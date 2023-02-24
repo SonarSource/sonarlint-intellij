@@ -26,37 +26,28 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.Orchestrator
-import com.sonar.orchestrator.build.SonarScanner
-import com.sonar.orchestrator.container.Server
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
-import org.junit.Assume
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.ideMajorVersion
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
-import org.sonarlint.intellij.its.utils.OrchestratorUtils
-import org.sonarqube.ws.client.HttpConnector
-import org.sonarqube.ws.client.WsClient
-import org.sonarqube.ws.client.WsClientFactories
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
-import org.sonarqube.ws.client.users.CreateRequest
-import org.sonarqube.ws.client.usertokens.GenerateRequest
-import java.io.File
 import java.time.Duration.ofSeconds
 
 @EnabledIf("isNotCLion")
@@ -161,14 +152,12 @@ class BindingTest : BaseUiTest() {
 
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
+        private val ORCHESTRATOR: Orchestrator = defaultBuilderEnv()
             .addPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.8.3.2219"))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))
             .build()
 
-        private const val SONARLINT_USER = "sonarlint"
-        private const val SONARLINT_PWD = "sonarlintpwd"
         private const val PROJECT_KEY = "sample-scala"
         private const val MODULE_PROJECT_KEY = "sample-scala-mod"
 
@@ -177,9 +166,7 @@ class BindingTest : BaseUiTest() {
         fun prepare() {
             ORCHESTRATOR.start()
 
-            val adminWsClient = newAdminWsClient()
-            adminWsClient.users()
-                .create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
+            val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
 
             ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
             ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
@@ -192,23 +179,10 @@ class BindingTest : BaseUiTest() {
             excludeFileRequest.values = listOf("src/Excluded.scala")
             adminWsClient.settings().set(excludeFileRequest)
 
-            ORCHESTRATOR.executeBuild(
-                SonarScanner.create(File("projects/sample-scala/"))
-                    .setProperty("sonar.login", SONARLINT_USER)
-                    .setProperty("sonar.password", SONARLINT_PWD)
-                    .setProperty("sonar.projectKey", PROJECT_KEY)
-            )
-            ORCHESTRATOR.executeBuild(
-                SonarScanner.create(File("projects/sample-scala/mod/"))
-                    .setProperty("sonar.login", SONARLINT_USER)
-                    .setProperty("sonar.password", SONARLINT_PWD)
-                    .setProperty("sonar.projectKey", MODULE_PROJECT_KEY)
-            )
+            executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY);
+            executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY);
 
-            val generateRequest = GenerateRequest()
-            generateRequest.name = "TestUser"
-            token = adminWsClient.userTokens().generate(generateRequest).token
-
+            token = generateToken(adminWsClient)
 
             val searchRequest = SearchRequest()
             searchRequest.s = "FILE_LINE"
@@ -216,16 +190,6 @@ class BindingTest : BaseUiTest() {
             val response = adminWsClient.issues().search(searchRequest)
             val firstIssueKey = response.issuesList[0].key
             adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
-        }
-
-        private fun newAdminWsClient(): WsClient {
-            val server = ORCHESTRATOR.server
-            return WsClientFactories.getDefault().newClient(
-                HttpConnector.newBuilder()
-                    .url(server.url)
-                    .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-                    .build()
-            )
         }
 
         @AfterAll

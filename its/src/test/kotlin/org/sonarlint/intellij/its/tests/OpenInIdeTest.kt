@@ -23,8 +23,6 @@ import com.google.protobuf.InvalidProtocolBufferException
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.utils.keyboard
 import com.sonar.orchestrator.Orchestrator
-import com.sonar.orchestrator.build.MavenBuild
-import com.sonar.orchestrator.container.Server
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
 import org.assertj.core.api.Assertions.assertThat
@@ -40,15 +38,13 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ItUtils
-import org.sonarlint.intellij.its.utils.OrchestratorUtils
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.optionalStep
-import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
-import org.sonarqube.ws.client.WsClientFactories
 import org.sonarqube.ws.client.hotspots.SearchRequest
-import org.sonarqube.ws.client.users.CreateRequest
-import org.sonarqube.ws.client.usertokens.GenerateRequest
-import java.io.File
 import java.net.URL
 
 const val PROJECT_KEY = "sample-java-hotspot"
@@ -147,49 +143,26 @@ class OpenInIdeTest : BaseUiTest() {
         private var firstHotspotKey: String? = null
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
+        private val ORCHESTRATOR: Orchestrator = defaultBuilderEnv()
             .addPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", ItUtils.javaVersion))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
             .build()
-
-        private const val SONARLINT_USER = "sonarlint"
-        private const val SONARLINT_PWD = "sonarlintpwd"
 
         @BeforeAll
         @JvmStatic
         fun prepare() {
             ORCHESTRATOR.start()
 
-            val adminWsClient = newAdminWsClient()
-            adminWsClient.users()
-                .create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
+            val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
 
             ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Java")
             ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
 
             // Build and analyze project to raise hotspot
-            val file = File("projects/sample-java-hotspot/pom.xml")
-            ORCHESTRATOR.executeBuild(
-                MavenBuild.create(file)
-                    .setCleanPackageSonarGoals()
-                    .setProperty("sonar.login", SONARLINT_USER)
-                    .setProperty("sonar.password", SONARLINT_PWD)
-            )
+            executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR);
 
             firstHotspotKey = getFirstHotspotKey(adminWsClient)
-            val generateRequest = GenerateRequest()
-            generateRequest.name = "TestUser"
-            token = adminWsClient.userTokens().generate(generateRequest).token
-        }
-
-        private fun newAdminWsClient(): WsClient {
-            val server = ORCHESTRATOR.server
-            return WsClientFactories.getDefault().newClient(
-                HttpConnector.newBuilder()
-                    .url(server.url)
-                    .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-                    .build()
-            )
+            token = generateToken(adminWsClient)
         }
 
         @AfterAll

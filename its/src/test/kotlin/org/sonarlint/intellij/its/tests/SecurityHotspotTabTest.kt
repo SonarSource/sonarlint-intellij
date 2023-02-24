@@ -39,31 +39,25 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsCl
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
 
 
-const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
+const val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
 
-@DisabledIf("isCLion", disabledReason = "No taint vulnerabilities in CLion")
-class TaintVulnerabilitiesTest : BaseUiTest() {
+@DisabledIf("isCLion", disabledReason = "No security hotspots in CLion")
+class SecurityHotspotTabTest : BaseUiTest() {
 
     @Test
     fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
-        openExistingProject("sample-java-taint-vulnerability", true)
-
-        verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
+        openExistingProject("sample-java-hotspot", true)
+        verifySecurityHotspotTabContainsMessages(this, "The project is not bound to SonarQube 9.7+")
     }
 
     @Test
-    fun should_display_sink() = uiTest {
-        openExistingProject("sample-java-taint-vulnerability", true)
+    fun should_display_security_hotspots() = uiTest {
+        openExistingProject("sample-java-hotspot", true)
         bindProjectFromPanel()
 
-        openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+        openFile("src/main/java/foo/Foo.java", "Foo.java")
 
-        verifyTaintTabContainsMessages(
-            this,
-            "Found 1 issue in 1 file",
-            "FileWithSink.java",
-            "Change this code to not construct SQL queries directly from user-controlled data."
-        )
+        verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
     }
 
     private fun bindProjectFromPanel() {
@@ -71,28 +65,41 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
-                    tab("Taint Vulnerabilities") { select() }
-                    content("TaintVulnerabilitiesPanel") {
-                        anActionLink("Configure Binding").click()
+                    tab("Security Hotspots") { select() }
+                    content("SecurityHotspotsPanel") {
+                        anActionLink("Configure binding").click()
                     }
                 }
-
                 bindProjectToSonarQube(
                     ORCHESTRATOR.server.url,
                     token,
-                    TAINT_VULNERABILITY_PROJECT_KEY
+                    SECURITY_HOTSPOT_PROJECT_KEY
                 )
             }
         }
     }
 
-    private fun verifyTaintTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+    private fun verifySecurityHotspotTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
         with(remoteRobot) {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
-                    tabTitleContains("Taint Vulnerabilities") { select() }
-                    content("TaintVulnerabilitiesPanel") {
+                    tabTitleContains("Security Hotspots") { select() }
+                    content("SecurityHotspotsPanel") {
+                        expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun verifySecurityHotspotTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+        with(remoteRobot) {
+            idea {
+                toolWindow("SonarLint") {
+                    ensureOpen()
+                    tabTitleContains("Security Hotspots") { select() }
+                    content("SecurityHotspotTree") {
                         expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                     }
                 }
@@ -108,7 +115,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
             .keepBundledPlugins()
-            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml"))
+            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
             .build()
 
         @BeforeAll
@@ -118,15 +125,15 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
 
             val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
 
-            ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
+            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java Hotspot")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
-                TAINT_VULNERABILITY_PROJECT_KEY,
+                SECURITY_HOTSPOT_PROJECT_KEY,
                 "java",
-                "SonarLint IT Java Taint Vulnerability"
+                "SonarLint IT Java Hotspot"
             )
 
             // Build and analyze project to raise hotspot
-            executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR);
+            executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR);
 
             token = generateToken(adminWsClient)
         }

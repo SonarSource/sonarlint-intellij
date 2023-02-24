@@ -28,10 +28,10 @@ import com.intellij.serviceContainer.NonInjectable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
 import org.sonarlint.intellij.actions.ClearReportAction;
+import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
-import org.sonarlint.intellij.actions.FilterSecurityHotspotAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 /**
@@ -82,7 +82,7 @@ public class SonarLintActions {
     analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
       "Run a SonarLint analysis on VCS changed files",
       SonarLintIcons.SCM);
-    filterAction = new FilterSecurityHotspotAction("Filter Security Hotspots",
+    filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
       "Filter security hotspots based on SonarQube matches",
       AllIcons.General.Filter);
   }
@@ -119,6 +119,8 @@ public class SonarLintActions {
     return analyzeAllFilesAction;
   }
 
-  public AnAction filterSecurityHotspots() { return filterAction; }
+  public AnAction filterSecurityHotspots() {
+    return filterAction;
+  }
 
 }

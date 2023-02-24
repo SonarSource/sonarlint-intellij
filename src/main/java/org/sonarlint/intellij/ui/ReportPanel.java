@@ -190,7 +190,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     mainToolbar.getComponent().setVisible(true);
   }
 
-  private SimpleActionGroup createActionGroup() {
+  private static SimpleActionGroup createActionGroup() {
     var sonarLintActions = SonarLintActions.getInstance();
     var actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.analyzeChangedFiles());

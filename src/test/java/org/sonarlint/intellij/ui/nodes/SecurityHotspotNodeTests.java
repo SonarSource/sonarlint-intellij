@@ -33,25 +33,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class SecurityHotspotNodeTests {
-  private LiveSecurityHotspotNode node;
 
   @Test
   void testCount() {
-    var i = createSecurityHotspot(System.currentTimeMillis(), "rule");
-    node = new LiveSecurityHotspotNode(i, false);
+    var i = createSecurityHotspot();
+    var node = new LiveSecurityHotspotNode(i, false);
     assertThat(node.getFindingCount()).isEqualTo(1);
     assertThat(node.getHotspot()).isEqualTo(i);
   }
 
-  private static LiveSecurityHotspot createSecurityHotspot(long date, String message) {
+  private static LiveSecurityHotspot createSecurityHotspot() {
     var file = mock(PsiFile.class);
     when(file.isValid()).thenReturn(true);
     var issue = mock(Issue.class);
-    when(issue.getMessage()).thenReturn(message);
+    when(issue.getMessage()).thenReturn("rule");
     when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(VulnerabilityProbability.HIGH));
     when(issue.getType()).thenReturn(RuleType.BUG);
-    var securityHotspotPointer = new LiveSecurityHotspot(issue, file, Collections.emptyList());
-    securityHotspotPointer.setIntroductionDate(date);
-    return securityHotspotPointer;
+    return new LiveSecurityHotspot(issue, file, Collections.emptyList());
   }
 }

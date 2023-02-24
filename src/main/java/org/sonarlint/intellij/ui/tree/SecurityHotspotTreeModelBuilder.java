@@ -50,6 +50,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private static final List<VulnerabilityProbability> VULNERABILITY_PROBABILITIES = List.of(VulnerabilityProbability.HIGH,
     VulnerabilityProbability.MEDIUM, VulnerabilityProbability.LOW);
   private static final Comparator<LiveSecurityHotspot> SECURITY_HOTSPOT_COMPARATOR = new SecurityHotspotComparator();
+  private static final Comparator<LiveSecurityHotspotNode> SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR = new LiveSecurityHotspotNodeComparator();
 
   private final FindingTreeIndex index;
   private DefaultTreeModel model;
@@ -211,7 +212,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
     for (var securityHotspot : securityHotspotsPointer) {
       var iNode = new LiveSecurityHotspotNode(securityHotspot, true);
-      var idx = summary.insertLiveSecurityHotspotNode(iNode, new LiveSecurityHotspotNodeComparator());
+      var idx = summary.insertLiveSecurityHotspotNode(iNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
       var newIdx = new int[]{idx};
       model.nodesWereInserted(summary, newIdx);
       model.nodeChanged(summary);
@@ -231,7 +232,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
     for (var securityHotspotNode : nonFilteredNodes) {
       if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
-        var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, new LiveSecurityHotspotNodeComparator());
+        var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
         var newIdx = new int[]{idx};
         model.nodesWereInserted(summary, newIdx);
         model.nodeChanged(summary);
@@ -270,7 +271,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
   }
 
-  private static class LiveSecurityHotspotNodeComparator implements Comparator<LiveSecurityHotspotNode> {
+  static class LiveSecurityHotspotNodeComparator implements Comparator<LiveSecurityHotspotNode> {
     @Override public int compare(LiveSecurityHotspotNode o1, LiveSecurityHotspotNode o2) {
       int c = o1.getHotspot().getVulnerabilityProbability().compareTo(o2.getHotspot().getVulnerabilityProbability());
       if (c != 0) {
@@ -284,6 +285,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       var rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
 
       return ComparisonChain.start()
+        .compare(o1.getHotspot().getFile().getPath(), o2.getHotspot().getFile().getPath())
         .compare(rangeStart1, rangeStart2)
         .compare(o1.getHotspot().getRuleKey(), o2.getHotspot().getRuleKey())
         .compare(o1.getHotspot().uid(), o2.getHotspot().uid())
@@ -293,13 +295,6 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
   static class SecurityHotspotComparator implements Comparator<LiveSecurityHotspot> {
     @Override public int compare(@Nonnull LiveSecurityHotspot o1, @Nonnull LiveSecurityHotspot o2) {
-      var introductionDateOrdering = Ordering.natural().reverse().nullsLast();
-      var dateCompare = introductionDateOrdering.compare(o1.getIntroductionDate(), o2.getIntroductionDate());
-
-      if (dateCompare != 0) {
-        return dateCompare;
-      }
-
       var vulnerabilityCompare = Ordering.explicit(VULNERABILITY_PROBABILITIES)
         .compare(o1.getVulnerabilityProbability(), o2.getVulnerabilityProbability());
 
