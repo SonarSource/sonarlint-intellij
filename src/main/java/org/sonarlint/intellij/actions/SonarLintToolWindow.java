@@ -127,21 +127,21 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   }
 
   private Content getTaintVulnerabilitiesContent() {
-    if (taintVulnerabilitiesContent == null) {
-      taintVulnerabilitiesContent = getToolWindow().getContentManager()
+    var toolWindow = getToolWindow();
+    if (taintVulnerabilitiesContent == null && toolWindow != null) {
+      taintVulnerabilitiesContent = toolWindow.getContentManager()
         .findContent(buildTabName(0, SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
     return taintVulnerabilitiesContent;
   }
 
   public void populateTaintVulnerabilitiesTab(TaintVulnerabilitiesStatus status) {
-    if (getToolWindow() == null) {
-      return;
-    }
     var content = getTaintVulnerabilitiesContent();
-    content.setDisplayName(buildTabName(status.count(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
-    var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
-    taintVulnerabilitiesPanel.populate(status);
+    if (content != null) {
+      content.setDisplayName(buildTabName(status.count(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+      var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
+      taintVulnerabilitiesPanel.populate(status);
+    }
   }
 
   private Content getSecurityHotspotContent() {
