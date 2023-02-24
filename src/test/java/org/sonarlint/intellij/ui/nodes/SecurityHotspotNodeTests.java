@@ -37,7 +37,7 @@ class SecurityHotspotNodeTests {
   @Test
   void testCount() {
     var i = createSecurityHotspot();
-    LiveSecurityHotspotNode node = new LiveSecurityHotspotNode(i, false);
+    var node = new LiveSecurityHotspotNode(i, false);
     assertThat(node.getFindingCount()).isEqualTo(1);
     assertThat(node.getHotspot()).isEqualTo(i);
   }

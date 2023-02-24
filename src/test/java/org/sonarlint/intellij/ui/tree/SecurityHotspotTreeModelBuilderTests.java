@@ -24,7 +24,6 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,7 +38,6 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
@@ -134,8 +132,8 @@ class SecurityHotspotTreeModelBuilderTests {
   }
 
   private static LiveSecurityHotspot mockSecurityHotspot(String path, int startOffset, String rule,
-    VulnerabilityProbability vulnerability, @Nullable Long introductionDate) throws IOException {
-    var issue = mock(Issue.class);
+    VulnerabilityProbability vulnerability, @Nullable Long introductionDate) {
+
     var virtualFile = mock(VirtualFile.class);
     when(virtualFile.getPath()).thenReturn(path);
     when(virtualFile.isValid()).thenReturn(true);
@@ -143,8 +141,7 @@ class SecurityHotspotTreeModelBuilderTests {
     when(psiFile.isValid()).thenReturn(true);
     when(psiFile.getVirtualFile()).thenReturn(virtualFile);
 
-    var f = mockFile(path);
-    when(issue.getInputFile()).thenReturn(f);
+    var issue = mock(Issue.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(vulnerability));
     when(issue.getType()).thenReturn(RuleType.SECURITY_HOTSPOT);
@@ -167,14 +164,6 @@ class SecurityHotspotTreeModelBuilderTests {
     VulnerabilityProbability vulnerability) throws IOException {
     var securityHotspot = mockSecurityHotspot(path, startOffset, rule, vulnerability, null);
     return new LiveSecurityHotspotNode(securityHotspot, false);
-  }
-
-  private static ClientInputFile mockFile(String path) throws IOException {
-    var file = mock(ClientInputFile.class);
-    when(file.contents()).thenReturn(path);
-    when(file.getCharset()).thenReturn(Charset.defaultCharset());
-    when(file.isTest()).thenReturn(false);
-    return file;
   }
 
 }

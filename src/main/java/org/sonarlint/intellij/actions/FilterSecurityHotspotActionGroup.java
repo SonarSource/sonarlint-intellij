@@ -22,7 +22,6 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import java.util.ArrayList;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,12 +37,12 @@ public class FilterSecurityHotspotActionGroup extends ActionGroup {
     super(title, description, icon);
     setPopup(true);
 
-    final ArrayList<AnAction> kids = new ArrayList<>(3);
     var settings = new FilterSecurityHotspotSettings();
-    kids.add(new FilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL, settings));
-    kids.add(new FilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY, settings));
-    kids.add(new FilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SONARQUBE, settings));
-    myChildren = kids.toArray(AnAction.EMPTY_ARRAY);
+    myChildren = new AnAction[] {
+      new FilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL, settings),
+      new FilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY, settings),
+      new FilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SONARQUBE, settings)
+    };
   }
 
   @NotNull

@@ -28,6 +28,7 @@ import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,19 +44,42 @@ class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests 
   }
 
   @Test
-  void testSelectingAllFilters() {
+  void testSelectingShowAllFilter() {
+    var event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(getProject());
+
+    FilterSecurityHotspotAction action = (FilterSecurityHotspotAction) actionGroup.getChildren(event)[0];
+    action.setSelected(event, true);
+
+    // Show All is already selected by default, it shouldn't trigger a new filtering
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
+  }
+
+  @Test
+  void testSelectingLocalOnlyFilter() {
     var event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(getProject());
 
     FilterSecurityHotspotAction action = (FilterSecurityHotspotAction) actionGroup.getChildren(event)[1];
     action.setSelected(event, true);
-    action = (FilterSecurityHotspotAction) actionGroup.getChildren(event)[2];
-    action.setSelected(event, true);
-    action = (FilterSecurityHotspotAction) actionGroup.getChildren(event)[0];
+
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
+    verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
+  }
+
+  @Test
+  void testSelectingExistingOnSonarQubeFilter() {
+    var event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(getProject());
+
+    FilterSecurityHotspotAction action = (FilterSecurityHotspotAction) actionGroup.getChildren(event)[2];
     action.setSelected(event, true);
 
-    verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
-    verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
     verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
   }
 

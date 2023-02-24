@@ -23,7 +23,6 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,7 +35,6 @@ import javax.swing.tree.DefaultTreeModel;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
@@ -47,7 +45,7 @@ import static org.mockito.Mockito.when;
 
 class IssueTreeModelBuilderTests {
   private final IssueTreeModelBuilder treeBuilder = new IssueTreeModelBuilder();
-  private final DefaultTreeModel model  = treeBuilder.createModel();
+  private final DefaultTreeModel model = treeBuilder.createModel();
 
   @Test
   void createModel() {
@@ -84,11 +82,11 @@ class IssueTreeModelBuilderTests {
   void testIssueComparator() throws IOException {
     List<LiveIssue> list = new ArrayList<>();
 
-    list.add(mockIssuePointer("f1", 100, "rule1", IssueSeverity.MAJOR, null));
-    list.add(mockIssuePointer("f1", 100, "rule2", IssueSeverity.MAJOR, 1000L));
-    list.add(mockIssuePointer("f1", 100, "rule3", IssueSeverity.MINOR, 2000L));
-    list.add(mockIssuePointer("f1", 50, "rule4", IssueSeverity.MINOR, null));
-    list.add(mockIssuePointer("f1", 100, "rule5", IssueSeverity.MAJOR, null));
+    list.add(mockIssuePointer(100, "rule1", IssueSeverity.MAJOR, null));
+    list.add(mockIssuePointer(100, "rule2", IssueSeverity.MAJOR, 1000L));
+    list.add(mockIssuePointer(100, "rule3", IssueSeverity.MINOR, 2000L));
+    list.add(mockIssuePointer(50, "rule4", IssueSeverity.MINOR, null));
+    list.add(mockIssuePointer(100, "rule5", IssueSeverity.MAJOR, null));
 
     List<LiveIssue> sorted = new ArrayList<>(list);
     sorted.sort(new IssueTreeModelBuilder.IssueComparator());
@@ -102,39 +100,30 @@ class IssueTreeModelBuilderTests {
     when(file.getName()).thenReturn(fileName);
     when(file.isValid()).thenReturn(true);
 
-    var psiFile = mock(PsiFile.class);
-    when(psiFile.isValid()).thenReturn(true);
     List<LiveIssue> issueList = new LinkedList<>();
 
     for (var i = 0; i < numIssues; i++) {
-      issueList.add(mockIssuePointer(fileName, i, "rule" + i, IssueSeverity.MAJOR, (long) i));
+      issueList.add(mockIssuePointer(i, "rule" + i, IssueSeverity.MAJOR, (long) i));
     }
 
     data.put(file, issueList);
   }
 
-  private static LiveIssue mockIssuePointer(String path, int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) throws IOException {
-    var issue = mock(Issue.class);
+  private static LiveIssue mockIssuePointer(int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) throws IOException {
     var psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
-    var f = mockFile(path);
-    when(issue.getInputFile()).thenReturn(f);
+
+    var issue = mock(Issue.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getSeverity()).thenReturn(severity);
     when(issue.getType()).thenReturn(RuleType.BUG);
+
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
+
     var ip = new LiveIssue(issue, psiFile, Collections.emptyList());
     ip.setIntroductionDate(introductionDate);
     return ip;
-  }
-
-  private static ClientInputFile mockFile(String path) throws IOException {
-    var file = mock(ClientInputFile.class);
-    when(file.contents()).thenReturn(path);
-    when(file.getCharset()).thenReturn(Charset.defaultCharset());
-    when(file.isTest()).thenReturn(false);
-    return file;
   }
 
 }
