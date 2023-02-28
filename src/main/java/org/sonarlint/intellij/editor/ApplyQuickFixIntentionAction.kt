@@ -22,6 +22,7 @@ package org.sonarlint.intellij.editor
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
 import com.intellij.icons.AllIcons
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Iconable
@@ -45,7 +46,8 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
         fix.applied = true
         SonarLintUtils.getService(SonarLintTelemetry::class.java).addQuickFixAppliedForRule(ruleKey)
         // TODO Handle edits in other files!
-        val currentFileEdits = fix.virtualFileEdits.filter { it.target == file.virtualFile }.flatMap { it.edits }
+        val topLevelFile = InjectedLanguageManager.getInstance(file.project).getTopLevelFile(file)
+        val currentFileEdits = fix.virtualFileEdits.filter { it.target == topLevelFile.virtualFile }.flatMap { it.edits }
         currentFileEdits.forEach { (rangeMarker, newText) ->
             editor.document.replaceString(rangeMarker.startOffset, rangeMarker.endOffset, normalizeLineEndingsToLineFeeds(newText))
         }
