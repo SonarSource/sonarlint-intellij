@@ -79,7 +79,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   private <T> void openTab(String displayName, Consumer<T> tabPanelConsumer) {
     var toolWindow = updateTab(displayName, tabPanelConsumer);
     if (toolWindow != null) {
-      selectTab(toolWindow, displayName);
+      toolWindow.show(() -> selectTab(toolWindow, displayName));
     }
   }
 
