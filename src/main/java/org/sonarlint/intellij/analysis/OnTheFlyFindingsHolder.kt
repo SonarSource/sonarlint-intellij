@@ -55,13 +55,13 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         with(findings.onlyFor(openFiles)) {
             currentIssuesPerOpenFile.putAll(issuesPerFile)
             currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
-            ApplicationManager.getApplication().invokeLater {
+            ApplicationManager.getApplication().invokeLater({
                 if (issuesPerFile.keys.contains(selectedFile)) {
                     updateCurrentFileTab()
                 }
                 updateSecurityHotspots()
                 getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(filesInvolved)
-            }
+            }, { project.isDisposed })
         }
     }
 
