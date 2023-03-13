@@ -23,7 +23,6 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
@@ -57,6 +56,7 @@ import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
@@ -280,7 +280,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private void subscribeToEvents() {
     var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
-      newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
+      newStatus -> runOnUiThread(project, this::refreshToolbar));
   }
 
   public void clear() {

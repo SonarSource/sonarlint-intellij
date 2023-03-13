@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -58,6 +56,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThreadAndWait;
 
 public class Analysis implements Cancelable {
   private final Project project;
@@ -187,8 +186,7 @@ public class Analysis implements Cancelable {
 
       if (indicator.isShowing()) {
         var dialogMsg = "SonarLint analysis failed: " + e.getMessage();
-        ApplicationManager.getApplication().invokeAndWait(() -> Messages.showErrorDialog(dialogMsg, "Error Running SonarLint Analysis"),
-          ModalityState.defaultModalityState());
+        runOnUiThreadAndWait(project, () -> Messages.showErrorDialog(dialogMsg, "Error Running SonarLint Analysis"));
       }
 
       callback.onError(e);

@@ -31,7 +31,6 @@ import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.serviceContainer.NonInjectable
-import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -46,6 +45,7 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.SERVER_NOTIFICATIONS_GROUP
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.LastNotificationTime
 import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.NotificationConfiguration
 import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.ServerNotification
@@ -197,7 +197,7 @@ class ProjectServerNotificationsSubscriber : Disposable {
   private inner class ConfigureNotificationsAction(private val connectionName: String) : NotificationAction("Configure") {
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
       WindowManager.getInstance().getFrame(e.project) ?: return
-      UIUtil.invokeLaterIfNeeded {
+      runOnUiThread(project) {
         val connectionToEdit = Settings.getGlobalSettings().serverConnections.find { it.name == connectionName }
         if (connectionToEdit != null) {
           val wizard = ServerConnectionWizard.forNotificationsEdition(connectionToEdit)

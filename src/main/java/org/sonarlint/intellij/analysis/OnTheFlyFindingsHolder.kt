@@ -32,6 +32,7 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import java.util.concurrent.ConcurrentHashMap
 
 class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerListener {
@@ -55,13 +56,13 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         with(findings.onlyFor(openFiles)) {
             currentIssuesPerOpenFile.putAll(issuesPerFile)
             currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
-            ApplicationManager.getApplication().invokeLater({
+            runOnUiThread(project) {
                 if (issuesPerFile.keys.contains(selectedFile)) {
                     updateCurrentFileTab()
                 }
                 updateSecurityHotspots()
                 getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(filesInvolved)
-            }, { project.isDisposed })
+            }
         }
     }
 

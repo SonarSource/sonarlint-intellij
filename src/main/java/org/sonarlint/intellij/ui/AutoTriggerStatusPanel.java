@@ -22,13 +22,11 @@ package org.sonarlint.intellij.ui;
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.JBUI;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -37,11 +35,13 @@ import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class AutoTriggerStatusPanel {
   private static final String AUTO_TRIGGER_ENABLED = "AUTO_TRIGGER_ENABLED";
@@ -67,7 +67,7 @@ public class AutoTriggerStatusPanel {
   }
 
   private void switchCard(String cardName) {
-    ApplicationManager.getApplication().invokeLater(() -> layout.show(panel, cardName), ModalityState.defaultModalityState());
+    runOnUiThread(project, () -> layout.show(panel, cardName));
   }
 
   private void switchCards() {

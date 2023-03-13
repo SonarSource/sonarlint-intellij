@@ -47,6 +47,7 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleContextualSectionDto
@@ -124,7 +125,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
             val newState = RuleDetailsLoaderState(module, finding.getRuleKey(), finding.getRuleDescriptionContextKey())
             if (state == newState) {
                 // Still force a refresh of the UI, as some other fields of the finding may be differents
-                ApplicationManager.getApplication().invokeLater {
+                runOnUiThread(project) {
                     updateUiComponents()
                 }
                 return
@@ -143,7 +144,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
                             } else {
                                 ruleDetails = response.details()
                             }
-                            ApplicationManager.getApplication().invokeLater {
+                            runOnUiThread(project) {
                                 updateUiComponents()
                             }
                         }

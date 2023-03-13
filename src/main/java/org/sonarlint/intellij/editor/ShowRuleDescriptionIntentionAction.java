@@ -27,13 +27,14 @@ import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.ui.UIUtil;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
+
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class ShowRuleDescriptionIntentionAction implements IntentionAction, PriorityAction, Iconable {
 
@@ -72,7 +73,7 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
     if (liveIssue.isEmpty()) {
       return;
     }
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
+    runOnUiThread(project, () -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
       .showIssueDescription(liveIssue.get()));
   }
 

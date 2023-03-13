@@ -22,13 +22,11 @@ package org.sonarlint.intellij.ui;
 import com.intellij.ide.IdeTooltipManager;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.TooltipWithClickableLinks;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
@@ -38,6 +36,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsListener;
@@ -51,6 +50,7 @@ import org.sonarsource.sonarlint.core.serverapi.UrlUtils;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class CurrentFileConnectedModePanel {
 
@@ -72,7 +72,7 @@ public class CurrentFileConnectedModePanel {
     switchCards();
     CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
     project.getMessageBus().connect(project).subscribe(VcsListener.TOPIC,
-      (module, branchName) -> ApplicationManager.getApplication().invokeLater(this::switchCards, ModalityState.defaultModalityState()));
+      (module, branchName) -> runOnUiThread(project, this::switchCards));
   }
 
   private void createPanel() {
@@ -202,7 +202,7 @@ public class CurrentFileConnectedModePanel {
   }
 
   private void switchCard(String cardName) {
-    ApplicationManager.getApplication().invokeLater(() -> layout.show(panel, cardName), ModalityState.defaultModalityState());
+    runOnUiThread(project, () -> layout.show(panel, cardName));
   }
 
   JPanel getPanel() {
