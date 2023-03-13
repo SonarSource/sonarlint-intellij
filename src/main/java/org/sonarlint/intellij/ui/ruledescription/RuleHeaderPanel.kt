@@ -81,6 +81,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         updateCommonFields(type, ruleKey)
         ruleSeverityIcon.icon = SonarLintIcons.severity(severity)
         ruleSeverityLabel.text = clean(severity.toString())
+        ruleSeverityLabel.setCopyable(true)
     }
 
     fun update(ruleKey: String, type: RuleType, vulnerabilityProbability: VulnerabilityProbability) {
@@ -89,6 +90,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         hotspotVulnerabilityLabel.isVisible = true
         hotspotVulnerabilityValueLabel.apply {
             text = vulnerabilityProbability.name
+            setCopyable(true)
             background = SonarLintIcons.colorsByProbability[vulnerabilityProbability]
         }
     }
@@ -96,7 +98,9 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private fun updateCommonFields(type: RuleType, ruleKey: String) {
         ruleTypeIcon.icon = SonarLintIcons.type(type)
         ruleTypeLabel.text = clean(type.toString())
+        ruleTypeLabel.setCopyable(true)
         ruleKeyLabel.text = ruleKey
+        ruleKeyLabel.setCopyable(true)
     }
 
 
