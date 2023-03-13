@@ -29,7 +29,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.BrowserHyperlinkListener
 import com.intellij.ui.IdeBorderFactory
-import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBLoadingPanel
@@ -233,6 +232,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
 
     private fun updateHeader(finding: Finding, ruleDescription: ActiveRuleDetailsDto) {
         ruleNameLabel.text = ruleDescription.name
+        ruleNameLabel.setCopyable(true)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
         if (finding is LiveSecurityHotspot) {
             val htmlStringBuilder = StringBuilder("""
