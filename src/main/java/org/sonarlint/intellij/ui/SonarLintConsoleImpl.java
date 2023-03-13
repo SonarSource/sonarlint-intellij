@@ -51,7 +51,7 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
   @Override
   public void debug(String msg) {
     if (debugEnabled()) {
-      getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
+      print(msg, ConsoleViewContentType.NORMAL_OUTPUT);
     }
   }
 
@@ -62,12 +62,18 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   @Override
   public void info(String msg) {
-    getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
+    print(msg, ConsoleViewContentType.NORMAL_OUTPUT);
   }
 
   @Override
   public void error(String msg) {
-    getConsoleView().print(msg + "\n", ConsoleViewContentType.ERROR_OUTPUT);
+    print(msg, ConsoleViewContentType.ERROR_OUTPUT);
+  }
+
+  private void print(String msg, ConsoleViewContentType outputType) {
+    if (!myProject.isDisposed()) {
+      getConsoleView().print(msg + "\n", outputType);
+    }
   }
 
   @Override
