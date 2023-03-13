@@ -23,7 +23,6 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
@@ -37,6 +36,8 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
+
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarLint";
@@ -57,7 +58,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
 
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
-      ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
+      runOnUiThread(project, mainToolbar::updateActionsImmediately));
   }
 
   private void addToolbar() {

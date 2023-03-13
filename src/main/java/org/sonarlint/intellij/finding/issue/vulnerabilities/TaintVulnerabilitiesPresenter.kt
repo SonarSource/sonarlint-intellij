@@ -23,8 +23,6 @@ import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -38,6 +36,7 @@ import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
@@ -105,13 +104,13 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
           }
           val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
           currentVulnerabilitiesByFile = if (status is FoundTaintVulnerabilities) status.byFile else emptyMap()
-          ApplicationManager.getApplication().invokeLater({
+          runOnUiThread(project) {
             getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(status)
             // annotate the code with intention actions
             if (!status.isEmpty()) {
               getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
             }
-          }, ModalityState.defaultModalityState(), project.disposed)
+          }
         }
       })
   }

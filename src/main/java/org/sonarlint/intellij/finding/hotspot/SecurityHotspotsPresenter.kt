@@ -19,13 +19,12 @@
  */
 package org.sonarlint.intellij.finding.hotspot
 
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
 sealed class SecurityHotspotsLocalDetectionSupport
 
@@ -39,12 +38,12 @@ class SecurityHotspotsPresenter(private val project: Project) {
             .checkLocalSecurityHotspotDetectionSupported(project)
             .thenApply { response -> if (response.isSupported) Supported else NotSupported(response.reason!!) }
             .thenAccept { status ->
-                ApplicationManager.getApplication().invokeLater({
+                runOnUiThread(project) {
                     getService(project, SonarLintToolWindow::class.java).populateSecurityHotspotsTab(status)
                     if (status is Supported) {
                         getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
                     }
-                }, ModalityState.defaultModalityState(), project.disposed)
+                }
             }
     }
 

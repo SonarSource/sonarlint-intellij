@@ -26,7 +26,6 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.ui.UIUtil;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +33,8 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class ShowLocationsIntentionAction implements IntentionAction, PriorityAction, Iconable {
   private final LiveIssue issue;
@@ -59,8 +60,7 @@ public class ShowLocationsIntentionAction implements IntentionAction, PriorityAc
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(issue);
     var sonarLintToolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
-    UIUtil.invokeLaterIfNeeded(() -> sonarLintToolWindow.showIssueLocations(issue));
-
+    runOnUiThread(project, () -> sonarLintToolWindow.showIssueLocations(issue));
   }
 
   @Override public boolean startInWriteAction() {

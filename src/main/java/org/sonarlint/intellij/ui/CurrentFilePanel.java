@@ -23,14 +23,12 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.util.Collection;
@@ -40,12 +38,14 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NonNls;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
@@ -63,7 +63,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable 
     var splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
     super.setContent(splitter);
     project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
-      newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
+      newStatus -> runOnUiThread(project, this::refreshToolbar));
   }
 
   @Override

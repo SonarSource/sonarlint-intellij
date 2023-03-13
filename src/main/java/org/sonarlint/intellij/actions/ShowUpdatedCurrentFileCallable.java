@@ -20,12 +20,13 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.util.ui.UIUtil;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisIntermediateResult;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class ShowUpdatedCurrentFileCallable implements AnalysisCallback {
   private final Project project;
@@ -52,7 +53,7 @@ public class ShowUpdatedCurrentFileCallable implements AnalysisCallback {
   }
 
   private void showCurrentFileTab() {
-    UIUtil.invokeLaterIfNeeded(() -> {
+    runOnUiThread(project, () -> {
       var toolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
       toolWindow.openCurrentFileTab();
     });

@@ -20,8 +20,6 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.ui.UIUtil;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisIntermediateResult;
 import org.sonarlint.intellij.analysis.AnalysisResult;
@@ -29,6 +27,7 @@ import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class ShowSecurityHotspotCallable implements AnalysisCallback {
   private final Project project;
@@ -58,7 +57,7 @@ public class ShowSecurityHotspotCallable implements AnalysisCallback {
   }
 
   private void showSecurityHotspotsTab() {
-    UIUtil.invokeLaterIfNeeded(() -> {
+    runOnUiThread(project, () -> {
       var toolWindow = getService(project, SonarLintToolWindow.class);
       toolWindow.openSecurityHotspotsTab();
       toolWindow.bringToFront();
