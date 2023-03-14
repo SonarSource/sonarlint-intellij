@@ -206,7 +206,7 @@ dependencies {
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.17.0.31219")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.0.1.20755")
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.28.0.9490")
-    "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.0.0.11155")
+    "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.1.0.11333")
     "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.12.0.1956")
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.11.0.3905")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.7.1.3306")
