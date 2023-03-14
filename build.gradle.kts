@@ -214,7 +214,7 @@ dependencies {
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.8.0.64684")
     "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.0.1.611")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.42.0.61084")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.43.0.61486")
     }
     // workaround for light tests in 2020.3, might remove later
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-reflect")
