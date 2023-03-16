@@ -72,6 +72,9 @@ public class TaskProgressMonitor implements ClientProgressMonitor {
    */
   @Override
   public void setFraction(float fraction) {
+    if (indicator.isIndeterminate()) {
+      indicator.setIndeterminate(false);
+    }
     indicator.setFraction(fraction);
   }
 
