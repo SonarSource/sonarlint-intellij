@@ -41,7 +41,7 @@ import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjec
 
 const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
 
-@DisabledIf("isCLion", disabledReason = "No taint vulnerabilities in CLion")
+@DisabledIf("isCLionOrGoLand", disabledReason = "No taint vulnerabilities in CLion or GoLand")
 class TaintVulnerabilitiesTest : BaseUiTest() {
 
     @Test

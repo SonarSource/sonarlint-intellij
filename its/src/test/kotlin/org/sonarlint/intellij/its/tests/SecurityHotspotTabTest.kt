@@ -41,7 +41,7 @@ import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjec
 
 const val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
 
-@DisabledIf("isCLion", disabledReason = "No security hotspots in CLion")
+@DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
 class SecurityHotspotTabTest : BaseUiTest() {
 
     @Test

@@ -57,7 +57,8 @@ object EmbeddedPlugins {
         EmbeddedPlugin(Language.KOTLIN, "Kotlin", "sonar-kotlin-plugin-*.jar"),
         EmbeddedPlugin(Language.RUBY, "Ruby", "sonar-ruby-plugin-*.jar"),
         EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"),
-        EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-text-plugin-*.jar")
+        EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-text-plugin-*.jar"),
+        EmbeddedPlugin(Language.GO, "Go", "sonar-go-plugin-*.jar")
     )
 
     @JvmStatic

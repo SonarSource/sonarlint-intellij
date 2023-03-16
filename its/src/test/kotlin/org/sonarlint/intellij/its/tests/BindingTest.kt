@@ -31,7 +31,7 @@ import com.sonar.orchestrator.locator.MavenLocation
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIf
+import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -50,7 +50,7 @@ import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
 import java.time.Duration.ofSeconds
 
-@EnabledIf("isNotCLion")
+@DisabledIf("isCLionOrGoLand")
 class BindingTest : BaseUiTest() {
 
     @Test
