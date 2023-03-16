@@ -240,13 +240,13 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun should_apply_overlapping_quick_fixes_on_same_line() {
+    fun should_apply_overlapping_quick_fixes() {
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
         analyze(file.virtualFile)
 
-        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-        myFixture.editor.caretModel.currentCaret.moveToOffset(58)
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove this unused private field"))
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Use \"Arrays.toString(array)\" instead"))
+        myFixture.editor.caretModel.currentCaret.moveToOffset(180)
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Merge this if statement with the enclosing one"))
 
         myFixture.checkResultByFile("src/quick_fixes/overlapping_quick_fixes.expected.java")
     }

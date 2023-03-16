@@ -31,6 +31,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
+import java.util.Set;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -49,6 +50,9 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpLanguageReg
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
+
+  // some quick fixes do not match the IntelliJ experience
+  private static final Set<String> SILENCED_QUICK_FIXABLE_RULE_KEYS = Set.of("java:S1068", "java:S1144", "java:S1172");
 
   @Override
   public void apply(@NotNull PsiFile file, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
@@ -104,7 +108,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       intentionActions.add(new DisableRuleIntentionAction(issue.getRuleKey()));
     }
     issue.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(issue, c)));
-    issue.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
+    if (shouldSuggestQuickFix(issue)) {
+      issue.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
+    }
 
     var annotationBuilder = annotationHolder
       .newAnnotation(getSeverity(issue.getUserSeverity()), issue.getMessage())
@@ -120,6 +126,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
     annotationBuilder.highlightType(getType(issue.getUserSeverity()))
       .create();
+  }
+
+  private static boolean shouldSuggestQuickFix(LiveIssue issue) {
+    return !SILENCED_QUICK_FIXABLE_RULE_KEYS.contains(issue.getRuleKey());
   }
 
   private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
