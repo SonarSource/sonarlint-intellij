@@ -32,7 +32,7 @@ import java.util.EnumSet
 import java.util.function.Consumer
 
 object EmbeddedPlugins {
-    private val STANDALONE_LANGUAGES: Set<Language> = EnumSet.of(
+    private val ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA: Set<Language> = EnumSet.of(
         Language.HTML,
         Language.XML,
         Language.JS,
@@ -45,11 +45,11 @@ object EmbeddedPlugins {
         Language.TS,
         Language.YAML
     )
-    private val CONNECTED_ADDITIONAL_LANGUAGES: Set<Language> = EnumSet.of(
+    private val ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE: Set<Language> = EnumSet.of(
         Language.SCALA,
         Language.SWIFT
     )
-    private val EMBEDDED_PLUGINS = listOf(
+    private val EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE = listOf(
         EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
         EmbeddedPlugin(Language.CS, "CSharp", "sonarlint-omnisharp-plugin-*.jar"),
         EmbeddedPlugin(Language.HTML, "HTML", "sonar-html-plugin-*.jar"),
@@ -63,7 +63,7 @@ object EmbeddedPlugins {
 
     @JvmStatic
     fun getEmbeddedPluginsForConnectedMode(): Map<String, Path> {
-        return EMBEDDED_PLUGINS.mapNotNull {
+        return EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.mapNotNull {
             val path = findEmbeddedPlugin(getPluginsDir(), it);
             if (path != null) {
                 it.pluginKey to path
@@ -76,8 +76,8 @@ object EmbeddedPlugins {
     @JvmStatic
     val enabledLanguagesInConnectedMode: Set<Language>
         get() {
-            val enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES)
-            enabledLanguages.addAll(CONNECTED_ADDITIONAL_LANGUAGES)
+            val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
+            enabledLanguages.addAll(ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE)
             amendEnabledLanguages(enabledLanguages)
             return enabledLanguages
         }
@@ -85,7 +85,7 @@ object EmbeddedPlugins {
     @JvmStatic
     val enabledLanguagesInStandaloneMode: Set<Language>
         get() {
-            val enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES)
+            val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
             amendEnabledLanguages(enabledLanguages)
             return enabledLanguages
         }
