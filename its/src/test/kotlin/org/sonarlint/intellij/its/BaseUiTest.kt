@@ -36,6 +36,7 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
+import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.preferencesDialog
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
@@ -63,13 +64,18 @@ open class BaseUiTest {
         }
 
         @JvmStatic
+        fun isCLionOrGoLand(): Boolean {
+            return remoteRobot.isCLion() || remoteRobot.isGoLand()
+        }
+
+        @JvmStatic
         fun isCLion(): Boolean {
             return remoteRobot.isCLion()
         }
 
         @JvmStatic
-        fun isNotCLion(): Boolean {
-            return !remoteRobot.isCLion()
+        fun isGoLand(): Boolean {
+            return remoteRobot.isGoLand()
         }
     }
 

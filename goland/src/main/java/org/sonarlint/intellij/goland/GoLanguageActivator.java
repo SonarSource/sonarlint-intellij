@@ -17,12 +17,17 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.fixtures
+package org.sonarlint.intellij.goland;
 
-import com.intellij.remoterobot.RemoteRobot
+import java.util.Set;
+import org.sonarlint.intellij.common.LanguageActivator;
+import org.sonarsource.sonarlint.core.commons.Language;
 
-fun RemoteRobot.ideMajorVersion() = callJs<Int>("com.intellij.openapi.application.ApplicationInfo.getInstance().getBuild().getBaselineVersion()")
-
-fun RemoteRobot.isCLion() = callJs<Boolean>("com.intellij.util.PlatformUtils.isCLion()")
-
-fun RemoteRobot.isGoLand() = callJs<Boolean>("com.intellij.util.PlatformUtils.isGoIde()")
+public class GoLanguageActivator implements LanguageActivator {
+  @Override
+  public void amendLanguages(Set<Language> enabledLanguages) {
+    enabledLanguages.clear();
+    enabledLanguages.add(Language.GO);
+    enabledLanguages.add(Language.SECRETS);
+  }
+}

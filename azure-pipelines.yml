@@ -165,10 +165,14 @@ stages:
             IDEA_VERSION: 'IC-2021.3.3'
           CLion2021:
             IDEA_VERSION: 'CL-2021.3.3'
+          GoLand2021:
+            IDEA_VERSION: 'GO-2021.3.3'
           Idea2022:
             IDEA_VERSION: 'IC-2022.3.2'
           CLion2022:
             IDEA_VERSION: 'CL-2022.3.2'
+          GoLand2022:
+            IDEA_VERSION: 'GO-2022.3.2'
       steps:
       - checkout: self
         fetchDepth: 1
@@ -194,6 +198,11 @@ stages:
         displayName: 'Download CLion key'
         inputs:
           secureFile: 'clion.key'
+      - task: DownloadSecureFile@1
+        name: golandKey
+        displayName: 'Download GoLand key'
+        inputs:
+          secureFile: 'goland.key'
       - bash: |
           set -e -o pipefail -u
           sudo apt-get update
@@ -211,6 +220,7 @@ stages:
 
           mkdir -p its/build/idea-sandbox/config-uiTest/
           cp $(clionKey.secureFilePath) its/build/idea-sandbox/config-uiTest/clion.key
+          cp $(golandKey.secureFilePath) its/build/idea-sandbox/config-uiTest/goland.key
 
           ./gradlew :its:runIdeForUiTests --stacktrace -i -PijVersion=$(IDEA_VERSION) -PslPluginDirectory=$(Agent.BuildDirectory)/staged-plugin > /tmp/runIdeGradle.log &
         displayName: 'Prepare env and start IDE $(IDEA_VERSION)'

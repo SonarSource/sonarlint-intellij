@@ -190,6 +190,7 @@ dependencies {
     }
     implementation(project(":common"))
     runtimeOnly(project(":clion"))
+    runtimeOnly(project(":goland"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(platform("org.junit:junit-bom:5.9.2"))
@@ -213,6 +214,7 @@ dependencies {
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.7.0.3820")
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.8.0.64684")
     "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.0.1.611")
+    "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.12.0.4243")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.43.0.61486")
     }

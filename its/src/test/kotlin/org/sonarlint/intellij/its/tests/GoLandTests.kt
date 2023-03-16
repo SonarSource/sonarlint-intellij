@@ -17,12 +17,27 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.fixtures
+package org.sonarlint.intellij.its.tests
 
-import com.intellij.remoterobot.RemoteRobot
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIf
+import org.sonarlint.intellij.its.BaseUiTest
 
-fun RemoteRobot.ideMajorVersion() = callJs<Int>("com.intellij.openapi.application.ApplicationInfo.getInstance().getBuild().getBaselineVersion()")
 
-fun RemoteRobot.isCLion() = callJs<Boolean>("com.intellij.util.PlatformUtils.isCLion()")
+@EnabledIf("isGoLand")
+class GoLandTests : BaseUiTest() {
 
-fun RemoteRobot.isGoLand() = callJs<Boolean>("com.intellij.util.PlatformUtils.isGoIde()")
+    @Test
+    fun should_analyze_go() = uiTest {
+        openExistingProject("sample-go")
+
+        openFile("file.go")
+
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file.go",
+            "Remove or correct this useless self-assignment."
+        )
+    }
+
+}

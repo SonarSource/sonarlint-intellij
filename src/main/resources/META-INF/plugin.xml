@@ -36,8 +36,8 @@
             <br/>
             <p>
                 SonarLint integrates with most JetBrains IDEs including
-                IntelliJ IDEA, CLion, WebStorm, PHPStorm, PyCharm, Rider, Android Studio & RubyMine. Supported languages include
-                C, C++, Java, JavaScript, TypeScript, Python, C#, Kotlin, Ruby, HTML, CSS & PHP.
+                IntelliJ IDEA, CLion, GoLand, WebStorm, PHPStorm, PyCharm, Rider, Android Studio & RubyMine. Supported languages include
+                C, C++, Java, Go, JavaScript, TypeScript, Python, C#, Kotlin, Ruby, HTML, CSS & PHP.
                 Beginning in version 7.5, SonarLint can detect <a href="https://github.com/SonarSource/sonarlint-intellij/wiki/Security-Hotspots">Security Hotspots</a> when in Connected Mode with SonarQube 9.7+.
             </p>
             <br/>
@@ -58,7 +58,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>8.1 - Support for tiarmclang compiler, Kotlin 1.8 and IPython syntax. 6 new rules for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>8.1 - Support analysis of Go in GoLand. Support for tiarmclang compiler, Kotlin 1.8 and IPython syntax. 6 new rules for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.0 - Raise minimal supported version to 2021.3. Report Security Hotspots locally when connected to SonarQube 9.7+. Support of JavaScript analysis in HTML files. Support for clang-cl and Microchip compilers. New quick fixes for 11 Java rules. New quick fix for a C++ rule. New quick fixes for 17 Python rules. 6 new rules for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>7.4 - Display Clean Code principles in rule descriptions. 13 new rules around std::format for C++. 1 new rule for Java. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>7.3 - Improved display of rule descriptions. New react performance rules. Analyze CSS files. New Kotlin rules. 6 new C++20 rules. Support Python 3.11. Analyze JS, TS, CSS and HTML in Rider. 1 new rule for C# in Rider. Many rules improvements.</li>
@@ -157,6 +157,7 @@
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.modules.clion</depends>
+    <depends optional="true" config-file="plugin-goland.xml">com.intellij.modules.goland</depends>
     <depends optional="true" config-file="plugin-rider.xml">com.intellij.modules.rider</depends>
 
     <projectListeners>

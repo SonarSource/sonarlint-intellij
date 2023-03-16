@@ -49,7 +49,7 @@ import java.net.URL
 
 const val PROJECT_KEY = "sample-java-hotspot"
 
-@DisabledIf("isCLion", disabledReason = "Java Security Hotspot not detected in CLion")
+@DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
 class OpenInIdeTest : BaseUiTest() {
 
     @Test

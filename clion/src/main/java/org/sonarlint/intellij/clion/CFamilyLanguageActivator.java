@@ -27,7 +27,6 @@ import org.sonarsource.sonarlint.core.commons.Language;
 public class CFamilyLanguageActivator implements LanguageActivator {
   @Override
   public void amendLanguages(Set<Language> enabledLanguages) {
-    // Only C/C++ for now in CLion
     enabledLanguages.clear();
     enabledLanguages.add(Language.C);
     enabledLanguages.add(Language.CPP);

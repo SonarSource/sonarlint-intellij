@@ -188,7 +188,7 @@ public class SonarLintUtils {
 
   @CheckForNull
   public static String getIdeVersionForTelemetry() {
-    String ideVersion = null;
+    String ideVersion;
     try {
       var appInfo = getAppInfo();
       ideVersion = appInfo.getVersionName() + " " + appInfo.getFullVersion();
@@ -207,8 +207,7 @@ public class SonarLintUtils {
   }
 
   public static boolean isTaintVulnerabilitiesEnabled() {
-    // No Taint Vulnerabilities in C/C++ for the time being
-    return !PlatformUtils.isCLion();
+    return !PlatformUtils.isCLion() && !PlatformUtils.isGoIde();
   }
 
   public static boolean isModuleLevelBindingEnabled() {
