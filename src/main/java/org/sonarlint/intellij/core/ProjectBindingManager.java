@@ -273,7 +273,7 @@ public class ProjectBindingManager {
         return false;
       }
       ProjectKeyAndBranch that = (ProjectKeyAndBranch) o;
-      return projectKey.equals(that.projectKey) && branchName.equals(that.branchName);
+      return projectKey.equals(that.projectKey) && Objects.equals(branchName, that.branchName);
     }
 
     @Override
