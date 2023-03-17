@@ -21,6 +21,7 @@ Useful links
     - [Ruby](https://rules.sonarsource.com/ruby)
     - [PHP](https://rules.sonarsource.com/php)
     - [HTML](https://rules.sonarsource.com/html)
+    - [Go](https://rules.sonarsource.com/go)
 - [SonarLint community](https://community.sonarsource.com/c/help/sl)
 
 How to install
