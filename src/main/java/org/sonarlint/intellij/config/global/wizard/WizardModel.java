@@ -84,6 +84,10 @@ public class WizardModel {
     return this;
   }
 
+  public boolean isSonarCloud() {
+    return ServerType.SONARCLOUD.equals(serverType);
+  }
+
   public boolean isNotificationsSupported() {
     return notificationsSupported;
   }
@@ -108,8 +112,8 @@ public class WizardModel {
   }
 
   public void queryOrganizations() throws Exception {
-    final ServerConnection partialConnection = createConnectionWithoutOrganization();
-    if (partialConnection.isSonarCloud()) {
+    if (isSonarCloud()) {
+      final ServerConnection partialConnection = createConnectionWithoutOrganization();
       final var task = buildAndRunGetOrganizationsTask(partialConnection);
       setOrganizationList(task.organizations());
       final var presetOrganizationKey = getOrganizationKey();
@@ -241,10 +245,6 @@ public class WizardModel {
 
   public ServerConnection createConnection() {
     return createConnection(organizationKey);
-  }
-
-  public ServerConnection createUnauthenticatedConnection() {
-    return createUnauthenticatedConnection(organizationKey).build();
   }
 
   private ServerConnection.Builder createUnauthenticatedConnection(@Nullable String organizationKey) {

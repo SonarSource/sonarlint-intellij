@@ -27,7 +27,6 @@ import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.ListSpeedSearch;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBList;
-import com.intellij.util.Function;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.DefaultListModel;
@@ -145,9 +144,8 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   @Override public boolean isComplete() {
-    // if this step is skipped because there is only one organization, we still need to return true so that the wizard
-    // can finish
-    return model.getOrganizationList().size() <= 1 || orgList.getSelectedValue() != null;
+    // even if skipped in the SQ context, this step is still checked for completion
+    return !model.isSonarCloud() || orgList.getSelectedValue() != null;
   }
 
   @Override public void commit(CommitType commitType) {
@@ -171,7 +169,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
     list.setEnabled(true);
     list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     list.setCellRenderer(new ListRenderer());
-    new ListSpeedSearch<>(list, (Function<ServerOrganization, String>) o -> o.getName() + " " + o.getKey());
+    new ListSpeedSearch<>(list, o -> o.getName() + " " + o.getKey());
     orgList = list;
   }
 
