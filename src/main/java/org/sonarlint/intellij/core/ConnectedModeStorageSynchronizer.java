@@ -36,6 +36,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsListener;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.messages.ServerBranchesListenerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -142,6 +143,7 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
             if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
               getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
             }
+            getService(myProject, SecurityHotspotsPresenter.class).presentSecurityHotspotsForOpenFiles();
           } catch (Exception e) {
             log.log("There was an error while synchronizing issues: " + e.getMessage(), ClientLogOutput.Level.WARN);
           }

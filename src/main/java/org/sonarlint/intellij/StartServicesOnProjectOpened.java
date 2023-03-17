@@ -44,13 +44,14 @@ public class StartServicesOnProjectOpened implements StartupActivity {
     }
     getService(project, ProjectServerNotificationsSubscriber.class).start();
     getService(project, EditorChangeTrigger.class).onProjectOpened();
+    doSubscribeForServerEvents(project);
+
+    getService(BackendService.class).projectOpened(project);
+
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
     }
     getService(project, SecurityHotspotsRefreshTrigger.class).subscribeToTriggeringEvents();
-    doSubscribeForServerEvents(project);
-
-    getService(BackendService.class).projectOpened(project);
 
     // perform on bindings load
     getService(project, ConnectedModeStorageSynchronizer.class).init();

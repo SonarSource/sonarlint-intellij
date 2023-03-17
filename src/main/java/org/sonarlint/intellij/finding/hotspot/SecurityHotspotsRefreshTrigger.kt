@@ -65,8 +65,7 @@ class SecurityHotspotsRefreshTrigger(private val project: Project) {
     getService(project, SecurityHotspotsPresenter::class.java).presentSecurityHotspotsForOpenFiles()
   }
 
-  // TODO need to update the method for security hotspots
   private fun triggerRefresh() {
-    getService(project, SecurityHotspotsPresenter::class.java).refreshSecurityHotspotsForOpenFiles()
+    getService(project, SecurityHotspotsPresenter::class.java).refreshSecurityHotspotsForOpenFilesAsync()
   }
 }
