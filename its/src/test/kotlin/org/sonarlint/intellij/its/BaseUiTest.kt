@@ -275,6 +275,9 @@ open class BaseUiTest {
                 clickPath("Tools", "SonarLint")
             }
 
+            // let the SonarLint view settle (sometimes the UI thread blocks for a few seconds)
+            Pause.pause(4000)
+
             function(this)
         }
     }
@@ -282,7 +285,7 @@ open class BaseUiTest {
     private fun clearConnections() {
         sonarLintGlobalSettings {
             val removeButton = actionButton(byTooltipText("Remove"))
-            jList(JListFixture.byType(), Duration.ofSeconds(20)) {
+            jList(JListFixture.byType()) {
                 while (collectItems().isNotEmpty()) {
                     removeButton.clickWhenEnabled()
                     optionalStep {
