@@ -17,7 +17,7 @@ jobs:
         id: sl_release
         with:
           publish_to_binaries: false
-          slack_channel: team-sonarlint-java
+          slack_channel: team-sonarlint-intelliclipse-notifs
         env:
           ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
           BURGRX_USER: ${{ secrets.BURGRX_USER }}
