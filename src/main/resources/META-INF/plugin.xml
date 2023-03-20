@@ -28,25 +28,31 @@
     <description><![CDATA[
         <html>
             <p>
-                SonarLint is a free IDE extension to find and fix bugs, vulnerabilities and code smells as you write code!
-                Like a spell checker, SonarLint highlights issues on the fly and provides quick fixes and contextual remediation guidance
-                to help you clean the code before it is even committed. With support for several popular and classic languages,
-                SonarLint helps developers of all experience and skill levels write Clean Code.
+                SonarLint is a free IDE extension to find and fix coding issues in real-time, flagging issues as you code, just like a spell-checker.
+                More than a linter, it also delivers rich contextual guidance to help developers understand why there is an issue,
+                assess the risk and educate them on how to fix it. This helps improve their skills, enhance their productivity,
+                and take ownership of their code, taking linting to a different level.
+            </p>
+            <br/>
+            <p>
+                When paired with <a href="https://www.sonarsource.com/products/sonarqube/">SonarQube</a> or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarCloud</a> in connected mode,
+                SonarLint forms a powerful end-to-end code quality platform to enrich the CI/CD pipeline, ensuring any code edits or additions are clean.
+                In connected mode, your team can share common language rulesets, project analysis settings and <a href="https://www.sonarsource.com/products/sonarlint/features/connected-mode/">more</a>.
+            </p>
+            <br/>
+            <p>
+                SonarLint is a powerful open-source tool for developers of all experience and skill levels, empowering them
+                to deliver Clean Code - code fit for development and production. An essential linting tool for every developer.
             </p>
             <br/>
             <p>
                 SonarLint integrates with most JetBrains IDEs including
                 IntelliJ IDEA, CLion, GoLand, WebStorm, PHPStorm, PyCharm, Rider, Android Studio & RubyMine. Supported languages include
                 C, C++, Java, Go, JavaScript, TypeScript, Python, C#, Kotlin, Ruby, HTML, CSS & PHP.
-                Beginning in version 7.5, SonarLint can detect <a href="https://github.com/SonarSource/sonarlint-intellij/wiki/Security-Hotspots">Security Hotspots</a> when in Connected Mode with SonarQube 9.7+.
             </p>
             <br/>
             <p>
-                SonarLint isn't just about your code, it's also an opportunity to bring your passion for quality code to the whole team.
-                When paired with <a href="https://www.sonarsource.com/products/sonarqube/">SonarQube</a> or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarCloud</a> in connected mode,
-                your team can share common language rulesets, project analysis settings
-                and <a href="https://www.sonarsource.com/products/sonarlint/features/connected-mode/">more</a>.
-                The combination forms a continuous analysis solution that ensures code fit for development and production.
+                Beginning in version 7.5, SonarLint can detect <a href="https://github.com/SonarSource/sonarlint-intellij/wiki/Security-Hotspots">Security Hotspots</a> when in Connected Mode with SonarQube 9.7+.
             </p>
             <br/>
             <p>
