@@ -52,6 +52,8 @@ class GitRepo(private val repo: GitRepository, private val project: Project, pri
             }
             val minDistance = branchesPerDistance.keys.stream().min(Comparator.naturalOrder()).get()
             val bestCandidates: Set<String?> = branchesPerDistance[minDistance]!!
+            logger.info("Best candidates are $bestCandidates")
+
             if (bestCandidates.contains(serverMainBranch)) {
                 // Favor the main branch when there are multiple candidates with the same distance
                 serverMainBranch
@@ -63,9 +65,13 @@ class GitRepo(private val repo: GitRepository, private val project: Project, pri
     }
 
     private fun distance(project: Project, repository: GitRepository, from: String, to: String): Int? {
+        logger.info("Getting merge base from HEAD=$from to $to")
         val mergeBase = GitHistoryUtils.getMergeBase(project, repository.root, from, to) ?: return null
+        logger.info("Found merge base ${mergeBase.asString()}")
         val aheadCount = getNumberOfCommitsBetween(repository, from, mergeBase.asString()) ?: return null
+        logger.info("Number of commits ahead=$aheadCount ")
         val behindCount = getNumberOfCommitsBetween(repository, to, mergeBase.asString()) ?: return null
+        logger.info("Number of commits behind=$behindCount ")
         return aheadCount + behindCount
     }
 
