@@ -213,6 +213,7 @@ dependencies {
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.8.0.64684")
     "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.0.1.611")
     "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.12.0.4259")
+    "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.16.0.3845")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.43.0.61486")
     }

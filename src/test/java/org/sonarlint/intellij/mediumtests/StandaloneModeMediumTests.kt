@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.mediumtests
 
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.vcs.FileStatusManager
@@ -65,7 +66,14 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } },
                 { it.introductionDate })
             .containsExactly(
-                tuple("xml:S1778", "Remove all characters located before \"<?xml\".", RuleType.BUG, IssueSeverity.CRITICAL, Pair(62, 67), null)
+                tuple(
+                    "xml:S1778",
+                    "Remove all characters located before \"<?xml\".",
+                    RuleType.BUG,
+                    IssueSeverity.CRITICAL,
+                    Pair(62, 67),
+                    null
+                )
             )
     }
 
@@ -117,6 +125,86 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             .containsExactly(
                 tuple("javascript:S1481", "Remove the declaration of the unused 'x' variable.", Pair(219, 220))
             )
+    }
+
+    @Test
+    fun should_analyze_dockerfiles() {
+        val fileToAnalyze = myFixture.configureByFile("src/Dockerfile").virtualFile
+
+        val (issues, highlightInfos) = analyzeAndHighlight(fileToAnalyze)
+
+        assertThat(issues)
+            .extracting(
+                { it.ruleKey },
+                { it.message },
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+            .containsExactly(
+                tuple("docker:S6476", "Replace `from` with upper case format `FROM`.", Pair(0, 4))
+            )
+
+        assertThat(highlightInfos).hasSize(1)
+    }
+
+    @Test
+    fun should_analyze_cloudformation_files() {
+        val fileToAnalyze = myFixture.configureByFile("src/CloudFormation.yaml").virtualFile
+
+        val (issues, highlightInfos) = analyzeAndHighlight(fileToAnalyze)
+
+        assertThat(issues)
+            .extracting(
+                { it.ruleKey },
+                { it.message },
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+            .containsExactly(
+                tuple("cloudformation:S6295", "Make sure missing \"RetentionInDays\" property is intended here.", Pair(79, 98))
+            )
+        assertThat(highlightInfos).hasSize(1)
+    }
+
+    @Test
+    fun should_analyze_terraform_files() {
+        val fileToAnalyze = myFixture.configureByFile("src/Terraform.tf").virtualFile
+
+        val (issues, highlightInfos) = analyzeAndHighlight(fileToAnalyze)
+
+        assertThat(issues)
+            .extracting(
+                { it.ruleKey },
+                { it.message },
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+            .containsExactly(
+                tuple(
+                    "terraform:S6273",
+                    "Rename tag key \"anycompany:cost-center\" to match the regular expression \"^([A-Z][A-Za-z]*:)*([A-Z][A-Za-z]*)\$\".",
+                    Pair(90, 114)
+                )
+            )
+        assertThat(highlightInfos).hasSize(1)
+    }
+
+    @Test
+    fun should_analyze_kubernetes_files() {
+        val fileToAnalyze = myFixture.configureByFile("src/Kubernetes.yaml").virtualFile
+
+        val (issues, highlightInfos) = analyzeAndHighlight(fileToAnalyze)
+
+        assertThat(issues)
+            .extracting(
+                { it.ruleKey },
+                { it.message },
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+            .containsExactly(
+                tuple(
+                    "kubernetes:S1135",
+                    "Complete the task associated to this \"TODO\" comment.",
+                    Pair(127, 144)
+                )
+            )
+        // contains another annotation for the TO-DO
+        assertThat(highlightInfos)
+            .extracting({it.description})
+            .contains(tuple("Complete the task associated to this \"TODO\" comment."))
     }
 
     @Test
@@ -197,9 +285,19 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                     { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
                 .containsExactlyInAnyOrder(
                     tuple("devenv.js", "secrets:S6290", "Make sure this AWS Access Key ID is not disclosed.", Pair(286, 306)),
-                    tuple("devenv.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72)),
+                    tuple(
+                        "devenv.js",
+                        "javascript:S2703",
+                        "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.",
+                        Pair(62, 72)
+                    ),
                     tuple("devenv_unversionned.js", "secrets:S6290", "Make sure this AWS Access Key ID is not disclosed.", Pair(286, 306)),
-                    tuple("devenv_unversionned.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72))
+                    tuple(
+                        "devenv_unversionned.js",
+                        "javascript:S2703",
+                        "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.",
+                        Pair(62, 72)
+                    )
                 )
         } finally {
             myVcsManager.unregisterVcs(myVcs)
@@ -298,10 +396,14 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     }
 
-    private fun analyze(vararg fileToAnalyzes: VirtualFile): List<LiveIssue> {
+    private fun analyzeAndHighlight(vararg filesToAnalyze: VirtualFile): Pair<List<LiveIssue>, List<HighlightInfo>> {
+        return analyze(*filesToAnalyze) to myFixture.doHighlighting()
+    }
+
+    private fun analyze(vararg filesToAnalyze: VirtualFile): List<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
-        submitter.analyzeFilesPreCommit(fileToAnalyzes.toList())
-        return fileToAnalyzes.flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
+        submitter.analyzeFilesPreCommit(filesToAnalyze.toList())
+        return filesToAnalyze.flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
     }
 
     private fun analyzeAll(): List<LiveIssue> {

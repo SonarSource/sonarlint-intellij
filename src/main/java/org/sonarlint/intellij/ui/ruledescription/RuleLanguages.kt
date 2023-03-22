@@ -33,10 +33,12 @@ private val typescriptFileTypesByPriority = arrayOf("TypeScript", "JavaScript")
 enum class RuleLanguages(private val language: Language, private vararg val fileTypesByPriorityOrder: String) {
 
     C(Language.C, *cFamilyLanguagesFileTypesByPriority),
+    // for now most code examples are written in YAML for CloudFormation
     CLOUD_FORMATION(Language.CLOUDFORMATION, "YAML"),
     CPP(Language.CPP, *cFamilyLanguagesFileTypesByPriority),
     CSH(Language.CS, "C#"),
     CSS(Language.CSS, "CSS"),
+    // Dockerfile file type is available in WebStorm
     DOCKER(Language.DOCKER, "Dockerfile"),
     GO(Language.GO, "Go"),
     HTML(Language.HTML, "HTML"),
@@ -50,7 +52,8 @@ enum class RuleLanguages(private val language: Language, private vararg val file
     PY(Language.PYTHON, "Python"),
     RUBY(Language.RUBY, "Ruby"),
     SCALA(Language.SCALA, "Scala"),
-    TERRAFORM(Language.TERRAFORM, "YAML"),
+    // comes from the "Terraform and HCL" plugin from JetBrains (installable from the marketplace)
+    TERRAFORM(Language.TERRAFORM, "Terraform"),
     TS(Language.TS, *typescriptFileTypesByPriority),
     XML(Language.XML, "XML"),
     YAML(Language.YAML, "YAML");
