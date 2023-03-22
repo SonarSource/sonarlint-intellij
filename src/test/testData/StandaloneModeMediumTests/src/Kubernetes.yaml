@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod # comment
+metadata:
+  name: example
+spec:
+  containers:
+    - name: web
+      # NonCompliant@+1
+      #     TODO fix me
+      image: nginx

@@ -43,7 +43,11 @@ object EmbeddedPlugins {
         Language.RUBY,
         Language.SECRETS,
         Language.TS,
-        Language.YAML
+        Language.YAML,
+        Language.CLOUDFORMATION,
+        Language.DOCKER,
+        Language.KUBERNETES,
+        Language.TERRAFORM,
     )
     private val ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE: Set<Language> = EnumSet.of(
         Language.SCALA,
@@ -58,7 +62,8 @@ object EmbeddedPlugins {
         EmbeddedPlugin(Language.RUBY, "Ruby", "sonar-ruby-plugin-*.jar"),
         EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"),
         EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-text-plugin-*.jar"),
-        EmbeddedPlugin(Language.GO, "Go", "sonar-go-plugin-*.jar")
+        EmbeddedPlugin(Language.GO, "Go", "sonar-go-plugin-*.jar"),
+        EmbeddedPlugin(Language.CLOUDFORMATION.pluginKey, "IaC", "sonar-iac-plugin-*.jar"),
     )
 
     @JvmStatic
