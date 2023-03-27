@@ -190,7 +190,6 @@ dependencies {
     }
     implementation(project(":common"))
     runtimeOnly(project(":clion"))
-    runtimeOnly(project(":goland"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(platform("org.junit:junit-bom:5.9.2"))
