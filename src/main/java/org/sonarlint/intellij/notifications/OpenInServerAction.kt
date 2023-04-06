@@ -19,9 +19,21 @@
  */
 package org.sonarlint.intellij.notifications
 
-import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.ServerNotification
-import java.time.ZonedDateTime
+import com.intellij.ide.BrowserUtil
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 
-fun aServerNotification(category: String, message: String, link: String, projectKey: String, time: ZonedDateTime = ZonedDateTime.now()) : ServerNotification {
-  return ServerNotification(category, message, link, projectKey, time)
+class OpenInServerAction(serverLabel: String, private val link: String, private val category: String) :
+    NotificationAction("Open in $serverLabel") {
+    
+    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+        val telemetry = getService(SonarLintTelemetry::class.java)
+        telemetry.devNotificationsClicked(category)
+        BrowserUtil.browse(link)
+        notification.hideBalloon()
+    }
+
 }
