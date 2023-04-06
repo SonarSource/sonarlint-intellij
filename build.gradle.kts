@@ -195,7 +195,6 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.9.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.junit.platform:junit-platform-launcher")
-    testImplementation(kotlin("test"))
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation("com.squareup.okhttp3:mockwebserver:4.10.0")

@@ -36,10 +36,8 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.util.containers.orNull
 import org.apache.commons.lang.StringEscapeUtils
-import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -51,7 +49,6 @@ import org.sonarlint.intellij.http.ApacheHttpClient.Companion.default
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
-import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
@@ -69,12 +66,11 @@ import org.sonarsource.sonarlint.core.clientapi.client.host.GetHostInfoResponse
 import org.sonarsource.sonarlint.core.clientapi.client.hotspot.ShowHotspotParams
 import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
+import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
 import org.sonarsource.sonarlint.core.commons.http.HttpClient
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
-import javax.swing.JComponent
-import javax.swing.SwingUtilities
 
 object SonarLintIntelliJClient : SonarLintClient {
 
@@ -175,6 +171,11 @@ object SonarLintIntelliJClient : SonarLintClient {
 
     override fun showMessage(params: ShowMessageParams) {
         showBalloon(null, params.text, convert(params.type))
+    }
+
+    override fun showSmartNotification(params: ShowSmartNotificationParams) {
+        val projects = params.scopeIds.mapNotNull { BackendService.findModule(it)?.project ?: BackendService.findProject(it) }.toSet()
+        projects.map { SonarLintProjectNotifications.get(it).handle(params) }
     }
 
     private fun convert(type: String?): NotificationType {

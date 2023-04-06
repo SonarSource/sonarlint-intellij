@@ -29,6 +29,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.serviceContainer.NonInjectable
+import com.jetbrains.rd.util.firstOrNull
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -57,8 +58,8 @@ import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQ
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedParams
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetActiveRuleDetailsParams
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetActiveRuleDetailsResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -97,6 +98,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 sonarQubeConnections,
                 sonarCloudConnections,
                 null,
+                true,
+                mapOf(),
                 true
             )
         )
@@ -144,14 +147,13 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         backend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
     }
 
-    private fun toSonarQubeBackendConnection(createdConnection: ServerConnection) = SonarQubeConnectionConfigurationDto(
-        createdConnection.name, createdConnection.hostUrl
-    )
+    private fun toSonarQubeBackendConnection(createdConnection: ServerConnection): SonarQubeConnectionConfigurationDto {
+        return SonarQubeConnectionConfigurationDto(createdConnection.name, createdConnection.hostUrl, createdConnection.isDisableNotifications)
+    }
 
-    private fun toSonarCloudBackendConnection(createdConnection: ServerConnection) =
-        SonarCloudConnectionConfigurationDto(
-            createdConnection.name, createdConnection.organizationKey!!
-        )
+    private fun toSonarCloudBackendConnection(createdConnection: ServerConnection): SonarCloudConnectionConfigurationDto {
+        return SonarCloudConnectionConfigurationDto(createdConnection.name, createdConnection.organizationKey!!, createdConnection.isDisableNotifications)
+    }
 
     fun projectOpened(project: Project) {
         val binding = getService(project, ProjectBindingManager::class.java).binding
@@ -261,8 +263,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         )
     }
 
-    fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetActiveRuleDetailsResponse> {
-        return backend.activeRulesService.getActiveRuleDetails(GetActiveRuleDetailsParams(moduleId(module), ruleKey, contextKey))
+    fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetEffectiveRuleDetailsResponse> {
+        return backend.rulesService.getEffectiveRuleDetails(GetEffectiveRuleDetailsParams(moduleId(module), ruleKey, contextKey))
     }
 
     fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {
@@ -289,6 +291,14 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         fun moduleId(module: Module): String {
             // there is no reliable unique identifier for modules, but a module is represented by a single object
             return uniqueIdentifierForModules.computeIfAbsent(module) { m -> m.name + "-" + moduleCount++ }
+        }
+
+        fun findModule(configScopeId: String) : Module? {
+            return uniqueIdentifierForModules.filter { it.value == configScopeId  }.firstOrNull()?.key
+        }
+
+        fun findProject(configScopeId: String) : Project? {
+            return ProjectManager.getInstance().openProjects.find { projectId(it) == configScopeId }
         }
     }
 

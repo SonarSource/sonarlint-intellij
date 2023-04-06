@@ -234,7 +234,6 @@
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisSubmitter"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>
         <projectService serviceImplementation="org.sonarlint.intellij.finding.persistence.FindingsCache"/>

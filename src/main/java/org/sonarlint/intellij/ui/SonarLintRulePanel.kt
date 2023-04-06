@@ -50,9 +50,9 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleContextualSectionDto
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDescriptionTabDto
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleContextualSectionDto
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDescriptionTabDto
 import org.sonarsource.sonarlint.core.serverapi.UrlUtils.urlEncode
 import java.awt.BorderLayout
 import java.awt.Font
@@ -76,7 +76,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
     private val securityHotspotHeaderMessage = JEditorPane()
     private val ruleDetailsLoader = RuleDetailsLoader()
     private var finding: Finding? = null
-    private var ruleDetails: ActiveRuleDetailsDto? = null
+    private var ruleDetails: EffectiveRuleDetailsDto? = null
 
     init {
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
@@ -210,16 +210,16 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         }
     }
 
-    private fun addTab(tabDesc: ActiveRuleDescriptionTabDto, sectionsTabs: JBTabbedPane, index: Int) {
+    private fun addTab(tabDesc: RuleDescriptionTabDto, sectionsTabs: JBTabbedPane, index: Int) {
         val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
         val htmlViewer = RuleHtmlViewer(true)
         tabDesc.content.map({ nonContextual -> htmlViewer.updateHtml(nonContextual.htmlContent) }, { contextual ->
             val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
             comboPanel.add(JBLabel("Which component or framework contains the issue?"))
             val contextCombo = ComboBox(DefaultComboBoxModel(contextual.contextualSections.toTypedArray()))
-            contextCombo.renderer = SimpleListCellRenderer.create("", ActiveRuleContextualSectionDto::getDisplayName)
+            contextCombo.renderer = SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName)
             contextCombo.addActionListener {
-                val htmlContent = (contextCombo.selectedItem as ActiveRuleContextualSectionDto).htmlContent
+                val htmlContent = (contextCombo.selectedItem as RuleContextualSectionDto).htmlContent
                 htmlViewer.updateHtml(htmlContent)
             }
             comboPanel.add(contextCombo)
@@ -231,7 +231,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         sectionsTabs.insertTab(tabDesc.title, null, sectionPanel, null, index)
     }
 
-    private fun updateHeader(finding: Finding, ruleDescription: ActiveRuleDetailsDto) {
+    private fun updateHeader(finding: Finding, ruleDescription: EffectiveRuleDetailsDto) {
         ruleNameLabel.text = ruleDescription.name
         ruleNameLabel.setCopyable(true)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
@@ -268,7 +268,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         return """<a href="$href">$text<icon src="AllIcons.Ide.External_link_arrow" href="$href"></a>"""
     }
 
-    private fun updateParams(ruleDescription: ActiveRuleDetailsDto) {
+    private fun updateParams(ruleDescription: EffectiveRuleDetailsDto) {
         if (ruleDescription.params.isNotEmpty()) {
             populateParamPanel(ruleDescription)
         } else {
@@ -280,7 +280,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         paramsPanel.isVisible = false
     }
 
-    private fun populateParamPanel(ruleDetails: ActiveRuleDetailsDto) {
+    private fun populateParamPanel(ruleDetails: EffectiveRuleDetailsDto) {
         paramsPanel.isVisible = true
         paramsPanel.apply {
             removeAll()

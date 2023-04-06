@@ -20,43 +20,12 @@
 package org.sonarlint.intellij.mediumtests
 
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.tuple
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
-import org.sonarlint.intellij.any
-import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ModuleBindingManager
-import org.sonarlint.intellij.core.ServerNotificationsService
-import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber
-import org.sonarlint.intellij.util.ImmediateExecutorService
-import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.NotificationConfiguration
 
 class MultiModuleMediumTests : AbstractSonarLintHeavyTests() {
-
-    fun test_it_should_register_at_start_when_module_override_binding_and_server_supports_notifications() {
-        val module = createModule("foo")
-
-        val serverNotificationsService = Mockito.mock(ServerNotificationsService::class.java)
-        val projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService, ImmediateExecutorService())
-
-        connectProjectTo(ServerConnection.newBuilder().setHostUrl("host").setName("mySq").build(), "projectKey1")
-        connectModuleTo(module, "moduleProjectKey")
-
-        Mockito.`when`(serverNotificationsService.isSupported(any())).thenReturn(true)
-
-        projectServerNotificationsSubscriber.start()
-
-        val notificationConfigurationCaptor = ArgumentCaptor.forClass(NotificationConfiguration::class.java)
-
-        Mockito.verify(serverNotificationsService, Mockito.times(2)).register(capture(notificationConfigurationCaptor))
-        val notificationConfigurations = notificationConfigurationCaptor.allValues
-        assertThat(notificationConfigurations)
-            .extracting(NotificationConfiguration::projectKey)
-            .containsOnly(tuple("moduleProjectKey"), tuple("projectKey1"))
-    }
 
     fun test_should_return_project_key_for_module_binding_override() {
         val secondModule = createModule("foo")

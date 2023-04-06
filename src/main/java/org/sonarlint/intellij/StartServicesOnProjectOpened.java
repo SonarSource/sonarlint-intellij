@@ -30,7 +30,6 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.server.events.ServerEventsService;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
-import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -42,7 +41,6 @@ public class StartServicesOnProjectOpened implements StartupActivity {
     if (ApplicationManager.getApplication().isUnitTestMode()) {
       return;
     }
-    getService(project, ProjectServerNotificationsSubscriber.class).start();
     getService(project, EditorChangeTrigger.class).onProjectOpened();
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
