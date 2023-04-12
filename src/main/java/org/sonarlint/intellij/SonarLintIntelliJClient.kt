@@ -39,15 +39,18 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.containers.orNull
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
 import org.sonarlint.intellij.http.ApacheHttpClient.Companion.default
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
+import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.computeInEDT
@@ -67,6 +70,9 @@ import org.sonarsource.sonarlint.core.clientapi.client.hotspot.ShowHotspotParams
 import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
 import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
+import org.sonarsource.sonarlint.core.clientapi.client.progress.ReportProgressParams
+import org.sonarsource.sonarlint.core.clientapi.client.progress.StartProgressParams
+import org.sonarsource.sonarlint.core.clientapi.client.sync.DidSynchronizeConfigurationScopeParams
 import org.sonarsource.sonarlint.core.commons.http.HttpClient
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.util.concurrent.CancellationException
@@ -75,6 +81,7 @@ import java.util.concurrent.CompletableFuture
 object SonarLintIntelliJClient : SonarLintClient {
 
     private val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint")
+    private val backendTaskProgressReporter = BackendTaskProgressReporter()
 
     override fun suggestBinding(params: SuggestBindingParams) {
         params.suggestions.forEach { (projectId, suggestions) -> suggestAutoBind(findProject(projectId), suggestions) }
@@ -121,7 +128,7 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     private fun findInContentRoots(
-        project: Project, fileNames: List<String>
+        project: Project, fileNames: List<String>,
     ): Set<VirtualFile> {
         val contentRoots = ProjectRootManager.getInstance(project).contentRoots.filter { it.isDirectory }
         return fileNames.mapNotNull { fileName ->
@@ -291,10 +298,35 @@ object SonarLintIntelliJClient : SonarLintClient {
         }
     }
 
+    override fun startProgress(params: StartProgressParams): CompletableFuture<Void> {
+        return backendTaskProgressReporter.startTask(params)
+    }
+
+    override fun reportProgress(params: ReportProgressParams) {
+        if (params.notification.isLeft) {
+            backendTaskProgressReporter.updateProgress(params.taskId, params.notification.left)
+        } else {
+            backendTaskProgressReporter.completeTask(params.taskId)
+        }
+    }
+
+    override fun didSynchronizeConfigurationScopes(params: DidSynchronizeConfigurationScopeParams) {
+        if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
+            params.configurationScopeIds.mapNotNull { scopeId ->
+                    BackendService.findModule(scopeId)?.project ?: BackendService.findProject(scopeId)
+            }
+                .forEach { project ->
+                    getService(
+                        project,
+                        TaintVulnerabilitiesPresenter::class.java
+                    ).presentTaintVulnerabilitiesForOpenFiles()
+                }
+        }
+    }
+
     private fun showConfirmModal(title: String, message: String, confirmText: String, project: Project?): Boolean {
         return Messages.OK == ApplicationManager.getApplication().computeInEDT {
             Messages.showYesNoDialog(project, StringEscapeUtils.escapeHtml(message), title, confirmText, "Cancel", Messages.getWarningIcon())
         }
     }
-
 }

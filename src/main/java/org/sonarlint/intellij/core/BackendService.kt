@@ -32,6 +32,7 @@ import com.intellij.serviceContainer.NonInjectable
 import com.jetbrains.rd.util.firstOrNull
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -47,6 +48,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.HostInfoDto
 import org.sonarsource.sonarlint.core.clientapi.backend.InitializeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.authentication.HelpGenerateUserTokenParams
 import org.sonarsource.sonarlint.core.clientapi.backend.authentication.HelpGenerateUserTokenResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.branch.DidChangeActiveSonarProjectBranchParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.ConfigurationScopeDto
@@ -90,6 +92,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 HostInfoDto(ApplicationInfo.getInstance().versionName),
                 TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
                 getLocalStoragePath(),
+                SonarLintEngineFactory.getWorkDir(),
                 EmbeddedPlugins.findEmbeddedPlugins(),
                 EmbeddedPlugins.getEmbeddedPluginsForConnectedMode(),
                 EmbeddedPlugins.enabledLanguagesInStandaloneMode,
@@ -100,6 +103,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 null,
                 true,
                 mapOf(),
+                false,
+                SonarLintUtils.isTaintVulnerabilitiesEnabled(),
                 true
             )
         )
@@ -281,6 +286,10 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun checkLocalSecurityHotspotDetectionSupported(project: Project): CompletableFuture<CheckLocalDetectionSupportedResponse> {
         return backend.hotspotService.checkLocalDetectionSupported(CheckLocalDetectionSupportedParams(projectId(project)))
+    }
+
+    fun branchChanged(module: Module, newActiveBranchName: String) {
+        backend.sonarProjectBranchService.didChangeActiveSonarProjectBranch(DidChangeActiveSonarProjectBranchParams(moduleId(module), newActiveBranchName))
     }
 
     companion object {

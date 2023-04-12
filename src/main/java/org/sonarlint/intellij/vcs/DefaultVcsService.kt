@@ -27,6 +27,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
 import org.sonarlint.intellij.common.vcs.VcsListener.TOPIC
 import org.sonarlint.intellij.common.vcs.VcsService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -50,7 +51,10 @@ class DefaultVcsService @NonInjectable constructor(
             return resolvedBranchPerModule[module]!!
         }
         val branchName = resolveServerBranchName(module)
-        branchName?.let { resolvedBranchPerModule[module] = it }
+        branchName?.let {
+            resolvedBranchPerModule[module] = it
+            getService(BackendService::class.java).branchChanged(module, it)
+        }
         return branchName
     }
 
@@ -105,6 +109,9 @@ class DefaultVcsService @NonInjectable constructor(
                 }
                 if (previousBranchName != newBranchName) {
                     project.messageBus.syncPublisher(TOPIC).resolvedServerBranchChanged(module, newBranchName)
+                    if (newBranchName != null) {
+                        getService(BackendService::class.java).branchChanged(module, newBranchName)
+                    }
                 }
             }
         }
