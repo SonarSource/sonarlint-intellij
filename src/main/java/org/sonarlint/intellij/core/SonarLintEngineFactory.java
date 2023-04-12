@@ -129,7 +129,7 @@ public class SonarLintEngineFactory {
     return Paths.get(PathManager.getSystemPath()).resolve("sonarlint");
   }
 
-  private static Path getWorkDir() {
+  public static Path getWorkDir() {
     return Paths.get(PathManager.getTempPath()).resolve("sonarlint");
   }
 
