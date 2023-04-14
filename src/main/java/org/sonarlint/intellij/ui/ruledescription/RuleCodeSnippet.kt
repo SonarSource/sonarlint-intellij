@@ -19,6 +19,10 @@
  */
 package org.sonarlint.intellij.ui.ruledescription
 
+import com.intellij.diff.DiffContentFactory
+import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.diff.tools.util.base.TextDiffSettingsHolder
+import com.intellij.diff.util.DiffUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Document
@@ -27,15 +31,25 @@ import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory
+import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
+import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_ADDITION
+import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_REMOVAL
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
+import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
 import java.awt.BorderLayout
 
-class RuleCodeSnippet(private val project: Project) : JBPanel<RuleCodeSnippet>(), Disposable {
+
+class RuleCodeSnippet(private val project: Project, language: FileType, private val codeExampleFragment: CodeExampleFragment) :
+    JBPanel<RuleCodeSnippet>(), Disposable {
 
     private var myEditor: EditorEx
 
@@ -44,6 +58,8 @@ class RuleCodeSnippet(private val project: Project) : JBPanel<RuleCodeSnippet>()
         myEditor = createEditor() as EditorEx
         layout = BorderLayout()
         add(myEditor.component, BorderLayout.CENTER)
+        reset(codeExampleFragment.code, language)
+        myEditor.putUserData(CODE_EXAMPLE_FRAGMENT_KEY, codeExampleFragment)
     }
 
     private fun createEditor(): Editor {
@@ -66,7 +82,7 @@ class RuleCodeSnippet(private val project: Project) : JBPanel<RuleCodeSnippet>()
         return editor
     }
 
-    fun reset(usageText: String, fileType: FileType) {
+    private fun reset(usageText: String, fileType: FileType) {
         reInitViews()
         ApplicationManager.getApplication().invokeLater {
             if (myEditor.isDisposed) {
@@ -83,6 +99,33 @@ class RuleCodeSnippet(private val project: Project) : JBPanel<RuleCodeSnippet>()
         val scheme = EditorColorsManager.getInstance().globalScheme
         myEditor.highlighter =
             EditorHighlighterFactory.getInstance().createEditorHighlighter(fileType, scheme, project)
+
+        if (codeExampleFragment.diffTarget != null) {
+            runOnUiThread(
+                project
+            ) {
+                val provider = DiffUtil.createTextDiffProvider(
+                    project, SimpleDiffRequest(
+                        "Diff",
+                        DiffContentFactory.getInstance().createEmpty(),
+                        DiffContentFactory.getInstance().createEmpty(), null, null
+                    ), TextDiffSettingsHolder.TextDiffSettings(), {}, this
+                )
+                val fragments =
+                    provider.compare(codeExampleFragment.code, codeExampleFragment.diffTarget!!.code, EmptyProgressIndicator())
+
+                val attributeKey = if (codeExampleFragment.type == CodeExampleType.Compliant) DIFF_ADDITION else DIFF_REMOVAL
+                fragments?.forEach { fragment ->
+                    myEditor.markupModel.addRangeHighlighter(
+                        attributeKey,
+                        fragment.startOffset1,
+                        fragment.endOffset1,
+                        0,
+                        HighlighterTargetArea.EXACT_RANGE
+                    )
+                }
+            }
+        }
     }
 
     override fun dispose() {
@@ -93,5 +136,9 @@ class RuleCodeSnippet(private val project: Project) : JBPanel<RuleCodeSnippet>()
     private fun reInitViews() {
         myEditor.reinitSettings()
         myEditor.markupModel.removeAllHighlighters()
+    }
+
+    companion object {
+        val CODE_EXAMPLE_FRAGMENT_KEY: Key<CodeExampleFragment> = Key.create("SONARLINT_CODE_EXAMPLE_FRAGMENT_KEY")
     }
 }

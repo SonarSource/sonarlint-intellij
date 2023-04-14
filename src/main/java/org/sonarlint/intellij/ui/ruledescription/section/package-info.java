@@ -17,21 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.editor
+@ParametersAreNonnullByDefault
+package org.sonarlint.intellij.ui.ruledescription.section;
 
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.EditorKind
-import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
-import org.sonarlint.intellij.editor.actions.CopyCodeExampleAction
-import org.sonarlint.intellij.editor.actions.DiffCodeExamplesAction
-
-class SonarLintEditorWidgetActionProvider : InspectionWidgetActionProvider {
-    override fun createAction(editor: Editor): AnAction? {
-        if (editor.editorKind == EditorKind.UNTYPED) {
-            return DefaultActionGroup(DiffCodeExamplesAction(editor), CopyCodeExampleAction(editor))
-        }
-        return null
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;
