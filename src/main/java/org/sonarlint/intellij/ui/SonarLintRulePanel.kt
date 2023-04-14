@@ -31,6 +31,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.util.Disposer
+import com.intellij.psi.XmlElementFactory
 import com.intellij.ui.BrowserHyperlinkListener
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.ScrollPaneFactory.createScrollPane
@@ -58,6 +59,10 @@ import org.sonarlint.intellij.ui.ruledescription.RuleCodeSnippet
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
+import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
+import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
+import org.sonarlint.intellij.ui.ruledescription.section.HtmlFragment
+import org.sonarlint.intellij.ui.ruledescription.section.Section
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleContextualSectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDescriptionTabDto
@@ -79,7 +84,10 @@ import javax.swing.text.DefaultCaret
 
 private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
 
+private const val PRE_TAG_ENDING = "</pre>"
+
 class SonarLintRulePanel(private val project: Project, private val parent: Disposable) : JBLoadingPanel(BorderLayout(), project) {
+
 
     private val descriptionPanel = JBPanel<JBPanel<*>>(BorderLayout())
     private val ruleNameLabel = JBLabel()
@@ -151,11 +159,11 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
                         .orTimeout(30, TimeUnit.SECONDS)
                         .handle { response, error ->
                             stopLoading()
-                            if (error != null) {
+                            ruleDetails = if (error != null) {
                                 SonarLintConsole.get(project).error("Cannot get rule description", error)
-                                ruleDetails = null
+                                null
                             } else {
-                                ruleDetails = response.details()
+                                response.details()
                             }
                             runOnUiThread(project) {
                                 updateUiComponents()
@@ -374,41 +382,51 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
     }
 
     private fun parseCodeExamples(
-        ruleDescriptionHeader: String, language: FileType,
+        htmlDescription: String, language: FileType,
     ): JScrollPane {
         val mainPanel = JBPanel<JBPanel<*>>(VerticalFlowLayout(0, 0))
-        var ruleDescription = ruleDescriptionHeader
+        var ruleDescription = htmlDescription
         var matcherStart: Matcher = Pattern.compile("<pre[^>]*>").matcher(ruleDescription)
-        var matcherEnd: Matcher = Pattern.compile("</pre>").matcher(ruleDescription)
+        var matcherEnd: Matcher = Pattern.compile(PRE_TAG_ENDING).matcher(ruleDescription)
 
+        val section = Section()
+
+        val xmlElementFactory = XmlElementFactory.getInstance(project)
         while (matcherStart.find() && matcherEnd.find()) {
             val front: String = ruleDescription.substring(0, matcherStart.start()).trim()
 
             if (front.isNotBlank()) {
-                val htmlViewer = RuleHtmlViewer(false)
-                mainPanel.add(htmlViewer)
-                htmlViewer.updateHtml(front)
+                section.add(HtmlFragment(front))
             }
+
+            val preTag =
+                xmlElementFactory.createTagFromText(ruleDescription.substring(matcherStart.start(), matcherStart.end()).trim() + PRE_TAG_ENDING)
+            val diffId = preTag.getAttributeValue("data-diff-id")
+            val diffType = preTag.getAttributeValue("data-diff-type")?.let { CodeExampleType.from(it) }
 
             val middle: String = ruleDescription.substring(matcherStart.end(), matcherEnd.start()).trim()
 
             if (middle.isNotBlank()) {
-                val codeSnippet = RuleCodeSnippet(project)
-                codeSnippet.reset(StringEscapeUtils.unescapeHtml(middle), language)
-                mainPanel.add(codeSnippet)
-                Disposer.register(parent, codeSnippet)
+                section.add(CodeExampleFragment(StringEscapeUtils.unescapeHtml(middle), diffType, diffId))
             }
 
             ruleDescription = ruleDescription.substring(matcherEnd.end(), ruleDescription.length).trim()
             matcherStart = Pattern.compile("<pre[^>]*>").matcher(ruleDescription)
-            matcherEnd = Pattern.compile("</pre>").matcher(ruleDescription)
+            matcherEnd = Pattern.compile(PRE_TAG_ENDING).matcher(ruleDescription)
         }
 
         if (ruleDescription.isNotBlank()) {
-            val htmlViewer = RuleHtmlViewer(false)
-            mainPanel.add(htmlViewer)
-            htmlViewer.updateHtml(ruleDescription)
+            section.add(HtmlFragment(ruleDescription))
         }
+
+        section.fragments.map {
+            when (it) {
+                is HtmlFragment -> RuleHtmlViewer(false).apply { updateHtml(it.html) }
+                is CodeExampleFragment -> RuleCodeSnippet(project, language, it).apply {
+                    Disposer.register(this@SonarLintRulePanel.parent, this) }
+            }
+        }
+            .forEach { mainPanel.add(it) }
 
         val scrollPane = createScrollPane(mainPanel)
         scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
