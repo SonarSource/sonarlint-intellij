@@ -79,7 +79,7 @@ private const val TOOLBAR_GROUP_ID = "TaintVulnerabilities"
 class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindowPanel(false, true),
     OccurenceNavigator, DataProvider, Disposable {
 
-    private val rulePanel = SonarLintRulePanel(project)
+    private val rulePanel = SonarLintRulePanel(project, this)
     private lateinit var tree: TaintVulnerabilityTree
     private lateinit var treeBuilder: TaintVulnerabilityTreeModelBuilder
     private val noVulnerabilitiesLabel = JLabel("")
