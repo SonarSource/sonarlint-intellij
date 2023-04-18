@@ -142,7 +142,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
 
     // Rule panel
-    rulePanel = new SonarLintRulePanel(project);
+    rulePanel = new SonarLintRulePanel(project, this);
 
     detailsTab = new JBTabbedPane();
     detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);
