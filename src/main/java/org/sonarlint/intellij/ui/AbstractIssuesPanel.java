@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -54,7 +55,7 @@ import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 
-public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
+public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Disposable, OccurenceNavigator {
   private static final String ID = "SonarLint";
   private static final int RULE_TAB_INDEX = 0;
   private static final int LOCATIONS_TAB_INDEX = 1;
@@ -86,7 +87,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
 
     // Rule panel
-    rulePanel = new SonarLintRulePanel(project);
+    rulePanel = new SonarLintRulePanel(project, this);
 
     detailsTab = new JBTabbedPane();
     detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);

@@ -19,7 +19,9 @@
  */
 package org.sonarlint.intellij.ui
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.progress.ProgressIndicator
@@ -27,8 +29,11 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.BrowserHyperlinkListener
 import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.ScrollPaneFactory.createScrollPane
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBLoadingPanel
@@ -39,6 +44,7 @@ import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
+import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
@@ -48,8 +54,10 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.ruledescription.RuleCodeSnippet
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
+import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleContextualSectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDescriptionTabDto
@@ -59,15 +67,19 @@ import java.awt.Font
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.util.concurrent.TimeUnit
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JEditorPane
+import javax.swing.JScrollPane
+import javax.swing.ScrollPaneConstants
 import javax.swing.event.HyperlinkEvent
 import javax.swing.text.DefaultCaret
 
 
 private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
 
-class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLayout(), project) {
+class SonarLintRulePanel(private val project: Project, private val parent: Disposable) : JBLoadingPanel(BorderLayout(), project) {
 
     private val descriptionPanel = JBPanel<JBPanel<*>>(BorderLayout())
     private val ruleNameLabel = JBLabel()
@@ -134,7 +146,8 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
             startLoading()
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description...", false) {
                 override fun run(progressIndicator: ProgressIndicator) {
-                    SonarLintUtils.getService(BackendService::class.java).getActiveRuleDetails(module, finding.getRuleKey(), finding.getRuleDescriptionContextKey())
+                    SonarLintUtils.getService(BackendService::class.java)
+                        .getActiveRuleDetails(module, finding.getRuleKey(), finding.getRuleDescriptionContextKey())
                         .orTimeout(30, TimeUnit.SECONDS)
                         .handle { response, error ->
                             stopLoading()
@@ -181,14 +194,11 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         } else {
             updateHeader(finding, ruleDetails)
             descriptionPanel.removeAll()
+            val language = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language.languageKey)
             ruleDetails.description.map(
                 { monolithDescription ->
-                    val htmlHeader = monolithDescription.htmlContent
-                    if (!htmlHeader.isNullOrBlank()) {
-                        val htmlViewer = RuleHtmlViewer(true)
-                        descriptionPanel.add(htmlViewer, BorderLayout.CENTER)
-                        htmlViewer.updateHtml(htmlHeader)
-                    }
+                    val scrollPane = parseCodeExamples(monolithDescription.htmlContent, language)
+                    descriptionPanel.add(scrollPane, BorderLayout.CENTER)
                 },
                 { withSections ->
                     val htmlHeader = withSections.introductionHtmlContent
@@ -197,11 +207,12 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
                         descriptionPanel.add(htmlViewer, BorderLayout.NORTH)
                         htmlViewer.updateHtml(htmlHeader)
                     }
+
                     val sectionsTabs = JBTabbedPane()
                     sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
                     withSections.tabs.forEachIndexed { index, tabDesc ->
-                        addTab(tabDesc, sectionsTabs, index)
+                        addTab(tabDesc, sectionsTabs, index, language)
                     }
 
                     descriptionPanel.add(sectionsTabs, BorderLayout.CENTER)
@@ -210,24 +221,32 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         }
     }
 
-    private fun addTab(tabDesc: RuleDescriptionTabDto, sectionsTabs: JBTabbedPane, index: Int) {
+    private fun addTab(
+        tabDesc: RuleDescriptionTabDto, sectionsTabs: JBTabbedPane, index: Int,
+        language: FileType,
+    ) {
         val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
-        val htmlViewer = RuleHtmlViewer(true)
-        tabDesc.content.map({ nonContextual -> htmlViewer.updateHtml(nonContextual.htmlContent) }, { contextual ->
+        tabDesc.content.map({ nonContextual ->
+            val scrollPane = parseCodeExamples(nonContextual.htmlContent, language)
+            sectionPanel.add(scrollPane, BorderLayout.CENTER)
+        }, { contextual ->
             val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
             comboPanel.add(JBLabel("Which component or framework contains the issue?"))
             val contextCombo = ComboBox(DefaultComboBoxModel(contextual.contextualSections.toTypedArray()))
             contextCombo.renderer = SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName)
             contextCombo.addActionListener {
+                val layout = sectionPanel.layout as BorderLayout
+                layout.getLayoutComponent(BorderLayout.CENTER)?.let { sectionPanel.remove(it) }
+
                 val htmlContent = (contextCombo.selectedItem as RuleContextualSectionDto).htmlContent
-                htmlViewer.updateHtml(htmlContent)
+                val scrollPane = parseCodeExamples(htmlContent, language)
+                sectionPanel.add(scrollPane, BorderLayout.CENTER)
             }
             comboPanel.add(contextCombo)
             sectionPanel.add(comboPanel, BorderLayout.NORTH)
             contextCombo.selectedIndex =
                 contextual.contextualSections.indexOfFirst { sec -> sec.contextKey == contextual.defaultContextKey }
         })
-        sectionPanel.add(htmlViewer, BorderLayout.CENTER)
         sectionsTabs.insertTab(tabDesc.title, null, sectionPanel, null, index)
     }
 
@@ -236,13 +255,15 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         ruleNameLabel.setCopyable(true)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
         if (finding is LiveSecurityHotspot) {
-            val htmlStringBuilder = StringBuilder("""
+            val htmlStringBuilder = StringBuilder(
+                """
                 A ${externalLink("Security Hotspot", "https://docs.sonarqube.org/latest/user-guide/security-hotspots/")}
                 highlights a security-sensitive piece of code that the developer <b>needs to review</b>.
                 Upon review, you’ll either find there is no threat or you need to apply a fix to secure the code.
                 <br>
                 At the moment, the status of a Security Hotspot can only be updated in SonarQube. 
-                """.trimIndent())
+                """.trimIndent()
+            )
             val serverFindingKey = finding.serverFindingKey
             if (serverFindingKey != null) {
                 val serverConnection =
@@ -251,7 +272,16 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
                 if (projectKey != null) {
                     htmlStringBuilder.append(
                         """
-                        Click ${externalLink("here", "${serverConnection.hostUrl}/security_hotspots?id=${urlEncode(projectKey)}&hotspots=${urlEncode(serverFindingKey)}")}
+                        Click ${
+                            externalLink(
+                                "here",
+                                "${serverConnection.hostUrl}/security_hotspots?id=${urlEncode(projectKey)}&hotspots=${
+                                    urlEncode(
+                                        serverFindingKey
+                                    )
+                                }"
+                            )
+                        }
                         to open it on '${serverConnection.name}' server.""".trimIndent()
                     )
                 }
@@ -343,5 +373,52 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         }
     }
 
+    private fun parseCodeExamples(
+        ruleDescriptionHeader: String, language: FileType,
+    ): JScrollPane {
+        val mainPanel = JBPanel<JBPanel<*>>(VerticalFlowLayout(0, 0))
+        var ruleDescription = ruleDescriptionHeader
+        var matcherStart: Matcher = Pattern.compile("<pre[^>]*>").matcher(ruleDescription)
+        var matcherEnd: Matcher = Pattern.compile("</pre>").matcher(ruleDescription)
+
+        while (matcherStart.find() && matcherEnd.find()) {
+            val front: String = ruleDescription.substring(0, matcherStart.start()).trim()
+
+            if (front.isNotBlank()) {
+                val htmlViewer = RuleHtmlViewer(false)
+                mainPanel.add(htmlViewer)
+                htmlViewer.updateHtml(front)
+            }
+
+            val middle: String = ruleDescription.substring(matcherStart.end(), matcherEnd.start()).trim()
+
+            if (middle.isNotBlank()) {
+                val codeSnippet = RuleCodeSnippet(project)
+                codeSnippet.reset(StringEscapeUtils.unescapeHtml(middle), language)
+                mainPanel.add(codeSnippet)
+                Disposer.register(parent, codeSnippet)
+            }
+
+            ruleDescription = ruleDescription.substring(matcherEnd.end(), ruleDescription.length).trim()
+            matcherStart = Pattern.compile("<pre[^>]*>").matcher(ruleDescription)
+            matcherEnd = Pattern.compile("</pre>").matcher(ruleDescription)
+        }
+
+        if (ruleDescription.isNotBlank()) {
+            val htmlViewer = RuleHtmlViewer(false)
+            mainPanel.add(htmlViewer)
+            htmlViewer.updateHtml(ruleDescription)
+        }
+
+        val scrollPane = createScrollPane(mainPanel)
+        scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+        scrollPane.verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
+        scrollPane.verticalScrollBar.unitIncrement = 10
+        scrollPane.isOpaque = false
+        scrollPane.viewport.isOpaque = false
+        scrollPane.border = null
+
+        return scrollPane
+    }
 
 }
