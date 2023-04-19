@@ -66,8 +66,6 @@ class RuleCodeSnippet(private val project: Project, language: FileType, private 
         val editorFactory = EditorFactory.getInstance()
         val editorDocument = editorFactory.createDocument("")
         val editor = editorFactory.createViewer(editorDocument) as EditorEx
-        val scheme = EditorColorsManager.getInstance().globalScheme
-        editor.colorsScheme = scheme
         val settings = editor.settings
         settings.isLineMarkerAreaShown = false
         settings.isFoldingOutlineShown = false
