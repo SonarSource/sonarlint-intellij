@@ -46,7 +46,7 @@ import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
 import java.awt.BorderLayout
 
 
-class RuleCodeSnippet(private val project: Project, language: FileType, private val codeExampleFragment: CodeExampleFragment) :
+class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, private val codeExampleFragment: CodeExampleFragment) :
     JBPanel<RuleCodeSnippet>(), Disposable {
 
     private var myEditor: EditorEx
@@ -56,7 +56,7 @@ class RuleCodeSnippet(private val project: Project, language: FileType, private 
         myEditor = createEditor() as EditorEx
         layout = BorderLayout()
         add(myEditor.component, BorderLayout.CENTER)
-        setText(codeExampleFragment.code, language)
+        setText(codeExampleFragment.code, fileTypeFromRule)
         myEditor.document.setReadOnly(true)
         myEditor.putUserData(CODE_EXAMPLE_FRAGMENT_KEY, codeExampleFragment)
     }
