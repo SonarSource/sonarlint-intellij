@@ -202,10 +202,10 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         } else {
             updateHeader(finding, ruleDetails)
             descriptionPanel.removeAll()
-            val language = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language.languageKey)
+            val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language.languageKey)
             ruleDetails.description.map(
                 { monolithDescription ->
-                    val scrollPane = parseCodeExamples(monolithDescription.htmlContent, language)
+                    val scrollPane = parseCodeExamples(monolithDescription.htmlContent, fileType)
                     descriptionPanel.add(scrollPane, BorderLayout.CENTER)
                 },
                 { withSections ->
@@ -220,7 +220,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
                     sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
                     withSections.tabs.forEachIndexed { index, tabDesc ->
-                        addTab(tabDesc, sectionsTabs, index, language)
+                        addTab(tabDesc, sectionsTabs, index, fileType)
                     }
 
                     descriptionPanel.add(sectionsTabs, BorderLayout.CENTER)
@@ -382,7 +382,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
     }
 
     private fun parseCodeExamples(
-        htmlDescription: String, language: FileType,
+        htmlDescription: String, fileType: FileType,
     ): JScrollPane {
         val mainPanel = JBPanel<JBPanel<*>>(VerticalFlowLayout(0, 0))
         var ruleDescription = htmlDescription
@@ -422,7 +422,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         section.fragments.map {
             when (it) {
                 is HtmlFragment -> RuleHtmlViewer(false).apply { updateHtml(it.html) }
-                is CodeExampleFragment -> RuleCodeSnippet(project, language, it).apply {
+                is CodeExampleFragment -> RuleCodeSnippet(project, fileType, it).apply {
                     Disposer.register(this@SonarLintRulePanel.parent, this) }
             }
         }

@@ -24,46 +24,42 @@ import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.fileTypes.UnknownFileType
 import org.sonarsource.sonarlint.core.commons.Language
 
-enum class RuleLanguages(val language: Language, val fileType: String?) {
+// ObjectiveC file type is available in CLion, and C++ is available in IDEA
+private val cFamilyLanguagesFileTypesByPriority = arrayOf("ObjectiveC", "C++")
 
-    ABAP(Language.ABAP, null),
-    APEX(Language.APEX, null),
-    C(Language.C, "C++"),
+// TypeScript file type is available in WebStorm, and JavaScript is available in IDEA
+private val typescriptFileTypesByPriority = arrayOf("TypeScript", "JavaScript")
+
+enum class RuleLanguages(private val language: Language, private vararg val fileTypesByPriorityOrder: String) {
+
+    C(Language.C, *cFamilyLanguagesFileTypesByPriority),
     CLOUD_FORMATION(Language.CLOUDFORMATION, "YAML"),
-    COBOL(Language.COBOL, null),
-    CPP(Language.CPP, "C++"),
+    CPP(Language.CPP, *cFamilyLanguagesFileTypesByPriority),
     CSH(Language.CS, "C#"),
     CSS(Language.CSS, "CSS"),
-    DOCKER(Language.DOCKER, null),
+    DOCKER(Language.DOCKER, "Dockerfile"),
     GO(Language.GO, "Go"),
     HTML(Language.HTML, "HTML"),
-    IPYTHON(Language.IPYTHON, "Python"),
     JAVA(Language.JAVA, "JAVA"),
     JS(Language.JS, "JavaScript"),
     JSP(Language.JSP, "JAVA"),
     KOTLIN(Language.KOTLIN, "Kotlin"),
     KUBERNETES(Language.KUBERNETES, "YAML"),
-    OBJC(Language.OBJC, "C++"),
+    OBJC(Language.OBJC, *cFamilyLanguagesFileTypesByPriority),
     PHP(Language.PHP, "PHP"),
-    PLI(Language.PLI, "SQL"),
-    PLSQL(Language.PLSQL, "SQL"),
     PY(Language.PYTHON, "Python"),
-    RPG(Language.RPG, null),
     RUBY(Language.RUBY, "Ruby"),
     SCALA(Language.SCALA, "Scala"),
-    SECRETS(Language.SECRETS, null),
-    SWIFT(Language.SWIFT, null),
     TERRAFORM(Language.TERRAFORM, "YAML"),
-    TSQL(Language.TSQL, null),
-    TS(Language.TS, "JavaScript"),
-    VBNET(Language.VBNET, null),
+    TS(Language.TS, *typescriptFileTypesByPriority),
     XML(Language.XML, "XML"),
     YAML(Language.YAML, "YAML");
 
     companion object {
-        fun findFileTypeByRuleLanguage(value: String): FileType {
-            val ideName = RuleLanguages.values().firstOrNull { it.language.languageKey == value }?.fileType
-            return ideName?.let { FileTypeRegistry.getInstance().findFileTypeByName(it) ?: UnknownFileType.INSTANCE }
+        fun findFileTypeByRuleLanguage(languageKey: String): FileType {
+            return values().find { it.language.languageKey == languageKey }?.fileTypesByPriorityOrder?.firstNotNullOfOrNull { fileType ->
+                FileTypeRegistry.getInstance().findFileTypeByName(fileType)
+            }
                 ?: UnknownFileType.INSTANCE
         }
     }
