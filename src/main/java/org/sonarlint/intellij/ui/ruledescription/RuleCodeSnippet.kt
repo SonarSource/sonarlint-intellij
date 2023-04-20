@@ -24,7 +24,6 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.tools.util.base.TextDiffSettingsHolder
 import com.intellij.diff.util.DiffUtil
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
@@ -42,7 +41,6 @@ import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_ADDITION
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_REMOVAL
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
 import java.awt.BorderLayout
@@ -58,7 +56,8 @@ class RuleCodeSnippet(private val project: Project, language: FileType, private 
         myEditor = createEditor() as EditorEx
         layout = BorderLayout()
         add(myEditor.component, BorderLayout.CENTER)
-        reset(codeExampleFragment.code, language)
+        setText(codeExampleFragment.code, language)
+        myEditor.document.setReadOnly(true)
         myEditor.putUserData(CODE_EXAMPLE_FRAGMENT_KEY, codeExampleFragment)
     }
 
@@ -80,14 +79,8 @@ class RuleCodeSnippet(private val project: Project, language: FileType, private 
         return editor
     }
 
-    private fun reset(usageText: String, fileType: FileType) {
-        reInitViews()
-        ApplicationManager.getApplication().invokeLater {
-            if (myEditor.isDisposed) {
-                return@invokeLater
-            }
-            DocumentUtil.writeInRunUndoTransparentAction { configureByText(usageText, fileType) }
-        }
+    private fun setText(text: String, fileType: FileType) {
+        DocumentUtil.writeInRunUndoTransparentAction { configureByText(text, fileType) }
     }
 
     private fun configureByText(usageText: String, fileType: FileType) {
@@ -99,41 +92,31 @@ class RuleCodeSnippet(private val project: Project, language: FileType, private 
             EditorHighlighterFactory.getInstance().createEditorHighlighter(fileType, scheme, project)
 
         if (codeExampleFragment.diffTarget != null) {
-            runOnUiThread(
-                project
-            ) {
-                val provider = DiffUtil.createTextDiffProvider(
-                    project, SimpleDiffRequest(
-                        "Diff",
-                        DiffContentFactory.getInstance().createEmpty(),
-                        DiffContentFactory.getInstance().createEmpty(), null, null
-                    ), TextDiffSettingsHolder.TextDiffSettings(), {}, this
-                )
-                val fragments =
-                    provider.compare(codeExampleFragment.code, codeExampleFragment.diffTarget!!.code, EmptyProgressIndicator())
+            val provider = DiffUtil.createTextDiffProvider(
+                project, SimpleDiffRequest(
+                    "Diff",
+                    DiffContentFactory.getInstance().createEmpty(),
+                    DiffContentFactory.getInstance().createEmpty(), null, null
+                ), TextDiffSettingsHolder.TextDiffSettings(), {}, this
+            )
+            val fragments =
+                provider.compare(codeExampleFragment.code, codeExampleFragment.diffTarget!!.code, EmptyProgressIndicator())
 
-                val attributeKey = if (codeExampleFragment.type == CodeExampleType.Compliant) DIFF_ADDITION else DIFF_REMOVAL
-                fragments?.forEach { fragment ->
-                    myEditor.markupModel.addRangeHighlighter(
-                        attributeKey,
-                        fragment.startOffset1,
-                        fragment.endOffset1,
-                        0,
-                        HighlighterTargetArea.EXACT_RANGE
-                    )
-                }
+            val attributeKey = if (codeExampleFragment.type == CodeExampleType.Compliant) DIFF_ADDITION else DIFF_REMOVAL
+            fragments?.forEach { fragment ->
+                myEditor.markupModel.addRangeHighlighter(
+                    attributeKey,
+                    fragment.startOffset1,
+                    fragment.endOffset1,
+                    0,
+                    HighlighterTargetArea.EXACT_RANGE
+                )
             }
         }
     }
 
     override fun dispose() {
-        val editorFactory = EditorFactory.getInstance()
-        editorFactory.releaseEditor(myEditor)
-    }
-
-    private fun reInitViews() {
-        myEditor.reinitSettings()
-        myEditor.markupModel.removeAllHighlighters()
+        EditorFactory.getInstance().releaseEditor(myEditor)
     }
 
     companion object {
