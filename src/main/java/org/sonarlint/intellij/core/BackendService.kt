@@ -97,7 +97,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 EmbeddedPlugins.getEmbeddedPluginsForConnectedMode(),
                 EmbeddedPlugins.enabledLanguagesInStandaloneMode,
                 EmbeddedPlugins.enabledLanguagesInConnectedMode,
-                false,
+                true,
                 sonarQubeConnections,
                 sonarCloudConnections,
                 null,
