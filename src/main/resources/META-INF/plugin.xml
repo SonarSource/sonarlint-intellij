@@ -192,17 +192,8 @@
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
         <iw.actionProvider implementation="org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider"/>
 
-        <!-- BE CAREFUL to not register the annotator twice for the same language (taking into account inheritance) or the annotation will appear multiple times -->
-        <externalAnnotator language="kotlin" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <externalAnnotator language="Python" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <externalAnnotator language="PHP" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <!-- JavaScript is the base language for TypeScript, EcmaScript, jsx, ...-->
-        <externalAnnotator language="JavaScript" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <externalAnnotator language="ruby" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <!-- XML is the base language for HTML, XHTML, ...-->
-        <externalAnnotator language="XML" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <externalAnnotator language="Scala" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <externalAnnotator language="Swift" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <!-- Empty language attribute corresponds to any language (see com.intellij.lang.Language.ANY) -->
+        <externalAnnotator language="" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
         <applicationService serviceInterface="org.sonarlint.intellij.core.server.events.ServerEventsService"
                             serviceImplementation="org.sonarlint.intellij.core.server.events.ServerEventsProductionService"
