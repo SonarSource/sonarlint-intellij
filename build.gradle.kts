@@ -140,6 +140,8 @@ tasks.runPluginVerifier {
                 RunPluginVerifierTask.FailureLevel.INTERNAL_API_USAGES,
                 // TODO Workaround for CLion
                 RunPluginVerifierTask.FailureLevel.MISSING_DEPENDENCIES,
+                // needed because of UpdateInBackground usages in recent versions, replacement is available from 2022.2
+                RunPluginVerifierTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
             )
         )
     )
