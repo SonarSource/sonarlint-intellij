@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -38,7 +37,7 @@ import org.sonarlint.intellij.finding.persistence.FindingsCache;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class ClearCurrentFileIssuesAction extends AnAction {
+public class ClearCurrentFileIssuesAction extends AbstractSonarAction {
 
   public ClearCurrentFileIssuesAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
     super(text, description, icon);

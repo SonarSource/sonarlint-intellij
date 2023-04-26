@@ -21,12 +21,10 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.ToggleAction;
-import com.intellij.openapi.project.DumbAware;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class ToolWindowVerboseModeAction extends ToggleAction implements DumbAware {
+public class ToolWindowVerboseModeAction extends AbstractSonarToggleAction {
   public ToolWindowVerboseModeAction() {
     super("Verbose output", "Enable verbose output for SonarLint analysis",
       AllIcons.Actions.StartDebugger);

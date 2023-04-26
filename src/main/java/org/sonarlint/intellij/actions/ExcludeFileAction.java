@@ -23,7 +23,6 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
@@ -32,6 +31,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.project.ExclusionItem;
@@ -41,7 +41,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class ExcludeFileAction extends DumbAwareAction {
+public class ExcludeFileAction extends AbstractSonarAction {
   public ExcludeFileAction() {
 
   }
@@ -51,36 +51,22 @@ public class ExcludeFileAction extends DumbAwareAction {
   }
 
   @Override
-  public void update(AnActionEvent e) {
-    super.update(e);
-
-    var project = e.getProject();
-    if (project == null || !project.isInitialized() || project.isDisposed()) {
-      e.getPresentation().setEnabled(false);
-      e.getPresentation().setVisible(true);
-      return;
-    }
-
+  protected boolean isVisible(AnActionEvent e) {
     var files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
-    if (!ActionPlaces.isPopupPlace(e.getPlace()) || files == null || files.length == 0 || AbstractSonarAction.isRiderSlnOrCsproj(files)) {
-      e.getPresentation().setEnabled(false);
-      e.getPresentation().setVisible(false);
-      return;
-    }
-
-    e.getPresentation().setVisible(true);
-
-    var exclusions = List.copyOf(getSettingsFor(project).getFileExclusions());
-
-    var anyFileToAdd = toStringStream(project, files)
-      .anyMatch(path -> !exclusions.contains(path));
-
-    if (!anyFileToAdd) {
-      e.getPresentation().setEnabled(false);
-    }
+    return ActionPlaces.isPopupPlace(e.getPlace()) && files != null && files.length > 0 && !AbstractSonarAction.isRiderSlnOrCsproj(files);
   }
 
-  @Override public void actionPerformed(AnActionEvent e) {
+  @Override
+  protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
+    var files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+    var exclusions = List.copyOf(getSettingsFor(project).getFileExclusions());
+
+    return files != null && toStringStream(project, files)
+      .anyMatch(path -> !exclusions.contains(path));
+  }
+
+  @Override
+  public void actionPerformed(AnActionEvent e) {
     var project = e.getProject();
     var files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
 

@@ -42,10 +42,12 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
     val TAINT_VULNERABILITY_DATA_KEY = DataKey.create<LocalTaintVulnerability>("sonarlint_taint_vulnerability")
   }
 
-  override fun update(e: AnActionEvent) {
-    val project = e.project ?: return
+  override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
+    return e.getData(TAINT_VULNERABILITY_DATA_KEY) != null
+  }
+
+  override fun updatePresentation(e: AnActionEvent, project: Project) {
     val serverConnection = serverConnection(project) ?: return
-    super.update(e)
     e.presentation.text = "Open in " + serverConnection.productName
     e.presentation.icon = serverConnection.productIcon
   }
@@ -60,10 +62,6 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
     val projectKey = getService(localFileModule, ModuleBindingManager::class.java).resolveProjectKey() ?: return
     BrowserUtil.browse(buildLink(serverUrl, projectKey, key))
     getService(SonarLintTelemetry::class.java).taintVulnerabilitiesInvestigatedRemotely()
-  }
-
-  override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
-    return e.getData(TAINT_VULNERABILITY_DATA_KEY) != null
   }
 
   private fun buildLink(serverUrl: String, projectKey: String, issueKey: String): String {

@@ -20,13 +20,13 @@
 package org.sonarlint.intellij.editor.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Editor
+import org.sonarlint.intellij.actions.AbstractSonarAction
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 
-class CopyCodeExampleAction(private val editor: Editor): AnAction("Copy", "Copy code example", AllIcons.Actions.Copy) {
+class CopyCodeExampleAction(private val editor: Editor): AbstractSonarAction("Copy", "Copy code example", AllIcons.Actions.Copy) {
     override fun actionPerformed(e: AnActionEvent) {
         val selection = StringSelection(editor.document.text)
         Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, null)

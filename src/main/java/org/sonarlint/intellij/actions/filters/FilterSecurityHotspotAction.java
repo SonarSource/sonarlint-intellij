@@ -20,13 +20,13 @@
 package org.sonarlint.intellij.actions.filters;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.ToggleAction;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class FilterSecurityHotspotAction extends ToggleAction {
+public class FilterSecurityHotspotAction extends AbstractSonarToggleAction {
 
   private final SecurityHotspotFilters filter;
   private final FilterSecurityHotspotSettings settings;

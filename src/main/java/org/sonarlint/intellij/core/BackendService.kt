@@ -276,7 +276,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         return backend.authenticationHelperService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl, isSonarCloud))
     }
 
-    fun openHotspotInIde(module: Module, hotspotKey: String) {
+    fun openHotspotInBrowser(module: Module, hotspotKey: String) {
         val branchName: String? = getService(module.project, VcsService::class.java).getServerBranchName(module)
         branchName?.let {
             val configScopeId = moduleId(module)

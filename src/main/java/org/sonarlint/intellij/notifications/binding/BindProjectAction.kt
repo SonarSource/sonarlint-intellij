@@ -20,15 +20,16 @@
 package org.sonarlint.intellij.notifications.binding
 
 import com.intellij.notification.Notification
-import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
 
-class BindProjectAction(private val bindingSuggestion: BindingSuggestion) : NotificationAction("Bind project") {
-    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+class BindProjectAction(private val bindingSuggestion: BindingSuggestion) : AbstractSonarAction("Bind project") {
+    override fun actionPerformed(e: AnActionEvent) {
+        val notification = Notification.get(e)
         notification.expire()
         val project = e.project!!
         val bindingManager = SonarLintUtils.getService(project, ProjectBindingManager::class.java)

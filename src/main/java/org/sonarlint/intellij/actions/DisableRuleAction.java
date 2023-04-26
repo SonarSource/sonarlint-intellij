@@ -20,9 +20,10 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKey;
+import com.intellij.openapi.project.Project;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -31,14 +32,28 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class DisableRuleAction extends AnAction {
+public class DisableRuleAction extends AbstractSonarAction {
   public static final DataKey<LiveIssue> ISSUE_DATA_KEY = DataKey.create("sonarlint_issue");
 
   public DisableRuleAction() {
     super("Disable Rule", "Disable the SonarLint rule that activated this rule", AllIcons.Actions.Cancel);
   }
 
-  @Override public void actionPerformed(AnActionEvent e) {
+  @Override
+  protected boolean isVisible(AnActionEvent e) {
+    var project = e.getProject();
+    var issue = e.getData(ISSUE_DATA_KEY);
+    return project != null && !getSettingsFor(project).isBindingEnabled() && issue != null;
+  }
+
+  @Override
+  protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
+    var issue = e.getData(ISSUE_DATA_KEY);
+    return issue != null && !getGlobalSettings().isRuleExplicitlyDisabled(issue.getRuleKey());
+  }
+
+  @Override
+  public void actionPerformed(AnActionEvent e) {
     var project = e.getProject();
     if (project == null) {
       return;
@@ -49,24 +64,6 @@ public class DisableRuleAction extends AnAction {
       disableRule(issue.getRuleKey());
       SonarLintUtils.getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE);
     }
-  }
-
-  @Override
-  public void update(AnActionEvent e) {
-    var project = e.getProject();
-    if (project == null) {
-      e.getPresentation().setEnabled(false);
-      e.getPresentation().setVisible(false);
-      return;
-    }
-
-    var issue = e.getData(ISSUE_DATA_KEY);
-    var visible = !getSettingsFor(project).isBindingEnabled() && issue != null;
-    e.getPresentation().setVisible(visible);
-
-    var explicitlyDisabled = issue != null && getGlobalSettings().isRuleExplicitlyDisabled(issue.getRuleKey());
-    var enabled = visible && !explicitlyDisabled;
-    e.getPresentation().setEnabled(enabled);
   }
 
   private static void disableRule(String ruleKey) {
