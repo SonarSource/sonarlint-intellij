@@ -36,6 +36,7 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.AnActionLink
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
+import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenIssueInBrowserAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
@@ -114,7 +115,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private fun createDisclaimer(): StripePanel {
         val stripePanel = StripePanel("This tab displays taint vulnerabilities detected by SonarQube or SonarCloud. SonarLint does not detect those issues locally.", Information)
         stripePanel.addAction("Learn more", OpenTaintVulnerabilityDocumentationAction())
-        stripePanel.addAction("Dismiss", object : AnAction() {
+        stripePanel.addAction("Dismiss", object : AbstractSonarAction() {
             override fun actionPerformed(e: AnActionEvent) {
                 stripePanel.isVisible = false
                 getGlobalSettings().dismissTaintVulnerabilitiesTabDisclaimer()

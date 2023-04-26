@@ -39,10 +39,13 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
     val SECURITY_HOTSPOT_DATA_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
   }
 
-  override fun update(e: AnActionEvent) {
-    val project = e.project ?: return
+  override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
+    return e.getData(SECURITY_HOTSPOT_DATA_KEY) != null &&
+        e.getData(SECURITY_HOTSPOT_DATA_KEY)?.serverFindingKey != null
+  }
+
+  override fun updatePresentation(e: AnActionEvent, project: Project) {
     val serverConnection = serverConnection(project) ?: return
-    super.update(e)
     e.presentation.text = "Open in " + serverConnection.productName
     e.presentation.icon = serverConnection.productIcon
   }
@@ -53,12 +56,7 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
     val key = securityHotspot?.serverFindingKey ?: return
     val localFile = securityHotspot.psiFile().virtualFile ?: return
     val localFileModule = ModuleUtil.findModuleForFile(localFile, project) ?: return
-    getService(BackendService::class.java).openHotspotInIde(localFileModule, key)
-  }
-
-  override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
-    return e.getData(SECURITY_HOTSPOT_DATA_KEY) != null &&
-        e.getData(SECURITY_HOTSPOT_DATA_KEY)?.serverFindingKey != null
+    getService(BackendService::class.java).openHotspotInBrowser(localFileModule, key)
   }
 
   private fun serverConnection(project: Project): ServerConnection? = getService(project, ProjectBindingManager::class.java).tryGetServerConnection().orElse(null)

@@ -25,8 +25,8 @@ import com.intellij.openapi.ui.TestDialogManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -50,7 +50,9 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
 
   @Test
   void testEnabled() {
-    assertThat(action.isVisible("")).isTrue();
+    var anActionEvent = mock(AnActionEvent.class);
+    when(anActionEvent.getPlace()).thenReturn("ANY");
+    assertThat(action.isVisible(anActionEvent)).isTrue();
     status.tryRun();
     assertThat(action.isEnabled(event, getProject(), status)).isFalse();
 

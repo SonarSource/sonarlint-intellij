@@ -24,17 +24,18 @@ import com.intellij.diff.DiffDialogHints
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Editor
+import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.ui.ruledescription.RuleCodeSnippet
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
 
 class DiffCodeExamplesAction(private val editor: Editor) :
-    AnAction("Diff", "Diff code examples", AllIcons.Actions.Diff) {
-    override fun update(e: AnActionEvent) {
+    AbstractSonarAction("Diff", "Diff code examples", AllIcons.Actions.Diff) {
+
+    override fun isVisible(e: AnActionEvent): Boolean {
         val codeExampleFragment = editor.getUserData(RuleCodeSnippet.CODE_EXAMPLE_FRAGMENT_KEY)
-        e.presentation.isEnabledAndVisible = codeExampleFragment?.diffTarget != null
+        return codeExampleFragment?.diffTarget != null
     }
 
     override fun actionPerformed(e: AnActionEvent) {

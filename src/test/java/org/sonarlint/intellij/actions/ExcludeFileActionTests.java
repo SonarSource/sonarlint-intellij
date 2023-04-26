@@ -84,7 +84,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
 
     action.update(e);
 
-    assertThat(presentation.isVisible()).isTrue();
+    assertThat(presentation.isVisible()).isFalse();
     assertThat(presentation.isEnabled()).isFalse();
   }
 
@@ -94,7 +94,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
 
     action.update(e);
 
-    assertThat(presentation.isVisible()).isTrue();
+    assertThat(presentation.isVisible()).isFalse();
     assertThat(presentation.isEnabled()).isFalse();
   }
 
@@ -104,7 +104,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
 
     action.update(e);
 
-    assertThat(presentation.isVisible()).isTrue();
+    assertThat(presentation.isVisible()).isFalse();
     assertThat(presentation.isEnabled()).isFalse();
   }
 

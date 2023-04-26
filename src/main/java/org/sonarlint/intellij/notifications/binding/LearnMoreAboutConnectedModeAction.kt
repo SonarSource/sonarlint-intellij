@@ -20,10 +20,10 @@
 package org.sonarlint.intellij.notifications.binding
 
 import com.intellij.ide.BrowserUtil
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.actions.AbstractSonarAction
 
-class LearnMoreAboutConnectedModeAction : AnAction("Learn more") {
+class LearnMoreAboutConnectedModeAction : AbstractSonarAction("Learn more") {
     override fun actionPerformed(e: AnActionEvent) {
         BrowserUtil.browse("https://github.com/SonarSource/sonarlint-intellij/wiki/Bind-to-SonarQube-or-SonarCloud")
     }

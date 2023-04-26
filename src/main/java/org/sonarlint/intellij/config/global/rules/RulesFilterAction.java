@@ -23,12 +23,14 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Toggleable;
-import com.intellij.openapi.actionSystem.ex.CheckboxAction;
 import com.intellij.openapi.project.DumbAware;
-import com.intellij.openapi.project.DumbAwareAction;
+import com.intellij.openapi.project.Project;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.AbstractSonarAction;
+import org.sonarlint.intellij.actions.AbstractSonarCheckboxAction;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 class RulesFilterAction extends DefaultActionGroup implements Toggleable, DumbAware {
   private final RulesFilterModel model;
@@ -44,7 +46,7 @@ class RulesFilterAction extends DefaultActionGroup implements Toggleable, DumbAw
     add(new FilterCheckboxAction("Show Only Changed", model::setShowOnlyChanged, model::isShowOnlyChanged));
   }
 
-  private static class FilterCheckboxAction extends CheckboxAction implements DumbAware {
+  private static class FilterCheckboxAction extends AbstractSonarCheckboxAction {
     private final Consumer<Boolean> setter;
     private final Supplier<Boolean> getter;
 
@@ -63,20 +65,19 @@ class RulesFilterAction extends DefaultActionGroup implements Toggleable, DumbAw
     }
   }
 
-  private class ResetFilterAction extends DumbAwareAction {
-    ResetFilterAction() {
+  private class ResetFilterAction extends AbstractSonarAction {
+    private ResetFilterAction() {
       super("Reset Filter");
+    }
+
+    @Override
+    protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
+      return !model.isEmpty();
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
       model.reset(true);
-    }
-
-    @Override
-    public void update(@NotNull AnActionEvent e) {
-      final var presentation = e.getPresentation();
-      presentation.setEnabled(!model.isEmpty());
     }
   }
 }

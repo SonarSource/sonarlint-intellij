@@ -21,6 +21,7 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.stream.Stream;
@@ -28,9 +29,13 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 
-public abstract class AbstractSonarAction extends AnAction {
+public abstract class AbstractSonarAction extends AnAction implements DumbAware {
   protected AbstractSonarAction() {
     super();
+  }
+
+  protected AbstractSonarAction(@Nullable String text) {
+    super(text);
   }
 
   protected AbstractSonarAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
@@ -38,23 +43,21 @@ public abstract class AbstractSonarAction extends AnAction {
   }
 
   @Override
-  public void update(AnActionEvent e) {
+  public final void update(AnActionEvent e) {
     var p = e.getProject();
-
-    if (isVisible(e.getPlace())) {
-      e.getPresentation().setVisible(true);
-    } else {
-      e.getPresentation().setVisible(false);
+    if (p == null || !p.isInitialized() || p.isDisposed()) {
+      e.getPresentation().setEnabledAndVisible(false);
+      return;
+    }
+    var visible = isVisible(e);
+    e.getPresentation().setVisible(visible);
+    if (!visible) {
       e.getPresentation().setEnabled(false);
       return;
     }
 
-    if (p == null || !p.isInitialized() || p.isDisposed()) {
-      e.getPresentation().setEnabled(false);
-    } else {
-      var status = AnalysisStatus.get(p);
-      e.getPresentation().setEnabled(isEnabled(e, p, status));
-    }
+    e.getPresentation().setEnabled(isEnabled(e, p, AnalysisStatus.get(p)));
+    updatePresentation(e, p);
   }
 
   static boolean isRiderSlnOrCsproj(VirtualFile[] files) {
@@ -68,9 +71,15 @@ public abstract class AbstractSonarAction extends AnAction {
    *
    * @see com.intellij.openapi.actionSystem.ActionPlaces
    */
-  protected boolean isVisible(String place) {
+  protected boolean isVisible(AnActionEvent e) {
     return true;
   }
 
-  protected abstract boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status);
+  protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
+    return true;
+  }
+
+  protected void updatePresentation(AnActionEvent e, Project project) {
+    // let subclasses change text and icon
+  }
 }

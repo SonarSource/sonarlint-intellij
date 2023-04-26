@@ -19,26 +19,21 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.ToggleAction;
+import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.util.NlsActions;
+import javax.swing.Icon;
+import org.jetbrains.annotations.Nullable;
 
-import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+public abstract class AbstractSonarToggleAction extends ToggleAction implements DumbAware {
 
-public class ToolWindowLogAnalysisAction extends AbstractSonarToggleAction {
-  public ToolWindowLogAnalysisAction() {
-    super("Analysis logs", "Enable logging of SonarLint analysis", null);
+  protected AbstractSonarToggleAction(@Nullable @NlsActions.ActionText final String text) {
+    super(text);
   }
 
-  @Override
-  public boolean isSelected(AnActionEvent event) {
-    var p = event.getProject();
-    return p != null && getSettingsFor(p).isAnalysisLogsEnabled();
-  }
-
-  @Override
-  public void setSelected(AnActionEvent event, boolean flag) {
-    var p = event.getProject();
-    if (p != null) {
-      getSettingsFor(p).setAnalysisLogsEnabled(flag);
-    }
+  protected AbstractSonarToggleAction(@Nullable @NlsActions.ActionText final String text,
+    @Nullable @NlsActions.ActionDescription final String description,
+    @Nullable final Icon icon) {
+    super(text, description, icon);
   }
 }

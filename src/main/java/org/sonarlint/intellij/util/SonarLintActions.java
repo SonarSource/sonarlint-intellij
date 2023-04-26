@@ -24,6 +24,7 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.serviceContainer.NonInjectable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
@@ -56,8 +57,8 @@ public class SonarLintActions {
 
   @NonInjectable
   SonarLintActions(ActionManager actionManager) {
-    var analyzeMenu = actionManager.getAction("AnalyzeMenu");
-    // some flavors of IDEA don't have the analyze menu
+    var analyzeMenu = actionManager.getAction(IdeActions.GROUP_ANALYZE);
+    // some flavors of IDEA don't have the Analyze menu, register at runtime to avoid error if declared in plugin.xml
     if (analyzeMenu instanceof DefaultActionGroup) {
       var sonarLintAnalyzeMenu = actionManager.getAction("SonarLint.AnalyzeMenu");
       var analyzeMenuGroup = (DefaultActionGroup) analyzeMenu;

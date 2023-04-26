@@ -47,8 +47,8 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
   }
 
   @Override
-  protected boolean isVisible(String place) {
-    return !ActionPlaces.PROJECT_VIEW_POPUP.equals(place);
+  protected boolean isVisible(AnActionEvent e) {
+    return !ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace());
   }
 
   @Override public void actionPerformed(AnActionEvent e) {

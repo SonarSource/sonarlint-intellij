@@ -21,12 +21,11 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.project.DumbAwareAction;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,13 +33,14 @@ import java.util.stream.Stream;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class SonarAnalyzeFilesAction extends DumbAwareAction {
+public class SonarAnalyzeFilesAction extends AbstractSonarAction {
   public SonarAnalyzeFilesAction() {
     super();
   }
@@ -50,34 +50,21 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
   }
 
   @Override
-  public void update(AnActionEvent e) {
-    super.update(e);
-
+  protected boolean isVisible(AnActionEvent e) {
     var files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
-    if (files == null || files.length == 0 || AbstractSonarAction.isRiderSlnOrCsproj(files)) {
-      e.getPresentation().setEnabled(false);
-      e.getPresentation().setVisible(false);
-      return;
-    }
+    return files != null && files.length > 0 && !AbstractSonarAction.isRiderSlnOrCsproj(files);
+  }
 
+  @Override
+  protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
+    return !status.isRunning();
+  }
+
+  @Override
+  protected void updatePresentation(AnActionEvent e, Project project) {
     if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(e.getPlace())) {
       e.getPresentation().setIcon(SonarLintIcons.PLAY);
     }
-    e.getPresentation().setVisible(true);
-
-    var project = e.getProject();
-    if (project == null || !project.isInitialized() || project.isDisposed()) {
-      e.getPresentation().setEnabled(false);
-      return;
-    }
-
-    var status = getService(project, AnalysisStatus.class);
-    if (status.isRunning()) {
-      e.getPresentation().setEnabled(false);
-      return;
-    }
-
-    e.getPresentation().setEnabled(true);
   }
 
   @Override
