@@ -21,6 +21,7 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.UpdateInBackground;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -29,7 +30,8 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 
-public abstract class AbstractSonarAction extends AnAction implements DumbAware {
+// UpdateInBackground is scheduled for removal and comes with a replacement in 2022.2. We have to use it for older versions
+public abstract class AbstractSonarAction extends AnAction implements DumbAware, UpdateInBackground {
   protected AbstractSonarAction() {
     super();
   }

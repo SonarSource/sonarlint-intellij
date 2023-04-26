@@ -20,12 +20,14 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.ToggleAction;
+import com.intellij.openapi.actionSystem.UpdateInBackground;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.util.NlsActions;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractSonarToggleAction extends ToggleAction implements DumbAware {
+// UpdateInBackground is scheduled for removal and comes with a replacement in 2022.2. We have to use it for older versions
+public abstract class AbstractSonarToggleAction extends ToggleAction implements DumbAware, UpdateInBackground {
 
   protected AbstractSonarToggleAction(@Nullable @NlsActions.ActionText final String text) {
     super(text);
