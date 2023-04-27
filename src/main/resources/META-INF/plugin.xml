@@ -64,7 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>8.2 - Support syntax highlighting and diff view for code examples. 3 new rules for Java. 8 new rules for JavaScript. 2 new rules for C# in Rider. 9 new rules for Kotlin.</li>
+        <li>8.2 - Support syntax highlighting and diff view for code examples. 3 new rules for Java. 8 new rules for JavaScript. 2 new rules for C# in Rider. 9 new rules for Kotlin. 11 new rules, 3 new quick fixes for Python.</li>
         <li>8.1 - Support analysis of Go in GoLand. Support for tiarmclang compiler, Kotlin 1.8 and IPython syntax. 6 new rules for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.0 - Raise minimal supported version to 2021.3. Report Security Hotspots locally when connected to SonarQube 9.7+. Support of JavaScript analysis in HTML files. Support for clang-cl and Microchip compilers. New quick fixes for 11 Java rules. New quick fix for a C++ rule. New quick fixes for 17 Python rules. 6 new rules for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>7.4 - Display Clean Code principles in rule descriptions. 13 new rules around std::format for C++. 1 new rule for Java. Bug fixes, fewer FPs and improvements for many languages.</li>
