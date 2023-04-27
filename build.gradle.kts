@@ -213,7 +213,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.11.0.3905")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.7.1.3306")
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.7.0.3820")
-    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.8.0.64684")
+    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.9.0.68420")
     "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.0.1.611")
     "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.12.0.4259")
     "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.16.0.3845")
