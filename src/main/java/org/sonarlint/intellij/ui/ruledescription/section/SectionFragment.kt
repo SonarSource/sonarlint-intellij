@@ -21,7 +21,11 @@ package org.sonarlint.intellij.ui.ruledescription.section
 
 sealed interface SectionFragment
 
-class HtmlFragment(val html: String) : SectionFragment
+class HtmlFragment(var html: String) : SectionFragment {
+    fun append(htmlFragment: HtmlFragment) {
+        html += htmlFragment.html
+    }
+}
 
 class CodeExampleFragment(val code: String, val type: CodeExampleType?, val diffId: String?) : SectionFragment {
     var diffTarget: CodeExampleFragment? = null
