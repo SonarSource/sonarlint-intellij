@@ -259,7 +259,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
     }
 
     private fun updateHeader(finding: Finding, ruleDescription: EffectiveRuleDetailsDto) {
-        ruleNameLabel.text = ruleDescription.name
+        ruleNameLabel.text = StringEscapeUtils.escapeHtml(ruleDescription.name)
         ruleNameLabel.setCopyable(true)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
         if (finding is LiveSecurityHotspot) {
