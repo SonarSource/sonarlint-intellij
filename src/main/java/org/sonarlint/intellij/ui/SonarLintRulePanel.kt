@@ -46,6 +46,7 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
 import org.apache.commons.lang.StringEscapeUtils
+import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
@@ -381,42 +382,52 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
     }
 
+    private fun isWithinTable(previousHtml: String): Boolean {
+        // very naive implementation, but should be good enough
+        return StringUtils.countMatches(previousHtml, "<table>") > StringUtils.countMatches(previousHtml, "</table>")
+    }
+
     private fun parseCodeExamples(
         htmlDescription: String, fileType: FileType,
     ): JScrollPane {
         val mainPanel = JBPanel<JBPanel<*>>(VerticalFlowLayout(0, 0))
-        var ruleDescription = htmlDescription
-        var matcherStart: Matcher = Pattern.compile("<pre[^>]*>").matcher(ruleDescription)
-        var matcherEnd: Matcher = Pattern.compile(PRE_TAG_ENDING).matcher(ruleDescription)
+        var remainingRuleDescription = htmlDescription
+        var computedRuleDescription = ""
+        var matcherStart: Matcher = Pattern.compile("<pre[^>]*>").matcher(remainingRuleDescription)
+        var matcherEnd: Matcher = Pattern.compile(PRE_TAG_ENDING).matcher(remainingRuleDescription)
 
         val section = Section()
-
         val xmlElementFactory = XmlElementFactory.getInstance(project)
         while (matcherStart.find() && matcherEnd.find()) {
-            val front: String = ruleDescription.substring(0, matcherStart.start()).trim()
+            val front: String = remainingRuleDescription.substring(0, matcherStart.start()).trim()
 
             if (front.isNotBlank()) {
-                section.add(HtmlFragment(front))
+                section.mergeOrAdd(HtmlFragment(front))
             }
+            computedRuleDescription += front
 
             val preTag =
-                xmlElementFactory.createTagFromText(ruleDescription.substring(matcherStart.start(), matcherStart.end()).trim() + PRE_TAG_ENDING)
+                xmlElementFactory.createTagFromText(remainingRuleDescription.substring(matcherStart.start(), matcherStart.end()).trim() + PRE_TAG_ENDING)
             val diffId = preTag.getAttributeValue("data-diff-id")
             val diffType = preTag.getAttributeValue("data-diff-type")?.let { CodeExampleType.from(it) }
 
-            val middle: String = ruleDescription.substring(matcherStart.end(), matcherEnd.start()).trim()
+            val middle: String = remainingRuleDescription.substring(matcherStart.end(), matcherEnd.start()).trim()
 
             if (middle.isNotBlank()) {
-                section.add(CodeExampleFragment(StringEscapeUtils.unescapeHtml(middle), diffType, diffId))
+                if (isWithinTable(computedRuleDescription)) {
+                    section.mergeOrAdd(HtmlFragment("<pre>$middle$PRE_TAG_ENDING"))
+                } else {
+                    section.add(CodeExampleFragment(StringEscapeUtils.unescapeHtml(middle), diffType, diffId))
+                }
             }
-
-            ruleDescription = ruleDescription.substring(matcherEnd.end(), ruleDescription.length).trim()
-            matcherStart = Pattern.compile("<pre[^>]*>").matcher(ruleDescription)
-            matcherEnd = Pattern.compile(PRE_TAG_ENDING).matcher(ruleDescription)
+            computedRuleDescription += remainingRuleDescription.substring(matcherStart.start(), matcherEnd.end())
+            remainingRuleDescription = remainingRuleDescription.substring(matcherEnd.end(), remainingRuleDescription.length).trim()
+            matcherStart = Pattern.compile("<pre[^>]*>").matcher(remainingRuleDescription)
+            matcherEnd = Pattern.compile(PRE_TAG_ENDING).matcher(remainingRuleDescription)
         }
 
-        if (ruleDescription.isNotBlank()) {
-            section.add(HtmlFragment(ruleDescription))
+        if (remainingRuleDescription.isNotBlank()) {
+            section.mergeOrAdd(HtmlFragment(remainingRuleDescription))
         }
 
         section.fragments.map {

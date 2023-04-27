@@ -26,8 +26,13 @@ class Section {
     val fragments: MutableList<SectionFragment> = mutableListOf()
     private val codeExampleFragmentsToDiffById = hashMapOf<String, MutableList<CodeExampleFragment>>()
 
-    fun add(htmlFragment: HtmlFragment) {
-        fragments.add(htmlFragment)
+    fun mergeOrAdd(htmlFragment: HtmlFragment) {
+        val lastFragment = fragments.lastOrNull()
+        if (lastFragment is HtmlFragment) {
+            lastFragment.append(htmlFragment)
+        } else {
+            fragments.add(htmlFragment)
+        }
     }
 
     fun add(codeExampleFragment: CodeExampleFragment) {
