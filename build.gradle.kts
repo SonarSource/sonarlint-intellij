@@ -8,7 +8,7 @@ import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.util.*
+import java.util.EnumSet
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -206,7 +206,7 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.18.0.31443")
-    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.0.1.20755")
+    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.1.0.21143")
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.28.0.9490")
     "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.1.0.11333")
     "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.13.0.2116")
