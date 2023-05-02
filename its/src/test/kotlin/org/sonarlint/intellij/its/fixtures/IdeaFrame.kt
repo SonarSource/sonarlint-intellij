@@ -84,7 +84,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         } catch (timeoutException: WaitForConditionTimeoutException) {
           try {
             // could be between 2 background tasks, wait and retry
-            Thread.sleep(1000)
+            Thread.sleep(500)
           } catch (e: InterruptedException) {
             e.printStackTrace()
           }
