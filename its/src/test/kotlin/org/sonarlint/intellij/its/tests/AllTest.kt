@@ -62,6 +62,7 @@ import org.sonarqube.ws.client.settings.SetRequest
 import java.net.URL
 import java.time.Duration
 
+@DisabledIf("isCLionOrGoLand")
 class AllTest : BaseUiTest() {
 
     companion object {
@@ -110,7 +111,7 @@ class AllTest : BaseUiTest() {
 
             ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
             ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
-            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module ")
+            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module")
             ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
 
             val excludeFileRequest = SetRequest()
