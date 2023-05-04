@@ -74,9 +74,9 @@ class OrchestratorUtils {
             )
         }
 
-        fun generateToken(wsClient: WsClient) : String {
+        fun generateToken(wsClient: WsClient, userName: String) : String {
             val generateRequest = GenerateRequest()
-            generateRequest.name = "TestUser"
+            generateRequest.name = "TestUser_$userName"
             return wsClient.userTokens().generate(generateRequest).token
         }
     }

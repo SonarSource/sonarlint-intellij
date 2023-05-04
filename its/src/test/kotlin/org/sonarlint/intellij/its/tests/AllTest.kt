@@ -25,6 +25,7 @@ import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.OrchestratorExtension
@@ -69,18 +70,14 @@ class AllTest : BaseUiTest() {
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
             .keepBundledPlugins()
-            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
-            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml"))
-            .restoreProfileAtStartup(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
-            .restoreProfileAtStartup(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))
             .build()
 
         private lateinit var adminWsClient: WsClient
 
-        val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
-        val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
-        val PROJECT_KEY = "sample-scala"
-        val MODULE_PROJECT_KEY = "sample-scala-mod"
+        const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
+        const val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
+        const val PROJECT_KEY = "sample-scala"
+        const val MODULE_PROJECT_KEY = "sample-scala-mod"
 
         private var firstHotspotKey: String? = null
         lateinit var token: String
@@ -98,26 +95,23 @@ class AllTest : BaseUiTest() {
         @BeforeAll
         fun createSonarLintUser() {
             adminWsClient = OrchestratorUtils.newAdminWsClientWithUser(ORCHESTRATOR.server)
+        }
+    }
 
-            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @DisabledIf("isCLionOrGoLand")
+    inner class BindingTest : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))
+
             ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
             ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
             ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module ")
             ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
-            ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(
-                TAINT_VULNERABILITY_PROJECT_KEY,
-                "java",
-                "SonarLint IT Java Taint Vulnerability"
-            )
-
-            // Build and analyze project to raise hotspot
-            OrchestratorUtils.executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR);
-            // Build and analyze project to raise hotspot
-            OrchestratorUtils.executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR);
-
-            firstHotspotKey = getFirstHotspotKey(adminWsClient)
 
             val excludeFileRequest = SetRequest()
             excludeFileRequest.key = "sonar.exclusions"
@@ -125,10 +119,10 @@ class AllTest : BaseUiTest() {
             excludeFileRequest.values = listOf("src/Excluded.scala")
             adminWsClient.settings().set(excludeFileRequest)
 
-            OrchestratorUtils.executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY);
-            OrchestratorUtils.executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY);
+            OrchestratorUtils.executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY)
+            OrchestratorUtils.executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY)
 
-            token = OrchestratorUtils.generateToken(adminWsClient)
+            token = OrchestratorUtils.generateToken(adminWsClient, "BindingTest")
 
             val searchRequest = SearchRequest()
             searchRequest.s = "FILE_LINE"
@@ -137,12 +131,6 @@ class AllTest : BaseUiTest() {
             val firstIssueKey = response.issuesList[0].key
             adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
         }
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand")
-    inner class BindingTest : BaseUiTest() {
 
         @Test
         fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
@@ -246,7 +234,21 @@ class AllTest : BaseUiTest() {
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
     inner class OpenInIdeTest : BaseUiTest() {
 
-        @Test
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
+
+            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
+
+            // Build and analyze project to raise hotspot
+            OrchestratorUtils.executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
+
+            firstHotspotKey = getFirstHotspotKey(adminWsClient)
+
+            token = OrchestratorUtils.generateToken(adminWsClient, "OpenInIdeTest")
+        }
+        
         fun opensHotspotAfterConfiguringConnectionAndBinding() = uiTest {
             openExistingProject("sample-java-hotspot", true)
 
@@ -260,6 +262,13 @@ class AllTest : BaseUiTest() {
         private fun createConnection(robot: RemoteRobot) {
             with(robot) {
                 idea {
+                    try {
+                        waitFor(Duration.ofSeconds(3)) {
+                            false
+                        }
+                    } catch (_: WaitForConditionTimeoutException) {
+                    }
+
                     dialog("Opening Security Hotspot...") {
                         button("Create connection").click()
                     }
@@ -344,6 +353,19 @@ class AllTest : BaseUiTest() {
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
     inner class SecurityHotspotTabTest : BaseUiTest() {
 
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
+
+            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java Hotspot")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
+
+            // Build and analyze project to raise hotspot
+            OrchestratorUtils.executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
+
+            token = OrchestratorUtils.generateToken(adminWsClient, "SecurityHotspotTabTest")
+        }
+
         @Test
         fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
             openExistingProject("sample-java-hotspot", true)
@@ -412,6 +434,23 @@ class AllTest : BaseUiTest() {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand", disabledReason = "No taint vulnerabilities in CLion or GoLand")
     inner class TaintVulnerabilitiesTest : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml"))
+
+            ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                TAINT_VULNERABILITY_PROJECT_KEY,
+                "java",
+                "SonarLint IT Java Taint Vulnerability"
+            )
+
+            // Build and analyze project to raise hotspot
+            OrchestratorUtils.executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
+
+            token = OrchestratorUtils.generateToken(adminWsClient, "TaintVulnerabilitiesTest")
+        }
 
         @Test
         fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
