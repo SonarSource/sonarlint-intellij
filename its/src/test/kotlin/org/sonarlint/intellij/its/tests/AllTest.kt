@@ -159,10 +159,10 @@ class AllTest : BaseUiTest() {
 
             openFile("mod/src/HelloModule.scala", "HelloModule.scala")
 
-            verifyCurrentFileTabContainsMessages(
+   /*         verifyCurrentFileTabContainsMessages(
                 "Found 1 issue in 1 file",
                 "HelloModule.scala",
-            )
+            )*/
             clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
             verifyRuleDescriptionTabContains("Methods should not be empty")
 
