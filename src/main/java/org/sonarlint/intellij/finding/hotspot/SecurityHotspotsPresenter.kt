@@ -47,7 +47,4 @@ class SecurityHotspotsPresenter(private val project: Project) {
             }
     }
 
-    fun refreshSecurityHotspotsForOpenFiles() {
-        presentSecurityHotspotsForOpenFiles()
-    }
 }

@@ -42,13 +42,13 @@ class SecurityHotspotsRefreshTrigger(private val project: Project) {
         }
 
         override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
-          triggerDisplayUpdate()
+          triggerRefresh()
         }
       })
-      subscribe(ProjectConfigurationListener.TOPIC, ProjectConfigurationListener { triggerDisplayUpdate() })
+      subscribe(ProjectConfigurationListener.TOPIC, ProjectConfigurationListener { triggerRefresh() })
       subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
         override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-          triggerDisplayUpdate()
+          triggerRefresh()
         }
       })
       subscribe(VcsListener.TOPIC, VcsListener { module, _ ->
@@ -58,15 +58,11 @@ class SecurityHotspotsRefreshTrigger(private val project: Project) {
       })
     }
 
-    triggerDisplayUpdate()
+    triggerRefresh()
   }
 
-  private fun triggerDisplayUpdate() {
+  private fun triggerRefresh() {
     getService(project, SecurityHotspotsPresenter::class.java).presentSecurityHotspotsForOpenFiles()
   }
 
-  // TODO need to update the method for security hotspots
-  private fun triggerRefresh() {
-    getService(project, SecurityHotspotsPresenter::class.java).refreshSecurityHotspotsForOpenFiles()
-  }
 }
