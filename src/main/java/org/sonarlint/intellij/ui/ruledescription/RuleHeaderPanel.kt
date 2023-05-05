@@ -32,10 +32,10 @@ import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import java.awt.Color
 import java.awt.FlowLayout
-import java.awt.event.ActionEvent
-import javax.swing.AbstractAction
+import java.awt.event.ActionListener
 import javax.swing.BorderFactory
 import javax.swing.JButton
+import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 
@@ -68,12 +68,18 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         add(ruleKeyLabel.apply {
             border = JBUI.Borders.emptyLeft(10)
         }, HorizontalLayout.CENTER)
-        changeStatusButton.action = object : AbstractAction() {
-            override fun actionPerformed(e: ActionEvent) {
-                println("Change status")
-            }
-        }
-        add(changeStatusButton, HorizontalLayout.LEFT)
+
+        changeStatusButton.addActionListener(ActionListener {
+            println("Change status")
+        })
+
+        changeStatusButton.text = "Change status"
+
+        val changeStatusPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
+        changeStatusPanel.apply { border = BorderFactory.createEmptyBorder(0, 15, 0, 0) }
+
+        changeStatusPanel.add(changeStatusButton.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 0) })
+        add(changeStatusPanel)
     }
 
     fun clear() {
@@ -106,7 +112,6 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         }
 
         changeStatusButton.isVisible = true
-        changeStatusButton.text = "Change status"
     }
 
     private fun updateCommonFields(type: RuleType, ruleKey: String) {
