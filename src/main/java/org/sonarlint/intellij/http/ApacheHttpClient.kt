@@ -55,7 +55,7 @@ import java.util.function.Consumer
 class ApacheHttpClient private constructor(
     private val client: CloseableHttpAsyncClient,
     private val login: String? = null,
-    private val password: String? = null
+    private val password: String? = null,
 ) : HttpClient {
 
     fun withCredentials(login: String?, password: String?): ApacheHttpClient {
@@ -71,7 +71,7 @@ class ApacheHttpClient private constructor(
     override fun getEventStream(
         url: String,
         connectionListener: HttpConnectionListener,
-        messageConsumer: Consumer<String>
+        messageConsumer: Consumer<String>,
     ): HttpClient.AsyncRequest {
         val request = SimpleRequestBuilder.get(url).build()
         request.config = RequestConfig.custom()
@@ -152,9 +152,13 @@ class ApacheHttpClient private constructor(
     }
 
     override fun post(url: String, contentType: String, body: String): Response {
+        return postAsync(url, contentType, body).get()
+    }
+
+    override fun postAsync(url: String, contentType: String, body: String): CompletableFuture<Response> {
         val httpRequest = SimpleRequestBuilder.post(url).build()
         httpRequest.setBody(body, ContentType.parse(contentType))
-        return executeAsync(httpRequest).get()
+        return executeAsync(httpRequest)
     }
 
     override fun delete(url: String, contentType: String, body: String): Response {
