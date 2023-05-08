@@ -265,6 +265,8 @@
                            displayType="STICKY_BALLOON"/>
         <notificationGroup id="SonarLint: Binding Suggestions"
                            displayType="STICKY_BALLOON"/>
+        <notificationGroup id="SonarLint: Security Hotspot Review"
+                           displayType="BALLOON"/>
 
     </extensions>
 
