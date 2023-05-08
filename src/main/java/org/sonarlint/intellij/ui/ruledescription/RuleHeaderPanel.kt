@@ -32,7 +32,10 @@ import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import java.awt.Color
 import java.awt.FlowLayout
+import java.awt.event.ActionListener
 import javax.swing.BorderFactory
+import javax.swing.JButton
+import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 
@@ -44,6 +47,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private val hotspotVulnerabilityLabel = JBLabel("Review priority: ")
     private val hotspotVulnerabilityValueLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
+    private val changeStatusButton = JButton()
 
     init {
         add(ruleTypeIcon, HorizontalLayout.LEFT)
@@ -64,6 +68,18 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         add(ruleKeyLabel.apply {
             border = JBUI.Borders.emptyLeft(10)
         }, HorizontalLayout.CENTER)
+
+        changeStatusButton.addActionListener(ActionListener {
+            println("Change status")
+        })
+
+        changeStatusButton.text = "Change status"
+
+        val changeStatusPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
+        changeStatusPanel.apply { border = BorderFactory.createEmptyBorder(0, 15, 0, 0) }
+
+        changeStatusPanel.add(changeStatusButton.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 0) })
+        add(changeStatusPanel)
     }
 
     fun clear() {
@@ -74,6 +90,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         ruleSeverityLabel.text = ""
         hotspotVulnerabilityLabel.isVisible = false
         hotspotVulnerabilityValueLabel.text = ""
+        changeStatusButton.isVisible = false
     }
 
     fun update(ruleKey: String, type: RuleType, severity: IssueSeverity) {
@@ -93,6 +110,8 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
             setCopyable(true)
             background = SonarLintIcons.colorsByProbability[vulnerabilityProbability]
         }
+
+        changeStatusButton.isVisible = true
     }
 
     private fun updateCommonFields(type: RuleType, ruleKey: String) {
