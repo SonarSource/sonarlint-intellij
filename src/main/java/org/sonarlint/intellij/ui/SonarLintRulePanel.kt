@@ -297,7 +297,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
 
             }
             SwingHelper.setHtml(securityHotspotHeaderMessage, htmlStringBuilder.toString(), JBUI.CurrentTheme.ContextHelp.FOREGROUND)
-            headerPanel.update(ruleDescription.key, ruleDescription.type, finding.vulnerabilityProbability)
+            headerPanel.update(project, serverFindingKey, finding.file, ruleDescription.key, ruleDescription.type, finding.vulnerabilityProbability)
         } else {
             headerPanel.update(ruleDescription.key, ruleDescription.type, ruleDescription.severity)
         }

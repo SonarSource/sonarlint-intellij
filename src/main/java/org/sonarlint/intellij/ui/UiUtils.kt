@@ -20,17 +20,23 @@
 package org.sonarlint.intellij.ui
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 
 class UiUtils {
     companion object {
         @JvmStatic
         fun runOnUiThread(project: Project, runnable: Runnable) {
-            ApplicationManager.getApplication().invokeLater {
+            runOnUiThread(project, runnable, ModalityState.defaultModalityState())
+        }
+
+        @JvmStatic
+        fun runOnUiThread(project: Project, runnable: Runnable, modality: ModalityState) {
+            ApplicationManager.getApplication().invokeLater({
                 if (!project.isDisposed) {
                     runnable.run()
                 }
-            }
+            }, modality)
         }
 
         @JvmStatic

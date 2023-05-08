@@ -19,7 +19,9 @@
  */
 package org.sonarlint.intellij.ui.ruledescription
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -27,12 +29,12 @@ import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import java.awt.Color
 import java.awt.FlowLayout
-import java.awt.event.ActionListener
 import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -69,10 +71,6 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
             border = JBUI.Borders.emptyLeft(10)
         }, HorizontalLayout.CENTER)
 
-        changeStatusButton.addActionListener(ActionListener {
-            println("Change status")
-        })
-
         changeStatusButton.text = "Change status"
 
         val changeStatusPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
@@ -101,7 +99,14 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         ruleSeverityLabel.setCopyable(true)
     }
 
-    fun update(ruleKey: String, type: RuleType, vulnerabilityProbability: VulnerabilityProbability) {
+    fun update(
+        project: Project,
+        securityHotspotKey: String?,
+        file: VirtualFile,
+        ruleKey: String,
+        type: RuleType,
+        vulnerabilityProbability: VulnerabilityProbability,
+    ) {
         clear()
         updateCommonFields(type, ruleKey)
         hotspotVulnerabilityLabel.isVisible = true
@@ -111,7 +116,12 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
             background = SonarLintIcons.colorsByProbability[vulnerabilityProbability]
         }
 
-        changeStatusButton.isVisible = true
+        securityHotspotKey?.let {
+            changeStatusButton.addActionListener {
+                ReviewSecurityHotspotAction().openReviewingDialog(project, securityHotspotKey, file)
+            }
+            changeStatusButton.isVisible = true
+        }
     }
 
     private fun updateCommonFields(type: RuleType, ruleKey: String) {
