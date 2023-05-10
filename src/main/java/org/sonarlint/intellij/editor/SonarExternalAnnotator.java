@@ -34,12 +34,16 @@ import java.util.ArrayList;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
+import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
+import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
@@ -73,6 +77,20 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         }
       });
 
+    var toolWindowService = getService(project, SonarLintToolWindow.class);
+    if (toolWindowService.isSecurityHotspotsTabActive()) {
+      var securityHotspots = issueManager.getSecurityHotspotsForFile(file.getVirtualFile());
+      securityHotspots.stream()
+        .filter(securityHotspot -> !securityHotspot.isResolved())
+        .forEach(securityHotspot -> {
+          // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
+          var validTextRange = securityHotspot.getValidTextRange();
+          if (validTextRange != null) {
+            addAnnotation(project, securityHotspot, validTextRange, holder);
+          }
+        });
+    }
+
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       getService(project, TaintVulnerabilitiesPresenter.class).getCurrentVulnerabilitiesByFile()
         .getOrDefault(file.getVirtualFile(), emptyList())
@@ -101,15 +119,21 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private static void addAnnotation(Project project, LiveIssue issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
+  private static void addAnnotation(Project project, LiveFinding issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
     var intentionActions = new ArrayList<IntentionAction>();
     intentionActions.add(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
     if (!getSettingsFor(project).isBindingEnabled()) {
       intentionActions.add(new DisableRuleIntentionAction(issue.getRuleKey()));
     }
-    issue.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(issue, c)));
+
     if (shouldSuggestQuickFix(issue)) {
       issue.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
+    }
+
+    if (issue instanceof LiveSecurityHotspot) {
+      intentionActions.add(new ReviewSecurityHotspotAction(issue.getServerFindingKey()));
+    } else {
+      issue.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction((LiveIssue) issue, c)));
     }
 
     var annotationBuilder = annotationHolder
@@ -124,11 +148,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     } else {
       annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(issue.getUserSeverity()));
     }
+
     annotationBuilder.highlightType(getType(issue.getUserSeverity()))
       .create();
   }
 
-  private static boolean shouldSuggestQuickFix(LiveIssue issue) {
+  private static boolean shouldSuggestQuickFix(LiveFinding issue) {
     return !SILENCED_QUICK_FIXABLE_RULE_KEYS.contains(issue.getRuleKey());
   }
 

@@ -19,15 +19,20 @@
  */
 package org.sonarlint.intellij.actions
 
+import com.intellij.codeInsight.intention.IntentionAction
+import com.intellij.codeInsight.intention.PriorityAction
 import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Iconable
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -36,9 +41,9 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
 
-class ReviewSecurityHotspotAction : AbstractSonarAction(
+class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null) : AbstractSonarAction(
     "Review Security Hotspot", "Review Security Hotspot Status on SonarQube", AllIcons.Actions.BuildLoadChanges
-) {
+), IntentionAction, PriorityAction, Iconable {
 
     companion object {
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Security Hotspot Review")
@@ -53,13 +58,13 @@ class ReviewSecurityHotspotAction : AbstractSonarAction(
         val project = e.project ?: return
         val securityHotspot =
             e.getData(SECURITY_HOTSPOT_KEY) ?: return displayErrorNotification(project, "The security hotspot could not be found.")
+        serverFindingKey = securityHotspot.serverFindingKey
 
-        securityHotspot.serverFindingKey?.let {
-            openReviewingDialog(project, it, securityHotspot.file)
-        }
+        openReviewingDialog(project, securityHotspot.file)
     }
 
-    fun openReviewingDialog(project: Project, securityHotspotKey: String, file: VirtualFile) {
+    fun openReviewingDialog(project: Project, file: VirtualFile) {
+        serverFindingKey ?: return displayErrorNotification(project, "Could not find the security hotspot on SonarQube.")
         val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
             project, "No module could be found for this file."
         )
@@ -74,7 +79,7 @@ class ReviewSecurityHotspotAction : AbstractSonarAction(
                 if (listStatuses.isEmpty()) {
                     displayErrorNotification(project, "The statuses for this security hotspot could not be retrieved.")
                 } else {
-                    if (ReviewSecurityHotspotDialog(project, listStatuses, module, securityHotspotKey).showAndGet()) {
+                    if (ReviewSecurityHotspotDialog(project, listStatuses, module, serverFindingKey!!).showAndGet()) {
                         displaySuccessfulNotification(project)
                         SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
                             .removeSecurityHotspotFromList(securityHotspotKey)
@@ -104,5 +109,23 @@ class ReviewSecurityHotspotAction : AbstractSonarAction(
         notification.isImportant = true
         notification.notify(project)
     }
+
+    override fun startInWriteAction() = false
+
+    override fun getText() = "SonarLint: Change security hotspot status"
+
+    override fun getFamilyName() = "SonarLint review"
+
+    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = serverFindingKey != null
+
+    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
+        file?.let {
+            openReviewingDialog(project, it.virtualFile)
+        }
+    }
+
+    override fun getPriority() = PriorityAction.Priority.NORMAL
+
+    override fun getIcon(flags: Int) = AllIcons.Actions.BuildLoadChanges
 
 }

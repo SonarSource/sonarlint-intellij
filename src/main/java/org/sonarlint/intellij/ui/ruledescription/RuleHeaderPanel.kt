@@ -118,7 +118,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
 
         securityHotspotKey?.let {
             changeStatusButton.addActionListener {
-                ReviewSecurityHotspotAction().openReviewingDialog(project, securityHotspotKey, file)
+                ReviewSecurityHotspotAction(securityHotspotKey).openReviewingDialog(project, file)
             }
             changeStatusButton.isVisible = true
         }
