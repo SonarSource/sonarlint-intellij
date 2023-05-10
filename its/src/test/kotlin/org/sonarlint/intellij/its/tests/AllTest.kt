@@ -130,7 +130,11 @@ class AllTest : BaseUiTest() {
             searchRequest.projects = listOf(MODULE_PROJECT_KEY)
             val response = adminWsClient.issues().search(searchRequest)
             val firstIssueKey = response.issuesList[0].key
-            adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
+            val responseSuppression = adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
+            println("""
+                First issue found: line[${response.issuesList[0].line}] key[$firstIssueKey]
+                Response of suppression: line[${responseSuppression.issue.line}] key[${responseSuppression.issue.key}]
+            """.trimIndent())
         }
 
         @Test
@@ -159,10 +163,10 @@ class AllTest : BaseUiTest() {
 
             openFile("mod/src/HelloModule.scala", "HelloModule.scala")
 
-   /*         verifyCurrentFileTabContainsMessages(
+            verifyCurrentFileTabContainsMessages(
                 "Found 1 issue in 1 file",
                 "HelloModule.scala",
-            )*/
+            )
             clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
             verifyRuleDescriptionTabContains("Methods should not be empty")
 
