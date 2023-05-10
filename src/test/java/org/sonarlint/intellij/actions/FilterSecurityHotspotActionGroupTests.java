@@ -34,13 +34,14 @@ import static org.mockito.Mockito.when;
 
 class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests {
 
-  private final FilterSecurityHotspotActionGroup actionGroup = new FilterSecurityHotspotActionGroup("title", "description", null);
+  private FilterSecurityHotspotActionGroup actionGroup;
   private SonarLintToolWindow toolWindow;
 
   @BeforeEach
   void prepare() {
     toolWindow = mock(SonarLintToolWindow.class);
     replaceProjectService(SonarLintToolWindow.class, toolWindow);
+    actionGroup = new FilterSecurityHotspotActionGroup("title", "description", null);
   }
 
   @Test

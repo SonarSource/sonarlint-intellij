@@ -24,7 +24,7 @@ public class FilterSecurityHotspotSettings {
   private SecurityHotspotFilters currentlySelectedFilter;
 
   public FilterSecurityHotspotSettings() {
-    currentlySelectedFilter = SecurityHotspotFilters.SHOW_ALL;
+    currentlySelectedFilter = SecurityHotspotFilters.DEFAULT_FILTER;
   }
 
   public SecurityHotspotFilters getCurrentlySelectedFilter() {
