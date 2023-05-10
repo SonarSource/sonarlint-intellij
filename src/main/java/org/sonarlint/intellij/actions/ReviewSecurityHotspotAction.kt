@@ -76,6 +76,8 @@ class ReviewSecurityHotspotAction : AbstractSonarAction(
                 } else {
                     if (ReviewSecurityHotspotDialog(project, listStatuses, module, securityHotspotKey).showAndGet()) {
                         displaySuccessfulNotification(project)
+                        SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
+                            .removeSecurityHotspotFromList(securityHotspotKey)
                     }
                 }
             }.exceptionally { error ->
@@ -96,7 +98,8 @@ class ReviewSecurityHotspotAction : AbstractSonarAction(
     private fun displaySuccessfulNotification(project: Project) {
         val notification = GROUP.createNotification(
             "<b>SonarLint - Security hotspot review</b>",
-            "The security hotspot status was successfully updated!", NotificationType.INFORMATION
+            "The security hotspot status was successfully updated!",
+            NotificationType.INFORMATION
         )
         notification.isImportant = true
         notification.notify(project)
