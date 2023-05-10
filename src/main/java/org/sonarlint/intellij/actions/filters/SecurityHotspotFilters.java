@@ -27,6 +27,7 @@ public enum SecurityHotspotFilters {
   LOCAL_ONLY("Local Only"),
   EXISTING_ON_SONARQUBE("Existing On SonarQube");
 
+  public static final SecurityHotspotFilters DEFAULT_FILTER = SHOW_ALL;
   private final String title;
 
   SecurityHotspotFilters(String title) {
