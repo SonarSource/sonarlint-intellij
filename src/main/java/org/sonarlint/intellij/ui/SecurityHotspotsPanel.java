@@ -87,6 +87,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private SecurityHotspotsLocalDetectionSupport status;
   private int securityHotspotCount;
   private JLabel notSupportedLabel;
+  private SecurityHotspotFilters currentFilter;
 
   public SecurityHotspotsPanel(Project project) {
     super(false, true);
@@ -159,7 +160,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       TreeUtil.expandAll(securityHotspotTree);
       displaySecurityHotspots();
 
-      return securityHotspotCount;
+      return applyCurrentFiltering();
     } else {
       return 0;
     }
@@ -271,8 +272,18 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return false;
   }
 
-  public void filterSecurityHotspots(SecurityHotspotFilters filter) {
-    securityHotspotTreeBuilder.filterSecurityHotspots(filter);
+  private int applyCurrentFiltering() {
+    return securityHotspotTreeBuilder.applyCurrentFiltering();
+  }
+
+  public int filterSecurityHotspots(SecurityHotspotFilters filter) {
+    return securityHotspotTreeBuilder.filterSecurityHotspots(filter);
+  }
+
+  public int removeSecurityHotspotFromList(String securityHotspotKey) {
+    securityHotspotCount--;
+    displaySecurityHotspots();
+    return securityHotspotTreeBuilder.removeSecurityHotspot(securityHotspotKey);
   }
 
   @Override

@@ -53,9 +53,11 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private static final Comparator<LiveSecurityHotspotNode> SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR = new LiveSecurityHotspotNodeComparator();
 
   private final FindingTreeIndex index;
+  private SecurityHotspotFilters currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
   private DefaultTreeModel model;
   private SummaryNode summary;
   private List<LiveSecurityHotspotNode> nonFilteredNodes;
+  private int filteredCount;
 
   public SecurityHotspotTreeModelBuilder() {
     this.index = new FindingTreeIndex();
@@ -69,6 +71,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     nonFilteredNodes = new ArrayList<>();
+    filteredCount = 0;
     return model;
   }
 
@@ -119,7 +122,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     if (newFile) {
       var parent = getFilesParent();
       var idx = parent.insertFileNode(fNode, new FileNodeComparator());
-      var newIdx = new int[]{idx};
+      var newIdx = new int[] {idx};
       model.nodesWereInserted(parent, newIdx);
       model.nodeChanged(parent);
     } else {
@@ -213,7 +216,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     for (var securityHotspot : securityHotspotsPointer) {
       var iNode = new LiveSecurityHotspotNode(securityHotspot, true);
       var idx = summary.insertLiveSecurityHotspotNode(iNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
-      var newIdx = new int[]{idx};
+      var newIdx = new int[] {idx};
       model.nodesWereInserted(summary, newIdx);
       model.nodeChanged(summary);
     }
@@ -227,19 +230,39 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     });
   }
 
-  public void filterSecurityHotspots(SecurityHotspotFilters filter) {
+  public int applyCurrentFiltering() {
+    return filterSecurityHotspots(currentFilter);
+  }
+
+  public int filterSecurityHotspots(SecurityHotspotFilters filter) {
+    currentFilter = filter;
+    var currentlyFilteredCount = 0;
     Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
 
     for (var securityHotspotNode : nonFilteredNodes) {
       if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
         var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
-        var newIdx = new int[]{idx};
+        var newIdx = new int[] {idx};
         model.nodesWereInserted(summary, newIdx);
         model.nodeChanged(summary);
+        currentlyFilteredCount++;
       }
     }
 
     model.reload();
+    filteredCount = currentlyFilteredCount;
+    return filteredCount;
+  }
+
+  public int removeSecurityHotspot(String securityHotspotKey) {
+    for (var securityHotspotNode : nonFilteredNodes) {
+      var serverFindingKey = securityHotspotNode.getHotspot().getServerFindingKey();
+      if (serverFindingKey != null && serverFindingKey.equals(securityHotspotKey)) {
+        nonFilteredNodes.remove(securityHotspotNode);
+        break;
+      }
+    }
+    return applyCurrentFiltering();
   }
 
   public void clear() {
@@ -261,7 +284,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   private static class FileNodeComparator implements Comparator<FileNode> {
-    @Override public int compare(FileNode o1, FileNode o2) {
+    @Override
+    public int compare(FileNode o1, FileNode o2) {
       int c = o1.file().getName().compareTo(o2.file().getName());
       if (c != 0) {
         return c;
@@ -272,7 +296,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   static class LiveSecurityHotspotNodeComparator implements Comparator<LiveSecurityHotspotNode> {
-    @Override public int compare(LiveSecurityHotspotNode o1, LiveSecurityHotspotNode o2) {
+    @Override
+    public int compare(LiveSecurityHotspotNode o1, LiveSecurityHotspotNode o2) {
       int c = o1.getHotspot().getVulnerabilityProbability().compareTo(o2.getHotspot().getVulnerabilityProbability());
       if (c != 0) {
         return c;
@@ -294,7 +319,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   static class SecurityHotspotComparator implements Comparator<LiveSecurityHotspot> {
-    @Override public int compare(@Nonnull LiveSecurityHotspot o1, @Nonnull LiveSecurityHotspot o2) {
+    @Override
+    public int compare(@Nonnull LiveSecurityHotspot o1, @Nonnull LiveSecurityHotspot o2) {
       var vulnerabilityCompare = Ordering.explicit(VULNERABILITY_PROBABILITIES)
         .compare(o1.getVulnerabilityProbability(), o2.getVulnerabilityProbability());
 

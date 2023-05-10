@@ -68,11 +68,21 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::clear);
   }
 
+  public void removeSecurityHotspotFromList(String securityHotspotKey) {
+    var content = getSecurityHotspotContent();
+    if (content != null) {
+      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
+      var hotspotsCount = hotspotsPanel.removeSecurityHotspotFromList(securityHotspotKey);
+      content.setDisplayName(buildTabName(hotspotsCount, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+    }
+  }
+
   public void filterSecurityHotspotTab(SecurityHotspotFilters filter) {
     var content = getSecurityHotspotContent();
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      hotspotsPanel.filterSecurityHotspots(filter);
+      var hotspotsCount = hotspotsPanel.filterSecurityHotspots(filter);
+      content.setDisplayName(buildTabName(hotspotsCount, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
   }
 
