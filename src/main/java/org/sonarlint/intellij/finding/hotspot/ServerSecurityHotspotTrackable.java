@@ -76,7 +76,7 @@ public class ServerSecurityHotspotTrackable implements Trackable {
 
   @Override
   public boolean isResolved() {
-    return serverHotspot.isResolved();
+    return serverHotspot.getStatus().isResolved();
   }
 
   @Override
