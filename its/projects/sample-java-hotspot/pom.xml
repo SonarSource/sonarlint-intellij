@@ -8,7 +8,7 @@
   <description>Sample project for ITs</description>
   
   <properties>
-    <old.version>${pom.version}</old.version>
+    <old.version>${project.version}</old.version>
     <sonar.projectKey>sample-java-hotspot</sonar.projectKey>
   </properties>
 

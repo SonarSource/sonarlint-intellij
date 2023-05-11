@@ -30,7 +30,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.anActionLink
+import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
@@ -51,13 +53,16 @@ class SecurityHotspotTabTest : BaseUiTest() {
     }
 
     @Test
-    fun should_display_security_hotspots() = uiTest {
+    fun should_display_security_hotspots_and_review_it_successfully() = uiTest {
         openExistingProject("sample-java-hotspot", true)
         bindProjectFromPanel()
 
         openFile("src/main/java/foo/Foo.java", "Foo.java")
-
         verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
+
+        openReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
+        changeStatusAndPressChange(this, "Acknowledged")
+        verifyStatusWasSuccessfullyChanged(this, "SonarLint - Security hotspot review")
     }
 
     private fun bindProjectFromPanel() {
@@ -75,6 +80,51 @@ class SecurityHotspotTabTest : BaseUiTest() {
                     token,
                     SECURITY_HOTSPOT_PROJECT_KEY
                 )
+            }
+        }
+    }
+
+    private fun openReviewDialogFromList(remoteRobot: RemoteRobot, securityHotspotMessage: String) {
+        with(remoteRobot) {
+            idea {
+                toolWindow("SonarLint") {
+                    ensureOpen()
+                    tabTitleContains("Security Hotspots") { select() }
+                    content("SecurityHotspotTree") {
+                        findText(securityHotspotMessage).rightClick()
+                    }
+                }
+                actionMenuItem("Review Security Hotspot") {
+                    click()
+                }
+            }
+        }
+    }
+
+    private fun changeStatusAndPressChange(remoteRobot: RemoteRobot, status: String) {
+        with(remoteRobot) {
+            idea {
+                dialog("Change Security Hotspot Status On SonarQube") {
+                    content(status) {
+                        click()
+                    }
+                    pressButton("Change status")
+                }
+            }
+        }
+    }
+
+    private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot, title: String) {
+        with(remoteRobot) {
+            idea {
+                notification(title) {
+                    hasText("The security hotspot status was successfully updated!")
+                }
+                toolWindow("SonarLint") {
+                    content("SecurityHotspotsPanel") {
+                        hasText("No security hotspot found.")
+                    }
+                }
             }
         }
     }

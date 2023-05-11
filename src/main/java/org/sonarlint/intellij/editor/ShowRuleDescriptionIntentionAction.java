@@ -39,9 +39,11 @@ import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 public class ShowRuleDescriptionIntentionAction implements IntentionAction, PriorityAction, Iconable {
 
   private final String ruleKey;
+  private final long findingUid;
 
-  public ShowRuleDescriptionIntentionAction(String ruleKey) {
+  public ShowRuleDescriptionIntentionAction(String ruleKey, long findingUid) {
     this.ruleKey = ruleKey;
+    this.findingUid = findingUid;
   }
 
   @Override
@@ -67,14 +69,14 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
       // passed here to be a completely virtual 'PHP_REGEXP_FILE' instance. However, the editor holds the reference to the actual file.
       actualFile = ((EditorEx) editor).getVirtualFile();
     }
-    var issueManager = SonarLintUtils.getService(project, FindingsCache.class);
-    var liveIssues = issueManager.getIssuesForFile(actualFile);
-    var liveIssue = liveIssues.stream().filter(issue -> issue.getRuleKey().equals(ruleKey)).findFirst();
-    if (liveIssue.isEmpty()) {
+    var findingCache = SonarLintUtils.getService(project, FindingsCache.class);
+    var liveFindings = findingCache.getFindingsForFile(actualFile);
+    var liveFinding = liveFindings.stream().filter(finding -> finding.uid() == findingUid).findFirst();
+    if (liveFinding.isEmpty()) {
       return;
     }
     runOnUiThread(project, () -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
-      .showIssueDescription(liveIssue.get()));
+      .showFindingDescription(liveFinding.get()));
   }
 
   @Override
