@@ -33,8 +33,6 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
@@ -62,13 +60,7 @@ public class ShowLocationsIntentionAction implements IntentionAction, PriorityAc
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(finding);
     var sonarLintToolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
-    runOnUiThread(project, () -> {
-      if (finding instanceof LiveIssue) {
-        sonarLintToolWindow.showIssueLocations((LiveIssue) finding);
-      } else {
-        sonarLintToolWindow.showSecurityHotspotLocations((LiveSecurityHotspot) finding);
-      }
-    });
+    runOnUiThread(project, () -> sonarLintToolWindow.showFindingLocations(finding));
   }
 
   @Override public boolean startInWriteAction() {

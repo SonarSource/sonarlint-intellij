@@ -294,6 +294,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     detailsTab.setSelectedIndex(LOCATIONS_TAB_INDEX);
   }
 
+  public void selectRulesTab() {
+    detailsTab.setSelectedIndex(RULE_TAB_INDEX);
+  }
+
   @Override
   // called automatically because the panel is one of the content of the tool window
   public void dispose() {

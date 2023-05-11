@@ -38,6 +38,7 @@ import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -49,6 +50,7 @@ import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
@@ -220,8 +222,28 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     }
   }
 
+  public void showFindingDescription(LiveFinding liveFinding) {
+    if (liveFinding.getType() == RuleType.SECURITY_HOTSPOT) {
+      showSecurityHotspotDescription((LiveSecurityHotspot) liveFinding);
+    } else {
+      showIssueDescription((LiveIssue) liveFinding);
+    }
+  }
+
   public void showIssueDescription(LiveIssue liveIssue) {
     showIssue(liveIssue, CurrentFilePanel::selectRulesTab);
+  }
+
+  public void showSecurityHotspotDescription(LiveSecurityHotspot liveSecurityHotspot) {
+    showSecurityHotspot(liveSecurityHotspot, SecurityHotspotsPanel::selectRulesTab);
+  }
+
+  public void showFindingLocations(LiveFinding liveFinding) {
+    if (liveFinding.getType() == RuleType.SECURITY_HOTSPOT) {
+      showSecurityHotspotLocations((LiveSecurityHotspot) liveFinding);
+    } else {
+      showIssueLocations((LiveIssue) liveFinding);
+    }
   }
 
   public void showIssueLocations(LiveIssue liveIssue) {

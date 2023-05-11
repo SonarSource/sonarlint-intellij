@@ -120,7 +120,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   private static void addAnnotation(Project project, LiveFinding finding, TextRange validTextRange, AnnotationHolder annotationHolder) {
     var intentionActions = new ArrayList<IntentionAction>();
-    intentionActions.add(new ShowRuleDescriptionIntentionAction(finding.getRuleKey()));
+    intentionActions.add(new ShowRuleDescriptionIntentionAction(finding.getRuleKey(), finding.uid()));
     if (!getSettingsFor(project).isBindingEnabled()) {
       intentionActions.add(new DisableRuleIntentionAction(finding.getRuleKey()));
     }
