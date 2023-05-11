@@ -40,7 +40,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
@@ -119,37 +118,37 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private static void addAnnotation(Project project, LiveFinding issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
+  private static void addAnnotation(Project project, LiveFinding finding, TextRange validTextRange, AnnotationHolder annotationHolder) {
     var intentionActions = new ArrayList<IntentionAction>();
-    intentionActions.add(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
+    intentionActions.add(new ShowRuleDescriptionIntentionAction(finding.getRuleKey()));
     if (!getSettingsFor(project).isBindingEnabled()) {
-      intentionActions.add(new DisableRuleIntentionAction(issue.getRuleKey()));
+      intentionActions.add(new DisableRuleIntentionAction(finding.getRuleKey()));
     }
 
-    if (shouldSuggestQuickFix(issue)) {
-      issue.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
+    if (shouldSuggestQuickFix(finding)) {
+      finding.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, finding.getRuleKey())));
     }
 
-    if (issue instanceof LiveSecurityHotspot) {
-      intentionActions.add(new ReviewSecurityHotspotAction(issue.getServerFindingKey()));
-    } else {
-      issue.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction((LiveIssue) issue, c)));
+    if (finding instanceof LiveSecurityHotspot) {
+      intentionActions.add(new ReviewSecurityHotspotAction(finding.getServerFindingKey()));
     }
+
+    finding.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(finding, c)));
 
     var annotationBuilder = annotationHolder
-      .newAnnotation(getSeverity(issue.getUserSeverity()), issue.getMessage())
+      .newAnnotation(getSeverity(finding.getUserSeverity()), finding.getMessage())
       .range(validTextRange);
     for (IntentionAction action : intentionActions) {
       annotationBuilder = annotationBuilder.withFix(action);
     }
 
-    if (issue.getRange() == null) {
+    if (finding.getRange() == null) {
       annotationBuilder = annotationBuilder.fileLevel();
     } else {
-      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(issue.getUserSeverity()));
+      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(finding.getUserSeverity()));
     }
 
-    annotationBuilder.highlightType(getType(issue.getUserSeverity()))
+    annotationBuilder.highlightType(getType(finding.getUserSeverity()))
       .create();
   }
 

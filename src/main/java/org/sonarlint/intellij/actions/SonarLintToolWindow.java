@@ -211,12 +211,25 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     selectTab.accept(currentFilePanel);
   }
 
+  private void showSecurityHotspot(LiveSecurityHotspot liveSecurityHotspot, Consumer<SecurityHotspotsPanel> selectTab) {
+    var content = getSecurityHotspotContent();
+    if (content != null) {
+      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
+      hotspotsPanel.selectAndHighlightSecurityHotspot(liveSecurityHotspot);
+      selectTab.accept(hotspotsPanel);
+    }
+  }
+
   public void showIssueDescription(LiveIssue liveIssue) {
     showIssue(liveIssue, CurrentFilePanel::selectRulesTab);
   }
 
   public void showIssueLocations(LiveIssue liveIssue) {
     showIssue(liveIssue, CurrentFilePanel::selectLocationsTab);
+  }
+
+  public void showSecurityHotspotLocations(LiveSecurityHotspot liveSecurityHotspot) {
+    showSecurityHotspot(liveSecurityHotspot, SecurityHotspotsPanel::selectLocationsTab);
   }
 
   public boolean trySelectSecurityHotspot(String securityHotspotKey) {
@@ -259,6 +272,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
   @Override
   public void selectionChanged(@NotNull ContentManagerEvent event) {
+    // Introduced in the context of security hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
   }
 }

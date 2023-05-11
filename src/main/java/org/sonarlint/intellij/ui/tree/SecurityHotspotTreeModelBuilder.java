@@ -154,7 +154,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
   }
 
-  public LiveSecurityHotspot findHotspot(String securityHotspotKey) {
+  public LiveSecurityHotspot findHotspotByKey(String securityHotspotKey) {
     var nodes = summary.children();
     while (nodes.hasMoreElements()) {
       var securityHotspotNode = (LiveSecurityHotspotNode) nodes.nextElement();

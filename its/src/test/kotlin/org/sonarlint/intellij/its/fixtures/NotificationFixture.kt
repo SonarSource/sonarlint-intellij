@@ -36,8 +36,6 @@ fun RemoteRobot.notification(
     val notification = find<NotificationFixture>(NotificationFixture.byTitle(title), timeout)
 
     notification.apply(function)
-
-    notification
 }
 
 @FixtureName("Notification")

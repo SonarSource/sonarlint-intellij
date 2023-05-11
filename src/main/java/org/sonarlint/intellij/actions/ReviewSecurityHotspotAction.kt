@@ -82,7 +82,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null) 
                     if (ReviewSecurityHotspotDialog(project, listStatuses, module, serverFindingKey!!).showAndGet()) {
                         displaySuccessfulNotification(project)
                         SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
-                            .removeSecurityHotspotFromList(securityHotspotKey)
+                            .removeSecurityHotspotFromList(serverFindingKey!!)
                     }
                 }
             }.exceptionally { error ->

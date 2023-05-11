@@ -120,6 +120,11 @@ class SecurityHotspotTabTest : BaseUiTest() {
                 notification(title) {
                     hasText("The security hotspot status was successfully updated!")
                 }
+                toolWindow("SonarLint") {
+                    content("SecurityHotspotsPanel") {
+                        hasText("No security hotspot found.")
+                    }
+                }
             }
         }
     }

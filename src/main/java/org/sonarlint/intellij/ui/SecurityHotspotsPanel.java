@@ -264,7 +264,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public boolean trySelectSecurityHotspot(String securityHotspotKey) {
-    var foundHotspot = securityHotspotTreeBuilder.findHotspot(securityHotspotKey);
+    var foundHotspot = securityHotspotTreeBuilder.findHotspotByKey(securityHotspotKey);
     if (foundHotspot != null) {
       updateOnSelect(foundHotspot);
       return true;
@@ -276,6 +276,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return securityHotspotTreeBuilder.applyCurrentFiltering();
   }
 
+  public void selectAndHighlightSecurityHotspot(LiveSecurityHotspot securityHotspot) {
+    updateOnSelect(securityHotspot);
+  }
+
   public int filterSecurityHotspots(SecurityHotspotFilters filter) {
     return securityHotspotTreeBuilder.filterSecurityHotspots(filter);
   }
@@ -284,6 +288,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     securityHotspotCount--;
     displaySecurityHotspots();
     return securityHotspotTreeBuilder.removeSecurityHotspot(securityHotspotKey);
+  }
+
+  public void selectLocationsTab() {
+    detailsTab.setSelectedIndex(LOCATIONS_TAB_INDEX);
   }
 
   @Override
