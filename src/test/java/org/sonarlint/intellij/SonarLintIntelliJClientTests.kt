@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
-import org.sonarsource.sonarlint.core.clientapi.client.SuggestBindingParams
+import org.sonarsource.sonarlint.core.clientapi.client.binding.SuggestBindingParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
 import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
