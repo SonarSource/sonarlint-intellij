@@ -34,8 +34,15 @@ import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder
 import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.http.ContentType
+import org.apache.hc.core5.http.EntityDetails
+import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.HttpResponse
+import org.apache.hc.core5.http.HttpResponseInterceptor
+import org.apache.hc.core5.http.HttpStatus
+import org.apache.hc.core5.http.Method
 import org.apache.hc.core5.http.nio.support.BasicRequestProducer
+import org.apache.hc.core5.http.protocol.HttpContext
+import org.apache.hc.core5.http.protocol.HttpCoreContext
 import org.apache.hc.core5.http2.HttpVersionPolicy
 import org.apache.hc.core5.reactor.ssl.TlsDetails
 import org.apache.hc.core5.util.Timeout
@@ -89,7 +96,7 @@ class ApacheHttpClient private constructor(
 
                 override fun start(
                     response: HttpResponse,
-                    contentType: ContentType
+                    contentType: ContentType,
                 ) {
                     if (response.code < 200 || response.code >= 300) {
                         connectionListener.onError(response.code)
@@ -218,6 +225,7 @@ class ApacheHttpClient private constructor(
                                 .build())
                         .build()
                 )
+                .addResponseInterceptorFirst(RedirectInterceptor())
                 .setUserAgent("SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version)
                 // SLI-629 - Force HTTP/1
                 .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_1)
@@ -238,5 +246,29 @@ class ApacheHttpClient private constructor(
         init {
             default.client.start()
         }
+    }
+}
+
+class RedirectInterceptor : HttpResponseInterceptor {
+    override fun process(response: HttpResponse, entity: EntityDetails?, context: HttpContext) {
+        alterResponseCodeIfNeeded(context, response)
+    }
+
+    private fun alterResponseCodeIfNeeded(context: HttpContext, response: HttpResponse) {
+        if (isPost(context)) {
+            // Apache handles some redirect statuses by transforming the POST into a GET
+            // we force a different status to keep the request a POST
+            val code = response.code
+            if (code == HttpStatus.SC_MOVED_PERMANENTLY) {
+                response.code = HttpStatus.SC_PERMANENT_REDIRECT
+            } else if (code == HttpStatus.SC_MOVED_TEMPORARILY || code == HttpStatus.SC_SEE_OTHER) {
+                response.code = HttpStatus.SC_TEMPORARY_REDIRECT
+            }
+        }
+    }
+
+    private fun isPost(context: HttpContext): Boolean {
+        val request = context.getAttribute(HttpCoreContext.HTTP_REQUEST) as HttpRequest?
+        return request != null && Method.POST.isSame(request.method)
     }
 }
