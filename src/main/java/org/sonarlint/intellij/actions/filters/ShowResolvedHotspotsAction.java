@@ -20,36 +20,30 @@
 package org.sonarlint.intellij.actions.filters;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class FilterSecurityHotspotAction extends AbstractSonarToggleAction {
+public class ShowResolvedHotspotsAction extends AbstractSonarToggleAction {
 
-  private final SecurityHotspotFilters filter;
-
-  public FilterSecurityHotspotAction(SecurityHotspotFilters filter) {
-    super(filter.getTitle());
-    this.filter = filter;
+  public ShowResolvedHotspotsAction() {
+    super("Show Resolved Security Hotspots", "Show resolved security hotspots", SonarLintIcons.type(RuleType.SECURITY_HOTSPOT));
   }
 
   @Override
-  public boolean isSelected(@NotNull AnActionEvent e) {
-    return FilterSecurityHotspotSettings.getCurrentlySelectedFilter() == filter;
+  public boolean isSelected(AnActionEvent event) {
+    return FilterSecurityHotspotSettings.isResolved();
   }
 
   @Override
-  public void setSelected(@NotNull AnActionEvent e, boolean enabled) {
-    var project = e.getProject();
-    if (project == null) {
-      return;
-    }
-
-    if (enabled && FilterSecurityHotspotSettings.getCurrentlySelectedFilter() != filter) {
-      getService(project, SonarLintToolWindow.class).filterSecurityHotspotTab(filter);
-      FilterSecurityHotspotSettings.setCurrentlySelectedFilter(filter);
+  public void setSelected(AnActionEvent event, boolean flag) {
+    var p = event.getProject();
+    if (p != null) {
+      FilterSecurityHotspotSettings.setResolved(flag);
+      getService(p, SonarLintToolWindow.class).filterSecurityHotspotTab(FilterSecurityHotspotSettings.getCurrentlySelectedFilter());
     }
   }
 
