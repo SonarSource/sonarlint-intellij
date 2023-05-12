@@ -23,14 +23,13 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
-import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class ShowResolvedHotspotsAction extends AbstractSonarToggleAction {
 
   public ShowResolvedHotspotsAction() {
-    super("Show Resolved Security Hotspots", "Show resolved security hotspots", SonarLintIcons.type(RuleType.SECURITY_HOTSPOT));
+    super("Show Resolved Security Hotspots", "Show resolved security hotspots", SonarLintIcons.HOTSPOT_CHECKED);
   }
 
   @Override

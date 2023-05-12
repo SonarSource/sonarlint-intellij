@@ -45,7 +45,7 @@ import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 
 class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, private var status: HotspotReviewStatus? = null) :
     AbstractSonarAction(
-        "Review Security Hotspot", "Review Security Hotspot Status on SonarQube", AllIcons.Actions.BuildLoadChanges
+        "Review Security Hotspot", "Review Security Hotspot Status on SonarQube", null
     ), IntentionAction, PriorityAction, Iconable {
 
     companion object {
