@@ -80,6 +80,8 @@ object SonarLintIcons {
     val CONNECTED = getIcon("/images/connected.svg")
     @JvmField
     val CONNECTION_ERROR = getIcon("/images/io_error.svg")
+    @JvmField
+    val HOTSPOT_CHECKED = getIcon("/images/hotspot_checked.svg")
 
     private val SEVERITY_ICONS = mapOf(
         IssueSeverity.BLOCKER to getIcon("/images/severity/blocker.svg"),

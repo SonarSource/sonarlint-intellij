@@ -33,6 +33,7 @@ import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
+import org.sonarlint.intellij.actions.filters.ShowResolvedHotspotsAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 /**
@@ -50,6 +51,7 @@ public class SonarLintActions {
   private final AnAction analyzeChangedFilesAction;
   private final AnAction analyzeAllFilesAction;
   private final ActionGroup filterAction;
+  private final AnAction showResolvedHotspotAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -86,6 +88,7 @@ public class SonarLintActions {
     filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
       "Filter security hotspots based on SonarQube matches",
       AllIcons.General.Filter);
+    showResolvedHotspotAction = new ShowResolvedHotspotsAction();
   }
 
   public static SonarLintActions getInstance() {
@@ -124,4 +127,7 @@ public class SonarLintActions {
     return filterAction;
   }
 
+  public AnAction showResolvedHotspotAction() {
+    return showResolvedHotspotAction;
+  }
 }

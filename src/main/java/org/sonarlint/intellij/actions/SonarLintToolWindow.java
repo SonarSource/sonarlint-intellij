@@ -50,6 +50,7 @@ import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 
 public class SonarLintToolWindow implements ContentManagerListenerAdapter {
@@ -73,11 +74,11 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::clear);
   }
 
-  public void removeSecurityHotspotFromList(String securityHotspotKey) {
+  public void updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
     var content = getSecurityHotspotContent();
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      var hotspotsCount = hotspotsPanel.removeSecurityHotspotFromList(securityHotspotKey);
+      var hotspotsCount = hotspotsPanel.updateStatusAndApplyCurrentFiltering(securityHotspotKey, status);
       content.setDisplayName(buildTabName(hotspotsCount, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
   }
