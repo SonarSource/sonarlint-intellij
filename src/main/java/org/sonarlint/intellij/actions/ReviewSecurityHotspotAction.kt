@@ -40,10 +40,13 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
+import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 
-class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null) : AbstractSonarAction(
-    "Review Security Hotspot", "Review Security Hotspot Status on SonarQube", AllIcons.Actions.BuildLoadChanges
-), IntentionAction, PriorityAction, Iconable {
+class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, private var status: HotspotReviewStatus? = null) :
+    AbstractSonarAction(
+        "Review Security Hotspot", "Review Security Hotspot Status on SonarQube", null
+    ), IntentionAction, PriorityAction, Iconable {
 
     companion object {
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Security Hotspot Review")
@@ -59,12 +62,14 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null) 
         val securityHotspot =
             e.getData(SECURITY_HOTSPOT_KEY) ?: return displayErrorNotification(project, "The security hotspot could not be found.")
         serverFindingKey = securityHotspot.serverFindingKey
+        status = securityHotspot.status
 
         openReviewingDialog(project, securityHotspot.file)
     }
 
     fun openReviewingDialog(project: Project, file: VirtualFile) {
         serverFindingKey ?: return displayErrorNotification(project, "Could not find the security hotspot on SonarQube.")
+        status ?: return displayErrorNotification(project, "Could not find the current security hotspot status.")
         val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
             project, "No module could be found for this file."
         )
@@ -79,10 +84,9 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null) 
                 if (listStatuses.isEmpty()) {
                     displayErrorNotification(project, "The statuses for this security hotspot could not be retrieved.")
                 } else {
-                    if (ReviewSecurityHotspotDialog(project, listStatuses, module, serverFindingKey!!).showAndGet()) {
+                    val newStatus = HotspotStatus.valueOf(status!!.name)
+                    if (ReviewSecurityHotspotDialog(project, listStatuses, module, serverFindingKey!!, newStatus).showAndGet()) {
                         displaySuccessfulNotification(project)
-                        SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
-                            .removeSecurityHotspotFromList(serverFindingKey!!)
                     }
                 }
             }.exceptionally { error ->

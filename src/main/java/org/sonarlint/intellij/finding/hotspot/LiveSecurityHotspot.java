@@ -28,11 +28,14 @@ import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
+import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
 public class LiveSecurityHotspot extends LiveFinding {
   private final VulnerabilityProbability vulnerabilityProbability;
+  private HotspotReviewStatus status;
 
   public LiveSecurityHotspot(Issue issue, PsiFile psiFile, List<QuickFix> quickFixes) {
     this(issue, psiFile, null, null, quickFixes);
@@ -41,6 +44,7 @@ public class LiveSecurityHotspot extends LiveFinding {
   public LiveSecurityHotspot(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
     super(issue, psiFile, range, context, quickFixes);
     this.vulnerabilityProbability = issue.getVulnerabilityProbability().get();
+    this.status = HotspotReviewStatus.TO_REVIEW;
   }
 
   public VulnerabilityProbability getVulnerabilityProbability() {
@@ -55,4 +59,22 @@ public class LiveSecurityHotspot extends LiveFinding {
   public VirtualFile getFile() {
     return psiFile().getVirtualFile();
   }
+
+  public void setStatus(HotspotReviewStatus status) {
+    this.status = status;
+  }
+
+  public void setStatus(HotspotStatus status) {
+    this.status = HotspotReviewStatus.valueOf(status.name());
+  }
+
+  public HotspotReviewStatus getStatus() {
+    return status;
+  }
+
+  @Override
+  public boolean isResolved() {
+    return status.isResolved();
+  }
+
 }

@@ -29,10 +29,13 @@ import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
+import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import java.awt.FlowLayout
+import java.awt.event.ActionEvent
+import javax.swing.AbstractAction
 import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -67,8 +70,6 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
             border = JBUI.Borders.emptyLeft(10)
         }, HorizontalLayout.CENTER)
 
-        changeStatusButton.text = "Change status"
-
         val changeStatusPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
         changeStatusPanel.apply { border = BorderFactory.createEmptyBorder(0, 15, 0, 0) }
 
@@ -98,6 +99,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     fun update(
         project: Project,
         securityHotspotKey: String?,
+        status: HotspotReviewStatus,
         file: VirtualFile,
         ruleKey: String,
         type: RuleType,
@@ -113,8 +115,10 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         }
 
         securityHotspotKey?.let {
-            changeStatusButton.addActionListener {
-                ReviewSecurityHotspotAction(securityHotspotKey).openReviewingDialog(project, file)
+            changeStatusButton.action = object : AbstractAction("Change status") {
+                override fun actionPerformed(e: ActionEvent?) {
+                    ReviewSecurityHotspotAction(securityHotspotKey, status).openReviewingDialog(project, file)
+                }
             }
             changeStatusButton.isVisible = true
         }

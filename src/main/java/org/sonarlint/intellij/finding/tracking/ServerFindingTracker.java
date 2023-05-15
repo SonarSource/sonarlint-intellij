@@ -21,6 +21,8 @@ package org.sonarlint.intellij.finding.tracking;
 
 import java.util.Collection;
 import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.finding.hotspot.ServerSecurityHotspotTrackable;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
@@ -58,6 +60,9 @@ public class ServerFindingTracker {
     }
     if (liveFinding instanceof LiveIssue) {
       ((LiveIssue) liveFinding).setType(serverFinding.getType());
+    }
+    if (liveFinding instanceof LiveSecurityHotspot && serverFinding instanceof ServerSecurityHotspotTrackable) {
+      ((LiveSecurityHotspot) liveFinding).setStatus(((ServerSecurityHotspotTrackable) serverFinding).getStatus());
     }
   }
 

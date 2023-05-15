@@ -22,6 +22,7 @@ package org.sonarlint.intellij.finding.hotspot;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.finding.tracking.Trackable;
+import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
@@ -77,6 +78,10 @@ public class ServerSecurityHotspotTrackable implements Trackable {
   @Override
   public boolean isResolved() {
     return serverHotspot.getStatus().isResolved();
+  }
+
+  public HotspotReviewStatus getStatus() {
+    return serverHotspot.getStatus();
   }
 
   @Override

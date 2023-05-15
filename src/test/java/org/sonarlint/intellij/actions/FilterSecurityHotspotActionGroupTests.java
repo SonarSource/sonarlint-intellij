@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotAction;
+import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotSettings;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -34,14 +35,14 @@ import static org.mockito.Mockito.when;
 
 class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests {
 
-  private FilterSecurityHotspotActionGroup actionGroup;
+  private final FilterSecurityHotspotActionGroup actionGroup = new FilterSecurityHotspotActionGroup("title", "description", null);
   private SonarLintToolWindow toolWindow;
 
   @BeforeEach
   void prepare() {
     toolWindow = mock(SonarLintToolWindow.class);
     replaceProjectService(SonarLintToolWindow.class, toolWindow);
-    actionGroup = new FilterSecurityHotspotActionGroup("title", "description", null);
+    FilterSecurityHotspotSettings.setCurrentlySelectedFilter(SecurityHotspotFilters.DEFAULT_FILTER);
   }
 
   @Test

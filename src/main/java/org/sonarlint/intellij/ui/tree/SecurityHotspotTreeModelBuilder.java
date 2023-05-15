@@ -40,6 +40,7 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
 /**
@@ -234,11 +235,21 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     return filterSecurityHotspots(currentFilter);
   }
 
+  public int updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
+    for (var securityHotspotNode : nonFilteredNodes) {
+      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
+        securityHotspotNode.getHotspot().setStatus(status);
+        break;
+      }
+    }
+
+    return filterSecurityHotspots(currentFilter);
+  }
+
   public int filterSecurityHotspots(SecurityHotspotFilters filter) {
     currentFilter = filter;
     var currentlyFilteredCount = 0;
     Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
-
     for (var securityHotspotNode : nonFilteredNodes) {
       if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
         var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
@@ -254,17 +265,6 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     return filteredCount;
   }
 
-  public int removeSecurityHotspot(String securityHotspotKey) {
-    for (var securityHotspotNode : nonFilteredNodes) {
-      var serverFindingKey = securityHotspotNode.getHotspot().getServerFindingKey();
-      if (serverFindingKey != null && serverFindingKey.equals(securityHotspotKey)) {
-        nonFilteredNodes.remove(securityHotspotNode);
-        break;
-      }
-    }
-    return applyCurrentFiltering();
-  }
-
   public void clear() {
     updateModel(Collections.emptyMap(), "No analysis done");
   }
@@ -276,7 +276,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   private static boolean accept(LiveSecurityHotspot securityHotspot) {
-    return !securityHotspot.isResolved() && securityHotspot.isValid();
+    return securityHotspot.isValid();
   }
 
   private static boolean accept(VirtualFile file) {
