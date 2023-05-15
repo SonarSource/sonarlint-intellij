@@ -29,10 +29,14 @@ import javax.swing.ButtonGroup
 import javax.swing.JPanel
 import kotlin.properties.Delegates
 
-class ReviewSecurityHotspotPanel(private val listAllowedStatuses: List<HotspotStatus>, val callbackForButton: (Boolean) -> Unit) : JPanel(),
+class ReviewSecurityHotspotPanel(
+    private val listAllowedStatuses: List<HotspotStatus>,
+    private val defaultStatus: HotspotStatus,
+    val callbackForButton: (Boolean) -> Unit,
+) : JPanel(),
     ActionListener {
 
-    var selectedStatus: HotspotStatus by Delegates.observable(HotspotStatus.TO_REVIEW) { _, _, newValue -> callbackForButton(newValue != HotspotStatus.TO_REVIEW) }
+    var selectedStatus: HotspotStatus by Delegates.observable(HotspotStatus.TO_REVIEW) { _, _, newValue -> callbackForButton(newValue != defaultStatus) }
 
     init {
         layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, true, false)
@@ -41,7 +45,7 @@ class ReviewSecurityHotspotPanel(private val listAllowedStatuses: List<HotspotSt
 
     private fun handleStatusPanel(buttonGroup: ButtonGroup) {
         listAllowedStatuses.forEach { status ->
-            val statusPanel = StatusPanel(status, HotspotStatus.TO_REVIEW == status)
+            val statusPanel = StatusPanel(status, defaultStatus == status)
             buttonGroup.add(statusPanel.statusRadioButton)
             statusPanel.addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent?) {

@@ -25,9 +25,11 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
+import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import java.awt.event.ActionEvent
@@ -38,6 +40,7 @@ class ReviewSecurityHotspotDialog(
     listOfAllowedStatus: List<HotspotStatus>,
     module: Module,
     securityHotspotKey: String,
+    currentStatus: HotspotStatus,
 ) : DialogWrapper(false) {
 
     private val centerPanel: ReviewSecurityHotspotPanel
@@ -52,9 +55,21 @@ class ReviewSecurityHotspotDialog(
             }
 
             override fun actionPerformed(e: ActionEvent) {
+                val status = getStatus()
                 SonarLintUtils.getService(BackendService::class.java)
-                    .changeStatusForHotspot(BackendService.moduleId(module), securityHotspotKey, getStatus())
-                    .thenAccept { closeDialog(project, OK_EXIT_CODE) }
+                    .changeStatusForHotspot(BackendService.moduleId(module), securityHotspotKey, status)
+                    .thenAccept {
+                        runOnUiThread(
+                            project,
+                            {
+                                SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
+                                    .updateStatusAndApplyCurrentFiltering(securityHotspotKey, status)
+                                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+                                close(OK_EXIT_CODE)
+                            },
+                            ModalityState.stateForComponent(this@ReviewSecurityHotspotDialog.contentPane)
+                        )
+                    }
                     .exceptionally { error ->
                         SonarLintConsole.get(project).error("Error while changing the security hotspot status", error)
 
@@ -66,12 +81,16 @@ class ReviewSecurityHotspotDialog(
                         notification.isImportant = true
                         notification.notify(project)
 
-                        closeDialog(project, CANCEL_EXIT_CODE)
+                        runOnUiThread(
+                            project,
+                            { close(CANCEL_EXIT_CODE) },
+                            ModalityState.stateForComponent(this@ReviewSecurityHotspotDialog.contentPane)
+                        )
                         null
                     }
             }
         }
-        centerPanel = ReviewSecurityHotspotPanel(listOfAllowedStatus) { changeStatusAction.isEnabled = it }
+        centerPanel = ReviewSecurityHotspotPanel(listOfAllowedStatus, currentStatus) { changeStatusAction.isEnabled = it }
         init()
     }
 
@@ -80,13 +99,5 @@ class ReviewSecurityHotspotDialog(
     override fun createActions() = arrayOf(changeStatusAction, cancelAction)
 
     private fun getStatus() = centerPanel.selectedStatus
-
-    private fun closeDialog(project: Project, exitCode: Int) {
-        runOnUiThread(
-            project,
-            { close(exitCode) },
-            ModalityState.stateForComponent(this@ReviewSecurityHotspotDialog.contentPane)
-        )
-    }
 
 }

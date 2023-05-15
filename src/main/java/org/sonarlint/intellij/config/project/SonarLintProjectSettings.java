@@ -33,6 +33,7 @@ public final class SonarLintProjectSettings {
 
   private boolean verboseEnabled = false;
   private boolean analysisLogsEnabled = false;
+  private boolean resolvedHotspotsEnabled = false;
   private Map<String, String> additionalProperties = new LinkedHashMap<>();
   private boolean bindingEnabled = false;
   // For backward compatibility
@@ -86,6 +87,15 @@ public final class SonarLintProjectSettings {
 
   public boolean isAnalysisLogsEnabled() {
     return analysisLogsEnabled;
+  }
+
+  public boolean isResolvedHotspotsEnabled() {
+    return resolvedHotspotsEnabled;
+  }
+
+
+  public void setResolvedHotspotsEnabled(boolean resolvedHotspotsEnabled) {
+    this.resolvedHotspotsEnabled = resolvedHotspotsEnabled;
   }
 
   public void setAnalysisLogsEnabled(boolean analysisLogsEnabled) {
