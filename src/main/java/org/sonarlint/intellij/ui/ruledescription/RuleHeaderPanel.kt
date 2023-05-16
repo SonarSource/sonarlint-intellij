@@ -57,7 +57,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
             // Don't use JBColor.WHITE as it will be dark gray on dark theme
             foreground = JBColor(Color.white, Color.white)
             font = JBFont.label().asBold()
-            verticalTextPosition = SwingConstants.TOP
+            verticalTextPosition = SwingConstants.CENTER
             isOpaque = true
             border = BorderFactory.createEmptyBorder(0, 15, 0, 15)
         }, HorizontalLayout.LEFT)
