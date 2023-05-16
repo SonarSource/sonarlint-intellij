@@ -35,6 +35,4 @@ fun RemoteRobot.isGoLand() = callJs<Boolean>("com.intellij.util.PlatformUtils.is
  *  [implementation](https://github.com/go-lang-plugin-org/go-lang-idea-plugin/blob/master/src/com/goide/GoLanguage.java),
  *  which hasn't changed for over 8+ years.
  */
-fun RemoteRobot.isGoPlugin() = callJs<Boolean>(
-    "try { java.lang.Class.forName('com.goide.GoLanguage'); return true; } catch (ignored) { return false; }"
-)
+fun RemoteRobot.isGoPlugin() = callJs<Boolean>("function isClassAvailable() { try { java.lang.Class.forName('com.goide.GoLanguage'); return true; } catch(_) { return false; } } isClassAvailable();")
