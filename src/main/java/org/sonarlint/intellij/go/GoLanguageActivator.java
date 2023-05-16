@@ -25,7 +25,7 @@ import org.sonarsource.sonarlint.core.commons.Language;
 
 /**
  *  The Go language is provided via the Go plugin, it's bundled inside the GoLand installation and currently only
- *  available for IntelliJ IDEA Ultimate <a href="https://plugins.jetbrains.com/plugin/9568-go">the marketplace</a>.
+ *  available for IntelliJ IDEA Ultimate from the <a href="https://plugins.jetbrains.com/plugin/9568-go">marketplace</a>
  */
 public class GoLanguageActivator implements LanguageActivator {
   @Override

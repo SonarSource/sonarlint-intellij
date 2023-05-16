@@ -37,6 +37,7 @@ import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
+import org.sonarlint.intellij.its.fixtures.isGoPlugin
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.preferencesDialog
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
@@ -73,10 +74,21 @@ open class BaseUiTest {
             return remoteRobot.isCLion()
         }
 
+        /**
+         *  This only checks for the GoLand IDE, if you want to check for the Go language support in general (via the
+         *  Go plugin), use [BaseUiTest.isGoPlugin]!
+         */
         @JvmStatic
         fun isGoLand(): Boolean {
             return remoteRobot.isGoLand()
         }
+
+        /**
+         *  This one checks for the Go language support in general (via the Go plugin), if you want to check for the
+         *  GoLand IDE, use [BaseUiTest.isGoLand]!
+         */
+        @JvmStatic
+        fun isGoPlugin(): Boolean = remoteRobot.isGoPlugin()
     }
 
 

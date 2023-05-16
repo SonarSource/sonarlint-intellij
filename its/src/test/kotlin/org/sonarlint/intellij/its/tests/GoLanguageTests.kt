@@ -24,9 +24,9 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 
 
-@EnabledIf("isGoLand")
-class GoLandTests : BaseUiTest() {
-
+/** Tests for Go language support (not limited to GoLand) */
+@EnabledIf("isGoPlugin")
+class GoLanguageTests : BaseUiTest() {
     @Test
     fun should_analyze_go() = uiTest {
         openExistingProject("sample-go")
@@ -39,5 +39,4 @@ class GoLandTests : BaseUiTest() {
             "Remove or correct this useless self-assignment."
         )
     }
-
 }
