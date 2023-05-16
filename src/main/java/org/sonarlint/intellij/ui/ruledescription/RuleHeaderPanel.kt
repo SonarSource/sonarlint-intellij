@@ -20,17 +20,14 @@
 package org.sonarlint.intellij.ui.ruledescription
 
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
-import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
-import java.awt.Color
 import java.awt.FlowLayout
 import javax.swing.BorderFactory
 import javax.swing.SwingConstants
@@ -46,24 +43,22 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private val ruleKeyLabel = JBLabel()
 
     init {
-        add(ruleTypeIcon, HorizontalLayout.LEFT)
+        add(ruleTypeIcon)
         add(ruleTypeLabel.apply {
             border = JBUI.Borders.emptyRight(10)
-        }, HorizontalLayout.LEFT)
-        add(ruleSeverityIcon, HorizontalLayout.LEFT)
-        add(ruleSeverityLabel, HorizontalLayout.LEFT)
-        add(hotspotVulnerabilityLabel, HorizontalLayout.LEFT)
+        })
+        add(ruleSeverityIcon)
+        add(ruleSeverityLabel)
+        add(hotspotVulnerabilityLabel)
         add(hotspotVulnerabilityValueLabel.apply {
-            // Don't use JBColor.WHITE as it will be dark gray on dark theme
-            foreground = JBColor(Color.white, Color.white)
             font = JBFont.label().asBold()
             verticalTextPosition = SwingConstants.CENTER
             isOpaque = true
             border = BorderFactory.createEmptyBorder(0, 15, 0, 15)
-        }, HorizontalLayout.LEFT)
+        })
         add(ruleKeyLabel.apply {
             border = JBUI.Borders.emptyLeft(10)
-        }, HorizontalLayout.CENTER)
+        })
     }
 
     fun clear() {
