@@ -21,7 +21,7 @@
 -->
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
     <extensions defaultExtensionNs="org.sonarlint.idea">
-        <languageActivator implementation="org.sonarlint.intellij.goland.GoLanguageActivator"/>
+        <languageActivator implementation="org.sonarlint.intellij.go.GoLanguageActivator"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

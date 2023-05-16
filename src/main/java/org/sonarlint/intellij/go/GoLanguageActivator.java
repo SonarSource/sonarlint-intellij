@@ -17,12 +17,16 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.goland;
+package org.sonarlint.intellij.go;
 
 import java.util.Set;
 import org.sonarlint.intellij.common.LanguageActivator;
 import org.sonarsource.sonarlint.core.commons.Language;
 
+/**
+ *  The Go language is provided via the Go plugin, it's bundled inside the GoLand installation and currently only
+ *  available for IntelliJ IDEA Ultimate <a href="https://plugins.jetbrains.com/plugin/9568-go">the marketplace</a>.
+ */
 public class GoLanguageActivator implements LanguageActivator {
   @Override
   public void amendLanguages(Set<Language> enabledLanguages) {
