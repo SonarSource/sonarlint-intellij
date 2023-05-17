@@ -20,11 +20,14 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
+import com.intellij.ide.ui.LafManager;
+import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -94,7 +97,17 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", LOCATIONS_TAB_INDEX);
   }
 
+  /**
+   *  To handle UI theme changes the rule windows must be reloaded immediately, otherwise the accessibility isn't great
+   *  (bad contrast, ...). We want to subscribe to the message bus everytime the rule panel content changes to reload
+   *  the panel with the correct rule content.
+   */
   protected void issueTreeSelectionChanged() {
+    ApplicationManager.getApplication().getMessageBus().connect().subscribe(LafManagerListener.TOPIC, ignored -> actualIssueTreeSelectionChanged());
+    actualIssueTreeSelectionChanged();
+  }
+
+  private void actualIssueTreeSelectionChanged() {
     var selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
       var issue = selectedNodes[0].issue();
