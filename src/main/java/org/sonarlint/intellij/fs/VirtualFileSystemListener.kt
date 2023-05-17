@@ -33,8 +33,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
-import com.intellij.util.PlatformUtils
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
@@ -46,7 +45,7 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
  * The BulkFileListener is not tied to a specific project but global to the IDE instance
  */
 class VirtualFileSystemListener(
-    private val fileEventsNotifier: ModuleFileEventsNotifier = getService(
+    private val fileEventsNotifier: ModuleFileEventsNotifier = SonarLintUtils.getService(
         ModuleFileEventsNotifier::class.java
     )
 ) : BulkFileListener {
@@ -83,7 +82,7 @@ class VirtualFileSystemListener(
     }
 
     private fun getEngineIfStarted(project: Project): SonarLintEngine? =
-        getService(project, ProjectBindingManager::class.java).engineIfStarted
+        SonarLintUtils.getService(project, ProjectBindingManager::class.java).engineIfStarted
 
     private fun fileEventsByModules(
         events: List<VFileEvent>,
@@ -110,7 +109,7 @@ class VirtualFileSystemListener(
             file.isDirectory -> file.children.flatMap { allEventsFor(it, fileModule, type) }
             // SLI-551 Only send events on .py files (avoid parse errors)
             // For Rider, send all events for OmniSharp
-            PlatformUtils.isRider() || ModuleFileEventsNotifier.isPython(file) -> listOfNotNull(buildModuleFileEvent(fileModule, file, type))
+            SonarLintUtils.isRider() || ModuleFileEventsNotifier.isPython(file) -> listOfNotNull(buildModuleFileEvent(fileModule, file, type))
             else -> emptyList()
         }
     }
