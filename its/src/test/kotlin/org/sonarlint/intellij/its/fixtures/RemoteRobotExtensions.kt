@@ -30,9 +30,7 @@ fun RemoteRobot.isGoLand() = callJs<Boolean>("com.intellij.util.PlatformUtils.is
 /**
  *  Check if the Go plugin is available, currently bundled in GoLand and as a plugin from the marketplace for IntelliJ
  *  IDEA Ultimate. The plugin was [open source](https://github.com/go-lang-plugin-org/go-lang-idea-plugin/tree/master)
- *  but is now closed source and property of JetBrains. As the SDK provides no API for getting a list of all installed
- *  plugin ids (Go plugin id: org.jetbrains.plugins.go), we have to test for the actual
- *  [implementation](https://github.com/go-lang-plugin-org/go-lang-idea-plugin/blob/master/src/com/goide/GoLanguage.java),
- *  which hasn't changed for over 8+ years.
+ *  but is now closed source and property of JetBrains. We have to check via the PluginManager to find the plugin by its
+ *  id, not its name: org.jetbrains.plugins.go
  */
-fun RemoteRobot.isGoPlugin() = callJs<Boolean>("function isClassAvailable() { try { java.lang.Class.forName('com.goide.GoLanguage'); return true; } catch(_) { return false; } } isClassAvailable();")
+fun RemoteRobot.isGoPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('org.jetbrains.plugins.go'))")
