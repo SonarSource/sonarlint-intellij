@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ class SecurityHotspotTreeModelBuilderTests {
 
   private SecurityHotspotTreeModelBuilder treeBuilder;
   private DefaultTreeModel model;
+  private Project project = mock(Project.class);
 
   @BeforeEach
   void init() {
@@ -139,13 +141,13 @@ class SecurityHotspotTreeModelBuilderTests {
 
     treeBuilder.updateModelWithoutFileNode(data, "empty");
 
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(3);
+    assertThat(treeBuilder.filterSecurityHotspots(project, SecurityHotspotFilters.SHOW_ALL)).isEqualTo(3);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(3);
 
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.EXISTING_ON_SONARQUBE)).isEqualTo(2);
+    assertThat(treeBuilder.filterSecurityHotspots(project, SecurityHotspotFilters.EXISTING_ON_SONARQUBE)).isEqualTo(2);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
 
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.LOCAL_ONLY)).isEqualTo(1);
+    assertThat(treeBuilder.filterSecurityHotspots(project, SecurityHotspotFilters.LOCAL_ONLY)).isEqualTo(1);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(1);
   }
 
@@ -161,11 +163,11 @@ class SecurityHotspotTreeModelBuilderTests {
     treeBuilder.updateModelWithoutFileNode(data, "empty");
 
     FilterSecurityHotspotSettings.setResolved(false);
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(2);
+    assertThat(treeBuilder.filterSecurityHotspots(project, SecurityHotspotFilters.SHOW_ALL)).isEqualTo(2);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
 
     FilterSecurityHotspotSettings.setResolved(true);
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(4);
+    assertThat(treeBuilder.filterSecurityHotspots(project, SecurityHotspotFilters.SHOW_ALL)).isEqualTo(4);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(4);
   }
 

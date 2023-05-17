@@ -28,11 +28,11 @@ import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.util.ui.UIUtil;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +51,7 @@ import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.RuleType;
@@ -95,7 +96,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     var content = getSecurityHotspotContent();
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      var hotspotsCount = hotspotsPanel.filterSecurityHotspots(filter);
+      var hotspotsCount = hotspotsPanel.filterSecurityHotspots(project, filter);
       content.setDisplayName(buildTabName(hotspotsCount, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
   }
@@ -293,17 +294,11 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     }
   }
 
-  public Collection<LiveSecurityHotspot> getDisplayedSecurityHotspots(Collection<LiveSecurityHotspot> securityHotspots) {
+  public Collection<LiveSecurityHotspot> getDisplayedSecurityHotspots() {
     var toolWindow = getToolWindow();
-    if (toolWindow != null && toolWindow.isVisible() && securityHotspotsContent != null  && securityHotspotsContent.isSelected()) {
+    if (toolWindow != null && toolWindow.isVisible() && securityHotspotsContent != null && securityHotspotsContent.isSelected()) {
       var securityHotspotPanel = (SecurityHotspotsPanel) securityHotspotsContent.getComponent();
-      var displayedSecurityHotspots = new ArrayList<LiveSecurityHotspot>();
-      securityHotspotPanel.getDisplayedNodes().forEach(filteredNode -> {
-        if (securityHotspots.contains(filteredNode.getHotspot())) {
-          displayedSecurityHotspots.add(filteredNode.getHotspot());
-        }
-      });
-      return displayedSecurityHotspots;
+      return securityHotspotPanel.getDisplayedNodes().stream().map(LiveSecurityHotspotNode::getHotspot).collect(Collectors.toList());
     }
     return Collections.emptyList();
   }

@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +36,8 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -241,11 +244,11 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     });
   }
 
-  public int applyCurrentFiltering() {
-    return filterSecurityHotspots(currentFilter);
+  public int applyCurrentFiltering(Project project) {
+    return filterSecurityHotspots(project, currentFilter);
   }
 
-  public int updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
+  public int updateStatusAndApplyCurrentFiltering(Project project, String securityHotspotKey, HotspotStatus status) {
     for (var securityHotspotNode : nonFilteredNodes) {
       if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
         securityHotspotNode.getHotspot().setStatus(status);
@@ -253,7 +256,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       }
     }
 
-    return filterSecurityHotspots(currentFilter);
+    return filterSecurityHotspots(project, currentFilter);
   }
 
   public boolean updateStatusForHotspotWithFileNode(String securityHotspotKey, HotspotStatus status) {
@@ -269,12 +272,18 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     return filteredNodes;
   }
 
-  public int filterSecurityHotspots(SecurityHotspotFilters filter) {
+  private Collection<VirtualFile> getFilesForNodes() {
+    return nonFilteredNodes.stream().map(LiveSecurityHotspotNode::getHotspot).map(LiveSecurityHotspot::getFile).collect(Collectors.toSet());
+  }
+
+  public int filterSecurityHotspots(Project project, SecurityHotspotFilters filter) {
+    var fileList = getFilesForNodes();
     currentFilter = filter;
     filteredNodes.clear();
     Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
     for (var securityHotspotNode : nonFilteredNodes) {
       if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
+        fileList.add(securityHotspotNode.getHotspot().getFile());
         var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
         var newIdx = new int[] {idx};
         model.nodesWereInserted(summary, newIdx);
@@ -284,6 +293,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
 
     model.reload();
+    SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
     return filteredNodes.size();
   }
 
