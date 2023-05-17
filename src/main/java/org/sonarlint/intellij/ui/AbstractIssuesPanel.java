@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
-import com.intellij.ide.ui.LafManager;
 import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;

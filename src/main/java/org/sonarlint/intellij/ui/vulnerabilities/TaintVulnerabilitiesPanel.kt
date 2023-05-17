@@ -22,7 +22,6 @@ package org.sonarlint.intellij.ui.vulnerabilities
 import com.intellij.icons.AllIcons.General.Information
 import com.intellij.ide.OccurenceNavigator
 import com.intellij.ide.OccurenceNavigator.OccurenceInfo
-import com.intellij.ide.ui.LafManager
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
@@ -39,7 +38,11 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.AnActionLink
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
-import org.sonarlint.intellij.actions.*
+import org.sonarlint.intellij.actions.AbstractSonarAction
+import org.sonarlint.intellij.actions.OpenIssueInBrowserAction
+import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
+import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
+import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
