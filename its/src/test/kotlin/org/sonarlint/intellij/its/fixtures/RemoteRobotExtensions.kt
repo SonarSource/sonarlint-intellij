@@ -27,7 +27,7 @@ fun RemoteRobot.ideMajorVersion() = callJs<Int>("com.intellij.openapi.applicatio
 fun RemoteRobot.isCLion() = callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('clion')")
 
 /** com.intellij.util.PlatformUtils.isGoIde() should not be used as it is marked as internal */
-fun RemoteRobot.isGoIde() = callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('goland')")
+fun RemoteRobot.isGoLand() = callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('goland')")
 
 /**
  *  Check if the Go plugin is available, currently bundled in GoLand and as a plugin from the marketplace for IntelliJ
