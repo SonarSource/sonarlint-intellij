@@ -260,8 +260,23 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   public boolean updateStatusForHotspotWithFileNode(String securityHotspotKey, HotspotStatus status) {
-    if (numberHotspots() > 0) {
-      summary.updateLiveSecurityHotspotNodeFromFileNode(securityHotspotKey, status, index);
+    var optionalNode = nonFilteredNodes
+      .stream()
+      .filter(node -> securityHotspotKey.equals(node.getHotspot().getServerFindingKey()))
+      .findFirst();
+
+    if (optionalNode.isPresent()) {
+      var hotspotNode = optionalNode.get();
+      var hotspot = hotspotNode.getHotspot();
+      hotspot.setStatus(status);
+      if (hotspot.isResolved()) {
+        var fileNode = (FileNode) hotspotNode.getParent();
+        fileNode.remove(hotspotNode);
+        if (fileNode.getFindingCount() == 0) {
+          index.remove(fileNode.file());
+          summary.remove(fileNode);
+        }
+      }
       model.reload();
       return true;
     }

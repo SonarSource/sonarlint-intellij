@@ -22,9 +22,7 @@ package org.sonarlint.intellij.ui.nodes;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.stream.Collectors;
-import org.sonarlint.intellij.ui.tree.FindingTreeIndex;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 
 public class SummaryNode extends AbstractNode {
   private String emptyText;
@@ -97,28 +95,6 @@ public class SummaryNode extends AbstractNode {
     int insertIdx = -foundIndex - 1;
     insert(newChild, insertIdx);
     return insertIdx;
-  }
-
-  public void updateLiveSecurityHotspotNodeFromFileNode(String securityHotspotKey, HotspotStatus status, FindingTreeIndex index) {
-    var fileNodes = children.stream().map(n -> (FileNode) n).collect(Collectors.<FileNode>toList());
-    for (var fileNode : fileNodes) {
-      var children = fileNode.children();
-      while(children.hasMoreElements()) {
-        var hotspotNode = (LiveSecurityHotspotNode) children.nextElement();
-        var hotspot = hotspotNode.getHotspot();
-        if (securityHotspotKey.equals(hotspot.getServerFindingKey())) {
-          hotspot.setStatus(status);
-          if (hotspot.isResolved()) {
-            fileNode.remove(hotspotNode);
-            if (fileNode.getFindingCount() == 0) {
-              index.remove(fileNode.file());
-              remove(fileNode);
-            }
-          }
-          return;
-        }
-      }
-    }
   }
 
   @Override
