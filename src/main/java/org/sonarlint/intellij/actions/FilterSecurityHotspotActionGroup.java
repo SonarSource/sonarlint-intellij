@@ -39,7 +39,7 @@ public class FilterSecurityHotspotActionGroup extends ActionGroup {
     myChildren = new AnAction[] {
       new FilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL),
       new FilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY),
-      new FilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SONARQUBE)
+      new FilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SERVER)
     };
   }
 

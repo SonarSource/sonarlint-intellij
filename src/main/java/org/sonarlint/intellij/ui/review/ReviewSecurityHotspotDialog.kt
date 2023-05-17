@@ -37,6 +37,7 @@ import javax.swing.AbstractAction
 
 class ReviewSecurityHotspotDialog(
     project: Project,
+    productName: String,
     listOfAllowedStatus: List<HotspotStatus>,
     module: Module,
     securityHotspotKey: String,
@@ -47,7 +48,7 @@ class ReviewSecurityHotspotDialog(
     private val changeStatusAction: AbstractAction
 
     init {
-        title = "Change Security Hotspot Status On SonarQube"
+        title = "Change Security Hotspot Status On $productName"
         isResizable = false
         changeStatusAction = object : AbstractAction("Change status") {
             init {

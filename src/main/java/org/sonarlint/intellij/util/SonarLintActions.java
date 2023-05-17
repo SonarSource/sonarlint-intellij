@@ -86,7 +86,7 @@ public class SonarLintActions {
       "Run a SonarLint analysis on VCS changed files",
       SonarLintIcons.SCM);
     filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
-      "Filter security hotspots based on SonarQube matches",
+      "Filter security hotspots",
       AllIcons.General.Filter);
     showResolvedHotspotAction = new ShowResolvedHotspotsAction();
   }

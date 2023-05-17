@@ -36,6 +36,7 @@ import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -45,7 +46,7 @@ import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 
 class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, private var status: HotspotReviewStatus? = null) :
     AbstractSonarAction(
-        "Review Security Hotspot", "Review Security Hotspot Status on SonarQube", null
+        "Review Security Hotspot", "Review Security Hotspot Status", null
     ), IntentionAction, PriorityAction, Iconable {
 
     companion object {
@@ -58,6 +59,16 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
             && e.getData(SECURITY_HOTSPOT_KEY)?.isValid == true
     }
 
+    override fun updatePresentation(e: AnActionEvent, project: Project) {
+        val serverConnection = serverConnection(project) ?: return
+        e.presentation.description = "Review Security Hotspot Status on ${serverConnection.productName}"
+    }
+
+    private fun serverConnection(project: Project): ServerConnection? = SonarLintUtils.getService(
+        project,
+        ProjectBindingManager::class.java
+    ).tryGetServerConnection().orElse(null)
+
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val securityHotspot =
@@ -69,24 +80,21 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     }
 
     fun openReviewingDialog(project: Project, file: VirtualFile) {
-        serverFindingKey ?: return displayErrorNotification(project, "Could not find the security hotspot on SonarQube.")
+        val connection = serverConnection(project) ?: return displayErrorNotification(project, "No connection could be found.")
+        serverFindingKey ?: return displayErrorNotification(project, "Could not find the security hotspot on ${connection.productName}.")
         status ?: return displayErrorNotification(project, "Could not find the current security hotspot status.")
         val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
             project, "No module could be found for this file."
         )
-        val connection = SonarLintUtils.getService(project, ProjectBindingManager::class.java).tryGetServerConnection()
-        if (connection.isEmpty) {
-            return displayErrorNotification(project, "No connection to SonarQube could be found.")
-        }
 
-        SonarLintUtils.getService(BackendService::class.java).listAllowedStatusesForHotspots(connection.get().name)
+        SonarLintUtils.getService(BackendService::class.java).listAllowedStatusesForHotspots(connection.name)
             .thenAccept { listAllowedStatusesResponse ->
                 val listStatuses = listAllowedStatusesResponse.allowedStatuses
                 if (listStatuses.isEmpty()) {
                     displayErrorNotification(project, "The statuses for this security hotspot could not be retrieved.")
                 } else {
                     val newStatus = HotspotStatus.valueOf(status!!.name)
-                    if (ReviewSecurityHotspotDialog(project, listStatuses, module, serverFindingKey!!, newStatus).showAndGet()) {
+                    if (ReviewSecurityHotspotDialog(project, connection.productName, listStatuses, module, serverFindingKey!!, newStatus).showAndGet()) {
                         displaySuccessfulNotification(project)
                     }
                 }

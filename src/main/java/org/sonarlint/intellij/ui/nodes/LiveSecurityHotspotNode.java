@@ -23,12 +23,15 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.OffsetIcon;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.util.Locale;
 import javax.swing.Icon;
+import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class LiveSecurityHotspotNode extends AbstractNode {
   private final LiveSecurityHotspot securityHotspot;
@@ -53,9 +56,12 @@ public class LiveSecurityHotspotNode extends AbstractNode {
 
     var typeIcon = SonarLintIcons.hotspotTypeWithProbability(vulnerability);
     var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
-    if (securityHotspot.getServerFindingKey() != null) {
-      renderer.setIconToolTip(vulnerabilityText + " " + typeStr + " matched on SonarQube");
-      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.ICON_SONARQUBE_16, typeIcon));
+    var serverConnection = getService(securityHotspot.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
+    if (securityHotspot.getServerFindingKey() != null && serverConnection.isPresent()) {
+      var productIcon = serverConnection.get().getProductIcon();
+      var tooltip = vulnerabilityText + " " + typeStr + serverConnection.get().getProductName();
+      renderer.setIconToolTip(tooltip);
+      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, productIcon, typeIcon));
     } else {
       renderer.setIconToolTip(vulnerabilityText + " " + typeStr);
       setIcon(renderer, new OffsetIcon(typeIcon.getIconWidth() + gap, typeIcon));
