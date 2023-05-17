@@ -49,7 +49,7 @@ class SecurityHotspotTabTest : BaseUiTest() {
     @Test
     fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
         openExistingProject("sample-java-hotspot", true)
-        verifySecurityHotspotTabContainsMessages(this, "The project is not bound to SonarQube 9.7+")
+        verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
     }
 
     @Test
