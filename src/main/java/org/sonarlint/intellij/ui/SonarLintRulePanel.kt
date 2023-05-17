@@ -50,6 +50,7 @@ import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -264,19 +265,17 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         ruleNameLabel.setCopyable(true)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
         if (finding is LiveSecurityHotspot) {
+            val serverConnection =
+                SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
             val htmlStringBuilder = StringBuilder(
                 """
-                A ${externalLink("Security Hotspot", "https://docs.sonarqube.org/latest/user-guide/security-hotspots/")}
+                A ${securityHotspotsDocLink(serverConnection)}
                 highlights a security-sensitive piece of code that the developer <b>needs to review</b>.
                 Upon review, you’ll either find there is no threat or you need to apply a fix to secure the code.
-                <br>
-                At the moment, the status of a Security Hotspot can only be updated in SonarQube. 
                 """.trimIndent()
             )
             val serverFindingKey = finding.serverFindingKey
             if (serverFindingKey != null) {
-                val serverConnection =
-                    SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
                 val projectKey = Settings.getSettingsFor(project).projectKey
                 if (projectKey != null) {
                     htmlStringBuilder.append(
@@ -284,11 +283,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
                         Click ${
                             externalLink(
                                 "here",
-                                "${serverConnection.hostUrl}/security_hotspots?id=${urlEncode(projectKey)}&hotspots=${
-                                    urlEncode(
-                                        serverFindingKey
-                                    )
-                                }"
+                                securityHotspotDetailsLink(serverConnection, projectKey, serverFindingKey)
                             )
                         }
                         to open it on '${serverConnection.name}' server.""".trimIndent()
@@ -302,6 +297,25 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             headerPanel.update(ruleDescription.key, ruleDescription.type, ruleDescription.severity)
         }
     }
+
+    private fun securityHotspotDetailsLink(
+        serverConnection: ServerConnection,
+        projectKey: String,
+        serverFindingKey: String,
+    ): String {
+        val prefixPath = if (serverConnection.isSonarCloud) "project/" else ""
+        return "${serverConnection.hostUrl}/{$prefixPath}security_hotspots?id=${urlEncode(projectKey)}&hotspots=${
+            urlEncode(
+                serverFindingKey
+            )
+        }"
+    }
+
+    private fun securityHotspotsDocLink(serverConnection: ServerConnection) = externalLink(
+        "Security Hotspot",
+        if (serverConnection.isSonarCloud) "https://docs.sonarcloud.io/digging-deeper/security-hotspots/"
+        else "https://docs.sonarqube.org/latest/user-guide/security-hotspots/"
+    )
 
     private fun externalLink(text: String, href: String): String {
         return """<a href="$href">$text<icon src="AllIcons.Ide.External_link_arrow" href="$href"></a>"""
@@ -407,7 +421,9 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             computedRuleDescription += front
 
             val preTag =
-                xmlElementFactory.createTagFromText(remainingRuleDescription.substring(matcherStart.start(), matcherStart.end()).trim() + PRE_TAG_ENDING)
+                xmlElementFactory.createTagFromText(
+                    remainingRuleDescription.substring(matcherStart.start(), matcherStart.end()).trim() + PRE_TAG_ENDING
+                )
             val diffId = preTag.getAttributeValue("data-diff-id")
             val diffType = preTag.getAttributeValue("data-diff-type")?.let { CodeExampleType.from(it) }
 
@@ -434,7 +450,8 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             when (it) {
                 is HtmlFragment -> RuleHtmlViewer(false).apply { updateHtml(it.html) }
                 is CodeExampleFragment -> RuleCodeSnippet(project, fileType, it).apply {
-                    Disposer.register(this@SonarLintRulePanel.parent, this) }
+                    Disposer.register(this@SonarLintRulePanel.parent, this)
+                }
             }
         }
             .forEach { mainPanel.add(it) }

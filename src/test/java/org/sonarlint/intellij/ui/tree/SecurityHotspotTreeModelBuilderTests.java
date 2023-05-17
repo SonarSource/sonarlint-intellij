@@ -146,7 +146,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.SHOW_ALL)).isEqualTo(3);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(3);
 
-    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.EXISTING_ON_SONARQUBE)).isEqualTo(2);
+    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.EXISTING_ON_SERVER)).isEqualTo(2);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
 
     assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.LOCAL_ONLY)).isEqualTo(1);

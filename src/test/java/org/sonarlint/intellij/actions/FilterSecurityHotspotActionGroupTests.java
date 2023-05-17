@@ -56,7 +56,7 @@ class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests 
     // Show All is already selected by default, it shouldn't trigger a new filtering
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
-    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SERVER);
   }
 
   @Test
@@ -69,7 +69,7 @@ class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests 
 
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
     verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
-    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SERVER);
   }
 
   @Test
@@ -82,7 +82,7 @@ class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests 
 
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
-    verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
+    verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SERVER);
   }
 
   @Test
