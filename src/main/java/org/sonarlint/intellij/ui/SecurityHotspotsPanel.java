@@ -267,12 +267,15 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   private int displaySecurityHotspotsAfterFiltering(int filteredCount) {
-    if (filteredCount == 0) {
-      cardPanel.show(NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
-    } else {
-      cardPanel.show(SECURITY_HOTSPOTS_LIST_CARD_ID);
+    if (status instanceof Supported) {
+      if (filteredCount == 0) {
+        cardPanel.show(NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
+      } else {
+        cardPanel.show(SECURITY_HOTSPOTS_LIST_CARD_ID);
+      }
+      return filteredCount;
     }
-    return filteredCount;
+    return 0;
   }
 
   public boolean trySelectSecurityHotspot(String securityHotspotKey) {
@@ -306,6 +309,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
   public void selectRulesTab() {
     detailsTab.setSelectedIndex(RULE_TAB_INDEX);
+  }
+
+  public Collection<LiveSecurityHotspotNode> getDisplayedNodes() {
+    return securityHotspotTreeBuilder.getFilteredNodes();
   }
 
   @Override

@@ -46,6 +46,13 @@ import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 /**
  * Responsible for maintaining the tree model and send change events when needed.
  * Should be optimized to minimize the recreation of portions of the tree.
+ *
+ * There are 2 implementations within this class
+ * - Security hotspots within a file node (used for the report tab)
+ * - Security hotspots directly child of the summary node (used for the security hotspots tab)
+ *
+ * In the report tab, there is no filtering mechanism, the nodes are simply deleted when needed
+ * In the security hotspots tab, there is a filtering mechanism that hides or not some nodes
  */
 public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder {
   private static final List<VulnerabilityProbability> VULNERABILITY_PROBABILITIES = List.of(VulnerabilityProbability.HIGH,
@@ -58,7 +65,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private DefaultTreeModel model;
   private SummaryNode summary;
   private List<LiveSecurityHotspotNode> nonFilteredNodes;
-  private int filteredCount;
+  private List<LiveSecurityHotspotNode> filteredNodes;
 
   public SecurityHotspotTreeModelBuilder() {
     this.index = new FindingTreeIndex();
@@ -72,7 +79,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     nonFilteredNodes = new ArrayList<>();
-    filteredCount = 0;
+    filteredNodes = new ArrayList<>();
     return model;
   }
 
@@ -89,6 +96,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
     var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
 
+    nonFilteredNodes.clear();
     toRemove.forEach(this::removeFile);
 
     for (var e : map.entrySet()) {
@@ -104,7 +112,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       return;
     }
 
-    var filtered = filter(securityHotspots);
+    var filtered = filter(securityHotspots, false);
     if (filtered.isEmpty()) {
       removeFile(file);
       return;
@@ -131,7 +139,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
   }
 
-  private static void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
+  private void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
     node.removeAllChildren();
 
     var securityHotspots = new TreeSet<>(SECURITY_HOTSPOT_COMPARATOR);
@@ -143,6 +151,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     for (var securityHotspot : securityHotspots) {
       var iNode = new LiveSecurityHotspotNode(securityHotspot, false);
       node.add(iNode);
+
+      nonFilteredNodes.add(iNode);
     }
   }
 
@@ -192,7 +202,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       return;
     }
 
-    var filtered = filter(securityHotspots);
+    var filtered = filter(securityHotspots, true);
     if (filtered.isEmpty()) {
       removeHotspotsByFile(file);
       return;
@@ -246,9 +256,22 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     return filterSecurityHotspots(currentFilter);
   }
 
+  public boolean updateStatusForHotspotWithFileNode(String securityHotspotKey, HotspotStatus status) {
+    if (numberHotspots() > 0) {
+      summary.updateLiveSecurityHotspotNodeFromFileNode(securityHotspotKey, status, index);
+      model.reload();
+      return true;
+    }
+    return false;
+  }
+
+  public Collection<LiveSecurityHotspotNode> getFilteredNodes() {
+    return filteredNodes;
+  }
+
   public int filterSecurityHotspots(SecurityHotspotFilters filter) {
     currentFilter = filter;
-    var currentlyFilteredCount = 0;
+    filteredNodes.clear();
     Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
     for (var securityHotspotNode : nonFilteredNodes) {
       if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
@@ -256,27 +279,30 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
         var newIdx = new int[] {idx};
         model.nodesWereInserted(summary, newIdx);
         model.nodeChanged(summary);
-        currentlyFilteredCount++;
+        filteredNodes.add(securityHotspotNode);
       }
     }
 
     model.reload();
-    filteredCount = currentlyFilteredCount;
-    return filteredCount;
+    return filteredNodes.size();
   }
 
   public void clear() {
     updateModel(Collections.emptyMap(), "No analysis done");
   }
 
-  private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots) {
+  private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots, boolean enableResolved) {
     return StreamSupport.stream(securityHotspots.spliterator(), false)
-      .filter(SecurityHotspotTreeModelBuilder::accept)
+      .filter(hotspot -> accept(hotspot, enableResolved))
       .collect(Collectors.toList());
   }
 
-  private static boolean accept(LiveSecurityHotspot securityHotspot) {
-    return securityHotspot.isValid();
+  private static boolean accept(LiveSecurityHotspot securityHotspot, boolean enableResolved) {
+    if (enableResolved) {
+      return securityHotspot.isValid();
+    } else {
+      return !securityHotspot.isResolved() && securityHotspot.isValid();
+    }
   }
 
   private static boolean accept(VirtualFile file) {

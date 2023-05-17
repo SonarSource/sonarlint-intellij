@@ -28,7 +28,9 @@ import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.util.ui.UIUtil;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
@@ -80,6 +82,12 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
       var hotspotsCount = hotspotsPanel.updateStatusAndApplyCurrentFiltering(securityHotspotKey, status);
       content.setDisplayName(buildTabName(hotspotsCount, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+    }
+    var contentManager = getToolWindow().getContentManager();
+    content = contentManager.findContent(SonarLintToolWindowFactory.REPORT_TAB_TITLE);
+    if (content != null) {
+      var reportPanel = (ReportPanel) content.getComponent();
+      reportPanel.updateStatusForSecurityHotspot(securityHotspotKey, status);
     }
   }
 
@@ -285,12 +293,19 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     }
   }
 
-  public boolean isSecurityHotspotsTabActive() {
+  public Collection<LiveSecurityHotspot> getDisplayedSecurityHotspots(Collection<LiveSecurityHotspot> securityHotspots) {
     var toolWindow = getToolWindow();
-    if (toolWindow != null && securityHotspotsContent != null) {
-      return toolWindow.isVisible() && securityHotspotsContent.isSelected();
+    if (toolWindow != null && toolWindow.isVisible() && securityHotspotsContent != null  && securityHotspotsContent.isSelected()) {
+      var securityHotspotPanel = (SecurityHotspotsPanel) securityHotspotsContent.getComponent();
+      var displayedSecurityHotspots = new ArrayList<LiveSecurityHotspot>();
+      securityHotspotPanel.getDisplayedNodes().forEach(filteredNode -> {
+        if (securityHotspots.contains(filteredNode.getHotspot())) {
+          displayedSecurityHotspots.add(filteredNode.getHotspot());
+        }
+      });
+      return displayedSecurityHotspots;
     }
-    return false;
+    return Collections.emptyList();
   }
 
   @Override

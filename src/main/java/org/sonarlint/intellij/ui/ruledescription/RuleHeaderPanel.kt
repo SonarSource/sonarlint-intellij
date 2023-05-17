@@ -104,6 +104,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         project: Project,
         securityHotspotKey: String?,
         status: HotspotReviewStatus,
+        isValid: Boolean,
         file: VirtualFile,
         ruleKey: String,
         type: RuleType,
@@ -124,7 +125,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
                     ReviewSecurityHotspotAction(securityHotspotKey, status).openReviewingDialog(project, file)
                 }
             }
-            changeStatusButton.isVisible = true
+            changeStatusButton.isVisible = isValid
         }
     }
 

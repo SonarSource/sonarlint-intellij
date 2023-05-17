@@ -55,6 +55,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
         return e.getData(SECURITY_HOTSPOT_KEY) != null && e.getData(SECURITY_HOTSPOT_KEY)?.serverFindingKey != null
+            && e.getData(SECURITY_HOTSPOT_KEY)?.isValid == true
     }
 
     override fun actionPerformed(e: AnActionEvent) {

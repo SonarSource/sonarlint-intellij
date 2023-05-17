@@ -140,8 +140,13 @@ class SecurityHotspotTreeModelBuilderTests {
     treeBuilder.updateModelWithoutFileNode(data, "empty");
 
     assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(3);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(3);
+
     assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.EXISTING_ON_SONARQUBE)).isEqualTo(2);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
+
     assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.LOCAL_ONLY)).isEqualTo(1);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(1);
   }
 
   @Test
@@ -157,8 +162,11 @@ class SecurityHotspotTreeModelBuilderTests {
 
     FilterSecurityHotspotSettings.setResolved(false);
     assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(2);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
+
     FilterSecurityHotspotSettings.setResolved(true);
     assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(4);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(4);
   }
 
   private void addFile(Map<VirtualFile, Collection<LiveSecurityHotspot>> data, String fileName, int numSecurityHotspots) {
@@ -181,7 +189,6 @@ class SecurityHotspotTreeModelBuilderTests {
         securityHotspotList.add(mockSecurityHotspot(fileName, i, "rule" + i, VulnerabilityProbability.HIGH, (long) i, status, serverFindingKey + "" + (i + 1)));
       } else {
         securityHotspotList.add(mockSecurityHotspot(fileName, i, "rule" + i, VulnerabilityProbability.HIGH, (long) i, status, null));
-
       }
     }
 
