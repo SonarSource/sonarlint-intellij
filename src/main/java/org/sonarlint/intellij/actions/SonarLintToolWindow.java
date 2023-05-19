@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.IdeFocusManager;
@@ -47,7 +48,8 @@ import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
-public class SonarLintToolWindow implements ContentManagerListenerAdapter {
+@Service(Service.Level.PROJECT)
+public final class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
   private final Project project;
   private Content taintVulnerabilitiesContent;

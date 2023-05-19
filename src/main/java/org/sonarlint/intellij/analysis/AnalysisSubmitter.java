@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -43,8 +44,8 @@ import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.ProjectUtils.getAllFiles;
 
-public class AnalysisSubmitter {
-
+@Service(Service.Level.PROJECT)
+public final class AnalysisSubmitter {
   public static final String ANALYSIS_TASK_TITLE = "SonarLint Analysis";
   private final Project project;
   private final OnTheFlyFindingsHolder onTheFlyFindingsHolder;

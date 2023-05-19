@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -62,8 +63,8 @@ import static org.sonarlint.intellij.util.FutureUtils.waitForTask;
 import static org.sonarlint.intellij.util.FutureUtils.waitForTasks;
 import static org.sonarlint.intellij.util.ProjectUtils.getRelativePaths;
 
-public class ServerIssueUpdater implements Disposable {
-
+@Service(Service.Level.PROJECT)
+public final class ServerIssueUpdater implements Disposable {
   private static final int THREADS_NUM = 5;
   private static final int QUEUE_LIMIT = 100;
   private static final int FETCH_ALL_ISSUES_THRESHOLD = 10;

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
@@ -51,7 +52,8 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class ProjectBindingManager {
+@Service(Service.Level.PROJECT)
+public final class ProjectBindingManager {
   private final Project myProject;
   private final ProgressManager progressManager;
 

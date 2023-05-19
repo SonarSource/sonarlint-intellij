@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.finding.hotspot
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -31,8 +32,8 @@ sealed class SecurityHotspotsLocalDetectionSupport
 data class NotSupported(val reason: String) : SecurityHotspotsLocalDetectionSupport()
 object Supported : SecurityHotspotsLocalDetectionSupport()
 
+@Service(Service.Level.PROJECT)
 class SecurityHotspotsPresenter(private val project: Project) {
-
     fun presentSecurityHotspotsForOpenFiles() {
         getService(BackendService::class.java)
             .checkLocalSecurityHotspotDetectionSupported(project)
@@ -46,5 +47,4 @@ class SecurityHotspotsPresenter(private val project: Project) {
                 }
             }
     }
-
 }

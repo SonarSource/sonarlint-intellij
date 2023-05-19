@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.concurrency.JobScheduler;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -40,8 +41,8 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class ConnectedModeStorageSynchronizer implements Disposable {
-
+@Service(Service.Level.PROJECT)
+public final class ConnectedModeStorageSynchronizer implements Disposable {
   private final Project myProject;
   private ScheduledFuture<?> scheduledTask;
 

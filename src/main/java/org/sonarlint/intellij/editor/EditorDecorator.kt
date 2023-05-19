@@ -23,6 +23,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
@@ -42,11 +43,12 @@ import java.util.function.Consumer
 
 private const val HIGHLIGHT_GROUP_ID = 1001
 
-open class EditorDecorator(private val project: Project) {
+@Service(Service.Level.PROJECT)
+class EditorDecorator(private val project: Project) {
     private val currentHighlightedDoc: HashSet<Document> = hashSetOf()
     private var blinker: RangeBlinker? = null
 
-    open fun removeHighlights() {
+    fun removeHighlights() {
         currentHighlightedDoc.forEach {
             clearSecondaryLocationNumbers(it)
             UpdateHighlightersUtil.setHighlightersToEditor(project, it, 0, it.textLength, emptyList(), null, HIGHLIGHT_GROUP_ID)
@@ -60,7 +62,7 @@ open class EditorDecorator(private val project: Project) {
         blinker = null
     }
 
-    open fun highlightFlow(flow: Flow) {
+    fun highlightFlow(flow: Flow) {
         updateHighlights(createHighlights(flow.locations))
         displaySecondaryLocationNumbers(flow, null)
     }
@@ -71,7 +73,7 @@ open class EditorDecorator(private val project: Project) {
         }
     }
 
-    open fun highlightFinding(finding: LiveFinding) {
+    fun highlightFinding(finding: LiveFinding) {
         val highlights = finding.context()
             .map { createHighlights(it.flows()[0].locations) }
             .orElse(mutableListOf())
@@ -80,21 +82,21 @@ open class EditorDecorator(private val project: Project) {
         finding.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
     }
 
-    open fun highlight(vulnerability: LocalTaintVulnerability) {
+    fun highlight(vulnerability: LocalTaintVulnerability) {
         val highlights = createHighlights(vulnerability.flows[0].locations)
         createHighlight(vulnerability.rangeMarker(), vulnerability.message())?.let(highlights::add)
         updateHighlights(highlights)
         displaySecondaryLocationNumbers(vulnerability.flows[0], null)
     }
 
-    open fun highlightPrimaryLocation(rangeMarker: RangeMarker, message: String?, associatedFlow: Flow) {
+    fun highlightPrimaryLocation(rangeMarker: RangeMarker, message: String?, associatedFlow: Flow) {
         val highlights = createHighlights(associatedFlow.locations)
         createHighlight(rangeMarker, message)?.let(highlights::add)
         updateHighlights(highlights)
         displaySecondaryLocationNumbers(associatedFlow, null)
     }
 
-    open fun highlightSecondaryLocation(secondaryLocation: Location, parentFlow: Flow) {
+    fun highlightSecondaryLocation(secondaryLocation: Location, parentFlow: Flow) {
         secondaryLocation.range ?: return
         val highlights = createHighlights(parentFlow.locations)
         createHighlight(secondaryLocation.range, secondaryLocation.message)?.let(highlights::add)
@@ -150,7 +152,7 @@ open class EditorDecorator(private val project: Project) {
         })
     }
 
-    open fun isActiveInEditor(editor: Editor): Boolean {
+    fun isActiveInEditor(editor: Editor): Boolean {
         return currentHighlightedDoc.contains(editor.document)
     }
 
@@ -180,5 +182,4 @@ open class EditorDecorator(private val project: Project) {
     }
 
     class Highlight(val document: Document, val highlightInfo: HighlightInfo)
-
 }

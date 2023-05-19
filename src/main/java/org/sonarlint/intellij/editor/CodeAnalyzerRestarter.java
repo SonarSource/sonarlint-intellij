@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -31,7 +32,9 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 
-public class CodeAnalyzerRestarter {
+
+@Service(Service.Level.PROJECT)
+public final class CodeAnalyzerRestarter {
   private final Project myProject;
   private final DaemonCodeAnalyzer codeAnalyzer;
 

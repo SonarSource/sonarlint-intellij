@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.finding.issue.vulnerabilities
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
@@ -31,8 +32,8 @@ import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.getOpenFiles
 
+@Service(Service.Level.PROJECT)
 class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
-
   fun subscribeToTriggeringEvents() {
     val busConnection = project.messageBus.connect()
     with(busConnection) {
