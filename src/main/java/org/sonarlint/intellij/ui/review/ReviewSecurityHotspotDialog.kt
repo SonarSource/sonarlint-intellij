@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.review
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.module.Module
@@ -29,11 +30,12 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.SECURITY_HOTSPOTS_LINK
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import java.awt.event.ActionEvent
-import javax.swing.AbstractAction
+import javax.swing.JButton
 
 class ReviewSecurityHotspotDialog(
     project: Project,
@@ -45,17 +47,18 @@ class ReviewSecurityHotspotDialog(
 ) : DialogWrapper(false) {
 
     private val centerPanel: ReviewSecurityHotspotPanel
-    private val changeStatusAction: AbstractAction
+    private val changeStatusAction: DialogWrapperAction
 
     init {
-        title = "Change Security Hotspot Status On $productName"
+        title = "Change Security Hotspot Status on $productName"
         isResizable = false
-        changeStatusAction = object : AbstractAction("Change status") {
+        changeStatusAction = object : DialogWrapperAction("Change Status") {
             init {
+                putValue(DEFAULT_ACTION, true)
                 isEnabled = false
             }
 
-            override fun actionPerformed(e: ActionEvent) {
+            override fun doAction(e: ActionEvent?) {
                 val status = getStatus()
                 SonarLintUtils.getService(BackendService::class.java)
                     .changeStatusForHotspot(BackendService.moduleId(module), securityHotspotKey, status)
@@ -97,7 +100,15 @@ class ReviewSecurityHotspotDialog(
 
     override fun createCenterPanel() = centerPanel
 
-    override fun createActions() = arrayOf(changeStatusAction, cancelAction)
+    override fun createActions() = arrayOf(changeStatusAction, cancelAction, helpAction)
+
+    override fun getPreferredFocusedComponent() = getButton(cancelAction)
+
+    override fun doHelpAction() = BrowserUtil.browse(SECURITY_HOTSPOTS_LINK)
+
+    override fun setHelpTooltip(helpButton: JButton) {
+        helpButton.toolTipText = "Show help contents"
+    }
 
     private fun getStatus() = centerPanel.selectedStatus
 
