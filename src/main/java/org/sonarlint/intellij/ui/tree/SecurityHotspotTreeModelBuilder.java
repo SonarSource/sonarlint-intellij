@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +36,8 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -46,6 +49,13 @@ import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 /**
  * Responsible for maintaining the tree model and send change events when needed.
  * Should be optimized to minimize the recreation of portions of the tree.
+ *
+ * There are 2 implementations within this class
+ * - Security hotspots within a file node (used for the report tab)
+ * - Security hotspots directly child of the summary node (used for the security hotspots tab)
+ *
+ * In the report tab, there is no filtering mechanism, the nodes are simply deleted when needed
+ * In the security hotspots tab, there is a filtering mechanism that hides or not some nodes
  */
 public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder {
   private static final List<VulnerabilityProbability> VULNERABILITY_PROBABILITIES = List.of(VulnerabilityProbability.HIGH,
@@ -58,7 +68,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private DefaultTreeModel model;
   private SummaryNode summary;
   private List<LiveSecurityHotspotNode> nonFilteredNodes;
-  private int filteredCount;
+  private List<LiveSecurityHotspotNode> filteredNodes;
 
   public SecurityHotspotTreeModelBuilder() {
     this.index = new FindingTreeIndex();
@@ -72,7 +82,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     nonFilteredNodes = new ArrayList<>();
-    filteredCount = 0;
+    filteredNodes = new ArrayList<>();
     return model;
   }
 
@@ -89,6 +99,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
     var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
 
+    nonFilteredNodes.clear();
     toRemove.forEach(this::removeFile);
 
     for (var e : map.entrySet()) {
@@ -104,7 +115,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       return;
     }
 
-    var filtered = filter(securityHotspots);
+    var filtered = filter(securityHotspots, false);
     if (filtered.isEmpty()) {
       removeFile(file);
       return;
@@ -131,7 +142,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
   }
 
-  private static void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
+  private void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
     node.removeAllChildren();
 
     var securityHotspots = new TreeSet<>(SECURITY_HOTSPOT_COMPARATOR);
@@ -143,6 +154,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     for (var securityHotspot : securityHotspots) {
       var iNode = new LiveSecurityHotspotNode(securityHotspot, false);
       node.add(iNode);
+
+      nonFilteredNodes.add(iNode);
     }
   }
 
@@ -192,7 +205,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       return;
     }
 
-    var filtered = filter(securityHotspots);
+    var filtered = filter(securityHotspots, true);
     if (filtered.isEmpty()) {
       removeHotspotsByFile(file);
       return;
@@ -231,11 +244,11 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     });
   }
 
-  public int applyCurrentFiltering() {
-    return filterSecurityHotspots(currentFilter);
+  public int applyCurrentFiltering(Project project) {
+    return filterSecurityHotspots(project, currentFilter);
   }
 
-  public int updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
+  public int updateStatusAndApplyCurrentFiltering(Project project, String securityHotspotKey, HotspotStatus status) {
     for (var securityHotspotNode : nonFilteredNodes) {
       if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
         securityHotspotNode.getHotspot().setStatus(status);
@@ -243,40 +256,78 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       }
     }
 
-    return filterSecurityHotspots(currentFilter);
+    return filterSecurityHotspots(project, currentFilter);
   }
 
-  public int filterSecurityHotspots(SecurityHotspotFilters filter) {
+  public boolean updateStatusForHotspotWithFileNode(String securityHotspotKey, HotspotStatus status) {
+    var optionalNode = nonFilteredNodes
+      .stream()
+      .filter(node -> securityHotspotKey.equals(node.getHotspot().getServerFindingKey()))
+      .findFirst();
+
+    if (optionalNode.isPresent()) {
+      var hotspotNode = optionalNode.get();
+      var hotspot = hotspotNode.getHotspot();
+      hotspot.setStatus(status);
+      if (hotspot.isResolved()) {
+        var fileNode = (FileNode) hotspotNode.getParent();
+        fileNode.remove(hotspotNode);
+        if (fileNode.getFindingCount() == 0) {
+          index.remove(fileNode.file());
+          summary.remove(fileNode);
+        }
+      }
+      model.reload();
+      return true;
+    }
+    return false;
+  }
+
+  public Collection<LiveSecurityHotspotNode> getFilteredNodes() {
+    return filteredNodes;
+  }
+
+  private Collection<VirtualFile> getFilesForNodes() {
+    return nonFilteredNodes.stream().map(LiveSecurityHotspotNode::getHotspot).map(LiveSecurityHotspot::getFile).collect(Collectors.toSet());
+  }
+
+  public int filterSecurityHotspots(Project project, SecurityHotspotFilters filter) {
+    var fileList = getFilesForNodes();
     currentFilter = filter;
-    var currentlyFilteredCount = 0;
+    filteredNodes.clear();
     Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
     for (var securityHotspotNode : nonFilteredNodes) {
       if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
+        fileList.add(securityHotspotNode.getHotspot().getFile());
         var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
         var newIdx = new int[] {idx};
         model.nodesWereInserted(summary, newIdx);
         model.nodeChanged(summary);
-        currentlyFilteredCount++;
+        filteredNodes.add(securityHotspotNode);
       }
     }
 
     model.reload();
-    filteredCount = currentlyFilteredCount;
-    return filteredCount;
+    SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
+    return filteredNodes.size();
   }
 
   public void clear() {
     updateModel(Collections.emptyMap(), "No analysis done");
   }
 
-  private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots) {
+  private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots, boolean enableResolved) {
     return StreamSupport.stream(securityHotspots.spliterator(), false)
-      .filter(SecurityHotspotTreeModelBuilder::accept)
+      .filter(hotspot -> accept(hotspot, enableResolved))
       .collect(Collectors.toList());
   }
 
-  private static boolean accept(LiveSecurityHotspot securityHotspot) {
-    return securityHotspot.isValid();
+  private static boolean accept(LiveSecurityHotspot securityHotspot, boolean enableResolved) {
+    if (enableResolved) {
+      return securityHotspot.isValid();
+    } else {
+      return !securityHotspot.isResolved() && securityHotspot.isValid();
+    }
   }
 
   private static boolean accept(VirtualFile file) {

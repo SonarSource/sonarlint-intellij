@@ -54,6 +54,7 @@ import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
@@ -109,6 +110,13 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     }
 
     expandTree();
+  }
+
+  public void updateStatusForSecurityHotspot(String securityHotspotKey, HotspotStatus status) {
+    var wasUpdated = securityHotspotTreeBuilder.updateStatusForHotspotWithFileNode(securityHotspotKey, status);
+    if (wasUpdated) {
+      expandTree();
+    }
   }
 
   private void initPanel() {
