@@ -104,11 +104,11 @@ class SecurityHotspotTabTest : BaseUiTest() {
     private fun changeStatusAndPressChange(remoteRobot: RemoteRobot, status: String) {
         with(remoteRobot) {
             idea {
-                dialog("Change Security Hotspot Status On SonarQube") {
+                dialog("Change Security Hotspot Status on SonarQube") {
                     content(status) {
                         click()
                     }
-                    pressButton("Change status")
+                    pressButton("Change Status")
                 }
             }
         }
