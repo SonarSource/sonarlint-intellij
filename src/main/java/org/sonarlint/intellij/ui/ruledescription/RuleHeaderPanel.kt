@@ -22,9 +22,9 @@ package org.sonarlint.intellij.ui.ruledescription
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.SonarLintIcons
@@ -73,7 +73,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         val changeStatusPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
         changeStatusPanel.apply { border = BorderFactory.createEmptyBorder(0, 15, 0, 0) }
 
-        changeStatusPanel.add(changeStatusButton.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 0) })
+        changeStatusPanel.add(changeStatusButton)
         add(changeStatusPanel)
     }
 
@@ -116,7 +116,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         }
 
         securityHotspotKey?.let {
-            changeStatusButton.action = object : AbstractAction("Change status") {
+            changeStatusButton.action = object : AbstractAction("Change Status") {
                 override fun actionPerformed(e: ActionEvent?) {
                     ReviewSecurityHotspotAction(securityHotspotKey, status).openReviewingDialog(project, file)
                 }
