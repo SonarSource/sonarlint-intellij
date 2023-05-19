@@ -137,8 +137,6 @@ tasks.runPluginVerifier {
                 RunPluginVerifierTask.FailureLevel.EXPERIMENTAL_API_USAGES,
                 RunPluginVerifierTask.FailureLevel.NOT_DYNAMIC,
                 RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
-                // for Module.getModuleFilePath() and PlatformUtils.isRider/AppCode/CLion
-                RunPluginVerifierTask.FailureLevel.INTERNAL_API_USAGES,
                 // TODO Workaround for CLion
                 RunPluginVerifierTask.FailureLevel.MISSING_DEPENDENCIES,
                 // needed because of UpdateInBackground usages in recent versions, replacement is available from 2022.2
