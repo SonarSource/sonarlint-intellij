@@ -54,6 +54,7 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -269,8 +270,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
                 SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
             val htmlStringBuilder = StringBuilder(
                 """
-                A ${securityHotspotsDocLink(serverConnection)}
-                highlights a security-sensitive piece of code that the developer <b>needs to review</b>.
+                A ${securityHotspotsDocLink()} highlights a security-sensitive piece of code that the developer <b>needs to review</b>.
                 Upon review, you’ll either find there is no threat or you need to apply a fix to secure the code.
                 """.trimIndent()
             )
@@ -311,10 +311,9 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }"
     }
 
-    private fun securityHotspotsDocLink(serverConnection: ServerConnection) = externalLink(
+    private fun securityHotspotsDocLink() = externalLink(
         "Security Hotspot",
-        if (serverConnection.isSonarCloud) "https://docs.sonarcloud.io/digging-deeper/security-hotspots/"
-        else "https://docs.sonarqube.org/latest/user-guide/security-hotspots/"
+        SonarLintDocumentation.SECURITY_HOTSPOTS_LINK
     )
 
     private fun externalLink(text: String, href: String): String {
