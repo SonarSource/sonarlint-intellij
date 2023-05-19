@@ -35,8 +35,10 @@ import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotSettings;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
@@ -50,8 +52,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class SecurityHotspotTreeModelBuilderTests {
+class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
 
+  private final CodeAnalyzerRestarter codeAnalyzerRestarter = mock(CodeAnalyzerRestarter.class);
   private SecurityHotspotTreeModelBuilder treeBuilder;
   private DefaultTreeModel model;
 
@@ -61,6 +64,7 @@ class SecurityHotspotTreeModelBuilderTests {
     model = treeBuilder.createModel();
     FilterSecurityHotspotSettings.setCurrentlySelectedFilter(SecurityHotspotFilters.DEFAULT_FILTER);
     FilterSecurityHotspotSettings.setResolved(false);
+    replaceProjectService(CodeAnalyzerRestarter.class, codeAnalyzerRestarter);
   }
 
   @Test
@@ -139,9 +143,14 @@ class SecurityHotspotTreeModelBuilderTests {
 
     treeBuilder.updateModelWithoutFileNode(data, "empty");
 
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(3);
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.EXISTING_ON_SONARQUBE)).isEqualTo(2);
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.LOCAL_ONLY)).isEqualTo(1);
+    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.SHOW_ALL)).isEqualTo(3);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(3);
+
+    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.EXISTING_ON_SONARQUBE)).isEqualTo(2);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
+
+    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.LOCAL_ONLY)).isEqualTo(1);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(1);
   }
 
   @Test
@@ -156,9 +165,12 @@ class SecurityHotspotTreeModelBuilderTests {
     treeBuilder.updateModelWithoutFileNode(data, "empty");
 
     FilterSecurityHotspotSettings.setResolved(false);
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(2);
+    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.SHOW_ALL)).isEqualTo(2);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
+
     FilterSecurityHotspotSettings.setResolved(true);
-    assertThat(treeBuilder.filterSecurityHotspots(SecurityHotspotFilters.SHOW_ALL)).isEqualTo(4);
+    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.SHOW_ALL)).isEqualTo(4);
+    assertThat(treeBuilder.getFilteredNodes()).hasSize(4);
   }
 
   private void addFile(Map<VirtualFile, Collection<LiveSecurityHotspot>> data, String fileName, int numSecurityHotspots) {
@@ -181,7 +193,6 @@ class SecurityHotspotTreeModelBuilderTests {
         securityHotspotList.add(mockSecurityHotspot(fileName, i, "rule" + i, VulnerabilityProbability.HIGH, (long) i, status, serverFindingKey + "" + (i + 1)));
       } else {
         securityHotspotList.add(mockSecurityHotspot(fileName, i, "rule" + i, VulnerabilityProbability.HIGH, (long) i, status, null));
-
       }
     }
 

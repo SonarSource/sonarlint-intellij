@@ -163,7 +163,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       TreeUtil.expandAll(securityHotspotTree);
       displaySecurityHotspots();
 
-      return applyCurrentFiltering();
+      return applyCurrentFiltering(project);
     } else {
       return 0;
     }
@@ -267,12 +267,15 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   private int displaySecurityHotspotsAfterFiltering(int filteredCount) {
-    if (filteredCount == 0) {
-      cardPanel.show(NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
-    } else {
-      cardPanel.show(SECURITY_HOTSPOTS_LIST_CARD_ID);
+    if (status instanceof Supported) {
+      if (filteredCount == 0) {
+        cardPanel.show(NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
+      } else {
+        cardPanel.show(SECURITY_HOTSPOTS_LIST_CARD_ID);
+      }
+      return filteredCount;
     }
-    return filteredCount;
+    return 0;
   }
 
   public boolean trySelectSecurityHotspot(String securityHotspotKey) {
@@ -284,20 +287,20 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return false;
   }
 
-  public int applyCurrentFiltering() {
-    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.applyCurrentFiltering());
+  public int applyCurrentFiltering(Project project) {
+    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.applyCurrentFiltering(project));
   }
 
   public int updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
-    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(securityHotspotKey, status));
+    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(project, securityHotspotKey, status));
   }
 
   public void selectAndHighlightSecurityHotspot(LiveSecurityHotspot securityHotspot) {
     updateOnSelect(securityHotspot);
   }
 
-  public int filterSecurityHotspots(SecurityHotspotFilters filter) {
-    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.filterSecurityHotspots(filter));
+  public int filterSecurityHotspots(Project project, SecurityHotspotFilters filter) {
+    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.filterSecurityHotspots(project, filter));
   }
 
   public void selectLocationsTab() {
@@ -306,6 +309,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
   public void selectRulesTab() {
     detailsTab.setSelectedIndex(RULE_TAB_INDEX);
+  }
+
+  public Collection<LiveSecurityHotspotNode> getDisplayedNodes() {
+    return securityHotspotTreeBuilder.getFilteredNodes();
   }
 
   @Override
