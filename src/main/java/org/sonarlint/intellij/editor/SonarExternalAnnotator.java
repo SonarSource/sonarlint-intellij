@@ -76,18 +76,16 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         }
       });
 
+    // only annotate the hotspots currently displayed in the tree
     var toolWindowService = getService(project, SonarLintToolWindow.class);
-    if (toolWindowService.isSecurityHotspotsTabActive()) {
-      var securityHotspots = issueManager.getSecurityHotspotsForFile(file.getVirtualFile());
-      securityHotspots
-        .forEach(securityHotspot -> {
-          // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
-          var validTextRange = securityHotspot.getValidTextRange();
-          if (validTextRange != null) {
-            addAnnotation(project, securityHotspot, validTextRange, holder);
-          }
-        });
-    }
+    toolWindowService.getDisplayedSecurityHotspots()
+      .forEach(securityHotspot -> {
+        // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
+        var validTextRange = securityHotspot.getValidTextRange();
+        if (validTextRange != null) {
+          addAnnotation(project, securityHotspot, validTextRange, holder);
+        }
+      });
 
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       getService(project, TaintVulnerabilitiesPresenter.class).getCurrentVulnerabilitiesByFile()
