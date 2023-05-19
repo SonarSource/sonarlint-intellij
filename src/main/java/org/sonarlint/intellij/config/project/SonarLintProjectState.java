@@ -31,7 +31,7 @@ import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
 
 @State(name = "SonarLintProjectState", storages = {@Storage("sonarlint-state.xml")})
-public final class SonarLintProjectState implements PersistentStateComponent<SonarLintProjectState> {
+public class SonarLintProjectState implements PersistentStateComponent<SonarLintProjectState> {
   // Xml serializer doesn't handle ZonedDateTime, so we keep milliseconds since epoch
   @Tag
   private Long lastEventPolling = null;

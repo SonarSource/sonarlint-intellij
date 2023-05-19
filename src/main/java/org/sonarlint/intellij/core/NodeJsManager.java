@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
 
+import com.intellij.openapi.components.Service;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.Settings;
@@ -34,8 +35,8 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarsource.sonarlint.core.NodeJsHelper;
 import org.sonarsource.sonarlint.core.commons.Version;
 
-public class NodeJsManager {
-
+@Service(Service.Level.APP)
+public final class NodeJsManager {
   private boolean nodeInit = false;
   private Path nodeJsPath = null;
   private Version nodeJsVersion = null;

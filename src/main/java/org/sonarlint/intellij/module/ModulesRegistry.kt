@@ -19,12 +19,14 @@
  */
 package org.sonarlint.intellij.module
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import java.util.concurrent.ConcurrentHashMap
 
+@Service(Service.Level.APP)
 class ModulesRegistry {
     private val modules: MutableMap<Module, ClientModuleInfo> = ConcurrentHashMap()
 
