@@ -22,13 +22,11 @@ package org.sonarlint.intellij.ui.vulnerabilities
 import com.intellij.icons.AllIcons.General.Information
 import com.intellij.ide.OccurenceNavigator
 import com.intellij.ide.OccurenceNavigator.OccurenceInfo
-import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataProvider
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
@@ -200,17 +198,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         TreeUtil.selectPath(tree, TreePath(vulnerabilityNode.path))
     }
 
-    /**
-     *  To handle UI theme changes the rule windows must be reloaded immediately, otherwise the accessibility isn't great
-     *  (bad contrast, ...). We want to subscribe to the message bus everytime the rule panel content changes to reload
-     *  the panel with the correct rule content.
-     */
     private fun updateRulePanelContent() {
-        ApplicationManager.getApplication().messageBus.connect().subscribe(LafManagerListener.TOPIC, LafManagerListener { actualUpdateRulePanelContent() })
-        actualUpdateRulePanelContent()
-    }
-
-    private fun actualUpdateRulePanelContent() {
         val highlighting = getService(project, EditorDecorator::class.java)
         val issue = tree.getIssueFromSelectedNode()
         if (issue == null) {
