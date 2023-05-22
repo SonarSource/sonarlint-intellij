@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.fixtures
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.Locator
@@ -92,6 +93,9 @@ open class DialogFixture(
   fun pressButton(text: String) {
     button(text).click()
   }
+
+  fun content(text: String, function: ComponentFixture.() -> Unit = {}) =
+    findElement<ComponentFixture>(byXpath("dialog with content text '$text'", "//div[@text='$text']")).apply(function)
 
   open fun pressFinishOrCreate() {
     // https://github.com/JetBrains/intellij-community/commit/b0392e7871d6f310d89a25b5c69b67d4c1244e05

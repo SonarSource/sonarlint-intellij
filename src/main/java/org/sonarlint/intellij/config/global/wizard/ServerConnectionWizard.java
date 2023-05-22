@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 
 public class ServerConnectionWizard {
   private final WizardModel model;
@@ -92,7 +93,7 @@ public class ServerConnectionWizard {
 
     @Override
     protected void helpAction() {
-      BrowserUtil.browse("https://github.com/SonarSource/sonarlint-intellij/wiki/Bind-to-SonarQube-or-SonarCloud");
+      BrowserUtil.browse(SonarLintDocumentation.CONNECTED_MODE_LINK);
     }
 
     @Override

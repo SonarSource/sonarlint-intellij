@@ -28,7 +28,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import com.intellij.util.PlatformUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.SonarLintAppUtils
@@ -63,7 +63,7 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, StartupActivi
         val file = FileDocumentManager.getInstance().getFile(document) ?: return
         // SLI-551 Only send events on .py files (avoid parse errors)
         // For Rider, send all events for OmniSharp
-        if (!PlatformUtils.isRider() && !ModuleFileEventsNotifier.isPython(file)) return;
+        if (!SonarLintUtils.isRider() && !ModuleFileEventsNotifier.isPython(file)) return;
         val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return
         val fileEvent = buildModuleFileEvent(module, file, document, ModuleFileEvent.Type.MODIFIED) ?: return
         synchronized(eventsToSend) {

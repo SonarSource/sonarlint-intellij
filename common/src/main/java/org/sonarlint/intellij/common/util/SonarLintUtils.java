@@ -33,7 +33,6 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.PlatformUtils;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Transparency;
@@ -206,11 +205,31 @@ public class SonarLintUtils {
     return ApplicationInfo.getInstance();
   }
 
+  /** Alternative to {@link com.intellij.util.PlatformUtils#isCLion} */
+  public static boolean isCLion() {
+    return getAppInfo().getFullApplicationName().toLowerCase().contains("clion");
+  }
+
+  /** Alternative to {@link com.intellij.util.PlatformUtils#isGoIde} */
+  public static boolean isGoIde() {
+    return getAppInfo().getFullApplicationName().toLowerCase().contains("goland");
+  }
+
+  /** Alternative to {@link com.intellij.util.PlatformUtils#isRider} */
+  public static boolean isRider() {
+    return getAppInfo().getFullApplicationName().toLowerCase().contains("rider");
+  }
+
+  /** Alternative to {@link com.intellij.util.PlatformUtils#isAppCode} */
+  public static boolean isAppCode() {
+    return getAppInfo().getFullApplicationName().toLowerCase().contains("appcode");
+  }
+
   public static boolean isTaintVulnerabilitiesEnabled() {
-    return !PlatformUtils.isCLion() && !PlatformUtils.isGoIde();
+    return !isCLion() && !isGoIde();
   }
 
   public static boolean isModuleLevelBindingEnabled() {
-    return !PlatformUtils.isRider() && !PlatformUtils.isCLion() && !PlatformUtils.isAppCode();
+    return !isRider() && !isCLion() && !isAppCode();
   }
 }

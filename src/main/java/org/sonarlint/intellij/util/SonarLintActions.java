@@ -34,6 +34,7 @@ import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
+import org.sonarlint.intellij.actions.filters.ShowResolvedHotspotsAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 /**
@@ -52,6 +53,7 @@ public final class SonarLintActions {
   private final AnAction analyzeChangedFilesAction;
   private final AnAction analyzeAllFilesAction;
   private final ActionGroup filterAction;
+  private final AnAction showResolvedHotspotAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -86,8 +88,9 @@ public final class SonarLintActions {
       "Run a SonarLint analysis on VCS changed files",
       SonarLintIcons.SCM);
     filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
-      "Filter security hotspots based on SonarQube matches",
+      "Filter security hotspots",
       AllIcons.General.Filter);
+    showResolvedHotspotAction = new ShowResolvedHotspotsAction();
   }
 
   public static SonarLintActions getInstance() {
@@ -126,4 +129,7 @@ public final class SonarLintActions {
     return filterAction;
   }
 
+  public AnAction showResolvedHotspotAction() {
+    return showResolvedHotspotAction;
+  }
 }
