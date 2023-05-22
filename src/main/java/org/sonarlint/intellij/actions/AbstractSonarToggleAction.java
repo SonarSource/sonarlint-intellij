@@ -29,6 +29,10 @@ import org.jetbrains.annotations.Nullable;
 // UpdateInBackground is scheduled for removal and comes with a replacement in 2022.2. We have to use it for older versions
 public abstract class AbstractSonarToggleAction extends ToggleAction implements DumbAware, UpdateInBackground {
 
+  protected AbstractSonarToggleAction() {
+    super();
+  }
+
   protected AbstractSonarToggleAction(@Nullable @NlsActions.ActionText final String text) {
     super(text);
   }

@@ -32,7 +32,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 
 class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
   "Open In Browser",
-  "Open security hotspot in browser interface of SonarQube",
+  "Open security hotspot in browser",
   null
 ) {
   companion object {
@@ -47,6 +47,7 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
   override fun updatePresentation(e: AnActionEvent, project: Project) {
     val serverConnection = serverConnection(project) ?: return
     e.presentation.text = "Open in " + serverConnection.productName
+    e.presentation.description = "Open security hotspot in browser interface of " + serverConnection.productName
     e.presentation.icon = serverConnection.productIcon
   }
 

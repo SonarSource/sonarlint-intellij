@@ -62,6 +62,7 @@ import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
@@ -71,6 +72,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private static final int LOCATIONS_TAB_INDEX = 1;
   private static final String NOT_SUPPORTED_CARD_ID = "NOT_SUPPORTED_CARD";
   private static final String NO_SECURITY_HOTSPOT_CARD_ID = "NO_SECURITY_HOTSPOT_CARD_ID";
+  private static final String NO_SECURITY_HOTSPOT_FILTERED_CARD_ID = "NO_SECURITY_HOTSPOT_FILTERED_CARD_ID";
   private static final String SECURITY_HOTSPOTS_LIST_CARD_ID = "SECURITY_HOTSPOTS_LIST_CARD_ID";
   private static final String TOOLBAR_GROUP_ID = "SecurityHotspot";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
@@ -114,6 +116,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     notSupportedLabel = new JLabel();
     cardPanel.add(centeredLabel(notSupportedLabel, new AnActionLink("Configure binding", new SonarConfigureProject())), NOT_SUPPORTED_CARD_ID);
     cardPanel.add(centeredLabel(new JLabel("No security hotspot found"), null), NO_SECURITY_HOTSPOT_CARD_ID);
+    cardPanel.add(centeredLabel(new JLabel("No security hotspot shown due to the current filtering"), null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
     cardPanel.add(findingsPanel, SECURITY_HOTSPOTS_LIST_CARD_ID);
     setupToolbar(createActionGroup());
 
@@ -124,6 +127,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var sonarLintActions = SonarLintActions.getInstance();
     var actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.filterSecurityHotspots());
+    actionGroup.add(sonarLintActions.showResolvedHotspotAction());
     actionGroup.add(sonarLintActions.configure());
     return actionGroup;
   }
@@ -159,7 +163,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       TreeUtil.expandAll(securityHotspotTree);
       displaySecurityHotspots();
 
-      return securityHotspotCount;
+      return applyCurrentFiltering(project);
     } else {
       return 0;
     }
@@ -262,8 +266,20 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     }
   }
 
+  private int displaySecurityHotspotsAfterFiltering(int filteredCount) {
+    if (status instanceof Supported) {
+      if (filteredCount == 0) {
+        cardPanel.show(NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
+      } else {
+        cardPanel.show(SECURITY_HOTSPOTS_LIST_CARD_ID);
+      }
+      return filteredCount;
+    }
+    return 0;
+  }
+
   public boolean trySelectSecurityHotspot(String securityHotspotKey) {
-    var foundHotspot = securityHotspotTreeBuilder.findHotspot(securityHotspotKey);
+    var foundHotspot = securityHotspotTreeBuilder.findHotspotByKey(securityHotspotKey);
     if (foundHotspot != null) {
       updateOnSelect(foundHotspot);
       return true;
@@ -271,8 +287,32 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return false;
   }
 
-  public void filterSecurityHotspots(SecurityHotspotFilters filter) {
-    securityHotspotTreeBuilder.filterSecurityHotspots(filter);
+  public int applyCurrentFiltering(Project project) {
+    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.applyCurrentFiltering(project));
+  }
+
+  public int updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
+    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(project, securityHotspotKey, status));
+  }
+
+  public void selectAndHighlightSecurityHotspot(LiveSecurityHotspot securityHotspot) {
+    updateOnSelect(securityHotspot);
+  }
+
+  public int filterSecurityHotspots(Project project, SecurityHotspotFilters filter) {
+    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.filterSecurityHotspots(project, filter));
+  }
+
+  public void selectLocationsTab() {
+    detailsTab.setSelectedIndex(LOCATIONS_TAB_INDEX);
+  }
+
+  public void selectRulesTab() {
+    detailsTab.setSelectedIndex(RULE_TAB_INDEX);
+  }
+
+  public Collection<LiveSecurityHotspotNode> getDisplayedNodes() {
+    return securityHotspotTreeBuilder.getFilteredNodes();
   }
 
   @Override

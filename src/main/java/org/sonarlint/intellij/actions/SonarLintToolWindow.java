@@ -26,15 +26,21 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.util.ui.UIUtil;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -45,7 +51,10 @@ import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
@@ -68,11 +77,27 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::clear);
   }
 
+  public void updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
+    var content = getSecurityHotspotContent();
+    if (content != null) {
+      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
+      var hotspotsCount = hotspotsPanel.updateStatusAndApplyCurrentFiltering(securityHotspotKey, status);
+      content.setDisplayName(buildTabName(hotspotsCount, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+    }
+    var contentManager = getToolWindow().getContentManager();
+    content = contentManager.findContent(SonarLintToolWindowFactory.REPORT_TAB_TITLE);
+    if (content != null) {
+      var reportPanel = (ReportPanel) content.getComponent();
+      reportPanel.updateStatusForSecurityHotspot(securityHotspotKey, status);
+    }
+  }
+
   public void filterSecurityHotspotTab(SecurityHotspotFilters filter) {
     var content = getSecurityHotspotContent();
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      hotspotsPanel.filterSecurityHotspots(filter);
+      var hotspotsCount = hotspotsPanel.filterSecurityHotspots(project, filter);
+      content.setDisplayName(buildTabName(hotspotsCount, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
   }
 
@@ -198,12 +223,45 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     selectTab.accept(currentFilePanel);
   }
 
+  private void showSecurityHotspot(LiveSecurityHotspot liveSecurityHotspot, Consumer<SecurityHotspotsPanel> selectTab) {
+    var content = getSecurityHotspotContent();
+    if (content != null) {
+      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
+      hotspotsPanel.selectAndHighlightSecurityHotspot(liveSecurityHotspot);
+      selectTab.accept(hotspotsPanel);
+    }
+  }
+
+  public void showFindingDescription(LiveFinding liveFinding) {
+    if (liveFinding.getType() == RuleType.SECURITY_HOTSPOT) {
+      showSecurityHotspotDescription((LiveSecurityHotspot) liveFinding);
+    } else {
+      showIssueDescription((LiveIssue) liveFinding);
+    }
+  }
+
   public void showIssueDescription(LiveIssue liveIssue) {
     showIssue(liveIssue, CurrentFilePanel::selectRulesTab);
   }
 
+  public void showSecurityHotspotDescription(LiveSecurityHotspot liveSecurityHotspot) {
+    showSecurityHotspot(liveSecurityHotspot, SecurityHotspotsPanel::selectRulesTab);
+  }
+
+  public void showFindingLocations(LiveFinding liveFinding) {
+    if (liveFinding.getType() == RuleType.SECURITY_HOTSPOT) {
+      showSecurityHotspotLocations((LiveSecurityHotspot) liveFinding);
+    } else {
+      showIssueLocations((LiveIssue) liveFinding);
+    }
+  }
+
   public void showIssueLocations(LiveIssue liveIssue) {
     showIssue(liveIssue, CurrentFilePanel::selectLocationsTab);
+  }
+
+  public void showSecurityHotspotLocations(LiveSecurityHotspot liveSecurityHotspot) {
+    showSecurityHotspot(liveSecurityHotspot, SecurityHotspotsPanel::selectLocationsTab);
   }
 
   public boolean trySelectSecurityHotspot(String securityHotspotKey) {
@@ -234,5 +292,20 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
       var count = hotspotsPanel.updateFindings(currentSecurityHotspotsPerOpenFile);
       content.setDisplayName(buildTabName(count, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
+  }
+
+  public Collection<LiveSecurityHotspot> getDisplayedSecurityHotspots() {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null && toolWindow.isVisible() && securityHotspotsContent != null && securityHotspotsContent.isSelected()) {
+      var securityHotspotPanel = (SecurityHotspotsPanel) securityHotspotsContent.getComponent();
+      return securityHotspotPanel.getDisplayedNodes().stream().map(LiveSecurityHotspotNode::getHotspot).collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public void selectionChanged(@NotNull ContentManagerEvent event) {
+    // Introduced in the context of security hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
+    SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
   }
 }

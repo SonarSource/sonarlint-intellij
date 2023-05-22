@@ -19,17 +19,26 @@
  */
 package org.sonarlint.intellij.ui.ruledescription
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
+import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import java.awt.FlowLayout
+import java.awt.event.ActionEvent
+import javax.swing.AbstractAction
 import javax.swing.BorderFactory
+import javax.swing.JButton
+import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 
@@ -41,6 +50,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private val hotspotVulnerabilityLabel = JBLabel("Review priority: ")
     private val hotspotVulnerabilityValueLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
+    private val changeStatusButton = JButton()
 
     init {
         add(ruleTypeIcon)
@@ -58,7 +68,13 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         })
         add(ruleKeyLabel.apply {
             border = JBUI.Borders.emptyLeft(10)
-        })
+        }, HorizontalLayout.CENTER)
+
+        val changeStatusPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
+        changeStatusPanel.apply { border = BorderFactory.createEmptyBorder(0, 15, 0, 0) }
+
+        changeStatusPanel.add(changeStatusButton)
+        add(changeStatusPanel)
     }
 
     fun clear() {
@@ -69,6 +85,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         ruleSeverityLabel.text = ""
         hotspotVulnerabilityLabel.isVisible = false
         hotspotVulnerabilityValueLabel.text = ""
+        changeStatusButton.isVisible = false
     }
 
     fun update(ruleKey: String, type: RuleType, severity: IssueSeverity) {
@@ -79,7 +96,16 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         ruleSeverityLabel.setCopyable(true)
     }
 
-    fun update(ruleKey: String, type: RuleType, vulnerabilityProbability: VulnerabilityProbability) {
+    fun update(
+        project: Project,
+        securityHotspotKey: String?,
+        status: HotspotReviewStatus,
+        isValid: Boolean,
+        file: VirtualFile,
+        ruleKey: String,
+        type: RuleType,
+        vulnerabilityProbability: VulnerabilityProbability,
+    ) {
         clear()
         updateCommonFields(type, ruleKey)
         hotspotVulnerabilityLabel.isVisible = true
@@ -87,6 +113,15 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
             text = vulnerabilityProbability.name
             setCopyable(true)
             background = SonarLintIcons.colorsByProbability[vulnerabilityProbability]
+        }
+
+        securityHotspotKey?.let {
+            changeStatusButton.action = object : AbstractAction("Change Status") {
+                override fun actionPerformed(e: ActionEvent?) {
+                    ReviewSecurityHotspotAction(securityHotspotKey, status).openReviewingDialog(project, file)
+                }
+            }
+            changeStatusButton.isVisible = isValid
         }
     }
 

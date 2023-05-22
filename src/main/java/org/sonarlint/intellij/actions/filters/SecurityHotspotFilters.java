@@ -19,33 +19,47 @@
  */
 package org.sonarlint.intellij.actions.filters;
 
+import com.intellij.openapi.project.Project;
+import java.util.function.Function;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public enum SecurityHotspotFilters {
 
-  SHOW_ALL("Show All"),
-  LOCAL_ONLY("Local Only"),
-  EXISTING_ON_SONARQUBE("Existing On SonarQube");
+  SHOW_ALL(p -> "Show All"),
+  LOCAL_ONLY(p -> "Local Only"),
+  EXISTING_ON_SERVER(p -> "Existing" + getService(p, ProjectBindingManager.class).tryGetServerConnection().map(c -> " on " + c.getProductName()).orElse(""));
 
-  private final String title;
+  public static final SecurityHotspotFilters DEFAULT_FILTER = SHOW_ALL;
+  private final Function<Project, String> titleSupplier;
 
-  SecurityHotspotFilters(String title) {
-    this.title = title;
+  SecurityHotspotFilters(Function<Project, String> titleSupplier) {
+    this.titleSupplier = titleSupplier;
   }
 
-  public String getTitle() {
-    return title;
+  public String getTitle(Project project) {
+    return titleSupplier.apply(project);
   }
 
   public boolean shouldIncludeSecurityHotspot(LiveSecurityHotspot securityHotspot) {
+    var isSettingResolved = FilterSecurityHotspotSettings.isResolved();
+    var isNodeResolved = securityHotspot.isResolved();
+
+    var isIncluded = isSettingResolved || !isNodeResolved;
+
+    if (!isIncluded) {
+      return false;
+    }
+
     if (this == SHOW_ALL) {
       return true;
     } else if (this == LOCAL_ONLY) {
       return null == securityHotspot.getServerFindingKey();
-    } else if (this == EXISTING_ON_SONARQUBE) {
+    } else if (this == EXISTING_ON_SERVER) {
       return null != securityHotspot.getServerFindingKey();
     }
     return true;
   }
-
 }

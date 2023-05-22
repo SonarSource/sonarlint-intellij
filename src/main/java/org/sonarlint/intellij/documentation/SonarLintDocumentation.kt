@@ -17,15 +17,11 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.notifications.binding
+package org.sonarlint.intellij.documentation
 
-import com.intellij.ide.BrowserUtil
-import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.actions.AbstractSonarAction
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
-
-class LearnMoreAboutConnectedModeAction : AbstractSonarAction("Learn more") {
-    override fun actionPerformed(e: AnActionEvent) {
-        BrowserUtil.browse(SonarLintDocumentation.CONNECTED_MODE_LINK)
-    }
+object SonarLintDocumentation {
+    private const val BASE_DOCS_URL = "https://github.com/SonarSource/sonarlint-intellij/wiki"
+    const val CONNECTED_MODE_LINK = "${BASE_DOCS_URL}/Bind-to-SonarQube-or-SonarCloud"
+    const val SECURITY_HOTSPOTS_LINK = "${BASE_DOCS_URL}/Security-Hotspots"
+    const val TAINT_VULNERABILITIES_LINK = "${BASE_DOCS_URL}/Taint-Vulnerabilities"
 }
