@@ -194,53 +194,36 @@
         <!-- Empty language attribute corresponds to any language (see com.intellij.lang.Language.ANY) -->
         <externalAnnotator language="" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
-        <!-- Cannot be moved to service annotation because of 'serviceInterface' / 'testServiceImplementation' -->
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.core.server.events.ServerEventsService"
                             serviceImplementation="org.sonarlint.intellij.core.server.events.ServerEventsProductionService"
                             testServiceImplementation="org.sonarlint.intellij.util.ServerEventsNoOpService"/>
 
-        <!-- Cannot be moved to service annotation because of persisting application state -->
-        <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
-
-        <!-- Cannot be moved to service annotation because of 'serviceInterface' / 'testServiceImplementation' -->
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.core.EngineManager"
                             serviceImplementation="org.sonarlint.intellij.core.DefaultEngineManager"
                             testServiceImplementation="org.sonarlint.intellij.core.TestEngineManager"/>
 
-        <applicationService serviceImplementation="org.sonarlint.intellij.SonarLintPlugin"/>
-
-        <!-- Cannot be moved to service annotation because of 'serviceInterface' / 'testServiceImplementation' -->
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
                             serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"
                             testServiceImplementation="org.sonarlint.intellij.util.GlobalLogOutputTestImpl"/>
 
-        <applicationService serviceImplementation="org.sonarlint.intellij.util.SonarLintActions"/>
-
-        <!-- Cannot be moved to service annotation because of 'serviceInterface' -->
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"
                             serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
 
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.BackendService"/>
-
-        <!-- Cannot be moved to service annotation because of 'serviceInterface' / 'testServiceImplementation' -->
-        <applicationService serviceInterface="org.sonarlint.intellij.util.ThreadPoolExecutor"
-                            serviceImplementation="org.sonarlint.intellij.util.ApplicationThreadPoolExecutor"
-                            testServiceImplementation="org.sonarlint.intellij.util.SynchronousThreadPoolExecutor"/>
-
-        <!-- Cannot be moved to service annotation because of 'serviceInterface' -->
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <projectService serviceInterface="org.sonarlint.intellij.common.vcs.VcsService"
                         serviceImplementation="org.sonarlint.intellij.vcs.DefaultVcsService"/>
 
-        <!-- Cannot be moved to service annotation because of persisting project state -->
-        <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
-
-        <!-- Cannot be moved to service annotation because of 'serviceInterface' / 'testServiceImplementation' -->
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
 
         <!-- Cannot be moved to service annotation because of persisting project state -->
-        <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>
+        <!--<projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>-->
 
         <!-- Cannot be moved to service annotation because of module -->
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>

@@ -20,10 +20,12 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.serviceContainer.NonInjectable;
 
+@Service(Service.Level.PROJECT)
 @State(name = "SonarLintProjectSettings", storages = {@Storage("sonarlint.xml")})
 public final class SonarLintProjectSettingsStore implements PersistentStateComponent<SonarLintProjectSettings> {
 

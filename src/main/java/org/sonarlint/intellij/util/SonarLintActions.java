@@ -25,6 +25,7 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.IdeActions;
+import com.intellij.openapi.components.Service;
 import com.intellij.serviceContainer.NonInjectable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
@@ -40,7 +41,8 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
  * Some actions are created programmatically instead of being declared in plugin.xml so that they are not registered in
  * ActionManager, becoming accessible from the action search.
  */
-public class SonarLintActions {
+@Service(Service.Level.APP)
+public final class SonarLintActions {
 
   private final AnAction clearReportAction;
   private final AnAction clearIssuesAction;
