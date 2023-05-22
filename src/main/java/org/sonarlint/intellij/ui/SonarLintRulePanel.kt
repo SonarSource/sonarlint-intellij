@@ -128,7 +128,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         setLoadingText("Loading rule description...")
         clear()
 
-        ApplicationManager.getApplication().messageBus.connect().subscribe(LafManagerListener.TOPIC, LafManagerListener { updateUiComponents() })
+        ApplicationManager.getApplication().messageBus.connect(parent).subscribe(LafManagerListener.TOPIC, LafManagerListener { updateUiComponents() })
     }
 
     private data class RuleDetailsLoaderState(val lastModule: Module?, val lastFindingRuleKey: String?, val lastContextKey: String?)
