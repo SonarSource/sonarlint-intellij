@@ -194,6 +194,9 @@
         <!-- Empty language attribute corresponds to any language (see com.intellij.lang.Language.ANY) -->
         <externalAnnotator language="" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
+        <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
+        <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
+
         <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.core.server.events.ServerEventsService"
                             serviceImplementation="org.sonarlint.intellij.core.server.events.ServerEventsProductionService"
@@ -221,9 +224,6 @@
         <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
-
-        <!-- Cannot be moved to service annotation because of persisting project state -->
-        <!--<projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>-->
 
         <!-- Cannot be moved to service annotation because of module -->
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
