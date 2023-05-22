@@ -29,7 +29,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.fixtures.anActionLink
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
@@ -72,7 +71,7 @@ class SecurityHotspotTabTest : BaseUiTest() {
                     ensureOpen()
                     tab("Security Hotspots") { select() }
                     content("SecurityHotspotsPanel") {
-                        anActionLink("Configure binding").click()
+                        findText("Configure Binding").click()
                     }
                 }
                 bindProjectToSonarQube(
