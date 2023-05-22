@@ -27,11 +27,10 @@ class UiUtils {
     companion object {
         @JvmStatic
         fun runOnUiThread(project: Project, runnable: Runnable) {
-            runOnUiThread(project, runnable, ModalityState.defaultModalityState())
+            runOnUiThread(project, ModalityState.defaultModalityState(), runnable)
         }
 
-        @JvmStatic
-        fun runOnUiThread(project: Project, runnable: Runnable, modality: ModalityState) {
+        fun runOnUiThread(project: Project, modality: ModalityState, runnable: Runnable) {
             ApplicationManager.getApplication().invokeLater({
                 if (!project.isDisposed) {
                     runnable.run()

@@ -30,7 +30,7 @@ import javax.swing.JPanel
 import kotlin.properties.Delegates
 
 class ReviewSecurityHotspotPanel(
-    private val listAllowedStatuses: List<HotspotStatus>,
+    allowedStatuses: List<HotspotStatus>,
     private val defaultStatus: HotspotStatus,
     val callbackForButton: (Boolean) -> Unit,
 ) : JPanel(),
@@ -40,11 +40,12 @@ class ReviewSecurityHotspotPanel(
 
     init {
         layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, true, false)
-        handleStatusPanel(ButtonGroup())
+        display(allowedStatuses)
     }
 
-    private fun handleStatusPanel(buttonGroup: ButtonGroup) {
-        listAllowedStatuses.forEach { status ->
+    fun display(allowedStatuses: List<HotspotStatus>) {
+        val buttonGroup = ButtonGroup()
+        allowedStatuses.forEach { status ->
             val statusPanel = StatusPanel(status, defaultStatus == status)
             buttonGroup.add(statusPanel.statusRadioButton)
             statusPanel.addMouseListener(object : MouseAdapter() {
@@ -62,5 +63,4 @@ class ReviewSecurityHotspotPanel(
         e ?: return
         selectedStatus = HotspotStatus.valueOf(e.actionCommand)
     }
-
 }

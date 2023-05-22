@@ -33,16 +33,18 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.SECURITY_HOTSPOTS_LINK
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import java.awt.event.ActionEvent
 import javax.swing.JButton
 
+
 class ReviewSecurityHotspotDialog(
     project: Project,
     productName: String,
-    listOfAllowedStatus: List<HotspotStatus>,
     module: Module,
     securityHotspotKey: String,
+    permissionCheckResponse: CheckStatusChangePermittedResponse,
     currentStatus: HotspotStatus,
 ) : DialogWrapper(false) {
 
@@ -58,21 +60,20 @@ class ReviewSecurityHotspotDialog(
                 isEnabled = false
             }
 
-            override fun doAction(e: ActionEvent?) {
+            override fun doAction(e: ActionEvent) {
                 val status = getStatus()
                 SonarLintUtils.getService(BackendService::class.java)
                     .changeStatusForHotspot(BackendService.moduleId(module), securityHotspotKey, status)
                     .thenAccept {
                         runOnUiThread(
                             project,
-                            {
-                                SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
-                                    .updateStatusAndApplyCurrentFiltering(securityHotspotKey, status)
-                                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-                                close(OK_EXIT_CODE)
-                            },
-                            ModalityState.stateForComponent(this@ReviewSecurityHotspotDialog.contentPane)
-                        )
+                            ModalityState.stateForComponent(this@ReviewSecurityHotspotDialog.contentPane),
+                        ) {
+                            SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
+                                .updateStatusAndApplyCurrentFiltering(securityHotspotKey, status)
+                            SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+                            close(OK_EXIT_CODE)
+                        }
                     }
                     .exceptionally { error ->
                         SonarLintConsole.get(project).error("Error while changing the Security Hotspot status", error)
@@ -85,16 +86,15 @@ class ReviewSecurityHotspotDialog(
                         notification.isImportant = true
                         notification.notify(project)
 
-                        runOnUiThread(
-                            project,
-                            { close(CANCEL_EXIT_CODE) },
-                            ModalityState.stateForComponent(this@ReviewSecurityHotspotDialog.contentPane)
-                        )
+                        closeDialog(project)
                         null
                     }
             }
         }
-        centerPanel = ReviewSecurityHotspotPanel(listOfAllowedStatus, currentStatus) { changeStatusAction.isEnabled = it }
+        centerPanel = ReviewSecurityHotspotPanel(permissionCheckResponse.allowedStatuses, currentStatus) { changeStatusAction.isEnabled = permissionCheckResponse.isPermitted && it }
+        if (!permissionCheckResponse.isPermitted) {
+            setErrorText(permissionCheckResponse.notPermittedReason)
+        }
         init()
     }
 
@@ -111,5 +111,12 @@ class ReviewSecurityHotspotDialog(
     }
 
     private fun getStatus() = centerPanel.selectedStatus
+
+    private fun closeDialog(project: Project) {
+        runOnUiThread(
+            project,
+            ModalityState.stateForComponent(this@ReviewSecurityHotspotDialog.contentPane)
+        ) { close(CANCEL_EXIT_CODE) }
+    }
 
 }
