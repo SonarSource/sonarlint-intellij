@@ -40,6 +40,7 @@ import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.ui.scale.JBUIScale
@@ -92,7 +93,8 @@ private const val PRE_TAG_ENDING = "</pre>"
 
 class SonarLintRulePanel(private val project: Project, private val parent: Disposable) : JBLoadingPanel(BorderLayout(), project) {
 
-
+    private val mainPanel = JBPanelWithEmptyText(BorderLayout())
+    private val topPanel = JBPanel<JBPanel<*>>(BorderLayout())
     private val descriptionPanel = JBPanel<JBPanel<*>>(BorderLayout())
     private val ruleNameLabel = JBLabel()
     private val headerPanel = RuleHeaderPanel()
@@ -103,7 +105,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
     private var ruleDetails: EffectiveRuleDetailsDto? = null
 
     init {
-        add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
+        mainPanel.add(topPanel.apply {
             add(ruleNameLabel.apply {
                 font = UIUtil.getLabelFont().deriveFont((UIUtil.getLabelFont().size2D + JBUIScale.scale(3))).deriveFont(Font.BOLD)
             }, BorderLayout.NORTH)
@@ -121,12 +123,13 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             }, BorderLayout.SOUTH)
         }, BorderLayout.NORTH)
 
-        add(descriptionPanel, BorderLayout.CENTER)
+        mainPanel.add(descriptionPanel, BorderLayout.CENTER)
 
-        add(paramsPanel.apply {
+        mainPanel.add(paramsPanel.apply {
             border = IdeBorderFactory.createTitledBorder("Parameters")
         }, BorderLayout.SOUTH)
 
+        add(mainPanel)
         setLoadingText("Loading rule description...")
         clear()
 
@@ -200,12 +203,12 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         if (finding == null || ruleDetails == null) {
             val errorLoadingRuleDetails = finding != null
             descriptionPanel.removeAll()
-            hideRuleParameters()
             ruleNameLabel.text = ""
-            headerPanel.showMessage(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
+            disableEmptyDisplay(false)
+            mainPanel.withEmptyText(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
             securityHotspotHeaderMessage.text = ""
-            securityHotspotHeaderMessage.isVisible = false
         } else {
+            disableEmptyDisplay(true)
             updateHeader(finding, ruleDetails)
             descriptionPanel.removeAll()
             val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language.languageKey)
@@ -327,12 +330,8 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         if (ruleDescription.params.isNotEmpty()) {
             populateParamPanel(ruleDescription)
         } else {
-            hideRuleParameters()
+            paramsPanel.isVisible = false
         }
-    }
-
-    private fun hideRuleParameters() {
-        paramsPanel.isVisible = false
     }
 
     private fun populateParamPanel(ruleDetails: EffectiveRuleDetailsDto) {
@@ -467,6 +466,12 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         scrollPane.border = null
 
         return scrollPane
+    }
+
+    private fun disableEmptyDisplay(state: Boolean) {
+        topPanel.isVisible = state
+        descriptionPanel.isVisible = state
+        paramsPanel.isVisible = state
     }
 
 }

@@ -116,8 +116,10 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
       var content = contentManager.findContent(displayName);
-      var panel = (T) content.getComponent();
-      tabPanelConsumer.accept(panel);
+      if (content != null) {
+        var panel = (T) content.getComponent();
+        tabPanelConsumer.accept(panel);
+      }
     }
     return toolWindow;
   }

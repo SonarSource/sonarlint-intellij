@@ -19,17 +19,12 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.options.ShowSettingsUtil;
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 
-public class SonarConfigureProject extends AbstractSonarAction {
-  @Override
-  protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
-    return !status.isRunning();
-  }
+public class SonarConfigureProject extends AnAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
@@ -38,4 +33,5 @@ public class SonarConfigureProject extends AbstractSonarAction {
       ShowSettingsUtil.getInstance().editConfigurable(e.getProject(), configurable);
     }
   }
+
 }

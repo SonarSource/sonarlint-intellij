@@ -23,6 +23,8 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
@@ -30,7 +32,8 @@ import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
-import com.intellij.ui.components.AnActionLink;
+import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.ui.treeStructure.Tree;
@@ -43,10 +46,10 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreeSelectionModel;
+import org.sonarlint.intellij.actions.OpenSecurityHotspotDocumentationAction;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -88,7 +91,8 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private ActionToolbar mainToolbar;
   private SecurityHotspotsLocalDetectionSupport status;
   private int securityHotspotCount;
-  private JLabel notSupportedLabel;
+  private JBPanelWithEmptyText notSupportedPanel;
+  private AnAction sonarConfigureProject;
 
   public SecurityHotspotsPanel(Project project) {
     super(false, true);
@@ -113,13 +117,14 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     findingsPanel.add(createSplitter(project, this, this,
       ScrollPaneFactory.createScrollPane(treePanel), detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
 
-    notSupportedLabel = new JLabel();
-    cardPanel.add(centeredLabel(notSupportedLabel, new AnActionLink("Configure binding", new SonarConfigureProject())), NOT_SUPPORTED_CARD_ID);
-    cardPanel.add(centeredLabel(new JLabel("No security hotspot found"), null), NO_SECURITY_HOTSPOT_CARD_ID);
-    cardPanel.add(centeredLabel(new JLabel("No security hotspot shown due to the current filtering"), null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
+    sonarConfigureProject = new SonarConfigureProject();
+    notSupportedPanel = centeredLabel("Security hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
+    cardPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID);
+    cardPanel.add(centeredLabel("No security hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
+    cardPanel.add(centeredLabel("No security hotspot shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
     cardPanel.add(findingsPanel, SECURITY_HOTSPOTS_LIST_CARD_ID);
-    setupToolbar(createActionGroup());
 
+    setupToolbar(createActionGroup());
     mainPanel.add(cardPanel.getContainer(), BorderLayout.CENTER);
   }
 
@@ -129,6 +134,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     actionGroup.add(sonarLintActions.filterSecurityHotspots());
     actionGroup.add(sonarLintActions.showResolvedHotspotAction());
     actionGroup.add(sonarLintActions.configure());
+    actionGroup.add(new OpenSecurityHotspotDocumentationAction());
     return actionGroup;
   }
 
@@ -223,13 +229,24 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return mainPanel;
   }
 
-  private static JPanel centeredLabel(JLabel textLabel, @Nullable AnActionLink actionLink) {
-    var labelPanel = new JPanel(new HorizontalLayout(5));
-    labelPanel.add(textLabel, HorizontalLayout.CENTER);
-    if (actionLink != null) {
-      labelPanel.add(actionLink, HorizontalLayout.CENTER);
+  private static JBPanelWithEmptyText centeredLabel(String textLabel, @Nullable String actionText, @Nullable AnAction action) {
+    var labelPanel = new JBPanelWithEmptyText(new HorizontalLayout(5));
+    var text = labelPanel.getEmptyText();
+    text.setText(textLabel);
+    if (action != null && actionText != null) {
+      text.appendLine(actionText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+        ignore -> ActionUtil.invokeAction(action, labelPanel, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
     }
     return labelPanel;
+  }
+
+  private void updateNotSupportedText(String newText) {
+    var text = notSupportedPanel.getEmptyText();
+    text.setText(newText);
+    if (sonarConfigureProject != null) {
+      text.appendLine("Configure Binding", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+        ignore -> ActionUtil.invokeAction(sonarConfigureProject, notSupportedPanel, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+    }
   }
 
   private void setupToolbar(ActionGroup group) {
@@ -251,7 +268,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var highlighting = getService(project, EditorDecorator.class);
     highlighting.removeHighlights();
     if (status instanceof NotSupported) {
-      notSupportedLabel.setText(((NotSupported) status).getReason());
+      updateNotSupportedText(((NotSupported) status).getReason());
       cardPanel.show(NOT_SUPPORTED_CARD_ID);
     } else if (status instanceof Supported) {
       displaySecurityHotspots();
