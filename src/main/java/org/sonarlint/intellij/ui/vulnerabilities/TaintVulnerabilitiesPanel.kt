@@ -91,14 +91,13 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private val rulePanel = SonarLintRulePanel(project, this)
     private lateinit var tree: TaintVulnerabilityTree
     private lateinit var treeBuilder: TaintVulnerabilityTreeModelBuilder
-    private var noVulnerabilitiesLabel = ""
     private val cards = CardPanel()
     private val noVulnerabilitiesPanel: JBPanelWithEmptyText
 
     init {
         cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
-        noVulnerabilitiesPanel = centeredLabel(noVulnerabilitiesLabel, "", null)
+        noVulnerabilitiesPanel = centeredLabel("", "", null)
         cards.add(noVulnerabilitiesPanel, NO_ISSUES_CARD_ID)
         cards.add(createSplitter(project, this, this, ScrollPaneFactory.createScrollPane(createTree()), rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
@@ -209,8 +208,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private fun showNoVulnerabilitiesLabel() {
         val serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
-        noVulnerabilitiesLabel = "No vulnerabilities found for currently opened files in the latest analysis on ${serverConnection.productName}"
-        noVulnerabilitiesPanel.withEmptyText(noVulnerabilitiesLabel)
+        noVulnerabilitiesPanel.withEmptyText("No vulnerabilities found for currently opened files in the latest analysis on ${serverConnection.productName}")
         showCard(NO_ISSUES_CARD_ID)
     }
 

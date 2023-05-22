@@ -277,7 +277,7 @@
 
         <action id="SonarLint.AnalyzeFiles"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeFilesAction"
-                text="Analyze With SonarLint"
+                text="Analyze with SonarLint"
                 description="Run SonarLint analysis on selected file(s)"
                 icon="org.sonarlint.intellij.SonarLintIcons.SONARLINT_ACTION">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>

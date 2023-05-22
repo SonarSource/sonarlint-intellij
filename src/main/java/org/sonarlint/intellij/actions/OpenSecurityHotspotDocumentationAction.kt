@@ -22,15 +22,14 @@ package org.sonarlint.intellij.actions
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
-
-private const val DOCUMENTATION_URL = "https://github.com/SonarSource/sonarlint-intellij/wiki/Security-Hotspots"
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.SECURITY_HOTSPOTS_LINK
 
 class OpenSecurityHotspotDocumentationAction : AbstractSonarAction(
     "Learn More", "Learn more about security hotspots in SonarLint", AllIcons.Actions.Help
 ) {
 
     override fun actionPerformed(e: AnActionEvent) {
-        BrowserUtil.browse(DOCUMENTATION_URL)
+        BrowserUtil.browse(SECURITY_HOTSPOTS_LINK)
     }
 
 }
