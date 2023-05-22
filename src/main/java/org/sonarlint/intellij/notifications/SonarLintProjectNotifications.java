@@ -24,6 +24,7 @@ import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +42,8 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class SonarLintProjectNotifications {
+@Service(Service.Level.PROJECT)
+public final class SonarLintProjectNotifications {
   private static final NotificationGroup BINDING_PROBLEM_GROUP = NotificationGroupManager.getInstance()
     .getNotificationGroup("SonarLint: Server Binding Errors");
   public static final NotificationGroup SERVER_NOTIFICATIONS_GROUP = NotificationGroupManager.getInstance()

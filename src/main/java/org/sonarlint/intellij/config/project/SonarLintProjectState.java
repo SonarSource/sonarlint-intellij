@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
@@ -30,8 +31,9 @@ import java.time.ZonedDateTime;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
 
+@Service(Service.Level.PROJECT)
 @State(name = "SonarLintProjectState", storages = {@Storage("sonarlint-state.xml")})
-public class SonarLintProjectState implements PersistentStateComponent<SonarLintProjectState> {
+public final class SonarLintProjectState implements PersistentStateComponent<SonarLintProjectState> {
   // Xml serializer doesn't handle ZonedDateTime, so we keep milliseconds since epoch
   @Tag
   private Long lastEventPolling = null;

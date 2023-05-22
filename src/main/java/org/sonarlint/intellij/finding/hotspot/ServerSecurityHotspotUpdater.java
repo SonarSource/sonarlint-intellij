@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.finding.hotspot;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -63,8 +64,9 @@ import static org.sonarlint.intellij.util.FutureUtils.waitForTask;
 import static org.sonarlint.intellij.util.FutureUtils.waitForTasks;
 import static org.sonarlint.intellij.util.ProjectUtils.getRelativePaths;
 
-public class ServerSecurityHotspotUpdater implements Disposable {
 
+@Service(Service.Level.PROJECT)
+public final class ServerSecurityHotspotUpdater implements Disposable {
   private static final int THREADS_NUM = 5;
   private static final int QUEUE_LIMIT = 100;
   private static final int FETCH_ALL_HOTSPOTS_THRESHOLD = 10;

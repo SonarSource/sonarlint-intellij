@@ -20,14 +20,15 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.components.Service;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.NotificationConfiguration;
 import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.ServerNotificationListener;
 import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.ServerNotificationsRegistry;
 
-public class ServerNotificationsService implements Disposable {
-
+@Service(Service.Level.APP)
+public final class ServerNotificationsService implements Disposable {
   private final ServerNotificationsRegistry serverNotificationsRegistry;
 
   public ServerNotificationsService() {

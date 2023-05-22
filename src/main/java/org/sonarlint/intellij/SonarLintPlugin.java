@@ -22,11 +22,13 @@ package org.sonarlint.intellij;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.extensions.PluginId;
 import java.nio.file.Path;
 import org.sonarlint.intellij.http.ApacheHttpClient;
 
-public class SonarLintPlugin implements Disposable {
+@Service(Service.Level.APP)
+public final class SonarLintPlugin implements Disposable {
   private IdeaPluginDescriptor plugin;
 
   public String getVersion() {

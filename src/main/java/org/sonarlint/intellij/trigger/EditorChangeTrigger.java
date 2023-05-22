@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
@@ -42,7 +43,8 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 @ThreadSafe
-public class EditorChangeTrigger implements DocumentListener, Disposable {
+@Service(Service.Level.PROJECT)
+public final class EditorChangeTrigger implements DocumentListener, Disposable {
   private static final int DEFAULT_TIMER_MS = 2000;
 
   // entries in this map mean that the file is "dirty"

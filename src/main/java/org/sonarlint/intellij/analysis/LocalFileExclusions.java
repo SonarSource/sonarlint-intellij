@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -60,7 +61,8 @@ import org.sonarsource.sonarlint.core.client.api.common.ClientFileExclusions;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class LocalFileExclusions {
+@Service(Service.Level.PROJECT)
+public final class LocalFileExclusions {
   private final Project myProject;
 
   private ClientFileExclusions projectExclusions;

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.finding.persistence;
 
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -50,7 +51,8 @@ import static java.util.Collections.emptyList;
  * Findings can then be displayed as annotations at any time.
  */
 @ThreadSafe
-public class FindingsCache {
+@Service(Service.Level.PROJECT)
+public final class FindingsCache {
   private final Project myProject;
   private final LiveFindingCache<LiveIssue> liveIssueCache;
   private final LiveFindingCache<LiveSecurityHotspot> liveSecurityHotspotCache;

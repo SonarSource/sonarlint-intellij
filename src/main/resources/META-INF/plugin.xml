@@ -188,67 +188,51 @@
         <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
         <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.editor.EditorDecorator"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.actions.SonarLintToolWindow"/>
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
         <iw.actionProvider implementation="org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider"/>
 
         <!-- Empty language attribute corresponds to any language (see com.intellij.lang.Language.ANY) -->
         <externalAnnotator language="" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
+        <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
+        <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
+
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.core.server.events.ServerEventsService"
                             serviceImplementation="org.sonarlint.intellij.core.server.events.ServerEventsProductionService"
                             testServiceImplementation="org.sonarlint.intellij.util.ServerEventsNoOpService"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
+
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.core.EngineManager"
                             serviceImplementation="org.sonarlint.intellij.core.DefaultEngineManager"
                             testServiceImplementation="org.sonarlint.intellij.core.TestEngineManager"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.SonarLintPlugin"/>
+
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
                             serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"
                             testServiceImplementation="org.sonarlint.intellij.util.GlobalLogOutputTestImpl"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.util.SonarLintActions"/>
+
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"
                             serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotificationsService"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.NodeJsManager"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.fs.ModuleFileEventsNotifier"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.module.ModulesRegistry"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.BackendService"/>
-        <applicationService serviceInterface="org.sonarlint.intellij.util.ThreadPoolExecutor"
-                            serviceImplementation="org.sonarlint.intellij.util.ApplicationThreadPoolExecutor"
-                            testServiceImplementation="org.sonarlint.intellij.util.SynchronousThreadPoolExecutor"/>
 
-        <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <projectService serviceInterface="org.sonarlint.intellij.common.vcs.VcsService"
                         serviceImplementation="org.sonarlint.intellij.vcs.DefaultVcsService"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.notifications.SonarLintProjectNotifications"/>
+
+        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisSubmitter"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.finding.persistence.FindingsCache"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisStatus"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.trigger.EditorChangeTrigger"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintAnalyzer"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.core.ServerIssueUpdater"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.finding.hotspot.ServerSecurityHotspotUpdater"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.analysis.LocalFileExclusions"/>
 
+        <!-- Cannot be moved to service annotation because of module -->
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
 
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <postStartupActivity implementation="org.sonarlint.intellij.fs.EditorFileChangeListener"/>
+
         <notificationGroup id="SonarLint: Server Binding Errors"
                            displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Analyzer Requirement"
@@ -267,7 +251,6 @@
                            displayType="STICKY_BALLOON"/>
         <notificationGroup id="SonarLint: Security Hotspot Review"
                            displayType="BALLOON"/>
-
     </extensions>
 
     <extensionPoints>
@@ -342,7 +325,5 @@
                 description="Configure SonarLint"
                 icon="org.sonarlint.intellij.SonarLintIcons.TOOLS">
         </action>
-
     </actions>
-
 </idea-plugin>

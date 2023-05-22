@@ -23,6 +23,7 @@ import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -56,6 +57,7 @@ data class FoundTaintVulnerabilities(val byFile: Map<VirtualFile, Collection<Loc
 
 const val TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE = "Error refreshing taint vulnerabilities"
 
+@Service(Service.Level.PROJECT)
 class TaintVulnerabilitiesPresenter(private val project: Project) {
   var currentVulnerabilitiesByFile : Map<VirtualFile, Collection<LocalTaintVulnerability>> = emptyMap()
 
