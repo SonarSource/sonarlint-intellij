@@ -44,6 +44,7 @@ import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.serverapi.UrlUtils;
@@ -53,8 +54,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class CurrentFileConnectedModePanel {
-
-  private static final String CONNECTED_MODE_DOCUMENTATION_URL = "https://github.com/SonarSource/sonarlint-intellij/wiki/Bind-to-SonarQube-or-SonarCloud";
 
   private static final String EMPTY = "Empty";
   private static final String NOT_CONNECTED = "Not Connected";
@@ -111,7 +110,7 @@ public class CurrentFileConnectedModePanel {
       var notConnectedTooltip = new TooltipWithClickableLinks.ForBrowser(this,
         "<h3>Not Connected</h3>" +
           "<p>Click to synchronize your project with SonarQube or SonarCloud.</p>" +
-          "<p><a href=\"" + CONNECTED_MODE_DOCUMENTATION_URL + "\">Learn More</a></p>");
+          "<p><a href=\"" + SonarLintDocumentation.CONNECTED_MODE_LINK + "\">Learn More</a></p>");
       IdeTooltipManager.getInstance().setCustomTooltip(this, notConnectedTooltip);
     }
   }

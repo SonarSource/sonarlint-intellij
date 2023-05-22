@@ -31,6 +31,7 @@ import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PathUtil;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -128,16 +129,18 @@ public class SonarLintAppUtils {
   }
 
   /**
-   * Path will always contain forward slashes.
+   *  Path will always contain forward slashes. Resolving the module path uses the official alternative to
+   *  {@link com.intellij.openapi.module.Module#getModuleFilePath} which is marked as internally!
    */
   @CheckForNull
   private static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
-    var moduleFilePath = module.getModuleFilePath();
-    if ("".equals(moduleFilePath)) {
-      // Non persistent module
-      return null;
-    }
-    var baseDir = Paths.get(moduleFilePath).getParent();
+    var moduleContentRoots = Arrays.stream(ModuleRootManager.getInstance(module).getContentRoots())
+            .filter(contentRoot -> contentRoot.getPath().trim().length() > 0)
+            .toArray(VirtualFile[]::new);
+
+    // If there are multiple content roots (this can be possible based on the SDK API documentation), just take the
+    // first one, assuming this one is the path of the ".iml" file.
+    var baseDir = Paths.get(moduleContentRoots[0].getPath()).getParent();
     var filePath = Paths.get(file.getPath());
     if (!filePath.startsWith(baseDir)) {
       return null;

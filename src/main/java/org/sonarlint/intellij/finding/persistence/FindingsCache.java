@@ -30,11 +30,14 @@ import com.intellij.psi.PsiFile;
 import com.intellij.serviceContainer.NonInjectable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -86,6 +89,14 @@ public final class FindingsCache {
   public void clearAllFindingsForAllFiles() {
     liveIssueCache.clear();
     liveSecurityHotspotCache.clear();
+  }
+
+  public Collection<LiveFinding> getFindingsForFile(VirtualFile file) {
+    return Stream.of(liveIssueCache, liveSecurityHotspotCache)
+      .map(findingCache -> findingCache.getLive(file))
+      .filter(Objects::nonNull)
+      .flatMap(Collection::stream)
+      .collect(Collectors.toList());
   }
 
   public Collection<LiveIssue> getIssuesForFile(VirtualFile file) {

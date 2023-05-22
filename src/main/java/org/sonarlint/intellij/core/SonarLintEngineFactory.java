@@ -21,7 +21,6 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.util.PlatformUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -136,7 +135,7 @@ public class SonarLintEngineFactory {
   private static Map<String, String> prepareExtraProps() {
     var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
     var extraProps = new HashMap<String, String>();
-    if (PlatformUtils.isRider()) {
+    if (SonarLintUtils.isRider()) {
       addOmnisharpServerPaths(plugin, extraProps);
     }
     return extraProps;

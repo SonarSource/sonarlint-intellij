@@ -58,8 +58,12 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveCo
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ChangeHotspotStatusParams
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedParams
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ListAllowedStatusesParams
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ListAllowedStatusesResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
@@ -288,6 +292,14 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun checkLocalSecurityHotspotDetectionSupported(project: Project): CompletableFuture<CheckLocalDetectionSupportedResponse> {
         return backend.hotspotService.checkLocalDetectionSupported(CheckLocalDetectionSupportedParams(projectId(project)))
+    }
+
+    fun changeStatusForHotspot(configurationScopeId: String, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
+        return backend.hotspotService.changeStatus(ChangeHotspotStatusParams(configurationScopeId, hotspotKey, newStatus))
+    }
+
+    fun listAllowedStatusesForHotspots(connectionId: String): CompletableFuture<ListAllowedStatusesResponse> {
+        return backend.hotspotService.listAllowedStatuses(ListAllowedStatusesParams(connectionId))
     }
 
     fun branchChanged(module: Module, newActiveBranchName: String) {

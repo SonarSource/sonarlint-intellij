@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotAction;
+import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotSettings;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -41,6 +42,7 @@ class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests 
   void prepare() {
     toolWindow = mock(SonarLintToolWindow.class);
     replaceProjectService(SonarLintToolWindow.class, toolWindow);
+    FilterSecurityHotspotSettings.setCurrentlySelectedFilter(SecurityHotspotFilters.DEFAULT_FILTER);
   }
 
   @Test
@@ -54,7 +56,7 @@ class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests 
     // Show All is already selected by default, it shouldn't trigger a new filtering
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
-    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SERVER);
   }
 
   @Test
@@ -67,7 +69,7 @@ class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests 
 
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
     verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
-    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
+    verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SERVER);
   }
 
   @Test
@@ -80,7 +82,7 @@ class FilterSecurityHotspotActionGroupTests extends AbstractSonarLintLightTests 
 
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.SHOW_ALL);
     verify(toolWindow, never()).filterSecurityHotspotTab(SecurityHotspotFilters.LOCAL_ONLY);
-    verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SONARQUBE);
+    verify(toolWindow).filterSecurityHotspotTab(SecurityHotspotFilters.EXISTING_ON_SERVER);
   }
 
   @Test
