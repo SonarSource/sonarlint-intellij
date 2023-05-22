@@ -52,7 +52,7 @@ import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
  *
  * There are 2 implementations within this class
  * - Security Hotspots within a file node (used for the report tab)
- * - Security Hotspots directly child of the summary node (used for the security hotspots tab)
+ * - Security Hotspots directly child of the summary node (used for the Security Hotspots tab)
  *
  * In the report tab, there is no filtering mechanism, the nodes are simply deleted when needed
  * In the Security Hotspots tab, there is a filtering mechanism that hides or not some nodes

@@ -61,9 +61,9 @@ import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQ
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ChangeHotspotStatusParams
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedParams
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedParams
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ListAllowedStatusesParams
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ListAllowedStatusesResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
@@ -298,8 +298,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         return backend.hotspotService.changeStatus(ChangeHotspotStatusParams(configurationScopeId, hotspotKey, newStatus))
     }
 
-    fun listAllowedStatusesForHotspots(connectionId: String): CompletableFuture<ListAllowedStatusesResponse> {
-        return backend.hotspotService.listAllowedStatuses(ListAllowedStatusesParams(connectionId))
+    fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
+        return backend.hotspotService.checkStatusChangePermitted(CheckStatusChangePermittedParams(connectionId, hotspotKey))
     }
 
     fun branchChanged(module: Module, newActiveBranchName: String) {
@@ -316,11 +316,11 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             return uniqueIdentifierForModules.computeIfAbsent(module) { m -> m.name + "-" + moduleCount++ }
         }
 
-        fun findModule(configScopeId: String) : Module? {
-            return uniqueIdentifierForModules.filter { it.value == configScopeId  }.firstOrNull()?.key
+        fun findModule(configScopeId: String): Module? {
+            return uniqueIdentifierForModules.filter { it.value == configScopeId }.firstOrNull()?.key
         }
 
-        fun findProject(configScopeId: String) : Project? {
+        fun findProject(configScopeId: String): Project? {
             return ProjectManager.getInstance().openProjects.find { projectId(it) == configScopeId }
         }
     }
