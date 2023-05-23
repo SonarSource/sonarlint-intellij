@@ -182,6 +182,10 @@ public final class SonarLintGlobalSettings {
       .findFirst();
   }
 
+  public boolean connectionExists(String connectionName) {
+    return getServerConnectionByName(connectionName).isPresent();
+  }
+
   public void addServerConnection(ServerConnection connection) {
     ArrayList<ServerConnection> sonarQubeServers = new ArrayList<>(servers);
     sonarQubeServers.add(connection);

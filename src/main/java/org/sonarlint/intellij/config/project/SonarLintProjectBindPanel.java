@@ -42,7 +42,6 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.util.ui.JBUI;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -63,6 +62,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.apache.commons.lang.StringUtils;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
@@ -73,6 +73,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintProjectBindPanel {
   private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
@@ -146,11 +147,12 @@ public class SonarLintProjectBindPanel {
   private void onConnectionSelected() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    var connectionSelected = getSelectedConnection() != null;
-    projectKeyTextField.setEnabled(connectionSelected);
-    projectKeyTextField.setEditable(connectionSelected);
-    searchProjectButton.setEnabled(connectionSelected);
-    updateStorageButton.setEnabled(connectionSelected);
+    var selectedConnection = getSelectedConnection();
+    var isAnyConnectionSelected = selectedConnection != null;
+    projectKeyTextField.setEnabled(isAnyConnectionSelected);
+    projectKeyTextField.setEditable(isAnyConnectionSelected);
+    searchProjectButton.setEnabled(isAnyConnectionSelected);
+    updateStorageButton.setEnabled(isAnyConnectionSelected && getGlobalSettings().connectionExists(selectedConnection.getName()));
   }
 
   /**
@@ -294,7 +296,7 @@ public class SonarLintProjectBindPanel {
     updateStorageButton.setText("Update local storage");
     updateStorageButton.setToolTipText("Fetch and cache data from server: quality profile, settings, ...");
 
-    var insets = JBUI.insets(2, 0, 0, 0);
+    var insets = JBUI.insetsTop(2);
 
     bindPanel.add(bindEnable, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
