@@ -58,7 +58,7 @@ class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLintLightTe
   @Test
   void testClasspathIgnoreInvalidJdkEntries() {
     final var props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
-    assertThat(props).containsOnlyKeys("sonar.java.source", "sonar.java.target");
+    assertThat(props).containsOnlyKeys("sonar.java.source", "sonar.java.target", "sonar.java.enablePreview");
   }
 
 }
