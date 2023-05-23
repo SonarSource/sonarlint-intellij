@@ -185,10 +185,23 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
     }
 
     fun clear() {
+        clearValues()
+        updateUiComponents()
+    }
+
+    fun clearDeletedFile() {
+        clearValues()
+        descriptionPanel.removeAll()
+        disableEmptyDisplay(false)
+        ruleNameLabel.text = ""
+        securityHotspotHeaderMessage.text = ""
+        mainPanel.withEmptyText("Finding location has been deleted")
+    }
+
+    private fun clearValues() {
         finding = null
         ruleDetails = null
         ruleDetailsLoader.clearState()
-        updateUiComponents()
     }
 
     fun setSelectedFinding(module: Module, finding: Finding) {

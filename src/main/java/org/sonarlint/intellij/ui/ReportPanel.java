@@ -189,7 +189,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     if (selectedIssueNodes.length > 0) {
       updateOnSelect(selectedIssueNodes[0].issue());
     } else {
-      clearSelectionChanged();
+      clearSelectionChanged(false);
     }
   }
 
@@ -202,13 +202,19 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
       if (selectedHotspotsNodes.length > 0) {
         updateOnSelect(selectedHotspotsNodes[0].getHotspot());
       } else {
-        clearSelectionChanged();
+        clearSelectionChanged(false);
       }
     }
   }
 
   private void updateOnSelect(LiveFinding liveFinding) {
     var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
+
+    if (moduleForFile == null) {
+      clearSelectionChanged(true);
+      return;
+    }
+
     rulePanel.setSelectedFinding(moduleForFile, liveFinding);
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
     flowsTree.getEmptyText().setText("Selected finding doesn't have flows");
@@ -281,10 +287,15 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the finding", LOCATIONS_TAB_INDEX);
   }
 
-  private void clearSelectionChanged() {
+  private void clearSelectionChanged(boolean isModuleMissing) {
     flowsTreeBuilder.clearFlows();
-    flowsTree.getEmptyText().setText("No finding selected");
-    rulePanel.clear();
+    if (isModuleMissing) {
+      flowsTree.getEmptyText().setText("Finding location has been deleted");
+      rulePanel.clearDeletedFile();
+    } else {
+      flowsTree.getEmptyText().setText("No finding selected");
+      rulePanel.clear();
+    }
     var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
     highlighting.removeHighlights();
   }
