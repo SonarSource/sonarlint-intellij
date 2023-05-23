@@ -23,12 +23,16 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.ui.components.JBPanel;
+import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -36,7 +40,7 @@ import java.awt.BorderLayout;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import javax.swing.Box;
-import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.analysis.AnalysisResult;
@@ -65,6 +69,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private static final int RULE_TAB_INDEX = 0;
   private static final int LOCATIONS_TAB_INDEX = 1;
   protected final Project project;
+  private final LastAnalysisPanel lastAnalysisPanel;
   protected SonarLintRulePanel rulePanel;
   protected JBTabbedPane detailsTab;
   protected Tree tree;
@@ -74,7 +79,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private ActionToolbar mainToolbar;
   protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
   protected Tree securityHotspotTree;
-  private final LastAnalysisPanel lastAnalysisPanel;
+  private JScrollPane findingsTreePane;
 
   public ReportPanel(Project project) {
     super(false, true);
@@ -101,7 +106,9 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
     var findings = analysisResult.getFindings();
     treeBuilder.updateModel(findings.getIssuesPerFile(), "No issues found");
-    securityHotspotTreeBuilder.updateModel(findings.getSecurityHotspotsPerFile(), "No security hotspots found");
+    securityHotspotTreeBuilder.updateModel(findings.getSecurityHotspotsPerFile(), "No Security Hotspots found");
+
+    disableEmptyDisplay(true);
 
     if (findings.getSecurityHotspotsPerFile().isEmpty()) {
       disableSecurityHotspotTree();
@@ -121,16 +128,41 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   private void initPanel() {
     // Findings panel with tree
-    var findingsPanel = new JPanel(new BorderLayout());
-    var treePanel = new JPanel(new VerticalFlowLayout(0, 0));
+    var findingsPanel = new JBPanelWithEmptyText(new BorderLayout());
+
+    initEmptyViews(findingsPanel);
+
+    var treePanel = new JBPanel<ReportPanel>(new VerticalFlowLayout(0, 0));
     treePanel.add(tree);
     treePanel.add(securityHotspotTree);
-    findingsPanel.add(ScrollPaneFactory.createScrollPane(treePanel), BorderLayout.CENTER);
-    findingsPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
+    findingsTreePane = ScrollPaneFactory.createScrollPane(treePanel);
+    findingsPanel.add(findingsTreePane, BorderLayout.CENTER);
+    findingsPanel.add(lastAnalysisPanel, BorderLayout.SOUTH);
     setToolbar(createActionGroup());
+    disableEmptyDisplay(false);
 
     // Put everything together
     super.setContent(createSplitter(project, this, this, findingsPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
+  }
+
+  private void initEmptyViews(JBPanelWithEmptyText findingsPanel) {
+    var statusText = findingsPanel.getEmptyText();
+    var sonarLintActions = SonarLintActions.getInstance();
+    var analyzeChangedFiles = sonarLintActions.analyzeChangedFiles();
+    var analyzeAllFiles = sonarLintActions.analyzeAllFiles();
+    statusText.setText(LastAnalysisPanel.NEVER_ANALYZED_EMPTY_TEXT);
+    statusText.appendLine("");
+    if (analyzeChangedFiles.getTemplateText() != null) {
+      statusText.appendText(analyzeChangedFiles.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+        ignore -> ActionUtil.invokeAction(analyzeChangedFiles, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+      if (analyzeAllFiles.getTemplateText() != null) {
+        statusText.appendText(" or ");
+      }
+    }
+    if (analyzeAllFiles.getTemplateText() != null) {
+      statusText.appendText(analyzeAllFiles.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+        ignore -> ActionUtil.invokeAction(analyzeAllFiles, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+    }
   }
 
   private void refreshToolbar() {
@@ -298,6 +330,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     lastAnalysisPanel.clear();
     treeBuilder.clear();
     securityHotspotTreeBuilder.clear();
+    disableEmptyDisplay(false);
   }
 
   private void expandTree() {
@@ -312,6 +345,11 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     } else {
       securityHotspotTree.expandRow(0);
     }
+  }
+
+  private void disableEmptyDisplay(Boolean state) {
+    findingsTreePane.setVisible(state);
+    lastAnalysisPanel.setVisible(state);
   }
 
   @Override

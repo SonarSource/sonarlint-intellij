@@ -122,7 +122,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         assertThat(projectNotifications).extracting("title", "content").containsExactly(
             tuple(
-                "<b>SonarLint Suggestions</b>", "Bind this project to 'projectName' on 'connectionId'?"
+                "<b>SonarLint suggestions</b>", "Bind this project to 'projectName' on 'connectionId'?"
             )
         )
     }
@@ -135,7 +135,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         assertThat(projectNotifications).extracting("title", "content").containsExactly(
             tuple(
-                "<b>SonarLint Suggestions</b>",
+                "<b>SonarLint suggestions</b>",
                 "Bind this project to SonarQube or SonarCloud?"
             )
         )
@@ -161,7 +161,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         assertThat(projectNotifications).extracting("title", "content").containsExactly(
             tuple(
-                "<b>SonarLint Suggestions</b>",
+                "<b>SonarLint suggestions</b>",
                 "Bind this project to SonarQube or SonarCloud?"
             )
         )

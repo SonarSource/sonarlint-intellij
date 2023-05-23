@@ -30,9 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
@@ -43,10 +41,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 public class SonarAnalyzeFilesAction extends AbstractSonarAction {
   public SonarAnalyzeFilesAction() {
     super();
-  }
-
-  public SonarAnalyzeFilesAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
-    super(text, description, icon);
   }
 
   @Override

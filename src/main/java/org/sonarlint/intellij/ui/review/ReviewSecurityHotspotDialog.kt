@@ -75,11 +75,11 @@ class ReviewSecurityHotspotDialog(
                         )
                     }
                     .exceptionally { error ->
-                        SonarLintConsole.get(project).error("Error while changing the security hotspot status", error)
+                        SonarLintConsole.get(project).error("Error while changing the Security Hotspot status", error)
 
                         val notification = ReviewSecurityHotspotAction.GROUP.createNotification(
                             "<b>SonarLint - Unable to change status</b>",
-                            "Could not change the security hotspot status.",
+                            "Could not change the Security Hotspot status.",
                             NotificationType.ERROR
                         )
                         notification.isImportant = true

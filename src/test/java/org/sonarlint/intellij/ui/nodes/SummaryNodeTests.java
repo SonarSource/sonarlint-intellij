@@ -53,7 +53,7 @@ class SummaryNodeTests {
     var renderer = mock(TreeCellRenderer.class);
     nodeForSecurityHotspot.render(renderer);
 
-    verify(renderer).append("Found 3 security hotspots in 1 file");
+    verify(renderer).append("Found 3 Security Hotspots in 1 file");
   }
 
   @Test
@@ -69,7 +69,7 @@ class SummaryNodeTests {
     var renderer = mock(TreeCellRenderer.class);
     nodeForSecurityHotspot.render(renderer);
 
-    verify(renderer).append("No security hotspots to display");
+    verify(renderer).append("No Security Hotspots to display");
   }
 
   @Test

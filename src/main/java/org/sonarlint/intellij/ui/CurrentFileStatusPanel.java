@@ -23,28 +23,26 @@ import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.components.JBPanel;
 import java.awt.BorderLayout;
-import javax.swing.JPanel;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 
-public class CurrentFileStatusPanel {
+public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
 
   private final Project project;
 
-  private JPanel panel;
-
   CurrentFileStatusPanel(Project project) {
+    super(new BorderLayout());
     this.project = project;
     createPanel();
   }
 
   private void createPanel() {
-    panel = new JPanel(new BorderLayout());
-    panel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.CENTER);
-    panel.add(new CurrentFileConnectedModePanel(project).getPanel(), BorderLayout.EAST);
+    add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.CENTER);
+    add(new CurrentFileConnectedModePanel(project).getPanel(), BorderLayout.EAST);
   }
 
   static void subscribeToEventsThatAffectCurrentFile(Project project, Runnable runnable) {
@@ -65,7 +63,4 @@ public class CurrentFileStatusPanel {
     });
   }
 
-  public JPanel getPanel() {
-    return panel;
-  }
 }

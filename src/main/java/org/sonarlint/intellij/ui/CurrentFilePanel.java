@@ -19,15 +19,18 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.ui.components.JBPanel;
+import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
@@ -36,7 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
-import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -47,20 +50,34 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
-public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable {
-  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
+public class CurrentFilePanel extends AbstractIssuesPanel {
+
   public static final String SONARLINT_TOOLWINDOW_ID = "SonarLint";
+  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
+  private final JBPanelWithEmptyText issuesPanel;
+  private final JScrollPane treeScrollPane;
+  private final AnAction analyzeFilesAction = ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles");
 
   public CurrentFilePanel(Project project) {
     super(project);
 
     // Issues panel
     setToolbar(actions());
-    var issuesPanel = new JPanel(new BorderLayout());
-    issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
-    issuesPanel.add(new CurrentFileStatusPanel(project).getPanel(), BorderLayout.SOUTH);
 
-    var splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
+    treeScrollPane = ScrollPaneFactory.createScrollPane(tree);
+
+    issuesPanel = new JBPanelWithEmptyText(new BorderLayout());
+    var statusText = issuesPanel.getEmptyText();
+    statusText.setText("No analysis done");
+    issuesPanel.add(treeScrollPane, BorderLayout.CENTER);
+    disableEmptyDisplay(false);
+
+    var mainPanel = new JBPanel<CurrentFilePanel>(new BorderLayout());
+    mainPanel.add(issuesPanel);
+    mainPanel.add(new CurrentFileStatusPanel(project), BorderLayout.SOUTH);
+
+    var splitter = createSplitter(project, this, this, mainPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
+
     super.setContent(splitter);
     project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> runOnUiThread(project, this::refreshToolbar));
@@ -76,18 +93,26 @@ public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable 
       ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles"),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"),
-      SonarLintActions.getInstance().clearIssues()
-    );
+      SonarLintActions.getInstance().clearIssues());
   }
 
   public void update(@Nullable VirtualFile file, @Nullable Collection<LiveIssue> issues) {
+    var statusText = issuesPanel.getEmptyText();
     String emptyText;
     Collection<LiveIssue> liveIssues = issues;
     if (file != null) {
       emptyText = liveIssues == null ? "No analysis done on the current opened file" : "No issues found in the current opened file";
+      statusText.setText(emptyText);
+      if (liveIssues == null && (analyzeFilesAction.getTemplateText() != null)) {
+        statusText.appendLine(analyzeFilesAction.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+          ignore -> ActionUtil.invokeAction(analyzeFilesAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        statusText.appendText(" (Ctrl+Shift+S)");
+      }
     } else {
       emptyText = "No file opened in the editor";
+      statusText.setText(emptyText);
     }
+
     if (liveIssues == null) {
       liveIssues = Collections.emptyList();
     }
@@ -96,8 +121,10 @@ public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable 
 
   private void update(@Nullable VirtualFile file, Collection<LiveIssue> issues, String emptyText) {
     if (file == null) {
+      disableEmptyDisplay(false);
       treeBuilder.updateModel(Map.of(), emptyText);
     } else {
+      disableEmptyDisplay(!issues.isEmpty());
       treeBuilder.updateModel(Map.of(file, issues), emptyText);
     }
     expandTree();
@@ -118,6 +145,10 @@ public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable 
 
   private void expandTree() {
     TreeUtil.expandAll(tree);
+  }
+
+  private void disableEmptyDisplay(boolean state) {
+    treeScrollPane.setVisible(state);
   }
 
   @Nullable

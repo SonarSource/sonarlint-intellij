@@ -116,8 +116,10 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
       var content = contentManager.findContent(displayName);
-      var panel = (T) content.getComponent();
-      tabPanelConsumer.accept(panel);
+      if (content != null) {
+        var panel = (T) content.getComponent();
+        tabPanelConsumer.accept(panel);
+      }
     }
     return toolWindow;
   }
@@ -307,7 +309,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
 
   @Override
   public void selectionChanged(@NotNull ContentManagerEvent event) {
-    // Introduced in the context of security hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
+    // Introduced in the context of Security Hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
   }
 }

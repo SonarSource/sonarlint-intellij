@@ -222,7 +222,7 @@ object SonarLintIntelliJClient : SonarLintClient {
         SonarLintProjectNotifications.get(project).expireCurrentHotspotNotificationIfNeeded()
         val file = tryFindFile(project, params.hotspotDetails.filePath)
         if (file == null) {
-            showBalloon(project, "Unable to open security hotspot. Can't find the file: ${params.hotspotDetails.filePath}", NotificationType.WARNING)
+            showBalloon(project, "Unable to open Security Hotspot. Can't find the file: ${params.hotspotDetails.filePath}", NotificationType.WARNING)
             return
         }
         ApplicationManager.getApplication().invokeAndWait {

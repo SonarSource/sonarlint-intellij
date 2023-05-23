@@ -17,27 +17,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions;
+package org.sonarlint.intellij.actions
 
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.options.ShowSettingsUtil;
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.analysis.AnalysisStatus;
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
+import com.intellij.icons.AllIcons
+import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.SECURITY_HOTSPOTS_LINK
 
-public class SonarConfigureProject extends AbstractSonarAction {
+class OpenSecurityHotspotDocumentationAction : AbstractSonarAction(
+    "Learn More", "Learn more about Security Hotspots in SonarLint", AllIcons.Actions.Help
+) {
 
-  @Override
-  protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
-    return !status.isRunning();
-  }
-
-  @Override
-  public void actionPerformed(AnActionEvent e) {
-    if (e.getProject() != null) {
-      var configurable = new SonarLintProjectConfigurable(e.getProject());
-      ShowSettingsUtil.getInstance().editConfigurable(e.getProject(), configurable);
+    override fun actionPerformed(e: AnActionEvent) {
+        BrowserUtil.browse(SECURITY_HOTSPOTS_LINK)
     }
-  }
 
 }

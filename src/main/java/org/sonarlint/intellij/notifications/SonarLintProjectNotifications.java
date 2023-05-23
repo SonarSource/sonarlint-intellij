@@ -112,7 +112,7 @@ public final class SonarLintProjectNotifications {
 
   private void notifyBindingSuggestions(String message, AnAction... mainActions) {
     var notification = BINDING_SUGGESTION_GROUP.createNotification(
-      "<b>SonarLint Suggestions</b>",
+      "<b>SonarLint suggestions</b>",
       message,
       NotificationType.INFORMATION);
     Arrays.stream(mainActions).forEach(notification::addAction);
@@ -127,7 +127,7 @@ public final class SonarLintProjectNotifications {
   public void notifyUnableToOpenSecurityHotspot(String message) {
     expireCurrentHotspotNotificationIfNeeded();
     currentOpenHotspotNotification = OPEN_IN_IDE_GROUP.createNotification(
-      "<b>SonarLint - Unable To Open Security Hotspot</b>",
+      "<b>SonarLint - Unable to open Security Hotspot</b>",
       message,
       NotificationType.INFORMATION);
     currentOpenHotspotNotification.setImportant(true);

@@ -111,7 +111,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   @NonNls
   private static final String EMPTY_HTML = "Select a rule to see the description";
   private final Map<String, RulesTreeNode.Rule> allRulesStateByKey = new ConcurrentHashMap<>();
-  private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();  private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
+  private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();
+  private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
   private final AtomicBoolean isDirty = new AtomicBoolean(false);
   private RulesTreeTable table;
   private RuleHtmlViewer ruleHtmlViewer;
@@ -467,10 +468,10 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
           JBUI.emptyInsets(), 0, 0));
       myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-        JBUI.insets(0, 2, 0, 0), 0, 0));
+        JBUI.insetsLeft(2), 0, 0));
     } else {
       myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-        JBUI.insets(0, 2, 0, 0), 0, 0));
+        JBUI.insetsLeft(2), 0, 0));
     }
     myParamsPanel.revalidate();
     myParamsPanel.repaint();
@@ -725,7 +726,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
     RulesParamsSeparator() {
       setLayout(new GridBagLayout());
-      var optionsLabelConstraints = new GridBagConstraints(0, 0, 1, 1, 0, 1, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(0, 2, 0, 0), 0, 0);
+      var optionsLabelConstraints = new GridBagConstraints(0, 0, 1, 1, 0, 1, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insetsLeft(2), 0, 0);
       add(new JBLabel("Options"), optionsLabelConstraints);
       var separatorConstraints = new GridBagConstraints(1, 0, 1, 1, 1, 1, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, JBUI.insets(2,
         TitledSeparator.SEPARATOR_LEFT_INSET,
