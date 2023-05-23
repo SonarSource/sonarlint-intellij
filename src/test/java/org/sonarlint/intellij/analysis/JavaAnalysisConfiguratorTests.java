@@ -188,6 +188,18 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
     assertThat(underTest.configure(getModule(), Collections.emptyList()).extraProperties).contains(entry("sonar.java.source", "9"), entry("sonar.java.target", "9"));
   }
 
+  /** SLI-936: Property "sonar.java.enablePreview" not set automatically anymore but based on module configuration */
+  @Test
+  void test_enablePreview() {
+    IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_17);
+    assertThat(underTest.configure(getModule(), Collections.emptyList()).extraProperties)
+            .contains(entry("sonar.java.enablePreview", "false"));
+
+    IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_17_PREVIEW);
+    assertThat(underTest.configure(getModule(), Collections.emptyList()).extraProperties)
+            .contains(entry("sonar.java.enablePreview", "true"));
+  }
+
   @Test
   void testSourceAndTarget_with_different_target() {
     IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_1_8);

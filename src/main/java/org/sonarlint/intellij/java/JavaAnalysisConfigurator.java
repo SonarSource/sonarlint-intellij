@@ -66,6 +66,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static final String JAVA_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
   private static final String JAVA_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
   private static final String JAVA_JDK_HOME_PROPERTY = "sonar.java.jdkHome";
+  private static final String JAVA_ENABLE_PREVIEW = "sonar.java.enablePreview";
 
   private static final char SEPARATOR = ',';
 
@@ -110,6 +111,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     }
     properties.put(JAVA_SOURCE_PROPERTY, languageLevelStr);
     properties.put(JAVA_TARGET_PROPERTY, bytecodeTarget);
+    properties.put(JAVA_ENABLE_PREVIEW, String.valueOf(languageLevel.isPreview()));
   }
 
   private static String getLanguageLevelOption(LanguageLevel level) {
