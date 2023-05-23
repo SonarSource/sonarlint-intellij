@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui
 
+import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileTypes.FileType
@@ -128,6 +129,8 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
 
         setLoadingText("Loading rule description...")
         clear()
+
+        ApplicationManager.getApplication().messageBus.connect(parent).subscribe(LafManagerListener.TOPIC, LafManagerListener { updateUiComponents() })
     }
 
     private data class RuleDetailsLoaderState(val lastModule: Module?, val lastFindingRuleKey: String?, val lastContextKey: String?)

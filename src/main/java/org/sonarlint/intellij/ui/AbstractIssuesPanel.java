@@ -94,7 +94,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", LOCATIONS_TAB_INDEX);
   }
 
-  protected void issueTreeSelectionChanged() {
+  private void issueTreeSelectionChanged() {
     var selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
       var issue = selectedNodes[0].issue();
