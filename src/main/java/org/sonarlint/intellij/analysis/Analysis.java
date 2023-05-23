@@ -62,17 +62,14 @@ public class Analysis implements Cancelable {
   private final Project project;
   private final Collection<VirtualFile> files;
   private final TriggerType trigger;
-  private final boolean waitForServerFindings;
   private final AnalysisCallback callback;
   private boolean finished = false;
   private boolean cancelled;
 
-  public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerFindings,
-    AnalysisCallback callback) {
+  public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
     this.project = project;
     this.files = files;
     this.trigger = trigger;
-    this.waitForServerFindings = waitForServerFindings;
     this.callback = callback;
   }
 
@@ -158,7 +155,7 @@ public class Analysis implements Cancelable {
     if (!filesHavingIssuesByModule.isEmpty()) {
       var serverIssueUpdater = SonarLintUtils.getService(project, ServerIssueUpdater.class);
       if (trigger.isShouldUpdateServerIssues()) {
-        serverIssueUpdater.fetchAndMatchServerIssues(filesHavingIssuesByModule, indicator, waitForServerFindings);
+        serverIssueUpdater.fetchAndMatchServerIssues(filesHavingIssuesByModule, indicator);
       } else {
         serverIssueUpdater.matchServerIssues(filesHavingIssuesByModule);
       }
@@ -170,7 +167,7 @@ public class Analysis implements Cancelable {
     if (!filesHavingSecurityHotspotsByModule.isEmpty()) {
       var updater = SonarLintUtils.getService(project, ServerSecurityHotspotUpdater.class);
       if (trigger.isShouldUpdateServerIssues()) {
-        updater.fetchAndMatchServerSecurityHotspots(filesHavingSecurityHotspotsByModule, indicator, waitForServerFindings);
+        updater.fetchAndMatchServerSecurityHotspots(filesHavingSecurityHotspotsByModule, indicator);
       } else {
         updater.matchServerSecurityHotspots(filesHavingSecurityHotspotsByModule);
       }

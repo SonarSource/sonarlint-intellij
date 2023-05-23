@@ -58,14 +58,14 @@ public final class AnalysisSubmitter {
   public void analyzeAllFiles() {
     var allFiles = getAllFiles(project);
     var callback = new ShowReportCallable(project);
-    var analysis = new Analysis(project, allFiles, TriggerType.ALL, true, callback);
+    var analysis = new Analysis(project, allFiles, TriggerType.ALL, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
   public void analyzeVcsChangedFiles() {
     var changedFiles = ChangeListManager.getInstance(project).getAffectedFiles();
     var callback = new ShowReportCallable(project);
-    var analysis = new Analysis(project, changedFiles, TriggerType.CHANGED_FILES, true, callback);
+    var analysis = new Analysis(project, changedFiles, TriggerType.CHANGED_FILES, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
@@ -97,7 +97,7 @@ public final class AnalysisSubmitter {
     }
 
     var callback = new ErrorAwareAnalysisCallback();
-    var analysis = new Analysis(project, files, trigger, true, callback);
+    var analysis = new Analysis(project, files, trigger, callback);
     var result = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
     return callback.analysisSucceeded() ? result : null;
   }
@@ -122,7 +122,7 @@ public final class AnalysisSubmitter {
 
   public void analyzeFileAndTrySelectHotspot(VirtualFile file, String securityHotspotKey) {
     AnalysisCallback callback = new ShowSecurityHotspotCallable(project, onTheFlyFindingsHolder, securityHotspotKey);
-    var task = new Analysis(project, List.of(file), TriggerType.OPEN_SECURITY_HOTSPOT, true, callback);
+    var task = new Analysis(project, List.of(file), TriggerType.OPEN_SECURITY_HOTSPOT, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, task::run);
   }
 
@@ -139,7 +139,10 @@ public final class AnalysisSubmitter {
   }
 
   private Cancelable analyzeInBackground(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
-    var task = new Analysis(project, files, trigger, false, callback);
+    if (shouldSkipAnalysis()) {
+      return null;
+    }
+    var task = new Analysis(project, files, trigger, callback);
     TaskRunnerKt.startBackgroundTask(project, ANALYSIS_TASK_TITLE, task::run);
     return task;
   }
@@ -148,7 +151,7 @@ public final class AnalysisSubmitter {
     if (shouldSkipAnalysis()) {
       return;
     }
-    var analysis = new Analysis(project, files, action, true, callback);
+    var analysis = new Analysis(project, files, action, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 

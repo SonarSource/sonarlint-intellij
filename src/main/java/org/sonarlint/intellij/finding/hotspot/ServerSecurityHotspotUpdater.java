@@ -112,8 +112,7 @@ public final class ServerSecurityHotspotUpdater implements Disposable {
     }
   }
 
-  public void fetchAndMatchServerSecurityHotspots(Map<Module, Collection<VirtualFile>> filesPerModule, ProgressIndicator indicator,
-    boolean waitForCompletion) {
+  public void fetchAndMatchServerSecurityHotspots(Map<Module, Collection<VirtualFile>> filesPerModule, ProgressIndicator indicator) {
     var projectSettings = getSettingsFor(myProject);
     if (!projectSettings.isBound()) {
       // not in connected mode
@@ -139,9 +138,7 @@ public final class ServerSecurityHotspotUpdater implements Disposable {
     } else {
       msg = "Fetching server hotspots in " + numFiles + SonarLintUtils.pluralize(" file", numFiles);
     }
-    if (waitForCompletion) {
-      msg += " (waiting for results)";
-    }
+    msg += " (waiting for results)";
     var console = getService(myProject, SonarLintConsole.class);
     console.debug(msg);
     indicator.setText(msg);
@@ -149,9 +146,7 @@ public final class ServerSecurityHotspotUpdater implements Disposable {
     // submit tasks
     var updateTasks = fetchAndMatchServerSecurityHotspots(filesPerModule, connection, engine, downloadAll);
     Future<?> waitForTasksTask = executorService.submit(() -> waitForTasks(myProject, updateTasks, "ServerHotspotUpdater"));
-    if (waitForCompletion) {
-      waitForTask(myProject, waitForTasksTask, "Wait", Duration.ofSeconds(60));
-    }
+    waitForTask(myProject, waitForTasksTask, "Wait", Duration.ofSeconds(60));
   }
 
   private List<Future<?>> fetchAndMatchServerSecurityHotspots(Map<Module, Collection<VirtualFile>> filesPerModule,
