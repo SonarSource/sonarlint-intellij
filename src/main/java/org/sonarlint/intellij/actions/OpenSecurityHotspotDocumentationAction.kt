@@ -25,7 +25,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.SECURITY_HOTSPOTS_LINK
 
 class OpenSecurityHotspotDocumentationAction : AbstractSonarAction(
-    "Learn More", "Learn more about security hotspots in SonarLint", AllIcons.Actions.Help
+    "Learn More", "Learn more about Security Hotspots in SonarLint", AllIcons.Actions.Help
 ) {
 
     override fun actionPerformed(e: AnActionEvent) {

@@ -118,10 +118,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       ScrollPaneFactory.createScrollPane(treePanel), detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
 
     sonarConfigureProject = new SonarConfigureProject();
-    notSupportedPanel = centeredLabel("Security hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
+    notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
     cardPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID);
-    cardPanel.add(centeredLabel("No security hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
-    cardPanel.add(centeredLabel("No security hotspot shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
+    cardPanel.add(centeredLabel("No Security Hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
+    cardPanel.add(centeredLabel("No Security Hotspot shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
     cardPanel.add(findingsPanel, SECURITY_HOTSPOTS_LIST_CARD_ID);
 
     setupToolbar(createActionGroup());
@@ -143,7 +143,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var model = flowsTreeBuilder.createModel();
     flowsTree = new FlowsTree(project, model);
     flowsTreeBuilder.clearFlows();
-    flowsTree.getEmptyText().setText("No security hotspot selected");
+    flowsTree.getEmptyText().setText("No Security Hotspot selected");
   }
 
   private void createTabs() {
@@ -165,7 +165,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     }
 
     if (status instanceof Supported) {
-      securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No security hotspots found");
+      securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No Security Hotspots found");
       TreeUtil.expandAll(securityHotspotTree);
       displaySecurityHotspots();
 
@@ -220,7 +220,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
     rulePanel.setSelectedFinding(moduleForFile, liveFinding);
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
-    flowsTree.getEmptyText().setText("Selected security hotspot doesn't have flows");
+    flowsTree.getEmptyText().setText("Selected Security Hotspot doesn't have flows");
     flowsTreeBuilder.populateForFinding(liveFinding);
     flowsTree.expandAll();
   }

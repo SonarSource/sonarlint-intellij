@@ -72,7 +72,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val securityHotspot =
-            e.getData(SECURITY_HOTSPOT_KEY) ?: return displayErrorNotification(project, "The security hotspot could not be found.")
+            e.getData(SECURITY_HOTSPOT_KEY) ?: return displayErrorNotification(project, "The Security Hotspot could not be found.")
         serverFindingKey = securityHotspot.serverFindingKey
         status = securityHotspot.status
 
@@ -81,8 +81,8 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     fun openReviewingDialog(project: Project, file: VirtualFile) {
         val connection = serverConnection(project) ?: return displayErrorNotification(project, "No connection could be found.")
-        serverFindingKey ?: return displayErrorNotification(project, "Could not find the security hotspot on ${connection.productName}.")
-        status ?: return displayErrorNotification(project, "Could not find the current security hotspot status.")
+        serverFindingKey ?: return displayErrorNotification(project, "Could not find the Security Hotspot on ${connection.productName}.")
+        status ?: return displayErrorNotification(project, "Could not find the current Security Hotspot status.")
         val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
             project, "No module could be found for this file."
         )
@@ -91,7 +91,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
             .thenAccept { listAllowedStatusesResponse ->
                 val listStatuses = listAllowedStatusesResponse.allowedStatuses
                 if (listStatuses.isEmpty()) {
-                    displayErrorNotification(project, "The statuses for this security hotspot could not be retrieved.")
+                    displayErrorNotification(project, "The statuses for this Security Hotspot could not be retrieved.")
                 } else {
                     val newStatus = HotspotStatus.valueOf(status!!.name)
                     if (ReviewSecurityHotspotDialog(project, connection.productName, listStatuses, module, serverFindingKey!!, newStatus).showAndGet()) {
@@ -99,15 +99,15 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
                     }
                 }
             }.exceptionally { error ->
-                SonarLintConsole.get(project).error("Error while retrieving the list of allowed statuses for security hotspots", error)
-                displayErrorNotification(project, "The statuses for this security hotspot could not be retrieved.")
+                SonarLintConsole.get(project).error("Error while retrieving the list of allowed statuses for Security Hotspots", error)
+                displayErrorNotification(project, "The statuses for this Security Hotspot could not be retrieved.")
                 null
             }
     }
 
     private fun displayErrorNotification(project: Project, content: String) {
         val notification = GROUP.createNotification(
-            "<b>SonarLint - Unable to review the security hotspot</b>", content, NotificationType.ERROR
+            "<b>SonarLint - Unable to review the Security Hotspot</b>", content, NotificationType.ERROR
         )
         notification.isImportant = true
         notification.notify(project)
@@ -115,8 +115,8 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     private fun displaySuccessfulNotification(project: Project) {
         val notification = GROUP.createNotification(
-            "<b>SonarLint - Security hotspot review</b>",
-            "The security hotspot status was successfully updated!",
+            "<b>SonarLint - Security Hotspot review</b>",
+            "The Security Hotspot status was successfully updated!",
             NotificationType.INFORMATION
         )
         notification.isImportant = true
@@ -125,7 +125,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     override fun startInWriteAction() = false
 
-    override fun getText() = "SonarLint: Change security hotspot status"
+    override fun getText() = "SonarLint: Change Security Hotspot status"
 
     override fun getFamilyName() = "SonarLint review"
 

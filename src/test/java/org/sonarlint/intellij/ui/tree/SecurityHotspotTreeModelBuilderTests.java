@@ -78,7 +78,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     Map<VirtualFile, Collection<LiveSecurityHotspot>> data = new HashMap<>();
 
     // ordering of files: name
-    // ordering of security hotspots: getVulnerabilityProbability, introduction date, range start, rule name
+    // ordering of Security Hotspots: getVulnerabilityProbability, introduction date, range start, rule name
     addFile(data, "file1", 2);
     addFile(data, "file2", 2);
     addFile(data, "file3", 2);

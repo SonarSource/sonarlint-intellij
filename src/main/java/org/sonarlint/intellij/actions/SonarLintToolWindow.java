@@ -309,7 +309,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
 
   @Override
   public void selectionChanged(@NotNull ContentManagerEvent event) {
-    // Introduced in the context of security hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
+    // Introduced in the context of Security Hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
   }
 }

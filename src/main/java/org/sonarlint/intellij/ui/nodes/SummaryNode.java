@@ -37,7 +37,7 @@ public class SummaryNode extends AbstractNode {
   public SummaryNode(boolean forSecurityHotspot) {
     super();
     if (forSecurityHotspot) {
-      this.emptyText = "No security hotspots to display";
+      this.emptyText = "No Security Hotspots to display";
     } else {
       this.emptyText = "No issues to display";
     }
@@ -57,7 +57,7 @@ public class SummaryNode extends AbstractNode {
     }
 
     if (forSecurityHotspot) {
-      return String.format("Found %d %s in %d %s", findings, findings == 1 ? "security hotspot" : "security hotspots", files, files == 1 ? "file" : "files");
+      return String.format("Found %d %s in %d %s", findings, findings == 1 ? "Security Hotspot" : "Security Hotspots", files, files == 1 ? "file" : "files");
     }
 
     return String.format("Found %d %s in %d %s", findings, findings == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");

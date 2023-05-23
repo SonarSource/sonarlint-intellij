@@ -42,7 +42,7 @@ import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjec
 
 const val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
 
-@DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
+@DisabledIf("isCLionOrGoLand", disabledReason = "No Java Security Hotspots in CLion or GoLand")
 class SecurityHotspotTabTest : BaseUiTest() {
 
     @Test
@@ -61,7 +61,7 @@ class SecurityHotspotTabTest : BaseUiTest() {
 
         openReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
         changeStatusAndPressChange(this, "Acknowledged")
-        verifyStatusWasSuccessfullyChanged(this, "SonarLint - Security hotspot review")
+        verifyStatusWasSuccessfullyChanged(this, "SonarLint - Security Hotspot review")
     }
 
     private fun bindProjectFromPanel() {
@@ -117,11 +117,11 @@ class SecurityHotspotTabTest : BaseUiTest() {
         with(remoteRobot) {
             idea {
                 notification(title) {
-                    hasText("The security hotspot status was successfully updated!")
+                    hasText("The Security Hotspot status was successfully updated!")
                 }
                 toolWindow("SonarLint") {
                     content("SecurityHotspotsPanel") {
-                        hasText("No security hotspot found.")
+                        hasText("No Security Hotspot found.")
                     }
                 }
             }

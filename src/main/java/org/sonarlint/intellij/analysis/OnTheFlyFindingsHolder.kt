@@ -74,7 +74,7 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
         currentIssuesPerOpenFile.remove(file)
         currentSecurityHotspotsPerOpenFile.remove(file)
-        // update only security hotspots, issues will be updated in reaction to selectionChanged
+        // update only Security Hotspots, issues will be updated in reaction to selectionChanged
         updateSecurityHotspots()
     }
 

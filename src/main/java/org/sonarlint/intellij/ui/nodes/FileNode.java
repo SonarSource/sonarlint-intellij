@@ -55,7 +55,7 @@ public class FileNode extends AbstractNode {
   public void render(TreeCellRenderer renderer) {
     renderer.setIcon(getIcon());
     renderer.append(file.getName());
-    renderer.append(spaceAndThinSpace() + "(" + getFindingCount() + pluralize(isSecurityHotspot ? " security hotspot" : " issue", getFindingCount()) + ")",
+    renderer.append(spaceAndThinSpace() + "(" + getFindingCount() + pluralize(isSecurityHotspot ? " Security Hotspot" : " issue", getFindingCount()) + ")",
       SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
   }
 

@@ -106,7 +106,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
     var findings = analysisResult.getFindings();
     treeBuilder.updateModel(findings.getIssuesPerFile(), "No issues found");
-    securityHotspotTreeBuilder.updateModel(findings.getSecurityHotspotsPerFile(), "No security hotspots found");
+    securityHotspotTreeBuilder.updateModel(findings.getSecurityHotspotsPerFile(), "No Security Hotspots found");
 
     disableEmptyDisplay(true);
 

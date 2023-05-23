@@ -51,11 +51,11 @@ import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
  * Should be optimized to minimize the recreation of portions of the tree.
  *
  * There are 2 implementations within this class
- * - Security hotspots within a file node (used for the report tab)
- * - Security hotspots directly child of the summary node (used for the security hotspots tab)
+ * - Security Hotspots within a file node (used for the report tab)
+ * - Security Hotspots directly child of the summary node (used for the security hotspots tab)
  *
  * In the report tab, there is no filtering mechanism, the nodes are simply deleted when needed
- * In the security hotspots tab, there is a filtering mechanism that hides or not some nodes
+ * In the Security Hotspots tab, there is a filtering mechanism that hides or not some nodes
  */
 public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder {
   private static final List<VulnerabilityProbability> VULNERABILITY_PROBABILITIES = List.of(VulnerabilityProbability.HIGH,
@@ -430,7 +430,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   /**
-   * Finds the first security hotspot node which is child of a given node.
+   * Finds the first Security Hotspot node which is child of a given node.
    */
   @CheckForNull
   private static LiveSecurityHotspotNode firstHotspotDown(AbstractNode node) {
@@ -447,7 +447,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   /**
-   * Finds the first security hotspot node which is child of a given node.
+   * Finds the first Security Hotspot node which is child of a given node.
    */
   @CheckForNull
   private static LiveSecurityHotspotNode lastHotspotDown(AbstractNode node) {
