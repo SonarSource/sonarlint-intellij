@@ -106,7 +106,7 @@ public final class AnalysisSubmitter {
     AnalysisCallback callback;
 
     if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(actionEvent.getPlace())
-      || ActionPlaces.KEYBOARD_SHORTCUT.equals(actionEvent.getPlace())) {
+      || ActionPlaces.isMainMenuOrActionSearch(actionEvent.getPlace())) {
       callback = new ShowUpdatedCurrentFileCallable(project, onTheFlyFindingsHolder);
     } else {
       callback = new ShowReportCallable(project);
