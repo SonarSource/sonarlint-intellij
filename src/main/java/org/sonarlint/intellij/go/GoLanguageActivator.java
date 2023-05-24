@@ -31,6 +31,5 @@ public class GoLanguageActivator implements LanguageActivator {
   @Override
   public void amendLanguages(Set<Language> enabledLanguages) {
     enabledLanguages.add(Language.GO);
-    enabledLanguages.add(Language.SECRETS);
   }
 }
