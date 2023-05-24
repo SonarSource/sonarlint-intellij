@@ -131,9 +131,14 @@ public class SonarLintAppUtils {
   /**
    *  Path will always contain forward slashes. Resolving the module path uses the official alternative to
    *  {@link com.intellij.openapi.module.Module#getModuleFilePath} which is marked as internally!
+   *
+   *  INFO: Package level access for the light / heavy testing as manipulating
+   *  {@link com.intellij.testFramework.fixtures.BasePlatformTestCase} for
+   *  {@link SonarLintAppUtils#getRelativePathForAnalysis} to not return from
+   *  {@link SonarLintAppUtils#getPathRelativeToProjectBaseDir} every time would be way too time-consuming!
    */
   @CheckForNull
-  private static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
+  static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
     var filePath = Paths.get(file.getPath());
     var moduleContentRoots = Arrays.stream(ModuleRootManager.getInstance(module).getContentRoots())
             .filter(contentRoot -> contentRoot.getPath().trim().length() > 0)
