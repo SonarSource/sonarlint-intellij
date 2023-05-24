@@ -194,6 +194,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       setSecurityHotspots(e.getKey(), e.getValue());
     }
 
+    copyToFilteredNodes();
     model.nodeChanged(summary);
 
     return summary.getFindingCount();
@@ -212,7 +213,6 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
 
     setRootSecurityHotspots(file, filtered);
-    copyToFilteredNodes();
   }
 
   private void removeHotspotsByFile(VirtualFile file) {
