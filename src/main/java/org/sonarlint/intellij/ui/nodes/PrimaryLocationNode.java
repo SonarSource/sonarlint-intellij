@@ -89,4 +89,12 @@ public class PrimaryLocationNode extends AbstractNode {
     var offset = rangeMarker.getStartOffset() - doc.getLineStartOffset(line);
     return String.format("(%d, %d) ", line + 1, offset);
   }
+
+  @Override
+  public String toString() {
+    if (message != null && !message.isEmpty() && !"...".equals(message)) {
+      return message;
+    }
+    return "";
+  }
 }

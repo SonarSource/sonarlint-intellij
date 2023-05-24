@@ -41,4 +41,6 @@ class FlowNode(val flow: Flow, private val label: String, val issue: LocalTaintV
   override fun hashCode(): Int {
     return Objects.hash(label)
   }
+
+  override fun toString() = label
 }

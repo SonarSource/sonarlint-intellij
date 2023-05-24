@@ -113,4 +113,9 @@ public class IssueNode extends AbstractNode {
     var offset = range.getStartOffset() - doc.getLineStartOffset(line);
     return String.format("(%d, %d) ", line + 1, offset);
   }
+
+  @Override
+  public String toString() {
+    return issue.getMessage();
+  }
 }

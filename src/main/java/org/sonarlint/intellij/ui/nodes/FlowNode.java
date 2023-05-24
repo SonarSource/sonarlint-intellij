@@ -44,4 +44,9 @@ public class FlowNode extends AbstractNode {
     renderer.setBorder(new BottomLineBorder());
     renderer.append(label, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
   }
+
+  @Override
+  public String toString() {
+    return label;
+  }
 }
