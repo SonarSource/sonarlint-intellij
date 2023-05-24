@@ -30,8 +30,6 @@ import org.sonarsource.sonarlint.core.commons.Language;
 public class GoLanguageActivator implements LanguageActivator {
   @Override
   public void amendLanguages(Set<Language> enabledLanguages) {
-    enabledLanguages.clear();
     enabledLanguages.add(Language.GO);
-    enabledLanguages.add(Language.SECRETS);
   }
 }
