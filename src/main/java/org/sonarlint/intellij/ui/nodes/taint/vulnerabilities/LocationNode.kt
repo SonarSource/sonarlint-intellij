@@ -70,4 +70,6 @@ class LocationNode(private val number: Int?, val location: Location, val associa
   override fun hashCode(): Int {
     return Objects.hash(number, location.range?.startOffset, location.range?.endOffset, location.message)
   }
+
+  override fun toString() = location.message ?: ""
 }

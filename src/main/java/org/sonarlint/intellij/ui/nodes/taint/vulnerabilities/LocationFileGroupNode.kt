@@ -49,4 +49,6 @@ class LocationFileGroupNode(private val position: Int, private val location: Loc
     return Objects.hash(position, location.file)
   }
 
+  override fun toString() = location.file?.name ?: location.originalFileName ?: "Unknown file"
+
 }

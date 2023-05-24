@@ -87,4 +87,11 @@ public class LiveSecurityHotspotNode extends AbstractNode {
     return 1;
   }
 
+
+
+  @Override
+  public String toString() {
+    return securityHotspot.getMessage();
+  }
+
 }
