@@ -295,9 +295,9 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     } else {
       flowsTree.getEmptyText().setText("No finding selected");
       rulePanel.clear();
+      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+      highlighting.removeHighlights();
     }
-    var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-    highlighting.removeHighlights();
   }
 
   private void createFlowsTree() {
