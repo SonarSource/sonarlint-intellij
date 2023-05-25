@@ -78,7 +78,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     // only annotate the hotspots currently displayed in the tree
     var toolWindowService = getService(project, SonarLintToolWindow.class);
-    toolWindowService.getDisplayedSecurityHotspots()
+    toolWindowService.getDisplayedSecurityHotspotsForFile(file.getVirtualFile())
       .forEach(securityHotspot -> {
         // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
         var validTextRange = securityHotspot.getValidTextRange();

@@ -298,11 +298,11 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     }
   }
 
-  public Collection<LiveSecurityHotspot> getDisplayedSecurityHotspots() {
+  public Collection<LiveSecurityHotspot> getDisplayedSecurityHotspotsForFile(VirtualFile file) {
     var toolWindow = getToolWindow();
     if (toolWindow != null && toolWindow.isVisible() && securityHotspotsContent != null && securityHotspotsContent.isSelected()) {
       var securityHotspotPanel = (SecurityHotspotsPanel) securityHotspotsContent.getComponent();
-      return securityHotspotPanel.getDisplayedNodes().stream().map(LiveSecurityHotspotNode::getHotspot).collect(Collectors.toList());
+      return securityHotspotPanel.getDisplayedNodesForFile(file).stream().map(LiveSecurityHotspotNode::getHotspot).collect(Collectors.toList());
     }
     return Collections.emptyList();
   }

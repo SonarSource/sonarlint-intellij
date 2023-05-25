@@ -181,19 +181,13 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
   public int updateModelWithoutFileNode(Map<VirtualFile, Collection<LiveSecurityHotspot>> map, String emptyText) {
     summary.setEmptyText(emptyText);
-
-    var nodes = summary.children();
-    while (nodes.hasMoreElements()) {
-      var securityHotspotNode = (LiveSecurityHotspotNode) nodes.nextElement();
-      if (!map.containsKey(securityHotspotNode.getHotspot().getFile())) {
-        model.removeNodeFromParent(securityHotspotNode);
-      }
-    }
+    summary.removeAllChildren();
 
     for (var e : map.entrySet()) {
       setSecurityHotspots(e.getKey(), e.getValue());
     }
 
+    copyToFilteredNodes();
     model.nodeChanged(summary);
 
     return summary.getFindingCount();
@@ -201,32 +195,18 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
   private void setSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
     if (!accept(file)) {
-      removeHotspotsByFile(file);
       return;
     }
 
     var filtered = filter(securityHotspots, true);
     if (filtered.isEmpty()) {
-      removeHotspotsByFile(file);
       return;
     }
 
-    setRootSecurityHotspots(file, filtered);
-    copyToFilteredNodes();
+    setRootSecurityHotspots(filtered);
   }
 
-  private void removeHotspotsByFile(VirtualFile file) {
-    Collections.list(summary.children()).forEach(e -> {
-      var securityHotspotNode = (LiveSecurityHotspotNode) e;
-      if (securityHotspotNode.getHotspot().getFile().equals(file)) {
-        model.removeNodeFromParent(securityHotspotNode);
-      }
-    });
-  }
-
-  private void setRootSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
-    removeHotspotsByFile(file);
-
+  private void setRootSecurityHotspots(Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
     for (var securityHotspot : securityHotspotsPointer) {
       var iNode = new LiveSecurityHotspotNode(securityHotspot, true);
       var idx = summary.insertLiveSecurityHotspotNode(iNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);

@@ -43,6 +43,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JComponent;
@@ -328,8 +329,11 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     detailsTab.setSelectedIndex(RULE_TAB_INDEX);
   }
 
-  public Collection<LiveSecurityHotspotNode> getDisplayedNodes() {
-    return securityHotspotTreeBuilder.getFilteredNodes();
+  public Collection<LiveSecurityHotspotNode> getDisplayedNodesForFile(VirtualFile file) {
+    return securityHotspotTreeBuilder.getFilteredNodes()
+      .stream()
+      .filter(node -> node.getHotspot().getFile().equals(file))
+      .collect(Collectors.toList());
   }
 
   @Override
