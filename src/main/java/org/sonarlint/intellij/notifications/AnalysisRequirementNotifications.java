@@ -101,18 +101,4 @@ public class AnalysisRequirementNotifications {
       alreadyNotified.add(content);
     }
   }
-
-  /**
-   * For old versions of SonarJS before the requirement was stored in the MANIFEST
-   */
-  public static void notifyNodeCommandException(Project project) {
-    var notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
-      "<b>SonarLint - Node.js required</b>",
-      "Node.js >= 16.x is required to perform JavaScript or TypeScript analysis. Check the SonarLint Log for details.",
-      NotificationType.WARNING);
-    notification.setImportant(true);
-    notification.notify(project);
-    notification.addAction(new OpenSonarLintLogAction(project));
-  }
-
 }

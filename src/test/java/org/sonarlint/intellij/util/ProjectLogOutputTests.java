@@ -83,10 +83,4 @@ class ProjectLogOutputTests extends AbstractSonarLintLightTests {
     logOutput.log("test", ClientLogOutput.Level.TRACE);
     verify(mockConsole).debug("test");
   }
-
-  @Test
-  void testNodeCommandException() {
-    logOutput.log("org.sonarsource.nodejs.NodeCommandException: Node not found :(", ClientLogOutput.Level.DEBUG);
-    verify(mockConsole).info("org.sonarsource.nodejs.NodeCommandException: Node not found :(");
-  }
 }
