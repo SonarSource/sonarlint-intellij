@@ -22,7 +22,6 @@ package org.sonarlint.intellij.util;
 import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -40,12 +39,6 @@ public class ProjectLogOutput implements ClientLogOutput {
       return;
     }
     var console = SonarLintUtils.getService(project, SonarLintConsole.class);
-    if (isNodeCommandException(msg)) {
-      console.info(msg);
-      AnalysisRequirementNotifications.notifyNodeCommandException(project);
-      // Avoid duplicate log (info + debug)
-      return;
-    }
     if (!getSettingsFor(project).isAnalysisLogsEnabled()) {
       return;
     }
@@ -62,9 +55,5 @@ public class ProjectLogOutput implements ClientLogOutput {
       default:
         console.info(msg);
     }
-  }
-
-  private static boolean isNodeCommandException(String msg) {
-    return msg.contains("NodeCommandException");
   }
 }
