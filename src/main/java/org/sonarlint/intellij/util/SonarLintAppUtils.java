@@ -131,21 +131,29 @@ public class SonarLintAppUtils {
   /**
    *  Path will always contain forward slashes. Resolving the module path uses the official alternative to
    *  {@link com.intellij.openapi.module.Module#getModuleFilePath} which is marked as internally!
+   *
+   *  INFO: Package level access for the light / heavy testing as manipulating
+   *  {@link com.intellij.testFramework.fixtures.BasePlatformTestCase} for
+   *  {@link SonarLintAppUtils#getRelativePathForAnalysis} to not return from
+   *  {@link SonarLintAppUtils#getPathRelativeToProjectBaseDir} every time would be way too time-consuming!
    */
   @CheckForNull
-  private static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
+  static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
+    var filePath = Paths.get(file.getPath());
     var moduleContentRoots = Arrays.stream(ModuleRootManager.getInstance(module).getContentRoots())
             .filter(contentRoot -> contentRoot.getPath().trim().length() > 0)
             .toArray(VirtualFile[]::new);
 
-    // If there are multiple content roots (this can be possible based on the SDK API documentation), just take the
-    // first one, assuming this one is the path of the ".iml" file.
-    var baseDir = Paths.get(moduleContentRoots[0].getPath()).getParent();
-    var filePath = Paths.get(file.getPath());
-    if (!filePath.startsWith(baseDir)) {
-      return null;
+    // There can be multiple content roots (based on the IntelliJ SDK), e.g. for a Gradle project the project directory
+    // and every sourceSet (main, test, ...) or based on the .idea/modules.xml configuration.
+    for (VirtualFile contentRoot: moduleContentRoots) {
+      var contentRootDir = Paths.get(contentRoot.getPath());
+      if (filePath.startsWith(contentRootDir)) {
+        return PathUtil.toSystemIndependentName(contentRootDir.relativize(filePath).toString());
+      }
     }
-    return PathUtil.toSystemIndependentName(baseDir.relativize(filePath).toString());
+
+    return null;
   }
 
   @CheckForNull
