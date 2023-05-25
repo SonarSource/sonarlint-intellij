@@ -63,8 +63,9 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private static final Comparator<LiveSecurityHotspot> SECURITY_HOTSPOT_COMPARATOR = new SecurityHotspotComparator();
   private static final Comparator<LiveSecurityHotspotNode> SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR = new LiveSecurityHotspotNodeComparator();
 
+  protected SecurityHotspotFilters currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
+  protected boolean shouldShowResolvedHotspots = false;
   private final FindingTreeIndex index;
-  private SecurityHotspotFilters currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
   private DefaultTreeModel model;
   private SummaryNode summary;
   private List<LiveSecurityHotspotNode> nonFilteredNodes;
@@ -224,21 +225,6 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     });
   }
 
-  public int applyCurrentFiltering(Project project) {
-    return filterSecurityHotspots(project, currentFilter);
-  }
-
-  public int updateStatusAndApplyCurrentFiltering(Project project, String securityHotspotKey, HotspotStatus status) {
-    for (var securityHotspotNode : nonFilteredNodes) {
-      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
-        securityHotspotNode.getHotspot().setStatus(status);
-        break;
-      }
-    }
-
-    return filterSecurityHotspots(project, currentFilter);
-  }
-
   public boolean updateStatusForHotspotWithFileNode(String securityHotspotKey, HotspotStatus status) {
     var optionalNode = nonFilteredNodes
       .stream()
@@ -271,13 +257,22 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     return nonFilteredNodes.stream().map(LiveSecurityHotspotNode::getHotspot).map(LiveSecurityHotspot::getFile).collect(Collectors.toSet());
   }
 
-  public int filterSecurityHotspots(Project project, SecurityHotspotFilters filter) {
-    var fileList = getFilesForNodes();
-    currentFilter = filter;
+  public int updateStatusAndApplyCurrentFiltering(Project project, String securityHotspotKey, HotspotStatus status) {
+    for (var securityHotspotNode : nonFilteredNodes) {
+      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
+        securityHotspotNode.getHotspot().setStatus(status);
+        break;
+      }
+    }
+    return applyCurrentFiltering(project);
+  }
+
+  public int applyCurrentFiltering(Project project) {
     filteredNodes.clear();
+    var fileList = getFilesForNodes();
     Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
     for (var securityHotspotNode : nonFilteredNodes) {
-      if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
+      if (currentFilter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot()) && (shouldShowResolvedHotspots || !securityHotspotNode.getHotspot().isResolved())) {
         fileList.add(securityHotspotNode.getHotspot().getFile());
         var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
         var newIdx = new int[] {idx};
@@ -286,24 +281,33 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
         filteredNodes.add(securityHotspotNode);
       }
     }
-
     model.reload();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
     return filteredNodes.size();
+  }
+
+  public int filterSecurityHotspots(Project project, SecurityHotspotFilters filter) {
+    currentFilter = filter;
+    return applyCurrentFiltering(project);
+  }
+
+  public int filterSecurityHotspots(Project project, boolean isResolved) {
+    shouldShowResolvedHotspots = isResolved;
+    return applyCurrentFiltering(project);
   }
 
   public void clear() {
     updateModel(Collections.emptyMap(), "No analysis done");
   }
 
-  private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots, boolean enableResolved) {
+  private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots, boolean allowResolved) {
     return StreamSupport.stream(securityHotspots.spliterator(), false)
-      .filter(hotspot -> accept(hotspot, enableResolved))
+      .filter(hotspot -> accept(hotspot, allowResolved))
       .collect(Collectors.toList());
   }
 
-  private static boolean accept(LiveSecurityHotspot securityHotspot, boolean enableResolved) {
-    if (enableResolved) {
+  private static boolean accept(LiveSecurityHotspot securityHotspot, boolean allowResolved) {
+    if (allowResolved) {
       return securityHotspot.isValid();
     } else {
       return !securityHotspot.isResolved() && securityHotspot.isValid();

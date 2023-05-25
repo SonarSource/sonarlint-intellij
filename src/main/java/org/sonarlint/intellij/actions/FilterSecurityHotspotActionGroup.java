@@ -26,6 +26,7 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotAction;
+import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotSettings;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 
 public class FilterSecurityHotspotActionGroup extends ActionGroup {
@@ -36,10 +37,12 @@ public class FilterSecurityHotspotActionGroup extends ActionGroup {
     super(title, description, icon);
     setPopup(true);
 
+    var settings = new FilterSecurityHotspotSettings();
+
     myChildren = new AnAction[] {
-      new FilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL),
-      new FilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY),
-      new FilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SERVER)
+      new FilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL, settings),
+      new FilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY, settings),
+      new FilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SERVER, settings)
     };
   }
 

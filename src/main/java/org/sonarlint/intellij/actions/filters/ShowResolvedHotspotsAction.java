@@ -20,7 +20,8 @@
 package org.sonarlint.intellij.actions.filters;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import org.sonarlint.intellij.SonarLintIcons;
+import javax.swing.Icon;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 
@@ -28,21 +29,24 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class ShowResolvedHotspotsAction extends AbstractSonarToggleAction {
 
-  public ShowResolvedHotspotsAction() {
-    super("Show Resolved Security Hotspots", "Show resolved security hotspots", SonarLintIcons.HOTSPOT_CHECKED);
+  private boolean isResolved;
+
+  public ShowResolvedHotspotsAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+    super(text, description, icon);
+    isResolved = false;
   }
 
   @Override
   public boolean isSelected(AnActionEvent event) {
-    return FilterSecurityHotspotSettings.isResolved();
+    return isResolved;
   }
 
   @Override
   public void setSelected(AnActionEvent event, boolean flag) {
     var p = event.getProject();
     if (p != null) {
-      FilterSecurityHotspotSettings.setResolved(flag);
-      getService(p, SonarLintToolWindow.class).filterSecurityHotspotTab(FilterSecurityHotspotSettings.getCurrentlySelectedFilter());
+      isResolved = flag;
+      getService(p, SonarLintToolWindow.class).filterSecurityHotspotTab(isResolved);
     }
   }
 

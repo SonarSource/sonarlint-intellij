@@ -29,9 +29,11 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 public class FilterSecurityHotspotAction extends AbstractSonarToggleAction {
 
   private final SecurityHotspotFilters filter;
+  private final FilterSecurityHotspotSettings settings;
 
-  public FilterSecurityHotspotAction(SecurityHotspotFilters filter) {
+  public FilterSecurityHotspotAction(SecurityHotspotFilters filter, FilterSecurityHotspotSettings settings) {
     this.filter = filter;
+    this.settings = settings;
   }
 
   @Override
@@ -46,7 +48,7 @@ public class FilterSecurityHotspotAction extends AbstractSonarToggleAction {
 
   @Override
   public boolean isSelected(@NotNull AnActionEvent e) {
-    return FilterSecurityHotspotSettings.getCurrentlySelectedFilter() == filter;
+    return settings.getCurrentlySelectedFilter() == filter;
   }
 
   @Override
@@ -56,9 +58,9 @@ public class FilterSecurityHotspotAction extends AbstractSonarToggleAction {
       return;
     }
 
-    if (enabled && FilterSecurityHotspotSettings.getCurrentlySelectedFilter() != filter) {
+    if (enabled && settings.getCurrentlySelectedFilter() != filter) {
       getService(project, SonarLintToolWindow.class).filterSecurityHotspotTab(filter);
-      FilterSecurityHotspotSettings.setCurrentlySelectedFilter(filter);
+      settings.setCurrentlySelectedFilter(filter);
     }
   }
 

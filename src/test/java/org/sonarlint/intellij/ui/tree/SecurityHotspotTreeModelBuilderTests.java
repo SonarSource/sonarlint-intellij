@@ -30,19 +30,21 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotSettings;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
@@ -62,8 +64,8 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   void init() {
     treeBuilder = new SecurityHotspotTreeModelBuilder();
     model = treeBuilder.createModel();
-    FilterSecurityHotspotSettings.setCurrentlySelectedFilter(SecurityHotspotFilters.DEFAULT_FILTER);
-    FilterSecurityHotspotSettings.setResolved(false);
+    treeBuilder.currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
+    treeBuilder.shouldShowResolvedHotspots = false;
     replaceProjectService(CodeAnalyzerRestarter.class, codeAnalyzerRestarter);
   }
 
@@ -164,20 +166,34 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
 
     treeBuilder.updateModelWithoutFileNode(data, "empty");
 
-    FilterSecurityHotspotSettings.setResolved(false);
-    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.SHOW_ALL)).isEqualTo(2);
+    assertThat(treeBuilder.filterSecurityHotspots(getProject(), false)).isEqualTo(2);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
-
-    FilterSecurityHotspotSettings.setResolved(true);
-    assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.SHOW_ALL)).isEqualTo(4);
+    assertThat(treeBuilder.filterSecurityHotspots(getProject(), true)).isEqualTo(4);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(4);
+  }
+
+  @Test
+  void shouldUpdateStatusAndApplyCurrentFiltering() {
+    Map<VirtualFile, Collection<LiveSecurityHotspot>> data = new HashMap<>();
+
+    var file = addFileWithStatusAndFindingKeyForHotspot(data, "file1", 1, HotspotReviewStatus.TO_REVIEW, "keyA");
+    var hotspot = data.get(file).stream().findFirst();
+    if (hotspot.isEmpty()) {
+      Assertions.fail();
+    }
+
+    treeBuilder.updateModelWithoutFileNode(data, "empty");
+
+    var result = treeBuilder.updateStatusAndApplyCurrentFiltering(getProject(), Objects.requireNonNull(hotspot.get().getServerFindingKey()), HotspotStatus.FIXED);
+    assertThat(result).isZero();
+    assertThat(treeBuilder.getFilteredNodes()).isEmpty();
   }
 
   private void addFile(Map<VirtualFile, Collection<LiveSecurityHotspot>> data, String fileName, int numSecurityHotspots) {
     addFileWithStatusAndFindingKeyForHotspot(data, fileName, numSecurityHotspots, HotspotReviewStatus.TO_REVIEW, null);
   }
 
-  private void addFileWithStatusAndFindingKeyForHotspot(Map<VirtualFile, Collection<LiveSecurityHotspot>> data, String fileName, int numSecurityHotspots,
+  private VirtualFile addFileWithStatusAndFindingKeyForHotspot(Map<VirtualFile, Collection<LiveSecurityHotspot>> data, String fileName, int numSecurityHotspots,
     HotspotReviewStatus status, @Nullable String serverFindingKey) {
     var file = mock(VirtualFile.class);
     when(file.getName()).thenReturn(fileName);
@@ -197,6 +213,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     }
 
     data.put(file, securityHotspotList);
+    return file;
   }
 
   private static LiveSecurityHotspot mockSecurityHotspot(String path, int startOffset, String rule,

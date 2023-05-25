@@ -90,7 +90,9 @@ public final class SonarLintActions {
     filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
       "Filter Security Hotspots",
       AllIcons.General.Filter);
-    showResolvedHotspotAction = new ShowResolvedHotspotsAction();
+    showResolvedHotspotAction = new ShowResolvedHotspotsAction("Show Resolved Security Hotspots",
+      "Show resolved security hotspots",
+      SonarLintIcons.HOTSPOT_CHECKED);
   }
 
   public static SonarLintActions getInstance() {

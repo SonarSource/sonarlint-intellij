@@ -21,22 +21,18 @@ package org.sonarlint.intellij.actions.filters;
 
 public class FilterSecurityHotspotSettings {
 
-  private static SecurityHotspotFilters currentlySelectedFilter = SecurityHotspotFilters.DEFAULT_FILTER;
-  private static boolean resolved = false;
+  private SecurityHotspotFilters currentlySelectedFilter;
 
-  public static boolean isResolved() {
-    return resolved;
+  public FilterSecurityHotspotSettings() {
+    this.currentlySelectedFilter = SecurityHotspotFilters.DEFAULT_FILTER;
   }
 
-  public static SecurityHotspotFilters getCurrentlySelectedFilter() {
+  public SecurityHotspotFilters getCurrentlySelectedFilter() {
     return currentlySelectedFilter;
   }
 
-  public static void setCurrentlySelectedFilter(SecurityHotspotFilters filter) {
+  public void setCurrentlySelectedFilter(SecurityHotspotFilters filter) {
     currentlySelectedFilter = filter;
   }
 
-  public static void setResolved(boolean resolved) {
-    FilterSecurityHotspotSettings.resolved = resolved;
-  }
 }
