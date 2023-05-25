@@ -44,15 +44,6 @@ public enum SecurityHotspotFilters {
   }
 
   public boolean shouldIncludeSecurityHotspot(LiveSecurityHotspot securityHotspot) {
-    var isSettingResolved = FilterSecurityHotspotSettings.isResolved();
-    var isNodeResolved = securityHotspot.isResolved();
-
-    var isIncluded = isSettingResolved || !isNodeResolved;
-
-    if (!isIncluded) {
-      return false;
-    }
-
     if (this == SHOW_ALL) {
       return true;
     } else if (this == LOCAL_ONLY) {

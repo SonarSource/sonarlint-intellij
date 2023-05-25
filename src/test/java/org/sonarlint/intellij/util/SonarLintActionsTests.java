@@ -54,6 +54,7 @@ class SonarLintActionsTests extends AbstractSonarLintLightTests {
     assertActionFields(instance.clearIssues());
     assertActionFields(instance.cleanConsole());
     assertActionFields(instance.filterSecurityHotspots());
+    assertActionFields(instance.showResolvedHotspotAction());
   }
 
   @Test
