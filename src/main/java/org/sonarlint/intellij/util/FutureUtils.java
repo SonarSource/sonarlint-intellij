@@ -19,18 +19,21 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class FutureUtils {
-  public static void waitForTask(Project project, Future<?> task, String taskName, Duration timeoutDuration) {
+  public static void waitForTask(Project project, ProgressIndicator indicator, Future<?> task, String taskName, Duration timeoutDuration) {
     try {
-      task.get(timeoutDuration.getSeconds(), TimeUnit.SECONDS);
+      waitForFuture(indicator, task, timeoutDuration);
     } catch (TimeoutException ex) {
       task.cancel(true);
       SonarLintConsole.get(project).error(taskName + " task expired", ex);
@@ -41,10 +44,32 @@ public class FutureUtils {
     }
   }
 
-  public static void waitForTasks(Project project, List<Future<?>> updateTasks, String taskName) {
+  public static void waitForTasks(Project project, ProgressIndicator indicator, List<Future<?>> updateTasks, String taskName) {
     for (var f : updateTasks) {
-      waitForTask(project, f, taskName, Duration.ofSeconds(20));
+      waitForTask(project, indicator, f, taskName, Duration.ofSeconds(20));
     }
+  }
+
+  private static void waitForFuture(ProgressIndicator indicator, Future<?> future, Duration durationTimeout) throws InterruptedException, ExecutionException, TimeoutException {
+    long counter = 0;
+    while (counter < durationTimeout.toMillis()) {
+      counter += 100;
+      if (indicator.isCanceled()) {
+        future.cancel(true);
+        return;
+      }
+      try {
+        future.get(100, TimeUnit.MILLISECONDS);
+        return;
+      } catch (TimeoutException ignored) {
+        continue;
+      } catch (InterruptedException | CancellationException e) {
+        throw new InterruptedException("Interrupted");
+      } catch (ExecutionException e) {
+        throw e;
+      }
+    }
+    throw new TimeoutException();
   }
 
   private FutureUtils() {

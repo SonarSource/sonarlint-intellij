@@ -137,8 +137,8 @@ public final class ServerIssueUpdater implements Disposable {
 
       // submit tasks
       var updateTasks = fetchAndMatchServerIssues(filesPerModule, connection, engine, downloadAll);
-      Future<?> waitForTasksTask = executorService.submit(() -> waitForTasks(myProject, updateTasks, "ServerIssueUpdater"));
-      waitForTask(myProject, waitForTasksTask, "Wait", Duration.ofSeconds(60));
+      Future<?> waitForTasksTask = executorService.submit(() -> waitForTasks(myProject, indicator, updateTasks, "ServerIssueUpdater"));
+      waitForTask(myProject, indicator, waitForTasksTask, "Wait", Duration.ofSeconds(60));
     } catch (InvalidBindingException e) {
       // ignore, do nothing
     }

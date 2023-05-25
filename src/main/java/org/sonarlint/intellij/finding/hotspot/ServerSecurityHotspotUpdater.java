@@ -145,8 +145,8 @@ public final class ServerSecurityHotspotUpdater implements Disposable {
 
     // submit tasks
     var updateTasks = fetchAndMatchServerSecurityHotspots(filesPerModule, connection, engine, downloadAll);
-    Future<?> waitForTasksTask = executorService.submit(() -> waitForTasks(myProject, updateTasks, "ServerHotspotUpdater"));
-    waitForTask(myProject, waitForTasksTask, "Wait", Duration.ofSeconds(60));
+    Future<?> waitForTasksTask = executorService.submit(() -> waitForTasks(myProject, indicator, updateTasks, "ServerHotspotUpdater"));
+    waitForTask(myProject, indicator, waitForTasksTask, "Wait", Duration.ofSeconds(60));
   }
 
   private List<Future<?>> fetchAndMatchServerSecurityHotspots(Map<Module, Collection<VirtualFile>> filesPerModule,
