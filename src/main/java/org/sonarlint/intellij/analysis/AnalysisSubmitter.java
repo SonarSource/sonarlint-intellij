@@ -49,23 +49,31 @@ public final class AnalysisSubmitter {
   public static final String ANALYSIS_TASK_TITLE = "SonarLint Analysis";
   private final Project project;
   private final OnTheFlyFindingsHolder onTheFlyFindingsHolder;
+  private Cancelable currentManualAnalysis;
 
   public AnalysisSubmitter(Project project) {
     this.project = project;
     this.onTheFlyFindingsHolder = new OnTheFlyFindingsHolder(project);
   }
 
+  public void cancelCurrentManualAnalysis() {
+    if (currentManualAnalysis != null) {
+      currentManualAnalysis.cancel();
+      currentManualAnalysis = null;
+    }
+  }
+
   public void analyzeAllFiles() {
     var allFiles = getAllFiles(project);
     var callback = new ShowReportCallable(project);
-    var analysis = new Analysis(project, allFiles, TriggerType.ALL, true, callback);
+    var analysis = new Analysis(project, allFiles, TriggerType.ALL, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
   public void analyzeVcsChangedFiles() {
     var changedFiles = ChangeListManager.getInstance(project).getAffectedFiles();
     var callback = new ShowReportCallable(project);
-    var analysis = new Analysis(project, changedFiles, TriggerType.CHANGED_FILES, true, callback);
+    var analysis = new Analysis(project, changedFiles, TriggerType.CHANGED_FILES, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
@@ -97,7 +105,7 @@ public final class AnalysisSubmitter {
     }
 
     var callback = new ErrorAwareAnalysisCallback();
-    var analysis = new Analysis(project, files, trigger, true, callback);
+    var analysis = new Analysis(project, files, trigger, callback);
     var result = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
     return callback.analysisSucceeded() ? result : null;
   }
@@ -116,13 +124,13 @@ public final class AnalysisSubmitter {
     if (shouldExecuteInBackground(actionEvent)) {
       analyzeInBackground(files, TriggerType.ACTION, callback);
     } else {
-      analyzeInBackgroundableModal(files, TriggerType.ACTION, callback);
+      currentManualAnalysis = analyzeInBackgroundableModal(files, TriggerType.ACTION, callback);
     }
   }
 
   public void analyzeFileAndTrySelectHotspot(VirtualFile file, String securityHotspotKey) {
     AnalysisCallback callback = new ShowSecurityHotspotCallable(project, onTheFlyFindingsHolder, securityHotspotKey);
-    var task = new Analysis(project, List.of(file), TriggerType.OPEN_SECURITY_HOTSPOT, true, callback);
+    var task = new Analysis(project, List.of(file), TriggerType.OPEN_SECURITY_HOTSPOT, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, task::run);
   }
 
@@ -139,17 +147,18 @@ public final class AnalysisSubmitter {
   }
 
   private Cancelable analyzeInBackground(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
-    var task = new Analysis(project, files, trigger, false, callback);
-    TaskRunnerKt.startBackgroundTask(project, ANALYSIS_TASK_TITLE, task::run);
-    return task;
+    var analysis = new Analysis(project, files, trigger, callback);
+    TaskRunnerKt.startBackgroundTask(project, ANALYSIS_TASK_TITLE, analysis::run);
+    return analysis;
   }
 
-  private void analyzeInBackgroundableModal(Collection<VirtualFile> files, TriggerType action, AnalysisCallback callback) {
+  private Cancelable analyzeInBackgroundableModal(Collection<VirtualFile> files, TriggerType action, AnalysisCallback callback) {
     if (shouldSkipAnalysis()) {
-      return;
+      return null;
     }
-    var analysis = new Analysis(project, files, action, true, callback);
+    var analysis = new Analysis(project, files, action, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
+    return analysis;
   }
 
   private boolean shouldSkipAnalysis() {

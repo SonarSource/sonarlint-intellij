@@ -91,7 +91,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     replaceProjectService(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
     replaceProjectService(FindingsCache.class, findingsCacheMock);
 
-    task = new Analysis(getProject(), filesToAnalyze, TriggerType.ACTION, false, mock(AnalysisCallback.class));
+    task = new Analysis(getProject(), filesToAnalyze, TriggerType.ACTION, mock(AnalysisCallback.class));
 
     // IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     AnalysisStatus.get(getProject()).stopRun();

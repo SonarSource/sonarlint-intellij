@@ -89,7 +89,7 @@ class ServerIssueUpdaterTests extends AbstractSonarLintLightTests {
     var file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
     getProjectSettings().setBindingEnabled(false);
 
-    underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator());
     verifyNoInteractions(findingsCache);
   }
 
@@ -106,7 +106,7 @@ class ServerIssueUpdaterTests extends AbstractSonarLintLightTests {
     // run
     getProjectSettings().setBindingEnabled(true);
 
-    underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator());
 
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
@@ -129,7 +129,7 @@ class ServerIssueUpdaterTests extends AbstractSonarLintLightTests {
     // run
     getProjectSettings().setBindingEnabled(true);
 
-    underTest.fetchAndMatchServerIssues(Map.of(getModule(), files), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Map.of(getModule(), files), new EmptyProgressIndicator());
 
     verify(engine, timeout(500)).downloadAllServerIssues(any(), any(), eq(PROJECT_KEY), anyString(), isNull());
     verify(mockedConsole, never()).error(anyString());

@@ -62,27 +62,27 @@ public class Analysis implements Cancelable {
   private final Project project;
   private final Collection<VirtualFile> files;
   private final TriggerType trigger;
-  private final boolean waitForServerFindings;
   private final AnalysisCallback callback;
   private boolean finished = false;
   private boolean cancelled;
+  private ProgressIndicator indicator;
 
-  public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerFindings,
-    AnalysisCallback callback) {
+  public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
     this.project = project;
     this.files = files;
     this.trigger = trigger;
-    this.waitForServerFindings = waitForServerFindings;
     this.callback = callback;
   }
 
-
   public AnalysisResult run(ProgressIndicator indicator) {
     try {
+      finished = false;
+      this.indicator = indicator;
       notifyStart();
       return doRun(indicator);
     } finally {
       finished = true;
+      this.indicator = null;
       if (!project.isDisposed()) {
         getService(project, AnalysisStatus.class).stopRun();
       }
@@ -97,6 +97,9 @@ public class Analysis implements Cancelable {
   public void cancel() {
     if (!isFinished()) {
       this.cancelled = true;
+      if (indicator != null) {
+        indicator.cancel();
+      }
     }
   }
 
@@ -140,7 +143,9 @@ public class Analysis implements Cancelable {
 
       findingsCache.replaceFindings(summary.findings);
 
+      checkCanceled(indicator);
       matchWithServerIssuesIfNeeded(indicator, summary.filesHavingIssuesByModule);
+      checkCanceled(indicator);
       matchWithServerSecurityHotspotsIfNeeded(indicator, summary.filesHavingSecurityHotspotsByModule);
 
       var result = new AnalysisResult(summary.findings, files, trigger, Instant.now());
@@ -158,7 +163,7 @@ public class Analysis implements Cancelable {
     if (!filesHavingIssuesByModule.isEmpty()) {
       var serverIssueUpdater = SonarLintUtils.getService(project, ServerIssueUpdater.class);
       if (trigger.isShouldUpdateServerIssues()) {
-        serverIssueUpdater.fetchAndMatchServerIssues(filesHavingIssuesByModule, indicator, waitForServerFindings);
+        serverIssueUpdater.fetchAndMatchServerIssues(filesHavingIssuesByModule, indicator);
       } else {
         serverIssueUpdater.matchServerIssues(filesHavingIssuesByModule);
       }
@@ -170,7 +175,7 @@ public class Analysis implements Cancelable {
     if (!filesHavingSecurityHotspotsByModule.isEmpty()) {
       var updater = SonarLintUtils.getService(project, ServerSecurityHotspotUpdater.class);
       if (trigger.isShouldUpdateServerIssues()) {
-        updater.fetchAndMatchServerSecurityHotspots(filesHavingSecurityHotspotsByModule, indicator, waitForServerFindings);
+        updater.fetchAndMatchServerSecurityHotspots(filesHavingSecurityHotspotsByModule, indicator);
       } else {
         updater.matchServerSecurityHotspots(filesHavingSecurityHotspotsByModule);
       }
@@ -232,8 +237,7 @@ public class Analysis implements Cancelable {
     return new Summary(project, scope.getFilesByModule(), allFailedFiles, rawFindingHandler.getRawIssueCount(), findings);
   }
 
-  private static <T> Map<VirtualFile, Collection<T>> getFindingsPerAnalyzedFile(Map<VirtualFile,
-    Collection<T>> detectedFindingsPerFile, Set<VirtualFile> analyzedFiles) {
+  private static <T> Map<VirtualFile, Collection<T>> getFindingsPerAnalyzedFile(Map<VirtualFile, Collection<T>> detectedFindingsPerFile, Set<VirtualFile> analyzedFiles) {
     Map<VirtualFile, Collection<T>> findingsPerAnalyzedFile = analyzedFiles.stream().collect(toMap(Function.identity(),
       k -> new ArrayList<>()));
     findingsPerAnalyzedFile.putAll(detectedFindingsPerFile);
@@ -268,13 +272,12 @@ public class Analysis implements Cancelable {
       this.onlyFailedFiles = failedFiles.containsAll(filesByModule.values().stream().flatMap(Collection::stream).collect(toSet()));
     }
 
-    private static <L extends LiveFinding> Map<Module, Collection<VirtualFile>> filterFilesHavingFindingsByModule(Map<Module,
-      Collection<VirtualFile>> filesByModule, Map<VirtualFile, Collection<L>> issuesPerFile) {
+    private static <L extends LiveFinding> Map<Module, Collection<VirtualFile>> filterFilesHavingFindingsByModule(Map<Module, Collection<VirtualFile>> filesByModule,
+      Map<VirtualFile, Collection<L>> issuesPerFile) {
       var filesWithIssuesPerModule = new LinkedHashMap<Module, Collection<VirtualFile>>();
 
       for (var entry : filesByModule.entrySet()) {
-        var moduleFilesWithIssues =
-          entry.getValue().stream().filter(f -> !issuesPerFile.getOrDefault(f, Collections.emptyList()).isEmpty()).collect(toList());
+        var moduleFilesWithIssues = entry.getValue().stream().filter(f -> !issuesPerFile.getOrDefault(f, Collections.emptyList()).isEmpty()).collect(toList());
         if (!moduleFilesWithIssues.isEmpty()) {
           filesWithIssuesPerModule.put(entry.getKey(), moduleFilesWithIssues);
         }
