@@ -21,17 +21,16 @@ package org.sonarlint.intellij.its.tests
 
 import com.google.protobuf.InvalidProtocolBufferException
 import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.fixtures.ActionButtonFixture
+import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
+import com.intellij.remoterobot.fixtures.ActionLinkFixture.Companion.byText
 import com.intellij.remoterobot.fixtures.ContainerFixture
-import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
-import com.sonar.orchestrator.OrchestratorExtension
 import com.sonar.orchestrator.container.Edition
+import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -39,7 +38,6 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.DisabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.fixtures.anActionLink
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
@@ -50,22 +48,24 @@ import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
+import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.OrchestratorUtils
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
 import org.sonarlint.intellij.its.utils.optionalStep
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
 import java.net.URL
-import java.time.Duration
+import java.time.Duration.ofSeconds
 
 @DisabledIf("isCLionOrGoLand")
 class AllTest : BaseUiTest() {
 
     companion object {
+        @JvmField
         @RegisterExtension
         val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
@@ -179,7 +179,7 @@ class AllTest : BaseUiTest() {
 
         private fun bindProjectAndModuleInFileSettings() {
             sonarLintGlobalSettings {
-                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
+                actionButton(byTooltipText("Add")).clickWhenEnabled()
                 dialog("New Connection: Server Details") {
                     keyboard { enterText("Orchestrator") }
                     jRadioButtons()[1].select()
@@ -205,7 +205,7 @@ class AllTest : BaseUiTest() {
 
                 comboBox("Connection:").click()
                 remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                    waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
+                    waitFor(ofSeconds(5)) { hasText("Orchestrator") }
                     findText("Orchestrator").click()
                 }
                 pressOk()
@@ -213,7 +213,7 @@ class AllTest : BaseUiTest() {
 
                 jbTextField().text = PROJECT_KEY
 
-                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
+                actionButton(byTooltipText("Add")).clickWhenEnabled()
                 dialog("Select module") {
                     jbTable().selectItemContaining("sample-scala-module")
                     pressOk()
@@ -221,7 +221,7 @@ class AllTest : BaseUiTest() {
 
                 pressOk()
                 errorMessage("Project key for module 'sample-scala-module' should not be empty")
-                buttons(JButtonFixture.byText("Search in list..."))[1].click()
+                buttons(byText("Search in list..."))[1].click()
                 dialog("Select SonarQube Project To Bind") {
                     jList {
                         clickItem(MODULE_PROJECT_KEY, false)
@@ -253,7 +253,8 @@ class AllTest : BaseUiTest() {
 
             token = OrchestratorUtils.generateToken(adminWsClient, "OpenInIdeTest")
         }
-        
+
+        @Test
         fun opensHotspotAfterConfiguringConnectionAndBinding() = uiTest {
             openExistingProject("sample-java-hotspot", true)
 
@@ -264,16 +265,14 @@ class AllTest : BaseUiTest() {
             verifyHotspotOpened(this)
         }
 
+        private fun triggerOpenHotspotRequest() {
+            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
+                .readText()
+        }
+
         private fun createConnection(robot: RemoteRobot) {
             with(robot) {
                 idea {
-                    try {
-                        waitFor(Duration.ofSeconds(3)) {
-                            false
-                        }
-                    } catch (_: WaitForConditionTimeoutException) {
-                    }
-
                     dialog("Opening Security Hotspot...") {
                         button("Create connection").click()
                     }
@@ -338,17 +337,12 @@ class AllTest : BaseUiTest() {
                     toolWindow("SonarLint") {
                         tabTitleContains("Security Hotspots") {
                             content("SecurityHotspotsPanel") {
-                                Assertions.assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
+                                assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
                             }
                         }
                     }
                 }
             }
-        }
-
-        private fun triggerOpenHotspotRequest() {
-            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$SECURITY_HOTSPOT_PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
-                .readText()
         }
 
     }
@@ -374,17 +368,20 @@ class AllTest : BaseUiTest() {
         @Test
         fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
             openExistingProject("sample-java-hotspot", true)
-            verifySecurityHotspotTabContainsMessages(this, "The project is not bound to SonarQube 9.7+")
+            verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
         }
 
         @Test
-        fun should_display_security_hotspots() = uiTest {
+        fun should_display_security_hotspots_and_review_it_successfully() = uiTest {
             openExistingProject("sample-java-hotspot", true)
             bindProjectFromPanel()
 
             openFile("src/main/java/foo/Foo.java", "Foo.java")
-
             verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
+
+            openReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
+            changeStatusAndPressChange(this, "Acknowledged")
+            verifyStatusWasSuccessfullyChanged(this, "SonarLint - Security Hotspot review")
         }
 
         private fun bindProjectFromPanel() {
@@ -394,14 +391,59 @@ class AllTest : BaseUiTest() {
                         ensureOpen()
                         tab("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
-                            anActionLink("Configure binding").click()
+                            findText("Configure Binding").click()
                         }
                     }
-                    ProjectBindingUtils.bindProjectToSonarQube(
+                    bindProjectToSonarQube(
                         ORCHESTRATOR.server.url,
                         token,
                         SECURITY_HOTSPOT_PROJECT_KEY
                     )
+                }
+            }
+        }
+
+        private fun openReviewDialogFromList(remoteRobot: RemoteRobot, securityHotspotMessage: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Security Hotspots") { select() }
+                        content("SecurityHotspotTree") {
+                            findText(securityHotspotMessage).rightClick()
+                        }
+                    }
+                    actionMenuItem("Review Security Hotspot") {
+                        click()
+                    }
+                }
+            }
+        }
+
+        private fun changeStatusAndPressChange(remoteRobot: RemoteRobot, status: String) {
+            with(remoteRobot) {
+                idea {
+                    dialog("Change Security Hotspot Status on SonarQube") {
+                        content(status) {
+                            click()
+                        }
+                        pressButton("Change Status")
+                    }
+                }
+            }
+        }
+
+        private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot, title: String) {
+            with(remoteRobot) {
+                idea {
+                    notification(title) {
+                        hasText("The Security Hotspot status was successfully updated!")
+                    }
+                    toolWindow("SonarLint") {
+                        content("SecurityHotspotsPanel") {
+                            hasText("No Security Hotspot found.")
+                        }
+                    }
                 }
             }
         }
@@ -413,7 +455,7 @@ class AllTest : BaseUiTest() {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
-                            expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
                 }
@@ -427,7 +469,7 @@ class AllTest : BaseUiTest() {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
-                            expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
                 }
@@ -486,11 +528,11 @@ class AllTest : BaseUiTest() {
                         ensureOpen()
                         tab("Taint Vulnerabilities") { select() }
                         content("TaintVulnerabilitiesPanel") {
-                            anActionLink("Configure Binding").click()
+                            findText("Configure Binding").click()
                         }
                     }
 
-                    ProjectBindingUtils.bindProjectToSonarQube(
+                    bindProjectToSonarQube(
                         ORCHESTRATOR.server.url,
                         token,
                         TAINT_VULNERABILITY_PROJECT_KEY
@@ -506,7 +548,7 @@ class AllTest : BaseUiTest() {
                         ensureOpen()
                         tabTitleContains("Taint Vulnerabilities") { select() }
                         content("TaintVulnerabilitiesPanel") {
-                            expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
                 }

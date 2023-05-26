@@ -19,11 +19,11 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import com.sonar.orchestrator.Orchestrator
-import com.sonar.orchestrator.OrchestratorBuilder
 import com.sonar.orchestrator.build.MavenBuild
 import com.sonar.orchestrator.build.SonarScanner
 import com.sonar.orchestrator.container.Server
+import com.sonar.orchestrator.junit5.OrchestratorExtension
+import com.sonar.orchestrator.junit5.OrchestratorExtensionBuilder
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
@@ -36,8 +36,8 @@ class OrchestratorUtils {
         private const val SONARLINT_USER = "sonarlint"
         private const val SONARLINT_PWD = "sonarlintpwd"
 
-        fun defaultBuilderEnv(): OrchestratorBuilder {
-            return Orchestrator.builderEnv()
+        fun defaultBuilderEnv(): OrchestratorExtensionBuilder {
+            return OrchestratorExtension.builderEnv()
                 .defaultForceAuthentication()
                 .useDefaultAdminCredentialsForBuilds(true)
                 .setSonarVersion(ItUtils.SONAR_VERSION)
@@ -56,7 +56,7 @@ class OrchestratorUtils {
             return wsClient;
         }
 
-        fun executeBuildWithMaven(filePath: String, orchestrator: Orchestrator) {
+        fun executeBuildWithMaven(filePath: String, orchestrator: OrchestratorExtension) {
             orchestrator.executeBuild(
                 MavenBuild.create(File(filePath))
                     .setCleanPackageSonarGoals()
@@ -65,7 +65,7 @@ class OrchestratorUtils {
             )
         }
 
-        fun executeBuildWithSonarScanner(filePath: String, orchestrator: Orchestrator, projectKey: String) {
+        fun executeBuildWithSonarScanner(filePath: String, orchestrator: OrchestratorExtension, projectKey: String) {
             orchestrator.executeBuild(
                 SonarScanner.create(File(filePath))
                     .setProperty("sonar.login", SONARLINT_USER)
