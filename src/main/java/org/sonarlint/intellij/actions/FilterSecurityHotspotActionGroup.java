@@ -31,19 +31,28 @@ import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 
 public class FilterSecurityHotspotActionGroup extends ActionGroup {
 
-  private final AnAction[] myChildren;
+  private final FilterSecurityHotspotAction[] myChildren;
+  private final FilterSecurityHotspotSettings settings;
 
   public FilterSecurityHotspotActionGroup(String title, String description, @Nullable Icon icon) {
     super(title, description, icon);
     setPopup(true);
 
-    var settings = new FilterSecurityHotspotSettings();
+    settings = new FilterSecurityHotspotSettings();
 
-    myChildren = new AnAction[] {
+    myChildren = new FilterSecurityHotspotAction[] {
       new FilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL, settings),
       new FilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY, settings),
       new FilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SERVER, settings)
     };
+  }
+
+  public void resetToDefaultSettings(AnActionEvent e) {
+    for (var child : myChildren) {
+      if (child.getFilter() == SecurityHotspotFilters.DEFAULT_FILTER) {
+        child.setSelected(e, true);
+      }
+    }
   }
 
   @NotNull

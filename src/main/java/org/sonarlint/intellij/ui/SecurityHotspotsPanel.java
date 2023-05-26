@@ -296,13 +296,17 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return 0;
   }
 
-  public boolean trySelectSecurityHotspot(String securityHotspotKey) {
-    var foundHotspot = securityHotspotTreeBuilder.findHotspotByKey(securityHotspotKey);
+  public boolean trySelectFilteredSecurityHotspot(String securityHotspotKey) {
+    var foundHotspot = securityHotspotTreeBuilder.findFilteredHotspotByKey(securityHotspotKey);
     if (foundHotspot != null) {
       updateOnSelect(foundHotspot);
       return true;
     }
     return false;
+  }
+
+  public boolean doesSecurityHotspotExist(String securityHotspotKey) {
+    return securityHotspotTreeBuilder.findHotspotByKey(securityHotspotKey).isPresent();
   }
 
   public int updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {

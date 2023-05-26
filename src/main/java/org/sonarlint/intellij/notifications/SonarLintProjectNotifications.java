@@ -124,12 +124,13 @@ public final class SonarLintProjectNotifications {
     notification.notify(myProject);
   }
 
-  public void notifyUnableToOpenSecurityHotspot(String message) {
+  public void notifyUnableToOpenSecurityHotspot(String message, AnAction... mainActions) {
     expireCurrentHotspotNotificationIfNeeded();
     currentOpenHotspotNotification = OPEN_IN_IDE_GROUP.createNotification(
       "<b>SonarLint - Unable to open Security Hotspot</b>",
       message,
       NotificationType.INFORMATION);
+    Arrays.stream(mainActions).forEach(currentOpenHotspotNotification::addAction);
     currentOpenHotspotNotification.setImportant(true);
     currentOpenHotspotNotification.setIcon(SonarLintIcons.SONARLINT);
     currentOpenHotspotNotification.notify(myProject);

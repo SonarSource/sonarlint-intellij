@@ -92,7 +92,6 @@ public class FindingStreamer implements AutoCloseable {
     }
 
     public void stop() {
-      endRunnable.run();
       cancelRunning();
       executorService.shutdownNow();
     }

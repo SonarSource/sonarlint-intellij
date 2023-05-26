@@ -24,6 +24,7 @@ import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisIntermediateResult;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder;
+import org.sonarlint.intellij.notifications.ClearSecurityHotspotsFiltersAction;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -61,10 +62,18 @@ public class ShowSecurityHotspotCallable implements AnalysisCallback {
       var toolWindow = getService(project, SonarLintToolWindow.class);
       toolWindow.openSecurityHotspotsTab();
       toolWindow.bringToFront();
-      boolean success = getService(project, SonarLintToolWindow.class).trySelectSecurityHotspot(securityHotspotKey);
-      if (!success) {
+
+      boolean found = getService(project, SonarLintToolWindow.class).tryFindSecurityHotspot(securityHotspotKey);
+      if (!found) {
         SonarLintProjectNotifications.get(project)
-          .notifyUnableToOpenSecurityHotspot("The Security Hotspot you tried to open could not be detected by SonarLint in the current code.");
+          .notifyUnableToOpenSecurityHotspot("The Security Hotspot could not be detected by SonarLint in the current code.");
+      } else {
+        boolean selected = getService(project, SonarLintToolWindow.class).trySelectSecurityHotspot(securityHotspotKey);
+        if (!selected) {
+          SonarLintProjectNotifications.get(project)
+            .notifyUnableToOpenSecurityHotspot("The Security Hotspot could not be opened by SonarLint due to the applied filters.",
+              new ClearSecurityHotspotsFiltersAction(securityHotspotKey));
+        }
       }
     });
   }

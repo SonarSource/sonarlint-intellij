@@ -36,6 +36,10 @@ public class FilterSecurityHotspotAction extends AbstractSonarToggleAction {
     this.settings = settings;
   }
 
+  public SecurityHotspotFilters getFilter() {
+    return filter;
+  }
+
   @Override
   public void update(@NotNull AnActionEvent e) {
     var project = e.getProject();
