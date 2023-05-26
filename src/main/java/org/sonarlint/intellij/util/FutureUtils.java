@@ -31,9 +31,12 @@ import java.util.concurrent.TimeoutException;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class FutureUtils {
+
+  private static final long WAITING_FREQUENCY = 100;
+
   public static void waitForTask(Project project, ProgressIndicator indicator, Future<?> task, String taskName, Duration timeoutDuration) {
     try {
-      waitForFuture(indicator, task, timeoutDuration);
+      waitForFutureWithTimeout(indicator, task, timeoutDuration);
     } catch (TimeoutException ex) {
       task.cancel(true);
       SonarLintConsole.get(project).error(taskName + " task expired", ex);
@@ -50,23 +53,22 @@ public class FutureUtils {
     }
   }
 
-  private static void waitForFuture(ProgressIndicator indicator, Future<?> future, Duration durationTimeout) throws InterruptedException, ExecutionException, TimeoutException {
+  private static void waitForFutureWithTimeout(ProgressIndicator indicator, Future<?> future, Duration durationTimeout)
+    throws InterruptedException, ExecutionException, TimeoutException {
     long counter = 0;
     while (counter < durationTimeout.toMillis()) {
-      counter += 100;
+      counter += WAITING_FREQUENCY;
       if (indicator.isCanceled()) {
         future.cancel(true);
         return;
       }
       try {
-        future.get(100, TimeUnit.MILLISECONDS);
+        future.get(WAITING_FREQUENCY, TimeUnit.MILLISECONDS);
         return;
       } catch (TimeoutException ignored) {
         continue;
       } catch (InterruptedException | CancellationException e) {
         throw new InterruptedException("Interrupted");
-      } catch (ExecutionException e) {
-        throw e;
       }
     }
     throw new TimeoutException();

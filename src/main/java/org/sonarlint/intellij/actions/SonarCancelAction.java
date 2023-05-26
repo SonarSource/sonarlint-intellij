@@ -35,7 +35,7 @@ public class SonarCancelAction extends AbstractSonarAction {
   public void actionPerformed(AnActionEvent e) {
     if (e.getProject() != null) {
       AnalysisStatus.get(e.getProject()).cancel();
-      SonarLintUtils.getService(e.getProject(), AnalysisSubmitter.class).cancelCurrentAutoAnalysis();
+      SonarLintUtils.getService(e.getProject(), AnalysisSubmitter.class).cancelCurrentManualAnalysis();
     }
   }
 }
