@@ -34,7 +34,7 @@ import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
-import org.sonarlint.intellij.actions.filters.ShowResolvedHotspotsAction;
+import org.sonarlint.intellij.actions.filters.IncludeResolvedHotspotsAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 /**
@@ -53,7 +53,7 @@ public final class SonarLintActions {
   private final AnAction analyzeChangedFilesAction;
   private final AnAction analyzeAllFilesAction;
   private final ActionGroup filterAction;
-  private final AnAction showResolvedHotspotAction;
+  private final AnAction includeResolvedHotspotAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -90,8 +90,8 @@ public final class SonarLintActions {
     filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
       "Filter Security Hotspots",
       AllIcons.General.Filter);
-    showResolvedHotspotAction = new ShowResolvedHotspotsAction("Show Resolved Security Hotspots",
-      "Show resolved security hotspots",
+    includeResolvedHotspotAction = new IncludeResolvedHotspotsAction("Include Resolved Security Hotspots",
+      "Include resolved Security Hotspots",
       SonarLintIcons.HOTSPOT_CHECKED);
   }
 
@@ -131,7 +131,7 @@ public final class SonarLintActions {
     return filterAction;
   }
 
-  public AnAction showResolvedHotspotAction() {
-    return showResolvedHotspotAction;
+  public AnAction includeResolvedHotspotAction() {
+    return includeResolvedHotspotAction;
   }
 }

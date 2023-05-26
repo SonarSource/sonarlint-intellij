@@ -133,7 +133,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var sonarLintActions = SonarLintActions.getInstance();
     var actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.filterSecurityHotspots());
-    actionGroup.add(sonarLintActions.showResolvedHotspotAction());
+    actionGroup.add(sonarLintActions.includeResolvedHotspotAction());
     actionGroup.add(sonarLintActions.configure());
     actionGroup.add(new OpenSecurityHotspotDocumentationAction());
     return actionGroup;

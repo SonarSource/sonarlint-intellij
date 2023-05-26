@@ -27,11 +27,11 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class ShowResolvedHotspotsAction extends AbstractSonarToggleAction {
+public class IncludeResolvedHotspotsAction extends AbstractSonarToggleAction {
 
   private boolean isResolved;
 
-  public ShowResolvedHotspotsAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+  public IncludeResolvedHotspotsAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
     super(text, description, icon);
     isResolved = false;
   }
