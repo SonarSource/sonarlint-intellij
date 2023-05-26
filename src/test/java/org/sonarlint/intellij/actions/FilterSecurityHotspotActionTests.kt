@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.actions.filters.ShowResolvedHotspotsAction
+import org.sonarlint.intellij.actions.filters.IncludeResolvedHotspotsAction
 
 class FilterSecurityHotspotActionTests : AbstractSonarLintLightTests() {
 
@@ -33,16 +33,18 @@ class FilterSecurityHotspotActionTests : AbstractSonarLintLightTests() {
 
     @Test
     fun shouldNotBeSelectedByDefault() {
-        val showResolvedHotspotsAction = ShowResolvedHotspotsAction("", "", null)
-        assertThat(showResolvedHotspotsAction.isSelected(event)).isFalse();
+        val includeResolvedHotspotsAction =
+            IncludeResolvedHotspotsAction("", "", null)
+        assertThat(includeResolvedHotspotsAction.isSelected(event)).isFalse();
     }
 
     @Test
     fun shouldChangeAfterUpdate() {
         `when`(event.project).thenReturn(project)
-        val showResolvedHotspotsAction = ShowResolvedHotspotsAction("", "", null)
-        showResolvedHotspotsAction.setSelected(event, true)
-        assertThat(showResolvedHotspotsAction.isSelected(event)).isTrue()
+        val includeResolvedHotspotsAction =
+            IncludeResolvedHotspotsAction("", "", null)
+        includeResolvedHotspotsAction.setSelected(event, true)
+        assertThat(includeResolvedHotspotsAction.isSelected(event)).isTrue()
     }
 
 }

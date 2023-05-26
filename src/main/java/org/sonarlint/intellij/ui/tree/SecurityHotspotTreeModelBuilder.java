@@ -64,7 +64,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private static final Comparator<LiveSecurityHotspotNode> SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR = new LiveSecurityHotspotNodeComparator();
 
   protected SecurityHotspotFilters currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
-  protected boolean shouldShowResolvedHotspots = false;
+  protected boolean shouldIncludeResolvedHotspots = false;
   private final FindingTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summary;
@@ -272,7 +272,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     var fileList = getFilesForNodes();
     Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
     for (var securityHotspotNode : nonFilteredNodes) {
-      if (currentFilter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot()) && (shouldShowResolvedHotspots || !securityHotspotNode.getHotspot().isResolved())) {
+      if (currentFilter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot()) && (shouldIncludeResolvedHotspots || !securityHotspotNode.getHotspot().isResolved())) {
         fileList.add(securityHotspotNode.getHotspot().getFile());
         var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
         var newIdx = new int[] {idx};
@@ -292,7 +292,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   public int filterSecurityHotspots(Project project, boolean isResolved) {
-    shouldShowResolvedHotspots = isResolved;
+    shouldIncludeResolvedHotspots = isResolved;
     return applyCurrentFiltering(project);
   }
 
