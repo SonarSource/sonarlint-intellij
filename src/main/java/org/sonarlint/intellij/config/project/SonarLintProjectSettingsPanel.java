@@ -33,6 +33,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;
@@ -80,6 +81,9 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     if (bindingEnabled) {
       if (selectedConnection == null) {
         throw new ConfigurationException("Connection should not be empty");
+      }
+      if (!getGlobalSettings().connectionExists(selectedConnection.getName())) {
+        throw new ConfigurationException("Connection should be saved first");
       }
       if (selectedProjectKey == null || selectedProjectKey.isBlank()) {
         throw new ConfigurationException("Project key should not be empty");
