@@ -31,6 +31,12 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.serviceContainer.NonInjectable
 import com.jetbrains.rd.util.firstOrNull
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -67,11 +73,6 @@ import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.APP)
 class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
@@ -308,7 +309,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     companion object {
         private var moduleCount = 1
-        internal val uniqueIdentifierForModules = hashMapOf<Module, String>()
+        internal val uniqueIdentifierForModules = ConcurrentHashMap<Module, String>()
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
 
         fun moduleId(module: Module): String {
