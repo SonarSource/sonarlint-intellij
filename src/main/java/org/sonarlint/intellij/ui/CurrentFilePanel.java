@@ -76,7 +76,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     mainPanel.add(issuesPanel);
     mainPanel.add(new CurrentFileStatusPanel(project), BorderLayout.SOUTH);
 
-    var splitter = createSplitter(project, this, this, mainPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
+    var splitter = createSplitter(project, this, this, mainPanel, findingDetailsPanel, SPLIT_PROPORTION_PROPERTY, 0.5f);
 
     super.setContent(splitter);
     project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
