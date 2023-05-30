@@ -27,7 +27,6 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.FilterComponent;
@@ -101,6 +100,7 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetail
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String MAIN_SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
@@ -229,7 +229,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void recomputeDirtyState() {
-    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+    runOnPooledThread(() -> {
       var persistedRules = loadRuleNodes(getGlobalSettings());
       for (var persisted : persistedRules.values()) {
         final var possiblyModified = allRulesStateByKey.get(persisted.getKey());
@@ -259,7 +259,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     // Loading rules may take time, so do that on a background thread
     panel.startLoading();
     selectedRuleKey = null;
-    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+    runOnPooledThread(() -> {
       allRulesStateByKey.clear();
       allRulesStateByKey.putAll(loadRuleNodes(settings));
 
