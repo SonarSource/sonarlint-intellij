@@ -49,7 +49,7 @@ public class SonarLintAppUtils {
   @CheckForNull
   public static Module findModuleForFile(VirtualFile file, Project project) {
     return getApplication().<Module>runReadAction(() -> {
-      if (!project.isOpen()) {
+      if (!project.isOpen() || project.isDisposed()) {
         return null;
       }
       return ProjectFileIndex.getInstance(project).getModuleForFile(file, false);

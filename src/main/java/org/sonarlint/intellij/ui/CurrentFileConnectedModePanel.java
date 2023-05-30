@@ -52,6 +52,7 @@ import org.sonarsource.sonarlint.core.serverapi.UrlUtils;
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class CurrentFileConnectedModePanel {
 
@@ -162,7 +163,7 @@ public class CurrentFileConnectedModePanel {
     var selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
       // Checking connected mode state may take time, so lets move from EDT to pooled thread
-      ApplicationManager.getApplication().executeOnPooledThread(() -> {
+      runOnPooledThread(project, () -> {
         var projectBindingManager = getService(project, ProjectBindingManager.class);
         projectBindingManager.tryGetServerConnection().ifPresentOrElse(serverConnection -> {
           try {

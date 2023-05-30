@@ -42,6 +42,7 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class AutoTriggerStatusPanel {
   private static final String AUTO_TRIGGER_ENABLED = "AUTO_TRIGGER_ENABLED";
@@ -80,7 +81,7 @@ public class AutoTriggerStatusPanel {
     var selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
       // Computing server exclusions may take time, so lets move from EDT to pooled thread
-      ApplicationManager.getApplication().executeOnPooledThread(() -> {
+      runOnPooledThread(project, () -> {
         var localFileExclusions = SonarLintUtils.getService(project, LocalFileExclusions.class);
         try {
           var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> switchCard(FILE_DISABLED));
