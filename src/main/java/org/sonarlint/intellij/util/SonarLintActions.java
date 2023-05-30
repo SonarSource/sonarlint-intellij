@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -52,8 +51,8 @@ public final class SonarLintActions {
   private final AnAction configureAction;
   private final AnAction analyzeChangedFilesAction;
   private final AnAction analyzeAllFilesAction;
-  private final ActionGroup filterAction;
-  private final AnAction includeResolvedHotspotAction;
+  private final FilterSecurityHotspotActionGroup filterAction;
+  private final IncludeResolvedHotspotsAction includeResolvedHotspotAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -127,11 +126,11 @@ public final class SonarLintActions {
     return analyzeAllFilesAction;
   }
 
-  public AnAction filterSecurityHotspots() {
+  public FilterSecurityHotspotActionGroup filterSecurityHotspots() {
     return filterAction;
   }
 
-  public AnAction includeResolvedHotspotAction() {
+  public IncludeResolvedHotspotsAction includeResolvedHotspotAction() {
     return includeResolvedHotspotAction;
   }
 }

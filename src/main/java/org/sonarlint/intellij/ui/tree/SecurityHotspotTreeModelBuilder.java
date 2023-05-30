@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -169,7 +170,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
   }
 
-  public LiveSecurityHotspot findHotspotByKey(String securityHotspotKey) {
+  public LiveSecurityHotspot findFilteredHotspotByKey(String securityHotspotKey) {
     var nodes = summary.children();
     while (nodes.hasMoreElements()) {
       var securityHotspotNode = (LiveSecurityHotspotNode) nodes.nextElement();
@@ -178,6 +179,13 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       }
     }
     return null;
+  }
+
+  public Optional<LiveSecurityHotspot> findHotspotByKey(String securityHotspotKey) {
+    return nonFilteredNodes.stream()
+      .map(LiveSecurityHotspotNode::getHotspot)
+      .filter(hotspot -> hotspot.getServerFindingKey() != null && hotspot.getServerFindingKey().equals(securityHotspotKey))
+      .findFirst();
   }
 
   public int updateModelWithoutFileNode(Map<VirtualFile, Collection<LiveSecurityHotspot>> map, String emptyText) {

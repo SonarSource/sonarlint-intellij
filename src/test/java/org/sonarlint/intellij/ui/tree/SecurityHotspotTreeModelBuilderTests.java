@@ -189,6 +189,31 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     assertThat(treeBuilder.getFilteredNodes()).isEmpty();
   }
 
+  @Test
+  void shouldFindHotspotByKey() {
+    Map<VirtualFile, Collection<LiveSecurityHotspot>> data = new HashMap<>();
+
+    var file = addFileWithStatusAndFindingKeyForHotspot(data, "file1", 1, HotspotReviewStatus.SAFE, "keyA");
+    var hotspot = data.get(file).stream().findFirst();
+    if (hotspot.isEmpty()) {
+      Assertions.fail();
+    }
+
+    treeBuilder.updateModelWithoutFileNode(data, "empty");
+
+    var filteredResultBeforeFiltering = treeBuilder.findFilteredHotspotByKey(Objects.requireNonNull(hotspot.get().getServerFindingKey()));
+    var resultBeforeFiltering = treeBuilder.findHotspotByKey(Objects.requireNonNull(hotspot.get().getServerFindingKey()));
+    treeBuilder.applyCurrentFiltering(getProject());
+    var filteredResultAfterFiltering = treeBuilder.findFilteredHotspotByKey(Objects.requireNonNull(hotspot.get().getServerFindingKey()));
+    var resultAfterFiltering = treeBuilder.findHotspotByKey(Objects.requireNonNull(hotspot.get().getServerFindingKey()));
+
+    assertThat(filteredResultBeforeFiltering).isEqualTo(hotspot.get());
+    assertThat(resultBeforeFiltering).isPresent().contains(hotspot.get());
+
+    assertThat(filteredResultAfterFiltering).isNull();
+    assertThat(resultAfterFiltering).isPresent().contains(hotspot.get());
+  }
+
   private void addFile(Map<VirtualFile, Collection<LiveSecurityHotspot>> data, String fileName, int numSecurityHotspots) {
     addFileWithStatusAndFindingKeyForHotspot(data, fileName, numSecurityHotspots, HotspotReviewStatus.TO_REVIEW, null);
   }
