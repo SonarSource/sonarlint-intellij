@@ -24,11 +24,11 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonar.api.batch.fs.InputFile
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer
+import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileSystem
 import java.util.stream.Stream
@@ -46,22 +46,17 @@ internal class ModuleFileSystem(private val project: Project, private val module
         BackgroundTaskUtil.runUnderDisposeAwareIndicator(project) {
             ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
                 ProgressManager.checkCanceled()
-                if (!fileOrDir.isDirectory && !ProjectCoreUtil.isProjectOrWorkspaceFile(
-                        fileOrDir,
-                        fileOrDir.fileType
-                    )
-                ) {
+
+                // Analysis can only be done on actual files which contain text and not binary data
+                if (VirtualFileUtils.isNonBinaryFile(fileOrDir)) {
                     val element = ReadAction.compute<ClientInputFile, Exception> {
-                        sonarLintAnalyzer.createClientInputFile(
-                            module,
-                            fileOrDir,
-                            null
-                        )
+                        sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
                     }
                     if (element != null) {
                         files.add(element)
                     }
                 }
+
                 true
             }
         }
