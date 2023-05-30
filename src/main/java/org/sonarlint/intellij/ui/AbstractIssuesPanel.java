@@ -27,11 +27,8 @@ import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.tools.SimpleActionGroup;
-import com.intellij.ui.ScrollPaneFactory;
-import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.event.KeyAdapter;
@@ -50,68 +47,40 @@ import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
-import org.sonarlint.intellij.ui.tree.FlowsTree;
-import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 
 public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Disposable, OccurenceNavigator {
   private static final String ID = "SonarLint";
-  private static final int RULE_TAB_INDEX = 0;
-  private static final int LOCATIONS_TAB_INDEX = 1;
   protected final Project project;
-  protected SonarLintRulePanel rulePanel;
-  protected JBTabbedPane detailsTab;
   protected Tree tree;
   protected IssueTreeModelBuilder treeBuilder;
-  protected FlowsTree flowsTree;
-  protected FlowsTreeModelBuilder flowsTreeBuilder;
   private ActionToolbar mainToolbar;
+  protected FindingDetailsPanel findingDetailsPanel;
 
   protected AbstractIssuesPanel(Project project) {
     super(false, true);
     this.project = project;
 
-    createFlowsTree();
     createIssuesTree();
-    createTabs();
+    createFindingDetailsPanel();
   }
 
   public void refreshToolbar() {
     mainToolbar.updateActionsImmediately();
   }
 
-  private void createTabs() {
-    // Flows panel with tree
-    var flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree, true);
-    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
-
-    // Rule panel
-    rulePanel = new SonarLintRulePanel(project, this);
-
-    detailsTab = new JBTabbedPane();
-    detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);
-    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", LOCATIONS_TAB_INDEX);
+  private void createFindingDetailsPanel() {
+    findingDetailsPanel = new FindingDetailsPanel(project, this, FindingKind.ISSUE);
   }
 
   private void issueTreeSelectionChanged() {
     var selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
       var issue = selectedNodes[0].issue();
-      var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(issue.psiFile().getVirtualFile());
-      if (moduleForFile != null) {
-        rulePanel.setSelectedFinding(moduleForFile, issue);
-      } else {
-        rulePanel.clear();
-      }
-      SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(issue);
-      flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
-      flowsTreeBuilder.populateForFinding(issue);
-      flowsTree.expandAll();
+      findingDetailsPanel.show(issue);
     } else {
-      flowsTreeBuilder.clearFlows();
-      flowsTree.getEmptyText().setText("No issue selected");
-      rulePanel.clear();
+      findingDetailsPanel.clear();
       var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
       highlighting.removeHighlights();
     }
@@ -135,14 +104,6 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     var actionGroup = new SimpleActionGroup();
     actions.forEach(actionGroup::add);
     return actionGroup;
-  }
-
-  private void createFlowsTree() {
-    flowsTreeBuilder = new FlowsTreeModelBuilder();
-    var model = flowsTreeBuilder.createModel();
-    flowsTree = new FlowsTree(project, model);
-    flowsTreeBuilder.clearFlows();
-    flowsTree.getEmptyText().setText("No issue selected");
   }
 
   private void createIssuesTree() {
@@ -253,11 +214,11 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   public void selectLocationsTab() {
-    detailsTab.setSelectedIndex(LOCATIONS_TAB_INDEX);
+    findingDetailsPanel.selectLocationsTab();
   }
 
   public void selectRulesTab() {
-    detailsTab.setSelectedIndex(RULE_TAB_INDEX);
+    findingDetailsPanel.selectRulesTab();
   }
 
 }

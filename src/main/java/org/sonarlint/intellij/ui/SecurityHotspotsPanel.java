@@ -26,7 +26,6 @@ import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -34,7 +33,6 @@ import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBPanelWithEmptyText;
-import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -61,8 +59,6 @@ import org.sonarlint.intellij.finding.hotspot.NotSupported;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.hotspot.Supported;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
-import org.sonarlint.intellij.ui.tree.FlowsTree;
-import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
@@ -72,8 +68,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
-  private static final int RULE_TAB_INDEX = 0;
-  private static final int LOCATIONS_TAB_INDEX = 1;
   private static final String NOT_SUPPORTED_CARD_ID = "NOT_SUPPORTED_CARD";
   private static final String NO_SECURITY_HOTSPOT_CARD_ID = "NO_SECURITY_HOTSPOT_CARD_ID";
   private static final String NO_SECURITY_HOTSPOT_FILTERED_CARD_ID = "NO_SECURITY_HOTSPOT_FILTERED_CARD_ID";
@@ -82,10 +76,6 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
   protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
   protected Tree securityHotspotTree;
-  protected FlowsTree flowsTree;
-  protected FlowsTreeModelBuilder flowsTreeBuilder;
-  protected SonarLintRulePanel rulePanel;
-  protected JBTabbedPane detailsTab;
   private final JPanel mainPanel;
   private final Project project;
   private final CardPanel cardPanel;
@@ -94,6 +84,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private int securityHotspotCount;
   private JBPanelWithEmptyText notSupportedPanel;
   private AnAction sonarConfigureProject;
+  private FindingDetailsPanel findingDetailsPanel;
 
   public SecurityHotspotsPanel(Project project) {
     super(false, true);
@@ -102,9 +93,8 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     cardPanel = new CardPanel();
     mainPanel = new JPanel(new BorderLayout());
 
-    createFlowsTree();
     createSecurityHotspotsTree();
-    createTabs();
+    createFindingDetailsPanel();
     initPanel();
 
     super.setContent(mainPanel);
@@ -116,7 +106,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
     var findingsPanel = new JPanel(new BorderLayout());
     findingsPanel.add(createSplitter(project, this, this,
-      ScrollPaneFactory.createScrollPane(treePanel), detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
+      ScrollPaneFactory.createScrollPane(treePanel), findingDetailsPanel, SPLIT_PROPORTION_PROPERTY, 0.5f));
 
     sonarConfigureProject = new SonarConfigureProject();
     notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
@@ -139,25 +129,8 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return actionGroup;
   }
 
-  private void createFlowsTree() {
-    flowsTreeBuilder = new FlowsTreeModelBuilder();
-    var model = flowsTreeBuilder.createModel();
-    flowsTree = new FlowsTree(project, model);
-    flowsTreeBuilder.clearFlows();
-    flowsTree.getEmptyText().setText("No Security Hotspot selected");
-  }
-
-  private void createTabs() {
-    // Flows panel with tree
-    var flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree, true);
-    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
-
-    // Rule panel
-    rulePanel = new SonarLintRulePanel(project, this);
-
-    detailsTab = new JBTabbedPane();
-    detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);
-    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the finding", LOCATIONS_TAB_INDEX);
+  private void createFindingDetailsPanel() {
+    findingDetailsPanel = new FindingDetailsPanel(project, this, FindingKind.SECURITY_HOTSPOT);
   }
 
   public int updateFindings(Map<VirtualFile, Collection<LiveSecurityHotspot>> findings) {
@@ -210,20 +183,13 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   private void clearSelectionChanged() {
-    flowsTreeBuilder.clearFlows();
-    flowsTree.getEmptyText().setText("No finding selected");
-    rulePanel.clear();
+    findingDetailsPanel.clear();
     var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
     highlighting.removeHighlights();
   }
 
   public void updateOnSelect(LiveFinding liveFinding) {
-    var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
-    rulePanel.setSelectedFinding(moduleForFile, liveFinding);
-    SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
-    flowsTree.getEmptyText().setText("Selected Security Hotspot doesn't have flows");
-    flowsTreeBuilder.populateForFinding(liveFinding);
-    flowsTree.expandAll();
+    findingDetailsPanel.show(liveFinding);
   }
 
   public JComponent getPanel() {
@@ -326,11 +292,11 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public void selectLocationsTab() {
-    detailsTab.setSelectedIndex(LOCATIONS_TAB_INDEX);
+    findingDetailsPanel.selectLocationsTab();
   }
 
   public void selectRulesTab() {
-    detailsTab.setSelectedIndex(RULE_TAB_INDEX);
+    findingDetailsPanel.selectRulesTab();
   }
 
   public Collection<LiveSecurityHotspotNode> getDisplayedNodesForFile(VirtualFile file) {

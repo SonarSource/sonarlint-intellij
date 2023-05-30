@@ -25,7 +25,6 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.tools.SimpleActionGroup;
@@ -33,7 +32,6 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBPanelWithEmptyText;
-import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
@@ -51,8 +49,6 @@ import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
-import org.sonarlint.intellij.ui.tree.FlowsTree;
-import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
@@ -66,30 +62,24 @@ import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
   private static final String ID = "SonarLint";
-  private static final int RULE_TAB_INDEX = 0;
-  private static final int LOCATIONS_TAB_INDEX = 1;
   protected final Project project;
   private final LastAnalysisPanel lastAnalysisPanel;
-  protected SonarLintRulePanel rulePanel;
-  protected JBTabbedPane detailsTab;
   protected Tree tree;
   protected IssueTreeModelBuilder treeBuilder;
-  protected FlowsTree flowsTree;
-  protected FlowsTreeModelBuilder flowsTreeBuilder;
   private ActionToolbar mainToolbar;
   protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
   protected Tree securityHotspotTree;
   private JScrollPane findingsTreePane;
+  private FindingDetailsPanel findingDetailsPanel;
 
   public ReportPanel(Project project) {
     super(false, true);
     this.project = project;
     this.lastAnalysisPanel = new LastAnalysisPanel();
 
-    createFlowsTree();
     createIssuesTree();
     createSecurityHotspotsTree();
-    createTabs();
+    createFindingDetailsPanel();
     handleListener();
     disableSecurityHotspotTree();
 
@@ -142,7 +132,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     disableEmptyDisplay(false);
 
     // Put everything together
-    super.setContent(createSplitter(project, this, this, findingsPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
+    super.setContent(createSplitter(project, this, this, findingsPanel, findingDetailsPanel, SPLIT_PROPORTION_PROPERTY, 0.5f));
   }
 
   private void initEmptyViews(JBPanelWithEmptyText findingsPanel) {
@@ -189,7 +179,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     if (selectedIssueNodes.length > 0) {
       updateOnSelect(selectedIssueNodes[0].issue());
     } else {
-      clearSelectionChanged(false);
+      clearSelection();
     }
   }
 
@@ -202,24 +192,13 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
       if (selectedHotspotsNodes.length > 0) {
         updateOnSelect(selectedHotspotsNodes[0].getHotspot());
       } else {
-        clearSelectionChanged(false);
+        clearSelection();
       }
     }
   }
 
   private void updateOnSelect(LiveFinding liveFinding) {
-    var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
-
-    if (moduleForFile == null) {
-      clearSelectionChanged(true);
-      return;
-    }
-
-    rulePanel.setSelectedFinding(moduleForFile, liveFinding);
-    SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
-    flowsTree.getEmptyText().setText("Selected finding doesn't have flows");
-    flowsTreeBuilder.populateForFinding(liveFinding);
-    flowsTree.expandAll();
+    findingDetailsPanel.show(liveFinding);
   }
 
   private void setToolbar(ActionGroup group) {
@@ -274,38 +253,14 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     manageInteraction(securityHotspotTree);
   }
 
-  private void createTabs() {
-    // Flows panel with tree
-    var flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree, true);
-    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
-
-    // Rule panel
-    rulePanel = new SonarLintRulePanel(project, this);
-
-    detailsTab = new JBTabbedPane();
-    detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);
-    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the finding", LOCATIONS_TAB_INDEX);
+  private void createFindingDetailsPanel() {
+    findingDetailsPanel = new FindingDetailsPanel(project, this, FindingKind.MIX);
   }
 
-  private void clearSelectionChanged(boolean isModuleMissing) {
-    flowsTreeBuilder.clearFlows();
-    if (isModuleMissing) {
-      flowsTree.getEmptyText().setText("Finding location has been deleted");
-      rulePanel.clearDeletedFile();
-    } else {
-      flowsTree.getEmptyText().setText("No finding selected");
-      rulePanel.clear();
-      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-      highlighting.removeHighlights();
-    }
-  }
-
-  private void createFlowsTree() {
-    flowsTreeBuilder = new FlowsTreeModelBuilder();
-    var model = flowsTreeBuilder.createModel();
-    flowsTree = new FlowsTree(project, model);
-    flowsTreeBuilder.clearFlows();
-    flowsTree.getEmptyText().setText("No finding selected");
+  private void clearSelection() {
+    findingDetailsPanel.clear();
+    var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+    highlighting.removeHighlights();
   }
 
   private void createIssuesTree() {
