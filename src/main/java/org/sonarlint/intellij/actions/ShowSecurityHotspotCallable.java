@@ -63,7 +63,7 @@ public class ShowSecurityHotspotCallable implements AnalysisCallback {
       toolWindow.openSecurityHotspotsTab();
       toolWindow.bringToFront();
 
-      boolean found = getService(project, SonarLintToolWindow.class).tryFindSecurityHotspot(securityHotspotKey);
+      boolean found = getService(project, SonarLintToolWindow.class).doesSecurityHotspotExist(securityHotspotKey);
       if (!found) {
         SonarLintProjectNotifications.get(project)
           .notifyUnableToOpenSecurityHotspot("The Security Hotspot could not be detected by SonarLint in the current code.");

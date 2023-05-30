@@ -277,7 +277,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     showSecurityHotspot(liveSecurityHotspot, SecurityHotspotsPanel::selectLocationsTab);
   }
 
-  public boolean tryFindSecurityHotspot(String securityHotspotKey) {
+  public boolean doesSecurityHotspotExist(String securityHotspotKey) {
     var content = getSecurityHotspotContent();
     if (content != null) {
       var sonarLintHotspotsPanel = (SecurityHotspotsPanel) content.getComponent();

@@ -22,17 +22,15 @@ package org.sonarlint.intellij.notifications
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup
 import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.actions.filters.IncludeResolvedHotspotsAction
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintActions
 
 class ClearSecurityHotspotsFiltersAction(private val securityHotspotKey: String) : NotificationAction("Clear filters and retry") {
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         e.project?.let {
-            (SonarLintActions.getInstance().filterSecurityHotspots() as FilterSecurityHotspotActionGroup).resetToDefaultSettings(e)
-            (SonarLintActions.getInstance().includeResolvedHotspotAction() as IncludeResolvedHotspotsAction).setSelected(e, true)
+            SonarLintActions.getInstance().filterSecurityHotspots().resetToDefaultSettings(e)
+            SonarLintActions.getInstance().includeResolvedHotspotAction().setSelected(e, true)
             if (!SonarLintUtils.getService(it, SonarLintToolWindow::class.java).trySelectSecurityHotspot(securityHotspotKey)) {
                 SonarLintProjectNotifications.get(it)
                     .notifyUnableToOpenSecurityHotspot("The Security Hotspot could not be opened by SonarLint.")
