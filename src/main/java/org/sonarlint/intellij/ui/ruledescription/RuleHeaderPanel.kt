@@ -29,6 +29,9 @@ import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
+import org.sonarlint.intellij.finding.Finding
+import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
@@ -43,6 +46,10 @@ import javax.swing.SwingConstants
 
 
 class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
+    companion object {
+        val MARK_AS_RESOLVED = "Mark as Resolved"
+    }
+
     private val ruleTypeIcon = JBLabel()
     private val ruleTypeLabel = JBLabel()
     private val ruleSeverityIcon = JBLabel()
@@ -91,6 +98,46 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     fun update(ruleKey: String, type: RuleType, severity: IssueSeverity) {
         clear()
         updateCommonFields(type, ruleKey)
+        updateRuleSeverity(severity)
+    }
+
+    fun update(ruleKey: String, type: RuleType, severity: IssueSeverity, finding: Finding) {
+        clear()
+        updateCommonFields(type, ruleKey)
+        updateRuleSeverity(severity)
+        val serverFindingKey: String
+        val isIssueValid: Boolean
+
+        when (finding) {
+            is LiveIssue -> {
+                serverFindingKey = finding.serverFindingKey ?: return
+                isIssueValid = finding.isValid
+            }
+
+            is LocalTaintVulnerability -> {
+                serverFindingKey = finding.key() ?: return
+                isIssueValid = finding.isValid()
+            }
+
+            else -> {
+                return
+            }
+        }
+
+        listenIssueButton(isIssueValid)
+    }
+
+    private fun listenIssueButton(isValid: Boolean) {
+        changeStatusButton.action = object : AbstractAction(MARK_AS_RESOLVED) {
+            override fun actionPerformed(e: ActionEvent?) {
+                System.out.println("Open Dialog")
+            }
+        }
+
+        changeStatusButton.isVisible = isValid
+    }
+
+    private fun updateRuleSeverity(severity: IssueSeverity) {
         ruleSeverityIcon.icon = SonarLintIcons.severity(severity)
         ruleSeverityLabel.text = clean(severity.toString())
         ruleSeverityLabel.setCopyable(true)
