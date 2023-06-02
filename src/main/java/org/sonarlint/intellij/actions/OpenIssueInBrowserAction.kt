@@ -21,7 +21,6 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
@@ -29,8 +28,8 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarsource.sonarlint.core.serverapi.UrlUtils
 
 class OpenIssueInBrowserAction : AbstractSonarAction(
@@ -38,9 +37,6 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
   "Open issue in browser interface of SonarQube or SonarCloud",
   null
 ) {
-  companion object {
-    val TAINT_VULNERABILITY_DATA_KEY = DataKey.create<LocalTaintVulnerability>("sonarlint_taint_vulnerability")
-  }
 
   override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
     return e.getData(TAINT_VULNERABILITY_DATA_KEY) != null
