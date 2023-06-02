@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.finding.issue;
 
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -49,5 +50,9 @@ public class LiveIssue extends LiveFinding {
 
   public void setType(@Nullable RuleType type) {
     this.type = type;
+  }
+
+  public VirtualFile getFile() {
+    return psiFile().getVirtualFile();
   }
 }

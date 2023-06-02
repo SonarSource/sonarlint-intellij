@@ -39,7 +39,6 @@ import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
 import org.sonarlint.intellij.actions.AbstractSonarAction
-import org.sonarlint.intellij.actions.OpenIssueInBrowserAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarConfigureProject
@@ -61,6 +60,7 @@ import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LocalTaintVulnerabilityNode
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTree
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTreeModelBuilder
+import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarlint.intellij.util.SonarLintActions
 import java.awt.BorderLayout
 import java.awt.event.ActionEvent
@@ -323,7 +323,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     override fun getData(dataId: String): Any? {
-        return if (OpenIssueInBrowserAction.TAINT_VULNERABILITY_DATA_KEY.`is`(dataId)) {
+        return if (TAINT_VULNERABILITY_DATA_KEY.`is`(dataId)) {
             tree.getSelectedIssue()
         } else null
     }
