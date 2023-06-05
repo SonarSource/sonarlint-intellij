@@ -33,6 +33,7 @@ import com.intellij.serviceContainer.NonInjectable
 import com.jetbrains.rd.util.firstOrNull
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
+import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsService
@@ -108,7 +109,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 mapOf(),
                 true,
                 SonarLintUtils.isTaintVulnerabilitiesEnabled(),
-                true
+                true,
+                "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version
             )
         ).thenRun {
             ApplicationManager.getApplication().messageBus.connect()
