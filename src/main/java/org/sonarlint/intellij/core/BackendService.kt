@@ -73,17 +73,18 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.APP)
 class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
     constructor() : this(SonarLintBackendImpl(SonarLintIntelliJClient))
 
-    private var initialized = false
+    private var initialized = AtomicBoolean(false)
 
     fun startOnce() : CompletableFuture<Void> {
-        if (initialized) return CompletableFuture.completedFuture(null)
+        if (initialized.get()) return CompletableFuture.completedFuture(null)
 
-        initialized = true
+        initialized.set(true)
         return initialize()
     }
 
@@ -233,7 +234,6 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     fun moduleAdded(module: Module) {
         val moduleProjectKey = getService(module, ModuleBindingManager::class.java).configuredProjectKey
         val projectBinding = getService(module.project, ProjectBindingManager::class.java).binding
-        if (!initialized) return
         getBackend().configurationService.didAddConfigurationScopes(
             DidAddConfigurationScopesParams(
                 listOf(
