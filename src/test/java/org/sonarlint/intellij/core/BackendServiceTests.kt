@@ -69,7 +69,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
                 .build()
         )
 
-        service.startOnce().get()
+        service.getBackend()
 
         val paramsCaptor = argumentCaptor<InitializeParams>()
         verify(backend).initialize(paramsCaptor.capture())
@@ -140,7 +140,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_closing_a_project() {
-        service.startOnce().get()
+        service.getBackend()
         val newProject = ProjectManagerEx.getInstanceEx().openProject(Path.of("test"), OpenProjectTask.newProject())!!
         service.projectOpened(newProject)
 
@@ -182,7 +182,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_binding_a_project_having_module_overrides() {
-        service.startOnce().get()
+        service.getBackend()
         projectSettings.isBindingSuggestionsEnabled = false
         val moduleBackendId = moduleBackendId(module)
 
@@ -203,7 +203,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_closing_a_project_having_module_overrides() {
-        service.startOnce().get()
+        service.getBackend()
         projectSettings.isBindingSuggestionsEnabled = false
         val moduleId = moduleBackendId(module)
 
