@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.io.FileUtils;
 import org.sonarsource.sonarlint.core.serverconnection.proto.Sonarlint;
 import org.sonarsource.sonarlint.core.serverconnection.storage.ProjectStoragePaths;
-import org.sonarsource.sonarlint.core.serverconnection.storage.ProtobufUtil;
+import org.sonarsource.sonarlint.core.serverconnection.storage.ProtobufFileUtil;
 
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
@@ -52,8 +52,8 @@ public class ProjectStorageFixture {
 
     public void setSettings(Map<String, String> settings) {
       var configFile = path.resolve("analyzer_config.pb");
-      var analyzerConfiguration = ProtobufUtil.readFile(configFile, Sonarlint.AnalyzerConfiguration.parser());
-      ProtobufUtil.writeToFile(Sonarlint.AnalyzerConfiguration.newBuilder(analyzerConfiguration)
+      var analyzerConfiguration = ProtobufFileUtil.readFile(configFile, Sonarlint.AnalyzerConfiguration.parser());
+      ProtobufFileUtil.writeToFile(Sonarlint.AnalyzerConfiguration.newBuilder(analyzerConfiguration)
         .clearSettings()
         .putAllSettings(settings).build(), configFile);
     }
@@ -112,7 +112,7 @@ public class ProjectStorageFixture {
         protoRuleSets.put(ruleSet.languageKey, ruleSetBuilder.build());
       });
       var analyzerConfiguration = Sonarlint.AnalyzerConfiguration.newBuilder().putAllRuleSetsByLanguageKey(protoRuleSets).build();
-      ProtobufUtil.writeToFile(analyzerConfiguration, projectFolder.resolve("analyzer_config.pb"));
+      ProtobufFileUtil.writeToFile(analyzerConfiguration, projectFolder.resolve("analyzer_config.pb"));
     }
 
     private void createProjectBranches(Path projectFolder) {
@@ -120,7 +120,7 @@ public class ProjectStorageFixture {
       var builder = Sonarlint.ProjectBranches.newBuilder()
         .setMainBranchName(mainBranchName)
         .addAllBranchName(branchNames);
-      ProtobufUtil.writeToFile(builder.build(), projectFolder.resolve("project_branches.pb"));
+      ProtobufFileUtil.writeToFile(builder.build(), projectFolder.resolve("project_branches.pb"));
     }
 
     public static class RuleSetBuilder {

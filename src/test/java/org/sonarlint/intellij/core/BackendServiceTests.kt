@@ -29,6 +29,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -41,6 +42,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveCo
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.ConnectionService
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
     private lateinit var backend: SonarLintBackend
@@ -51,6 +53,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     @BeforeEach
     fun prepare() {
         backend = mock(SonarLintBackend::class.java)
+        `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
         backendConnectionService = mock(ConnectionService::class.java)
         backendConfigurationService = mock(ConfigurationService::class.java)
         `when`(backend.connectionService).thenReturn(backendConnectionService)
@@ -66,7 +69,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
                 .build()
         )
 
-        service.startOnce()
+        service.startOnce().get()
 
         val paramsCaptor = argumentCaptor<InitializeParams>()
         verify(backend).initialize(paramsCaptor.capture())
@@ -137,7 +140,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_closing_a_project() {
-        service.startOnce()
+        service.startOnce().get()
         val newProject = ProjectManagerEx.getInstanceEx().openProject(Path.of("test"), OpenProjectTask.newProject())!!
         service.projectOpened(newProject)
 
@@ -179,7 +182,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_binding_a_project_having_module_overrides() {
-        service.startOnce()
+        service.startOnce().get()
         projectSettings.isBindingSuggestionsEnabled = false
         val moduleBackendId = moduleBackendId(module)
 
@@ -200,7 +203,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_closing_a_project_having_module_overrides() {
-        service.startOnce()
+        service.startOnce().get()
         projectSettings.isBindingSuggestionsEnabled = false
         val moduleId = moduleBackendId(module)
 
