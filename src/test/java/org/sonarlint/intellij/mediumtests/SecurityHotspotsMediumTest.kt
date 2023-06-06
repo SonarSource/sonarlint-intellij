@@ -178,7 +178,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     }
 
     private fun createStorage(
-        serverVersion: String? = "99.9",
+        serverVersion: String? = "9.9",
         projectKey: String = "projectKey",
         branchName: String = "master",
         activeRuleKey: String,
