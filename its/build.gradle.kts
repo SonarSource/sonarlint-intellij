@@ -67,6 +67,8 @@ intellij {
     instrumentCode.set(false)
 }
 
+val runIdeDirectory: String by project
+
 tasks.runIdeForUiTests {
     systemProperty("robot-server.port", "8082")
     systemProperty("sonarlint.telemetry.disabled", "true")
@@ -76,6 +78,9 @@ tasks.runIdeForUiTests {
     systemProperty("jb.consents.confirmation.enabled", "false")
     systemProperty("eap.require.license", "true")
     jvmArgs = listOf("-Xmx1G")
+    if (project.hasProperty("runIdeDirectory")) {
+        ideDir.set(File(runIdeDirectory))
+    }
     doFirst {
         if (project.hasProperty("slPluginDirectory")) {
             copy {
