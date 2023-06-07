@@ -31,6 +31,10 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
 
   public abstract void render(TreeCellRenderer renderer);
 
+  public boolean hasChildren() {
+    return getChildCount() != 0;
+  }
+
   public int getFindingCount() {
     if (findingCount < 0) {
       findingCount = 0;

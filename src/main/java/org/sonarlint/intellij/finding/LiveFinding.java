@@ -175,6 +175,11 @@ public abstract class LiveFinding implements Trackable, Finding {
   }
 
   @Override
+  public String getServerKey() {
+    return serverFindingKey;
+  }
+
+  @Override
   public String getServerFindingKey() {
     return serverFindingKey;
   }
