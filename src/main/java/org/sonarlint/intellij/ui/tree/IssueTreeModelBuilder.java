@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -135,9 +136,13 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     var node = index.getFileNode(file);
 
     if (node != null) {
-      index.remove(node.file());
-      model.removeNodeFromParent(node);
+      removeFileNode(node);
     }
+  }
+
+  private void removeFileNode(FileNode node) {
+    index.remove(node.file());
+    model.removeNodeFromParent(node);
   }
 
   private static void setIssues(FileNode node, Iterable<LiveIssue> issuePointers) {
@@ -168,6 +173,19 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
 
   private static boolean accept(VirtualFile file) {
     return file.isValid();
+  }
+
+  public void remove(LiveIssue issue) {
+    var fileNode = index.getFileNode(issue.psiFile().getVirtualFile());
+    if (fileNode != null) {
+      fileNode.findChildren(child -> Objects.equals(issue.getServerKey(), child.getServerKey()))
+        .ifPresent(issueNode -> {
+          model.removeNodeFromParent(issueNode);
+          if (!fileNode.hasChildren()) {
+            removeFileNode(fileNode);
+          }
+        });
+    }
   }
 
   private static class FileNodeComparator implements Comparator<FileNode> {

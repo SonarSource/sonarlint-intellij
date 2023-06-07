@@ -17,16 +17,8 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.finding
+package org.sonarlint.intellij.ui.nodes
 
-import org.sonarsource.sonarlint.core.commons.RuleType
+import org.sonarlint.intellij.finding.Finding
 
-interface Finding {
-    fun getServerKey(): String?
-
-    fun getRuleKey(): String
-
-    fun getType(): RuleType
-
-    fun getRuleDescriptionContextKey(): String?
-}
+abstract class FindingNode(val finding: Finding): AbstractNode()

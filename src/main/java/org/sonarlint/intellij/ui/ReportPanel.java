@@ -45,6 +45,7 @@ import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
@@ -107,6 +108,10 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     }
 
     expandTree();
+  }
+
+  public void remove(LiveIssue issue) {
+    treeBuilder.remove(issue);
   }
 
   public void updateStatusForSecurityHotspot(String securityHotspotKey, HotspotStatus status) {
@@ -323,5 +328,4 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   public void dispose() {
     lastAnalysisPanel.dispose();
   }
-
 }
