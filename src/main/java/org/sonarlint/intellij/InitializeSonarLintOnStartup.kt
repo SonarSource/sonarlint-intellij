@@ -25,6 +25,6 @@ import org.sonarlint.intellij.core.BackendService
 
 class InitializeSonarLintOnStartup : AppLifecycleListener {
     override fun appFrameCreated(commandLineArgs: MutableList<String>) {
-        SonarLintUtils.getService(BackendService::class.java).startOnce()
+        SonarLintUtils.getService(BackendService::class.java).getBackend()
     }
 }
