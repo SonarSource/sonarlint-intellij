@@ -165,4 +165,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
     return null;
   }
+
+  public void remove(LiveIssue issue) {
+    treeBuilder.remove(issue);
+  }
 }
