@@ -50,6 +50,8 @@ import org.sonarlint.intellij.its.utils.optionalStep
 import java.awt.Point
 import java.io.File
 import java.time.Duration
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 const val robotUrl = "http://localhost:8082"
 
@@ -93,7 +95,10 @@ open class BaseUiTest {
 
 
     fun uiTest(test: RemoteRobot.() -> Unit) {
+        val exec = Executors.newSingleThreadScheduledExecutor()
         try {
+            // Take a thread dump if a test take more than 5 minutes
+            exec.schedule({printThreadDump()}, 5, TimeUnit.MINUTES)
             remoteRobot.apply(test)
         } finally {
             closeAllDialogs()
@@ -113,8 +118,18 @@ open class BaseUiTest {
                     }
                 }
             }
+            exec.shutdownNow()
             failTestIfUncaughtExceptions()
         }
+    }
+
+    private fun printThreadDump() {
+        val stackTrace = remoteRobot.callJs<String>("""
+               java.lang.management.ManagementFactory.getThreadMXBean().dumpAllThreads(true, true).map(function(element){
+                    return element.toString();
+                }).join("\n");
+            """.trimIndent())
+        println(stackTrace)
     }
 
     private fun failTestIfUncaughtExceptions() {
