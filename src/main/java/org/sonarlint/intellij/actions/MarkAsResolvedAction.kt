@@ -25,12 +25,15 @@ import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Iconable
+import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.ui.resolve.MarkAsResolvedDialog
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 
 class MarkAsResolvedAction :
@@ -68,12 +71,32 @@ class MarkAsResolvedAction :
         val project = e.project ?: return
         val issue = e.getData(DisableRuleAction.ISSUE_DATA_KEY)
         val vulnerability = e.getData(TAINT_VULNERABILITY_DATA_KEY)
+        val file: VirtualFile
 
         if (issue == null && vulnerability == null) {
             return displayErrorNotification(project, "The issue could not be found.")
         }
 
-        println("Open in Dialog")
+        if(issue != null){
+            file = issue.file
+        } else {
+            file = vulnerability?.file() ?: return displayErrorNotification(project, "The file could not be found.")
+        }
+
+        openMarkAsResolvedDialog(project, file)
+    }
+
+    fun openMarkAsResolvedDialog(project: Project, file: VirtualFile) {
+        val connection = serverConnection(project) ?: return MarkAsResolvedAction.displayErrorNotification(
+            project,
+            "No connection could be found."
+        )
+
+        val module = ModuleUtil.findModuleForFile(file, project) ?: return MarkAsResolvedAction.displayErrorNotification(
+            project, "No module could be found for this file."
+        )
+
+        MarkAsResolvedDialog(connection.productName).show()
     }
 
     override fun getPriority() = PriorityAction.Priority.NORMAL
