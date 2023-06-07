@@ -35,13 +35,14 @@ import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
 
-public class IssueNode extends AbstractNode {
+public class IssueNode extends FindingNode {
   // not available in IJ15
   private static final SimpleTextAttributes GRAYED_SMALL_ATTRIBUTES = new SimpleTextAttributes(STYLE_SMALLER, UIUtil.getInactiveTextColor());
 
   private final LiveIssue issue;
 
   public IssueNode(Trackable issue) {
+    super((LiveIssue) issue);
     this.issue = ((LiveIssue) issue);
   }
 

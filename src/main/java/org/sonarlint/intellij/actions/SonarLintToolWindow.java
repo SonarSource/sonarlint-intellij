@@ -325,6 +325,15 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     return Collections.emptyList();
   }
 
+  public void markAsResolved(LocalTaintVulnerability taintVulnerability) {
+    this.<TaintVulnerabilitiesPanel>updateTab(SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE, panel -> panel.remove(taintVulnerability));
+  }
+
+  public void markAsResolved(LiveIssue issue) {
+    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(issue));
+    this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(issue));
+  }
+
   @Override
   public void selectionChanged(@NotNull ContentManagerEvent event) {
     // Introduced in the context of Security Hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
