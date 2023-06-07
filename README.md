@@ -76,7 +76,10 @@ Finally close the IDE.
 To test against a specific version of IntelliJ, the `ijVersion` property can be used, e.g.:
 
     ./gradlew :its:runIdeForUiTests  -PijVersion=IC-2019.3 &
-    ./gradlew :its:check
+
+To test against a specific IDE, the `runIdeDirectory` property can be used as such:
+
+    ./gradlew :its:runIdeForUiTests -PrunIdeDirectory=<IDE_PATH> &
 
 Please note that the IDE must be in foreground while tests are executed.
 
@@ -92,7 +95,7 @@ To run an IntelliJ instance with the plugin installed, execute the Gradle task `
 or the **Gradle** toolbar in IntelliJ, under `Tasks/intellij`.
 The instance files are stored under `build/idea-sandbox`.
 
-To run against a specific version of IntelliJ, the `runIdeDirectory` property can be used as such:
+To run against a specific IDE, the `runIdeDirectory` property can be used as such:
 
     ./gradlew :runIde -PrunIdeDirectory=<IDE_PATH>
 
