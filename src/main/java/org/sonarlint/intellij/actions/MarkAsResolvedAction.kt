@@ -25,9 +25,11 @@ import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.analysis.AnalysisStatus
@@ -36,12 +38,16 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.tasks.FutureAwaitingTask
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.resolve.MarkAsResolvedDialog
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
+
 
 class MarkAsResolvedAction :
     AbstractSonarAction(
@@ -98,22 +104,22 @@ class MarkAsResolvedAction :
         openMarkAsResolvedDialog(project, file, issueKey, isTaintVulnerability, issue, vulnerability)
     }
 
-    fun openMarkAsResolvedDialog(
+    private fun openMarkAsResolvedDialog(
         project: Project, file: VirtualFile, issueKey: String, isTaintVulnerability: Boolean,
         liveIssue: LiveIssue?, taintVulnerability: LocalTaintVulnerability?,
     ) {
-        val connection = serverConnection(project) ?: return MarkAsResolvedAction.displayErrorNotification(
+        val connection = serverConnection(project) ?: return displayErrorNotification(
             project,
             "No connection could be found."
         )
 
-        val module = ModuleUtil.findModuleForFile(file, project) ?: return MarkAsResolvedAction.displayErrorNotification(
+        val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
             project, "No module could be found for this file."
         )
 
         val response = checkPermission(project, connection, issueKey) ?: return
 
-        MarkAsResolvedDialog(
+        val newStatus = MarkAsResolvedDialog(
             project,
             connection.productName,
             module,
@@ -122,7 +128,39 @@ class MarkAsResolvedAction :
             isTaintVulnerability,
             liveIssue,
             taintVulnerability
-        ).show()
+        ).chooseResolution() ?: return
+        if (confirm(project, connection.productName, newStatus)) {
+            markAsResolved(project, module, liveIssue, taintVulnerability, issueKey, newStatus, isTaintVulnerability)
+        }
+    }
+
+    private fun markAsResolved(project: Project, module: Module, liveIssue: LiveIssue?, localTaintVulnerability: LocalTaintVulnerability?, issueKey: String, status: IssueStatus, isTaintVulnerability: Boolean) {
+        SonarLintUtils.getService(BackendService::class.java)
+            .markAsResolved(module, issueKey, status, isTaintVulnerability)
+            .thenAccept {
+                runOnUiThread(project) {
+                    val toolWindowService = SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
+
+                    if (isTaintVulnerability) {
+                        toolWindowService.markAsResolved(localTaintVulnerability)
+                    } else {
+                        toolWindowService.markAsResolved(liveIssue)
+                    }
+                    SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+                }
+            }
+            .exceptionally { error ->
+                SonarLintConsole.get(project).error("Error while marking Issue as resolved", error)
+
+                val notification = GROUP.createNotification(
+                    "<b>SonarLint - Unable to mark as resolved</b>",
+                    "Could not mark the Issue as resolved.",
+                    NotificationType.ERROR
+                )
+                notification.isImportant = true
+                notification.notify(project)
+                null
+            }
     }
 
     private fun checkPermission(project: Project, connection: ServerConnection, issueKey: String): CheckStatusChangePermittedResponse? {
@@ -134,6 +172,16 @@ class MarkAsResolvedAction :
             displayErrorNotification(project, "Could not check status change permission")
             null
         }
+    }
+
+    private fun confirm(project: Project, productName: String, issueStatus: IssueStatus): Boolean {
+        return MessageDialogBuilder.okCancel(
+            "Confirm marking issue as resolved",
+            "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be modified on $productName"
+        )
+            .yesText("Confirm")
+            .noText("Cancel")
+            .ask(project)
     }
 
     override fun getPriority() = PriorityAction.Priority.NORMAL
