@@ -45,17 +45,17 @@ import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.fixtures.waitUntilLoaded
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.StepsLogger
-import org.sonarlint.intellij.its.utils.VisualTreeDump
+import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
+import org.sonarlint.intellij.its.utils.VisualTreeDumpOnFailure
 import org.sonarlint.intellij.its.utils.optionalStep
 import java.awt.Point
 import java.io.File
 import java.time.Duration
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 const val robotUrl = "http://localhost:8082"
 
-@ExtendWith(VisualTreeDump::class)
+@ExtendWith(VisualTreeDumpOnFailure::class)
+@ExtendWith(ThreadDumpOnFailure::class)
 open class BaseUiTest {
 
     companion object {
@@ -95,10 +95,7 @@ open class BaseUiTest {
 
 
     fun uiTest(test: RemoteRobot.() -> Unit) {
-        val exec = Executors.newSingleThreadScheduledExecutor()
         try {
-            // Take a thread dump if a test take more than 5 minutes
-            exec.schedule({printThreadDump()}, 5, TimeUnit.MINUTES)
             remoteRobot.apply(test)
         } finally {
             closeAllDialogs()
@@ -118,18 +115,8 @@ open class BaseUiTest {
                     }
                 }
             }
-            exec.shutdownNow()
             failTestIfUncaughtExceptions()
         }
-    }
-
-    private fun printThreadDump() {
-        val stackTrace = remoteRobot.callJs<String>("""
-               java.lang.management.ManagementFactory.getThreadMXBean().dumpAllThreads(true, true).map(function(element){
-                    return element.toString();
-                }).join("\n");
-            """.trimIndent())
-        println(stackTrace)
     }
 
     private fun failTestIfUncaughtExceptions() {
@@ -149,7 +136,8 @@ open class BaseUiTest {
         com.intellij.diagnostic.MessagePool.getInstance().getFatalErrors(true, true)
             .forEach((error) => result.add("message=" + error.getMessage() + ", stacktrace=" + error.getThrowableText()))
         result
-    """)
+    """
+        )
     }
 
     private fun clearExceptions() {
@@ -212,7 +200,9 @@ open class BaseUiTest {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
-                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue() }
+                        expectedMessages.forEach {
+                            Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue()
+                        }
                     }
                 }
             }
@@ -239,7 +229,11 @@ open class BaseUiTest {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     content("CurrentFilePanel") {
-                        waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") { hasText(expectedMessage) }
+                        waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
+                            hasText(
+                                expectedMessage
+                            )
+                        }
                     }
                 }
             }
