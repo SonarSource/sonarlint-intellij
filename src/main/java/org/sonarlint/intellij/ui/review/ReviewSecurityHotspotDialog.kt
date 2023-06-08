@@ -63,7 +63,7 @@ class ReviewSecurityHotspotDialog(
             override fun doAction(e: ActionEvent) {
                 val status = getStatus()
                 SonarLintUtils.getService(BackendService::class.java)
-                    .changeStatusForHotspot(BackendService.moduleId(module), securityHotspotKey, status)
+                    .changeStatusForHotspot(module, securityHotspotKey, status)
                     .thenAccept {
                         runOnUiThread(
                             project,

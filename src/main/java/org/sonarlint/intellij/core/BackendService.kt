@@ -65,6 +65,8 @@ import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChang
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.ChangeIssueStatusParams
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
 import java.io.IOException
@@ -73,6 +75,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse as CheckIssueStatusChangePermittedResponse
 
 @Service(Service.Level.APP)
 class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
@@ -80,7 +83,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     private val initializedBackend: SonarLintBackend by lazy { initialize() }
 
-    private fun initialize() : SonarLintBackend {
+    private fun initialize(): SonarLintBackend {
         migrateStoragePath()
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
@@ -128,7 +131,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         return backendInitializedFuture.thenApply { backend }.get()
     }
 
-    fun getBackend() : SonarLintBackend {
+    fun getBackend(): SonarLintBackend {
         return initializedBackend
     }
 
@@ -293,16 +296,30 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         return initializedBackend.hotspotService.checkLocalDetectionSupported(CheckLocalDetectionSupportedParams(projectId(project)))
     }
 
-    fun changeStatusForHotspot(configurationScopeId: String, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
-        return initializedBackend.hotspotService.changeStatus(ChangeHotspotStatusParams(configurationScopeId, hotspotKey, newStatus))
+    fun changeStatusForHotspot(module: Module, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
+        return initializedBackend.hotspotService.changeStatus(ChangeHotspotStatusParams(moduleId(module), hotspotKey, newStatus))
+    }
+
+    fun markAsResolved(
+        module: Module,
+        issueKey: String,
+        newStatus: IssueStatus,
+        isTaintVulnerability: Boolean,
+    ): CompletableFuture<Void> {
+        return initializedBackend.issueService.changeStatus(ChangeIssueStatusParams(moduleId(module), issueKey, newStatus, isTaintVulnerability))
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
         return initializedBackend.hotspotService.checkStatusChangePermitted(CheckStatusChangePermittedParams(connectionId, hotspotKey))
     }
 
+    fun checkIssueStatusChangePermitted(connectionId: String, issueKey: String): CompletableFuture<CheckIssueStatusChangePermittedResponse> {
+        return initializedBackend.issueService.checkStatusChangePermitted(org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedParams(connectionId, issueKey))
+    }
+
     fun branchChanged(module: Module, newActiveBranchName: String) {
-        initializedBackend.sonarProjectBranchService.didChangeActiveSonarProjectBranch(DidChangeActiveSonarProjectBranchParams(moduleId(module), newActiveBranchName))
+        initializedBackend.sonarProjectBranchService.didChangeActiveSonarProjectBranch(DidChangeActiveSonarProjectBranchParams(moduleId(module),
+            newActiveBranchName))
     }
 
     companion object {
