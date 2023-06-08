@@ -73,14 +73,19 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import javax.swing.SwingUtilities
 
 @Service(Service.Level.APP)
 class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
     constructor() : this(SonarLintBackendImpl(SonarLintIntelliJClient))
 
-    private val initializedBackend: SonarLintBackend by lazy { initialize() }
+    private val initializedBackendDelegate = lazy { initialize() }
+    private val initializedBackend by initializedBackendDelegate
 
     private fun initialize() : SonarLintBackend {
+        if (SwingUtilities.isEventDispatchThread()) {
+            throw IllegalStateException("The SonarLint backend should not be initialized in the EDT")
+        }
         migrateStoragePath()
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
@@ -166,25 +171,29 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun projectOpened(project: Project) {
-        val binding = getService(project, ProjectBindingManager::class.java).binding
-        initializedBackend.configurationService.didAddConfigurationScopes(
-            DidAddConfigurationScopesParams(
-                listOf(
-                    toBackendConfigurationScope(project, binding)
+        if (initializedBackendDelegate.isInitialized()) {
+            val binding = getService(project, ProjectBindingManager::class.java).binding
+            initializedBackend.configurationService.didAddConfigurationScopes(
+                DidAddConfigurationScopesParams(
+                    listOf(
+                        toBackendConfigurationScope(project, binding)
+                    )
                 )
             )
-        )
+        }
     }
 
     internal fun projectClosed(project: Project) {
-        ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
-        initializedBackend.configurationService.didRemoveConfigurationScope(
-            DidRemoveConfigurationScopeParams(
-                projectId(
-                    project
+        if (initializedBackendDelegate.isInitialized()) {
+            ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
+            initializedBackend.configurationService.didRemoveConfigurationScope(
+                DidRemoveConfigurationScopeParams(
+                    projectId(
+                        project
+                    )
                 )
             )
-        )
+        }
     }
 
     private fun toBackendConfigurationScope(project: Project, binding: ProjectBinding?) = ConfigurationScopeDto(
@@ -224,29 +233,33 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun moduleAdded(module: Module) {
-        val moduleProjectKey = getService(module, ModuleBindingManager::class.java).configuredProjectKey
-        val projectBinding = getService(module.project, ProjectBindingManager::class.java).binding
-        initializedBackend.configurationService.didAddConfigurationScopes(
-            DidAddConfigurationScopesParams(
-                listOf(
-                    ConfigurationScopeDto(
-                        moduleId(module), projectId(module.project), true, module.name, BindingConfigurationDto(
-                            projectBinding?.connectionName, projectBinding?.let { moduleProjectKey }, true
+        if (initializedBackendDelegate.isInitialized()) {
+            val moduleProjectKey = getService(module, ModuleBindingManager::class.java).configuredProjectKey
+            val projectBinding = getService(module.project, ProjectBindingManager::class.java).binding
+            initializedBackend.configurationService.didAddConfigurationScopes(
+                DidAddConfigurationScopesParams(
+                    listOf(
+                        ConfigurationScopeDto(
+                            moduleId(module), projectId(module.project), true, module.name, BindingConfigurationDto(
+                                projectBinding?.connectionName, projectBinding?.let { moduleProjectKey }, true
+                            )
                         )
                     )
                 )
             )
-        )
+        }
     }
 
     fun moduleRemoved(module: Module) {
-        initializedBackend.configurationService.didRemoveConfigurationScope(
-            DidRemoveConfigurationScopeParams(
-                moduleId(
-                    module
+        if (initializedBackendDelegate.isInitialized()) {
+            initializedBackend.configurationService.didRemoveConfigurationScope(
+                DidRemoveConfigurationScopeParams(
+                    moduleId(
+                        module
+                    )
                 )
             )
-        )
+        }
         uniqueIdentifierForModules.remove(module)
     }
 
