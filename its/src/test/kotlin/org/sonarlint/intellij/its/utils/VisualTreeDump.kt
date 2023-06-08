@@ -29,6 +29,10 @@ class VisualTreeDump : TestWatcher {
     println("Test '${context.displayName}' failed")
     println("Printing visual tree")
     println()
-    URL(robotUrl).openStream().reader().use { println(it.readText()) }
+    val conn = URL(robotUrl).openConnection()
+    conn.connectTimeout = 100
+    conn.readTimeout = 1000
+    conn.connect()
+    conn.getInputStream().reader().use { println(it.readText()) }
   }
 }
