@@ -79,20 +79,15 @@ import javax.swing.SwingUtilities
 class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
     constructor() : this(SonarLintBackendImpl(SonarLintIntelliJClient))
 
-    private val initializedBackendDelegate = lazy { initialize() }
-    private val initializedBackend by initializedBackendDelegate
-
-    private fun initialize() : SonarLintBackend {
-        if (SwingUtilities.isEventDispatchThread()) {
-            throw IllegalStateException("The SonarLint backend should not be initialized in the EDT")
-        }
+    val initializeFuture: CompletableFuture<Void>
+    init {
         migrateStoragePath()
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
             serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
         val sonarQubeConnections =
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
-        val backendInitializedFuture = backend.initialize(
+        initializeFuture = backend.initialize(
             InitializeParams(
                 HostInfoDto(ApplicationInfo.getInstance().versionName),
                 TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
@@ -113,28 +108,34 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 true
             )
         )
-        ApplicationManager.getApplication().messageBus.connect()
-            .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
-                override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                    connectionsUpdated(newSettings.serverConnections)
-                }
+        initializeFuture.thenRun({
+            ApplicationManager.getApplication().messageBus.connect()
+                .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
+                    override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
+                        connectionsUpdated(newSettings.serverConnections)
+                    }
 
-                override fun changed(serverList: MutableList<ServerConnection>) {
-                    connectionsUpdated(serverList)
-                }
-            })
-        ApplicationManager.getApplication().messageBus.connect()
-            .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
+                    override fun changed(serverList: MutableList<ServerConnection>) {
+                        connectionsUpdated(serverList)
+                    }
+                })
+            ApplicationManager.getApplication().messageBus.connect()
+                .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
 
-                override fun projectClosing(project: Project) {
-                    this@BackendService.projectClosed(project)
-                }
-            })
-        return backendInitializedFuture.thenApply { backend }.get()
+                    override fun projectClosing(project: Project) {
+                        this@BackendService.projectClosed(project)
+                    }
+                })
+        })
+    }
+
+    fun waitForInitialized() {
+        initializeFuture.get();
     }
 
     fun getBackend() : SonarLintBackend {
-        return initializedBackend
+        waitForInitialized()
+        return backend
     }
 
     /**
@@ -159,7 +160,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     fun connectionsUpdated(serverConnections: List<ServerConnection>) {
         val scConnections = serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
         val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
-        initializedBackend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
+        backend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
     }
 
     private fun toSonarQubeBackendConnection(createdConnection: ServerConnection): SonarQubeConnectionConfigurationDto {
@@ -233,33 +234,30 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun moduleAdded(module: Module) {
-        if (initializedBackendDelegate.isInitialized()) {
-            val moduleProjectKey = getService(module, ModuleBindingManager::class.java).configuredProjectKey
-            val projectBinding = getService(module.project, ProjectBindingManager::class.java).binding
-            initializedBackend.configurationService.didAddConfigurationScopes(
-                DidAddConfigurationScopesParams(
-                    listOf(
-                        ConfigurationScopeDto(
-                            moduleId(module), projectId(module.project), true, module.name, BindingConfigurationDto(
-                                projectBinding?.connectionName, projectBinding?.let { moduleProjectKey }, true
-                            )
+        // Run in background thread, but preserving order of events
+        val moduleProjectKey = getService(module, ModuleBindingManager::class.java).configuredProjectKey
+        val projectBinding = getService(module.project, ProjectBindingManager::class.java).binding
+        backend.configurationService.didAddConfigurationScopes(
+            DidAddConfigurationScopesParams(
+                listOf(
+                    ConfigurationScopeDto(
+                        moduleId(module), projectId(module.project), true, module.name, BindingConfigurationDto(
+                            projectBinding?.connectionName, projectBinding?.let { moduleProjectKey }, true
                         )
                     )
                 )
             )
-        }
+        )
     }
 
     fun moduleRemoved(module: Module) {
-        if (initializedBackendDelegate.isInitialized()) {
-            initializedBackend.configurationService.didRemoveConfigurationScope(
-                DidRemoveConfigurationScopeParams(
-                    moduleId(
-                        module
-                    )
+        backend.configurationService.didRemoveConfigurationScope(
+            DidRemoveConfigurationScopeParams(
+                moduleId(
+                    module
                 )
             )
-        }
+        )
         uniqueIdentifierForModules.remove(module)
     }
 
