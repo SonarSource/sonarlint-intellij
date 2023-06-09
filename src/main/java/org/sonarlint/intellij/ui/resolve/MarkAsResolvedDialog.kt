@@ -20,31 +20,25 @@
 package org.sonarlint.intellij.ui.resolve
 
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import java.awt.event.ActionEvent
 
 class MarkAsResolvedDialog(
     project: Project,
-    productName: String,
-    module: Module,
-    issueKey: String,
+    connection: ServerConnection,
     permissionCheckResponse: CheckStatusChangePermittedResponse,
-    isTaintVulnerability: Boolean,
-    liveIssue: LiveIssue?,
-    localTaintVulnerability: LocalTaintVulnerability?
 ) : DialogWrapper(false) {
 
     private val centerPanel: MarkAsResolvedPanel
     private val changeStatusAction: DialogWrapperAction
 
     init {
-        title = "Mark Issue as Resolved on $productName"
+        title = "Mark Issue as Resolved on ${connection.productName}"
         isResizable = false
         changeStatusAction = object : DialogWrapperAction("Mark as Resolved") {
             init {
@@ -60,16 +54,17 @@ class MarkAsResolvedDialog(
                 }
             }
         }
-        centerPanel = MarkAsResolvedPanel(permissionCheckResponse.allowedStatuses) { changeStatusAction.isEnabled = permissionCheckResponse.isPermitted && it }
+        centerPanel = MarkAsResolvedPanel(connection, permissionCheckResponse.allowedStatuses) { changeStatusAction.isEnabled = permissionCheckResponse.isPermitted && it }
         if (!permissionCheckResponse.isPermitted) {
             setErrorText(permissionCheckResponse.notPermittedReason)
         }
         init()
     }
 
-    fun chooseResolution() = if (showAndGet()) getStatus() else null
+    fun chooseResolution() = if (showAndGet()) Resolution(getStatus()!!, getComment()) else null
 
     private fun getStatus() = centerPanel.selectedStatus
+    private fun getComment() = centerPanel.getComment()
 
     override fun createCenterPanel() = centerPanel
 
@@ -83,4 +78,6 @@ class MarkAsResolvedDialog(
             ModalityState.stateForComponent(this@MarkAsResolvedDialog.contentPane)
         ) { close(OK_EXIT_CODE) }
     }
+
+    data class Resolution(val newStatus: IssueStatus, val comment: String?)
 }
