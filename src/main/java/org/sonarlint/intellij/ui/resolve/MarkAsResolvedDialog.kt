@@ -23,11 +23,11 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import java.awt.event.ActionEvent
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
+import java.awt.event.ActionEvent
 
 class MarkAsResolvedDialog(
     project: Project,
@@ -60,7 +60,10 @@ class MarkAsResolvedDialog(
                 }
             }
         }
-        centerPanel = MarkAsResolvedPanel(permissionCheckResponse.allowedStatuses) { changeStatusAction.isEnabled = it }
+        centerPanel = MarkAsResolvedPanel(permissionCheckResponse.allowedStatuses) { changeStatusAction.isEnabled = permissionCheckResponse.isPermitted && it }
+        if (!permissionCheckResponse.isPermitted) {
+            setErrorText(permissionCheckResponse.notPermittedReason)
+        }
         init()
     }
 
