@@ -28,9 +28,11 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.ProjectLogOutput
@@ -65,7 +67,7 @@ class ServerEventsProductionService : ServerEventsService {
         val openedProjects = openedProjects()
         engineIfStarted?.subscribeForEvents(
             serverConnection.endpointParams,
-            serverConnection.httpClient,
+            getService(BackendService::class.java).getBackend().getHttpClient(serverConnection.name),
             getProjectKeys(serverConnection, openedProjects),
             this::handleEvents,
             CompositeLogOutput(getLogOutputs(serverConnection, openedProjects))
@@ -79,7 +81,7 @@ class ServerEventsProductionService : ServerEventsService {
             val openedProjects = openedProjects().minus(project)
             bindingManager.validConnectedEngine?.subscribeForEvents(
                 connection.endpointParams,
-                connection.httpClient,
+                getService(BackendService::class.java).getBackend().getHttpClient(connection.name),
                 getProjectKeys(connection, openedProjects),
                 this::handleEvents,
                 CompositeLogOutput(getLogOutputs(connection, openedProjects))

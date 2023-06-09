@@ -64,8 +64,6 @@ import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreating
 import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentialsParams
 import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentialsResponse
-import org.sonarsource.sonarlint.core.clientapi.client.connection.TokenDto
-import org.sonarsource.sonarlint.core.clientapi.client.connection.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeResponse
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FoundFileDto
@@ -84,6 +82,8 @@ import org.sonarsource.sonarlint.core.clientapi.client.progress.ReportProgressPa
 import org.sonarsource.sonarlint.core.clientapi.client.progress.StartProgressParams
 import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
 import org.sonarsource.sonarlint.core.clientapi.client.sync.DidSynchronizeConfigurationScopeParams
+import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
+import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.io.ByteArrayInputStream
 import java.net.Authenticator
@@ -338,8 +338,8 @@ object SonarLintIntelliJClient : SonarLintClient {
         return getGlobalSettings().getServerConnectionByName(params.connectionId)
             .map { connection -> connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
                 ?: connection.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.password))) }
-                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.getConnectionId()))}
-            .orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.getConnectionId())))
+                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))}
+            .orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.connectionId)))
     }
 
     override fun getProxyPasswordAuthentication(params: GetProxyPasswordAuthenticationParams): CompletableFuture<GetProxyPasswordAuthenticationResponse>? {

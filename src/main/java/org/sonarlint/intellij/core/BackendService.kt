@@ -32,6 +32,7 @@ import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.serviceContainer.NonInjectable
 import com.jetbrains.rd.util.firstOrNull
 import org.apache.commons.io.FileUtils
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -59,6 +60,10 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveCo
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.TransientSonarCloudConnectionDto
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.TransientSonarQubeConnectionDto
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ChangeHotspotStatusParams
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedParams
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedResponse
@@ -72,6 +77,8 @@ import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ListAllStandaloneRulesDefinitionsResponse
+import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
+import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -343,6 +350,17 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         backendFuture.thenAccept {
             it.sonarProjectBranchService.didChangeActiveSonarProjectBranch(DidChangeActiveSonarProjectBranchParams(moduleId(module), newActiveBranchName))
         }
+    }
+
+    fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val params: ValidateConnectionParams = if (server.isSonarCloud) {
+            ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
+        } else {
+            ValidateConnectionParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
+        }
+        return initializedBackend.connectionService.validateConnection(params)
     }
 
     companion object {
