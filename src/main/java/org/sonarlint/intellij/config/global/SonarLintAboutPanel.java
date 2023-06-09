@@ -28,8 +28,7 @@ import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
-import org.sonarlint.intellij.SonarLintIcons;
-
+import com.intellij.ui.components.JBScrollPane;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -39,8 +38,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.event.HyperlinkEvent;
-
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
@@ -129,6 +129,9 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "      \"open_in_browser_count\": 1,\n"
           + "      \"status_changed_count\": 2\n"
           + "    },\n"
+          + "    \"issue\": {\n"
+          + "      \"status_changed_count\": 3\n"
+          + "    },\n"
           + "    \"show_hotspot\": {\n"
           + "      \"requests_count\": 3\n"
           + "    },\n"
@@ -157,10 +160,12 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "        \"jcefSupported\": true\n"
           + "    }\n"
           + "}</pre></html>");
-        label.setBorder(HintUtil.createHintBorder());
-        label.setBackground(HintUtil.getInformationColor());
         label.setOpaque(true);
-        HintManager.getInstance().showHint(label, RelativePoint.getNorthWestOf(link), HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
+        var scrollPane = new JBScrollPane(label);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setBorder(HintUtil.createHintBorder());
+        scrollPane.setBackground(HintUtil.getInformationColor());
+        HintManager.getInstance().showHint(scrollPane, RelativePoint.getNorthWestOf(link), HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
       }
     });
 
