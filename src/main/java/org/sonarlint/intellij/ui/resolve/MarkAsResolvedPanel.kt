@@ -59,6 +59,5 @@ class MarkAsResolvedPanel (
     override fun actionPerformed(e: ActionEvent?) {
         e ?: return
         selectedStatus = IssueStatus.valueOf(e.actionCommand)
-        println("selected status is:" + selectedStatus)
     }
 }
