@@ -98,7 +98,7 @@ public class SonarLintUtils {
     return withTrailingSlash(aString).equals(withTrailingSlash(anotherString));
   }
 
-  private static String withTrailingSlash(String str) {
+  public static String withTrailingSlash(String str) {
     if (!str.endsWith("/")) {
       return str + '/';
     }
