@@ -29,6 +29,9 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.server.ServerLinks;
+import org.sonarlint.intellij.core.server.SonarCloudLinks;
+import org.sonarlint.intellij.core.server.SonarQubeLinks;
 import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarsource.sonarlint.core.commons.http.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
@@ -51,6 +54,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 // Don't change annotation, used for backward compatibility
 @Tag("SonarQubeServer")
 public class ServerConnection {
+  public static final String SONARCLOUD_URL = "https://sonarcloud.io";
   @OptionTag
   private String hostUrl;
   @Tag
@@ -187,6 +191,10 @@ public class ServerConnection {
 
   public static Builder newBuilder() {
     return new Builder();
+  }
+
+  public ServerLinks links() {
+    return isSonarCloud() ? SonarCloudLinks.INSTANCE : new SonarQubeLinks(hostUrl);
   }
 
   public static class Builder {

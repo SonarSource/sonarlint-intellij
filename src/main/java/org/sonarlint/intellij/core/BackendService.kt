@@ -65,6 +65,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChang
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.AddIssueCommentParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ChangeIssueStatusParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
@@ -307,6 +308,14 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         isTaintVulnerability: Boolean,
     ): CompletableFuture<Void> {
         return initializedBackend.issueService.changeStatus(ChangeIssueStatusParams(moduleId(module), issueKey, newStatus, isTaintVulnerability))
+    }
+
+    fun addCommentOnIssue(
+        module: Module,
+        issueKey: String,
+        comment: String
+    ): CompletableFuture<Void> {
+        return initializedBackend.issueService.addComment(AddIssueCommentParams(moduleId(module), issueKey, comment))
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
