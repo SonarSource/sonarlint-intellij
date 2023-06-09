@@ -20,6 +20,9 @@
 package org.sonarlint.intellij.ui.resolve
 
 import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBTextArea
+import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -27,16 +30,20 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.ButtonGroup
 import javax.swing.JPanel
+import javax.swing.JScrollPane
 import kotlin.properties.Delegates
 
-class MarkAsResolvedPanel (
+
+class MarkAsResolvedPanel(
+    private val connection: ServerConnection,
     allowedStatuses: List<IssueStatus>,
-    val callbackForButton: (Boolean) -> Unit
+    private val callbackForButton: (Boolean) -> Unit,
 ) : JPanel(),
     ActionListener {
     var selectedStatus: IssueStatus? by Delegates.observable(null) { _, _, newValue -> callbackForButton(newValue != null) }
+    private lateinit var commentTextArea : JBTextArea
     init {
-        layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, true, false)
+        layout = verticalLayout()
         display(allowedStatuses)
     }
 
@@ -54,7 +61,30 @@ class MarkAsResolvedPanel (
             statusPanel.statusRadioButton.addActionListener(this)
             add(statusPanel)
         }
+        add(commentPanel())
     }
+
+    fun getComment() : String? {
+        return commentTextArea.text.ifBlank { null }
+    }
+
+    private fun commentPanel(): JPanel {
+        commentTextArea = JBTextArea()
+        return JPanel(verticalLayout()).apply {
+            add(JBLabel("Add a comment (optional)"))
+            add(
+                JScrollPane(
+                    commentTextArea.apply {
+                        rows = 3
+                    })
+            )
+            val link = connection.links().formattingSyntaxDoc()
+            add(JBLabel("<a href=\"$link\">Formatting Help</a>:  *Bold*  ``Code``  * Bulleted point").apply { setCopyable(true) })
+        }
+
+    }
+
+    private fun verticalLayout() = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, true, false)
 
     override fun actionPerformed(e: ActionEvent?) {
         e ?: return
