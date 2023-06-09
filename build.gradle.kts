@@ -190,6 +190,7 @@ dependencies {
         exclude(module = "slf4j-api")
     }
     implementation(project(":common"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
     runtimeOnly(project(":clion"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
