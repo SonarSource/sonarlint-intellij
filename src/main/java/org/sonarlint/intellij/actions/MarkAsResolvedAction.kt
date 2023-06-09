@@ -104,7 +104,7 @@ class MarkAsResolvedAction :
         openMarkAsResolvedDialog(project, file, issueKey, isTaintVulnerability, issue, vulnerability)
     }
 
-    private fun openMarkAsResolvedDialog(
+    fun openMarkAsResolvedDialog(
         project: Project, file: VirtualFile, issueKey: String, isTaintVulnerability: Boolean,
         liveIssue: LiveIssue?, taintVulnerability: LocalTaintVulnerability?,
     ) {

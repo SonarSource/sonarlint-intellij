@@ -323,7 +323,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
                 finding.vulnerabilityProbability
             )
         } else {
-            headerPanel.update(ruleDescription.key, ruleDescription.type, ruleDescription.severity, finding)
+            headerPanel.update(project, ruleDescription.key, ruleDescription.type, ruleDescription.severity, finding)
         }
     }
 
