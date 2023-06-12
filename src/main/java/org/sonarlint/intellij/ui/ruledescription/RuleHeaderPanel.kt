@@ -28,7 +28,7 @@ import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.actions.MarkAsResolvedAction
+import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialog
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.issue.LiveIssue
@@ -142,7 +142,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     ) {
         changeStatusButton.action = object : AbstractAction(MARK_AS_RESOLVED) {
             override fun actionPerformed(e: ActionEvent?) {
-                MarkAsResolvedAction().openMarkAsResolvedDialog(project, file, issueKey, isTaintVulnerability, liveIssue, taintVulnerability)
+                openMarkAsResolvedDialog(project, file, issueKey, isTaintVulnerability, liveIssue, taintVulnerability)
             }
         }
 
