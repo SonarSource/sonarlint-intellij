@@ -47,6 +47,8 @@ import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.resolve.MarkAsResolvedDialog
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
+import org.sonarlint.intellij.util.displayErrorNotification
+import org.sonarlint.intellij.util.displaySuccessfulNotification
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 
@@ -57,15 +59,11 @@ class MarkAsResolvedAction :
         "Mark as Resolved", "Mark as Resolved", null
     ), PriorityAction, Iconable {
     companion object {
-        val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark as Resolved")
+        const val successTitle = "<b>SonarLint - Mark as Resolved</b>"
+        const val errorTitle = "<b>SonarLint - Unable to mark the issue as resolved</b>"
+        const val content = "The issue was successfully marked as resolved!"
 
-        fun displayErrorNotification(project: Project, content: String) {
-            val notification = GROUP.createNotification(
-                "<b>SonarLint - Unable to mark the issue as resolved</b>", content, NotificationType.ERROR
-            )
-            notification.isImportant = true
-            notification.notify(project)
-        }
+        val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark as Resolved")
     }
 
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
@@ -92,14 +90,14 @@ class MarkAsResolvedAction :
         var issueKey: String
 
         if (issue == null && vulnerability == null) {
-            return displayErrorNotification(project, "The issue could not be found.")
+            return displayErrorNotification(project, errorTitle, "The issue could not be found.", GROUP)
         }
 
         if (issue != null) {
             file = issue.file
-            issueKey = issue.serverFindingKey ?: return displayErrorNotification(project, "The issue key could not be found.")
+            issueKey = issue.serverFindingKey ?: return displayErrorNotification(project, errorTitle, "The issue key could not be found.", GROUP)
         } else {
-            file = vulnerability?.file() ?: return displayErrorNotification(project, "The file could not be found.")
+            file = vulnerability?.file() ?: return displayErrorNotification(project, errorTitle, "The file could not be found.", GROUP)
             isTaintVulnerability = true
             issueKey = vulnerability.key()
         }
@@ -113,11 +111,11 @@ class MarkAsResolvedAction :
     ) {
         val connection = serverConnection(project) ?: return displayErrorNotification(
             project,
-            "No connection could be found."
+            errorTitle, "No connection could be found.", GROUP
         )
 
         val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
-            project, "No module could be found for this file."
+            project, errorTitle, "No module could be found for this file.", GROUP
         )
 
         val response = checkPermission(project, connection, issueKey) ?: return
@@ -136,14 +134,15 @@ class MarkAsResolvedAction :
         getService(BackendService::class.java)
             .markAsResolved(module, issueKey, resolution.newStatus, isTaintVulnerability)
             .thenAccept {
+                displaySuccessfulNotification(project, successTitle, content, GROUP)
                 updateUI(project, isTaintVulnerability, localTaintVulnerability, liveIssue)
                 val comment = resolution.comment ?: return@thenAccept
                 addComment(project, module, issueKey, comment)
             }
             .exceptionally { error ->
-                SonarLintConsole.get(project).error("Error while marking Issue as resolved", error)
+                SonarLintConsole.get(project).error("Error while marking issue as resolved", error)
 
-                notifyError(project, "<b>SonarLint - Unable to mark as resolved</b>", "Could not mark the Issue as resolved.")
+                notifyError(project, "<b>SonarLint - Unable to mark as resolved</b>", "Could not mark the issue as resolved.")
                 null
             }
     }
@@ -192,7 +191,7 @@ class MarkAsResolvedAction :
             ProgressManager.getInstance().run(checkTask)
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Error while retrieving the list of allowed statuses for issues", e)
-            displayErrorNotification(project, "Could not check status change permission")
+            displayErrorNotification(project, errorTitle, "Could not check status change permission", GROUP)
             null
         }
     }

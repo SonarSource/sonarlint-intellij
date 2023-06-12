@@ -24,7 +24,6 @@ import com.intellij.codeInsight.intention.PriorityAction
 import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.editor.Editor
@@ -43,6 +42,8 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
+import org.sonarlint.intellij.util.displayErrorNotification
+import org.sonarlint.intellij.util.displaySuccessfulNotification
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
@@ -55,14 +56,9 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     companion object {
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Security Hotspot Review")
         val SECURITY_HOTSPOT_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
-
-        fun displayErrorNotification(project: Project, content: String) {
-            val notification = GROUP.createNotification(
-                "<b>SonarLint - Unable to review the Security Hotspot</b>", content, NotificationType.ERROR
-            )
-            notification.isImportant = true
-            notification.notify(project)
-        }
+        const val successTitle = "<b>SonarLint - Security Hotspot review</b>"
+        const val errorTitle = "<b>SonarLint - Unable to review the Security Hotspot</b>"
+        const val content = "The Security Hotspot status was successfully updated!"
     }
 
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
@@ -83,7 +79,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val securityHotspot =
-            e.getData(SECURITY_HOTSPOT_KEY) ?: return displayErrorNotification(project, "The Security Hotspot could not be found.")
+            e.getData(SECURITY_HOTSPOT_KEY) ?: return displayErrorNotification(project, errorTitle, "The Security Hotspot could not be found.", GROUP)
         serverFindingKey = securityHotspot.serverFindingKey
         status = securityHotspot.status
 
@@ -91,23 +87,22 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     }
 
     fun openReviewingDialog(project: Project, file: VirtualFile) {
-        val connection = serverConnection(project) ?: return displayErrorNotification(project, "No connection could be found.")
+        val connection = serverConnection(project) ?: return displayErrorNotification(project, errorTitle, "No connection could be found.", GROUP)
         val hotspotKey = serverFindingKey ?: return displayErrorNotification(
             project,
-            "Could not find the Security Hotspot on ${connection.productName}."
+            errorTitle, "Could not find the Security Hotspot on ${connection.productName}.", GROUP
         )
-        val currentStatus = status ?: return displayErrorNotification(project, "Could not find the current Security Hotspot status.")
+        val currentStatus = status ?: return displayErrorNotification(project, errorTitle, "Could not find the current Security Hotspot status.", GROUP)
         val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
-            project, "No module could be found for this file."
+            project, errorTitle, "No module could be found for this file.", GROUP
         )
 
         val response = checkPermission(project, connection, hotspotKey) ?: return
         val newStatus = HotspotStatus.valueOf(currentStatus.name)
         if (ReviewSecurityHotspotDialog(project, connection.productName, module, hotspotKey, response, newStatus).showAndGet()) {
-            displaySuccessfulNotification(project)
+            displaySuccessfulNotification(project, successTitle, content, GROUP)
         }
     }
-
 
     private fun checkPermission(project: Project, connection: ServerConnection, hotspotKey: String): CheckStatusChangePermittedResponse? {
         val checkTask = CheckHotspotStatusChangePermission(project, connection, hotspotKey)
@@ -115,19 +110,9 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
             ProgressManager.getInstance().run(checkTask)
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Error while retrieving the list of allowed statuses for Security Hotspots", e)
-            displayErrorNotification(project, "Could not check status change permission")
+            displayErrorNotification(project, errorTitle, "Could not check status change permission", GROUP)
             null
         }
-    }
-
-    private fun displaySuccessfulNotification(project: Project) {
-        val notification = GROUP.createNotification(
-            "<b>SonarLint - Security Hotspot review</b>",
-            "The Security Hotspot status was successfully updated!",
-            NotificationType.INFORMATION
-        )
-        notification.isImportant = true
-        notification.notify(project)
     }
 
     override fun startInWriteAction() = false
