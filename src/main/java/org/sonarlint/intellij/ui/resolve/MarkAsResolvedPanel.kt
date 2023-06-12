@@ -23,11 +23,11 @@ import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.ui.options.OptionPanel
+import org.sonarlint.intellij.ui.options.addComponents
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.ButtonGroup
 import javax.swing.JPanel
 import javax.swing.JScrollPane
@@ -50,14 +50,8 @@ class MarkAsResolvedPanel(
     fun display(allowedStatuses: List<IssueStatus>) {
         val buttonGroup = ButtonGroup()
         allowedStatuses.forEach { status ->
-            val statusPanel = MarkAsResolvedOptionPanel(status)
-            buttonGroup.add(statusPanel.statusRadioButton)
-            statusPanel.addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent?) {
-                    statusPanel.statusRadioButton.doClick()
-                    statusPanel.statusRadioButton.requestFocusInWindow()
-                }
-            })
+            val statusPanel = OptionPanel(status.name, status.title, status.description)
+            addComponents(buttonGroup, statusPanel)
             statusPanel.statusRadioButton.addActionListener(this)
             add(statusPanel)
         }
@@ -81,7 +75,6 @@ class MarkAsResolvedPanel(
             val link = connection.links().formattingSyntaxDoc()
             add(JBLabel("<a href=\"$link\">Formatting Help</a>:  *Bold*  ``Code``  * Bulleted point").apply { setCopyable(true) })
         }
-
     }
 
     private fun verticalLayout() = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, true, false)

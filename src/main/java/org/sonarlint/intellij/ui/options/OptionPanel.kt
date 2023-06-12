@@ -17,30 +17,35 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.resolve
+package org.sonarlint.intellij.ui.options
 
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.util.ui.JBUI
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import java.awt.Font
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
-class MarkAsResolvedOptionPanel (
-    status: IssueStatus,
-) : JBPanel<MarkAsResolvedOptionPanel>(GridBagLayout()) {
+import javax.swing.ButtonGroup
+
+open class OptionPanel (
+    name: String,
+    title: String,
+    description: String
+) : JBPanel<OptionPanel>(GridBagLayout()) {
 
     val statusRadioButton = JBRadioButton()
 
     init {
-        statusRadioButton.actionCommand = status.name
+        statusRadioButton.actionCommand = name
 
-        val statusLabel = JBLabel(status.title)
+        val statusLabel = JBLabel(title)
         statusLabel.font = Font(statusLabel.font.name, Font.BOLD, statusLabel.font.size)
-        val descriptionLabel = JBLabel(status.description)
+        val descriptionLabel = JBLabel(description)
 
         border = BorderFactory.createLineBorder(JBColor.BLACK, 1, true)
 
@@ -60,4 +65,18 @@ class MarkAsResolvedOptionPanel (
             )
         )
     }
+
+    fun setSelected(isSelected: Boolean){
+        statusRadioButton.isSelected = isSelected
+    }
+}
+
+fun addComponents(buttonGroup: ButtonGroup, statusPanel: OptionPanel) {
+    buttonGroup.add(statusPanel.statusRadioButton)
+    statusPanel.addMouseListener(object : MouseAdapter() {
+        override fun mouseClicked(e: MouseEvent?) {
+            statusPanel.statusRadioButton.doClick()
+            statusPanel.statusRadioButton.requestFocusInWindow()
+        }
+    })
 }

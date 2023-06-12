@@ -20,11 +20,11 @@
 package org.sonarlint.intellij.ui.review
 
 import com.intellij.openapi.ui.VerticalFlowLayout
+import org.sonarlint.intellij.ui.options.OptionPanel
+import org.sonarlint.intellij.ui.options.addComponents
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.ButtonGroup
 import javax.swing.JPanel
 import kotlin.properties.Delegates
@@ -46,16 +46,11 @@ class ReviewSecurityHotspotPanel(
     fun display(allowedStatuses: List<HotspotStatus>) {
         val buttonGroup = ButtonGroup()
         allowedStatuses.forEach { status ->
-            val statusPanel = StatusPanel(status, defaultStatus == status)
-            buttonGroup.add(statusPanel.statusRadioButton)
-            statusPanel.addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent?) {
-                    statusPanel.statusRadioButton.doClick()
-                    statusPanel.statusRadioButton.requestFocus()
-                }
-            })
-            statusPanel.statusRadioButton.addActionListener(this)
-            add(statusPanel)
+            val reviewOptionPanel = OptionPanel(status.name, status.title, status.description)
+            reviewOptionPanel.setSelected(defaultStatus == status)
+            addComponents(buttonGroup, reviewOptionPanel)
+            reviewOptionPanel.statusRadioButton.addActionListener(this)
+            add(reviewOptionPanel)
         }
     }
 
