@@ -21,6 +21,7 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.codeInsight.intention.PriorityAction
 import com.intellij.icons.AllIcons
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
@@ -29,6 +30,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DoNotAskOption
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.openapi.vfs.VirtualFile
@@ -48,6 +50,7 @@ import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_K
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 
+private const val SKIP_CONFIRM_DIALOG_PROPERTY = "SonarLint.markIssueAsResolved.hideConfirmation"
 
 class MarkAsResolvedAction :
     AbstractSonarAction(
@@ -195,14 +198,41 @@ class MarkAsResolvedAction :
     }
 
     private fun confirm(project: Project, productName: String, issueStatus: IssueStatus): Boolean {
+        if (PropertiesComponent.getInstance().getBoolean(SKIP_CONFIRM_DIALOG_PROPERTY, false)) {
+            return true
+        }
         return MessageDialogBuilder.okCancel(
             "Confirm marking issue as resolved",
             "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be modified on $productName"
         )
             .yesText("Confirm")
             .noText("Cancel")
+            .doNotAsk(DoNotShowAgain())
             .ask(project)
     }
+
+    private class DoNotShowAgain : DoNotAskOption {
+        override fun isToBeShown(): Boolean {
+            return true
+        }
+
+        override fun setToBeShown(toBeShown: Boolean, exitCode: Int) {
+            PropertiesComponent.getInstance().setValue(SKIP_CONFIRM_DIALOG_PROPERTY, java.lang.Boolean.toString(!toBeShown))
+        }
+
+        override fun canBeHidden(): Boolean {
+            return true
+        }
+
+        override fun shouldSaveOptionsOnCancel(): Boolean {
+            return false
+        }
+
+        override fun getDoNotShowMessage(): String {
+            return "Don't show again"
+        }
+    }
+
 
     override fun getPriority() = PriorityAction.Priority.NORMAL
 
