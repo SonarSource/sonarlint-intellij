@@ -60,7 +60,7 @@ public class LiveSecurityHotspotNode extends FindingNode {
     var serverConnection = getService(securityHotspot.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
     if (securityHotspot.getServerFindingKey() != null && serverConnection.isPresent()) {
       var productIcon = serverConnection.get().getProductIcon();
-      var tooltip = vulnerabilityText + " " + typeStr + serverConnection.get().getProductName();
+      var tooltip = vulnerabilityText + " " + typeStr + " existing on " + serverConnection.get().getProductName();
       renderer.setIconToolTip(tooltip);
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, productIcon, typeIcon));
     } else {
@@ -87,7 +87,6 @@ public class LiveSecurityHotspotNode extends FindingNode {
   public int getFindingCount() {
     return 1;
   }
-
 
 
   @Override
