@@ -64,6 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>8.4 - Allow marking issues existing on SonarQube/SonarCloud as resolved.</li>
         <li>8.3 - Allow changing status of Security Hotspots. Support security hotspots when connected to SonarCloud. Support analysis of Go not only in GoLand but also when using the Go plugin in IntelliJ IDEA Ultimate. 17 new rules for JavaScript. 6 new rules for PHP. 10 new rules, 1 new quick fix for Python. 9 new rules for Kotlin. 11 new rules for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.2 - Support syntax highlighting and diff view for code examples. Add support for CloudFormation, Docker, Kubernetes and Terraform. 3 new rules for Java. 8 new rules for JavaScript. 2 new rules for C# in Rider. 9 new rules for Kotlin. 11 new rules, 3 new quick fixes for Python. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.1 - Support analysis of Go in GoLand. Support for tiarmclang compiler, Kotlin 1.8 and IPython syntax. 6 new rules for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
