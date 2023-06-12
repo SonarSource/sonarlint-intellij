@@ -20,13 +20,15 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.ui.OffsetIcon;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.UIUtil;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.util.Locale;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
+import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
@@ -34,6 +36,7 @@ import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class IssueNode extends FindingNode {
   // not available in IJ15
@@ -52,14 +55,19 @@ public class IssueNode extends FindingNode {
     var severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
     var type = issue.getType();
 
-    if (type != null) {
-      var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
-      renderer.setIconToolTip(severityText + " " + typeStr);
-      var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
-      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type(type), SonarLintIcons.severity(severity)));
+    var severityIcon = SonarLintIcons.severity(severity);
+    var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
+    var serverConnection = getService(issue.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
+    var typeIcon = SonarLintIcons.type(type);
+    var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
+    if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
+      var connection = serverConnection.get();
+      renderer.setIconToolTip(severityText + " " + typeStr + " existing on " + connection.getProductName());
+      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, severityIcon));
     } else {
-      renderer.setIconToolTip(severityText);
-      setIcon(renderer, SonarLintIcons.severity(severity));
+      renderer.setIconToolTip(severityText + " " + typeStr);
+      var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
+      setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon, severityIcon)));
     }
 
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
