@@ -21,15 +21,16 @@ package org.sonarlint.intellij.core
 
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -42,7 +43,6 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveCo
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.ConnectionService
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
     private lateinit var backend: SonarLintBackend
@@ -53,12 +53,17 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     @BeforeEach
     fun prepare() {
         backend = mock(SonarLintBackend::class.java)
-        `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
         backendConnectionService = mock(ConnectionService::class.java)
         backendConfigurationService = mock(ConfigurationService::class.java)
         `when`(backend.connectionService).thenReturn(backendConnectionService)
         `when`(backend.configurationService).thenReturn(backendConfigurationService)
-        service = BackendService(backend)
+    }
+
+    @AfterEach
+    fun cleanup() {
+        if (service != null) {
+            service.dispose()
+        }
     }
 
     @Test
@@ -68,8 +73,11 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
                 .build()
         )
+        service = BackendService(backend)
 
-        service.getBackend()
+        runBlocking {
+            service.initBackend.await()
+        }
 
         val paramsCaptor = argumentCaptor<InitializeParams>()
         verify(backend).initialize(paramsCaptor.capture())
@@ -81,7 +89,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_adding_a_sonarqube_connection() {
-        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").build()))
+        service = BackendService(backend)
+        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").build())).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
         verify(backendConnectionService).didUpdateConnections(paramsCaptor.capture())
@@ -91,8 +102,11 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_adding_a_sonarcloud_connection() {
+        service = BackendService(backend)
         service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
-            .build()))
+            .build())).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
         verify(backendConnectionService).didUpdateConnections(paramsCaptor.capture())
@@ -102,7 +116,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_opening_a_non_bound_project() {
-        service.projectOpened(project)
+        service = BackendService(backend)
+        service.projectOpened(project).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
         verify(backendConfigurationService).didAddConfigurationScopes(paramsCaptor.capture())
@@ -123,7 +140,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         globalSettings.serverConnections = listOf(connection)
         projectSettings.bindTo(connection, "key")
 
-        service.projectOpened(project)
+        service = BackendService(backend)
+        service.projectOpened(project).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
         verify(backendConfigurationService).didAddConfigurationScopes(paramsCaptor.capture())
@@ -140,9 +160,9 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_closing_a_project() {
-        service.getBackend()
+        service = BackendService(backend)
         val newProject = ProjectManagerEx.getInstanceEx().openProject(Path.of("test"), OpenProjectTask.newProject())!!
-        service.projectOpened(newProject)
+        service.projectOpened(newProject).get()
 
         ProjectManagerEx.getInstanceEx().closeAndDispose(newProject)
 
@@ -153,7 +173,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_binding_a_project() {
-        service.projectBound(project, ProjectBinding("id", "key", emptyMap()))
+        service = BackendService(backend)
+        service.projectBound(project, ProjectBinding("id", "key", emptyMap())).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService).didUpdateBinding(paramsCaptor.capture())
@@ -167,8 +190,11 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_binding_a_project_with_binding_suggestions_disabled() {
+        service = BackendService(backend)
         projectSettings.isBindingSuggestionsEnabled = false
-        service.projectBound(project, ProjectBinding("id", "key", emptyMap()))
+        service.projectBound(project, ProjectBinding("id", "key", emptyMap())).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService).didUpdateBinding(paramsCaptor.capture())
@@ -182,11 +208,13 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_binding_a_project_having_module_overrides() {
-        service.getBackend()
+        service = BackendService(backend)
         projectSettings.isBindingSuggestionsEnabled = false
         val moduleBackendId = moduleBackendId(module)
 
-        service.projectBound(project, ProjectBinding("id", "key", mapOf(Pair(module, "moduleKey"))))
+        service.projectBound(project, ProjectBinding("id", "key", mapOf(Pair(module, "moduleKey")))).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService, times(2)).didUpdateBinding(paramsCaptor.capture())
@@ -203,25 +231,30 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_closing_a_project_having_module_overrides() {
-        service.getBackend()
+        service = BackendService(backend)
         projectSettings.isBindingSuggestionsEnabled = false
         val moduleId = moduleBackendId(module)
 
-        service.projectClosed(project)
+        service.projectClosed(project).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidRemoveConfigurationScopeParams>()
         verify(backendConfigurationService, times(2)).didRemoveConfigurationScope(paramsCaptor.capture())
         assertThat(paramsCaptor.allValues).extracting(
             "removedId"
         ).containsExactly(
-            moduleId,
-            projectBackendId(project)
+            projectBackendId(project),
+            moduleId
         )
     }
 
     @Test
     fun test_notify_backend_when_unbinding_a_project() {
-        service.projectUnbound(project)
+        service = BackendService(backend)
+        service.projectUnbound(project).get()
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService).didUpdateBinding(paramsCaptor.capture())
@@ -235,7 +268,11 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_unbinding_a_module() {
-        service.moduleUnbound(module)
+        service = BackendService(backend)
+        service.moduleUnbound(module).get()
+
+        Thread.sleep(300)
+
         val moduleId = moduleBackendId(module)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
@@ -250,7 +287,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_disabling_binding_suggestions_for_a_project() {
+        service = BackendService(backend)
         service.bindingSuggestionsDisabled(project)
+
+        Thread.sleep(300)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService).didUpdateBinding(paramsCaptor.capture())
@@ -264,6 +304,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_shut_backend_down_when_disposing_service() {
+        service = BackendService(backend)
         service.dispose()
 
         verify(backend).shutdown()
