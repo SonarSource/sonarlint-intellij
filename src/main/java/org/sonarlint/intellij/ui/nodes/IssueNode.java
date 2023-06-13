@@ -62,7 +62,7 @@ public class IssueNode extends FindingNode {
     var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
     if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
       var connection = serverConnection.get();
-      renderer.setIconToolTip(severityText + " " + typeStr + " existing on " + connection.getProductName());
+      renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, severityIcon));
     } else {
       renderer.setIconToolTip(severityText + " " + typeStr);
