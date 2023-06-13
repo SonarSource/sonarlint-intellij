@@ -78,7 +78,7 @@ import java.util.concurrent.ConcurrentHashMap
 class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
     constructor() : this(SonarLintBackendImpl(SonarLintIntelliJClient))
 
-    val backendFuture: CompletableFuture<SonarLintBackend> by lazy {
+    private val backendFuture: CompletableFuture<SonarLintBackend> by lazy {
         migrateStoragePath()
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
@@ -287,7 +287,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetEffectiveRuleDetailsResponse> {
-        return backendFuture.thenApply {
+        return backendFuture.thenCompose {
             it.rulesService.getEffectiveRuleDetails(
                 GetEffectiveRuleDetailsParams(
                     moduleId(module),
@@ -295,18 +295,18 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                     contextKey
                 )
             )
-        }.get()
+        }
     }
 
     fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {
-        return backendFuture.thenApply {
+        return backendFuture.thenCompose {
             it.authenticationHelperService.helpGenerateUserToken(
                 HelpGenerateUserTokenParams(
                     serverUrl,
                     isSonarCloud
                 )
             )
-        }.get()
+        }
     }
 
     fun openHotspotInBrowser(module: Module, hotspotKey: String) {
@@ -326,11 +326,11 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun checkLocalSecurityHotspotDetectionSupported(project: Project): CompletableFuture<CheckLocalDetectionSupportedResponse> {
-        return backendFuture.thenApply { it.hotspotService.checkLocalDetectionSupported(CheckLocalDetectionSupportedParams(projectId(project))) }.get()
+        return backendFuture.thenCompose { it.hotspotService.checkLocalDetectionSupported(CheckLocalDetectionSupportedParams(projectId(project))) }
     }
 
     fun changeStatusForHotspot(configurationScopeId: String, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
-        return backendFuture.thenApply {
+        return backendFuture.thenCompose {
             it.hotspotService.changeStatus(
                 ChangeHotspotStatusParams(
                     configurationScopeId,
@@ -338,18 +338,18 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                     newStatus
                 )
             )
-        }.get()
+        }
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
-        return backendFuture.thenApply {
+        return backendFuture.thenCompose {
             it.hotspotService.checkStatusChangePermitted(
                 CheckStatusChangePermittedParams(
                     connectionId,
                     hotspotKey
                 )
             )
-        }.get()
+        }
     }
 
     fun branchChanged(module: Module, newActiveBranchName: String) {

@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.Disposable;
@@ -28,6 +27,8 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.serviceContainer.NonInjectable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
@@ -37,6 +38,7 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   private ConsoleView consoleView;
   private final Project myProject;
+  private final Queue<Log> previousLogs = new ConcurrentLinkedQueue<>();
 
   public SonarLintConsoleImpl(Project project) {
     this.myProject = project;
@@ -72,7 +74,11 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   private void print(String msg, ConsoleViewContentType outputType) {
     if (!myProject.isDisposed()) {
-      getConsoleView().print(msg + "\n", outputType);
+      if (consoleView == null) {
+        previousLogs.offer(new Log(msg + "\n", outputType));
+      } else {
+        consoleView.print(msg + "\n", outputType);
+      }
     }
   }
 
@@ -87,24 +93,35 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
   }
 
   @Override
-  public synchronized void clear() {
+  public void clear() {
     if (consoleView != null) {
       consoleView.clear();
     }
   }
 
   @Override
-  public synchronized ConsoleView getConsoleView() {
-    if (consoleView == null) {
-      consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(myProject).getConsole();
+  public void setConsoleView(ConsoleView consoleView) {
+    while (!previousLogs.isEmpty()) {
+      var log = previousLogs.poll();
+      consoleView.print(log.text, log.outputType);
     }
-    return this.consoleView;
+    this.consoleView = consoleView;
   }
 
   @Override
   public void dispose() {
     if (consoleView != null) {
       Disposer.dispose(consoleView);
+    }
+  }
+
+  private static class Log {
+    private final String text;
+    private final ConsoleViewContentType outputType;
+
+    public Log(String text, ConsoleViewContentType outputType) {
+      this.text = text;
+      this.outputType = outputType;
     }
   }
 }

@@ -43,6 +43,6 @@ public interface SonarLintConsole {
 
   void clear();
 
-  ConsoleView getConsoleView();
+  void setConsoleView(ConsoleView consoleView);
 
 }
