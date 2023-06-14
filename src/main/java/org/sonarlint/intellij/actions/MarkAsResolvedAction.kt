@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.actions
 
+import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
 import com.intellij.icons.AllIcons
 import com.intellij.ide.util.PropertiesComponent
@@ -26,6 +27,7 @@ import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.progress.ProgressManager
@@ -34,6 +36,7 @@ import com.intellij.openapi.ui.DoNotAskOption
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -54,10 +57,15 @@ import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 
 private const val SKIP_CONFIRM_DIALOG_PROPERTY = "SonarLint.markIssueAsResolved.hideConfirmation"
 
-class MarkAsResolvedAction :
+class MarkAsResolvedAction(
+    private var isTaintVulnerability: Boolean = false,
+    private var liveIssue: LiveIssue? = null,
+    private var taintVulnerability: LocalTaintVulnerability? = null,
+    private var issueKey: String? = null
+)  :
     AbstractSonarAction(
         "Mark as Resolved", "Mark as Resolved", null
-    ), PriorityAction, Iconable {
+    ), IntentionAction, PriorityAction, Iconable {
     companion object {
         const val successTitle = "<b>SonarLint - Mark as Resolved</b>"
         const val errorTitle = "<b>SonarLint - Unable to mark the issue as resolved</b>"
@@ -249,6 +257,22 @@ class MarkAsResolvedAction :
     override fun getPriority() = PriorityAction.Priority.NORMAL
 
     override fun getIcon(flags: Int) = AllIcons.Actions.BuildLoadChanges
+
+    override fun startInWriteAction() = false
+
+    override fun getText() = "SonarLint: Mark issue as resolved"
+
+    override fun getFamilyName(): String {
+        return "SonarLint mark as resolved"
+    }
+
+    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = issueKey != null
+
+    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
+        file?.let {
+            openMarkAsResolvedDialog(project, it.virtualFile, issueKey!!, isTaintVulnerability, liveIssue, taintVulnerability)
+        }
+    }
 
     private class CheckIssueStatusChangePermission(
         project: Project,
