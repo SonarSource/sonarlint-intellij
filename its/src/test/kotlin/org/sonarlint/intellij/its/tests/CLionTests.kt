@@ -25,7 +25,14 @@ import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.utils.optionalStep
+import java.lang.management.ManagementFactory
+import java.lang.management.ThreadInfo
+import java.lang.management.ThreadMXBean
 import java.time.Duration
+import java.util.Arrays
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 
 @EnabledIf("isCLion")

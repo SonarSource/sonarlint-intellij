@@ -253,11 +253,15 @@ stages:
         displayName: 'Stop video recording'
         condition: always()
       - publish: /tmp/recording_$(IDEA_VERSION).mp4
+        displayName: 'Publish video recording'
         artifact: ITCaptureScreen_$(IDEA_VERSION)_$(System.JobAttempt)
+        condition: always()
+      - publish: its/build/idea-sandbox/system/log
+        displayName: 'Publish idea log folder'
+        artifact: idea_log_$(IDEA_VERSION)_$(System.JobAttempt)
         condition: always()
       - bash: |
           cat /tmp/runIdeGradle.log
-          cat its/build/idea-sandbox/system/log/idea.log
         displayName: 'Log'
         condition: always()
 - template: promote-stage.yml@commonTemplates

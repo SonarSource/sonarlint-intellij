@@ -17,14 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij
+package org.sonarlint.intellij.its.utils
 
-import com.intellij.ide.AppLifecycleListener
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.core.BackendService
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.TestWatcher
+import org.sonarlint.intellij.its.robotUrl
+import java.net.URL
 
-class InitializeSonarLintOnStartup : AppLifecycleListener {
-    override fun appFrameCreated(commandLineArgs: MutableList<String>) {
-        SonarLintUtils.getService(BackendService::class.java).getBackend()
+class VisualTreeDumpOnFailure : TestWatcher {
+    override fun testFailed(context: ExtensionContext, cause: Throwable) {
+        println("Test '${context.displayName}' failed")
+        println("Printing visual tree")
+        println()
+        val conn = URL(robotUrl).openConnection()
+        conn.connectTimeout = 100
+        conn.readTimeout = 1000
+        conn.connect()
+        conn.getInputStream().reader().use { println(it.readText()) }
     }
 }

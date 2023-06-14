@@ -21,14 +21,24 @@ package org.sonarlint.intellij.its.utils
 
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.TestWatcher
-import org.sonarlint.intellij.its.robotUrl
-import java.net.URL
+import org.sonarlint.intellij.its.BaseUiTest
 
-class VisualTreeDump : TestWatcher {
-  override fun testFailed(context: ExtensionContext, cause: Throwable) {
-    println("Test '${context.displayName}' failed")
-    println("Printing visual tree")
-    println()
-    URL(robotUrl).openStream().reader().use { println(it.readText()) }
-  }
+class ThreadDumpOnFailure : TestWatcher {
+    override fun testFailed(context: ExtensionContext, cause: Throwable) {
+        println("Test '${context.displayName}' failed")
+        println("Printing thread dump")
+        println()
+        printThreadDump()
+    }
+
+    private fun printThreadDump() {
+        val stackTrace = BaseUiTest.remoteRobot.callJs<String>(
+            """
+               java.lang.management.ManagementFactory.getThreadMXBean().dumpAllThreads(true, true).map(function(element){
+                    return element.toString();
+                }).join("\n");
+            """.trimIndent()
+        )
+        println(stackTrace)
+    }
 }

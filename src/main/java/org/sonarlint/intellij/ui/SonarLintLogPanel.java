@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -88,9 +89,8 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   }
 
   private void addConsole() {
-    var consoleView = SonarLintUtils.getService(project, SonarLintConsole.class).getConsoleView();
-    if (consoleView != null) {
-      super.setContent(consoleView.getComponent());
-    }
+    var consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+    SonarLintUtils.getService(project, SonarLintConsole.class).setConsoleView(consoleView);
+    super.setContent(consoleView.getComponent());
   }
 }

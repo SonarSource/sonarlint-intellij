@@ -45,7 +45,8 @@ import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.fixtures.waitUntilLoaded
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.StepsLogger
-import org.sonarlint.intellij.its.utils.VisualTreeDump
+import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
+import org.sonarlint.intellij.its.utils.VisualTreeDumpOnFailure
 import org.sonarlint.intellij.its.utils.optionalStep
 import java.awt.Point
 import java.io.File
@@ -53,7 +54,8 @@ import java.time.Duration
 
 const val robotUrl = "http://localhost:8082"
 
-@ExtendWith(VisualTreeDump::class)
+@ExtendWith(VisualTreeDumpOnFailure::class)
+@ExtendWith(ThreadDumpOnFailure::class)
 open class BaseUiTest {
 
     companion object {
@@ -134,7 +136,8 @@ open class BaseUiTest {
         com.intellij.diagnostic.MessagePool.getInstance().getFatalErrors(true, true)
             .forEach((error) => result.add("message=" + error.getMessage() + ", stacktrace=" + error.getThrowableText()))
         result
-    """)
+    """
+        )
     }
 
     private fun clearExceptions() {
@@ -197,7 +200,9 @@ open class BaseUiTest {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
-                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue() }
+                        expectedMessages.forEach {
+                            Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue()
+                        }
                     }
                 }
             }
@@ -224,7 +229,11 @@ open class BaseUiTest {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     content("CurrentFilePanel") {
-                        waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") { hasText(expectedMessage) }
+                        waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
+                            hasText(
+                                expectedMessage
+                            )
+                        }
                     }
                 }
             }
