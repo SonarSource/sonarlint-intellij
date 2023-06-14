@@ -34,12 +34,14 @@ import java.util.ArrayList;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
@@ -130,6 +132,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       intentionActions.add(new ReviewSecurityHotspotAction(finding.getServerFindingKey(), ((LiveSecurityHotspot) finding).getStatus()));
     }
 
+    if (finding instanceof LiveIssue) {
+      intentionActions.add(new MarkAsResolvedAction(false, (LiveIssue) finding, null, finding.getServerFindingKey()));
+    }
+
     finding.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(finding, c)));
 
     var annotationBuilder = annotationHolder
@@ -161,6 +167,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     annotationHolder.newAnnotation(getSeverity(vulnerability.severity()), vulnerability.message())
       .range(textRange)
       .withFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability))
+      .withFix(new MarkAsResolvedAction(true, null, vulnerability, vulnerability.key()))
       .textAttributes(getTextAttrsKey(vulnerability.severity()))
       .highlightType(getType(vulnerability.severity()))
       .create();
