@@ -261,7 +261,7 @@ public final class ServerSecurityHotspotUpdater implements Disposable {
           SonarLintConsole.get(myProject).debug("Skip fetching server hotspots, branch is unknown");
           return;
         }
-        engine.downloadAllServerHotspots(server.getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(server.getName()), projectKey, branchName, null);
+        engine.downloadAllServerHotspots(server.getEndpointParams(), getService(BackendService.class).getHttpClient(server.getName()), projectKey, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -294,7 +294,7 @@ public final class ServerSecurityHotspotUpdater implements Disposable {
         return List.of();
       }
       try {
-        engine.downloadAllServerHotspotsForFile(server.getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(server.getName()), projectBinding, relativePath,
+        engine.downloadAllServerHotspotsForFile(server.getEndpointParams(), getService(BackendService.class).getHttpClient(server.getName()), projectBinding, relativePath,
           branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);

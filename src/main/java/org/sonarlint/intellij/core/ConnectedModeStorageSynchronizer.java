@@ -89,7 +89,7 @@ public final class ConnectedModeStorageSynchronizer implements Disposable {
       progressIndicator.setIndeterminate(false);
       ProjectBindingManager bindingManager = getService(myProject, ProjectBindingManager.class);
       var projectKeysToSync = bindingManager.getUniqueProjectKeys();
-      engine.sync(serverConnection.getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(serverConnection.getName()), projectKeysToSync,
+      engine.sync(serverConnection.getEndpointParams(), getService(BackendService.class).getHttpClient(serverConnection.getName()), projectKeysToSync,
         new TaskProgressMonitor(progressIndicator, myProject));
       myProject.getMessageBus().syncPublisher(ServerBranchesListenerKt.getSERVER_BRANCHES_TOPIC()).serverBranchesUpdated();
     } catch (Exception e) {

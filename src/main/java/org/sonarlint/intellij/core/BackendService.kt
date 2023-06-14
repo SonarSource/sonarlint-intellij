@@ -79,6 +79,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDe
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ListAllStandaloneRulesDefinitionsResponse
 import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
 import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
+import org.sonarsource.sonarlint.core.http.HttpClient
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -138,6 +139,14 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                     }
                 })
         }.thenApply { backend }
+    }
+
+    fun getHttpClient(connectionId: String): HttpClient {
+        return backendFuture.thenApply { it.getHttpClient(connectionId) }.get()
+    }
+
+    fun getHttpClientNoAuth(): HttpClient {
+        return backendFuture.thenApply { it.getHttpClientNoAuth() }.get()
     }
 
     /**
@@ -360,7 +369,9 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         } else {
             ValidateConnectionParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
         }
-        return initializedBackend.connectionService.validateConnection(params)
+        return backendFuture.thenCompose {
+            it.connectionService.validateConnection(params)
+        }
     }
 
     companion object {

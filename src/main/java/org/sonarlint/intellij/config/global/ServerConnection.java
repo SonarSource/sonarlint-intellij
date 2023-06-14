@@ -172,7 +172,7 @@ public class ServerConnection {
   }
 
   public ServerApi api() {
-    return new ServerApi(getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(name));
+    return new ServerApi(getEndpointParams(), getService(BackendService.class).getHttpClient(name));
   }
 
   @Override

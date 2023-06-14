@@ -67,7 +67,7 @@ class ServerEventsProductionService : ServerEventsService {
         val openedProjects = openedProjects()
         engineIfStarted?.subscribeForEvents(
             serverConnection.endpointParams,
-            getService(BackendService::class.java).getBackend().getHttpClient(serverConnection.name),
+            getService(BackendService::class.java).getHttpClient(serverConnection.name),
             getProjectKeys(serverConnection, openedProjects),
             this::handleEvents,
             CompositeLogOutput(getLogOutputs(serverConnection, openedProjects))
@@ -81,7 +81,7 @@ class ServerEventsProductionService : ServerEventsService {
             val openedProjects = openedProjects().minus(project)
             bindingManager.validConnectedEngine?.subscribeForEvents(
                 connection.endpointParams,
-                getService(BackendService::class.java).getBackend().getHttpClient(connection.name),
+                getService(BackendService::class.java).getHttpClient(connection.name),
                 getProjectKeys(connection, openedProjects),
                 this::handleEvents,
                 CompositeLogOutput(getLogOutputs(connection, openedProjects))

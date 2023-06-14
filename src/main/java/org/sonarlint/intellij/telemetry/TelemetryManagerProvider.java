@@ -41,7 +41,7 @@ public class TelemetryManagerProvider {
   public TelemetryManager get() {
     var plugin = getService(SonarLintPlugin.class);
     var client = new TelemetryHttpClient(PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry(), null, System.getProperty("os.arch"),
-      getService(BackendService.class).getBackend().getHttpClientNoAuth());
+      getService(BackendService.class).getHttpClientNoAuth());
     return new TelemetryManager(getStorageFilePath(), client, new TelemetryClientAttributeProviderImpl());
   }
 

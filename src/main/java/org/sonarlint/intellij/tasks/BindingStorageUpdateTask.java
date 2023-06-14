@@ -163,7 +163,7 @@ public class BindingStorageUpdateTask {
       allProjectKeysToSync.addAll(projectKeysToSync);
     }
 
-    var httpClient = getService(BackendService.class).getBackend().getHttpClient(connection.getName());
+    var httpClient = getService(BackendService.class).getHttpClient(connection.getName());
     allProjectKeysToSync.forEach(projectKey -> {
       try {
         engine.updateProject(connection.getEndpointParams(), httpClient, projectKey, monitor);
@@ -186,7 +186,7 @@ public class BindingStorageUpdateTask {
       var projectAndBranchesToSync = bindingManager.getUniqueProjectKeysAndBranchesPairs();
       allProjectAndBranchesToSync.addAll(projectAndBranchesToSync);
     }
-    var httpClient = getService(BackendService.class).getBackend().getHttpClient(connection.getName());
+    var httpClient = getService(BackendService.class).getHttpClient(connection.getName());
     allProjectAndBranchesToSync
       .forEach(pb -> {
         var branchName = pb.getBranchName();

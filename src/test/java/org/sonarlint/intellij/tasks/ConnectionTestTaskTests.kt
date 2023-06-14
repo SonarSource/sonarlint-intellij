@@ -19,20 +19,16 @@
  */
 package org.sonarlint.intellij.tasks
 
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarsource.sonarlint.core.commons.http.HttpClient
-import org.sonarsource.sonarlint.core.serverapi.EndpointParams
+import org.sonarlint.intellij.core.BackendService
 import java.util.concurrent.CompletableFuture
 
 class ConnectionTestTaskTests : AbstractSonarLintLightTests() {
@@ -54,26 +50,22 @@ class ConnectionTestTaskTests : AbstractSonarLintLightTests() {
         task.run(mock(ProgressIndicator::class.java))
 
         val result = task.result!!
-        assertThat(result.success()).isFalse
-        assertThat(result.message()).isNotBlank
+        assertThat(result.isSuccess).isFalse
+        assertThat(result.message).isNotBlank
     }
 
     @Test
     fun should_return_no_result_if_task_has_been_canceled() {
         val progress = mock(ProgressIndicator::class.java)
         val server = mock(ServerConnection::class.java)
-        `when`(server.endpointParams).thenReturn(EndpointParams("base", false, null))
-        val httpClient = mock(HttpClient::class.java)
-        `when`(httpClient.getAsync(ArgumentMatchers.any())).thenReturn(CompletableFuture())
-        `when`(server.httpClient).thenReturn(httpClient)
+        val backendService = mock(BackendService::class.java)
+        replaceProjectService(BackendService::class.java, backendService)
+        `when`(backendService.validateConnection(server)).thenReturn(CompletableFuture())
         val task = ConnectionTestTask(server)
-        GlobalScope.launch {
-            delay(1000)
-            `when`(progress.isCanceled).thenReturn(true)
-        }
+        `when`(progress.checkCanceled()).thenThrow(ProcessCanceledException())
 
         task.run(progress)
 
-        assertThat(task.result).isNull()
+        assertNull(task.result)
     }
 }

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.tasks
 
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -32,9 +33,13 @@ class ConnectionTestTask(private val server: ServerConnection) :
         null, "Test Connection to " + if (server.isSonarCloud) "SonarCloud" else "SonarQube", true
     ) {
 
-    override fun compute(indicator: ProgressIndicator): ValidateConnectionResponse {
+    override fun compute(indicator: ProgressIndicator): ValidateConnectionResponse? {
         indicator.text = "Connecting to " + server.hostUrl + "..."
         indicator.isIndeterminate = true
-        return waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(server))
+        return try {
+            waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(server))
+        } catch (e: ProcessCanceledException) {
+            null
+        }
     }
 }
