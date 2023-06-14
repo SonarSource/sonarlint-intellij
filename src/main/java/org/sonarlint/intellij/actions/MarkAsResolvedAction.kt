@@ -50,6 +50,7 @@ import org.sonarlint.intellij.ui.resolve.MarkAsResolvedDialog
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarlint.intellij.util.displayErrorNotification
 import org.sonarlint.intellij.util.displaySuccessfulNotification
+import org.sonarlint.intellij.util.displayWarningNotification
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 
@@ -126,7 +127,7 @@ class MarkAsResolvedAction(
                 .thenAccept { displaySuccessfulNotification(project, content, GROUP) }
                 .exceptionally { error ->
                     SonarLintConsole.get(project).error("Error while adding a comment on the issue", error)
-                    displayErrorNotification(project, "Could not add a comment on the issue", GROUP)
+                    displayWarningNotification(project, "The issue was marked as resolved but there was an error adding the comment", GROUP)
                     null
                 }
         }
