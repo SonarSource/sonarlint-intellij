@@ -78,7 +78,7 @@ import java.util.concurrent.ConcurrentHashMap
 class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
     constructor() : this(SonarLintBackendImpl(SonarLintIntelliJClient))
 
-    private val backendFuture: CompletableFuture<SonarLintBackend> by lazy {
+    val backendFuture: CompletableFuture<SonarLintBackend> by lazy {
         migrateStoragePath()
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
@@ -169,24 +169,12 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun projectOpened(project: Project) {
         val binding = getService(project, ProjectBindingManager::class.java).binding
-        backendFuture.thenAccept { it.configurationService.didAddConfigurationScopes(
-            DidAddConfigurationScopesParams(
-                listOf(
-                    toBackendConfigurationScope(project, binding)
-                )
-            )
-        ) }
+        backendFuture.thenAccept { it.configurationService.didAddConfigurationScopes(DidAddConfigurationScopesParams(listOf(toBackendConfigurationScope(project, binding)))) }
     }
 
     internal fun projectClosed(project: Project) {
         ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
-        backendFuture.thenAccept { it.configurationService.didRemoveConfigurationScope(
-            DidRemoveConfigurationScopeParams(
-                projectId(
-                    project
-                )
-            )
-        ) }
+        backendFuture.thenAccept { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId(project))) }
     }
 
     private fun toBackendConfigurationScope(project: Project, binding: ProjectBinding?) = ConfigurationScopeDto(
@@ -248,13 +236,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun moduleRemoved(module: Module) {
         backendFuture.thenAccept {
-            it.configurationService.didRemoveConfigurationScope(
-                DidRemoveConfigurationScopeParams(
-                    moduleId(
-                        module
-                    )
-                )
-            )
+            it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(moduleId(module)))
             uniqueIdentifierForModules.remove(module)
         }
     }
@@ -278,50 +260,23 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     fun bindingSuggestionsDisabled(project: Project) {
         val binding = getService(project, ProjectBindingManager::class.java).binding
         backendFuture.thenAccept {
-            it.configurationService.didUpdateBinding(
-                DidUpdateBindingParams(
-                    projectId(project), BindingConfigurationDto(binding?.connectionName, binding?.projectKey, true)
-                )
-            )
+            it.configurationService.didUpdateBinding(DidUpdateBindingParams(projectId(project), BindingConfigurationDto(binding?.connectionName, binding?.projectKey, true)))
         }
     }
 
     fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetEffectiveRuleDetailsResponse> {
-        return backendFuture.thenCompose {
-            it.rulesService.getEffectiveRuleDetails(
-                GetEffectiveRuleDetailsParams(
-                    moduleId(module),
-                    ruleKey,
-                    contextKey
-                )
-            )
-        }
+        return backendFuture.thenCompose { it.rulesService.getEffectiveRuleDetails(GetEffectiveRuleDetailsParams(moduleId(module), ruleKey, contextKey)) }
     }
 
     fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {
-        return backendFuture.thenCompose {
-            it.authenticationHelperService.helpGenerateUserToken(
-                HelpGenerateUserTokenParams(
-                    serverUrl,
-                    isSonarCloud
-                )
-            )
-        }
+        return backendFuture.thenCompose { it.authenticationHelperService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl, isSonarCloud)) }
     }
 
     fun openHotspotInBrowser(module: Module, hotspotKey: String) {
         val branchName: String? = getService(module.project, VcsService::class.java).getServerBranchName(module)
         branchName?.let {
             val configScopeId = moduleId(module)
-            backendFuture.thenAccept {
-                it.hotspotService.openHotspotInBrowser(
-                    OpenHotspotInBrowserParams(
-                        configScopeId,
-                        branchName,
-                        hotspotKey
-                    )
-                )
-            }
+            backendFuture.thenAccept { it.hotspotService.openHotspotInBrowser(OpenHotspotInBrowserParams(configScopeId, branchName, hotspotKey)) }
         }
     }
 
@@ -330,37 +285,16 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun changeStatusForHotspot(configurationScopeId: String, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
-        return backendFuture.thenCompose {
-            it.hotspotService.changeStatus(
-                ChangeHotspotStatusParams(
-                    configurationScopeId,
-                    hotspotKey,
-                    newStatus
-                )
-            )
-        }
+        return backendFuture.thenCompose { it.hotspotService.changeStatus(ChangeHotspotStatusParams(configurationScopeId, hotspotKey, newStatus)) }
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
-        return backendFuture.thenCompose {
-            it.hotspotService.checkStatusChangePermitted(
-                CheckStatusChangePermittedParams(
-                    connectionId,
-                    hotspotKey
-                )
-            )
-        }
+        return backendFuture.thenCompose { it.hotspotService.checkStatusChangePermitted(CheckStatusChangePermittedParams(connectionId, hotspotKey)) }
     }
 
     fun branchChanged(module: Module, newActiveBranchName: String) {
         backendFuture.thenAccept {
-            it.sonarProjectBranchService.didChangeActiveSonarProjectBranch(
-                DidChangeActiveSonarProjectBranchParams(
-                    moduleId(
-                        module
-                    ), newActiveBranchName
-                )
-            )
+            it.sonarProjectBranchService.didChangeActiveSonarProjectBranch(DidChangeActiveSonarProjectBranchParams(moduleId(module), newActiveBranchName))
         }
     }
 

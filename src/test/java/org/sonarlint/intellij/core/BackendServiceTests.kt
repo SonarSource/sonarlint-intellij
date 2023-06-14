@@ -69,7 +69,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
                 .build()
         )
 
-        service.initializedBackend
+        service.backendFuture
 
         val paramsCaptor = argumentCaptor<InitializeParams>()
         verify(backend).initialize(paramsCaptor.capture())

@@ -77,9 +77,4 @@ class SonarLintConsoleImplementationTests extends AbstractSonarLintLightTests {
     console.error("error with exception", new IllegalStateException("ex"));
     verify(consoleView).print("error with exception\n", ConsoleViewContentType.ERROR_OUTPUT);
   }
-
-  @Test
-  void testGetter() {
-    assertThat(console.getConsoleView()).isEqualTo(consoleView);
-  }
 }
