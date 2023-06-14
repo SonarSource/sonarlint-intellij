@@ -47,3 +47,12 @@ fun displayErrorNotification(project: Project, title: String, content: String, g
     notification.addAction(ShowLogAction())
     notification.notify(project)
 }
+
+fun displayWarningNotification(project: Project, content: String, group: NotificationGroup) {
+    val notification = group.createNotification(
+        "", content, NotificationType.WARNING
+    )
+    notification.isImportant = true
+    notification.addAction(ShowLogAction())
+    notification.notify(project)
+}
