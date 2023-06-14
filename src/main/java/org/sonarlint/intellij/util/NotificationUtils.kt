@@ -22,10 +22,12 @@ package org.sonarlint.intellij.util
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
+import org.sonarlint.intellij.actions.ShowLogAction
 
-fun displaySuccessfulNotification(project: Project, title: String, content: String, group: NotificationGroup) {
+
+fun displaySuccessfulNotification(project: Project, content: String, group: NotificationGroup) {
     val notification = group.createNotification(
-        title,
+        "",
         content,
         NotificationType.INFORMATION
     )
@@ -33,10 +35,15 @@ fun displaySuccessfulNotification(project: Project, title: String, content: Stri
     notification.notify(project)
 }
 
+fun displayErrorNotification(project: Project, content: String, group: NotificationGroup) {
+    displayErrorNotification(project, "", content, group)
+}
+
 fun displayErrorNotification(project: Project, title: String, content: String, group: NotificationGroup) {
     val notification = group.createNotification(
         title, content, NotificationType.ERROR
     )
     notification.isImportant = true
+    notification.addAction(ShowLogAction())
     notification.notify(project)
 }

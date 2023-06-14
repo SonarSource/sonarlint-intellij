@@ -30,9 +30,7 @@ import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialog
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
-import org.sonarlint.intellij.finding.Finding
-import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.finding.Issue
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
@@ -48,7 +46,7 @@ import javax.swing.SwingConstants
 
 class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     companion object {
-        val MARK_AS_RESOLVED = "Mark as Resolved"
+        private const val MARK_AS_RESOLVED = "Mark as Resolved"
     }
 
     private val ruleTypeIcon = JBLabel()
@@ -102,51 +100,19 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         updateRuleSeverity(severity)
     }
 
-    fun update(project: Project, ruleKey: String, type: RuleType, severity: IssueSeverity, finding: Finding) {
+    fun update(project: Project, ruleKey: String, type: RuleType, severity: IssueSeverity, issue: Issue) {
         clear()
         updateCommonFields(type, ruleKey)
         updateRuleSeverity(severity)
-        val serverFindingKey: String
-        val isIssueValid: Boolean
-        var taintVulnerability: LocalTaintVulnerability
-        var liveIssue: LiveIssue
 
-        when (finding) {
-            is LiveIssue -> {
-                serverFindingKey = finding.serverFindingKey ?: return
-                isIssueValid = finding.isValid
-                liveIssue = finding
-                listenIssueButton(isIssueValid, project, liveIssue.file, serverFindingKey, false,
-                    liveIssue, null)
-            }
-
-            is LocalTaintVulnerability -> {
-                serverFindingKey = finding.key() ?: return
-                isIssueValid = finding.isValid()
-                taintVulnerability = finding
-                finding.file()?.let {
-                    listenIssueButton(isIssueValid, project, it, serverFindingKey, true,
-                        null, taintVulnerability)
+        if (issue.getServerKey() != null && issue.isValid()) {
+            changeStatusButton.isVisible = true
+            changeStatusButton.action = object : AbstractAction(MARK_AS_RESOLVED) {
+                override fun actionPerformed(e: ActionEvent?) {
+                    openMarkAsResolvedDialog(project, issue)
                 }
             }
-
-            else -> {
-                return
-            }
         }
-    }
-
-    private fun listenIssueButton(
-        isValid: Boolean, project: Project, file: VirtualFile, issueKey: String, isTaintVulnerability: Boolean,
-        liveIssue: LiveIssue?, taintVulnerability: LocalTaintVulnerability?,
-    ) {
-        changeStatusButton.action = object : AbstractAction(MARK_AS_RESOLVED) {
-            override fun actionPerformed(e: ActionEvent?) {
-                openMarkAsResolvedDialog(project, file, issueKey, isTaintVulnerability, liveIssue, taintVulnerability)
-            }
-        }
-
-        changeStatusButton.isVisible = isValid
     }
 
     private fun updateRuleSeverity(severity: IssueSeverity) {

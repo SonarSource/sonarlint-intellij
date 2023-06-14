@@ -41,6 +41,7 @@ import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
+import org.sonarlint.intellij.finding.Issue;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
@@ -142,6 +143,10 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
 
   public void openSecurityHotspotsTab() {
     openTab(getSecurityHotspotContent());
+  }
+
+  public void openLogTab() {
+    openTab(SonarLintToolWindowFactory.LOG_TAB_TITLE);
   }
 
   private void openTab(String name) {
@@ -325,13 +330,14 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     return Collections.emptyList();
   }
 
-  public void markAsResolved(LocalTaintVulnerability taintVulnerability) {
-    this.<TaintVulnerabilitiesPanel>updateTab(SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE, panel -> panel.remove(taintVulnerability));
-  }
-
-  public void markAsResolved(LiveIssue issue) {
-    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(issue));
-    this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(issue));
+  public void markAsResolved(Issue issue) {
+    if (issue instanceof LiveIssue) {
+      var liveIssue = (LiveIssue) issue;
+      this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
+      this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));
+    } else {
+      this.<TaintVulnerabilitiesPanel>updateTab(SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE, panel -> panel.remove((LocalTaintVulnerability) issue));
+    }
   }
 
   @Override

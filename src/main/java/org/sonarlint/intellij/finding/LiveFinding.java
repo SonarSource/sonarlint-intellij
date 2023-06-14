@@ -22,6 +22,7 @@ package org.sonarlint.intellij.finding;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.List;
 import java.util.Optional;
@@ -87,6 +88,7 @@ public abstract class LiveFinding implements Trackable, Finding {
     return Hex.encodeHexString(md5(content.replaceAll("\\s", "").getBytes(UTF_8))).hashCode();
   }
 
+  @Override
   public boolean isValid() {
     if (!psiFile.isValid()) {
       return false;
@@ -162,6 +164,14 @@ public abstract class LiveFinding implements Trackable, Finding {
 
   public PsiFile psiFile() {
     return psiFile;
+  }
+
+  public VirtualFile getFile() {
+    return psiFile().getVirtualFile();
+  }
+
+  public VirtualFile file() {
+    return getFile();
   }
 
   @Override
