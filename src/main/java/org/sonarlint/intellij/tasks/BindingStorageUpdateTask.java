@@ -163,15 +163,16 @@ public class BindingStorageUpdateTask {
       allProjectKeysToSync.addAll(projectKeysToSync);
     }
 
+    var httpClient = getService(BackendService.class).getBackend().getHttpClient(connection.getName());
     allProjectKeysToSync.forEach(projectKey -> {
       try {
-        engine.updateProject(connection.getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(connection.getName()), projectKey, monitor);
+        engine.updateProject(connection.getEndpointParams(), httpClient, projectKey, monitor);
       } catch (Exception e) {
         GlobalLogOutput.get().logError(e.getMessage(), e);
         failures.add(new ProjectStorageUpdateFailure(projectKey, e));
       }
     });
-    engine.sync(connection.getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(connection.getName()), allProjectKeysToSync, monitor);
+    engine.sync(connection.getEndpointParams(), httpClient, allProjectKeysToSync, monitor);
     projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ServerBranchesListenerKt.getSERVER_BRANCHES_TOPIC()).serverBranchesUpdated());
     updateAllProjectFindingsForCurrentBranch(engine, connection, monitor, projectsToUpdate);
     return failures;
@@ -185,6 +186,7 @@ public class BindingStorageUpdateTask {
       var projectAndBranchesToSync = bindingManager.getUniqueProjectKeysAndBranchesPairs();
       allProjectAndBranchesToSync.addAll(projectAndBranchesToSync);
     }
+    var httpClient = getService(BackendService.class).getBackend().getHttpClient(connection.getName());
     allProjectAndBranchesToSync
       .forEach(pb -> {
         var branchName = pb.getBranchName();
@@ -192,11 +194,11 @@ public class BindingStorageUpdateTask {
           GlobalLogOutput.get().log("Skip synchronizing issues, branch is unknown", ClientLogOutput.Level.DEBUG);
           return;
         }
-        engine.downloadAllServerIssues(connection.getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(connection.getName()), pb.getProjectKey(), branchName, monitor);
-        engine.downloadAllServerHotspots(connection.getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(connection.getName()), pb.getProjectKey(), branchName, monitor);
+        engine.downloadAllServerIssues(connection.getEndpointParams(), httpClient, pb.getProjectKey(), branchName, monitor);
+        engine.downloadAllServerHotspots(connection.getEndpointParams(), httpClient, pb.getProjectKey(), branchName, monitor);
 
         if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-          engine.syncServerTaintIssues(connection.getEndpointParams(), getService(BackendService.class).getBackend().getHttpClient(connection.getName()), pb.getProjectKey(), branchName, monitor);
+          engine.syncServerTaintIssues(connection.getEndpointParams(), httpClient, pb.getProjectKey(), branchName, monitor);
         }
       });
 

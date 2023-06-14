@@ -361,12 +361,12 @@ object SonarLintIntelliJClient : SonarLintClient {
         val certificates: Array<X509Certificate> = params.chain.stream()
             .map { certificateFactory.generateCertificate(ByteArrayInputStream(it.pem.toByteArray())) as X509Certificate }
             .collect(Collectors.toList()).toTypedArray()
-        try {
+        return try {
             CertificateManager.getInstance().trustManager.checkServerTrusted(certificates, params.authType)
+            CompletableFuture.completedFuture(CheckServerTrustedResponse(true))
         } catch (e: CertificateException) {
             return CompletableFuture.completedFuture(CheckServerTrustedResponse(false))
         }
-        return CompletableFuture.completedFuture(CheckServerTrustedResponse(true))
     }
 
     override fun selectProxies(params: SelectProxiesParams): CompletableFuture<SelectProxiesResponse>? {
