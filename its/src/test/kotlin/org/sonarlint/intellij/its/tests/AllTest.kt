@@ -111,7 +111,7 @@ class AllTest : BaseUiTest() {
 
             ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
             ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
-            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module")
+            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module ")
             ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
 
             val excludeFileRequest = SetRequest()
@@ -221,6 +221,7 @@ class AllTest : BaseUiTest() {
 
                 pressOk()
                 errorMessage("Project key for module 'sample-scala-module' should not be empty")
+                waitFor(ofSeconds(2)) { buttons(byText("Search in list...")).isNotEmpty() }
                 buttons(byText("Search in list..."))[1].click()
                 dialog("Select SonarQube Project To Bind") {
                     jList {
