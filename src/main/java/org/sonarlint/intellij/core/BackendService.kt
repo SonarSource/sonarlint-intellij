@@ -298,7 +298,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         newStatus: IssueStatus,
         isTaintVulnerability: Boolean,
     ): CompletableFuture<Void> {
-        return backendFuture.thenAccept {
+        return backendFuture.thenCompose {
             it.issueService.changeStatus(
                 ChangeIssueStatusParams(
                     moduleId(module), issueKey, newStatus, isTaintVulnerability
@@ -312,7 +312,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         issueKey: String,
         comment: String,
     ): CompletableFuture<Void> {
-        return backendFuture.thenAccept { it.issueService.addComment(AddIssueCommentParams(moduleId(module), issueKey, comment)) }
+        return backendFuture.thenCompose { it.issueService.addComment(AddIssueCommentParams(moduleId(module), issueKey, comment)) }
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
@@ -358,6 +358,6 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     override fun dispose() {
-        backendFuture.thenAccept { it.shutdown() }
+        backendFuture.thenCompose { it.shutdown() }
     }
 }

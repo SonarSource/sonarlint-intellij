@@ -133,7 +133,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     if (finding instanceof LiveIssue) {
-      intentionActions.add(new MarkAsResolvedAction(false, (LiveIssue) finding, null, finding.getServerFindingKey()));
+      intentionActions.add(new MarkAsResolvedAction((LiveIssue) finding));
     }
 
     finding.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(finding, c)));
@@ -167,7 +167,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     annotationHolder.newAnnotation(getSeverity(vulnerability.severity()), vulnerability.message())
       .range(textRange)
       .withFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability))
-      .withFix(new MarkAsResolvedAction(true, null, vulnerability, vulnerability.key()))
+      .withFix(new MarkAsResolvedAction(vulnerability))
       .textAttributes(getTextAttrsKey(vulnerability.severity()))
       .highlightType(getType(vulnerability.severity()))
       .create();

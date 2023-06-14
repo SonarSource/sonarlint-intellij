@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.resolve
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
+import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.options.OptionPanel
 import org.sonarlint.intellij.ui.options.addComponents
@@ -72,7 +73,7 @@ class MarkAsResolvedPanel(
                         rows = 3
                     })
             )
-            val link = connection.links().formattingSyntaxDoc()
+            val link = StringEscapeUtils.escapeHtml(connection.links().formattingSyntaxDoc())
             add(JBLabel("<a href=\"$link\">Formatting Help</a>:  *Bold*  ``Code``  * Bulleted point").apply { setCopyable(true) })
         }
     }

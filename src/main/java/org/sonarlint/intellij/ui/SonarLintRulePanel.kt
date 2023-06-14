@@ -58,6 +58,7 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.finding.Finding
+import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.RuleCodeSnippet
@@ -316,14 +317,14 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
                 project,
                 serverFindingKey,
                 finding.status,
-                finding.isValid,
+                finding.isValid(),
                 finding.file,
                 ruleDescription.key,
                 ruleDescription.type,
                 finding.vulnerabilityProbability
             )
         } else {
-            headerPanel.update(project, ruleDescription.key, ruleDescription.type, ruleDescription.severity, finding)
+            headerPanel.update(project, ruleDescription.key, ruleDescription.type, ruleDescription.severity, finding as Issue)
         }
     }
 

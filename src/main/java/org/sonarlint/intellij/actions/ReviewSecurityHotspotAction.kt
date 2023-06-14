@@ -56,14 +56,13 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     companion object {
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Security Hotspot Review")
         val SECURITY_HOTSPOT_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
-        const val successTitle = "<b>SonarLint - Security Hotspot review</b>"
-        const val errorTitle = "<b>SonarLint - Unable to review the Security Hotspot</b>"
-        const val content = "The Security Hotspot status was successfully updated!"
+        private const val errorTitle = "<b>SonarLint - Unable to review the Security Hotspot</b>"
+        private const val content = "The Security Hotspot status was successfully updated"
     }
 
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
         return e.getData(SECURITY_HOTSPOT_KEY) != null && e.getData(SECURITY_HOTSPOT_KEY)?.serverFindingKey != null
-            && e.getData(SECURITY_HOTSPOT_KEY)?.isValid == true
+            && e.getData(SECURITY_HOTSPOT_KEY)?.isValid() == true
     }
 
     override fun updatePresentation(e: AnActionEvent, project: Project) {
@@ -79,7 +78,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val securityHotspot =
-            e.getData(SECURITY_HOTSPOT_KEY) ?: return displayErrorNotification(project, errorTitle, "The Security Hotspot could not be found.", GROUP)
+            e.getData(SECURITY_HOTSPOT_KEY) ?: return displayErrorNotification(project, errorTitle, "The Security Hotspot could not be found", GROUP)
         serverFindingKey = securityHotspot.serverFindingKey
         status = securityHotspot.status
 
@@ -87,20 +86,20 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     }
 
     fun openReviewingDialog(project: Project, file: VirtualFile) {
-        val connection = serverConnection(project) ?: return displayErrorNotification(project, errorTitle, "No connection could be found.", GROUP)
+        val connection = serverConnection(project) ?: return displayErrorNotification(project, errorTitle, "No connection could be found", GROUP)
         val hotspotKey = serverFindingKey ?: return displayErrorNotification(
             project,
-            errorTitle, "Could not find the Security Hotspot on ${connection.productName}.", GROUP
+            errorTitle, "Could not find the Security Hotspot on ${connection.productName}", GROUP
         )
-        val currentStatus = status ?: return displayErrorNotification(project, errorTitle, "Could not find the current Security Hotspot status.", GROUP)
+        val currentStatus = status ?: return displayErrorNotification(project, errorTitle, "Could not find the current Security Hotspot status", GROUP)
         val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
-            project, errorTitle, "No module could be found for this file.", GROUP
+            project, errorTitle, "No module could be found for this file", GROUP
         )
 
         val response = checkPermission(project, connection, hotspotKey) ?: return
         val newStatus = HotspotStatus.valueOf(currentStatus.name)
         if (ReviewSecurityHotspotDialog(project, connection.productName, module, hotspotKey, response, newStatus).showAndGet()) {
-            displaySuccessfulNotification(project, successTitle, content, GROUP)
+            displaySuccessfulNotification(project, content, GROUP)
         }
     }
 

@@ -19,18 +19,4 @@
  */
 package org.sonarlint.intellij.finding
 
-import com.intellij.openapi.vfs.VirtualFile
-import org.sonarsource.sonarlint.core.commons.RuleType
-
-interface Finding {
-    fun getServerKey(): String?
-
-    fun getRuleKey(): String
-
-    fun getType(): RuleType
-
-    fun getRuleDescriptionContextKey(): String?
-    fun file(): VirtualFile?
-
-    fun isValid(): Boolean
-}
+interface Issue : Finding
