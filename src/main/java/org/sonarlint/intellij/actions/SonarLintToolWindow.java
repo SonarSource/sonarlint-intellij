@@ -336,7 +336,10 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
       this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
       this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));
     } else {
-      this.<TaintVulnerabilitiesPanel>updateTab(SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE, panel -> panel.remove((LocalTaintVulnerability) issue));
+      var content = getTaintVulnerabilitiesContent();
+      if (content != null) {
+        ((TaintVulnerabilitiesPanel) content.getComponent()).remove((LocalTaintVulnerability) issue);
+      }
     }
   }
 
