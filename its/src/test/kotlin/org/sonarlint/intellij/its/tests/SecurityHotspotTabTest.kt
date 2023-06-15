@@ -30,8 +30,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.firstNotification
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
@@ -61,7 +61,7 @@ class SecurityHotspotTabTest : BaseUiTest() {
 
         openReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
         changeStatusAndPressChange(this, "Acknowledged")
-        verifyStatusWasSuccessfullyChanged(this, "SonarLint - Security Hotspot review")
+        verifyStatusWasSuccessfullyChanged(this)
     }
 
     private fun bindProjectFromPanel() {
@@ -113,11 +113,11 @@ class SecurityHotspotTabTest : BaseUiTest() {
         }
     }
 
-    private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot, title: String) {
+    private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
         with(remoteRobot) {
             idea {
-                notification(title) {
-                    hasText("The Security Hotspot status was successfully updated!")
+                firstNotification {
+                    hasText("The Security Hotspot status was successfully updated")
                 }
                 toolWindow("SonarLint") {
                     content("SecurityHotspotsPanel") {
