@@ -50,8 +50,11 @@ import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.utils.OrchestratorUtils
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
 import org.sonarlint.intellij.its.utils.optionalStep
 import org.sonarqube.ws.client.WsClient
@@ -95,7 +98,7 @@ class AllTest : BaseUiTest() {
         @JvmStatic
         @BeforeAll
         fun createSonarLintUser() {
-            adminWsClient = OrchestratorUtils.newAdminWsClientWithUser(ORCHESTRATOR.server)
+            adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
         }
     }
 
@@ -120,21 +123,17 @@ class AllTest : BaseUiTest() {
             excludeFileRequest.values = listOf("src/Excluded.scala")
             adminWsClient.settings().set(excludeFileRequest)
 
-            OrchestratorUtils.executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY)
-            OrchestratorUtils.executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY)
+            executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY)
+            executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY)
 
-            token = OrchestratorUtils.generateToken(adminWsClient, "BindingTest")
+            token = generateToken(adminWsClient, "BindingTest")
 
             val searchRequest = SearchRequest()
             searchRequest.s = "FILE_LINE"
             searchRequest.projects = listOf(MODULE_PROJECT_KEY)
             val response = adminWsClient.issues().search(searchRequest)
             val firstIssueKey = response.issuesList[0].key
-            val responseSuppression = adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
-            println("""
-                First issue found: line[${response.issuesList[0].line}] key[$firstIssueKey]
-                Response of suppression: line[${responseSuppression.issue.line}] key[${responseSuppression.issue.key}]
-            """.trimIndent())
+            adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
         }
 
         @Test
@@ -248,11 +247,11 @@ class AllTest : BaseUiTest() {
             ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
 
             // Build and analyze project to raise hotspot
-            OrchestratorUtils.executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
+            executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
 
             firstHotspotKey = getFirstHotspotKey(adminWsClient)
 
-            token = OrchestratorUtils.generateToken(adminWsClient, "OpenInIdeTest")
+            token = generateToken(adminWsClient, "OpenInIdeTest")
         }
 
         @Test
@@ -361,9 +360,9 @@ class AllTest : BaseUiTest() {
             ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
 
             // Build and analyze project to raise hotspot
-            OrchestratorUtils.executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
+            executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
 
-            token = OrchestratorUtils.generateToken(adminWsClient, "SecurityHotspotTabTest")
+            token = generateToken(adminWsClient, "SecurityHotspotTabTest")
         }
 
         @Test
@@ -495,9 +494,9 @@ class AllTest : BaseUiTest() {
             )
 
             // Build and analyze project to raise hotspot
-            OrchestratorUtils.executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
+            executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
 
-            token = OrchestratorUtils.generateToken(adminWsClient, "TaintVulnerabilitiesTest")
+            token = generateToken(adminWsClient, "TaintVulnerabilitiesTest")
         }
 
         @Test
