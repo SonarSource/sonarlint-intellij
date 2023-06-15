@@ -57,11 +57,12 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdate
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.ConfigurationScopeDto
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidAddConfigurationScopesParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveConfigurationScopeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.check.CheckSmartNotificationsSupportedParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.TransientSonarCloudConnectionDto
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.TransientSonarQubeConnectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.TransientSonarCloudConnectionDto
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.TransientSonarQubeConnectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ChangeHotspotStatusParams
@@ -358,6 +359,19 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     fun branchChanged(module: Module, newActiveBranchName: String) {
         backendFuture.thenAccept {
             it.sonarProjectBranchService.didChangeActiveSonarProjectBranch(DidChangeActiveSonarProjectBranchParams(moduleId(module), newActiveBranchName))
+        }
+    }
+
+    fun checkSmartNotificationsSupported(server: ServerConnection): CompletableFuture<Boolean> {
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val params: CheckSmartNotificationsSupportedParams = if (server.isSonarCloud) {
+            CheckSmartNotificationsSupportedParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
+        } else {
+            CheckSmartNotificationsSupportedParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
+        }
+        return backendFuture.thenCompose {
+            it.connectionService.checkSmartNotificationsSupported(params)
         }
     }
 
