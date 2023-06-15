@@ -101,7 +101,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 null,
                 true,
                 mapOf(),
-                false,
+                true,
                 SonarLintUtils.isTaintVulnerabilitiesEnabled(),
                 true
             )
