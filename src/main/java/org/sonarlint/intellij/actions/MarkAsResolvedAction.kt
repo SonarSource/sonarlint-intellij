@@ -146,7 +146,7 @@ class MarkAsResolvedAction(
         private fun confirm(project: Project, productName: String, issueStatus: IssueStatus): Boolean {
             return shouldSkipConfirmationDialog() || MessageDialogBuilder.okCancel(
                 "Confirm marking issue as resolved",
-                "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be modified on $productName"
+                "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be updated on $productName and synchronized with any contributor using SonarLint in connected mode"
             )
                 .yesText("Confirm")
                 .noText("Cancel")
