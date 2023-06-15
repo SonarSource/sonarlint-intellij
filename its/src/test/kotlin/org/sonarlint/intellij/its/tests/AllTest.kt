@@ -22,8 +22,8 @@ package org.sonarlint.intellij.its.tests
 import com.google.protobuf.InvalidProtocolBufferException
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
-import com.intellij.remoterobot.fixtures.ActionLinkFixture.Companion.byText
 import com.intellij.remoterobot.fixtures.ContainerFixture
+import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
@@ -114,7 +114,7 @@ class AllTest : BaseUiTest() {
 
             ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
             ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
-            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module ")
+            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module")
             ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
 
             val excludeFileRequest = SetRequest()
@@ -220,8 +220,7 @@ class AllTest : BaseUiTest() {
 
                 pressOk()
                 errorMessage("Project key for module 'sample-scala-module' should not be empty")
-                waitFor(ofSeconds(2)) { buttons(byText("Search in list...")).isNotEmpty() }
-                buttons(byText("Search in list..."))[1].click()
+                buttons(JButtonFixture.byText("Search in list..."))[1].click()
                 dialog("Select SonarQube Project To Bind") {
                     jList {
                         clickItem(MODULE_PROJECT_KEY, false)
