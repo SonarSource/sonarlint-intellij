@@ -37,6 +37,14 @@ fun RemoteRobot.notification(
 
     notification.apply(function)
 }
+fun RemoteRobot.firstNotification(
+    timeout: Duration = Duration.ofSeconds(20),
+    function: NotificationFixture.() -> Unit = {},
+): NotificationFixture = step("Search first notification") {
+    val notification = find<NotificationFixture>(NotificationFixture.first(), timeout)
+
+    notification.apply(function)
+}
 
 @FixtureName("Notification")
 open class NotificationFixture(
@@ -46,6 +54,7 @@ open class NotificationFixture(
 
     companion object {
         fun byTitle(title: String) = byXpath("//div[@accessiblename='$title']")
+        fun first() = byXpath("//div[@class='NotificationCenterPanel']//div[@class='JEditorPane']")
     }
 
     fun content(classType: String, function: TabContentFixture.() -> Unit = {}) =
