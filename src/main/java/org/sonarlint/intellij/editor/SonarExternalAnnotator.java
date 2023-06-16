@@ -92,6 +92,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       getService(project, TaintVulnerabilitiesPresenter.class).getCurrentVulnerabilitiesByFile()
         .getOrDefault(file.getVirtualFile(), emptyList())
+        .stream().filter(vulnerability -> !vulnerability.isResolved())
         .forEach(vulnerability -> addAnnotation(vulnerability, holder));
     }
   }
