@@ -19,4 +19,6 @@
  */
 package org.sonarlint.intellij.finding
 
-interface Issue : Finding
+interface Issue : Finding {
+    fun resolve()
+}
