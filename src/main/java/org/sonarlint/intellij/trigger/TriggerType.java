@@ -29,7 +29,8 @@ public enum TriggerType {
   CHECK_IN("Pre-commit check", true),
   CONFIG_CHANGE("Config change", true),
   BINDING_UPDATE("Binding update", true),
-  OPEN_SECURITY_HOTSPOT("Open Security Hotspot", true);
+  OPEN_SECURITY_HOTSPOT("Open Security Hotspot", true),
+  SERVER_SENT_EVENT("Server-sent event", false);
 
   private final String name;
   private final boolean shouldUpdateServerIssues;
