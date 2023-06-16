@@ -137,7 +137,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
         assertThat(raisedHotspot).extracting({ it.serverFindingKey },
             { it.isResolved },
             { it.introductionDate },
-            { it.vulnerabilityProbability }).containsExactly("hotsptKey", false, 1600692399000L, VulnerabilityProbability.LOW)
+            { it.vulnerabilityProbability }).containsExactly("hotspotKey", false, 1600692399000L, VulnerabilityProbability.LOW)
     }
 
     @Test

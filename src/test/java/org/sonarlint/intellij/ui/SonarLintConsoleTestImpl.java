@@ -21,16 +21,27 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.execution.ui.ConsoleView;
 import java.io.PrintStream;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
-  private final Queue<String> previousMessages = new ConcurrentLinkedQueue<>();
+  private StringWriter stringWriter;
+  private PrintWriter printWriter;
+  private String lastMessage = "";
+
+  public SonarLintConsoleTestImpl() {
+    reset();
+  }
+
+  private void reset() {
+    this.stringWriter = new StringWriter();
+    this.printWriter = new PrintWriter(stringWriter);
+  }
 
   public String getLastMessage() {
-    return previousMessages.peek();
+    return lastMessage;
   }
 
   @Override
@@ -56,24 +67,22 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
   @Override
   public void error(String msg, Throwable t) {
     print(msg);
-    for (StackTraceElement traceElement : t.getStackTrace()) {
-      print(traceElement.toString());
-    }
+    t.printStackTrace(printWriter);
   }
 
   private void print(String msg) {
-    previousMessages.offer(msg);
+    lastMessage = msg;
+    printWriter.println(msg);
   }
 
   @Override
   public void clear() {
-    previousMessages.clear();
+    reset();
   }
 
   public void flushTo(PrintStream stream) {
-    while (!previousMessages.isEmpty()) {
-      stream.println(previousMessages.poll());
-    }
+    stream.println(stringWriter.getBuffer());
+    reset();
   }
 
   @Override
