@@ -37,3 +37,4 @@ $RECYCLE.BIN/
 .gradle
 classes
 build
+.scannerwork/
