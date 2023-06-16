@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core.server.events
 
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.roots.ProjectRootManager
@@ -94,16 +95,18 @@ class ServerEventsProductionService : ServerEventsService {
         }
 
         identifyProjectsImpactedBySecurityHotspotEvent(event).forEach { project ->
-            val impactedFiles = ArrayList<VirtualFile>()
+            val openFiles = FileEditorManager.getInstance(project).openFiles
             val filePath = (event as ServerHotspotEvent).filePath
+            val impactedFiles = ArrayList<VirtualFile>()
+
             ProjectRootManager.getInstance(project).contentRoots.forEach {
                 if (it.isDirectory) {
                     val matchedFile = it.findFileByRelativePath(filePath)
-                    if (matchedFile != null) {
+                    if (matchedFile != null && openFiles.contains(matchedFile)) {
                         impactedFiles.add(matchedFile)
                     }
                 } else {
-                    if (it.path.endsWith(filePath)) {
+                    if (it.path.endsWith(filePath) && openFiles.contains(it)) {
                         impactedFiles.add(it)
                     }
                 }
