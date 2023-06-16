@@ -20,19 +20,22 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.execution.ui.ConsoleView;
+import java.io.PrintStream;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
-  private String lastMessage = "";
+  private final Queue<String> previousMessages = new ConcurrentLinkedQueue<>();
 
   public String getLastMessage() {
-    return lastMessage;
+    return previousMessages.peek();
   }
 
   @Override
   public void debug(String msg) {
-    lastMessage = msg;
+    print(msg);
   }
 
   @Override
@@ -42,22 +45,35 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
   @Override
   public void info(String msg) {
-    lastMessage = msg;
+    print(msg);
   }
 
   @Override
   public void error(String msg) {
-    lastMessage = msg;
+    print(msg);
   }
 
   @Override
   public void error(String msg, Throwable t) {
-    lastMessage = msg;
+    print(msg);
+    for (StackTraceElement traceElement : t.getStackTrace()) {
+      print(traceElement.toString());
+    }
+  }
+
+  private void print(String msg) {
+    previousMessages.offer(msg);
   }
 
   @Override
   public void clear() {
-    lastMessage = "";
+    previousMessages.clear();
+  }
+
+  public void flushTo(PrintStream stream) {
+    while (!previousMessages.isEmpty()) {
+      stream.println(previousMessages.poll());
+    }
   }
 
   @Override
