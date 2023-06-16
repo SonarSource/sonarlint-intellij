@@ -89,13 +89,15 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
   @RegisterExtension
   AfterTestExecutionCallback afterTestExecutionCallback = context -> {
     Optional<Throwable> exception = context.getExecutionException();
-    if (exception.isPresent()) {
+    var console = getConsole();
+    if (console instanceof SonarLintConsoleTestImpl && exception.isPresent()) {
+      var testConsole = (SonarLintConsoleTestImpl) console;
       var testName = context.getDisplayName();
       System.out.println("Test '" + testName + "' failed. Logs:");
-      getConsole().flushTo(System.out);
+      testConsole.flushTo(System.out);
       System.out.println("End of logs for test '" + testName + "'");
     } else {
-      getConsole().clear();
+      console.clear();
     }
   };
 
@@ -147,8 +149,8 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     return (TestEngineManager) getService(EngineManager.class);
   }
 
-  protected SonarLintConsoleTestImpl getConsole() {
-    return (SonarLintConsoleTestImpl) getService(getProject(), SonarLintConsole.class);
+  protected SonarLintConsole getConsole() {
+    return getService(getProject(), SonarLintConsole.class);
   }
 
   protected VirtualFile createTestFile(String fileName, Language language, String text) {
