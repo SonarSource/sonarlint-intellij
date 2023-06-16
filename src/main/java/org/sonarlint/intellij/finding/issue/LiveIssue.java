@@ -50,4 +50,9 @@ public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.fin
   public void setType(@Nullable RuleType type) {
     this.type = type;
   }
+
+  @Override
+  public void resolve() {
+    setResolved(true);
+  }
 }
