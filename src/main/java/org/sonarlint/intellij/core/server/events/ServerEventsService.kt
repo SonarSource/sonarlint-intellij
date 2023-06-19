@@ -19,8 +19,12 @@
  */
 package org.sonarlint.intellij.core.server.events
 
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -28,15 +32,19 @@ import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
-import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter
+import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.ProjectLogOutput
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import org.sonarsource.sonarlint.core.serverapi.push.IssueChangedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotChangedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotClosedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotRaisedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.ServerEvent
+import org.sonarsource.sonarlint.core.serverapi.push.ServerHotspotEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
-import java.util.*
+import java.util.Optional
 
 interface ServerEventsService {
     fun autoSubscribe(binding: ProjectBinding) {
@@ -85,9 +93,25 @@ class ServerEventsProductionService : ServerEventsService {
                 project, TaintVulnerabilitiesPresenter::class.java
             ).presentTaintVulnerabilitiesForOpenFiles()
         }
-        ProjectManager.getInstance().openProjects.forEach { project ->
-            getService(project, SecurityHotspotsPresenter::class.java)
-                .presentSecurityHotspotsForOpenFiles()
+
+        identifyProjectsImpactedBySecurityHotspotEvent(event).forEach { project ->
+            val openFiles = FileEditorManager.getInstance(project).openFiles
+            val filePath = (event as ServerHotspotEvent).filePath
+            val impactedFiles = ArrayList<VirtualFile>()
+
+            ProjectRootManager.getInstance(project).contentRoots.forEach {
+                if (it.isDirectory) {
+                    val matchedFile = it.findFileByRelativePath(filePath)
+                    if (matchedFile != null && openFiles.contains(matchedFile)) {
+                        impactedFiles.add(matchedFile)
+                    }
+                } else {
+                    if (it.path.endsWith(filePath) && openFiles.contains(it)) {
+                        impactedFiles.add(it)
+                    }
+                }
+            }
+            getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(impactedFiles, TriggerType.SERVER_SENT_EVENT)
         }
     }
 
@@ -105,13 +129,27 @@ class ServerEventsProductionService : ServerEventsService {
         }.toSet()
     }
 
+    private fun identifyProjectsImpactedBySecurityHotspotEvent(event: ServerEvent): Set<Project> {
+        val projectKey = when (event) {
+            is SecurityHotspotChangedEvent -> event.projectKey
+            is SecurityHotspotClosedEvent -> event.projectKey
+            is SecurityHotspotRaisedEvent -> event.projectKey
+            else -> null
+        }
+
+        return ProjectManager.getInstance().openProjects.filter { project ->
+            getService(
+                project, ProjectBindingManager::class.java
+            ).uniqueProjectKeys.contains(projectKey)
+        }.toSet()
+    }
 
     private fun getProjectKeys(serverConnection: ServerConnection, projects: Set<Project>) =
-        projects.filter { bindingManager(it).tryGetServerConnection().equals(Optional.of(serverConnection)) }
+        projects.filter { bindingManager(it).tryGetServerConnection() == (Optional.of(serverConnection)) }
             .flatMap { bindingManager(it).uniqueProjectKeys }.toSet()
 
     private fun getLogOutputs(serverConnection: ServerConnection, projects: Set<Project>) =
-        projects.filter { bindingManager(it).tryGetServerConnection().equals(Optional.of(serverConnection)) }
+        projects.filter { bindingManager(it).tryGetServerConnection() == (Optional.of(serverConnection)) }
             .map { ProjectLogOutput(it) }.toSet()
 
     private fun openedProjects() = ProjectManager.getInstance().openProjects.toSet()
