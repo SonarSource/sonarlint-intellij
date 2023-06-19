@@ -1,33 +1,17 @@
 name: sonar-release
-# This workflow is triggered when publishing a new github release
+# This workflow is triggered when publishing a new GitHub release
 on:
   release:
     types:
       - published
 
-env:
-  PYTHONUNBUFFERED: 1
-
 jobs:
-  sonar_release:
-    runs-on: ubuntu-latest
-    name: Start release process
-    steps:
-      - name: SL release
-        id: sl_release
-        with:
-          publish_to_binaries: false
-          slack_channel: team-sonarlint-intelliclipse-notifs
-        env:
-          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
-          BURGRX_USER: ${{ secrets.BURGRX_USER }}
-          BURGRX_PASSWORD: ${{ secrets.BURGRX_PASSWORD }}
-          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
-          SLACK_API_TOKEN: ${{secrets.SLACK_API_TOKEN }}
-        uses: SonarSource/gh-action_release/main@v4
-
-      - name: Check outputs
-        if: always()
-        run: |
-          echo "${{ steps.sl_release.outputs.releasability }}"
-          echo "${{ steps.sl_release.outputs.release }}"
+  release:
+    permissions:
+      id-token: write
+      contents: write
+    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v5
+    with:
+      publishToBinaries: false
+      mavenCentralSync: true
+      slackChannel: team-sonarlint-intelliclipse-notifs

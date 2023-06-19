@@ -1,8 +1,8 @@
 SonarLint IntelliJ Plugin
 =========================
 
-[![Build Status](https://dev.azure.com/sonarsource/DotNetTeam%20Project/_apis/build/status/sonarlint/SonarLint%20IntelliJ?branchName=master)](https://dev.azure.com/sonarsource/DotNetTeam%20Project/_build/latest?definitionId=76&branchName=master) [![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status
-)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
+[![Build Status](https://api.cirrus-ci.com/github/SonarSource/sonarlint-intellij.svg?branch=master)](https://cirrus-ci.com/github/SonarSource/sonarlint-intellij)
+[![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
 
 SonarLint is an IDE extension that helps you detect and fix quality issues as you write code.
 Like a spell checker, SonarLint squiggles flaws so they can be fixed before committing code.
@@ -110,7 +110,7 @@ As the `clean` task may be inconvenient, an easier workaround is to delete the j
 How to release
 --------------
 
-See [release pipeline at Azure DevOps](https://dev.azure.com/sonarsource/DotNetTeam%20Project/_release?definitionId=10).
+See [release pipeline at GitHub](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/release.yml).
 
 License
 -------
