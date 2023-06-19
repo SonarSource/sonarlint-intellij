@@ -24,7 +24,12 @@ import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.vcs.FileStatusManager
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
-import com.intellij.openapi.vcs.changes.*
+import com.intellij.openapi.vcs.changes.ChangeListManagerGate
+import com.intellij.openapi.vcs.changes.ChangeListManagerImpl
+import com.intellij.openapi.vcs.changes.ChangeProvider
+import com.intellij.openapi.vcs.changes.ChangelistBuilder
+import com.intellij.openapi.vcs.changes.VcsDirtyScope
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
 import com.intellij.openapi.vcs.changes.committed.MockAbstractVcs
 import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.openapi.vfs.VirtualFile
@@ -286,6 +291,8 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                 .containsExactlyInAnyOrder(
                     tuple("devenv.js", "secrets:S6290", "Make sure this AWS Access Key ID is not disclosed.", Pair(286, 306)),
                     tuple("devenv_unversionned.js", "secrets:S6290", "Make sure this AWS Access Key ID is not disclosed.", Pair(286, 306)),
+                    tuple("devenv.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72)),
+                    tuple("devenv_unversionned.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72)),
                 )
         } finally {
             myVcsManager.unregisterVcs(myVcs)
