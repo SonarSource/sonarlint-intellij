@@ -26,10 +26,11 @@ import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
 import org.sonarlint.intellij.editor.actions.CopyCodeExampleAction
 import org.sonarlint.intellij.editor.actions.DiffCodeExamplesAction
+import org.sonarlint.intellij.ui.ruledescription.RuleCodeSnippet
 
 class SonarLintEditorWidgetActionProvider : InspectionWidgetActionProvider {
     override fun createAction(editor: Editor): AnAction? {
-        if (editor.editorKind == EditorKind.UNTYPED) {
+        if (editor.editorKind == EditorKind.UNTYPED && editor.document.getUserData(RuleCodeSnippet.IS_SONARLINT_DOCUMENT) == true) {
             return DefaultActionGroup(DiffCodeExamplesAction(editor), CopyCodeExampleAction(editor))
         }
         return null
