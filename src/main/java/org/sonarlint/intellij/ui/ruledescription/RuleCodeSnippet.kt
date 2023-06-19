@@ -64,6 +64,7 @@ class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, 
     private fun createEditor(): Editor {
         val editorFactory = EditorFactory.getInstance()
         val editorDocument = editorFactory.createDocument("")
+        editorDocument.putUserData(IS_SONARLINT_DOCUMENT, true)
         val editor = editorFactory.createViewer(editorDocument) as EditorEx
         val settings = editor.settings
         settings.isLineMarkerAreaShown = false
@@ -121,5 +122,6 @@ class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, 
 
     companion object {
         val CODE_EXAMPLE_FRAGMENT_KEY: Key<CodeExampleFragment> = Key.create("SONARLINT_CODE_EXAMPLE_FRAGMENT_KEY")
+        val IS_SONARLINT_DOCUMENT: Key<Boolean> = Key.create("IS_SONARLINT_DOCUMENT")
     }
 }
