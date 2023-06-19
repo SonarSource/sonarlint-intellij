@@ -458,7 +458,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
                 if (isWithinTable(computedRuleDescription)) {
                     section.mergeOrAdd(HtmlFragment("<pre>$middle$PRE_TAG_ENDING"))
                 } else {
-                    section.add(CodeExampleFragment(StringEscapeUtils.unescapeHtml(middle), diffType, diffId))
+                    section.add(CodeExampleFragment(replaceSpaceCharacters(middle), diffType, diffId))
                 }
             }
             computedRuleDescription += remainingRuleDescription.substring(matcherStart.start(), matcherEnd.end())
@@ -496,6 +496,18 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         topPanel.isVisible = state
         descriptionPanel.isVisible = state
         paramsPanel.isVisible = state
+    }
+
+    private fun replaceSpaceCharacters(text: String): String {
+        return StringEscapeUtils.unescapeHtml(text)
+            // &nbsp;
+            .replace("\u00a0","")
+            // &ensp;
+            .replace("\u2002","")
+            // &emsp;
+            .replace("\u2003","")
+            // &thinsp;
+            .replace("\u2009","")
     }
 
 }
