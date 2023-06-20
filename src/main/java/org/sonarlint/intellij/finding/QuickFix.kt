@@ -66,14 +66,14 @@ private fun convert(fileEdit: ClientInputFileEdit): VirtualFileEdit? {
 private fun convert(document: Document, textEdit: TextEdit): RangeMarkerEdit? {
     val range = textEdit.range()
     val lineCount = document.lineCount
-    val beginLine = range.startLine?.minus(1) ?: -1
-    val endLine = range.endLine?.minus(1) ?: -1
+    val beginLine = range.startLine.minus(1)
+    val endLine = range.endLine.minus(1)
     if (beginLine < 0 || beginLine >= lineCount || endLine < 0 || endLine >= lineCount) {
         // range lines don't exist
         return null
     }
-    val startOffset = document.getLineStartOffset(beginLine) + (range.startLineOffset ?:0)
-    val endOffset = range.endLineOffset?.plus(document.getLineStartOffset(endLine)) ?: document.getLineEndOffset(endLine)
+    val startOffset = document.getLineStartOffset(beginLine) + (range.startLineOffset)
+    val endOffset = range.endLineOffset.plus(document.getLineStartOffset(endLine))
     if (startOffset > document.getLineEndOffset(beginLine) || endOffset > document.getLineEndOffset(endLine)) {
         // offset is greater than line length
         return null
