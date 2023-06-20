@@ -13,8 +13,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 plugins {
-    kotlin("jvm") version "1.7.22"
-    id("org.jetbrains.intellij") version "1.12.0"
+    kotlin("jvm") version "1.8.10"
+    id("org.jetbrains.intellij") version "1.14.1"
     id("org.sonarqube") version "3.4.0.2513"
     java
     jacoco
