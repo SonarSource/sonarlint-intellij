@@ -26,7 +26,7 @@
   <vendor url="https://sonarsource.com">SonarSource</vendor>
   <description>Fake Plugin To Run SonarLint UI tests with multiple flavors</description>
 
-  <idea-version since-build="181.3007.14"/>
+  <idea-version since-build="213.5744.223"/>
 
   <depends>com.intellij.modules.lang</depends>
 </idea-plugin>

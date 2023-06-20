@@ -45,7 +45,6 @@ import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.KeyboardFocusManager
-import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -71,7 +70,7 @@ open class SonarLintRecentProjectPanel(private val parent: ProjectSelectionDialo
 
     private val projectsList: JBList<AnAction>
 
-    private fun performSelectedAction(event: InputEvent, selection: AnAction){
+    private fun performSelectedAction(selection: AnAction){
         val projectPath = (selection as ReopenProjectAction).projectPath
         parent.setSelectedProject(projectPath)
     }
@@ -161,7 +160,7 @@ open class SonarLintRecentProjectPanel(private val parent: ProjectSelectionDialo
 
         private fun getSubtitle(action: ReopenProjectAction): String? {
             var fullText = action.projectPath
-            if (fullText == null || fullText.isEmpty()) return " "
+            if (fullText.isNullOrEmpty()) return " "
             fullText = FileUtil.getLocationRelativeToUserHome(PathUtil.toSystemDependentName(fullText), false)
             return fullText
         }
@@ -193,20 +192,19 @@ open class SonarLintRecentProjectPanel(private val parent: ProjectSelectionDialo
                     if (cellBounds.contains(event.point)) {
                         val selection = projectsList.selectedValue
                         if (selection != null) {
-                            performSelectedAction(event, selection)
+                            performSelectedAction(selection)
                         }
                     }
                 }
                 return true
             }
         }.installOn(projectsList)
-        projectsList.registerKeyboardAction({ e ->
+        projectsList.registerKeyboardAction({ _ ->
             val selectedValues = projectsList.selectedValuesList
             if (selectedValues != null) {
                 for (selectedAction in selectedValues) {
                     if (selectedAction != null) {
-                        val event: InputEvent = KeyEvent(projectsList, KeyEvent.KEY_PRESSED, e.getWhen(), e.modifiers, KeyEvent.VK_ENTER, '\r')
-                        performSelectedAction(event, selectedAction)
+                        performSelectedAction(selectedAction)
                     }
                 }
             }

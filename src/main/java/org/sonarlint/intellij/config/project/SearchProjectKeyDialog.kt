@@ -36,6 +36,7 @@ import org.sonarsource.sonarlint.core.serverapi.component.ServerProject
 import java.awt.Component
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.util.Locale
 import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.ListSelectionModel
@@ -116,7 +117,7 @@ class SearchProjectKeyDialog(
         val model = (projectList.model as? DefaultListModel)
         model!!.clear()
         val sortedProjects = projectsByKey.values
-            .sortedWith(compareBy({ it.name.toLowerCase() }, { it.key.toLowerCase() }))
+            .sortedWith(compareBy({ it.name.lowercase(Locale.ENGLISH) }, { it.key.lowercase(Locale.ENGLISH) }))
 
         var selectedIndex = -1
         var index = 0

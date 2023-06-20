@@ -19,12 +19,11 @@
  */
 package org.sonarlint.intellij.core.server.events
 
-import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.messages.ProjectBindingListener
 
-class SubscribeOnProjectBindingChange(project: Project) : ProjectBindingListener {
+class SubscribeOnProjectBindingChange : ProjectBindingListener {
     override fun bindingChanged(previousBinding: ProjectBinding?, newBinding: ProjectBinding?) {
         if (previousBinding != null && previousBinding.connectionName != newBinding?.connectionName) {
             // we need to resubscribe for the previous engine as the project keys might have changed
