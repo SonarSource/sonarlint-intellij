@@ -24,9 +24,4 @@
         <analysisConfiguration implementation="org.sonarlint.intellij.rider.RiderAnalysisConfigurator"/>
         <languageActivator implementation="org.sonarlint.intellij.rider.CsharpLanguageActivator"/>
     </extensions>
-
-    <extensions defaultExtensionNs="com.intellij">
-        <!-- BE CAREFUL to not register the annotator twice for the same language (taking into account inheritance) or the annotation will appear multiple times -->
-        <externalAnnotator language="C#" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-    </extensions>
 </idea-plugin>
