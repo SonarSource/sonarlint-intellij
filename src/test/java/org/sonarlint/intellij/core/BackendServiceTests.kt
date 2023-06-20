@@ -20,12 +20,20 @@
 package org.sonarlint.intellij.core
 
 import com.intellij.ide.impl.OpenProjectTask
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import com.intellij.openapi.util.Disposer
+import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.reset
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
@@ -45,13 +53,21 @@ import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
+
     private lateinit var backend: SonarLintBackend
     private lateinit var backendConnectionService: ConnectionService
     private lateinit var backendConfigurationService: ConfigurationService
     private lateinit var service: BackendService
 
-    @BeforeEach
-    fun prepare() {
+    override fun initApplication() {
+        super.initApplication()
+
+        globalSettings.serverConnections = listOf(
+            ServerConnection.newBuilder().setName("id").setHostUrl("url").build(),
+            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
+                .build()
+        )
+
         backend = mock(SonarLintBackend::class.java)
         `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
         backendConnectionService = mock(ConnectionService::class.java)
@@ -59,18 +75,16 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(backend.connectionService).thenReturn(backendConnectionService)
         `when`(backend.configurationService).thenReturn(backendConfigurationService)
         service = BackendService(backend)
+        ApplicationManager.getApplication().replaceService(BackendService::class.java, service, testRootDisposable)
+    }
+    @BeforeEach
+    fun resetMockBackend() {
+        // Ignore previous events caused by HeavyTestFrameworkOpening a project
+        reset(backendConfigurationService)
     }
 
     @Test
     fun test_initialize_with_existing_connections_when_starting() {
-        globalSettings.serverConnections = listOf(
-            ServerConnection.newBuilder().setName("id").setHostUrl("url").build(),
-            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
-                .build()
-        )
-
-        service.backendFuture
-
         val paramsCaptor = argumentCaptor<InitializeParams>()
         verify(backend).initialize(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
@@ -102,6 +116,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_opening_a_non_bound_project() {
+
+
         service.projectOpened(project)
 
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
