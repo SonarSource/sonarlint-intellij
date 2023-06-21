@@ -43,9 +43,7 @@ class RuleParsingUtils {
     companion object {
         private const val PRE_TAG_ENDING = "</pre>"
 
-        fun parseCodeExamples(
-            project: Project, parent: Disposable, htmlDescription: String, fileType: FileType,
-        ): JScrollPane {
+        fun parseCodeExamples(project: Project, parent: Disposable, htmlDescription: String, fileType: FileType): JScrollPane {
             val mainPanel = JBPanel<JBPanel<*>>(VerticalFlowLayout(0, 0))
             var remainingRuleDescription = htmlDescription
             var computedRuleDescription = ""
@@ -95,18 +93,9 @@ class RuleParsingUtils {
                         Disposer.register(parent, this)
                     }
                 }
-            }
-                .forEach { mainPanel.add(it) }
+            }.forEach { mainPanel.add(it) }
 
-            val scrollPane = ScrollPaneFactory.createScrollPane(mainPanel)
-            scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-            scrollPane.verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
-            scrollPane.verticalScrollBar.unitIncrement = 10
-            scrollPane.isOpaque = false
-            scrollPane.viewport.isOpaque = false
-            scrollPane.border = null
-
-            return scrollPane
+            return createScrollPane(mainPanel)
         }
 
         private fun isWithinTable(previousHtml: String): Boolean {
@@ -124,6 +113,17 @@ class RuleParsingUtils {
                 .replace("\u2003","")
                 // &thinsp;
                 .replace("\u2009","")
+        }
+
+        private fun createScrollPane(mainPanel: JBPanel<*>): JScrollPane {
+            return ScrollPaneFactory.createScrollPane(mainPanel).apply {
+                horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+                verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
+                verticalScrollBar.unitIncrement = 10
+                isOpaque = false
+                viewport.isOpaque = false
+                border = null
+            }
         }
     }
 
