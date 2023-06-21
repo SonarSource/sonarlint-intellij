@@ -98,7 +98,9 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             add(headerPanel, BorderLayout.CENTER)
             add(securityHotspotHeaderMessage.apply {
                 contentType = UIUtil.HTML_MIME
-                (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
+                if (caret != null) {
+                    (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
+                }
                 editorKit = UIUtil.getHTMLEditorKit()
                 border = JBUI.Borders.empty()
                 isEditable = false
@@ -373,7 +375,9 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             constraints.gridwidth = 2
             add(JEditorPane().apply {
                 contentType = UIUtil.HTML_MIME
-                (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
+                if (caret != null) {
+                    (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
+                }
                 editorKit = UIUtil.getHTMLEditorKit()
                 addHyperlinkListener(RuleConfigHyperLinkListener(project))
                 isEditable = false

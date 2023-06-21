@@ -34,7 +34,9 @@ import javax.swing.text.DefaultCaret
 class RuleHtmlViewer(scrollable: Boolean) : JBPanel<RuleHtmlViewer>(BorderLayout()) {
     private var editor: JEditorPane = JEditorPane().apply {
         contentType = UIUtil.HTML_MIME
-        (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
+        if (caret != null) {
+            (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
+        }
         editorKit = UIUtil.getHTMLEditorKit()
         border = JBUI.Borders.empty(10)
         isEditable = false
