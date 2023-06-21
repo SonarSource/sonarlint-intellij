@@ -70,6 +70,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.issue.ChangeIssueStatusP
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.ListAllStandaloneRulesDefinitionsResponse
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -270,6 +271,10 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetEffectiveRuleDetailsResponse> {
         return backendFuture.thenCompose { it.rulesService.getEffectiveRuleDetails(GetEffectiveRuleDetailsParams(moduleId(module), ruleKey, contextKey)) }
+    }
+
+    fun getListAllStandaloneRulesDefinitions(): CompletableFuture<ListAllStandaloneRulesDefinitionsResponse> {
+        return backendFuture.thenCompose { it.rulesService.listAllStandaloneRulesDefinitions() }
     }
 
     fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {

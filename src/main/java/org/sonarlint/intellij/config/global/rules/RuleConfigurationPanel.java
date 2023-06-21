@@ -22,11 +22,12 @@ package org.sonarlint.intellij.config.global.rules;
 import com.intellij.ide.CommonActionsManager;
 import com.intellij.ide.DefaultTreeExpander;
 import com.intellij.ide.TreeExpander;
-import com.intellij.ide.ui.search.SearchUtil;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.FilterComponent;
@@ -93,7 +94,8 @@ import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel;
-import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer;
+import org.sonarlint.intellij.ui.ruledescription.RuleLanguages;
+import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
@@ -114,8 +116,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();
   private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
   private final AtomicBoolean isDirty = new AtomicBoolean(false);
+  private final Project project = ProjectManager.getInstance().getDefaultProject();
   private RulesTreeTable table;
-  private RuleHtmlViewer ruleHtmlViewer;
+  private JPanel ruleViewer;
   private JBLoadingPanel panel;
   private JPanel myParamsPanel;
   private RulesTreeTableModel model;
@@ -334,9 +337,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     ruleHeaderPanel = new RuleHeaderPanel();
     descriptionPanel.add(ruleHeaderPanel, BorderLayout.NORTH);
 
-    ruleHtmlViewer = new RuleHtmlViewer(true);
-    ruleHtmlViewer.setBorder(IdeBorderFactory.createBorder());
-    descriptionPanel.add(ruleHtmlViewer, BorderLayout.CENTER);
+    ruleViewer = new JBPanel<>(new BorderLayout());
+    ruleViewer.setBorder(IdeBorderFactory.createBorder());
+    descriptionPanel.add(ruleViewer, BorderLayout.CENTER);
 
     var rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_RULE_DEFAULT);
     rightSplitter.setFirstComponent(descriptionPanel);
@@ -383,7 +386,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void initOptionsAndDescriptionPanel() {
     myParamsPanel.removeAll();
-    ruleHtmlViewer.clear();
+    ruleViewer.removeAll();
     ruleHeaderPanel.showMessage(EMPTY_HTML);
     myParamsPanel.validate();
     myParamsPanel.repaint();
@@ -457,7 +460,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
     ruleHeaderPanel.update(singleNode.getKey(), singleNode.type(), singleNode.severity());
-    ruleHtmlViewer.updateHtml(SearchUtil.markup(singleNode.getHtmlDescription(), myRuleFilter.getFilter()));
+    var fileType = RuleLanguages.Companion.findFileTypeByRuleLanguage(singleNode.language().getLanguageKey());
+    ruleViewer.add(RuleParsingUtils.Companion.parseCodeExamples(project, this, singleNode.getHtmlDescription(), fileType));
 
     myParamsPanel.removeAll();
     final var configPanelAnchor = new JPanel(new GridLayout());
@@ -763,8 +767,5 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     }
 
   }
-
-
-
 
 }
