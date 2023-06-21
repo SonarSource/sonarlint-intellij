@@ -30,6 +30,9 @@ import javax.swing.Icon;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.core.server.ServerLinks;
+import org.sonarlint.intellij.core.server.SonarCloudLinks;
+import org.sonarlint.intellij.core.server.SonarQubeLinks;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 import org.sonarsource.sonarlint.core.serverapi.ServerApi;
 

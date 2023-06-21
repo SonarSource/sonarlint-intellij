@@ -58,6 +58,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.Configurati
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidAddConfigurationScopesParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveConfigurationScopeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.check.CheckSmartNotificationsSupportedParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.check.CheckSmartNotificationsSupportedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.TransientSonarCloudConnectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.TransientSonarQubeConnectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
@@ -262,7 +263,6 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 )
             )
         )
-
     }
 
     fun moduleRemoved(module: Module) {
@@ -309,12 +309,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {
-        return initializedBackend.authenticationHelperService.helpGenerateUserToken(
-            HelpGenerateUserTokenParams(
-                serverUrl,
-                isSonarCloud
-            )
-        )
+        return initializedBackend.authenticationHelperService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl, isSonarCloud))
     }
 
     fun openHotspotInBrowser(module: Module, hotspotKey: String) {
@@ -341,59 +336,35 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         )
     }
 
-    fun changeStatusForHotspot(configurationScopeId: String, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
+    fun changeStatusForHotspot(module: Module, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
         return initializedBackend.hotspotService.changeStatus(
             ChangeHotspotStatusParams(
-                configurationScopeId,
+                moduleId(module),
                 hotspotKey,
                 newStatus
             )
         )
     }
 
-    fun markAsResolved(
-        module: Module,
-        issueKey: String,
-        newStatus: IssueStatus,
-        isTaintVulnerability: Boolean,
-    ): CompletableFuture<Void> {
-        return backendFuture.thenCompose {
-            it.issueService.changeStatus(
-                ChangeIssueStatusParams(
-                    moduleId(module), issueKey, newStatus, isTaintVulnerability
-                )
-            )
-        }
+    fun markAsResolved(module: Module, issueKey: String, newStatus: IssueStatus, isTaintVulnerability: Boolean, ): CompletableFuture<Void> {
+        return initializedBackend.issueService.changeStatus(ChangeIssueStatusParams(moduleId(module), issueKey, newStatus, isTaintVulnerability))
     }
 
-    fun addCommentOnIssue(
-        module: Module,
-        issueKey: String,
-        comment: String,
-    ): CompletableFuture<Void> {
-        return backendFuture.thenCompose { it.issueService.addComment(AddIssueCommentParams(moduleId(module), issueKey, comment)) }
+    fun addCommentOnIssue(module: Module, issueKey: String, comment: String, ): CompletableFuture<Void> {
+        return initializedBackend.issueService.addComment(AddIssueCommentParams(moduleId(module), issueKey, comment))
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
-        return initializedBackend.hotspotService.checkStatusChangePermitted(
-            CheckStatusChangePermittedParams(
-                connectionId,
-                hotspotKey
-            )
-        )
+        return initializedBackend.hotspotService.checkStatusChangePermitted(CheckStatusChangePermittedParams(connectionId, hotspotKey))
     }
 
     fun checkIssueStatusChangePermitted(
         connectionId: String,
         issueKey: String,
     ): CompletableFuture<CheckIssueStatusChangePermittedResponse> {
-        return backendFuture.thenCompose {
-            it.issueService.checkStatusChangePermitted(
-                org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedParams(
-                    connectionId, issueKey
-                )
+        return initializedBackend.issueService.checkStatusChangePermitted(
+                org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedParams(connectionId, issueKey)
             )
-        }
     }
 
     fun branchChanged(module: Module, newActiveBranchName: String) {
@@ -405,7 +376,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         )
     }
 
-    fun checkSmartNotificationsSupported(server: ServerConnection): CompletableFuture<Boolean> {
+    fun checkSmartNotificationsSupported(server: ServerConnection): CompletableFuture<CheckSmartNotificationsSupportedResponse> {
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: CheckSmartNotificationsSupportedParams = if (server.isSonarCloud) {

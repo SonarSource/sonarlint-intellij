@@ -48,7 +48,7 @@ public class CheckNotificationsSupportedTask extends Task.Modal {
     indicator.setIndeterminate(false);
     try {
       indicator.setText("Checking support of notifications");
-      notificationsSupported = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).checkSmartNotificationsSupported(connection));
+      notificationsSupported = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).checkSmartNotificationsSupported(connection)).isSuccess();
     } catch (ProcessCanceledException e) {
       if (myProject != null) {
         SonarLintConsole.get(myProject).error("Failed to check notifications", e);
