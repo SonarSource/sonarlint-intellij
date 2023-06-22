@@ -181,7 +181,6 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         descriptionPanel.removeAll()
         disableEmptyDisplay(false)
         ruleNameLabel.text = ""
-        securityHotspotHeaderMessage.text = ""
         mainPanel.withEmptyText("Finding location has been deleted")
     }
 
@@ -206,7 +205,6 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             ruleNameLabel.text = ""
             disableEmptyDisplay(false)
             mainPanel.withEmptyText(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
-            securityHotspotHeaderMessage.text = ""
         } else {
             disableEmptyDisplay(true)
             updateHeader(finding, ruleDetails)
@@ -286,7 +284,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
                 if (projectKey != null) {
                     htmlStringBuilder.append(
                         """
-                        Click ${
+                         Click ${
                             externalLink(
                                 "here",
                                 securityHotspotDetailsLink(serverConnection, projectKey, serverFindingKey)
@@ -319,7 +317,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         serverFindingKey: String,
     ): String {
         val prefixPath = if (serverConnection.isSonarCloud) "project/" else ""
-        return "${serverConnection.hostUrl}/{$prefixPath}security_hotspots?id=${urlEncode(projectKey)}&hotspots=${
+        return "${serverConnection.hostUrl}/${prefixPath}security_hotspots?id=${urlEncode(projectKey)}&hotspots=${
             urlEncode(
                 serverFindingKey
             )
