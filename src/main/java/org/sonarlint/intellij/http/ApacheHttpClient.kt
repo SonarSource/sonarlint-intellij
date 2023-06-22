@@ -179,7 +179,7 @@ class ApacheHttpClient private constructor(
         val futureResponse = CompletableFuture<Response>()
         val httpFuture = client.execute(httpRequest, object : FutureCallback<SimpleHttpResponse> {
             override fun completed(result: SimpleHttpResponse) {
-                futureResponse.complete(ApacheHttpResponse(httpRequest.requestUri, result))
+                futureResponse.completeAsync { ApacheHttpResponse(httpRequest.requestUri, result) }
             }
 
             override fun failed(ex: Exception) {
