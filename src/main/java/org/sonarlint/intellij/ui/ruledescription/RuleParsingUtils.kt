@@ -27,6 +27,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.psi.XmlElementFactory
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBPanel
+import com.intellij.util.ui.JBUI
 import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
@@ -122,7 +123,7 @@ class RuleParsingUtils {
                 verticalScrollBar.unitIncrement = 10
                 isOpaque = false
                 viewport.isOpaque = false
-                border = null
+                border = JBUI.Borders.empty()
             }
         }
     }
