@@ -83,7 +83,7 @@ public class ServerStep extends AbstractWizardStepEx {
 
     String cloudText = "Connect to <a href=\"https://sonarcloud.io\">the online service</a>";
     sonarcloudText.setText(cloudText);
-    sonarcloudText.addHyperlinkListener(new BrowserHyperlinkListener());
+    sonarcloudText.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
 
     String sqText = "Connect to a server";
     sonarqubeText.setText(sqText);

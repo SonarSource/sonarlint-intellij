@@ -60,7 +60,7 @@ public class NotificationsStep extends AbstractWizardStepEx {
       "<li>the Quality Gate status of a bound project changes</li>" +
       "<li>the latest analysis of a bound project on " + sqOrSc + " raises new issues assigned to you</li>" +
       "</ul>");
-    notificationsDetails.addHyperlinkListener(new BrowserHyperlinkListener());
+    notificationsDetails.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
   }
 
   @NotNull

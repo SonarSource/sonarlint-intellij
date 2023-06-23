@@ -112,7 +112,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
     cardPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
-    cardPanel.add(centeredLabel("No Security Hotspot shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
+    cardPanel.add(centeredLabel("No Security Hotspots shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
     cardPanel.add(findingsPanel, SECURITY_HOTSPOTS_LIST_CARD_ID);
 
     setupToolbar(createActionGroup());
@@ -252,8 +252,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
   private int displaySecurityHotspotsAfterFiltering(int filteredCount) {
     if (status instanceof Supported) {
-      if (filteredCount == 0) {
+      if (filteredCount == 0 && securityHotspotCount > 0) {
         cardPanel.show(NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
+      } else if (filteredCount == 0 && securityHotspotCount == 0) {
+        cardPanel.show(NO_SECURITY_HOTSPOT_CARD_ID);
       } else {
         cardPanel.show(SECURITY_HOTSPOTS_LIST_CARD_ID);
       }
