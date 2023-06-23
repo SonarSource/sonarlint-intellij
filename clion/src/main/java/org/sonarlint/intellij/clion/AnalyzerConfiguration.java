@@ -38,7 +38,6 @@ import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
-
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,6 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.commons.Language;
@@ -113,13 +111,17 @@ public class AnalyzerConfiguration {
       collectMSVCProperties(compilerSettings, properties);
     }
 
+    var sonarLanguage = getSonarLanguage(languageKind);
+    if (sonarLanguage != null) {
+      properties.put("sonarLanguage", sonarLanguage.getLanguageKey());
+    }
     return ConfigurationResult.of(new Configuration(
       file,
       compilerSettings.getCompilerExecutable().getAbsolutePath(),
       compilerSettings.getCompilerWorkingDir().getAbsolutePath(),
       compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW),
       cFamilyCompiler,
-      getSonarLanguage(languageKind),
+      sonarLanguage,
       properties));
   }
 
