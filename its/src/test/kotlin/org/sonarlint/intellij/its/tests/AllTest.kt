@@ -43,7 +43,6 @@ import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
-import org.sonarlint.intellij.its.fixtures.firstNotification
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.jRadioButtons
@@ -657,7 +656,7 @@ class AllTest : BaseUiTest() {
         private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
             with(remoteRobot) {
                 idea {
-                    firstNotification() {
+                    notification {
                         hasText("The issue was successfully marked as resolved")
                     }
                     toolWindow("SonarLint") {

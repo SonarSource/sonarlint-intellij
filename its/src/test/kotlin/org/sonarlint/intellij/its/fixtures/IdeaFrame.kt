@@ -84,7 +84,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         } catch (timeoutException: WaitForConditionTimeoutException) {
           try {
             // could be between 2 background tasks, wait and retry
-            Thread.sleep(500)
+            Thread.sleep(1000)
           } catch (e: InterruptedException) {
             e.printStackTrace()
           }
@@ -97,7 +97,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
 
   fun waitBackgroundTasksFinished() {
     println("Check background tasks")
-    waitFor(Duration.ofMinutes(5), Duration.ofSeconds(1), "Some background tasks are still running") {
+    waitFor(Duration.ofMinutes(5), Duration.ofSeconds(2), "Some background tasks are still running") {
       !isBackgroundTaskRunning()
     }
     println("Check background tasks - done")
