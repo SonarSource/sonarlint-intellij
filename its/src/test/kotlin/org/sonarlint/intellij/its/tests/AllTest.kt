@@ -49,6 +49,7 @@ import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
+import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
@@ -435,7 +436,7 @@ class AllTest : BaseUiTest() {
         private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
             with(remoteRobot) {
                 idea {
-                    firstNotification {
+                    notification {
                         hasText("The Security Hotspot status was successfully updated")
                     }
                     toolWindow("SonarLint") {

@@ -25,15 +25,14 @@ import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
+import org.sonarlint.intellij.its.fixtures.NotificationFixture.Companion.notificationPanel
 import java.time.Duration
 
 fun RemoteRobot.notification(
-    title: String,
     timeout: Duration = Duration.ofSeconds(20),
     function: NotificationFixture.() -> Unit = {},
-): NotificationFixture = step("Search for dialog with title $title") {
-    val notification = find<NotificationFixture>(NotificationFixture.byTitle(title), timeout)
+): NotificationFixture = step("Search for notification panel") {
+    val notification = find<NotificationFixture>(notificationPanel(), timeout)
 
     notification.apply(function)
 }
@@ -53,11 +52,12 @@ open class NotificationFixture(
 ) : CommonContainerFixture(remoteRobot, remoteComponent) {
 
     companion object {
-        fun byTitle(title: String) = byXpath("//div[@accessiblename='$title']")
+        fun notificationPanel() = byXpath("//div[@class='NotificationCenterPanel']")
+        fun byMessage(message: String) = byXpath("//div[@accessiblename='$message']")
         fun first() = byXpath("//div[@class='NotificationCenterPanel']//div[@class='JEditorPane']")
     }
 
-    fun content(classType: String, function: TabContentFixture.() -> Unit = {}) =
-        findElement<TabContentFixture>(byXpath("//div[@class='$classType']")).apply(function)
+    fun content(message: String, function: NotificationFixture.() -> Unit = {}) =
+        find<NotificationFixture>(byMessage(message)).apply(function)
 
 }
