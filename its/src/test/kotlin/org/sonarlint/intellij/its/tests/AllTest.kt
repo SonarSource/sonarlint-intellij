@@ -30,6 +30,7 @@ import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
+import com.sonar.orchestrator.locator.MavenLocation
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
@@ -74,6 +75,7 @@ class AllTest : BaseUiTest() {
         val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
+            .addBundledPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.13.0.4374"))
             .keepBundledPlugins()
             .build()
 
