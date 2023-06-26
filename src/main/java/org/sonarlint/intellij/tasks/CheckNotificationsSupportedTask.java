@@ -24,7 +24,6 @@ import com.intellij.openapi.progress.Task;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.core.ServerNotificationsService;
 
 /**
  * Only useful for SonarQube, since we know notifications are available in SonarCloud
@@ -49,7 +48,7 @@ public class CheckNotificationsSupportedTask extends Task.Modal {
         notificationsSupported = true;
       } else {
         indicator.setText("Checking support of notifications");
-        notificationsSupported = ServerNotificationsService.get().isSupported(connection);
+        notificationsSupported = connection.api().developers().isSupported();
       }
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to check notifications", e);
