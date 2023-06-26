@@ -23,7 +23,7 @@ import com.google.protobuf.InvalidProtocolBufferException
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
 import com.intellij.remoterobot.fixtures.ContainerFixture
-import com.intellij.remoterobot.fixtures.JButtonFixture
+import com.intellij.remoterobot.fixtures.JButtonFixture.Companion.byText
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
@@ -42,13 +42,13 @@ import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
+import org.sonarlint.intellij.its.fixtures.firstNotification
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
-import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
@@ -82,6 +82,7 @@ class AllTest : BaseUiTest() {
         const val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
         const val PROJECT_KEY = "sample-scala"
         const val MODULE_PROJECT_KEY = "sample-scala-mod"
+        const val ISSUE_PROJECT_KEY = "sample-java-issues"
 
         private var firstHotspotKey: String? = null
         lateinit var token: String
@@ -220,7 +221,7 @@ class AllTest : BaseUiTest() {
 
                 pressOk()
                 errorMessage("Project key for module 'sample-scala-module' should not be empty")
-                buttons(JButtonFixture.byText("Search in list..."))[1].click()
+                buttons(byText("Search in list..."))[1].click()
                 dialog("Select SonarQube Project To Bind") {
                     jList {
                         clickItem(MODULE_PROJECT_KEY, false)
@@ -262,11 +263,6 @@ class AllTest : BaseUiTest() {
             createConnection(this)
             bindRecentProject(this)
             verifyHotspotOpened(this)
-        }
-
-        private fun triggerOpenHotspotRequest() {
-            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$SECURITY_HOTSPOT_PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
-                .readText()
         }
 
         private fun createConnection(robot: RemoteRobot) {
@@ -344,6 +340,10 @@ class AllTest : BaseUiTest() {
             }
         }
 
+        private fun triggerOpenHotspotRequest() {
+            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
+                .readText()
+        }
     }
 
     @Nested
@@ -380,7 +380,7 @@ class AllTest : BaseUiTest() {
 
             openReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
             changeStatusAndPressChange(this, "Acknowledged")
-            verifyStatusWasSuccessfullyChanged(this, "SonarLint - Security Hotspot review")
+            verifyStatusWasSuccessfullyChanged(this)
         }
 
         private fun bindProjectFromPanel() {
@@ -432,11 +432,11 @@ class AllTest : BaseUiTest() {
             }
         }
 
-        private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot, title: String) {
+        private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
             with(remoteRobot) {
                 idea {
-                    notification(title) {
-                        hasText("The Security Hotspot status was successfully updated!")
+                    firstNotification {
+                        hasText("The Security Hotspot status was successfully updated")
                     }
                     toolWindow("SonarLint") {
                         content("SecurityHotspotsPanel") {
@@ -547,6 +547,132 @@ class AllTest : BaseUiTest() {
                         ensureOpen()
                         tabTitleContains("Taint Vulnerabilities") { select() }
                         content("TaintVulnerabilitiesPanel") {
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
+    inner class CurrentFileTabTest : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-issue.xml"))
+
+            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "Sample Java Issues")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                ISSUE_PROJECT_KEY,
+                "java",
+                "SonarLint IT Java Issue"
+            )
+
+            // Build and analyze project to raise issue
+            executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR);
+
+            token = generateToken(adminWsClient, "CurrentFileTabTest")
+        }
+
+        @Test
+        fun should_display_issues_and_review_it_successfully() = uiTest {
+            openExistingProject("sample-java-issues", true)
+            bindProjectFromPanel()
+
+            openFile("src/main/java/foo/Foo.java", "Foo.java")
+            verifyIssueTreeContainsMessages(this, "Move this trailing comment on the previous empty line.")
+
+            openReviewDialogFromList(this, "Move this trailing comment on the previous empty line.")
+            changeStatusAndPressChange(this, "False Positive")
+            confirm(this)
+            verifyStatusWasSuccessfullyChanged(this)
+        }
+
+        private fun bindProjectFromPanel() {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tab("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            toolBarButton("Configure SonarLint").click()
+                        }
+                    }
+                    bindProjectToSonarQube(
+                        ORCHESTRATOR.server.url,
+                        token,
+                        ISSUE_PROJECT_KEY
+                    )
+                }
+            }
+        }
+
+        private fun openReviewDialogFromList(remoteRobot: RemoteRobot, issueMessage: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        content("IssueTree") {
+                            findText(issueMessage).rightClick()
+                        }
+                    }
+                    actionMenuItem("Mark as Resolved") {
+                        click()
+                    }
+                }
+            }
+        }
+
+        private fun changeStatusAndPressChange(remoteRobot: RemoteRobot, status: String) {
+            with(remoteRobot) {
+                idea {
+                    dialog("Mark Issue as Resolved on SonarQube") {
+                        content(status) {
+                            click()
+                        }
+
+                        pressButton("Mark as Resolved")
+                    }
+                }
+            }
+        }
+
+        private fun confirm(remoteRobot: RemoteRobot) {
+            with(remoteRobot) {
+                idea {
+                    dialog("Confirm marking issue as resolved") {
+                        pressButton("Confirm")
+                    }
+                }
+            }
+        }
+
+        private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
+            with(remoteRobot) {
+                idea {
+                    firstNotification() {
+                        hasText("The issue was successfully marked as resolved")
+                    }
+                    toolWindow("SonarLint") {
+                        content("CurrentFilePanel") {
+                            hasText("No issues found in the current opened file")
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        content("IssueTree") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
