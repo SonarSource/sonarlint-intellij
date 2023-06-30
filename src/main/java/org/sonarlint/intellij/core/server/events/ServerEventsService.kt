@@ -32,7 +32,6 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.ProjectLogOutput
