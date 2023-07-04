@@ -85,6 +85,7 @@ import org.sonarsource.sonarlint.core.clientapi.client.sync.DidSynchronizeConfig
 import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
 import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
 import java.io.ByteArrayInputStream
 import java.net.Authenticator
 import java.net.URI
@@ -334,15 +335,15 @@ object SonarLintIntelliJClient : SonarLintClient {
         }
     }
 
-    override fun getCredentials(params: GetCredentialsParams): CompletableFuture<GetCredentialsResponse>? {
+    override fun getCredentials(params: GetCredentialsParams): CompletableFuture<GetCredentialsResponse> {
         return getGlobalSettings().getServerConnectionByName(params.connectionId)
             .map { connection -> connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
                 ?: connection.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.password))) }
-                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))}
-            .orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.connectionId)))
+                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))
+            }.orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.connectionId)))
     }
 
-    override fun getProxyPasswordAuthentication(params: GetProxyPasswordAuthenticationParams): CompletableFuture<GetProxyPasswordAuthenticationResponse>? {
+    override fun getProxyPasswordAuthentication(params: GetProxyPasswordAuthenticationParams): CompletableFuture<GetProxyPasswordAuthenticationResponse> {
         val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(
             params.host,
             null,
@@ -356,7 +357,7 @@ object SonarLintIntelliJClient : SonarLintClient {
         return CompletableFuture.completedFuture(GetProxyPasswordAuthenticationResponse(auth.userName, String(auth.password)))
     }
 
-    override fun checkServerTrusted(params: CheckServerTrustedParams): CompletableFuture<CheckServerTrustedResponse>? {
+    override fun checkServerTrusted(params: CheckServerTrustedParams): CompletableFuture<CheckServerTrustedResponse> {
         val certificateFactory = CertificateFactory.getInstance("X.509")
         val certificates: Array<X509Certificate> = params.chain.stream()
             .map { certificateFactory.generateCertificate(ByteArrayInputStream(it.pem.toByteArray())) as X509Certificate }
@@ -365,11 +366,12 @@ object SonarLintIntelliJClient : SonarLintClient {
             CertificateManager.getInstance().trustManager.checkServerTrusted(certificates, params.authType)
             CompletableFuture.completedFuture(CheckServerTrustedResponse(true))
         } catch (e: CertificateException) {
+            SonarLintLogger.get().warn("Certificate is not trusted", e.message)
             return CompletableFuture.completedFuture(CheckServerTrustedResponse(false))
         }
     }
 
-    override fun selectProxies(params: SelectProxiesParams): CompletableFuture<SelectProxiesResponse>? {
+    override fun selectProxies(params: SelectProxiesParams): CompletableFuture<SelectProxiesResponse> {
         val uri = URI.create(params.uri)
         val proxiesResponse =
             SelectProxiesResponse(CommonProxy.getInstance().select(uri).stream().map { ProxyDto(it.type(), uri.host, uri.port) }

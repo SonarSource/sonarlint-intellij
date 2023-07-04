@@ -25,9 +25,6 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.extensions.PluginId;
 import java.nio.file.Path;
-import org.sonarlint.intellij.core.BackendService;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 @Service(Service.Level.APP)
 public final class SonarLintPlugin implements Disposable {
@@ -50,6 +47,6 @@ public final class SonarLintPlugin implements Disposable {
 
   @Override
   public void dispose() {
-    getService(BackendService.class).dispose();
+    // Nothing to do
   }
 }

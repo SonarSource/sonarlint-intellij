@@ -20,18 +20,13 @@
 package org.sonarlint.intellij.core
 
 import com.intellij.ide.impl.OpenProjectTask
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
-import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.times
@@ -116,8 +111,6 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_opening_a_non_bound_project() {
-
-
         service.projectOpened(project)
 
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
