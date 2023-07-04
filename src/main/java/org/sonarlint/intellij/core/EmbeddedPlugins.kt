@@ -51,7 +51,8 @@ object EmbeddedPlugins {
     )
     private val ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE: Set<Language> = EnumSet.of(
         Language.SCALA,
-        Language.SWIFT
+        Language.SWIFT,
+        Language.PLSQL
     )
     private val EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE = listOf(
         EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),

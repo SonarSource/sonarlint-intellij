@@ -56,7 +56,8 @@ enum class RuleLanguages(private val language: Language, private vararg val file
     TERRAFORM(Language.TERRAFORM, "Terraform"),
     TS(Language.TS, *typescriptFileTypesByPriority),
     XML(Language.XML, "XML"),
-    YAML(Language.YAML, "YAML");
+    YAML(Language.YAML, "YAML"),
+    PLSQL(Language.PLSQL, "PL/SQL");
 
     companion object {
         fun findFileTypeByRuleLanguage(languageKey: String): FileType {
