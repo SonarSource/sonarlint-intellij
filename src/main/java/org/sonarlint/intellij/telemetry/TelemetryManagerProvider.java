@@ -21,16 +21,16 @@ package org.sonarlint.intellij.telemetry;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.application.PathManager;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.http.ApacheHttpClient;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryHttpClient;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class TelemetryManagerProvider {
   public static final String TELEMETRY_PRODUCT_KEY = "idea";
@@ -39,9 +39,9 @@ public class TelemetryManagerProvider {
   private static final String OLD_STORAGE_FILENAME = "sonarlint_usage";
 
   public TelemetryManager get() {
-    var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    var plugin = getService(SonarLintPlugin.class);
     var client = new TelemetryHttpClient(PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry(), null, System.getProperty("os.arch"),
-      ApacheHttpClient.getDefault());
+      getService(BackendService.class).getHttpClientNoAuth());
     return new TelemetryManager(getStorageFilePath(), client, new TelemetryClientAttributeProviderImpl());
   }
 

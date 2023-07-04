@@ -47,6 +47,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -260,7 +261,7 @@ public final class ServerSecurityHotspotUpdater implements Disposable {
           SonarLintConsole.get(myProject).debug("Skip fetching server hotspots, branch is unknown");
           return;
         }
-        engine.downloadAllServerHotspots(server.getEndpointParams(), server.getHttpClient(), projectKey, branchName, null);
+        engine.downloadAllServerHotspots(server.getEndpointParams(), getService(BackendService.class).getHttpClient(server.getName()), projectKey, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -293,7 +294,7 @@ public final class ServerSecurityHotspotUpdater implements Disposable {
         return List.of();
       }
       try {
-        engine.downloadAllServerHotspotsForFile(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath,
+        engine.downloadAllServerHotspotsForFile(server.getEndpointParams(), getService(BackendService.class).getHttpClient(server.getName()), projectBinding, relativePath,
           branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);

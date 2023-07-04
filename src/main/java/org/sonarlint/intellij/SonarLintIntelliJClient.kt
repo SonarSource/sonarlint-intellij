@@ -36,7 +36,8 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.containers.orNull
+import com.intellij.util.net.ssl.CertificateManager
+import com.intellij.util.proxy.CommonProxy
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -47,7 +48,6 @@ import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
-import org.sonarlint.intellij.http.ApacheHttpClient.Companion.default
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
@@ -62,21 +62,39 @@ import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingResp
 import org.sonarsource.sonarlint.core.clientapi.client.binding.SuggestBindingParams
 import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionParams
 import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionResponse
+import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentialsParams
+import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentialsResponse
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeResponse
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FoundFileDto
 import org.sonarsource.sonarlint.core.clientapi.client.host.GetHostInfoResponse
 import org.sonarsource.sonarlint.core.clientapi.client.hotspot.ShowHotspotParams
+import org.sonarsource.sonarlint.core.clientapi.client.http.CheckServerTrustedParams
+import org.sonarsource.sonarlint.core.clientapi.client.http.CheckServerTrustedResponse
+import org.sonarsource.sonarlint.core.clientapi.client.http.GetProxyPasswordAuthenticationParams
+import org.sonarsource.sonarlint.core.clientapi.client.http.GetProxyPasswordAuthenticationResponse
+import org.sonarsource.sonarlint.core.clientapi.client.http.ProxyDto
+import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesParams
+import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesResponse
 import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
-import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
 import org.sonarsource.sonarlint.core.clientapi.client.progress.ReportProgressParams
 import org.sonarsource.sonarlint.core.clientapi.client.progress.StartProgressParams
+import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
 import org.sonarsource.sonarlint.core.clientapi.client.sync.DidSynchronizeConfigurationScopeParams
-import org.sonarsource.sonarlint.core.commons.http.HttpClient
+import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
+import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.URI
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.stream.Collectors
 
 object SonarLintIntelliJClient : SonarLintClient {
 
@@ -163,13 +181,6 @@ object SonarLintIntelliJClient : SonarLintClient {
             }
         }
         return virtualFile.contentsToByteArray().toString(virtualFile.charset)
-    }
-
-    override fun getHttpClient(connectionId: String) =
-        getGlobalSettings().getServerConnectionByName(connectionId).map { it.httpClient }.orNull()
-
-    override fun getHttpClientNoAuth(forUrl: String): HttpClient? {
-        return default
     }
 
     override fun openUrlInBrowser(params: OpenUrlInBrowserParams) {
@@ -322,6 +333,50 @@ object SonarLintIntelliJClient : SonarLintClient {
                     ).presentTaintVulnerabilitiesForOpenFiles()
                 }
         }
+    }
+
+    override fun getCredentials(params: GetCredentialsParams): CompletableFuture<GetCredentialsResponse> {
+        return getGlobalSettings().getServerConnectionByName(params.connectionId)
+            .map { connection -> connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
+                ?: connection.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.password))) }
+                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))
+            }.orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.connectionId)))
+    }
+
+    override fun getProxyPasswordAuthentication(params: GetProxyPasswordAuthenticationParams): CompletableFuture<GetProxyPasswordAuthenticationResponse> {
+        val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(
+            params.host,
+            null,
+            params.port,
+            params.protocol,
+            params.prompt,
+            params.scheme,
+            null,
+            Authenticator.RequestorType.PROXY
+        )
+        return CompletableFuture.completedFuture(GetProxyPasswordAuthenticationResponse(auth.userName, String(auth.password)))
+    }
+
+    override fun checkServerTrusted(params: CheckServerTrustedParams): CompletableFuture<CheckServerTrustedResponse> {
+        val certificateFactory = CertificateFactory.getInstance("X.509")
+        val certificates: Array<X509Certificate> = params.chain.stream()
+            .map { certificateFactory.generateCertificate(ByteArrayInputStream(it.pem.toByteArray())) as X509Certificate }
+            .collect(Collectors.toList()).toTypedArray()
+        return try {
+            CertificateManager.getInstance().trustManager.checkServerTrusted(certificates, params.authType)
+            CompletableFuture.completedFuture(CheckServerTrustedResponse(true))
+        } catch (e: CertificateException) {
+            SonarLintLogger.get().warn("Certificate is not trusted", e.message)
+            return CompletableFuture.completedFuture(CheckServerTrustedResponse(false))
+        }
+    }
+
+    override fun selectProxies(params: SelectProxiesParams): CompletableFuture<SelectProxiesResponse> {
+        val uri = URI.create(params.uri)
+        val proxiesResponse =
+            SelectProxiesResponse(CommonProxy.getInstance().select(uri).stream().map { ProxyDto(it.type(), uri.host, uri.port) }
+                .collect(Collectors.toList()))
+        return CompletableFuture.completedFuture(proxiesResponse)
     }
 
     private fun showConfirmModal(title: String, message: String, confirmText: String, project: Project?): Boolean {

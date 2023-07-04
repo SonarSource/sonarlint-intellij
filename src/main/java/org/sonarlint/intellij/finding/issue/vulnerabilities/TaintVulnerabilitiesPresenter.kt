@@ -34,6 +34,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
@@ -90,7 +91,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val branchName = getService(project, VcsService::class.java).getServerBranchName(module)
     if (branchName != null) {
       bindingManager.connectedEngine.downloadAllServerTaintIssuesForFile(serverConnection.endpointParams,
-        serverConnection.httpClient, projectBinding, relativePath, branchName, null)
+        getService(BackendService::class.java).getHttpClient(serverConnection.name), projectBinding, relativePath, branchName, null)
     }
   }
 

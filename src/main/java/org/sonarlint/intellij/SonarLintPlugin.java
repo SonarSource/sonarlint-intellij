@@ -25,7 +25,6 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.extensions.PluginId;
 import java.nio.file.Path;
-import org.sonarlint.intellij.http.ApacheHttpClient;
 
 @Service(Service.Level.APP)
 public final class SonarLintPlugin implements Disposable {
@@ -48,6 +47,6 @@ public final class SonarLintPlugin implements Disposable {
 
   @Override
   public void dispose() {
-    ApacheHttpClient.getDefault().close();
+    // Nothing to do
   }
 }

@@ -27,7 +27,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.impl.ProgressResult;
 import com.intellij.openapi.progress.impl.ProgressRunner;
 import com.intellij.openapi.progress.util.ProgressWindow;
-import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.WindowManager;
@@ -52,8 +51,8 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.ProgressUtils;
-import org.sonarsource.sonarlint.core.clientapi.backend.authentication.HelpGenerateUserTokenResponse;
-import org.sonarsource.sonarlint.core.serverapi.system.ValidationResult;
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.auth.HelpGenerateUserTokenResponse;
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionResponse;
 
 public class AuthStep extends AbstractWizardStepEx {
   private static final String LOGIN_ITEM = "Login / Password";
@@ -228,7 +227,7 @@ public class AuthStep extends AbstractWizardStepEx {
     ServerConnection tmpServer = model.createConnectionWithoutOrganization();
     ConnectionTestTask test = new ConnectionTestTask(tmpServer);
     var msg = "Failed to connect to the server. Please check the configuration.";
-    ValidationResult result;
+    ValidateConnectionResponse result;
     try {
       result = ProgressManager.getInstance().run(test);
     } catch (Exception e) {
@@ -240,8 +239,8 @@ public class AuthStep extends AbstractWizardStepEx {
     }
     if (result == null) {
       throw new CommitStepCancelledException();
-    } else if (!result.success()) {
-      throw new CommitStepException(msg + " Cause: " + result.message());
+    } else if (!result.isSuccess()) {
+      throw new CommitStepException(msg + " Cause: " + result.getMessage());
     }
   }
 

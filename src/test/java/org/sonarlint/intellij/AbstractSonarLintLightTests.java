@@ -33,11 +33,14 @@ import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
@@ -82,6 +85,21 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getModuleSettings().setSqPathPrefix("");
     getModuleSettings().clearBindingOverride();
   }
+
+  @RegisterExtension
+  AfterTestExecutionCallback afterTestExecutionCallback = context -> {
+    Optional<Throwable> exception = context.getExecutionException();
+    var console = getConsole();
+    if (console instanceof SonarLintConsoleTestImpl && exception.isPresent()) {
+      var testConsole = (SonarLintConsoleTestImpl) console;
+      var testName = context.getDisplayName();
+      System.out.println("Test '" + testName + "' failed. Logs:");
+      testConsole.flushTo(System.out);
+      System.out.println("End of logs for test '" + testName + "'");
+    } else {
+      console.clear();
+    }
+  };
 
   @AfterEach
   final void afterEachLightTest() throws Exception {
@@ -131,8 +149,8 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     return (TestEngineManager) getService(EngineManager.class);
   }
 
-  protected SonarLintConsoleTestImpl getConsole() {
-    return (SonarLintConsoleTestImpl) getService(getProject(), SonarLintConsole.class);
+  protected SonarLintConsole getConsole() {
+    return getService(getProject(), SonarLintConsole.class);
   }
 
   protected VirtualFile createTestFile(String fileName, Language language, String text) {

@@ -63,7 +63,6 @@ abstract class AbstractSonarLintHeavyTests : HeavyPlatformTestCase() {
 
     @AfterEach
     fun afterEachHeavyTest() {
-        getService(BackendService::class.java).dispose()
         super.tearDown()
     }
 

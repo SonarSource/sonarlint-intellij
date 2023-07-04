@@ -22,22 +22,21 @@ package org.sonarlint.intellij.config.global;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Tag;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.server.ServerLinks;
 import org.sonarlint.intellij.core.server.SonarCloudLinks;
 import org.sonarlint.intellij.core.server.SonarQubeLinks;
-import org.sonarlint.intellij.http.ApacheHttpClient;
-import org.sonarsource.sonarlint.core.commons.http.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 import org.sonarsource.sonarlint.core.serverapi.ServerApi;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
@@ -175,13 +174,8 @@ public class ServerConnection {
     return new EndpointParams(getHostUrl(), isSonarCloud(), getOrganizationKey());
   }
 
-  public HttpClient getHttpClient() {
-    var userToken = getToken();
-    return ApacheHttpClient.getDefault().withCredentials(isBlank(userToken) ? getLogin() : userToken, getPassword());
-  }
-
   public ServerApi api() {
-    return new ServerApi(getEndpointParams(), getHttpClient());
+    return new ServerApi(getEndpointParams(), getService(BackendService.class).getHttpClient(name));
   }
 
   @Override

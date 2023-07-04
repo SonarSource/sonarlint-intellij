@@ -89,7 +89,8 @@ public final class ConnectedModeStorageSynchronizer implements Disposable {
       progressIndicator.setIndeterminate(false);
       ProjectBindingManager bindingManager = getService(myProject, ProjectBindingManager.class);
       var projectKeysToSync = bindingManager.getUniqueProjectKeys();
-      engine.sync(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKeysToSync, new TaskProgressMonitor(progressIndicator, myProject));
+      engine.sync(serverConnection.getEndpointParams(), getService(BackendService.class).getHttpClient(serverConnection.getName()), projectKeysToSync,
+        new TaskProgressMonitor(progressIndicator, myProject));
       myProject.getMessageBus().syncPublisher(ServerBranchesListenerKt.getSERVER_BRANCHES_TOPIC()).serverBranchesUpdated();
     } catch (Exception e) {
       log.log("There was an error while synchronizing quality profiles: " + e.getMessage(), ClientLogOutput.Level.WARN);
