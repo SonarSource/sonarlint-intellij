@@ -274,7 +274,7 @@ dogfood_task:
   #  alias: "update_dogfood_repo"
   depends_on:
     - promote
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 2
