@@ -97,8 +97,8 @@ promote_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
     <<: *CONTAINER_DEFINITION
-  #    cpu: 2
-  #    memory: 1G
+    cpu: 3
+    memory: 2G
   env:
     GCF_ACCESS_TOKEN: VAULT[development/kv/data/promote data.token]
     PROMOTE_URL: VAULT[development/kv/data/promote data.url]
@@ -118,36 +118,14 @@ dogfood_task:
     - promote
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
   eks_container:
-    <<: *CONTAINER_DEFINITION
+    <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 2
     memory: 1G
   env:
     ARTIFACTORY_API_USER: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter
     ARTIFACTORY_API_KEY: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
-  env_script: |
-    source cirrus-env QA
-    echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CIRRUS_ENV
+    JDK_VERSION: "17"
   dogfood_script: |
-    #!/usr/bin/env python3
-    import requests
-    import os
-    import sys
-    import json
-
-    buildNumber = '${BUILD_NUMBER}'
-    buildInfoUrl = f'${ARTIFACTORY_URL}/api/build/sonarlint-intellij/{buildNumber}'
-    buildInfoResp = requests.get(url=buildInfoUrl, auth=('${ARTIFACTORY_API_USER}', '${ARTIFACTORY_API_KEY}'))
-    buildInfoJson = buildInfoResp.json()
-
-    buildInfo = buildInfoJson.get('buildInfo', {})
-    buildInfoProperties = buildInfo.get('properties', {})
-    version = buildInfoProperties.get('buildInfo.env.PROJECT_VERSION', 'NOT_FOUND')
-
-    xml = f"""<plugins>
-      <plugin id="org.sonarlint.idea" url="${ARTIFACTORY_URL}/sonarsource/org/sonarsource/sonarlint/intellij/sonarlint-intellij/{version}/sonarlint-intellij-{version}.zip" version="{version}"/>
-    </plugins>"""
-
-    updatePluginsXmlUrl = "${ARTIFACTORY_URL}/sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/updatePlugins.xml"
-    response = requests.put(url=updatePluginsXmlUrl, data=xml, auth=('${ARTIFACTORY_API_USER}', '${ARTIFACTORY_API_KEY}'))
-    if not response.status_code == 201:
-      sys.exit('[!] [{0}] Server Error'.format(response.status_code))
+    source cirrus-env QA
+    pip3 install requests
+    python3 .cirrus/dogfood.py

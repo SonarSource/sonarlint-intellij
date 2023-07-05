@@ -7,7 +7,8 @@ USER root
 ENV NODE_VERSION=18
 RUN apt-get update && apt-get install -y metacity xvfb xauth ffmpeg \
     nodejs=${NODE_VERSION}.* \
-    build-essential
+    build-essential \
+    python3-pip
 
 COPY --chmod=755 .cirrus/xvfb /etc/init.d/
 
