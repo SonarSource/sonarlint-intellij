@@ -21,6 +21,8 @@ package org.sonarlint.intellij.clion;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiManager;
+import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
 
@@ -28,6 +30,10 @@ public class CFamilyFileExclusionContributor implements FileExclusionContributor
 
   @Override
   public ExcludeResult shouldExclude(Module module, VirtualFile fileToAnalyze) {
+    var psiFile = PsiManager.getInstance(module.getProject()).findFile(fileToAnalyze);
+    if(!(psiFile instanceof OCPsiFile)){
+      return  ExcludeResult.notExcluded();
+    }
     var configurationResult = new AnalyzerConfiguration(module.getProject()).getConfiguration(fileToAnalyze);
     if (configurationResult.hasConfiguration()) {
       return ExcludeResult.notExcluded();
