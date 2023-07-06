@@ -22,6 +22,7 @@ package org.sonarlint.intellij.core
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.LanguageActivator
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.plsql.PLSQLLanguageActivator
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.Language
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
@@ -83,7 +84,7 @@ object EmbeddedPlugins {
         get() {
             val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
             enabledLanguages.addAll(ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE)
-            amendEnabledLanguages(enabledLanguages)
+            amendEnabledLanguages(enabledLanguages, true)
             return enabledLanguages
         }
 
@@ -91,13 +92,22 @@ object EmbeddedPlugins {
     val enabledLanguagesInStandaloneMode: Set<Language>
         get() {
             val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
-            amendEnabledLanguages(enabledLanguages)
+            amendEnabledLanguages(enabledLanguages, false)
             return enabledLanguages
         }
 
-    private fun amendEnabledLanguages(enabledLanguages: Set<Language>) {
+    private fun amendEnabledLanguages(enabledLanguages: Set<Language>, isForConnectedMode: Boolean) {
         val languageActivator = LanguageActivator.EP_NAME.extensionList
-        languageActivator.forEach(Consumer { l: LanguageActivator -> l.amendLanguages(enabledLanguages) })
+        languageActivator.forEach(Consumer {
+            l: LanguageActivator ->
+            if(l is PLSQLLanguageActivator){
+                if(isForConnectedMode){
+                    l.amendLanguages(enabledLanguages)
+                }
+            } else {
+                l.amendLanguages(enabledLanguages)
+            }
+        })
     }
 
     @JvmStatic
