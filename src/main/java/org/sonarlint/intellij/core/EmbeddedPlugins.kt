@@ -83,7 +83,7 @@ object EmbeddedPlugins {
         get() {
             val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
             enabledLanguages.addAll(ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE)
-            amendEnabledLanguages(enabledLanguages)
+            amendEnabledLanguages(enabledLanguages, true)
             return enabledLanguages
         }
 
@@ -91,13 +91,13 @@ object EmbeddedPlugins {
     val enabledLanguagesInStandaloneMode: Set<Language>
         get() {
             val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
-            amendEnabledLanguages(enabledLanguages)
+            amendEnabledLanguages(enabledLanguages, false)
             return enabledLanguages
         }
 
-    private fun amendEnabledLanguages(enabledLanguages: Set<Language>) {
+    private fun amendEnabledLanguages(enabledLanguages: Set<Language>, isConnected: Boolean) {
         val languageActivator = LanguageActivator.EP_NAME.extensionList
-        languageActivator.forEach(Consumer { l: LanguageActivator -> l.amendLanguages(enabledLanguages) })
+        languageActivator.forEach(Consumer { l: LanguageActivator -> l.amendLanguages(enabledLanguages, isConnected) })
     }
 
     @JvmStatic

@@ -26,8 +26,10 @@ import org.sonarsource.sonarlint.core.commons.Language;
 public class PLSQLLanguageActivator implements LanguageActivator {
 
   @Override
-  public void amendLanguages(Set<Language> enabledLanguages) {
-    enabledLanguages.add(Language.PLSQL);
+  public void amendLanguages(Set<Language> enabledLanguages, boolean isConnected) {
+    if (isConnected) {
+      enabledLanguages.add(Language.PLSQL);
+    }
   }
 
 }
