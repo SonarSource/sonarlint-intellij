@@ -25,7 +25,7 @@ import org.sonarsource.sonarlint.core.commons.Language;
 
 public class JavaLanguageActivator implements LanguageActivator {
   @Override
-  public void amendLanguages(Set<Language> enabledLanguages) {
+  public void amendLanguages(Set<Language> enabledLanguages, boolean isConnected) {
     enabledLanguages.add(Language.JAVA);
   }
 }
