@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source cirrus-env PROMOTE
+source .cirrus/set_gradle_build_version
+curl -sfSL -H "Authorization: Bearer $GCF_ACCESS_TOKEN" "$PROMOTE_URL/$GITHUB_REPO/$GITHUB_BRANCH/$BUILD_NUMBER/$PULL_REQUEST"
+github-notify-promotion
+burgr-notify-promotion

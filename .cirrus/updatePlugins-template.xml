@@ -1,0 +1,3 @@
+<plugins>
+  <plugin id="org.sonarlint.idea" url="${ARTIFACTORY_URL}/sonarsource/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip" version="${PROJECT_VERSION}"/>
+</plugins>

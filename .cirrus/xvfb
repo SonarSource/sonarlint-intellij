@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+XVFB=/usr/bin/Xvfb
+XVFB_ARGS="$DISPLAY -listen tcp -ac -screen 0 1280x960x24"
+PID_FILE=~/xvfb_${DISPLAY:1}.pid
+LOG_FILE=${CIRRUS_WORKING_DIR}/Xvfb.out
+case "$1" in
+  start)
+    echo -n "Starting virtual X frame buffer: Xvfb"
+    # shellcheck disable=SC2086
+    /sbin/start-stop-daemon --start --quiet --pidfile "$PID_FILE" --make-pidfile --background --exec "$XVFB" --no-close -- $XVFB_ARGS \
+        > "$LOG_FILE" 2>&1
+    echo "."
+    ;;
+  stop)
+    echo -n "Stopping virtual X frame buffer: Xvfb"
+    /sbin/start-stop-daemon --stop --quiet --pidfile "$PID_FILE"
+    echo "."
+    ;;
+  restart)
+    $0 stop
+    $0 start
+    ;;
+  *)
+  echo "Usage: /etc/init.d/xvfb {start|stop|restart}"
+  exit 1
+esac
+exit 0
