@@ -32,8 +32,6 @@ eks_container: &CONTAINER_DEFINITION
   region: eu-central-1
   cluster_name: ${CIRRUS_CLUSTER_NAME}
   namespace: default
-  cpu: 4
-  memory: 8G
 
 eks_builder_container: &BUILDER_CONTAINER_DEFINITION
   <<: *CONTAINER_DEFINITION
@@ -43,7 +41,7 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
     JDK_VERSION: ${JDK_VERSION}
   builder_role: cirrus-builder
   builder_image: docker-builder-v*
-  builder_instance_type: t2.small
+  builder_instance_type: t3.small
   builder_subnet_id: ${CIRRUS_AWS_SUBNET}
 
 ec2_instance: &WINVM_DEFINITION
@@ -76,6 +74,8 @@ build_task:
   <<: *ONLY_IF
   eks_container:
     <<: *CONTAINER_DEFINITION
+    cpu: 4
+    memory: 8G
   env:
     ARTIFACTORY_DEPLOY_REPO: sonarsource-public-qa
     ARTIFACTORY_DEPLOY_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer
@@ -100,6 +100,8 @@ validate_task:
     JDK_VERSION: "11"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
+    cpu: 4
+    memory: 8G
   <<: *SETUP_GRADLE_CACHE
   build_script: |
     source cirrus-env QA
@@ -143,7 +145,7 @@ qa_task:
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 4
-    memory: 12G
+    memory: 16G
   env:
     CLION_KEY: VAULT[development/team/sonarlint/kv/data/clion.key data.key]
     GOLAND_KEY: VAULT[development/team/sonarlint/kv/data/goland.key data.key]
@@ -230,7 +232,7 @@ mend_scan_task:
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 4
-    memory: 2G
+    memory: 4G
   env:
     WS_APIKEY: VAULT[development/kv/data/mend data.apikey]
   <<: *SETUP_GRADLE_CACHE
@@ -277,8 +279,8 @@ dogfood_task:
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 2
-    memory: 1G
+    cpu: 0.5
+    memory: 500M
   env:
     ARTIFACTORY_API_KEY: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     JDK_VERSION: "17"
