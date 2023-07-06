@@ -93,6 +93,9 @@ allprojects {
     tasks.cyclonedxBom {
         setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
         inputs.files(configurations.runtimeClasspath, configurations.archives.get())
+        mustRunAfter(
+            getTasksByName("buildPluginBlockmap", true)
+        )
     }
 
     val bomFile = layout.buildDirectory.file("reports/bom.json")
