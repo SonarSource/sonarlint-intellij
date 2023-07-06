@@ -20,13 +20,12 @@
 package org.sonarlint.intellij.rider;
 
 import java.util.Set;
-
 import org.sonarlint.intellij.common.LanguageActivator;
 import org.sonarsource.sonarlint.core.commons.Language;
 
 public class CsharpLanguageActivator implements LanguageActivator {
   @Override
-  public void amendLanguages(Set<Language> enabledLanguages) {
+  public void amendLanguages(Set<Language> enabledLanguages, boolean isConnected) {
     enabledLanguages.clear();
     enabledLanguages.add(Language.CS);
     enabledLanguages.add(Language.SECRETS);

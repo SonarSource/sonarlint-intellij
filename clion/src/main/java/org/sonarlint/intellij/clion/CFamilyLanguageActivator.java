@@ -20,16 +20,19 @@
 package org.sonarlint.intellij.clion;
 
 import java.util.Set;
-
 import org.sonarlint.intellij.common.LanguageActivator;
 import org.sonarsource.sonarlint.core.commons.Language;
 
 public class CFamilyLanguageActivator implements LanguageActivator {
   @Override
-  public void amendLanguages(Set<Language> enabledLanguages) {
+  public void amendLanguages(Set<Language> enabledLanguages, boolean isConnected) {
+    boolean isPLSQLEnabled = enabledLanguages.contains(Language.PLSQL);
     enabledLanguages.clear();
     enabledLanguages.add(Language.C);
     enabledLanguages.add(Language.CPP);
     enabledLanguages.add(Language.SECRETS);
+    if (isPLSQLEnabled) {
+      enabledLanguages.add(Language.PLSQL);
+    }
   }
 }
