@@ -14,14 +14,9 @@ env:
 
 auto_cancellation: $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
 
-only_if_with_nightly: &ONLY_IF
-  skip: "changesIncludeOnly('*.txt', '**/README.md')"
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
-    && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
-
 only_pr_and_maintained_branches: &ONLY_PR_AND_MAINTAINED_BRANCHES
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_BUILD_SOURCE != "cron"
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
     && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
 
 only_main_branches: &ONLY_MAIN_BRANCHES
@@ -72,7 +67,7 @@ cleanup_gradle_cache_script_template: &CLEANUP_GRADLE_CACHE_SCRIPT
 
 build_task:
   #  name: "Build and stage to repox"
-  <<: *ONLY_IF
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 4
@@ -96,7 +91,7 @@ validate_task:
   #  name: "Run UTs and trigger SonarQube analysis"
   depends_on:
     - build
-  <<: *ONLY_IF
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
     JDK_VERSION: "11"
   eks_container:
@@ -121,7 +116,7 @@ validate_windows_task:
   #  name: "Run unit tests on Windows"
   depends_on:
     - build
-  <<: *ONLY_IF
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
@@ -142,7 +137,7 @@ qa_task:
   #  name: "Run ITs"
   depends_on:
     - build
-  <<: *ONLY_IF
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 4
