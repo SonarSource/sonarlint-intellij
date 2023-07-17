@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<profile>
+  <name>SonarLint IT PLSQL Issue</name>
+  <language>plsql</language>
+  <rules>
+    <!-- Remove this commented out code -->
+    <rule>
+      <repositoryKey>plsql</repositoryKey>
+      <key>S125</key>
+      <priority>MAJOR</priority>
+    </rule>
+  </rules>
+</profile>

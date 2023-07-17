@@ -31,7 +31,7 @@ import java.time.Duration
 @JvmOverloads
 fun ContainerFixture.editor(title: String, timeout: Duration = Duration.ofSeconds(20), function: Editor.() -> Unit = {}): ContainerFixture {
   find<ComponentFixture>(
-    byXpath("//div[@class='EditorTabs']//div[@accessiblename='$title' and @class='SingleHeightLabel']"), timeout).click()
+    byXpath("//div[@class='EditorTabs']//div[@accessiblename='$title' and (@class='SingleHeightLabel' or @class='EditorTabLabel')]"), timeout).click()
   return find<Editor>(
     byXpath("title '$title'", "//div[@accessiblename='Editor for $title' and @class='EditorComponentImpl']"), timeout)
     .apply { runJs("robot.moveMouse(component);") }

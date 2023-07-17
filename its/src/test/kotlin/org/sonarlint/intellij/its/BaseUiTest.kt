@@ -38,6 +38,7 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
+import org.sonarlint.intellij.its.fixtures.isSQLPlugin
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.preferencesDialog
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
@@ -91,6 +92,9 @@ open class BaseUiTest {
          */
         @JvmStatic
         fun isGoPlugin(): Boolean = remoteRobot.isGoPlugin()
+
+        @JvmStatic
+        fun isSQLPlugin(): Boolean = remoteRobot.isSQLPlugin()
     }
 
 
