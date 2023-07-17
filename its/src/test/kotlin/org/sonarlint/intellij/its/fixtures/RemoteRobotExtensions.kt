@@ -36,3 +36,4 @@ fun RemoteRobot.isGoLand() = callJs<Boolean>("new String(com.intellij.openapi.ap
  *  id, not its name: org.jetbrains.plugins.go
  */
 fun RemoteRobot.isGoPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('org.jetbrains.plugins.go'))")
+fun RemoteRobot.isSQLPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('com.intellij.database'))")

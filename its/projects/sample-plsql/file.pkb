@@ -1,0 +1,25 @@
+//S125
+CREATE OR REPLACE PACKAGE BODY PAQUETTE IS
+
+    PROCEDURE prueba IS
+        vAux_ VARCHAR2(1);
+BEGIN
+        --Code
+SELECT 'X'
+INTO vAux_
+FROM DUAL
+SELECT 'X'
+INTO vAux_
+FROM DUAL
+--Code comment
+/*SELECT 'X'
+INTO vAux_
+FROM DUAL
+*/
+END prueba
+END Paquette;
+
+
+
+
+
