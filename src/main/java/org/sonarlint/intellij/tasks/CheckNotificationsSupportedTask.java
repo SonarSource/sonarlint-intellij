@@ -19,11 +19,16 @@
  */
 package org.sonarlint.intellij.tasks;
 
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.core.BackendService;
+
+import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 
 /**
  * Only useful for SonarQube, since we know notifications are available in SonarCloud
@@ -34,24 +39,20 @@ public class CheckNotificationsSupportedTask extends Task.Modal {
   private boolean notificationsSupported = false;
 
   public CheckNotificationsSupportedTask(ServerConnection connection) {
-    super(null, "Check if smart notifications are available in the SonarQube edition", true);
+    super(null, "Check if smart notifications are supported", true);
     this.connection = connection;
   }
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to " + connection.getHostUrl() + "...");
     indicator.setIndeterminate(false);
-
     try {
-      if (connection.isSonarCloud()) {
-        notificationsSupported = true;
-      } else {
-        indicator.setText("Checking support of notifications");
-        notificationsSupported = connection.api().developers().isSupported();
+      indicator.setText("Checking support of notifications");
+      notificationsSupported = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).checkSmartNotificationsSupported(connection)).isSuccess();
+    } catch (ProcessCanceledException e) {
+      if (myProject != null) {
+        SonarLintConsole.get(myProject).error("Failed to check notifications", e);
       }
-    } catch (Exception e) {
-      SonarLintConsole.get(myProject).error("Failed to check notifications", e);
       exception = e;
     }
   }

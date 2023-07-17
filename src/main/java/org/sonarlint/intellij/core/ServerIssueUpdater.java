@@ -252,7 +252,7 @@ public final class ServerIssueUpdater implements Disposable {
           SonarLintConsole.get(myProject).debug("Skip fetching server issues, branch is unknown");
           return;
         }
-        engine.downloadAllServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, branchName, null);
+        engine.downloadAllServerIssues(server.getEndpointParams(), getService(BackendService.class).getHttpClient(server.getName()), projectKey, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -285,7 +285,8 @@ public final class ServerIssueUpdater implements Disposable {
         return List.of();
       }
       try {
-        engine.downloadAllServerIssuesForFile(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, branchName, null);
+        engine.downloadAllServerIssuesForFile(server.getEndpointParams(),
+          getService(BackendService.class).getHttpClient(server.getName()), projectBinding, relativePath, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());

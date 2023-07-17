@@ -45,11 +45,11 @@ val jettyVersion: String by project
 val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
 
-// The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env (Azure)
+// The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
-val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_READER_USERNAME")
+val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
     ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_READER_PASSWORD")
+val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
     ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 allprojects {
@@ -92,6 +92,10 @@ allprojects {
 
     tasks.cyclonedxBom {
         setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
+        inputs.files(configurations.runtimeClasspath, configurations.archives.get())
+        mustRunAfter(
+            getTasksByName("buildPluginBlockmap", true)
+        )
     }
 
     val bomFile = layout.buildDirectory.file("reports/bom.json")
@@ -329,6 +333,14 @@ tasks {
     }
 }
 
+tasks.artifactoryPublish {
+    mustRunAfter(
+        getTasksByName("cyclonedxBom", true),
+        tasks.buildPlugin,
+        getTasksByName("buildPluginBlockmap", true)
+    )
+}
+
 sonarqube {
     properties {
         property("sonar.projectName", "SonarLint for IntelliJ IDEA")
@@ -337,7 +349,7 @@ sonarqube {
 
 artifactory {
     clientConfig.info.buildName = "sonarlint-intellij"
-    clientConfig.info.buildNumber = System.getenv("BUILD_BUILDID")
+    clientConfig.info.buildNumber = System.getenv("BUILD_ID")
     clientConfig.isIncludeEnvVars = true
     clientConfig.envVarsExcludePatterns = "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
     clientConfig.info.addEnvironmentProperty(
@@ -354,11 +366,11 @@ artifactory {
         defaults(delegateClosureOf<GroovyObject> {
             setProperty(
                 "properties", mapOf(
-                    "vcs.revision" to System.getenv("BUILD_SOURCEVERSION"),
-                    "vcs.branch" to (System.getenv("SYSTEM_PULLREQUEST_TARGETBRANCH")
-                        ?: System.getenv("BUILD_SOURCEBRANCHNAME")),
+                    "vcs.revision" to System.getenv("CIRRUS_CHANGE_IN_REPO"),
+                    "vcs.branch" to (System.getenv("CIRRUS_BASE_BRANCH")
+                        ?: System.getenv("CIRRUS_BRANCH")),
                     "build.name" to "sonarlint-intellij",
-                    "build.number" to System.getenv("BUILD_BUILDID")
+                    "build.number" to System.getenv("BUILD_ID")
                 )
             )
             invokeMethod("publishConfigs", "archives")
@@ -369,9 +381,16 @@ artifactory {
 }
 
 signing {
-    setRequired({
-        gradle.taskGraph.hasTask(":artifactoryPublish") && System.getenv("SYSTEM_PULLREQUEST_TARGETBRANCH") == null;
-    })
+    setRequired {
+        val branch = System.getenv("CIRRUS_BRANCH") ?: ""
+        val pr = System.getenv("CIRRUS_PR") ?: ""
+        (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
+            pr == "" &&
+            gradle.taskGraph.hasTask(":artifactoryPublish")
+    }
+    val signingKeyId: String? by project
+    val signingKey: String? by project
+    val signingPassword: String? by project
+    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
     sign(configurations.archives.get())
 }
-

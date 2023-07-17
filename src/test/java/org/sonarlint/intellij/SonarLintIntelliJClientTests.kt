@@ -91,22 +91,6 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun it_should_retrieve_the_http_client_of_a_known_connection() {
-        globalSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("connectionId").build())
-
-        val httpClient = client.getHttpClient("connectionId")
-
-        assertThat(httpClient).isNotNull
-    }
-
-    @Test
-    fun it_should_not_retrieve_the_http_client_for_an_unknown_connection() {
-        val httpClient = client.getHttpClient("connectionId")
-
-        assertThat(httpClient).isNull()
-    }
-
-    @Test
     fun it_should_suggest_exact_binding_if_there_is_one_suggestion() {
         globalSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("connectionId").build())
 

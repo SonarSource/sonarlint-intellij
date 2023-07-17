@@ -19,31 +19,27 @@
  */
 package org.sonarlint.intellij.tasks
 
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectionValidator
-import org.sonarsource.sonarlint.core.serverapi.ServerApiHelper
-import org.sonarsource.sonarlint.core.serverapi.system.ValidationResult
-import java.util.concurrent.CompletableFuture
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionResponse
 
 class ConnectionTestTask(private val server: ServerConnection) :
-    Task.WithResult<ValidationResult?, Exception>(null, "Test Connection to " + if (server.isSonarCloud) "SonarCloud" else "SonarQube", true) {
+    Task.WithResult<ValidateConnectionResponse?, Exception>(
+        null, "Test Connection to " + if (server.isSonarCloud) "SonarCloud" else "SonarQube", true
+    ) {
 
-    private lateinit var futureResult: CompletableFuture<ValidationResult>
-
-    override fun compute(indicator: ProgressIndicator): ValidationResult? {
+    override fun compute(indicator: ProgressIndicator): ValidateConnectionResponse? {
         indicator.text = "Connecting to " + server.hostUrl + "..."
         indicator.isIndeterminate = true
-        val connectionValidator = ConnectionValidator(ServerApiHelper(server.endpointParams, server.httpClient))
-        futureResult = connectionValidator.validateConnection()
-        while (!futureResult.isDone) {
-            Thread.sleep(500)
-            if (indicator.isCanceled) {
-                futureResult.cancel(true)
-                return null
-            }
+        return try {
+            waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(server))
+        } catch (e: ProcessCanceledException) {
+            null
         }
-        return futureResult.get()
     }
 }

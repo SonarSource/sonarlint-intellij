@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.util;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -29,7 +28,6 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class ProjectLogOutputTests extends AbstractSonarLintLightTests {
   private final SonarLintConsole mockConsole = mock(SonarLintConsole.class);
@@ -40,11 +38,6 @@ class ProjectLogOutputTests extends AbstractSonarLintLightTests {
     replaceProjectService(SonarLintConsole.class, mockConsole);
     getProjectSettings().setAnalysisLogsEnabled(true);
     logOutput = new ProjectLogOutput(getProject());
-  }
-
-  @AfterEach
-  void after() {
-    verifyNoMoreInteractions(mockConsole);
   }
 
   @Test

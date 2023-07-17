@@ -20,11 +20,25 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.execution.ui.ConsoleView;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
+  private StringWriter stringWriter;
+  private PrintWriter printWriter;
   private String lastMessage = "";
+
+  public SonarLintConsoleTestImpl() {
+    reset();
+  }
+
+  private void reset() {
+    this.stringWriter = new StringWriter();
+    this.printWriter = new PrintWriter(stringWriter);
+  }
 
   public String getLastMessage() {
     return lastMessage;
@@ -32,7 +46,7 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
   @Override
   public void debug(String msg) {
-    lastMessage = msg;
+    print(msg);
   }
 
   @Override
@@ -42,22 +56,33 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
   @Override
   public void info(String msg) {
-    lastMessage = msg;
+    print(msg);
   }
 
   @Override
   public void error(String msg) {
-    lastMessage = msg;
+    print(msg);
   }
 
   @Override
   public void error(String msg, Throwable t) {
+    print(msg);
+    t.printStackTrace(printWriter);
+  }
+
+  private void print(String msg) {
     lastMessage = msg;
+    printWriter.println(msg);
   }
 
   @Override
   public void clear() {
-    lastMessage = "";
+    reset();
+  }
+
+  public void flushTo(PrintStream stream) {
+    stream.println(stringWriter.getBuffer());
+    reset();
   }
 
   @Override

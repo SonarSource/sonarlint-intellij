@@ -208,28 +208,28 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void testClasspath() {
+  void testClasspath() throws IOException {
     final var props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
     assertThat(props)
-      .containsEntry("sonar.java.binaries", "\"" + compilerOutputDirPath + "\"")
+      .containsEntry("sonar.java.binaries", "\"" + compilerOutputDirPath.toRealPath() + "\"")
       .containsEntry("sonar.java.libraries", String.join(",",
-        guavaLibPath.toString(),
-        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar").toString(),
-        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar").toString(),
-        dependentModCompilerOutputDirPath.toString(),
-        exportedLibInDependentModulePath.toString()))
-      .containsEntry("sonar.java.test.binaries", compilerTestOutputDirPath.toString())
+        guavaLibPath.toRealPath().toString(),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar").toRealPath().toString(),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar").toRealPath().toString(),
+        dependentModCompilerOutputDirPath.toRealPath().toString(),
+        exportedLibInDependentModulePath.toRealPath().toString()))
+      .containsEntry("sonar.java.test.binaries", compilerTestOutputDirPath.toRealPath().toString())
       .containsEntry("sonar.java.test.libraries", String.join(",",
-        "\"" + compilerOutputDirPath + "\"",
-        junitLibPath.toString(),
-        guavaLibPath.toString(),
-        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar").toString(),
-        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar").toString(),
-        dependentModCompilerOutputDirPath.toString(),
-        exportedLibInDependentModulePath.toString(),
-        testDependentModCompilerOutputDirPath.toString(),
-        exportedLibInTestDependentModulePath.toString()))
-      .containsEntry("sonar.java.jdkHome", FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toString());
+        "\"" + compilerOutputDirPath.toRealPath() + "\"",
+        junitLibPath.toRealPath().toString(),
+        guavaLibPath.toRealPath().toString(),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar").toRealPath().toString(),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar").toRealPath().toString(),
+        dependentModCompilerOutputDirPath.toRealPath().toString(),
+        exportedLibInDependentModulePath.toRealPath().toString(),
+        testDependentModCompilerOutputDirPath.toRealPath().toString(),
+        exportedLibInTestDependentModulePath.toRealPath().toString()))
+      .containsEntry("sonar.java.jdkHome", FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toRealPath().toString());
   }
 
   private static Sdk addRtJarTo(@NotNull Sdk jdk) {

@@ -27,6 +27,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.eq
+import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
@@ -51,7 +52,7 @@ class ModuleFileEventsNotifierTests : AbstractSonarLintLightTests() {
 
         notifier.notifyAsync(engine, module, listOf(event))
 
-        Assertions.assertThat(console.lastMessage).isEqualTo("Error notifying analyzer of a file event")
+        Assertions.assertThat((console as SonarLintConsoleTestImpl).lastMessage).isEqualTo("Error notifying analyzer of a file event")
     }
 
 

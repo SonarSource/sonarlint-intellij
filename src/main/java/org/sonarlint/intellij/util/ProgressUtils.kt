@@ -35,8 +35,8 @@ object ProgressUtils {
             try {
                 indicator.checkCanceled()
             } catch (e: ProcessCanceledException) {
-                future.cancel(true);
-                throw e;
+                future.cancel(true)
+                throw e
             }
             try {
                 return future.get(100, TimeUnit.MILLISECONDS)
