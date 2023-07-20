@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -36,15 +37,19 @@ import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5;
+import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
 
 public abstract class LiveFinding implements Trackable, Finding {
   private static final AtomicLong UID_GEN = new AtomicLong();
 
   private final long uid;
+  private UUID backendId;
   private final RangeMarker range;
   private final PsiFile psiFile;
   private final Integer textRangeHash;
+  private final String textRangeHashString;
   private final Integer lineHash;
+  private final String lineHashString;
   private final String message;
   private final String ruleKey;
 
@@ -72,16 +77,37 @@ public abstract class LiveFinding implements Trackable, Finding {
 
     if (range != null) {
       var document = range.getDocument();
-      this.textRangeHash = checksum(document.getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
+      var lineContent = document.getText(new TextRange(range.getStartOffset(), range.getEndOffset()));
+      this.textRangeHash = checksum(lineContent);
+      this.textRangeHashString = md5Hex(lineContent.replaceAll("[\\s]", ""));
 
-      var line = range.getDocument().getLineNumber(range.getStartOffset());
+      var line = document.getLineNumber(range.getStartOffset());
       var lineStartOffset = document.getLineStartOffset(line);
       var lineEndOffset = document.getLineEndOffset(line);
-      this.lineHash = checksum(document.getText(new TextRange(lineStartOffset, lineEndOffset)));
+      var rangeContent = document.getText(new TextRange(lineStartOffset, lineEndOffset));
+      this.lineHash = checksum(rangeContent);
+      this.lineHashString = md5Hex(rangeContent.replaceAll("[\\s]", ""));
     } else {
       this.textRangeHash = null;
+      this.textRangeHashString = null;
       this.lineHash = null;
+      this.lineHashString = null;
     }
+  }
+
+  @CheckForNull
+  @Override
+  public UUID getId() {
+    return getBackendId();
+  }
+
+  public void setBackendId(UUID backendId) {
+    this.backendId = backendId;
+  }
+
+  @CheckForNull
+  public UUID getBackendId() {
+    return backendId;
   }
 
   private static int checksum(String content) {
@@ -116,9 +142,17 @@ public abstract class LiveFinding implements Trackable, Finding {
     return textRangeHash;
   }
 
+  public String getTextRangeHashString() {
+    return textRangeHashString;
+  }
+
   @Override
   public Integer getLineHash() {
     return lineHash;
+  }
+
+  public String getLineHashString() {
+    return lineHashString;
   }
 
   @org.jetbrains.annotations.NotNull

@@ -137,9 +137,12 @@ public class ServerConnection {
       return null;
     }
   }
-
   public boolean isSonarCloud() {
     return SonarLintUtils.isSonarCloudAlias(hostUrl);
+  }
+
+  public boolean isSonarQube() {
+    return !isSonarCloud();
   }
 
   public String getProductName() {
