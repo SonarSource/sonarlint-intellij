@@ -41,6 +41,8 @@ import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 
+import static org.sonarlint.intellij.util.DataKeys.ISSUE_DATA_KEY;
+
 /**
  * Extends {@link Tree} to provide context data for actions and initialize it
  */
@@ -62,7 +64,7 @@ public class IssueTree extends FindingTree implements DataProvider {
       return data;
     } else if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
       return navigate();
-    } else if (DisableRuleAction.ISSUE_DATA_KEY.is(dataId)) {
+    } else if (ISSUE_DATA_KEY.is(dataId)) {
       return getSelectedIssue();
     }
 

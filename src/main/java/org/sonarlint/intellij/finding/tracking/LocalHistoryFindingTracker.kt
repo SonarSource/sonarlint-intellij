@@ -76,6 +76,7 @@ class LocalHistoryFindingTracker(private val previousFindings: CachedFindings) {
          * Previous matched will be either server issue or preexisting local issue.
          */
         private fun <L : LiveFinding> copyFromPrevious(rawMatched: L, previousMatched: Trackable) {
+            rawMatched.backendId = previousMatched.id
             rawMatched.introductionDate = previousMatched.introductionDate
             // FIXME should we not reset those fields when unbinding a project?
             rawMatched.serverFindingKey = previousMatched.serverFindingKey

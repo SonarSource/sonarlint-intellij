@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.ServerIssueUpdater;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.LiveFindings;
@@ -144,7 +144,7 @@ public class Analysis implements Cancelable {
       findingsCache.replaceFindings(summary.findings);
 
       checkCanceled(indicator);
-      matchWithServerIssuesIfNeeded(indicator, summary.filesHavingIssuesByModule);
+      matchWithServerIssuesIfNeeded(summary.filesHavingIssuesByModule);
       checkCanceled(indicator);
       matchWithServerSecurityHotspotsIfNeeded(indicator, summary.filesHavingSecurityHotspotsByModule);
 
@@ -159,14 +159,12 @@ public class Analysis implements Cancelable {
     return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
   }
 
-  private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesHavingIssuesByModule) {
+  private void matchWithServerIssuesIfNeeded(Map<Module, Collection<VirtualFile>> filesHavingIssuesByModule) {
     if (!filesHavingIssuesByModule.isEmpty()) {
-      var serverIssueUpdater = SonarLintUtils.getService(project, ServerIssueUpdater.class);
-      if (trigger.isShouldUpdateServerIssues()) {
-        serverIssueUpdater.fetchAndMatchServerIssues(filesHavingIssuesByModule, indicator);
-      } else {
-        serverIssueUpdater.matchServerIssues(filesHavingIssuesByModule);
-      }
+      var backendService = getService(BackendService.class);
+      filesHavingIssuesByModule.forEach((module, filesHavingIssues) -> backendService.trackWithServerIssues(module,
+        filesHavingIssues.stream().collect(Collectors.toMap(Function.identity(),
+          file -> getService(module.getProject(), FindingsCache.class).getIssuesForFile(file))), trigger.isShouldUpdateServerIssues()));
     }
   }
 
@@ -237,7 +235,8 @@ public class Analysis implements Cancelable {
     return new Summary(project, scope.getFilesByModule(), allFailedFiles, rawFindingHandler.getRawIssueCount(), findings);
   }
 
-  private static <T> Map<VirtualFile, Collection<T>> getFindingsPerAnalyzedFile(Map<VirtualFile, Collection<T>> detectedFindingsPerFile, Set<VirtualFile> analyzedFiles) {
+  private static <T> Map<VirtualFile, Collection<T>> getFindingsPerAnalyzedFile(Map<VirtualFile, Collection<T>> detectedFindingsPerFile,
+    Set<VirtualFile> analyzedFiles) {
     Map<VirtualFile, Collection<T>> findingsPerAnalyzedFile = analyzedFiles.stream().collect(toMap(Function.identity(),
       k -> new ArrayList<>()));
     findingsPerAnalyzedFile.putAll(detectedFindingsPerFile);
@@ -272,12 +271,14 @@ public class Analysis implements Cancelable {
       this.onlyFailedFiles = failedFiles.containsAll(filesByModule.values().stream().flatMap(Collection::stream).collect(toSet()));
     }
 
-    private static <L extends LiveFinding> Map<Module, Collection<VirtualFile>> filterFilesHavingFindingsByModule(Map<Module, Collection<VirtualFile>> filesByModule,
+    private static <L extends LiveFinding> Map<Module, Collection<VirtualFile>> filterFilesHavingFindingsByModule(Map<Module,
+      Collection<VirtualFile>> filesByModule,
       Map<VirtualFile, Collection<L>> issuesPerFile) {
       var filesWithIssuesPerModule = new LinkedHashMap<Module, Collection<VirtualFile>>();
 
       for (var entry : filesByModule.entrySet()) {
-        var moduleFilesWithIssues = entry.getValue().stream().filter(f -> !issuesPerFile.getOrDefault(f, Collections.emptyList()).isEmpty()).collect(toList());
+        var moduleFilesWithIssues =
+          entry.getValue().stream().filter(f -> !issuesPerFile.getOrDefault(f, Collections.emptyList()).isEmpty()).collect(toList());
         if (!moduleFilesWithIssues.isEmpty()) {
           filesWithIssuesPerModule.put(entry.getKey(), moduleFilesWithIssues);
         }

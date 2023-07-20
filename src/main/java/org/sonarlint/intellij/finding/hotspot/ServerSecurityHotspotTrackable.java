@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.finding.hotspot;
 
+import java.util.UUID;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.finding.tracking.Trackable;
@@ -33,6 +34,12 @@ public class ServerSecurityHotspotTrackable implements Trackable {
 
   public ServerSecurityHotspotTrackable(ServerHotspot serverHotspot) {
     this.serverHotspot = serverHotspot;
+  }
+
+  @CheckForNull
+  @Override
+  public UUID getId() {
+    return null;
   }
 
   @CheckForNull
