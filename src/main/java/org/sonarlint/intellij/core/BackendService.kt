@@ -23,32 +23,33 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.jetbrains.rd.util.firstOrNull
 import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarsource.sonarlint.core.SonarLintBackendImpl
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
-import org.sonarsource.sonarlint.core.clientapi.backend.HostInfoDto
-import org.sonarsource.sonarlint.core.clientapi.backend.InitializeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.branch.DidChangeActiveSonarProjectBranchParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
@@ -73,6 +74,9 @@ import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChang
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
+import org.sonarsource.sonarlint.core.clientapi.backend.initialize.ClientInfoDto
+import org.sonarsource.sonarlint.core.clientapi.backend.initialize.FeatureFlagsDto
+import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.AddIssueCommentParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ChangeIssueStatusParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
@@ -103,24 +107,22 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         backend.initialize(
             InitializeParams(
-                HostInfoDto(ApplicationInfo.getInstance().versionName),
-                TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
+                ClientInfoDto(
+                    ApplicationInfo.getInstance().versionName,
+                    TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
+                    "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version
+                ),
+                FeatureFlagsDto(true, true, true, true, true),
                 getLocalStoragePath(),
                 SonarLintEngineFactory.getWorkDir(),
                 EmbeddedPlugins.findEmbeddedPlugins(),
                 EmbeddedPlugins.getEmbeddedPluginsForConnectedMode(),
                 EmbeddedPlugins.enabledLanguagesInStandaloneMode,
                 EmbeddedPlugins.enabledLanguagesInConnectedMode,
-                true,
                 sonarQubeConnections,
                 sonarCloudConnections,
                 null,
-                true,
-                mapOf(),
-                true,
-                SonarLintUtils.isTaintVulnerabilitiesEnabled(),
-                true,
-                "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version
+                mapOf()
             )
         ).thenRun {
             ApplicationManager.getApplication().messageBus.connect()

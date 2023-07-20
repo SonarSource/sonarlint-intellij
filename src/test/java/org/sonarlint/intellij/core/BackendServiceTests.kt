@@ -37,7 +37,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
-import org.sonarsource.sonarlint.core.clientapi.backend.InitializeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.ConfigurationService
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidAddConfigurationScopesParams

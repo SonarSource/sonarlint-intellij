@@ -67,7 +67,6 @@ import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentials
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeResponse
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FoundFileDto
-import org.sonarsource.sonarlint.core.clientapi.client.host.GetHostInfoResponse
 import org.sonarsource.sonarlint.core.clientapi.client.hotspot.ShowHotspotParams
 import org.sonarsource.sonarlint.core.clientapi.client.http.CheckServerTrustedParams
 import org.sonarsource.sonarlint.core.clientapi.client.http.CheckServerTrustedResponse
@@ -76,6 +75,7 @@ import org.sonarsource.sonarlint.core.clientapi.client.http.GetProxyPasswordAuth
 import org.sonarsource.sonarlint.core.clientapi.client.http.ProxyDto
 import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesParams
 import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesResponse
+import org.sonarsource.sonarlint.core.clientapi.client.info.GetClientInfoResponse
 import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
 import org.sonarsource.sonarlint.core.clientapi.client.progress.ReportProgressParams
@@ -212,7 +212,7 @@ object SonarLintIntelliJClient : SonarLintClient {
         notification.notify(project)
     }
 
-    override fun getHostInfo(): CompletableFuture<GetHostInfoResponse> {
+    override fun getClientInfo(): CompletableFuture<GetClientInfoResponse> {
         var description = ApplicationInfo.getInstance().fullVersion
         val edition = ApplicationNamesInfo.getInstance().editionName
         if (edition != null) {
@@ -222,7 +222,7 @@ object SonarLintIntelliJClient : SonarLintClient {
         if (openProjects.isNotEmpty()) {
             description += " - " + openProjects.joinToString(", ") { it.name }
         }
-        val hostInfoDto = GetHostInfoResponse(description)
+        val hostInfoDto = GetClientInfoResponse(description)
         return CompletableFuture.completedFuture(hostInfoDto)
     }
 
