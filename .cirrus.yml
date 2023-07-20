@@ -200,14 +200,14 @@ qa_task:
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
     gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin
-  stop_recording_script: |
-    pkill -SIGINT -f ffmpeg
-    while pgrep ffmpeg >/dev/null; do sleep 1; done
-    /etc/init.d/xvfb stop
-  display_log_script:
-    - cat ${CIRRUS_WORKING_DIR}/runIdeGradle.log
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
+    stop_recording_script: |
+      pkill -SIGINT -f ffmpeg
+      while pgrep ffmpeg >/dev/null; do sleep 1; done
+      /etc/init.d/xvfb stop
+    display_log_script:
+      - cat ${CIRRUS_WORKING_DIR}/runIdeGradle.log
     test_recording_artifacts:
       path: "${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4"
     log_artifacts:
