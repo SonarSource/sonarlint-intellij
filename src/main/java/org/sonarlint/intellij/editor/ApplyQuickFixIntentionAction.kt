@@ -43,6 +43,10 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
     override fun isAvailable(project: Project, editor: Editor, file: PsiFile) = fix.isApplicable()
 
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
+        if (!fix.isApplicable()) {
+            // the editor could have changed between the isAvailable and invoke calls
+            return
+        }
         fix.applied = true
         SonarLintUtils.getService(SonarLintTelemetry::class.java).addQuickFixAppliedForRule(ruleKey)
         // TODO Handle edits in other files!
