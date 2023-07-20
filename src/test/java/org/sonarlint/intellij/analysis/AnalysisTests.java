@@ -40,7 +40,6 @@ import org.mockito.stubbing.Answer;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.messages.AnalysisListener;
@@ -88,7 +87,6 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
     replaceProjectService(SonarLintConsole.class, sonarLintConsole);
-    replaceProjectService(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
     replaceProjectService(FindingsCache.class, findingsCacheMock);
 
     task = new Analysis(getProject(), filesToAnalyze, TriggerType.ACTION, mock(AnalysisCallback.class));

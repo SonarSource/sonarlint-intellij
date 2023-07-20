@@ -139,6 +139,10 @@ public class FindingPersistence<T extends LiveFinding> {
     if (liveFinding.getLine() != null) {
       builder.setLine(liveFinding.getLine());
     }
+    var id = liveFinding.getId();
+    if (id != null) {
+      builder.setId(id.toString());
+    }
     return builder.build();
   }
 }

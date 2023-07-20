@@ -178,7 +178,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   public void remove(LiveIssue issue) {
     var fileNode = index.getFileNode(issue.psiFile().getVirtualFile());
     if (fileNode != null) {
-      fileNode.findChildren(child -> Objects.equals(issue.getServerKey(), child.getServerKey()))
+      fileNode.findChildren(child -> Objects.equals(issue.uid(), ((LiveIssue) child).uid()))
         .ifPresent(issueNode -> {
           model.removeNodeFromParent(issueNode);
           if (!fileNode.hasChildren()) {

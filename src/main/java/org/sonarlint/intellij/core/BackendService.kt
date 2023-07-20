@@ -29,6 +29,7 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -40,9 +41,12 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
+import org.sonarlint.intellij.ui.ReadActionUtils
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarsource.sonarlint.core.SonarLintBackendImpl
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
 import org.sonarsource.sonarlint.core.clientapi.backend.branch.DidChangeActiveSonarProjectBranchParams
@@ -82,9 +86,14 @@ import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ListAllStandaloneRulesDefinitionsResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.tracking.ClientTrackedIssueDto
+import org.sonarsource.sonarlint.core.clientapi.backend.tracking.LineWithHashDto
+import org.sonarsource.sonarlint.core.clientapi.backend.tracking.TextRangeWithHashDto
+import org.sonarsource.sonarlint.core.clientapi.backend.tracking.TrackWithServerIssuesParams
 import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
 import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.http.HttpClient
+import org.sonarsource.sonarlint.core.serverconnection.IssueStorePaths
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -416,6 +425,78 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params = GetOrganizationParams(credentials, organizationKey)
         return initializedBackend.connectionService.getOrganization(params)
+    }
+
+    fun trackWithServerIssues(
+        module: Module,
+        liveIssuesByFile: Map<VirtualFile, Collection<LiveIssue>>,
+        shouldFetchIssuesFromServer: Boolean,
+    ) {
+        val binding = getService(module, ModuleBindingManager::class.java).binding ?: return
+        val serverRelativePathByVirtualFile = getRelativePaths(module.project, liveIssuesByFile.keys)
+            .mapValues { (_, ideRelativePath) -> IssueStorePaths.idePathToServerPath(binding, ideRelativePath) }
+            .mapNotNull { (key, value) -> value?.let { key to it } }
+            .toMap()
+        val virtualFileByServerRelativePath = serverRelativePathByVirtualFile.map { Pair(it.value, it.key) }.toMap()
+        val rawIssuesByRelativePath =
+            liveIssuesByFile
+                .filterKeys { file -> serverRelativePathByVirtualFile.containsKey(file) }
+                .entries.associate { (file, issues) ->
+                    serverRelativePathByVirtualFile[file]!! to issues.map {
+                        val textRangeWithHashDto = toTextRangeWithHashDto(module.project, it)
+                        ClientTrackedIssueDto(
+                            it.backendId,
+                            it.serverFindingKey,
+                            textRangeWithHashDto,
+                            textRangeWithHashDto?.let { range -> LineWithHashDto(range.startLine, it.lineHashString!!) },
+                            it.ruleKey,
+                            it.message
+                        )
+                    }
+                }
+
+        initializedBackend.issueTrackingService.trackWithServerIssues(
+            TrackWithServerIssuesParams(
+                moduleId(module),
+                rawIssuesByRelativePath,
+                shouldFetchIssuesFromServer
+            )
+        ).thenAccept { response ->
+            response.issuesByServerRelativePath.forEach { (serverRelativePath, trackedIssues) ->
+                val file = virtualFileByServerRelativePath[serverRelativePath] ?: return@forEach
+                val liveIssues = liveIssuesByFile[file] ?: return@forEach
+                liveIssues.zip(trackedIssues).forEach { (liveIssue, serverOrLocalIssue) ->
+                    if (serverOrLocalIssue.isLeft) {
+                        val serverIssue = serverOrLocalIssue.left
+                        liveIssue.backendId = serverIssue.id
+                        liveIssue.introductionDate = serverIssue.introductionDate
+                        liveIssue.serverFindingKey = serverIssue.serverKey
+                        liveIssue.isResolved = serverIssue.isResolved
+                        serverIssue.overriddenSeverity?.let { liveIssue.setSeverity(it) }
+                        liveIssue.setType(serverIssue.type)
+                    } else {
+                        val localOnlyIssue = serverOrLocalIssue.right
+                        liveIssue.backendId = localOnlyIssue.id
+                        liveIssue.isResolved = localOnlyIssue.resolutionStatus != null
+                    }
+                }
+            }
+        }
+            .get()
+    }
+
+    private fun toTextRangeWithHashDto(project: Project, issue: LiveIssue): TextRangeWithHashDto? {
+        val rangeMarker = issue.range ?: return null
+        if (!rangeMarker.isValid) {
+            return null
+        }
+        return ReadActionUtils.runReadActionSafely(project) {
+            val startLine = rangeMarker.document.getLineNumber(rangeMarker.startOffset)
+            val startLineOffset = rangeMarker.startOffset - rangeMarker.document.getLineStartOffset(startLine)
+            val endLine = rangeMarker.document.getLineNumber(rangeMarker.endOffset)
+            val endLineOffset = rangeMarker.endOffset - rangeMarker.document.getLineStartOffset(endLine)
+            TextRangeWithHashDto(startLine + 1, startLineOffset, endLine + 1, endLineOffset, issue.textRangeHashString)
+        }
     }
 
     companion object {

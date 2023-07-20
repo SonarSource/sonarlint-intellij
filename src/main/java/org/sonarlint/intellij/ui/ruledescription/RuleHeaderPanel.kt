@@ -29,6 +29,7 @@ import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.WrapLayout
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.canBeMarkedAsResolved
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialog
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.finding.Issue
@@ -106,7 +107,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(WrapLayout(FlowLayout.LEFT)) {
         updateCommonFields(type, ruleKey)
         updateRuleSeverity(severity)
 
-        if (issue.getServerKey() != null && issue.isValid()) {
+        if (canBeMarkedAsResolved(project, issue)) {
             changeStatusButton.isVisible = true
             changeStatusButton.action = object : AbstractAction(MARK_AS_RESOLVED) {
                 override fun actionPerformed(e: ActionEvent?) {
