@@ -23,16 +23,13 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
-import com.jetbrains.rd.util.firstOrNull
 import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
@@ -43,11 +40,9 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarsource.sonarlint.core.SonarLintBackendImpl
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
 import org.sonarsource.sonarlint.core.clientapi.backend.branch.DidChangeActiveSonarProjectBranchParams
@@ -91,7 +86,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse as CheckIssueStatusChangePermittedResponse
 
 @Service(Service.Level.APP)
@@ -269,7 +263,6 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun moduleRemoved(module: Module) {
         initializedBackend.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(moduleId(module)))
-        uniqueIdentifierForModules.remove(module)
     }
 
     fun moduleUnbound(module: Module) {
@@ -348,11 +341,18 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         )
     }
 
-    fun markAsResolved(module: Module, issueKey: String, newStatus: IssueStatus, isTaintVulnerability: Boolean, ): CompletableFuture<Void> {
-        return initializedBackend.issueService.changeStatus(ChangeIssueStatusParams(moduleId(module), issueKey, newStatus, isTaintVulnerability))
+    fun markAsResolved(module: Module, issueKey: String, newStatus: IssueStatus, isTaintVulnerability: Boolean): CompletableFuture<Void> {
+        return initializedBackend.issueService.changeStatus(
+            ChangeIssueStatusParams(
+                moduleId(module),
+                issueKey,
+                newStatus,
+                isTaintVulnerability
+            )
+        )
     }
 
-    fun addCommentOnIssue(module: Module, issueKey: String, comment: String, ): CompletableFuture<Void> {
+    fun addCommentOnIssue(module: Module, issueKey: String, comment: String): CompletableFuture<Void> {
         return initializedBackend.issueService.addComment(AddIssueCommentParams(moduleId(module), issueKey, comment))
     }
 
@@ -365,8 +365,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         issueKey: String,
     ): CompletableFuture<CheckIssueStatusChangePermittedResponse> {
         return initializedBackend.issueService.checkStatusChangePermitted(
-                org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedParams(connectionId, issueKey)
-            )
+            org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedParams(connectionId, issueKey)
+        )
     }
 
     fun branchChanged(module: Module, newActiveBranchName: String) {
@@ -401,17 +401,17 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     companion object {
-        private var moduleCount = 1
-        internal val uniqueIdentifierForModules = ConcurrentHashMap<Module, String>()
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
 
         fun moduleId(module: Module): String {
-            // there is no reliable unique identifier for modules, but a module is represented by a single object
-            return uniqueIdentifierForModules.computeIfAbsent(module) { m -> m.name + "-" + moduleCount++ }
+            // there is no reliable unique identifier for modules, we store one in settings
+            return getSettingsFor(module).uniqueId
         }
 
         fun findModule(configScopeId: String): Module? {
-            return uniqueIdentifierForModules.filter { it.value == configScopeId }.firstOrNull()?.key
+            return ProjectManager.getInstance().openProjects.firstNotNullOfOrNull { project ->
+                ModuleManager.getInstance(project).modules.firstOrNull { module -> getSettingsFor(module).uniqueId == configScopeId }
+            }
         }
 
         fun findProject(configScopeId: String): Project? {
