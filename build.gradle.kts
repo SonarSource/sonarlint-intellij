@@ -220,7 +220,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.13.0.4374")
     "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.16.0.3845")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.46.0.62229")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.47.0.62356")
     }
     // workaround for light tests in 2020.3, might remove later
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-reflect")
