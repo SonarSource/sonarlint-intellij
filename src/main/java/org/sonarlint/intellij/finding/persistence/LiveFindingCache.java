@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.finding.persistence;
 
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
@@ -32,6 +31,7 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.tracking.Trackable;
+import org.sonarlint.intellij.ui.ReadActionUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static java.util.Collections.emptyList;
@@ -103,7 +103,8 @@ public class LiveFindingCache<T extends LiveFinding> {
   public Collection<Trackable> getPreviousFindings(VirtualFile file) {
     var liveFindings = getLive(file);
     if (liveFindings != null) {
-      return ReadAction.compute(() -> liveFindings.stream().filter(T::isValid).collect(Collectors.toList()));
+      Collection<Trackable> result = ReadActionUtils.Companion.runReadActionSafely(project, () -> liveFindings.stream().filter(T::isValid).collect(Collectors.toList()));
+      return result == null ? emptyList() : result;
     }
 
     var storeKey = SonarLintAppUtils.getRelativePathForAnalysis(project, file);

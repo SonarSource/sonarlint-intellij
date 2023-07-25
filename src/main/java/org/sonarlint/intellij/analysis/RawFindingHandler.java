@@ -83,6 +83,9 @@ class RawFindingHandler implements IssueListener {
     VirtualFile file = inputFile.getClientObject();
     try {
       liveSecurityHotspot = RawIssueAdapter.toLiveSecurityHotspot(project, rawIssue, inputFile);
+      if (liveSecurityHotspot == null) {
+        return;
+      }
     } catch (TextRangeMatcher.NoMatchException e) {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
       SonarLintConsole.get(project).debug("Failed to find location of Security Hotspot for file: '" + file.getName() + "'." + e.getMessage());
@@ -104,6 +107,9 @@ class RawFindingHandler implements IssueListener {
     VirtualFile file = inputFile.getClientObject();
     try {
       liveIssue = RawIssueAdapter.toLiveIssue(project, rawIssue, inputFile);
+      if (liveIssue == null) {
+        return;
+      }
     } catch (TextRangeMatcher.NoMatchException e) {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
       SonarLintConsole.get(project).debug("Failed to find location of issue for file: '" + file.getName() + "'." + e.getMessage());

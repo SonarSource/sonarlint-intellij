@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
@@ -44,6 +43,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.ui.ReadActionUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -154,17 +154,21 @@ public final class SonarLintAnalyzer {
     if (relativePath != null) {
       var fileDocumentManager = FileDocumentManager.getInstance();
       if (fileDocumentManager.isFileModified(virtualFile)) {
-        return createInputFileFromDocument(virtualFile, language, test, charset, relativePath);
+        return createInputFileFromDocument(myProject, virtualFile, language, test, charset, relativePath);
       } else {
-        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, null, readDocumentModificationStamp(virtualFile), language);
+        var documentModificationStamp = readDocumentModificationStamp(myProject, virtualFile);
+        if (documentModificationStamp == null) {
+          return null;
+        }
+        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, null, documentModificationStamp, language);
       }
     }
     return null;
   }
 
-  private static DefaultClientInputFile createInputFileFromDocument(VirtualFile virtualFile, @org.jetbrains.annotations.Nullable Language language, boolean test, Charset charset,
-    String relativePath) {
-    return ReadAction.compute(() -> {
+  private static DefaultClientInputFile createInputFileFromDocument(Project project, VirtualFile virtualFile, @org.jetbrains.annotations.Nullable Language language, boolean test,
+    Charset charset, String relativePath) {
+    return ReadActionUtils.Companion.runReadActionSafely(virtualFile, project, () -> {
       var document = FileDocumentManager.getInstance().getDocument(virtualFile);
       var textInDocument = document != null ? document.getText() : null;
       var documentModificationStamp = document != null ? document.getModificationStamp() : 0;
@@ -172,8 +176,8 @@ public final class SonarLintAnalyzer {
     });
   }
 
-  private static long readDocumentModificationStamp(VirtualFile virtualFile) {
-    return ReadAction.compute(() -> {
+  private static Long readDocumentModificationStamp(Project project, VirtualFile virtualFile) {
+    return ReadActionUtils.Companion.runReadActionSafely(virtualFile, project, () -> {
       var document = FileDocumentManager.getInstance().getDocument(virtualFile);
       return document != null ? document.getModificationStamp() : 0;
     });

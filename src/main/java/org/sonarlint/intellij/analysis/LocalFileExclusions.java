@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -29,7 +28,6 @@ import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -43,7 +41,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
@@ -55,6 +52,7 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.ui.ReadActionUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ClientFileExclusions;
 
@@ -183,8 +181,8 @@ public final class LocalFileExclusions {
       forcedAnalysis ? Stream.empty() : onTheFlyExclusionCheckers(file, module)).collect(Collectors.toList());
 
     for (var exclusionChecker : exclusionCheckers) {
-      var result = ReadAction.compute(exclusionChecker::get);
-      if (result.isExcluded()) {
+      var result = ReadActionUtils.Companion.runReadActionSafely(module.getProject(), exclusionChecker::get);
+      if (result != null && result.isExcluded()) {
         excludedFileHandler.accept(file, result);
         return;
       }
@@ -269,7 +267,8 @@ public final class LocalFileExclusions {
     for (var module : modules) {
       var sonarLintFacade = projectBindingManager.getFacade(module);
       var virtualFiles = filesByModule.get(module);
-      var testPredicate = (Predicate<VirtualFile>) f -> ReadAction.compute(() -> TestSourcesFilter.isTestSources(f, module.getProject()));
+      var testPredicate = (Predicate<VirtualFile>) f ->
+        Boolean.TRUE.equals(ReadActionUtils.Companion.runReadActionSafely(f, module.getProject(), () -> TestSourcesFilter.isTestSources(f, module.getProject())));
       var excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
       for (var f : excluded) {
         excludedFileHandler.accept(f, ExcludeResult.excluded("exclusions configured in the bound project"));
