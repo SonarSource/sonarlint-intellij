@@ -202,7 +202,7 @@ dependencies {
     testImplementation("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.10.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
@@ -224,6 +224,11 @@ dependencies {
     }
     // workaround for light tests in 2020.3, might remove later
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-reflect")
+    constraints {
+        testImplementation("com.squareup.okio:okio-jvm:3.4.0") {
+            because("this transitive dependency of okhttp3 has a high severity vulnerability not yet patched")
+        }
+    }
 }
 
 tasks {
