@@ -88,7 +88,7 @@ class CurrentFileTabTest : BaseUiTest() {
                         findText(issueMessage).rightClick()
                     }
                 }
-                actionMenuItem("Mark as Resolved") {
+                actionMenuItem("Mark Issue as...") {
                     click()
                 }
             }
@@ -103,7 +103,7 @@ class CurrentFileTabTest : BaseUiTest() {
                         click()
                     }
 
-                    pressButton("Mark as Resolved")
+                    pressButton("Mark Issue as...")
                 }
             }
         }

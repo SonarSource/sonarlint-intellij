@@ -254,7 +254,7 @@
                            displayType="STICKY_BALLOON"/>
         <notificationGroup id="SonarLint: Security Hotspot Review"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint: Mark as Resolved"
+        <notificationGroup id="SonarLint: Mark Issue as Resolved"
                            displayType="BALLOON"/>
     </extensions>
 

@@ -60,13 +60,13 @@ class MarkAsResolvedAction(
     private var issue: Issue? = null
 )  :
     AbstractSonarAction(
-        "Mark as Resolved", "Mark as Resolved", null
+        "Mark Issue as...", "Change the issue resolution status", null
     ), IntentionAction, PriorityAction, Iconable {
     companion object {
         private const val errorTitle = "<b>SonarLint - Unable to mark the issue as resolved</b>"
         private const val content = "The issue was successfully marked as resolved"
 
-        val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark as Resolved")
+        val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark Issue as Resolved")
 
         fun openMarkAsResolvedDialog(project: Project, issue: Issue) {
             val connection = serverConnection(project) ?: return displayErrorNotification(
@@ -170,7 +170,7 @@ class MarkAsResolvedAction(
 
     override fun updatePresentation(e: AnActionEvent, project: Project) {
         val serverConnection = serverConnection(project) ?: return
-        e.presentation.description = "Mark as Resolved on ${serverConnection.productName}"
+        e.presentation.description = "Mark Issue as Resolved on ${serverConnection.productName}"
     }
 
 
@@ -209,10 +209,10 @@ class MarkAsResolvedAction(
 
     override fun startInWriteAction() = false
 
-    override fun getText() = "SonarLint: Mark issue as resolved"
+    override fun getText() = "SonarLint: Mark issue as..."
 
     override fun getFamilyName(): String {
-        return "SonarLint mark as resolved"
+        return "SonarLint mark issue as..."
     }
 
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = issue?.getServerKey() != null
@@ -230,7 +230,7 @@ class MarkAsResolvedAction(
     ) :
         FutureAwaitingTask<CheckStatusChangePermittedResponse>(
             project,
-            "Checking Mark as Resolved Permission",
+            "Checking permission to mark issue as resolved",
             getService(BackendService::class.java).checkIssueStatusChangePermitted(connection.name, issueKey)
         )
 }

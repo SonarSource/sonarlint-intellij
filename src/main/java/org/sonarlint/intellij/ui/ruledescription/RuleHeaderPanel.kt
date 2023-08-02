@@ -46,7 +46,7 @@ import javax.swing.SwingConstants
 
 class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     companion object {
-        private const val MARK_AS_RESOLVED = "Mark as Resolved"
+        private const val MARK_AS_RESOLVED = "Mark Issue as..."
     }
 
     private val ruleTypeIcon = JBLabel()
