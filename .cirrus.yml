@@ -1,5 +1,5 @@
 env:
-  CIRRUS_CLONE_DEPTH: "1"
+  CIRRUS_CLONE_DEPTH: "50"
   CIRRUS_SHELL: bash
 
   ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
