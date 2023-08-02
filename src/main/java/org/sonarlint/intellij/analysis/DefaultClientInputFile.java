@@ -118,7 +118,7 @@ public class DefaultClientInputFile implements ClientInputFile {
           result.write(buffer, 0, length);
         }
       }
-      return result.toString(charset.name());
+      return result.toString(charset);
     }
     return documentBuffer;
   }

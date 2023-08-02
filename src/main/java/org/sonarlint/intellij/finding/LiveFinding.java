@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.finding;
 
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -31,6 +30,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.sonarlint.intellij.finding.tracking.Trackable;
+import org.sonarlint.intellij.ui.ReadActionUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
@@ -100,7 +100,7 @@ public abstract class LiveFinding implements Trackable, Finding {
   @Override
   public Integer getLine() {
     if (range != null) {
-      return ReadAction.compute(() -> isValid() ? (range.getDocument().getLineNumber(range.getStartOffset()) + 1) : null);
+      return ReadActionUtils.Companion.runReadActionSafely(psiFile, () -> isValid() ? (range.getDocument().getLineNumber(range.getStartOffset()) + 1) : null);
     }
 
     return null;

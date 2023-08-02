@@ -27,7 +27,6 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
@@ -52,6 +51,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
+import org.sonarlint.intellij.ui.ReadActionUtils
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
@@ -125,11 +125,11 @@ object SonarLintIntelliJClient : SonarLintClient {
             FindFileByNamesInScopeResponse(emptyList())
         )
 
-        val foundFiles = ReadAction.compute<List<FoundFileDto>, Exception> {
+        val foundFiles = ReadActionUtils.runReadActionSafely(project) {
             findFiles(project, params)
         }
 
-        return CompletableFuture.completedFuture(FindFileByNamesInScopeResponse(foundFiles))
+        return CompletableFuture.completedFuture(FindFileByNamesInScopeResponse(foundFiles ?: emptyList()))
     }
 
     private fun findFiles(project: Project, params: FindFileByNamesInScopeParams): List<FoundFileDto> {
