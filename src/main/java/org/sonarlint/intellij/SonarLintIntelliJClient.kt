@@ -88,6 +88,8 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
 import java.io.ByteArrayInputStream
 import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.net.URI
 import java.security.cert.CertificateException
 import java.security.cert.CertificateFactory
@@ -374,8 +376,14 @@ object SonarLintIntelliJClient : SonarLintClient {
     override fun selectProxies(params: SelectProxiesParams): CompletableFuture<SelectProxiesResponse> {
         val uri = URI.create(params.uri)
         val proxiesResponse =
-            SelectProxiesResponse(CommonProxy.getInstance().select(uri).stream().map { ProxyDto(it.type(), uri.host, uri.port) }
-                .collect(Collectors.toList()))
+            SelectProxiesResponse(CommonProxy.getInstance().select(uri).stream().map {
+                if (it.type() != Proxy.Type.DIRECT && it.address() is InetSocketAddress) {
+                    val socketAddress = it.address() as InetSocketAddress
+                    ProxyDto(it.type(), socketAddress.hostString, socketAddress.port)
+                } else {
+                    ProxyDto.NO_PROXY
+                }
+            }.collect(Collectors.toList()))
         return CompletableFuture.completedFuture(proxiesResponse)
     }
 
