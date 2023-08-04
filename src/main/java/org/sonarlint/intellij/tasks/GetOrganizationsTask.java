@@ -21,15 +21,15 @@ package org.sonarlint.intellij.tasks;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
-
 import java.util.List;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.commons.progress.ProgressMonitor;
-import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
+import org.sonarlint.intellij.core.BackendService;
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.OrganizationDto;
+
+import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 
 /**
  * Only useful for SonarCloud
@@ -37,7 +37,7 @@ import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
 public class GetOrganizationsTask extends Task.Modal {
   private final ServerConnection connection;
   private Exception exception;
-  private List<ServerOrganization> organizations;
+  private List<OrganizationDto> organizations;
 
   public GetOrganizationsTask(ServerConnection connection) {
     super(null, "Fetch organizations from SonarCloud", true);
@@ -50,7 +50,7 @@ public class GetOrganizationsTask extends Task.Modal {
     indicator.setIndeterminate(false);
 
     try {
-      organizations = connection.api().organization().listUserOrganizations(new ProgressMonitor(new TaskProgressMonitor(indicator, myProject)));
+      organizations = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).listUserOrganizations(connection)).getUserOrganizations();
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
       exception = e;
@@ -61,7 +61,7 @@ public class GetOrganizationsTask extends Task.Modal {
     return exception;
   }
 
-  public List<ServerOrganization> organizations() {
+  public List<OrganizationDto> organizations() {
     return organizations;
   }
 
