@@ -60,6 +60,10 @@ import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.Transi
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.GetOrganizationParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.GetOrganizationResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.ListUserOrganizationsParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.ListUserOrganizationsResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ChangeHotspotStatusParams
@@ -398,6 +402,20 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             ValidateConnectionParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
         }
         return initializedBackend.connectionService.validateConnection(params)
+    }
+
+    fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val params = ListUserOrganizationsParams(credentials)
+        return initializedBackend.connectionService.listUserOrganizations(params)
+    }
+
+    fun getOrganization(server: ServerConnection, organizationKey: String): CompletableFuture<GetOrganizationResponse> {
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val params = GetOrganizationParams(credentials, organizationKey)
+        return initializedBackend.connectionService.getOrganization(params)
     }
 
     companion object {

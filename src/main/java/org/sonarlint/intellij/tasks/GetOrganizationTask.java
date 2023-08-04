@@ -21,22 +21,21 @@ package org.sonarlint.intellij.tasks;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
-
-import java.util.Optional;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.commons.progress.ProgressMonitor;
-import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
+import org.sonarlint.intellij.core.BackendService;
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.OrganizationDto;
+
+import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 
 public class GetOrganizationTask extends Task.Modal {
   private final ServerConnection server;
   private final String organizationKey;
 
   private Exception exception;
-  private Optional<ServerOrganization> organization = Optional.empty();
+  private OrganizationDto organization;
 
   public GetOrganizationTask(ServerConnection server, String organizationKey) {
     super(null, "Fetch Organization From SonarCloud", true);
@@ -51,7 +50,7 @@ public class GetOrganizationTask extends Task.Modal {
 
     try {
       indicator.setText("Searching organization");
-      organization = server.api().organization().getOrganization(organizationKey, new ProgressMonitor(new TaskProgressMonitor(indicator, myProject)));
+      organization = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(server, organizationKey)).getOrganization();
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
       exception = e;
@@ -62,7 +61,7 @@ public class GetOrganizationTask extends Task.Modal {
     return exception;
   }
 
-  public Optional<ServerOrganization> organization() {
+  public OrganizationDto organization() {
     return organization;
   }
 }
