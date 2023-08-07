@@ -30,12 +30,12 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.sonarlint.intellij.finding.tracking.Trackable;
-import org.sonarlint.intellij.ui.ReadActionUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5;
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public abstract class LiveFinding implements Trackable, Finding {
   private static final AtomicLong UID_GEN = new AtomicLong();
@@ -100,7 +100,7 @@ public abstract class LiveFinding implements Trackable, Finding {
   @Override
   public Integer getLine() {
     if (range != null) {
-      return ReadActionUtils.Companion.runReadActionSafely(psiFile, () -> isValid() ? (range.getDocument().getLineNumber(range.getStartOffset()) + 1) : null);
+      return computeReadActionSafely(psiFile, () -> range.getDocument().getLineNumber(range.getStartOffset()) + 1);
     }
 
     return null;

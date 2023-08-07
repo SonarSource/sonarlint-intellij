@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.intellij.openapi.application.ApplicationManager.getApplication;
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public class SonarLintAppUtils {
 
@@ -48,7 +48,7 @@ public class SonarLintAppUtils {
 
   @CheckForNull
   public static Module findModuleForFile(VirtualFile file, Project project) {
-    return getApplication().<Module>runReadAction(() -> {
+    return computeReadActionSafely(file, project, () -> {
       if (!project.isOpen() || project.isDisposed()) {
         return null;
       }
@@ -62,12 +62,13 @@ public class SonarLintAppUtils {
   }
 
   public static List<VirtualFile> retainOpenFiles(Project project, List<VirtualFile> files) {
-    return getApplication().<List<VirtualFile>>runReadAction(() -> {
+    var openFiles = computeReadActionSafely(project, () -> {
       if (!project.isOpen()) {
-        return Collections.emptyList();
+        return Collections.<VirtualFile>emptyList();
       }
       return files.stream().filter(f -> FileEditorManager.getInstance(project).isFileOpen(f)).collect(Collectors.toList());
     });
+    return openFiles != null ? openFiles : Collections.emptyList();
   }
 
   /**

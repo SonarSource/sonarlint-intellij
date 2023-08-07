@@ -51,7 +51,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
-import org.sonarlint.intellij.ui.ReadActionUtils
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
@@ -127,7 +127,7 @@ object SonarLintIntelliJClient : SonarLintClient {
             FindFileByNamesInScopeResponse(emptyList())
         )
 
-        val foundFiles = ReadActionUtils.runReadActionSafely(project) {
+        val foundFiles = computeReadActionSafely(project) {
             findFiles(project, params)
         }
 

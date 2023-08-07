@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.clion;
 
 import com.intellij.execution.ExecutionException;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
@@ -49,6 +48,8 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.commons.Language;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+
 public class AnalyzerConfiguration {
   private final Project project;
 
@@ -61,7 +62,8 @@ public class AnalyzerConfiguration {
   }
 
   public ConfigurationResult getConfiguration(VirtualFile file) {
-    return ApplicationManager.getApplication().<ConfigurationResult>runReadAction(() -> getConfigurationAction(file));
+    var configuration = computeReadActionSafely(file, project, () -> getConfigurationAction(file));
+    return configuration != null ? configuration : ConfigurationResult.skip("The file is invalid or the project is being closed");
   }
 
   /**

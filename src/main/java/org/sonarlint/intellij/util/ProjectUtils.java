@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -33,6 +32,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import org.sonarlint.intellij.finding.TextRangeMatcher;
+
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public class ProjectUtils {
 
@@ -77,7 +78,7 @@ public class ProjectUtils {
   }
 
   public static Map<VirtualFile, String> getRelativePaths(Project project, Collection<VirtualFile> files) {
-    return ApplicationManager.getApplication().<Map<VirtualFile, String>>runReadAction(() -> {
+    return computeReadActionSafely(project, () -> {
       Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
 
       for (var file : files) {
