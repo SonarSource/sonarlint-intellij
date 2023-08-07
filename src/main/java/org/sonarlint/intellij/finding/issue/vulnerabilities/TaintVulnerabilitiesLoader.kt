@@ -21,6 +21,7 @@ package org.sonarlint.intellij.finding.issue.vulnerabilities
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsService
@@ -28,7 +29,6 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.exception.InvalidBindingException
-import org.sonarlint.intellij.ui.ReadActionUtils
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
 import org.sonarlint.intellij.util.getRelativePathOf
@@ -49,7 +49,7 @@ object TaintVulnerabilitiesLoader {
   private fun getLocalTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<LocalTaintVulnerability> {
     val vulnerabilities = loadServerTaintVulnerabilitiesForFile(file, project, connectedEngine)
     return if (vulnerabilities.isEmpty()) emptyList()
-    else ReadActionUtils.runReadActionSafely(project) {
+    else computeReadActionSafely(project) {
       vulnerabilities.map { TaintVulnerabilityMatcher(project).match(it) }
     } ?: emptyList()
   }

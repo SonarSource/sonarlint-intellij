@@ -35,6 +35,7 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class ClearCurrentFileIssuesAction extends AbstractSonarAction {
@@ -52,7 +53,7 @@ public class ClearCurrentFileIssuesAction extends AbstractSonarAction {
       var issueManager = getService(project, FindingsCache.class);
       var codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
 
-      ApplicationManager.getApplication().runReadAction(() -> {
+      runReadActionSafely(project, () -> {
         issueManager.clearAllIssuesForAllFiles();
         getService(project, AnalysisSubmitter.class).clearCurrentFileIssues();
 

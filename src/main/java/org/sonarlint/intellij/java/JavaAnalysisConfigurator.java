@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.java;
 
 import com.intellij.compiler.CompilerConfiguration;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.LanguageLevelUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.projectRoots.JdkUtil;
@@ -55,6 +54,7 @@ import org.jetbrains.jps.model.java.JpsJavaSdkType;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isEmpty;
 
 public class JavaAnalysisConfigurator implements AnalysisConfigurator {
@@ -101,8 +101,10 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   }
 
   private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
-    var languageLevel = ApplicationManager.getApplication()
-      .<LanguageLevel>runReadAction(() -> LanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
+    var languageLevel = computeReadActionSafely(ijModule.getProject(), () -> LanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
+    if (languageLevel == null) {
+      return;
+    }
     final var languageLevelStr = getLanguageLevelOption(languageLevel);
     var bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
     if (isEmpty(bytecodeTarget)) {

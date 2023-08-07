@@ -31,10 +31,10 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.tracking.Trackable;
-import org.sonarlint.intellij.ui.ReadActionUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static java.util.Collections.emptyList;
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public class LiveFindingCache<T extends LiveFinding> {
   static final int DEFAULT_MAX_ENTRIES = 10_000;
@@ -103,7 +103,7 @@ public class LiveFindingCache<T extends LiveFinding> {
   public Collection<Trackable> getPreviousFindings(VirtualFile file) {
     var liveFindings = getLive(file);
     if (liveFindings != null) {
-      Collection<Trackable> result = ReadActionUtils.Companion.runReadActionSafely(project, () -> liveFindings.stream().filter(T::isValid).collect(Collectors.toList()));
+      Collection<Trackable> result = computeReadActionSafely(project, () -> liveFindings.stream().filter(T::isValid).collect(Collectors.toList()));
       return result == null ? emptyList() : result;
     }
 

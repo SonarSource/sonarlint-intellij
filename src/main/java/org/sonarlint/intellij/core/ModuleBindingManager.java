@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -35,6 +34,7 @@ import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -117,6 +117,9 @@ public class ModuleBindingManager {
       throw new IllegalStateException("Project is not bound");
     }
     var moduleFiles = collectPathsForModule();
+    if (moduleFiles == null) {
+      return;
+    }
     var projectBinding = engine.calculatePathPrefixes(projectKey, moduleFiles);
     var settings = getSettingsFor(module);
     settings.setIdePathPrefix(projectBinding.idePathPrefix());
@@ -124,7 +127,7 @@ public class ModuleBindingManager {
   }
 
   private List<String> collectPathsForModule() {
-    return ApplicationManager.getApplication().<List<String>>runReadAction(() -> {
+    return computeReadActionSafely(module.getProject(), () -> {
       var paths = new ArrayList<String>();
       var moduleRootManager = ModuleRootManager.getInstance(module);
       moduleRootManager.getFileIndex().iterateContent(virtualFile -> {

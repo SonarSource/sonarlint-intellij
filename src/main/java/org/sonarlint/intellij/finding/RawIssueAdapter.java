@@ -32,10 +32,10 @@ import java.util.stream.Collectors;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.ui.ReadActionUtils;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.finding.LocationKt.resolvedLocation;
 import static org.sonarlint.intellij.finding.QuickFixKt.convert;
 import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
@@ -43,7 +43,7 @@ import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
 public class RawIssueAdapter {
 
   public static LiveSecurityHotspot toLiveSecurityHotspot(Project project, Issue rawHotspot, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
-    return ReadActionUtils.Companion.runReadActionSafely(project, () -> {
+    return computeReadActionSafely(project, () -> {
       var matcher = new TextRangeMatcher(project);
       var psiFile = toPsiFile(project, inputFile.getClientObject());
       var textRange = rawHotspot.getTextRange();
@@ -59,7 +59,7 @@ public class RawIssueAdapter {
   }
 
   public static LiveIssue toLiveIssue(Project project, Issue rawIssue, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
-    return ReadActionUtils.Companion.runReadActionSafely(project, () -> {
+    return computeReadActionSafely(project, () -> {
       var matcher = new TextRangeMatcher(project);
       var psiFile = toPsiFile(project, inputFile.getClientObject());
       var textRange = rawIssue.getTextRange();

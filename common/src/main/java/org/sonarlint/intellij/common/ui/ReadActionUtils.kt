@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui
+package org.sonarlint.intellij.common.ui
 
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
@@ -27,23 +27,41 @@ import com.intellij.psi.PsiFile
 
 class ReadActionUtils {
     companion object {
-        fun <T> runReadActionSafely(project: Project, action: ThrowableComputable<T, out Exception>): T? {
+        @JvmStatic
+        fun <T> runReadActionSafely(project: Project, action: Runnable) {
             if (!project.isDisposed) {
-                return ReadAction.compute(action)
+                return ReadAction.run<Exception> {
+                    if (!project.isDisposed) action.run()
+                }
+            }
+        }
+
+        @JvmStatic
+        fun <T> computeReadActionSafely(project: Project, action: ThrowableComputable<T, out Exception>): T? {
+            if (!project.isDisposed) {
+                return ReadAction.compute<T?, Exception> {
+                    if (project.isDisposed) null else action.compute()
+                }
             }
             return null
         }
 
-        fun <T> runReadActionSafely(psiFile: PsiFile, action: ThrowableComputable<T, out Exception>): T? {
+        @JvmStatic
+        fun <T> computeReadActionSafely(psiFile: PsiFile, action: ThrowableComputable<T, out Exception>): T? {
             if (psiFile.isValid) {
-                return ReadAction.compute(action)
+                return ReadAction.compute<T?, Exception> {
+                    if (!psiFile.isValid) null else action.compute()
+                }
             }
             return null
         }
 
-        fun <T> runReadActionSafely(virtualFile: VirtualFile, project: Project, action: ThrowableComputable<T, out Exception>): T? {
-            if (virtualFile.isValid) {
-                return runReadActionSafely(project, action)
+        @JvmStatic
+        fun <T> computeReadActionSafely(virtualFile: VirtualFile, project: Project, action: ThrowableComputable<T, out Exception>): T? {
+            if (!project.isDisposed && virtualFile.isValid) {
+                return ReadAction.compute<T?, Exception> {
+                    if (project.isDisposed || !virtualFile.isValid) null else action.compute()
+                }
             }
             return null
         }

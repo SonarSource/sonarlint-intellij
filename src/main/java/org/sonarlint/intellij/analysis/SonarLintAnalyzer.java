@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
@@ -29,6 +28,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,12 +43,13 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
-import org.sonarlint.intellij.ui.ReadActionUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.commons.Language;
 import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
+
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintAnalyzer {
@@ -70,7 +71,9 @@ public final class SonarLintAnalyzer {
 
     // configure files
     var inputFiles = getInputFiles(module, filesToAnalyze, contributedLanguages);
-
+    if (inputFiles == null) {
+      return new ModuleAnalysisResult(Collections.emptyList());
+    }
     // Analyze
 
     try {
@@ -140,7 +143,7 @@ public final class SonarLintAnalyzer {
   }
 
   private List<ClientInputFile> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze, Map<VirtualFile, Language> contributedLanguages) {
-    return ApplicationManager.getApplication().<List<ClientInputFile>>runReadAction(() -> filesToAnalyze.stream()
+    return computeReadActionSafely(module.getProject(), () -> filesToAnalyze.stream()
       .map(f -> createClientInputFile(module, f, contributedLanguages.get(f)))
       .filter(Objects::nonNull)
       .collect(Collectors.toList()));
@@ -168,7 +171,7 @@ public final class SonarLintAnalyzer {
 
   private static DefaultClientInputFile createInputFileFromDocument(Project project, VirtualFile virtualFile, @org.jetbrains.annotations.Nullable Language language, boolean test,
     Charset charset, String relativePath) {
-    return ReadActionUtils.Companion.runReadActionSafely(virtualFile, project, () -> {
+    return computeReadActionSafely(virtualFile, project, () -> {
       var document = FileDocumentManager.getInstance().getDocument(virtualFile);
       var textInDocument = document != null ? document.getText() : null;
       var documentModificationStamp = document != null ? document.getModificationStamp() : 0;
@@ -177,7 +180,7 @@ public final class SonarLintAnalyzer {
   }
 
   private static Long readDocumentModificationStamp(Project project, VirtualFile virtualFile) {
-    return ReadActionUtils.Companion.runReadActionSafely(virtualFile, project, () -> {
+    return computeReadActionSafely(virtualFile, project, () -> {
       var document = FileDocumentManager.getInstance().getDocument(virtualFile);
       return document != null ? document.getModificationStamp() : 0;
     });

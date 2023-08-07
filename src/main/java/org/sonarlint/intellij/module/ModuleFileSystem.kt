@@ -27,7 +27,7 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonar.api.batch.fs.InputFile
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer
-import org.sonarlint.intellij.ui.ReadActionUtils
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileSystem
@@ -49,7 +49,7 @@ internal class ModuleFileSystem(private val project: Project, private val module
 
                 // Analysis can only be done on actual files which contain text and not binary data
                 if (VirtualFileUtils.isNonBinaryFile(fileOrDir)) {
-                    val element = ReadActionUtils.runReadActionSafely(module.project) {
+                    val element = computeReadActionSafely(module.project) {
                         sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
                     }
                     if (element != null) {
