@@ -92,7 +92,7 @@ public class ServerConnectionWizard {
     }
 
     @Override
-    protected void helpAction() {
+    protected void doHelpAction() {
       BrowserUtil.browse(SonarLintDocumentation.CONNECTED_MODE_LINK);
     }
 
