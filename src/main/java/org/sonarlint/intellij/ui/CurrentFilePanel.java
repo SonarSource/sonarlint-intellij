@@ -33,6 +33,7 @@ import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,6 +77,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     mainPanel.add(issuesPanel);
     mainPanel.add(new CurrentFileStatusPanel(project), BorderLayout.SOUTH);
 
+    findingDetailsPanel.setMinimumSize(new Dimension(350, 200));
     var splitter = createSplitter(project, this, this, mainPanel, findingDetailsPanel, SPLIT_PROPORTION_PROPERTY, 0.5f);
 
     super.setContent(splitter);
