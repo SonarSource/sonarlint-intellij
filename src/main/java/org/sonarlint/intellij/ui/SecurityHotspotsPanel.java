@@ -37,6 +37,7 @@ import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
@@ -104,6 +105,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var treePanel = new JPanel(new VerticalFlowLayout(0, 0));
     treePanel.add(securityHotspotTree);
 
+    findingDetailsPanel.setMinimumSize(new Dimension(350, 200));
     var findingsPanel = new JPanel(new BorderLayout());
     findingsPanel.add(createSplitter(project, this, this,
       ScrollPaneFactory.createScrollPane(treePanel), findingDetailsPanel, SPLIT_PROPORTION_PROPERTY, 0.5f));

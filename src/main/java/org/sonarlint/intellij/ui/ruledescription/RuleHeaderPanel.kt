@@ -27,6 +27,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.WrapLayout
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialog
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
@@ -44,7 +45,7 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 
-class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
+class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(WrapLayout(FlowLayout.LEFT)) {
     companion object {
         private const val MARK_AS_RESOLVED = "Mark Issue as..."
     }
