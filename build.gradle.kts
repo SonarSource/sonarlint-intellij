@@ -14,7 +14,7 @@ import java.util.zip.ZipOutputStream
 
 plugins {
     kotlin("jvm") version "1.8.10"
-    id("org.jetbrains.intellij") version "1.14.1"
+    id("org.jetbrains.intellij") version "1.15.0"
     id("org.sonarqube") version "3.4.0.2513"
     java
     jacoco
@@ -41,7 +41,6 @@ description = "SonarLint for IntelliJ IDEA"
 
 val sonarlintCoreVersion: String by project
 val protobufVersion: String by project
-val jettyVersion: String by project
 val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
 
@@ -189,24 +188,19 @@ configurations {
 dependencies {
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     implementation("commons-lang:commons-lang:2.6")
-    compileOnly("com.google.code.findbugs:jsr305:3.0.2")
-    implementation("org.apache.httpcomponents.client5:httpclient5:5.2.1") {
-        exclude(module = "slf4j-api")
-    }
     implementation(project(":common"))
+    compileOnly("com.google.code.findbugs:jsr305:3.0.2")
     runtimeOnly(project(":clion"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(platform("org.junit:junit-bom:5.9.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0") {
+        exclude(module = "junit")
+    }
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
-    testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
-    testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
-    testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.22.0.31918")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.3.2.22047")
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.30.0.9766")
@@ -222,6 +216,7 @@ dependencies {
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.47.0.62356")
     }
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // workaround for light tests in 2020.3, might remove later
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-reflect")
     constraints {
