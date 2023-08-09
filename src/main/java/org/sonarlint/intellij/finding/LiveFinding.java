@@ -24,6 +24,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
@@ -31,7 +32,10 @@ import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5;
@@ -57,6 +61,8 @@ public abstract class LiveFinding implements Trackable, Finding {
   private Long introductionDate;
   private String serverFindingKey;
   private boolean resolved;
+  private CleanCodeAttribute cleanCodeAttribute;
+  private Map<SoftwareQuality, ImpactSeverity> impacts;
 
 
   protected LiveFinding(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
@@ -69,6 +75,14 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.context = context;
     this.quickFixes = quickFixes;
     this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey().orElse(null);
+    this.cleanCodeAttribute = issue.getCleanCodeAttribute();
+
+    //TODO Remove mocking data for impacts
+    if (!issue.getImpacts().isEmpty()) {
+      this.impacts = issue.getImpacts();
+    } else {
+      this.impacts = Map.of(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH, SoftwareQuality.RELIABILITY, ImpactSeverity.MEDIUM, SoftwareQuality.SECURITY, ImpactSeverity.LOW);
+    }
 
     if (range != null) {
       var document = range.getDocument();
