@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
@@ -75,9 +76,15 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.context = context;
     this.quickFixes = quickFixes;
     this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey().orElse(null);
-    this.cleanCodeAttribute = issue.getCleanCodeAttribute();
 
-    //TODO Remove mocking data for impacts
+    // TODO: Remove mocking data for attribute
+    if (issue.getCleanCodeAttribute() != null) {
+      this.cleanCodeAttribute = issue.getCleanCodeAttribute();
+    } else {
+      this.cleanCodeAttribute = CleanCodeAttribute.defaultCleanCodeAttribute();
+    }
+
+    // TODO: Remove mocking data for impacts
     if (!issue.getImpacts().isEmpty()) {
       this.impacts = issue.getImpacts();
     } else {
@@ -211,6 +218,17 @@ public abstract class LiveFinding implements Trackable, Finding {
   @Override
   public boolean isResolved() {
     return resolved;
+  }
+
+  @Override
+  public CleanCodeAttribute getCleanCodeAttribute() {
+    return this.cleanCodeAttribute;
+  }
+
+  @NotNull
+  @Override
+  public Map<SoftwareQuality, ImpactSeverity> getImpacts() {
+    return this.impacts;
   }
 
   // mutable fields
