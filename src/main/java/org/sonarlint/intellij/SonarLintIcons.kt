@@ -21,6 +21,7 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.JBColor
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
@@ -90,12 +91,20 @@ object SonarLintIcons {
         IssueSeverity.MAJOR to getIcon("/images/severity/major.svg"),
         IssueSeverity.MINOR to getIcon("/images/severity/minor.svg")
     )
+
+    private val IMPACT_ICONS = mapOf(
+        ImpactSeverity.HIGH to getIcon("/images/impact/high.svg"),
+        ImpactSeverity.MEDIUM to getIcon("/images/impact/medium.svg"),
+        ImpactSeverity.LOW to getIcon("/images/impact/low.svg")
+    )
+
     private val TYPE_ICONS = mapOf(
         RuleType.BUG to getIcon("/images/type/bug.svg"),
         RuleType.CODE_SMELL to getIcon("/images/type/codeSmell.svg"),
         RuleType.VULNERABILITY to getIcon("/images/type/vulnerability.svg"),
         RuleType.SECURITY_HOTSPOT to getIcon("/images/type/hotspot.svg")
     )
+
     private val PROBABILITY_ICONS = mapOf(
         VulnerabilityProbability.HIGH to getIcon("/images/type/hotspotHigh.svg"),
         VulnerabilityProbability.MEDIUM to getIcon("/images/type/hotspotMedium.svg"),
@@ -120,6 +129,11 @@ object SonarLintIcons {
     @JvmStatic
     fun type(type: RuleType): Icon {
         return TYPE_ICONS[type]!!
+    }
+
+    @JvmStatic
+    fun impact(impact: ImpactSeverity): Icon {
+        return IMPACT_ICONS[impact]!!
     }
 
     @JvmStatic
