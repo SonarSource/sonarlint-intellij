@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.core.server
 
+import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.withTrailingSlash
-import org.sonarlint.intellij.config.global.ServerConnection.SONARCLOUD_URL
 
 sealed interface ServerLinks {
     fun formattingSyntaxDoc(): String
