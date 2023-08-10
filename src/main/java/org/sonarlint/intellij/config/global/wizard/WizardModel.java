@@ -31,7 +31,7 @@ import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.OrganizationDto;
 
-import static org.sonarlint.intellij.config.global.ServerConnection.SONARCLOUD_URL;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 
 public class WizardModel {
   private ServerType serverType;

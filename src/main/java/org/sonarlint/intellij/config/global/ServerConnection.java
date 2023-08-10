@@ -53,7 +53,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 // Don't change annotation, used for backward compatibility
 @Tag("SonarQubeServer")
 public class ServerConnection {
-  public static final String SONARCLOUD_URL = "https://sonarcloud.io";
   @OptionTag
   private String hostUrl;
   @Tag

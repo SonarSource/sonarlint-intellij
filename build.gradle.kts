@@ -171,6 +171,8 @@ val runIdeDirectory: String by project
 
 tasks.runIde {
     systemProperty("sonarlint.telemetry.disabled", "true")
+    // uncomment to customize the SonarCloud URL
+    //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
     if (project.hasProperty("runIdeDirectory")) {
         ideDir.set(File(runIdeDirectory))
     }

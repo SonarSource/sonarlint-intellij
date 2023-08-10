@@ -26,7 +26,6 @@ import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.ui.SwingHelper;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -44,7 +43,10 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MouseInputAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 
 public class ServerStep extends AbstractWizardStepEx {
   private static final int NAME_MAX_LENGTH = 50;
@@ -209,7 +211,7 @@ public class ServerStep extends AbstractWizardStepEx {
   private void save() {
     if (radioSonarCloud.isSelected()) {
       model.setServerType(WizardModel.ServerType.SONARCLOUD);
-      model.setServerUrl("https://sonarcloud.io");
+      model.setServerUrl(SONARCLOUD_URL);
     } else {
       model.setServerType(WizardModel.ServerType.SONARQUBE);
       model.setServerUrl(urlText.getText().trim());
