@@ -35,6 +35,7 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
+import org.sonarlint.intellij.common.ui.ReadActionUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -44,7 +45,6 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
-import org.sonarlint.intellij.ui.ReadActionUtils
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarsource.sonarlint.core.SonarLintBackendImpl
@@ -490,7 +490,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         if (!rangeMarker.isValid) {
             return null
         }
-        return ReadActionUtils.runReadActionSafely(project) {
+        return ReadActionUtils.computeReadActionSafely(project) {
             val startLine = rangeMarker.document.getLineNumber(rangeMarker.startOffset)
             val startLineOffset = rangeMarker.startOffset - rangeMarker.document.getLineStartOffset(startLine)
             val endLine = rangeMarker.document.getLineNumber(rangeMarker.endOffset)
