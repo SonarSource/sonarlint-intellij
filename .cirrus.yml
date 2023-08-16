@@ -274,13 +274,15 @@ dogfood_task:
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 0.5
-    memory: 500M
+    cpu: 1
+    memory: 1G
   env:
     ARTIFACTORY_API_KEY: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     JDK_VERSION: "17"
   dogfood_script: |
     source cirrus-env QA
+    source .cirrus/use-gradle-wrapper.sh
+    source .cirrus/set_gradle_build_version
     envsubst '$ARTIFACTORY_URL,$PROJECT_VERSION' <.cirrus/updatePlugins-template.xml >updatePlugins.xml
     jfrog rt u updatePlugins.xml sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/ \
       --url "${ARTIFACTORY_URL}" --access-token "${ARTIFACTORY_API_KEY}" --build-name "$CIRRUS_REPO_NAME" --build-number "$BUILD_NUMBER"
