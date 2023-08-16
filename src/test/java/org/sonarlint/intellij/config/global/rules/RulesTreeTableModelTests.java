@@ -48,7 +48,7 @@ class RulesTreeTableModelTests {
   @BeforeEach
   void setUp() {
     when(ruleDetails.getType()).thenReturn(RuleType.BUG);
-    when(ruleDetails.getDefaultSeverity()).thenReturn(IssueSeverity.MAJOR);
+    when(ruleDetails.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(ruleDetails.getKey()).thenReturn("key");
     when(ruleDetails.isActiveByDefault()).thenReturn(false);
     root.add(lang);

@@ -23,14 +23,18 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
-import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.analysis.api.*
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFileEdit
 import org.sonarsource.sonarlint.core.analysis.api.Flow
 import org.sonarsource.sonarlint.core.analysis.api.QuickFix
+import org.sonarsource.sonarlint.core.analysis.api.TextEdit
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
+import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
+import org.sonarsource.sonarlint.core.commons.SoftwareQuality
 import org.sonarsource.sonarlint.core.commons.TextRange
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import java.util.Optional
@@ -54,6 +58,16 @@ fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = o
     override fun getType() = RuleType.BUG
     override fun getRuleKey() = "ruleKey"
     override fun flows() = mutableListOf<Flow>()
+    override fun getCleanCodeAttribute() = CleanCodeAttribute.defaultCleanCodeAttribute()
+
+    override fun getImpacts(): MutableMap<SoftwareQuality, ImpactSeverity> {
+        return mutableMapOf(
+            SoftwareQuality.MAINTAINABILITY to ImpactSeverity.HIGH,
+            SoftwareQuality.RELIABILITY to ImpactSeverity.MEDIUM,
+            SoftwareQuality.SECURITY to ImpactSeverity.LOW
+        )
+    }
+
     override fun quickFixes() = mutableListOf<QuickFix>()
     override fun getRuleDescriptionContextKey() = Optional.empty<String>()
     override fun getVulnerabilityProbability() = Optional.empty<VulnerabilityProbability>()

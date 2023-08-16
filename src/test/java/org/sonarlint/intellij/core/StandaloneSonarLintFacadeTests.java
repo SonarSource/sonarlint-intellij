@@ -20,20 +20,13 @@
 package org.sonarlint.intellij.core;
 
 import java.util.Collections;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParamType;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
@@ -43,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class StandaloneSonarLintFacadeTests extends AbstractSonarLintLightTests {
+
   private StandaloneSonarLintEngine engine;
   private StandaloneSonarLintFacade facade;
 
@@ -59,30 +53,4 @@ class StandaloneSonarLintFacadeTests extends AbstractSonarLintLightTests {
     assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ClientProgressMonitor.class))).isEqualTo(results);
   }
 
-  private static StandaloneRuleDetails ruleDetails(String ruleKey) {
-    var rule = mock(StandaloneRuleDetails.class);
-    when(rule.isActiveByDefault()).thenReturn(true);
-    when(rule.getTags()).thenReturn(new String[] {"tag"});
-    StandaloneRuleParam aParam = aParam();
-    when(rule.paramDetails()).thenReturn(List.of(aParam));
-    when(rule.getKey()).thenReturn(ruleKey);
-    when(rule.getName()).thenReturn("ruleName");
-    when(rule.getHtmlDescription()).thenReturn("ruleDescription");
-    when(rule.getLanguage()).thenReturn(Language.JAVA);
-    when(rule.getDefaultSeverity()).thenReturn(IssueSeverity.MAJOR);
-    when(rule.getType()).thenReturn(RuleType.BUG);
-    return rule;
-  }
-
-  private static StandaloneRuleParam aParam() {
-    var param = mock(StandaloneRuleParam.class);
-    when(param.key()).thenReturn("paramKey");
-    when(param.name()).thenReturn("paramName");
-    when(param.description()).thenReturn("paramDescription");
-    when(param.defaultValue()).thenReturn("paramDefaultValue");
-    when(param.type()).thenReturn(StandaloneRuleParamType.STRING);
-    when(param.multiple()).thenReturn(false);
-    when(param.possibleValues()).thenReturn(List.of("YES", "NO", "MAYBE"));
-    return param;
-  }
 }
