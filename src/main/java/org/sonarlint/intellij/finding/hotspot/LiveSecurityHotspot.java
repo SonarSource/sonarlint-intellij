@@ -51,6 +51,8 @@ public class LiveSecurityHotspot extends LiveFinding {
     super(issue, psiFile, range, context, quickFixes);
     this.vulnerabilityProbability = issue.getVulnerabilityProbability().get();
     this.status = HotspotReviewStatus.TO_REVIEW;
+    this.setCleanCodeAttribute(null);
+    this.setImpacts(Collections.emptyMap());
   }
 
   public VulnerabilityProbability getVulnerabilityProbability() {

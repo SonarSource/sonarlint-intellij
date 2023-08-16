@@ -101,10 +101,10 @@ public class RulesFilterModel {
   }
 
   public boolean filter(RulesTreeNode.Rule rule) {
-    if (showOnlyEnabled && !rule.isActivated()) {
+    if (showOnlyEnabled && Boolean.FALSE.equals(rule.isActivated())) {
       return false;
     }
-    if (showOnlyDisabled && rule.isActivated()) {
+    if (showOnlyDisabled && Boolean.TRUE.equals(rule.isActivated())) {
       return false;
     }
     if (showOnlyChanged && !rule.isNonDefault()) {

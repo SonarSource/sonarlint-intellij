@@ -69,6 +69,8 @@ public abstract class LiveFinding implements Trackable, Finding {
   private Long introductionDate;
   private String serverFindingKey;
   private boolean resolved;
+  private CleanCodeAttribute cleanCodeAttribute;
+  private Map<SoftwareQuality, ImpactSeverity> impacts;
 
 
   protected LiveFinding(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context,
@@ -82,6 +84,9 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.context = context;
     this.quickFixes = quickFixes;
     this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey().orElse(null);
+
+    this.cleanCodeAttribute = issue.getCleanCodeAttribute();
+    this.impacts = issue.getImpacts();
 
     this.cleanCodeAttribute = issue.getCleanCodeAttribute();
     this.impacts = issue.getImpacts();
@@ -253,6 +258,14 @@ public abstract class LiveFinding implements Trackable, Finding {
   @Override
   public Map<SoftwareQuality, ImpactSeverity> getImpacts() {
     return this.impacts;
+  }
+
+  public void setCleanCodeAttribute(@Nullable CleanCodeAttribute attribute) {
+    this.cleanCodeAttribute = attribute;
+  }
+
+  public void setImpacts(Map<SoftwareQuality, ImpactSeverity> impacts) {
+    this.impacts = impacts;
   }
 
   // mutable fields

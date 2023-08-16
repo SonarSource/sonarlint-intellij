@@ -39,8 +39,12 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
+import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.HIGH;
+import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.LOW;
+import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.MEDIUM;
 import static org.sonarsource.sonarlint.core.commons.IssueSeverity.BLOCKER;
 import static org.sonarsource.sonarlint.core.commons.IssueSeverity.CRITICAL;
 import static org.sonarsource.sonarlint.core.commons.IssueSeverity.INFO;
@@ -53,6 +57,7 @@ import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR;
  */
 public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private static final List<IssueSeverity> SEVERITY_ORDER = List.of(BLOCKER, CRITICAL, MAJOR, MINOR, INFO);
+  private static final List<ImpactSeverity> IMPACT_ORDER = List.of(HIGH, MEDIUM, LOW);
   private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
   private final FindingTreeIndex index;
@@ -208,10 +213,19 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
         return dateCompare;
       }
 
-      var severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getUserSeverity(), o2.getUserSeverity());
-
-      if (severityCompare != 0) {
-        return severityCompare;
+      if (o1.getCleanCodeAttribute() != null && !o1.getImpacts().isEmpty()
+        && o2.getCleanCodeAttribute() != null && !o2.getImpacts().isEmpty()) {
+        var highestQualityImpactO1 = Collections.max(o1.getImpacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal))).getValue();
+        var highestQualityImpactO2 = Collections.max(o2.getImpacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal))).getValue();
+        var impactCompare = Ordering.explicit(IMPACT_ORDER).compare(highestQualityImpactO1, highestQualityImpactO2);
+        if (impactCompare != 0) {
+          return impactCompare;
+        }
+      } else {
+        var severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getUserSeverity(), o2.getUserSeverity());
+        if (severityCompare != 0) {
+          return severityCompare;
+        }
       }
 
       var r1 = o1.getRange();

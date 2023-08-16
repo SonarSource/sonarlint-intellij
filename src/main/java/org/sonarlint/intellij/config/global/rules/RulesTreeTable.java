@@ -32,7 +32,10 @@ import java.awt.Component;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Locale;
+import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -100,8 +103,16 @@ public class RulesTreeTable extends TreeTable {
         if (obj instanceof RulesTreeNode.Rule) {
           var rule = (RulesTreeNode.Rule) obj;
           var label = new JLabel();
-          var severityAndType = rule.severity() + " " + rule.type();
-          label.setText(StringUtil.capitalize(severityAndType.replace('_', ' ').toLowerCase(Locale.US)));
+          String text;
+          if (rule.attribute() != null && !rule.impacts().isEmpty()) {
+            var highestQualityImpact = Collections.max(rule.impacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
+            var impactText = StringUtil.capitalize(highestQualityImpact.getValue().toString().toLowerCase(Locale.ENGLISH));
+            var qualityText = highestQualityImpact.getKey().toString().toLowerCase(Locale.ENGLISH);
+            text = impactText + " " + qualityText;
+          } else {
+            text = rule.severity() + " " + rule.type();
+          }
+          label.setText(StringUtil.capitalize(text.replace('_', ' ').toLowerCase(Locale.US)));
           IdeTooltipManager.getInstance().show(new IdeTooltip(RulesTreeTable.this, point, label), false);
         }
       }
@@ -132,6 +143,17 @@ public class RulesTreeTable extends TreeTable {
         return value;
       }
     });
+
+    iconsColumn.setMaxWidth(JBUI.scale(40));
+  }
+
+  public void setIconsColumnWidthToNewCct() {
+    var iconsColumn = getColumnModel().getColumn(ICONS_COLUMN);
+    iconsColumn.setMaxWidth(JBUI.scale(20));
+  }
+
+  public void setDefaultIconsColumnWidth() {
+    var iconsColumn = getColumnModel().getColumn(ICONS_COLUMN);
     iconsColumn.setMaxWidth(JBUI.scale(40));
   }
 

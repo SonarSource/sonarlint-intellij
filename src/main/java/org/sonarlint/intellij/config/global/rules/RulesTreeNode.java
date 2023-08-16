@@ -32,6 +32,7 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParamT
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   protected Boolean activated;
@@ -119,6 +120,14 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
     public boolean getDefaultActivation() {
       return details.isActiveByDefault();
+    }
+
+    public CleanCodeAttribute attribute() {
+      return details.getCleanCodeAttribute().orElse(null);
+    }
+
+    public Map<SoftwareQuality, ImpactSeverity> impacts() {
+      return details.getDefaultImpacts();
     }
 
     public IssueSeverity severity() {

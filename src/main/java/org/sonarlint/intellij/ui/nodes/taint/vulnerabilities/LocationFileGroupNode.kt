@@ -39,6 +39,7 @@ class LocationFileGroupNode(private val position: Int, private val location: Loc
     if (file == null || !file.isValid) {
       renderer.append(" (unreachable in local code)", SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES)
     }
+    renderer.toolTipText = null
   }
 
   override fun equals(other: Any?): Boolean {

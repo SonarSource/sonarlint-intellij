@@ -63,7 +63,7 @@ public class PrimaryLocationNode extends AbstractNode {
   }
 
   @Override public void render(TreeCellRenderer renderer) {
-    renderer.setIpad(JBUI.insets(3, 3, 3, 3));
+    renderer.setIpad(JBUI.insets(3));
     renderer.setBorder(null);
     renderer.append(issueCoordinates(), bold ? SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES : SimpleTextAttributes.GRAY_ATTRIBUTES);
     if (number != null) {
