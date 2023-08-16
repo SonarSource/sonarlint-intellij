@@ -34,7 +34,6 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
-import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
@@ -52,11 +51,9 @@ import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
-import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
-import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.addTab
-import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.serverapi.UrlUtils.urlEncode
 import java.awt.BorderLayout
@@ -71,11 +68,11 @@ import javax.swing.text.DefaultCaret
 
 private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
 
-class SonarLintRulePanel(private val project: Project, private val parent: Disposable) : JBLoadingPanel(BorderLayout(), parent) {
+class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBLoadingPanel(BorderLayout(), parent) {
 
     private val mainPanel = JBPanelWithEmptyText(BorderLayout())
     private val topPanel = JBPanel<JBPanel<*>>(BorderLayout())
-    private val descriptionPanel = JBPanel<JBPanel<*>>(BorderLayout())
+    private val descriptionPanel = RuleDescriptionPanel(project, parent)
     private val ruleNameLabel = JBLabel()
     private val headerPanel = RuleHeaderPanel()
     private val paramsPanel = JBPanel<JBPanel<*>>(GridBagLayout())
@@ -208,27 +205,9 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             descriptionPanel.removeAll()
             val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language.languageKey)
             ruleDetails.description.map(
-                { monolithDescription ->
-                    val scrollPane = parseCodeExamples(project, parent, monolithDescription.htmlContent, fileType)
-                    descriptionPanel.add(scrollPane, BorderLayout.CENTER)
-                },
-                { withSections ->
-                    val htmlHeader = withSections.introductionHtmlContent
-                    if (!htmlHeader.isNullOrBlank()) {
-                        val htmlViewer = RuleHtmlViewer(false)
-                        descriptionPanel.add(htmlViewer, BorderLayout.NORTH)
-                        htmlViewer.updateHtml(htmlHeader)
-                    }
-
-                    val sectionsTabs = JBTabbedPane()
-                    sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
-
-                    withSections.tabs.forEachIndexed { index, tabDesc ->
-                        addTab(project, parent, tabDesc, sectionsTabs, index, fileType)
-                    }
-
-                    descriptionPanel.add(sectionsTabs, BorderLayout.CENTER)
-                })
+                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
+                { withSections -> descriptionPanel.addSections(withSections, fileType) }
+            )
             updateParams(ruleDetails)
         }
     }

@@ -45,7 +45,6 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBLoadingPanel;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.fields.ExpandableTextField;
 import com.intellij.util.ui.JBUI;
@@ -55,7 +54,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -75,7 +73,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JButton;
@@ -96,10 +93,9 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel;
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel;
-import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer;
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages;
-import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams;
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
@@ -125,7 +121,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private final AtomicBoolean isDirty = new AtomicBoolean(false);
   private final Project project = ProjectManager.getInstance().getDefaultProject();
   private RulesTreeTable table;
-  private JPanel ruleViewer;
+  private RuleDescriptionPanel ruleDescription;
   private JBLoadingPanel panel;
   private JPanel myParamsPanel;
   private RulesTreeTableModel model;
@@ -351,18 +347,18 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private JPanel createUIComponents() {
-    var descriptionPanel = new JBPanel<>(new BorderLayout());
-    descriptionPanel.setBorder(JBUI.Borders.emptyLeft(5));
+    var rulePanel = new JBPanel<>(new BorderLayout());
+    rulePanel.setBorder(JBUI.Borders.emptyLeft(5));
 
     ruleHeaderPanel = new RuleHeaderPanel();
-    descriptionPanel.add(ruleHeaderPanel, BorderLayout.NORTH);
+    rulePanel.add(ruleHeaderPanel, BorderLayout.NORTH);
 
-    ruleViewer = new JBPanel<>(new BorderLayout());
-    ruleViewer.setBorder(IdeBorderFactory.createBorder());
-    descriptionPanel.add(ruleViewer, BorderLayout.CENTER);
+    ruleDescription = new RuleDescriptionPanel(project, this);
+    ruleDescription.setBorder(IdeBorderFactory.createBorder());
+    rulePanel.add(ruleDescription, BorderLayout.CENTER);
 
     var rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_RULE_DEFAULT);
-    rightSplitter.setFirstComponent(descriptionPanel);
+    rightSplitter.setFirstComponent(rulePanel);
 
     myParamsPanel = new JBPanel<>(new GridBagLayout());
     myParamsPanel.setBorder(JBUI.Borders.emptyLeft(12));
@@ -406,7 +402,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void initOptionsAndDescriptionPanel() {
     myParamsPanel.removeAll();
-    ruleViewer.removeAll();
+    ruleDescription.removeAll();
     ruleHeaderPanel.showMessage(EMPTY_HTML);
     myParamsPanel.validate();
     myParamsPanel.repaint();
@@ -486,22 +482,12 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       () -> getService(BackendService.class).getStandaloneRuleDetails(new GetStandaloneRuleDescriptionParams(singleNode.getKey()))
         .thenAccept(details -> runOnUiThread(project, ModalityState.stateForComponent(getComponent()), () -> {
           details.getDescription().map(
-            monolithDescription -> ruleViewer.add(RuleParsingUtils.Companion.parseCodeExamples(project, this, monolithDescription.getHtmlContent(), fileType)),
+            monolithDescription -> {
+              ruleDescription.addMonolith(monolithDescription, fileType);
+              return null;
+            },
             withSections -> {
-              var htmlHeader = withSections.getIntroductionHtmlContent();
-              if (htmlHeader != null && !htmlHeader.isEmpty() && !htmlHeader.isBlank()) {
-                var htmlViewer = new RuleHtmlViewer(false);
-                ruleViewer.add(htmlViewer, BorderLayout.NORTH);
-                htmlViewer.updateHtml(htmlHeader);
-              }
-
-              var sectionsTabs = new JBTabbedPane();
-              sectionsTabs.setFont(UIUtil.getLabelFont().deriveFont(Font.BOLD));
-
-              IntStream.range(0, withSections.getTabs().size())
-                .forEach(index -> RuleParsingUtils.Companion.addTab(project, this, withSections.getTabs().get(index), sectionsTabs, index, fileType));
-
-              ruleViewer.add(sectionsTabs, BorderLayout.CENTER);
+              ruleDescription.addSections(withSections, fileType);
               return null;
             });
 
