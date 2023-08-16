@@ -22,20 +22,30 @@ package org.sonarlint.intellij.ui.ruledescription
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.XmlElementFactory
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.SimpleListCellRenderer
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
 import org.sonarlint.intellij.ui.ruledescription.section.HtmlFragment
 import org.sonarlint.intellij.ui.ruledescription.section.Section
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleContextualSectionDto
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDescriptionTabDto
+import java.awt.BorderLayout
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import javax.swing.DefaultComboBoxModel
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
 
@@ -97,6 +107,34 @@ class RuleParsingUtils {
             }.forEach { mainPanel.add(it) }
 
             return createScrollPane(mainPanel)
+        }
+
+        fun addTab(project: Project, parent: Disposable, tabDesc: RuleDescriptionTabDto,
+                           sectionsTabs: JBTabbedPane, index: Int, language: FileType) : JBPanel<JBPanel<*>> {
+            val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
+            tabDesc.content.map({ nonContextual ->
+                val scrollPane = parseCodeExamples(project, parent, nonContextual.htmlContent, language)
+                sectionPanel.add(scrollPane, BorderLayout.CENTER)
+            }, { contextual ->
+                val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
+                comboPanel.add(JBLabel("Which component or framework contains the issue?"))
+                val contextCombo = ComboBox(DefaultComboBoxModel(contextual.contextualSections.toTypedArray()))
+                contextCombo.renderer = SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName)
+                contextCombo.addActionListener {
+                    val layout = sectionPanel.layout as BorderLayout
+                    layout.getLayoutComponent(BorderLayout.CENTER)?.let { sectionPanel.remove(it) }
+
+                    val htmlContent = (contextCombo.selectedItem as RuleContextualSectionDto).htmlContent
+                    val scrollPane = parseCodeExamples(project, parent, htmlContent, language)
+                    sectionPanel.add(scrollPane, BorderLayout.CENTER)
+                }
+                comboPanel.add(contextCombo)
+                sectionPanel.add(comboPanel, BorderLayout.NORTH)
+                contextCombo.selectedIndex =
+                    contextual.contextualSections.indexOfFirst { sec -> sec.contextKey == contextual.defaultContextKey }
+            })
+            sectionsTabs.insertTab(tabDesc.title, null, sectionPanel, null, index)
+            return sectionPanel
         }
 
         private fun isWithinTable(previousHtml: String): Boolean {

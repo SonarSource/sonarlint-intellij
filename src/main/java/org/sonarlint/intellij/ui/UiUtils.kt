@@ -30,6 +30,7 @@ class UiUtils {
             runOnUiThread(project, ModalityState.defaultModalityState(), runnable)
         }
 
+        @JvmStatic
         fun runOnUiThread(project: Project, modality: ModalityState, runnable: Runnable) {
             ApplicationManager.getApplication().invokeLater({
                 if (!project.isDisposed) {

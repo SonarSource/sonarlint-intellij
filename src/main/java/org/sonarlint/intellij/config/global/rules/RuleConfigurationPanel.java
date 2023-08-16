@@ -22,16 +22,13 @@ package org.sonarlint.intellij.config.global.rules;
 import com.intellij.ide.CommonActionsManager;
 import com.intellij.ide.DefaultTreeExpander;
 import com.intellij.ide.TreeExpander;
-import com.intellij.ide.plugins.newui.HorizontalLayout;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.FilterComponent;
@@ -40,7 +37,6 @@ import com.intellij.ui.JBSplitter;
 import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SideBorder;
-import com.intellij.ui.SimpleListCellRenderer;
 import com.intellij.ui.TitledSeparator;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.components.ActionLink;
@@ -82,7 +78,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFormattedTextField;
@@ -101,22 +96,19 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.tasks.FutureAwaitingTask;
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel;
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer;
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages;
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionResponse;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleContextualSectionDto;
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDescriptionTabDto;
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleParamDefinitionDto;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
@@ -242,13 +234,10 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private void recomputeDirtyState() {
     runOnPooledThread(() -> getService(BackendService.class).getListAllStandaloneRulesDefinitions()
       .thenAccept(response -> {
-        allRulesStateByKey.clear();
-
         var persistedRules = response.getRulesByKey().values().stream()
           .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
             loadRuleActivation(getGlobalSettings(), ruleDefinitionDto),
-            loadNonDefaultRuleParams(getGlobalSettings(), ruleDefinitionDto))
-          )
+            loadNonDefaultRuleParams(getGlobalSettings(), ruleDefinitionDto)))
           .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
 
         for (var persisted : persistedRules.values()) {
@@ -289,8 +278,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         var ruleNodes = response.getRulesByKey().values().stream()
           .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
             loadRuleActivation(settings, ruleDefinitionDto),
-            loadNonDefaultRuleParams(settings, ruleDefinitionDto))
-          )
+            loadNonDefaultRuleParams(settings, ruleDefinitionDto)))
           .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
 
         allRulesStateByKey.putAll(ruleNodes);
@@ -494,90 +482,51 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     ruleHeaderPanel.update(singleNode.getKey(), singleNode.type(), singleNode.severity());
     var fileType = RuleLanguages.Companion.findFileTypeByRuleLanguage(singleNode.language().getLanguageKey());
 
-    var task = new FutureAwaitingTask<>(project, "Retrieving rule description",
-      getService(BackendService.class).getStandaloneRuleDetails(new GetStandaloneRuleDescriptionParams(singleNode.getKey())));
-    GetStandaloneRuleDescriptionResponse ruleDetails;
-    try {
-      ruleDetails = ProgressManager.getInstance().run(task);
-    } catch (Exception e) {
-      GlobalLogOutput.get().log("Could not retrieve rule description", ClientLogOutput.Level.ERROR);
-      return;
-    }
+    runOnPooledThread(project,
+      () -> getService(BackendService.class).getStandaloneRuleDetails(new GetStandaloneRuleDescriptionParams(singleNode.getKey()))
+        .thenAccept(details -> runOnUiThread(project, ModalityState.stateForComponent(getComponent()), () -> {
+          details.getDescription().map(
+            monolithDescription -> ruleViewer.add(RuleParsingUtils.Companion.parseCodeExamples(project, this, monolithDescription.getHtmlContent(), fileType)),
+            withSections -> {
+              var htmlHeader = withSections.getIntroductionHtmlContent();
+              if (htmlHeader != null && !htmlHeader.isEmpty() && !htmlHeader.isBlank()) {
+                var htmlViewer = new RuleHtmlViewer(false);
+                ruleViewer.add(htmlViewer, BorderLayout.NORTH);
+                htmlViewer.updateHtml(htmlHeader);
+              }
 
-    ruleDetails.getDescription().map(
-      monolithDescription -> ruleViewer.add(RuleParsingUtils.Companion.parseCodeExamples(project, this, monolithDescription.getHtmlContent(), fileType)),
-      withSections -> {
-        var htmlHeader = withSections.getIntroductionHtmlContent();
-        if (htmlHeader != null && !htmlHeader.isEmpty() && !htmlHeader.isBlank()) {
-          var htmlViewer = new RuleHtmlViewer(false);
-          ruleViewer.add(htmlViewer, BorderLayout.NORTH);
-          htmlViewer.updateHtml(htmlHeader);
-        }
+              var sectionsTabs = new JBTabbedPane();
+              sectionsTabs.setFont(UIUtil.getLabelFont().deriveFont(Font.BOLD));
 
-        var sectionsTabs = new JBTabbedPane();
-        sectionsTabs.setFont(UIUtil.getLabelFont().deriveFont(Font.BOLD));
+              IntStream.range(0, withSections.getTabs().size())
+                .forEach(index -> RuleParsingUtils.Companion.addTab(project, this, withSections.getTabs().get(index), sectionsTabs, index, fileType));
 
-        IntStream.range(0, withSections.getTabs().size()).forEach(index -> addTab(withSections.getTabs().get(index), sectionsTabs, index, fileType));
+              ruleViewer.add(sectionsTabs, BorderLayout.CENTER);
+              return null;
+            });
 
-        ruleViewer.add(sectionsTabs, BorderLayout.CENTER);
-        return null;
-      });
-
-    myParamsPanel.removeAll();
-    final var configPanelAnchor = new JBPanel<>(new GridLayout());
-    setConfigPanel(configPanelAnchor, singleNode, ruleDetails.getRuleDefinition().getParamsByKey());
-    if (configPanelAnchor.getComponentCount() != 0) {
-      rulesParamsSeparator = new RulesParamsSeparator();
-      myParamsPanel.add(rulesParamsSeparator,
-        new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-          JBUI.emptyInsets(), 0, 0));
-      myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-        JBUI.insetsLeft(2), 0, 0));
-    } else {
-      myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-        JBUI.insetsLeft(2), 0, 0));
-    }
-    myParamsPanel.revalidate();
-    myParamsPanel.repaint();
-  }
-
-  private void addTab(RuleDescriptionTabDto tabDesc, JBTabbedPane sectionsTabs, int index, FileType language) {
-    var sectionPanel = new JBPanel<>(new BorderLayout());
-    tabDesc.getContent().map(nonContextual -> {
-      var scrollPane = RuleParsingUtils.Companion.parseCodeExamples(project, this, nonContextual.getHtmlContent(), language);
-      sectionPanel.add(scrollPane, BorderLayout.CENTER);
-      return null;
-    }, contextual -> {
-      var comboPanel = new JBPanel<>(new HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)));
-      comboPanel.add(new JBLabel("Which component or framework contains the issue?"));
-      var contextCombo = new ComboBox<>(new DefaultComboBoxModel<>(contextual.getContextualSections().toArray(RuleContextualSectionDto[]::new)));
-      contextCombo.setRenderer(SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName));
-      contextCombo.addActionListener(e -> {
-        var layout = (BorderLayout) sectionPanel.getLayout();
-        var component = layout.getLayoutComponent(BorderLayout.CENTER);
-        if (component != null) {
-          sectionPanel.remove(component);
-        }
-
-        var selectedItem = (RuleContextualSectionDto) contextCombo.getSelectedItem();
-        if (selectedItem != null) {
-          var htmlContent = selectedItem.getHtmlContent();
-          var scrollPane = RuleParsingUtils.Companion.parseCodeExamples(project, this, htmlContent, language);
-          sectionPanel.add(scrollPane, BorderLayout.CENTER);
-        }
-      });
-      comboPanel.add(contextCombo);
-      sectionPanel.add(comboPanel, BorderLayout.NORTH);
-      var indexOfFirst = IntStream.range(0, contextual.getContextualSections().size())
-        .filter(secIndex -> contextual.getContextualSections().get(secIndex).getContextKey().equals(contextual.getDefaultContextKey()))
-        .findFirst();
-      if (indexOfFirst.isPresent()) {
-        contextCombo.setSelectedIndex(indexOfFirst.getAsInt());
-      }
-      return null;
-    });
-
-    sectionsTabs.insertTab(tabDesc.getTitle(), null, sectionPanel, null, index);
+          myParamsPanel.removeAll();
+          final var configPanelAnchor = new JBPanel<>(new GridLayout());
+          setConfigPanel(configPanelAnchor, singleNode, details.getRuleDefinition().getParamsByKey());
+          if (configPanelAnchor.getComponentCount() != 0) {
+            rulesParamsSeparator = new RulesParamsSeparator();
+            myParamsPanel.add(rulesParamsSeparator,
+              new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+                JBUI.emptyInsets(), 0, 0));
+            myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+              JBUI.insetsLeft(2), 0, 0));
+          } else {
+            myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+              JBUI.insetsLeft(2), 0, 0));
+          }
+          myParamsPanel.revalidate();
+          myParamsPanel.repaint();
+        }))
+        .exceptionally(error -> {
+          GlobalLogOutput.get().log("Could not retrieve rule description", ClientLogOutput.Level.ERROR);
+          return null;
+        })
+    );
   }
 
   private void setConfigPanel(final JPanel configPanelAnchor, RulesTreeNode.Rule rule, Map<String, RuleParamDefinitionDto> paramsByKey) {
