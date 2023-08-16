@@ -27,7 +27,7 @@ import javax.swing.Icon;
 import javax.swing.table.AbstractTableModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 
@@ -38,12 +38,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class RulesTreeTableModelTests {
-  private RulesTreeNode.Root root = new RulesTreeNode.Root();
-  private RulesTreeNode.Language lang = new RulesTreeNode.Language("lang");
-  private StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
-  private RulesTreeNode.Rule rule = new RulesTreeNode.Rule(ruleDetails, true, new HashMap<>());
-  private AbstractTableModel tableModel = mock(AbstractTableModel.class);
-  private RulesTreeTableModel model = new RulesTreeTableModel(root);
+  private final RulesTreeNode.Root root = new RulesTreeNode.Root();
+  private final RulesTreeNode.Language lang = new RulesTreeNode.Language("lang");
+  private final RuleDefinitionDto ruleDetails = mock(RuleDefinitionDto.class);
+  private final RulesTreeNode.Rule rule = new RulesTreeNode.Rule(ruleDetails, true, new HashMap<>());
+  private final AbstractTableModel tableModel = mock(AbstractTableModel.class);
+  private final RulesTreeTableModel model = new RulesTreeTableModel(root);
 
   @BeforeEach
   void setUp() {

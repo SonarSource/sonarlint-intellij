@@ -239,10 +239,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
     }
 
-    private fun addTab(
-        tabDesc: RuleDescriptionTabDto, sectionsTabs: JBTabbedPane, index: Int,
-        language: FileType,
-    ) {
+    private fun addTab(tabDesc: RuleDescriptionTabDto, sectionsTabs: JBTabbedPane, index: Int, language: FileType) {
         val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
         tabDesc.content.map({ nonContextual ->
             val scrollPane = parseCodeExamples(project, parent, nonContextual.htmlContent, language)

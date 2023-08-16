@@ -22,12 +22,16 @@ package org.sonarlint.intellij.config.global.rules;
 import com.intellij.ide.CommonActionsManager;
 import com.intellij.ide.DefaultTreeExpander;
 import com.intellij.ide.TreeExpander;
+import com.intellij.ide.plugins.newui.HorizontalLayout;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.FilterComponent;
@@ -36,6 +40,7 @@ import com.intellij.ui.JBSplitter;
 import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SideBorder;
+import com.intellij.ui.SimpleListCellRenderer;
 import com.intellij.ui.TitledSeparator;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.components.ActionLink;
@@ -44,6 +49,7 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBLoadingPanel;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.fields.ExpandableTextField;
 import com.intellij.util.ui.JBUI;
@@ -53,6 +59,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -72,8 +79,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFormattedTextField;
@@ -89,18 +98,24 @@ import javax.swing.text.NumberFormatter;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.core.EngineManager;
+import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.tasks.FutureAwaitingTask;
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel;
+import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer;
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages;
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionResponse;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleContextualSectionDto;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDescriptionTabDto;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleParamDefinitionDto;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
@@ -127,19 +142,12 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private RulesParamsSeparator rulesParamsSeparator;
   private String selectedRuleKey;
   private RuleHeaderPanel ruleHeaderPanel;
+
   public RuleConfigurationPanel() {
     createUIComponents();
   }
 
-  @NotNull
-  private static Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
-    var engine = SonarLintUtils.getService(EngineManager.class).getStandaloneEngine();
-    return engine.getAllRuleDetails().stream()
-      .map(r -> new RulesTreeNode.Rule(r, loadRuleActivation(settings, r), loadNonDefaultRuleParams(settings, r)))
-      .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
-  }
-
-  private static boolean loadRuleActivation(SonarLintGlobalSettings settings, StandaloneRuleDetails ruleDetails) {
+  private static boolean loadRuleActivation(SonarLintGlobalSettings settings, RuleDefinitionDto ruleDetails) {
     final var ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
     if (ruleInSettings != null) {
       return ruleInSettings.isActive();
@@ -147,7 +155,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     return ruleDetails.isActiveByDefault();
   }
 
-  private static Map<String, String> loadNonDefaultRuleParams(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
+  private static Map<String, String> loadNonDefaultRuleParams(SonarLintGlobalSettings settings, RuleDefinitionDto ruleDetails) {
     var ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
     if (ruleInSettings != null) {
       return ruleInSettings.getParams();
@@ -155,10 +163,10 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     return Collections.emptyMap();
   }
 
-  private static void addParamLabel(JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private static void addParamLabel(JPanel panel, GridBagConstraints constraints, RuleParamDefinitionDto param) {
     constraints.insets.right = UIUtil.DEFAULT_HGAP;
     constraints.weightx = 0.0;
-    panel.add(new JBLabel(param.name), constraints);
+    panel.add(new JBLabel(param.getName()), constraints);
   }
 
   private static boolean asBoolean(@Nullable String value) {
@@ -232,17 +240,30 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void recomputeDirtyState() {
-    runOnPooledThread(() -> {
-      var persistedRules = loadRuleNodes(getGlobalSettings());
-      for (var persisted : persistedRules.values()) {
-        final var possiblyModified = allRulesStateByKey.get(persisted.getKey());
-        if (!persisted.equals(possiblyModified)) {
-          this.isDirty.lazySet(true);
-          return;
+    runOnPooledThread(() -> getService(BackendService.class).getListAllStandaloneRulesDefinitions()
+      .thenAccept(response -> {
+        allRulesStateByKey.clear();
+
+        var persistedRules = response.getRulesByKey().values().stream()
+          .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
+            loadRuleActivation(getGlobalSettings(), ruleDefinitionDto),
+            loadNonDefaultRuleParams(getGlobalSettings(), ruleDefinitionDto))
+          )
+          .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
+
+        for (var persisted : persistedRules.values()) {
+          final var possiblyModified = allRulesStateByKey.get(persisted.getKey());
+          if (!persisted.equals(possiblyModified)) {
+            this.isDirty.lazySet(true);
+            return;
+          }
         }
-      }
-      this.isDirty.lazySet(false);
-    });
+        this.isDirty.lazySet(false);
+      })
+      .exceptionally(error -> {
+        GlobalLogOutput.get().log("Could not recompute rules: " + error.getMessage(), ClientLogOutput.Level.ERROR);
+        return null;
+      }));
   }
 
   @Override
@@ -259,20 +280,31 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
-    // Loading rules may take time, so do that on a background thread
     panel.startLoading();
     selectedRuleKey = null;
-    runOnPooledThread(() -> {
-      allRulesStateByKey.clear();
-      allRulesStateByKey.putAll(loadRuleNodes(settings));
+    runOnPooledThread(() -> getService(BackendService.class).getListAllStandaloneRulesDefinitions()
+      .thenAccept(response -> {
+        allRulesStateByKey.clear();
 
-      UIUtil.invokeLaterIfNeeded(() -> {
-        applyRuleSelection();
+        var ruleNodes = response.getRulesByKey().values().stream()
+          .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
+            loadRuleActivation(settings, ruleDefinitionDto),
+            loadNonDefaultRuleParams(settings, ruleDefinitionDto))
+          )
+          .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
 
-        updateModel();
-        panel.stopLoading();
-      });
-    });
+        allRulesStateByKey.putAll(ruleNodes);
+
+        UIUtil.invokeLaterIfNeeded(() -> {
+          applyRuleSelection();
+          updateModel();
+          panel.stopLoading();
+        });
+      })
+      .exceptionally(error -> {
+        GlobalLogOutput.get().log("Could not load rules: " + error.getMessage(), ClientLogOutput.Level.ERROR);
+        return null;
+      }));
   }
 
   private void restoreDefaults() {
@@ -344,7 +376,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     var rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_RULE_DEFAULT);
     rightSplitter.setFirstComponent(descriptionPanel);
 
-    myParamsPanel = new JPanel(new GridBagLayout());
+    myParamsPanel = new JBPanel<>(new GridBagLayout());
     myParamsPanel.setBorder(JBUI.Borders.emptyLeft(12));
     initOptionsAndDescriptionPanel();
     rightSplitter.setSecondComponent(myParamsPanel);
@@ -352,7 +384,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
     final var tree = initTreeScrollPane();
 
-    final var northPanel = new JPanel(new GridBagLayout());
+    final var northPanel = new JBPanel<>(new GridBagLayout());
     northPanel.setBorder(JBUI.Borders.empty(2, 0));
     myRuleFilter.setPreferredSize(new Dimension(20, myRuleFilter.getPreferredSize().height));
     northPanel.add(myRuleFilter, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL,
@@ -371,7 +403,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     mainSplitter.setSecondComponent(rightSplitter);
     mainSplitter.setHonorComponentsMinimumSize(false);
 
-    final var inspectionTreePanel = new JPanel(new BorderLayout());
+    final var inspectionTreePanel = new JBPanel<>(new BorderLayout());
     inspectionTreePanel.add(northPanel, BorderLayout.NORTH);
     inspectionTreePanel.add(mainSplitter, BorderLayout.CENTER);
 
@@ -461,11 +493,39 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
     ruleHeaderPanel.update(singleNode.getKey(), singleNode.type(), singleNode.severity());
     var fileType = RuleLanguages.Companion.findFileTypeByRuleLanguage(singleNode.language().getLanguageKey());
-    ruleViewer.add(RuleParsingUtils.Companion.parseCodeExamples(project, this, singleNode.getHtmlDescription(), fileType));
+
+    var task = new FutureAwaitingTask<>(project, "Retrieving rule description",
+      getService(BackendService.class).getStandaloneRuleDetails(new GetStandaloneRuleDescriptionParams(singleNode.getKey())));
+    GetStandaloneRuleDescriptionResponse ruleDetails;
+    try {
+      ruleDetails = ProgressManager.getInstance().run(task);
+    } catch (Exception e) {
+      GlobalLogOutput.get().log("Could not retrieve rule description", ClientLogOutput.Level.ERROR);
+      return;
+    }
+
+    ruleDetails.getDescription().map(
+      monolithDescription -> ruleViewer.add(RuleParsingUtils.Companion.parseCodeExamples(project, this, monolithDescription.getHtmlContent(), fileType)),
+      withSections -> {
+        var htmlHeader = withSections.getIntroductionHtmlContent();
+        if (htmlHeader != null && !htmlHeader.isEmpty() && !htmlHeader.isBlank()) {
+          var htmlViewer = new RuleHtmlViewer(false);
+          ruleViewer.add(htmlViewer, BorderLayout.NORTH);
+          htmlViewer.updateHtml(htmlHeader);
+        }
+
+        var sectionsTabs = new JBTabbedPane();
+        sectionsTabs.setFont(UIUtil.getLabelFont().deriveFont(Font.BOLD));
+
+        IntStream.range(0, withSections.getTabs().size()).forEach(index -> addTab(withSections.getTabs().get(index), sectionsTabs, index, fileType));
+
+        ruleViewer.add(sectionsTabs, BorderLayout.CENTER);
+        return null;
+      });
 
     myParamsPanel.removeAll();
-    final var configPanelAnchor = new JPanel(new GridLayout());
-    setConfigPanel(configPanelAnchor, singleNode);
+    final var configPanelAnchor = new JBPanel<>(new GridLayout());
+    setConfigPanel(configPanelAnchor, singleNode, ruleDetails.getRuleDefinition().getParamsByKey());
     if (configPanelAnchor.getComponentCount() != 0) {
       rulesParamsSeparator = new RulesParamsSeparator();
       myParamsPanel.add(rulesParamsSeparator,
@@ -481,9 +541,48 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     myParamsPanel.repaint();
   }
 
-  private void setConfigPanel(final JPanel configPanelAnchor, RulesTreeNode.Rule rule) {
+  private void addTab(RuleDescriptionTabDto tabDesc, JBTabbedPane sectionsTabs, int index, FileType language) {
+    var sectionPanel = new JBPanel<>(new BorderLayout());
+    tabDesc.getContent().map(nonContextual -> {
+      var scrollPane = RuleParsingUtils.Companion.parseCodeExamples(project, this, nonContextual.getHtmlContent(), language);
+      sectionPanel.add(scrollPane, BorderLayout.CENTER);
+      return null;
+    }, contextual -> {
+      var comboPanel = new JBPanel<>(new HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)));
+      comboPanel.add(new JBLabel("Which component or framework contains the issue?"));
+      var contextCombo = new ComboBox<>(new DefaultComboBoxModel<>(contextual.getContextualSections().toArray(RuleContextualSectionDto[]::new)));
+      contextCombo.setRenderer(SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName));
+      contextCombo.addActionListener(e -> {
+        var layout = (BorderLayout) sectionPanel.getLayout();
+        var component = layout.getLayoutComponent(BorderLayout.CENTER);
+        if (component != null) {
+          sectionPanel.remove(component);
+        }
+
+        var selectedItem = (RuleContextualSectionDto) contextCombo.getSelectedItem();
+        if (selectedItem != null) {
+          var htmlContent = selectedItem.getHtmlContent();
+          var scrollPane = RuleParsingUtils.Companion.parseCodeExamples(project, this, htmlContent, language);
+          sectionPanel.add(scrollPane, BorderLayout.CENTER);
+        }
+      });
+      comboPanel.add(contextCombo);
+      sectionPanel.add(comboPanel, BorderLayout.NORTH);
+      var indexOfFirst = IntStream.range(0, contextual.getContextualSections().size())
+        .filter(secIndex -> contextual.getContextualSections().get(secIndex).getContextKey().equals(contextual.getDefaultContextKey()))
+        .findFirst();
+      if (indexOfFirst.isPresent()) {
+        contextCombo.setSelectedIndex(indexOfFirst.getAsInt());
+      }
+      return null;
+    });
+
+    sectionsTabs.insertTab(tabDesc.getTitle(), null, sectionPanel, null, index);
+  }
+
+  private void setConfigPanel(final JPanel configPanelAnchor, RulesTreeNode.Rule rule, Map<String, RuleParamDefinitionDto> paramsByKey) {
     configPanelAnchor.removeAll();
-    final var additionalConfigPanel = ConfigPanelState.of(getAdditionalConfigPanel(rule)).getPanel(rule.activated);
+    final var additionalConfigPanel = ConfigPanelState.of(getAdditionalConfigPanel(rule, paramsByKey)).getPanel(rule.activated);
     if (additionalConfigPanel != null) {
       // assume that the panel does not need scrolling if it already contains a scrollable content
       if (UIUtil.hasScrollPane(additionalConfigPanel)) {
@@ -514,20 +613,20 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   @CheckForNull
-  private JComponent getAdditionalConfigPanel(RulesTreeNode.Rule rule) {
-    if (!rule.hasParameters()) {
+  private JComponent getAdditionalConfigPanel(RulesTreeNode.Rule rule, Map<String, RuleParamDefinitionDto> paramsByKey) {
+    if (paramsByKey.isEmpty()) {
       return null;
     }
-    final var configPanel = new JPanel(new GridBagLayout());
+    final var configPanel = new JBPanel<>(new GridBagLayout());
 
     final var constraints = new GridBagConstraints();
     constraints.gridy = 0;
-    for (var param : rule.getParamDetails()) {
+    for (var param : paramsByKey.values()) {
       constraints.gridx = 0;
       constraints.fill = GridBagConstraints.HORIZONTAL;
       constraints.anchor = GridBagConstraints.BASELINE_LEADING;
       constraints.gridwidth = 1;
-      switch (param.type) {
+      switch (param.getType()) {
         case TEXT:
           createTextParam(rule, configPanel, constraints, param);
           break;
@@ -544,50 +643,50 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
           createBooleanParam(rule, configPanel, constraints, param);
           break;
         default:
-          GlobalLogOutput.get().log("Unknown rule parameter type: " + param.type + " for rule " + rule.getKey(), ClientLogOutput.Level.ERROR);
+          GlobalLogOutput.get().log("Unknown rule parameter type: " + param.getType() + " for rule " + rule.getKey(), ClientLogOutput.Level.ERROR);
       }
       constraints.gridy++;
     }
     // Add an empty panel to fill the space
     constraints.weighty = 1.0;
-    configPanel.add(new JPanel(), constraints);
+    configPanel.add(new JBPanel<>(), constraints);
     return configPanel;
   }
 
-  private void createTextParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createTextParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RuleParamDefinitionDto param) {
     addParamLabel(panel, constraints, param);
     addTextField(rule, panel, constraints, param, new JBTextArea());
   }
 
-  private void createStringParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createStringParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RuleParamDefinitionDto param) {
     addParamLabel(panel, constraints, param);
     addTextField(rule, panel, constraints, param, new ExpandableTextField(s -> StringUtil.split(s, ","), l -> StringUtil.join(l, ",")));
   }
 
-  private void createIntParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createIntParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RuleParamDefinitionDto param) {
     addParamLabel(panel, constraints, param);
     // See NumberFormat.parse(), it will return a Long...
     var longFormat = NumberFormat.getIntegerInstance();
-    addNumberFormattedTextField(rule, panel, constraints, param, longFormat, asLong(param.defaultValue),
-      asLong(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
+    addNumberFormattedTextField(rule, panel, constraints, param, longFormat, asLong(param.getDefaultValue()),
+      asLong(rule.getCustomParams().getOrDefault(param.getKey(), param.getDefaultValue())));
   }
 
-  private void createFloatParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createFloatParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RuleParamDefinitionDto param) {
     addParamLabel(panel, constraints, param);
     var floatFormat = NumberFormat.getNumberInstance();
-    addNumberFormattedTextField(rule, panel, constraints, param, floatFormat, asDouble(param.defaultValue),
-      asDouble(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
+    addNumberFormattedTextField(rule, panel, constraints, param, floatFormat, asDouble(param.getDefaultValue()),
+      asDouble(rule.getCustomParams().getOrDefault(param.getKey(), param.getDefaultValue())));
   }
 
-  private void createBooleanParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
-    final var checkBox = new JBCheckBox(param.name, asBoolean(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
-    checkBox.setToolTipText(param.description);
+  private void createBooleanParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RuleParamDefinitionDto param) {
+    final var checkBox = new JBCheckBox(param.getName(), asBoolean(rule.getCustomParams().getOrDefault(param.getKey(), param.getDefaultValue())));
+    checkBox.setToolTipText(param.getDescription());
     checkBox.addActionListener(e -> {
       final Boolean b = checkBox.isSelected();
-      if (!b.equals(asBoolean(param.defaultValue))) {
-        rule.getCustomParams().put(param.key, b.toString());
+      if (!b.equals(asBoolean(param.getDefaultValue()))) {
+        rule.getCustomParams().put(param.getKey(), b.toString());
       } else {
-        rule.getCustomParams().remove(param.key);
+        rule.getCustomParams().remove(param.getKey());
       }
       recomputeDirtyState();
       rulesParamsSeparator.updateDefaultLinkVisibility();
@@ -597,17 +696,17 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     panel.add(checkBox, constraints);
   }
 
-  private void addTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, JTextComponent textComponent) {
-    textComponent.setToolTipText(param.description);
-    textComponent.setText(rule.getCustomParams().getOrDefault(param.key, param.defaultValue));
+  private void addTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RuleParamDefinitionDto param, JTextComponent textComponent) {
+    textComponent.setToolTipText(param.getDescription());
+    textComponent.setText(rule.getCustomParams().getOrDefault(param.getKey(), param.getDefaultValue()));
     textComponent.getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
       public void textChanged(DocumentEvent e) {
         var value = textComponent.getText();
-        if (!value.equals(param.defaultValue)) {
-          rule.getCustomParams().put(param.key, value);
+        if (!value.equals(param.getDefaultValue())) {
+          rule.getCustomParams().put(param.getKey(), value);
         } else {
-          rule.getCustomParams().remove(param.key);
+          rule.getCustomParams().remove(param.getKey());
         }
         recomputeDirtyState();
         rulesParamsSeparator.updateDefaultLinkVisibility();
@@ -619,10 +718,10 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     panel.add(textComponent, constraints);
   }
 
-  private void addNumberFormattedTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, NumberFormat numberFormat,
+  private void addNumberFormattedTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RuleParamDefinitionDto param, NumberFormat numberFormat,
     Number defaultValue, Number initialValue) {
     final var valueField = new JFormattedTextField();
-    valueField.setToolTipText(param.description);
+    valueField.setToolTipText(param.getDescription());
     valueField.setColumns(4);
     valueField.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter(numberFormat)));
     valueField.setValue(initialValue);
@@ -633,9 +732,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
           valueField.commitEdit();
           var value = (Number) valueField.getValue();
           if (value.doubleValue() != defaultValue.doubleValue()) {
-            rule.getCustomParams().put(param.key, String.valueOf(value));
+            rule.getCustomParams().put(param.getKey(), String.valueOf(value));
           } else {
-            rule.getCustomParams().remove(param.key);
+            rule.getCustomParams().remove(param.getKey());
           }
           recomputeDirtyState();
           rulesParamsSeparator.updateDefaultLinkVisibility();
