@@ -38,7 +38,7 @@ class RulesTreeNodeTests {
     when(details.getName()).thenReturn("name");
     when(details.getKey()).thenReturn("key");
     when(details.isActiveByDefault()).thenReturn(true);
-    when(details.getDefaultSeverity()).thenReturn(IssueSeverity.MAJOR);
+    when(details.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(details.getType()).thenReturn(RuleType.BUG);
     when(details.getLanguage()).thenReturn(Language.JAVA);
 

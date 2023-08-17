@@ -122,7 +122,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public IssueSeverity severity() {
-      return details.getDefaultSeverity();
+      return details.getSeverity();
     }
 
     public RuleType type() {
