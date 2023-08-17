@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
 
 -->
-<idea-plugin url="https://www.sonarlint.org" require-restart="true">
+<idea-plugin url="https://docs.sonarsource.com/sonarlint/intellij/" require-restart="true">
     <id>org.sonarlint.idea</id>
     <name>SonarLint</name>
     <version>${project.version}</version>
@@ -52,12 +52,11 @@
             </p>
             <br/>
             <p>
-                Beginning in version 7.5, SonarLint can detect <a href="https://github.com/SonarSource/sonarlint-intellij/wiki/Security-Hotspots">Security Hotspots</a> when in Connected Mode with SonarQube 9.7+.
+                Beginning in version 7.5, SonarLint can detect <a href="https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/security-hotspots/">Security Hotspots</a> when in Connected Mode with SonarQube 9.7+.
             </p>
             <br/>
             <p>
-                SonarLint requires your IDE to be run with a JVM 11+ (this is the case for all recent JetBrains IDE);
-                the analysis of JavaScript and TypeScript requires Node.js >= 14.20 to be installed on your computer (Node.js >= 16 is recommended).
+                Get started by checking the <a href="https://docs.sonarsource.com/sonarlint/intellij/getting-started/requirements/">Requirements</a> and <a href="https://docs.sonarsource.com/sonarlint/intellij/getting-started/installation/">Installation</a> pages.
             </p>
         </html>
       ]]></description>

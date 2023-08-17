@@ -20,9 +20,9 @@
 package org.sonarlint.intellij.documentation
 
 object SonarLintDocumentation {
-    private const val BASE_DOCS_URL = "https://github.com/SonarSource/sonarlint-intellij/wiki"
-    const val CONNECTED_MODE_LINK = "${BASE_DOCS_URL}/Bind-to-SonarQube-or-SonarCloud"
-    const val SECURITY_HOTSPOTS_LINK = "${BASE_DOCS_URL}/Security-Hotspots"
-    const val TAINT_VULNERABILITIES_LINK = "${BASE_DOCS_URL}/Taint-Vulnerabilities"
-    const val CLEAN_CODE_LINK = "https://docs.sonarsource.com/sonarlint/intellij/concepts/clean-code/"
+    const val BASE_DOCS_URL = "https://docs.sonarsource.com/sonarlint/intellij"
+    const val CONNECTED_MODE_LINK = "${BASE_DOCS_URL}/team-features/connected-mode"
+    const val SECURITY_HOTSPOTS_LINK = "${BASE_DOCS_URL}/using-sonarlint/security-hotspots"
+    const val TAINT_VULNERABILITIES_LINK = "${BASE_DOCS_URL}/using-sonarlint/taint-vulnerabilities"
+    const val CLEAN_CODE_LINK = "${BASE_DOCS_URL}/concepts/clean-code/"
 }

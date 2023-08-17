@@ -46,6 +46,8 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.BASE_DOCS_URL;
+
 public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
   private final JPanel panel;
   private JCheckBox enableTelemetryCheckBox;
@@ -60,8 +62,8 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
     var sonarlintIcon = new JBLabel(SonarLintIcons.SONARLINT_32);
     var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
     var title = new JBLabel("<html><b>SonarLint " + plugin.getVersion() + "</b></html>");
-    var linkLabel = new HyperlinkLabel("https://www.sonarlint.org");
-    linkLabel.addHyperlinkListener(e -> BrowserUtil.browse("https://www.sonarlint.org/intellij"));
+    var linkLabel = new HyperlinkLabel("Documentation");
+    linkLabel.addHyperlinkListener(e -> BrowserUtil.browse(BASE_DOCS_URL));
     var copyrightLabel = new JBLabel("<html>&copy; " + LocalDate.now().getYear() + " SonarSource</html>");
 
     var infoPanel = new JPanel(new GridBagLayout());
