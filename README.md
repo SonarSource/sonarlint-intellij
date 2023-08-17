@@ -10,44 +10,35 @@ Like a spell checker, SonarLint squiggles flaws so they can be fixed before comm
 Useful links
 ------------
 
-- [SonarLint website](https://www.sonarlint.org)
-- [Features](https://www.sonarlint.org/features/)
-- List of static code analysis rules per language:
-    - [Java](https://rules.sonarsource.com/java)
-    - [JavaScript](https://rules.sonarsource.com/javascript)
-    - [TypeScript](https://rules.sonarsource.com/typescript)
-    - [Python](https://rules.sonarsource.com/python)
-    - [Kotlin](https://rules.sonarsource.com/kotlin)
-    - [Ruby](https://rules.sonarsource.com/ruby)
-    - [PHP](https://rules.sonarsource.com/php)
-    - [HTML](https://rules.sonarsource.com/html)
-    - [Go](https://rules.sonarsource.com/go)
-- [SonarLint community](https://community.sonarsource.com/c/help/sl)
+- [Documentation](https://docs.sonarsource.com/sonarlint/intellij/)
+  - A full list of supported programming languages and links to the static code analysis rules associated with each language is available on the [Rules page](https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/rules/).
+- [Community](https://community.sonarsource.com/c/help/sl)
+  - Report an issue, ask for some help or suggest new features
 
 How to install
 --------------
 
 You can install SonarLint from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly available in the IDE preferences.
 
-Node.js >= 14.20 is required to perform JavaScript or TypeScript analysis (Node.js >= 16 is recommended).
+Full up-to-date details are available on the [Requirements](https://docs.sonarsource.com/sonarlint/intellij/getting-started/requirements/) and [Installation](https://docs.sonarsource.com/sonarlint/intellij/getting-started/installation/) pages.
 
-Have Question or Feedback?
+Questions and Feedback?
 --------------------------
 
-For SonarLint support questions ("How do I?", "I got this error, why?", ...), please first read the [FAQ](https://community.sonarsource.com/t/frequently-asked-questions/7204) and then head to the [SonarSource forum](https://community.sonarsource.com/c/help/sl). There are chances that a question similar to yours has already been answered. 
+For SonarLint support questions ("How do I?", "I got this error, why?", ...), please first read the [FAQ](https://community.sonarsource.com/t/frequently-asked-questions/7204) to learn how to get your logs, and then head to the [SonarSource forum](https://community.sonarsource.com/c/help/sl). Before creating a new topic, please check if your question has already been answered because there is a chance that someone has already had the same issue.
 
-Be aware that this forum is a community, so the standard pleasantries ("Hi", "Thanks", ...) are expected. And if you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing by. :-)
+Be aware that this forum is a community, and the standard pleasantries are expected (_Hello, Thank you, I appreciate the reply, etc_). If you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing by, but the Teams and Community Managers know that your questions are important. :-)
 
 Contributing
 ------------
 
-If you would like to see a new feature, please create a new thread in the forum ["Suggest new features"](https://community.sonarsource.com/c/suggestions/features).
+If you would like to see a new feature, check out the [PM for a Day](https://community.sonarsource.com/c/sl/pm-for-a-day-sl/41) page! There we provide a forum to discuss your needs and offer you a chance to engage the Product Manager and development teams directly. Feel free to add to an ongoing discussion or create a new thread if you have something new to bring up.
 
 Please be aware that we are not actively looking for feature contributions. The truth is that it's extremely difficult for someone outside SonarSource to comply with our roadmap and expectations. Therefore, we typically only accept minor cosmetic changes and typo fixes.
 
-With that in mind, if you would like to submit a code contribution, please create a pull request for this repository. Please explain your motives to contribute this change: what problem you are trying to fix, what improvement you are trying to make.
+With that in mind, if you would like to submit a code contribution, please create a pull request for this repository. Please explain your motives to contribute the change, describe what problem you are trying to fix, and tell us what improvement you are trying to make. The SonarLint Team will review the PR and discuss internally how it aligns with the [roadmap](https://www.sonarsource.com/products/sonarlint/roadmap/).
 
-Make sure that you follow our [code style](https://github.com/SonarSource/sonar-developer-toolset#code-style-configuration-for-intellij) and all tests are passing.
+Make sure that you follow our [code style](https://github.com/SonarSource/sonar-developer-toolset#code-style-configuration-for-intellij) and that all tests are passing.
 
 How to build
 ------------
@@ -110,7 +101,7 @@ As the `clean` task may be inconvenient, an easier workaround is to delete the j
 How to release
 --------------
 
-See [release pipeline at GitHub](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/release.yml).
+See the [release pipeline on GitHub](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/release.yml).
 
 License
 -------
