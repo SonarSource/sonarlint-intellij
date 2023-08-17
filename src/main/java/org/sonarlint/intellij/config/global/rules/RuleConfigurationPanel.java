@@ -475,7 +475,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
-    ruleHeaderPanel.update(singleNode.getKey(), singleNode.type(), singleNode.severity());
+    ruleHeaderPanel.updateForRuleConfiguration(singleNode.getKey(), singleNode.type(), singleNode.severity(), singleNode.attribute(), singleNode.impacts());
     var fileType = RuleLanguages.Companion.findFileTypeByRuleLanguage(singleNode.language().getLanguageKey());
 
     runOnPooledThread(project,

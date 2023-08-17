@@ -24,14 +24,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParamType;
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   protected Boolean activated;
@@ -121,6 +121,14 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       return details.isActiveByDefault();
     }
 
+    public CleanCodeAttribute attribute() {
+      return details.getCleanCodeAttribute().orElse(null);
+    }
+
+    public Map<SoftwareQuality, ImpactSeverity> impacts() {
+      return details.getDefaultImpacts();
+    }
+
     public IssueSeverity severity() {
       return details.getSeverity();
     }
@@ -164,28 +172,5 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       return Objects.hash(details.getKey(), activated, nonDefaultParams);
     }
   }
-  public static class RuleParam {
-    final String key;
-    final String name;
-    final String description;
-    final StandaloneRuleParamType type;
-    final boolean isMultiple;
-    @CheckForNull
-    final String defaultValue;
-    final String[] options;
 
-    public RuleParam(StandaloneRuleParam p) {
-      this(p.key(), p.name(), p.description(), p.type(), p.multiple(), p.defaultValue(), p.possibleValues().toArray(new String[0]));
-    }
-
-    public RuleParam(String key, String name, String description, StandaloneRuleParamType type, boolean isMultiple, @Nullable String defaultValue, String... options) {
-      this.key = key;
-      this.name = name;
-      this.description = description;
-      this.type = type;
-      this.isMultiple = isMultiple;
-      this.defaultValue = defaultValue;
-      this.options = options;
-    }
-  }
 }
