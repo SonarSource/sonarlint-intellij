@@ -108,8 +108,6 @@ validate_task:
     reports_artifacts:
       path: "**/reports/profile/**"
   on_failure:
-    reports_artifacts:
-      path: "**/reports/**/*"
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
@@ -132,8 +130,6 @@ validate_windows_task:
     reports_artifacts:
       path: "**/reports/profile/**"
   on_failure:
-    reports_artifacts:
-      path: "**/reports/**/*"
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
