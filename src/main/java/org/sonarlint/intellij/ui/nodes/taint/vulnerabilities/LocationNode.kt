@@ -30,7 +30,7 @@ import java.util.Objects
 
 class LocationNode(private val number: Int?, val location: Location, val associatedFlow: Flow, val issue: LocalTaintVulnerability) : AbstractNode() {
   override fun render(renderer: TreeCellRenderer) {
-    renderer.ipad = JBUI.insets(3, 3, 3, 3)
+    renderer.ipad = JBUI.insets(3)
     renderer.border = null
     if (number != null) {
       renderer.append("$number: ", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
@@ -38,7 +38,7 @@ class LocationNode(private val number: Int?, val location: Location, val associa
     renderer.append(issueCoordinates(), SimpleTextAttributes.GRAY_ATTRIBUTES)
     renderer.append(" ")
     val message = location.message
-    if (message != null && message.isNotEmpty() && "..." != message) {
+    if (!message.isNullOrEmpty() && "..." != message) {
       renderer.append(message, SimpleTextAttributes.REGULAR_ATTRIBUTES)
     }
     if (!location.exists()) {
@@ -47,6 +47,7 @@ class LocationNode(private val number: Int?, val location: Location, val associa
     else if (!location.codeMatches()) {
       renderer.append(" (local code not matching)", SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES)
     }
+    renderer.toolTipText = "Double click to open location"
   }
 
   private fun issueCoordinates(): String {

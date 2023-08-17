@@ -22,7 +22,6 @@ package org.sonarlint.intellij.ui.tree;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,12 +35,20 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.HIGH;
+import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.LOW;
+import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MAJOR;
+import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR;
+import static org.sonarsource.sonarlint.core.commons.SoftwareQuality.MAINTAINABILITY;
 
 class IssueTreeModelBuilderTests {
   private final IssueTreeModelBuilder treeBuilder = new IssueTreeModelBuilder();
@@ -54,8 +61,8 @@ class IssueTreeModelBuilderTests {
   }
 
   @Test
-  void testNavigation() throws IOException {
-    Map<VirtualFile, Collection<LiveIssue>> data = new HashMap<>();
+  void testNavigation() {
+    var data = new HashMap<VirtualFile, Collection<LiveIssue>>();
 
     // ordering of files: name
     // ordering of issues: creation date (inverse), getSeverity, setRuleName, startLine
@@ -79,14 +86,14 @@ class IssueTreeModelBuilderTests {
   }
 
   @Test
-  void testIssueComparator() throws IOException {
-    List<LiveIssue> list = new ArrayList<>();
+  void testIssueComparator() {
+    var list = new ArrayList<LiveIssue>();
 
-    list.add(mockIssuePointer(100, "rule1", IssueSeverity.MAJOR, null));
-    list.add(mockIssuePointer(100, "rule2", IssueSeverity.MAJOR, 1000L));
-    list.add(mockIssuePointer(100, "rule3", IssueSeverity.MINOR, 2000L));
-    list.add(mockIssuePointer(50, "rule4", IssueSeverity.MINOR, null));
-    list.add(mockIssuePointer(100, "rule5", IssueSeverity.MAJOR, null));
+    list.add(mockIssuePointer(100, "rule1", MAJOR, null));
+    list.add(mockIssuePointer(100, "rule2", MAJOR, 1000L));
+    list.add(mockIssuePointer(100, "rule3", MINOR, 2000L));
+    list.add(mockIssuePointer(50, "rule4", MINOR, null));
+    list.add(mockIssuePointer(100, "rule5", MAJOR, null));
 
     List<LiveIssue> sorted = new ArrayList<>(list);
     sorted.sort(new IssueTreeModelBuilder.IssueComparator());
@@ -95,21 +102,38 @@ class IssueTreeModelBuilderTests {
     assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3));
   }
 
-  private void addFile(Map<VirtualFile, Collection<LiveIssue>> data, String fileName, int numIssues) throws IOException {
+  @Test
+  void testIssueComparatorNewCct() {
+    var list = new ArrayList<LiveIssue>();
+
+    list.add(mockIssuePointer(100, "rule1", Map.of(MAINTAINABILITY, HIGH), null));
+    list.add(mockIssuePointer(100, "rule2", Map.of(MAINTAINABILITY, HIGH), 1000L));
+    list.add(mockIssuePointer(100, "rule3", Map.of(MAINTAINABILITY, LOW), 2000L));
+    list.add(mockIssuePointer(50, "rule4", Map.of(MAINTAINABILITY, LOW), null));
+    list.add(mockIssuePointer(100, "rule5", Map.of(MAINTAINABILITY, HIGH), null));
+
+    var sorted = new ArrayList<>(list);
+    sorted.sort(new IssueTreeModelBuilder.IssueComparator());
+
+    // criteria: creation date (most recent, nulls last), getImpact (highest first), rule alphabetically
+    assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3));
+  }
+
+  private void addFile(Map<VirtualFile, Collection<LiveIssue>> data, String fileName, int numIssues) {
     var file = mock(VirtualFile.class);
     when(file.getName()).thenReturn(fileName);
     when(file.isValid()).thenReturn(true);
 
-    List<LiveIssue> issueList = new LinkedList<>();
+    var issueList = new LinkedList<LiveIssue>();
 
     for (var i = 0; i < numIssues; i++) {
-      issueList.add(mockIssuePointer(i, "rule" + i, IssueSeverity.MAJOR, (long) i));
+      issueList.add(mockIssuePointer(i, "rule" + i, MAJOR, (long) i));
     }
 
     data.put(file, issueList);
   }
 
-  private static LiveIssue mockIssuePointer(int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) throws IOException {
+  private static LiveIssue mockIssuePointer(int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) {
     var psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
 
@@ -121,9 +145,27 @@ class IssueTreeModelBuilderTests {
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
 
-    var ip = new LiveIssue(issue, psiFile, Collections.emptyList());
-    ip.setIntroductionDate(introductionDate);
-    return ip;
+    var liveIssue = new LiveIssue(issue, psiFile, Collections.emptyList());
+    liveIssue.setIntroductionDate(introductionDate);
+    return liveIssue;
+  }
+
+  private static LiveIssue mockIssuePointer(int startOffset, String rule, Map<SoftwareQuality, ImpactSeverity> impacts, @Nullable Long introductionDate) {
+    var psiFile = mock(PsiFile.class);
+    when(psiFile.isValid()).thenReturn(true);
+
+    var issue = mock(Issue.class);
+    when(issue.getRuleKey()).thenReturn(rule);
+    when(issue.getType()).thenReturn(RuleType.BUG);
+    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.defaultCleanCodeAttribute());
+    when(issue.getImpacts()).thenReturn(impacts);
+
+    var marker = mock(RangeMarker.class);
+    when(marker.getStartOffset()).thenReturn(startOffset);
+
+    var liveIssue = new LiveIssue(issue, psiFile, Collections.emptyList());
+    liveIssue.setIntroductionDate(introductionDate);
+    return liveIssue;
   }
 
 }

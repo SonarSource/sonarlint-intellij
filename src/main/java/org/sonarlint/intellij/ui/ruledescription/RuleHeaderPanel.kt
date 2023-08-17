@@ -127,7 +127,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(BorderLayout()) {
                     ReviewSecurityHotspotAction(it, securityHotspot.status).openReviewingDialog(project, securityHotspot.file)
                 }
             }
-            changeStatusButton.isVisible = isValid
+            changeStatusButton.isVisible = securityHotspot.isValid()
         }
     }
 

@@ -24,7 +24,10 @@ import com.intellij.ui.OffsetIcon;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.UIUtil;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Locale;
+import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
 import org.sonarlint.intellij.SonarLintIcons;
@@ -51,23 +54,41 @@ public class IssueNode extends FindingNode {
 
   @Override
   public void render(TreeCellRenderer renderer) {
-    var severity = issue.getUserSeverity();
-    var severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
-    var type = issue.getType();
-
-    var severityIcon = SonarLintIcons.severity(severity);
     var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
     var serverConnection = getService(issue.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
-    var typeIcon = SonarLintIcons.type(type);
-    var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
-    if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
-      var connection = serverConnection.get();
-      renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
-      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, severityIcon));
+
+    if (issue.getCleanCodeAttribute() != null && !issue.getImpacts().isEmpty()) {
+      var highestQualityImpact = Collections.max(issue.getImpacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
+      var impactText = StringUtil.capitalize(highestQualityImpact.getValue().toString().toLowerCase(Locale.ENGLISH));
+      var qualityText = highestQualityImpact.getKey().toString().toLowerCase(Locale.ENGLISH);
+      var impactIcon = SonarLintIcons.impact(highestQualityImpact.getValue());
+
+      if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
+        var connection = serverConnection.get();
+        renderer.setIconToolTip(impactText + " " + qualityText + " already detected by " + connection.getProductName() + " analysis");
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
+      } else {
+        renderer.setIconToolTip(impactText + " " + qualityText);
+        var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
+        setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, impactIcon)));
+      }
     } else {
-      renderer.setIconToolTip(severityText + " " + typeStr);
-      var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
-      setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon, severityIcon)));
+      var severity = issue.getUserSeverity();
+      var severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
+      var type = issue.getType();
+      var severityIcon = SonarLintIcons.severity(severity);
+      var typeIcon = SonarLintIcons.type(type);
+      var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
+
+      if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
+        var connection = serverConnection.get();
+        renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, severityIcon));
+      } else {
+        renderer.setIconToolTip(severityText + " " + typeStr);
+        var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
+        setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon, severityIcon)));
+      }
     }
 
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);

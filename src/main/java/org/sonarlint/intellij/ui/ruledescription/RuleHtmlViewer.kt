@@ -68,5 +68,4 @@ class RuleHtmlViewer(scrollable: Boolean) : JBPanel<RuleHtmlViewer>(BorderLayout
         SwingHelper.setHtml(editor, html, UIUtil.getLabelForeground())
     }
 
-
 }

@@ -23,13 +23,18 @@ import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import javax.swing.Icon;
 import javax.swing.table.AbstractTableModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -49,6 +54,8 @@ class RulesTreeTableModelTests {
   void setUp() {
     when(ruleDetails.getType()).thenReturn(RuleType.BUG);
     when(ruleDetails.getSeverity()).thenReturn(IssueSeverity.MAJOR);
+    when(ruleDetails.getCleanCodeAttribute()).thenReturn(Optional.of(CleanCodeAttribute.defaultCleanCodeAttribute()));
+    when(ruleDetails.getDefaultImpacts()).thenReturn(Map.of(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.MEDIUM));
     when(ruleDetails.getKey()).thenReturn("key");
     when(ruleDetails.isActiveByDefault()).thenReturn(false);
     root.add(lang);
