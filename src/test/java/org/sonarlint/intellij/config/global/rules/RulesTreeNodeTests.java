@@ -20,10 +20,9 @@
 package org.sonarlint.intellij.config.global.rules;
 
 import java.util.HashMap;
-
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.Language;
 import org.sonarsource.sonarlint.core.commons.RuleType;
@@ -35,10 +34,9 @@ import static org.mockito.Mockito.when;
 class RulesTreeNodeTests {
   @Test
   void getters_rule() {
-    var details = mock(StandaloneRuleDetails.class);
+    var details = mock(RuleDefinitionDto.class);
     when(details.getName()).thenReturn("name");
     when(details.getKey()).thenReturn("key");
-    when(details.getHtmlDescription()).thenReturn("html");
     when(details.isActiveByDefault()).thenReturn(true);
     when(details.getDefaultSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(details.getType()).thenReturn(RuleType.BUG);
@@ -48,7 +46,6 @@ class RulesTreeNodeTests {
     assertThat(node.getKey()).isEqualTo("key");
     assertThat(node.getName()).isEqualTo("name");
     assertThat(node).hasToString("name");
-    assertThat(node.getHtmlDescription()).isEqualTo("html");
     assertThat(node.getDefaultActivation()).isTrue();
     assertThat(node.isNonDefault()).isTrue();
     assertThat(node.severity()).isEqualTo(IssueSeverity.MAJOR);
@@ -90,8 +87,8 @@ class RulesTreeNodeTests {
   }
 
   @NotNull
-  private StandaloneRuleDetails mockRuleDetails(String key) {
-    final var r1 = mock(StandaloneRuleDetails.class);
+  private RuleDefinitionDto mockRuleDetails(String key) {
+    final var r1 = mock(RuleDefinitionDto.class);
     when(r1.getKey()).thenReturn(key);
     return r1;
   }

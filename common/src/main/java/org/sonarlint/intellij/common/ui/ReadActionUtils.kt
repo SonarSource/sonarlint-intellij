@@ -28,7 +28,7 @@ import com.intellij.psi.PsiFile
 class ReadActionUtils {
     companion object {
         @JvmStatic
-        fun <T> runReadActionSafely(project: Project, action: Runnable) {
+        fun runReadActionSafely(project: Project, action: Runnable) {
             if (!project.isDisposed) {
                 return ReadAction.run<Exception> {
                     if (!project.isDisposed) action.run()

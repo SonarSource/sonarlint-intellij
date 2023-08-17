@@ -21,17 +21,15 @@ package org.sonarlint.intellij.config.global.rules;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParamType;
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 
@@ -102,10 +100,10 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   }
 
   public static class Rule extends RulesTreeNode {
-    private final StandaloneRuleDetails details;
+    private final RuleDefinitionDto details;
     private final Map<String, String> nonDefaultParams;
 
-    public Rule(StandaloneRuleDetails details, boolean activated, Map<String, String> nonDefaultParams) {
+    public Rule(RuleDefinitionDto details, boolean activated, Map<String, String> nonDefaultParams) {
       this.details = details;
       this.activated = activated;
       this.nonDefaultParams = new HashMap<>(nonDefaultParams);
@@ -113,10 +111,6 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
     public String getKey() {
       return details.getKey();
-    }
-
-    public String getHtmlDescription() {
-      return details.getHtmlDescription();
     }
 
     public String getName() {
@@ -147,17 +141,6 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     @Override
     public String toString() {
       return getName();
-    }
-
-    public boolean hasParameters() {
-      return !getParamDetails().isEmpty();
-    }
-
-    public List<RuleParam> getParamDetails() {
-      return details.paramDetails()
-        .stream()
-        .map(RuleParam::new)
-        .collect(Collectors.toList());
     }
 
     public Map<String, String> getCustomParams() {
