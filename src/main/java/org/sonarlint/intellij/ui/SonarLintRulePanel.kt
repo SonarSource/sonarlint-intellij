@@ -243,18 +243,9 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
 
             }
             SwingHelper.setHtml(securityHotspotHeaderMessage, htmlStringBuilder.toString(), JBUI.CurrentTheme.ContextHelp.FOREGROUND)
-            headerPanel.update(
-                project,
-                serverFindingKey,
-                finding.status,
-                finding.isValid(),
-                finding.file,
-                ruleDescription.key,
-                ruleDescription.type,
-                finding.vulnerabilityProbability
-            )
+            headerPanel.updateForSecurityHotspot(project, ruleDescription.key, ruleDescription.type, finding)
         } else {
-            headerPanel.update(project, ruleDescription.key, ruleDescription.type, ruleDescription.severity, finding as Issue)
+            headerPanel.updateForIssue(project, ruleDescription.type, ruleDescription.severity, finding as Issue)
         }
     }
 
