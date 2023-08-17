@@ -24,15 +24,20 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5;
@@ -56,6 +61,8 @@ public abstract class LiveFinding implements Trackable, Finding {
   private final FindingContext context;
   private final List<QuickFix> quickFixes;
   private final String ruleDescriptionContextKey;
+  private final CleanCodeAttribute cleanCodeAttribute;
+  private final Map<SoftwareQuality, ImpactSeverity> impacts;
 
   // tracked fields (mutable)
   private IssueSeverity severity;
@@ -75,6 +82,9 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.context = context;
     this.quickFixes = quickFixes;
     this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey().orElse(null);
+
+    this.cleanCodeAttribute = issue.getCleanCodeAttribute();
+    this.impacts = issue.getImpacts();
 
     if (range != null) {
       var document = range.getDocument();
@@ -232,6 +242,17 @@ public abstract class LiveFinding implements Trackable, Finding {
   @Override
   public boolean isResolved() {
     return resolved;
+  }
+
+  @Override
+  public CleanCodeAttribute getCleanCodeAttribute() {
+    return this.cleanCodeAttribute;
+  }
+
+  @NotNull
+  @Override
+  public Map<SoftwareQuality, ImpactSeverity> getImpacts() {
+    return this.impacts;
   }
 
   // mutable fields

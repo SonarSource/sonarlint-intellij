@@ -22,15 +22,21 @@ package org.sonarlint.intellij.finding.hotspot;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
+import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
 public class LiveSecurityHotspot extends LiveFinding {
@@ -49,6 +55,17 @@ public class LiveSecurityHotspot extends LiveFinding {
 
   public VulnerabilityProbability getVulnerabilityProbability() {
     return vulnerabilityProbability;
+  }
+
+  @Override
+  public CleanCodeAttribute getCleanCodeAttribute() {
+    return null;
+  }
+
+  @NotNull
+  @Override
+  public Map<SoftwareQuality, ImpactSeverity> getImpacts() {
+    return Collections.emptyMap();
   }
 
   @Override
