@@ -107,6 +107,8 @@ validate_task:
   always:
     reports_artifacts:
       path: "**/reports/profile/**"
+    gradle_artifacts:
+      path: "**/.gradle/**"
   on_failure:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
