@@ -166,7 +166,7 @@ public abstract class LiveFinding implements Trackable, Finding {
     return lineHashString;
   }
 
-  @org.jetbrains.annotations.NotNull
+  @NotNull
   @Override
   public String getRuleKey() {
     return ruleKey;

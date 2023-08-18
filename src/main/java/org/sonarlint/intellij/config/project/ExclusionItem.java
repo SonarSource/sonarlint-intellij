@@ -50,7 +50,7 @@ public class ExclusionItem {
     if (StringUtils.trimToNull(item) == null) {
       return null;
     }
-    switch (text.substring(0, i).toUpperCase(Locale.US)) {
+    switch (text.substring(0, i).toUpperCase(Locale.ENGLISH)) {
       case "FILE":
         return new ExclusionItem(FILE, item);
       case "DIRECTORY":
