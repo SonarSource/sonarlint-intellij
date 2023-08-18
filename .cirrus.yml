@@ -52,7 +52,6 @@ setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
     folder: ~/.gradle/caches
     fingerprint_script:
-      - echo $CIRRUS_OS
       - cat **/*.gradle* **/gradle-wrapper.properties || true
     populate_script:
       - mkdir -p ~/.gradle/caches
@@ -102,11 +101,14 @@ validate_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish :runPluginVerifier sonarqube jacocoTestReport
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze --profile check -x :its:check -x artifactoryPublish :runPluginVerifier sonarqube jacocoTestReport
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
-  on_failure:
+  always:
     reports_artifacts:
-      path: "**/reports/**/*"
+      path: "**/reports/profile/**"
+    test_artifacts:
+      path: "**/.gradle/**"
+  on_failure:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
@@ -123,11 +125,14 @@ validate_windows_task:
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
     source .cirrus/set_gradle_build_version
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish -x sonarqube :runPluginVerifier jacocoTestReport
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze --profile check -x :its:check -x artifactoryPublish -x sonarqube :runPluginVerifier jacocoTestReport
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
-  on_failure:
+  always:
     reports_artifacts:
-      path: "**/reports/**/*"
+      path: "**/reports/profile/**"
+    test_artifacts:
+      path: "**/.gradle/**"
+  on_failure:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
