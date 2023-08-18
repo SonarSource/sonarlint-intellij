@@ -52,7 +52,6 @@ setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
     folder: ~/.gradle/caches
     fingerprint_script:
-      - echo $CIRRUS_OS
       - cat **/*.gradle* **/gradle-wrapper.properties || true
     populate_script:
       - mkdir -p ~/.gradle/caches
@@ -63,6 +62,7 @@ cleanup_gradle_cache_script_template: &CLEANUP_GRADLE_CACHE_SCRIPT
     rm -rf ~/.gradle/daemon/
     rm -rf ~/.gradle/caches/transforms-*
     rm -rf ~/.gradle/caches/journal-*
+    rm -rf ~/.gradle/caches/jars-*/*/buildSrc.jar
     /usr/bin/find ~/.gradle/caches/ -name "*.lock" -type f -delete
 
 build_task:
@@ -125,8 +125,7 @@ validate_windows_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    source .cirrus/set_gradle_build_version
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze --profile check -x :its:check -x artifactoryPublish -x sonarqube :runPluginVerifier jacocoTestReport
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze --profile check -x :its:check -x artifactoryPublish -x sonarqube
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
