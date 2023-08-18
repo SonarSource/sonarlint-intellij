@@ -164,7 +164,7 @@ public class ExclusionTable {
     @Override public Object getValueAt(int rowIndex, int columnIndex) {
       var item = rows.get(rowIndex);
       if (columnIndex == 0) {
-        return StringUtils.capitalize(item.type().name().toLowerCase(Locale.US));
+        return StringUtils.capitalize(item.type().name().toLowerCase(Locale.ENGLISH));
       }
       return item.item();
     }
