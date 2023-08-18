@@ -107,7 +107,7 @@ validate_task:
   always:
     reports_artifacts:
       path: "**/reports/profile/**"
-    gradle_artifacts:
+    test_artifacts:
       path: "**/.gradle/**"
   on_failure:
     junit_artifacts:
@@ -131,6 +131,8 @@ validate_windows_task:
   always:
     reports_artifacts:
       path: "**/reports/profile/**"
+    test_artifacts:
+      path: "**/.gradle/**"
   on_failure:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
