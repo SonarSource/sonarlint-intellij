@@ -10,8 +10,7 @@ Like a spell checker, SonarLint squiggles flaws so they can be fixed before comm
 Useful links
 ------------
 
-- [SonarLint website](https://www.sonarlint.org)
-- [Features](https://www.sonarlint.org/features/)
+- [Documentation](https://docs.sonarsource.com/sonarlint/intellij/)
 - List of static code analysis rules per language:
     - [Java](https://rules.sonarsource.com/java)
     - [JavaScript](https://rules.sonarsource.com/javascript)
