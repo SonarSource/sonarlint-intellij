@@ -203,7 +203,7 @@ dependencies {
         exclude(module = "junit")
     }
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
-    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.22.0.31918")
+    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.23.0.32023")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.4.0.22160")
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.30.0.9766")
     "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.6.0.12071")
