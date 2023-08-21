@@ -24,4 +24,6 @@ object SonarLintDocumentation {
     const val CONNECTED_MODE_LINK = "${BASE_DOCS_URL}/Bind-to-SonarQube-or-SonarCloud"
     const val SECURITY_HOTSPOTS_LINK = "${BASE_DOCS_URL}/Security-Hotspots"
     const val TAINT_VULNERABILITIES_LINK = "${BASE_DOCS_URL}/Taint-Vulnerabilities"
+    // TODO: Rebase on Kevin's PR
+    const val CLEAN_CODE_LINK = "https://docs.sonarsource.com/sonarlint/intellij/concepts/clean-code/"
 }
