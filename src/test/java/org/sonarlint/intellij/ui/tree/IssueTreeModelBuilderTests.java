@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.junit.jupiter.api.Test;
@@ -157,7 +158,7 @@ class IssueTreeModelBuilderTests {
     var issue = mock(Issue.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getType()).thenReturn(RuleType.BUG);
-    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.defaultCleanCodeAttribute());
+    when(issue.getCleanCodeAttribute()).thenReturn(Optional.of(CleanCodeAttribute.defaultCleanCodeAttribute()));
     when(issue.getImpacts()).thenReturn(impacts);
 
     var marker = mock(RangeMarker.class);

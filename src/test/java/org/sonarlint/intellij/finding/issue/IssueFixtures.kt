@@ -58,7 +58,7 @@ fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = o
     override fun getType() = RuleType.BUG
     override fun getRuleKey() = "ruleKey"
     override fun flows() = mutableListOf<Flow>()
-    override fun getCleanCodeAttribute() = CleanCodeAttribute.defaultCleanCodeAttribute()
+    override fun getCleanCodeAttribute() = Optional.of(CleanCodeAttribute.defaultCleanCodeAttribute())
 
     override fun getImpacts(): MutableMap<SoftwareQuality, ImpactSeverity> {
         return mutableMapOf(

@@ -82,12 +82,8 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
       if (node instanceof RulesTreeNode.Rule) {
         var rule = (RulesTreeNode.Rule) node;
         var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
-        // TODO: Remove condition once the mapping is done on CORE
-        // We should always have new CCT for standalone rules
-        if (rule.attribute() != null && !rule.impacts().isEmpty()) {
-          var highestQualityImpact = Collections.max(rule.impacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
-          return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.impact(highestQualityImpact.getValue()));
-        }
+        var highestQualityImpact = Collections.max(rule.impacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
+        return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.impact(highestQualityImpact.getValue()));
       }
       return null;
     }
