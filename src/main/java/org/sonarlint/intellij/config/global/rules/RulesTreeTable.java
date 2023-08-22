@@ -103,15 +103,11 @@ public class RulesTreeTable extends TreeTable {
         if (obj instanceof RulesTreeNode.Rule) {
           var rule = (RulesTreeNode.Rule) obj;
           var label = new JLabel();
-          // TODO: Remove condition once we have the mapping done on CORE
-          // It should always be new CCT for standalone rules
-          if (rule.attribute() != null && !rule.impacts().isEmpty()) {
-            var highestQualityImpact = Collections.max(rule.impacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
-            var impactText = StringUtil.capitalize(highestQualityImpact.getValue().toString().toLowerCase(Locale.ENGLISH));
-            var qualityText = highestQualityImpact.getKey().toString().toLowerCase(Locale.ENGLISH);
-            var text = impactText + " " + qualityText;
-            label.setText(StringUtil.capitalize(text.replace('_', ' ').toLowerCase(Locale.ENGLISH)));
-          }
+          var highestQualityImpact = Collections.max(rule.impacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
+          var impactText = StringUtil.capitalize(highestQualityImpact.getValue().toString().toLowerCase(Locale.ENGLISH));
+          var qualityText = highestQualityImpact.getKey().toString().toLowerCase(Locale.ENGLISH);
+          var text = impactText + " " + qualityText;
+          label.setText(StringUtil.capitalize(text.replace('_', ' ').toLowerCase(Locale.ENGLISH)));
           IdeTooltipManager.getInstance().show(new IdeTooltip(RulesTreeTable.this, point, label), false);
         }
       }

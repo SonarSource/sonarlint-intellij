@@ -83,7 +83,7 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.quickFixes = quickFixes;
     this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey().orElse(null);
 
-    this.cleanCodeAttribute = issue.getCleanCodeAttribute();
+    this.cleanCodeAttribute = issue.getCleanCodeAttribute().orElse(null);
     this.impacts = issue.getImpacts();
 
     if (range != null) {
