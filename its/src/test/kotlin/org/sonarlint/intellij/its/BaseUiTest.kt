@@ -348,6 +348,19 @@ open class BaseUiTest {
         }
     }
 
+    protected fun clickPowerSaveMode() {
+        with(remoteRobot) {
+            optionalIdeaFrame(this)?.apply {
+                actionMenu("File") {
+                    open()
+                    item("Power Save Mode") {
+                        click()
+                    }
+                }
+            }
+        }
+    }
+
     protected fun openExistingProject(projectName: String, isMaven: Boolean = false) {
         copyProjectFiles(projectName)
         with(remoteRobot) {
