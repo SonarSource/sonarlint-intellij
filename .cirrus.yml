@@ -165,14 +165,14 @@ qa_task:
         IDEA_VERSION: 'GO-2021.3.3'
         QA_CATEGORY: 'GoLand2021'
     - env:
-        IDEA_VERSION: 'IC-2022.3.2'
-        QA_CATEGORY: 'Idea2022'
+        IDEA_VERSION: 'IC-2023.2.1'
+        QA_CATEGORY: 'Idea2023'
     - env:
-        IDEA_VERSION: 'CL-2022.3.2'
-        QA_CATEGORY: 'CLion2022'
+        IDEA_VERSION: 'CL-2023.2'
+        QA_CATEGORY: 'CLion2023'
     - env:
-        IDEA_VERSION: 'GO-2022.3.2'
-        QA_CATEGORY: 'GoLand2022'
+        IDEA_VERSION: 'GO-2023.2'
+        QA_CATEGORY: 'GoLand2023'
   <<: *SETUP_GRADLE_CACHE
   xvfb_background_script: |
     /etc/init.d/xvfb start
