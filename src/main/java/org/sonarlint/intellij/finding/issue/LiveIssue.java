@@ -52,7 +52,7 @@ public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.fin
   }
 
   @Override
-  public void resolve() {
-    setResolved(true);
+  public void resolve(boolean isResolved) {
+    setResolved(isResolved);
   }
 }

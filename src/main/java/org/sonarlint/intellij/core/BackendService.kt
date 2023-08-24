@@ -83,6 +83,8 @@ import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializePar
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.AddIssueCommentParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ChangeIssueStatusParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.ReopenIssueParams
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams
@@ -369,6 +371,10 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 isTaintVulnerability
             )
         )
+    }
+
+    fun reopenIssue(module: Module, issueId: String): CompletableFuture<ReopenIssueResponse> {
+        return initializedBackend.issueService.reopenIssue(ReopenIssueParams(moduleId(module), issueId))
     }
 
     fun addCommentOnIssue(module: Module, issueKey: String, comment: String): CompletableFuture<Void> {

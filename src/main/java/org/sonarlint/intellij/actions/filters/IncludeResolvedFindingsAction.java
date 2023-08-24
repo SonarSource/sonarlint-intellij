@@ -24,15 +24,20 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class IncludeResolvedHotspotsAction extends AbstractSonarToggleAction {
+public class IncludeResolvedFindingsAction<T extends LiveFinding> extends AbstractSonarToggleAction {
 
+  private final Class<T> type;
   private boolean isResolved;
 
-  public IncludeResolvedHotspotsAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+  public IncludeResolvedFindingsAction(@Nullable String text, @Nullable String description, @Nullable Icon icon, Class<T> type) {
     super(text, description, icon);
+    this.type = type;
     isResolved = false;
   }
 
@@ -45,8 +50,13 @@ public class IncludeResolvedHotspotsAction extends AbstractSonarToggleAction {
   public void setSelected(AnActionEvent event, boolean flag) {
     var p = event.getProject();
     if (p != null) {
-      isResolved = flag;
-      getService(p, SonarLintToolWindow.class).filterSecurityHotspotTab(isResolved);
+      if (type == LiveSecurityHotspot.class) {
+        isResolved = flag;
+        getService(p, SonarLintToolWindow.class).filterSecurityHotspotTab(isResolved);
+      } else if (type == LiveIssue.class) {
+        isResolved = flag;
+        getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
+      }
     }
   }
 

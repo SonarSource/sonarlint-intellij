@@ -93,13 +93,7 @@ public class IssueNode extends FindingNode {
 
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
 
-    if (issue.isValid()) {
-      renderer.setToolTipText("Double click to open location");
-      renderer.append(issue.getMessage());
-    } else {
-      renderer.setToolTipText("Issue is no longer valid");
-      renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
-    }
+    renderMessage(renderer);
 
     issue.context().ifPresent(context -> renderer.append(context.getSummaryDescription(), GRAYED_SMALL_ATTRIBUTES));
 
@@ -108,6 +102,24 @@ public class IssueNode extends FindingNode {
       renderer.append(" ");
       var age = DateUtils.toAge(introductionDate);
       renderer.append(age, SimpleTextAttributes.GRAY_ATTRIBUTES);
+    }
+  }
+
+  private void renderMessage(TreeCellRenderer renderer) {
+    if (issue.isValid()) {
+      renderer.setToolTipText("Double click to open location");
+      if (issue.isResolved() && issue.getServerFindingKey() == null) {
+        renderer.append(issue.getMessage(), SimpleTextAttributes.REGULAR_ITALIC_ATTRIBUTES);
+      } else {
+        renderer.append(issue.getMessage());
+      }
+    } else {
+      renderer.setToolTipText("Issue is no longer valid");
+      if (issue.isResolved() && issue.getServerFindingKey() == null) {
+        renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ITALIC_ATTRIBUTES);
+      } else {
+        renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
+      }
     }
   }
 

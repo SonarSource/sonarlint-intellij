@@ -43,6 +43,7 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.Issue
+import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -70,6 +71,9 @@ class MarkAsResolvedAction(
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark Issue as Resolved")
 
         fun canBeMarkedAsResolved(project: Project, issue: Issue) : Boolean {
+            if (issue is LiveIssue && issue.isResolved) {
+                return false
+            }
             val serverConnection = serverConnection(project)
             return issue.isValid() && serverConnection != null && (serverConnection.isSonarQube || issue.getServerKey() != null)
         }
@@ -104,7 +108,7 @@ class MarkAsResolvedAction(
             module: Module,
             issue: Issue,
             resolution: MarkAsResolvedDialog.Resolution,
-            issueKey: String,
+            issueKey: String
         ) {
             getService(BackendService::class.java)
                 .markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
@@ -122,7 +126,7 @@ class MarkAsResolvedAction(
 
         private fun updateUI(project: Project, issue: Issue) {
             runOnUiThread(project) {
-                issue.resolve()
+                issue.resolve(true)
                 getService(project, SonarLintToolWindow::class.java).markAsResolved(issue)
                 getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
             }
@@ -170,9 +174,14 @@ class MarkAsResolvedAction(
     }
 
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
-        // always disabled for standalone mode
-        // the checks will be done inside the popup for connected mode
-        return serverConnection(project) != null
+        var issue: Issue? = e.getData(ISSUE_DATA_KEY)
+        if (issue == null) {
+            issue = e.getData(TAINT_VULNERABILITY_DATA_KEY)
+        }
+        if (issue == null) {
+            return false
+        }
+        return canBeMarkedAsResolved(project, issue)
     }
 
     override fun updatePresentation(e: AnActionEvent, project: Project) {
@@ -209,7 +218,6 @@ class MarkAsResolvedAction(
         override fun getDoNotShowMessage() = "Don't show again"
     }
 
-
     override fun getPriority() = PriorityAction.Priority.NORMAL
 
     override fun getIcon(flags: Int) = AllIcons.Actions.BuildLoadChanges
@@ -222,7 +230,21 @@ class MarkAsResolvedAction(
         return "SonarLint mark issue as..."
     }
 
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = issue?.getServerKey() != null
+    override fun isVisible(e: AnActionEvent): Boolean {
+        val project = e.project ?: return false
+        var issue: Issue? = e.getData(ISSUE_DATA_KEY)
+        if (issue == null) {
+            issue = e.getData(TAINT_VULNERABILITY_DATA_KEY)
+        }
+        if (issue == null) {
+            return false
+        }
+        return canBeMarkedAsResolved(project, issue)
+    }
+
+    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
+        return issue?.let { canBeMarkedAsResolved(project, it) } ?: false
+    }
 
     override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
         file?.let {

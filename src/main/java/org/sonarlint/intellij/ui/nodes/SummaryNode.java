@@ -48,6 +48,10 @@ public class SummaryNode extends AbstractNode {
     this.emptyText = emptyText;
   }
 
+  public String getEmptyText() {
+    return emptyText;
+  }
+
   public String getText() {
     var findings = getFindingCount();
     var files = getChildCount();

@@ -21,10 +21,12 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,6 +36,8 @@ import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -63,6 +67,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private final FindingTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summary;
+  protected boolean includeLocallyResolvedIssues = false;
+  private Map<VirtualFile, Collection<LiveIssue>> latestIssues;
 
   public IssueTreeModelBuilder() {
     this.index = new FindingTreeIndex();
@@ -72,6 +78,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
    * Creates the model with a basic root
    */
   public DefaultTreeModel createModel() {
+    latestIssues = Collections.emptyMap();
     summary = new SummaryNode();
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
@@ -91,6 +98,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map, String emptyText) {
+    latestIssues = map;
     summary.setEmptyText(emptyText);
 
     var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
@@ -102,6 +110,22 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     }
 
     model.nodeChanged(summary);
+  }
+
+  public void allowResolvedIssues(boolean allowResolved) {
+    if (includeLocallyResolvedIssues != allowResolved) {
+      includeLocallyResolvedIssues = allowResolved;
+    }
+  }
+
+  public void refreshModel(Project project) {
+    updateModel(latestIssues, summary.getEmptyText());
+    var fileList = new HashSet<>(latestIssues.keySet());
+    SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
+  }
+
+  public boolean isShouldIncludeLocallyResolvedIssues() {
+    return includeLocallyResolvedIssues;
   }
 
   private void setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
@@ -166,14 +190,14 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     }
   }
 
-  private static List<LiveIssue> filter(Iterable<LiveIssue> issues) {
+  private List<LiveIssue> filter(Iterable<LiveIssue> issues) {
     return StreamSupport.stream(issues.spliterator(), false)
-      .filter(IssueTreeModelBuilder::accept)
+      .filter(this::accept)
       .collect(Collectors.toList());
   }
 
-  private static boolean accept(LiveIssue issue) {
-    return !issue.isResolved() && issue.isValid();
+  private boolean accept(LiveIssue issue) {
+    return (!issue.isResolved() && issue.isValid()) || (includeLocallyResolvedIssues && issue.isResolved() && issue.getServerFindingKey() == null);
   }
 
   private static boolean accept(VirtualFile file) {

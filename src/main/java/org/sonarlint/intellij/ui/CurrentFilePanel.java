@@ -85,6 +85,15 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       newStatus -> runOnUiThread(project, this::refreshToolbar));
   }
 
+  public void allowResolvedIssues(boolean allowResolved) {
+    treeBuilder.allowResolvedIssues(allowResolved);
+    refreshModel();
+  }
+
+  public boolean shouldIncludeLocallyResolvedIssues() {
+    return treeBuilder.isShouldIncludeLocallyResolvedIssues();
+  }
+
   @Override
   public void dispose() {
     // Nothing to do
@@ -94,6 +103,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     return List.of(
       ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles"),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
+      SonarLintActions.getInstance().includeResolvedIssuesAction(),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"),
       SonarLintActions.getInstance().clearIssues());
   }
@@ -170,5 +180,10 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
   public void remove(LiveIssue issue) {
     treeBuilder.remove(issue);
+  }
+
+  public void refreshModel() {
+    treeBuilder.refreshModel(project);
+    expandTree();
   }
 }

@@ -38,6 +38,7 @@ import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
+import org.sonarlint.intellij.actions.ReopenIssueAction;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 
@@ -79,6 +80,7 @@ public class IssueTree extends FindingTree implements DataProvider {
     var group = new DefaultActionGroup();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
     group.add(new MarkAsResolvedAction());
+    group.add(new ReopenIssueAction());
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
     group.addSeparator();
