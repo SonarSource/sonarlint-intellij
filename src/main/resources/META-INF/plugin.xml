@@ -64,7 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>9.0 - Support Clean Code attributes and software qualities. Support of PHP 8.3. 9 new rules for Python. 15 new rules for JS/TS. Detection of 50 new patterns and 22 new types for secrets. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>9.0 - Support Clean Code attributes and software qualities. Support of PHP 8.3. 9 new rules for Python. 15 new rules for JS/TS. Detection of 50 new patterns and 22 new types for secrets. Support of Bicep in Azure. 5 new rules for Azure Resource Manager templates. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.5.1 - Fix an error when creating or updating a connection to SonarCloud. Fix SSL issues related to our HTTP client. Fix an error when using a proxy.</li>
         <li>8.5 - Support PL/SQL analysis in connected mode when 'Database Tools and SQL' plugin is enabled. 43 new MISRA rules for C++. 12 new rules for CloudFormation, Docker, Kubernetes and Terraform. 9 new rules and one quick fix for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.4 - Allow marking issues existing on SonarQube/SonarCloud as resolved. Support near real-time synchronization of Security Hotspots with SonarQube. Support syntax highlighting in rule configuration. 5 new rules and 1 quick fix for JavaScript. 2 new rules for C++. 1 new rule for C# and support .NET 7 in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
