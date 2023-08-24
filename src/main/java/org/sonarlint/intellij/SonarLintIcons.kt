@@ -30,16 +30,10 @@ import javax.swing.Icon
 
 object SonarLintIcons {
 
-    private fun colorWithAlpha(rgb: Int, alphaPercent: Int): Color {
-        val alpha = alphaPercent * 255 / 100
-        val rgba = rgb and 0xffffff or (alpha shl 24)
-        return Color(rgba, true)
-    }
-
     // From IntelliJ Platform UI Guidelines
-    private val red60Color = colorWithAlpha(0xe05555, 60)
-    private val orange60Color = colorWithAlpha(0xf26522, 60)
-    private val yellow60Color = colorWithAlpha(0xf4af3d, 60)
+    private val red60Color = Color(224, 85, 85, 60)
+    private val orange60Color = Color(242, 101, 34, 60)
+    private val yellow60Color = Color(244, 175, 61, 60)
 
     @JvmField
     val ICON_SONARQUBE = getIcon("/images/SonarQube.png")
@@ -115,6 +109,18 @@ object SonarLintIcons {
         VulnerabilityProbability.HIGH to JBColor(red60Color, red60Color),
         VulnerabilityProbability.MEDIUM to JBColor(orange60Color, orange60Color),
         VulnerabilityProbability.LOW to JBColor(yellow60Color, yellow60Color)
+    )
+
+    val backgroundColorsByImpact = mapOf(
+        ImpactSeverity.HIGH to JBColor(Color(180, 35, 24, 20), Color(180, 35, 24, 60)),
+        ImpactSeverity.MEDIUM to JBColor(Color(174, 122, 41, 20), Color(174, 122, 41, 60)),
+        ImpactSeverity.LOW to JBColor(Color(49, 108, 146, 20), Color(49, 108, 146, 60))
+    )
+
+    val fontColorsByImpact = mapOf(
+        ImpactSeverity.HIGH to JBColor(Color(180, 35, 24, 0), Color.LIGHT_GRAY),
+        ImpactSeverity.MEDIUM to JBColor(Color(174, 122, 41, 0), Color.LIGHT_GRAY),
+        ImpactSeverity.LOW to JBColor(Color(49, 108, 146, 0), Color.LIGHT_GRAY)
     )
 
     private fun getIcon(path: String): Icon {

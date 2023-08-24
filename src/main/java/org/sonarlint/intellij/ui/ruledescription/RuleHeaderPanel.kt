@@ -24,6 +24,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.GotItTooltip
+import com.intellij.ui.Gray
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.panels.HorizontalLayout
@@ -40,6 +42,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
@@ -66,8 +69,8 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     }
 
     private val wrappedPanel = JBPanel<JBPanel<*>>(WrapLayout(FlowLayout.LEFT))
-    private val attributeLabel = JBLabel()
-    private val qualityLabels = LinkedList<JBLabel>()
+    private val attributePanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
+    private val qualityLabels = LinkedList<RoundedPanelWithBackgroundColor>()
     private val ruleTypeIcon = JBLabel()
     private val ruleTypeLabel = JBLabel()
     private val ruleSeverityIcon = JBLabel()
@@ -78,7 +81,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     private val changeStatusButton = JButton()
 
     fun clear() {
-        attributeLabel.text = ""
+        attributePanel.removeAll()
         qualityLabels.clear()
         ruleTypeIcon.icon = null
         ruleTypeLabel.text = ""
@@ -87,14 +90,17 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         ruleSeverityLabel.text = ""
         hotspotVulnerabilityLabel.isVisible = false
         hotspotVulnerabilityValueLabel.text = ""
+        hotspotVulnerabilityValueLabel.border = BorderFactory.createEmptyBorder()
         changeStatusButton.isVisible = false
         wrappedPanel.removeAll()
         removeAll()
         repaint()
     }
 
-    fun updateForRuleConfiguration(ruleKey: String, type: RuleType, severity: IssueSeverity,
-               attribute: CleanCodeAttribute?, qualities: Map<SoftwareQuality, ImpactSeverity>) {
+    fun updateForRuleConfiguration(
+        ruleKey: String, type: RuleType, severity: IssueSeverity,
+        attribute: CleanCodeAttribute?, qualities: Map<SoftwareQuality, ImpactSeverity>,
+    ) {
         clear()
         updateCommonFields(type, attribute, qualities, ruleKey)
         updateRuleSeverity(severity)
@@ -136,7 +142,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         hotspotVulnerabilityValueLabel.apply {
             text = securityHotspot.vulnerabilityProbability.name
             setCopyable(true)
-            background = SonarLintIcons.colorsByProbability[securityHotspot.vulnerabilityProbability]
+            border = BorderFactory.createEmptyBorder(0, 0, 0, 15)
         }
 
         securityHotspot.serverFindingKey?.let {
@@ -152,12 +158,16 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     private fun updateCommonFields(type: RuleType, attribute: CleanCodeAttribute?, qualities: Map<SoftwareQuality, ImpactSeverity>, ruleKey: String) {
         val newCctEnabled = attribute != null && qualities.isNotEmpty()
         if (newCctEnabled) {
-            attributeLabel.text = "<html><b>" + clean(attribute!!.attributeCategory.issueLabel) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>"
+            val attributeLabel = JBLabel("<html><b>" + clean(attribute!!.attributeCategory.issueLabel) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
+            attributePanel.add(attributeLabel)
             qualities.entries.forEach {
-                qualityLabels.addAll(listOf(
-                    JBLabel().apply { icon = SonarLintIcons.impact(it.value) },
-                    JBLabel(clean(it.key.toString())).apply { setCopyable(true) })
-                )
+                val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[it.value])
+                qualityPanel.add(JBLabel(clean(it.key.toString())).apply {
+                    setCopyable(true)
+                    foreground = SonarLintIcons.fontColorsByImpact[it.value]
+                })
+                qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(it.value) })
+                qualityLabels.add(qualityPanel)
             }
         } else {
             ruleTypeIcon.icon = SonarLintIcons.type(type)
@@ -172,7 +182,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
 
     private fun organizeHeader(newCct: Boolean) {
         if (newCct) {
-            wrappedPanel.add(attributeLabel.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 15) })
+            wrappedPanel.add(attributePanel.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 15) })
             qualityLabels.forEach { wrappedPanel.add(it) }
 
             GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
@@ -180,7 +190,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
                 withBrowserLink("Learn More", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
                 withIcon(SonarLintIcons.SONARLINT)
                 withPosition(Balloon.Position.atLeft)
-                show(attributeLabel, GotItTooltip.LEFT_MIDDLE)
+                show(wrappedPanel, GotItTooltip.LEFT_MIDDLE)
             }
         } else {
             wrappedPanel.add(ruleTypeIcon)
@@ -194,7 +204,6 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
                 font = JBFont.label().asBold()
                 verticalTextPosition = SwingConstants.CENTER
                 isOpaque = true
-                border = BorderFactory.createEmptyBorder(0, 15, 0, 15)
             })
         }
         wrappedPanel.add(ruleKeyLabel.apply {
