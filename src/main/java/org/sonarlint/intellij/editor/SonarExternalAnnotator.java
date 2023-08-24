@@ -72,7 +72,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     var toolWindowService = getService(project, SonarLintToolWindow.class);
     var locallyResolvedIssues = toolWindowService.shouldAnnotateLocallyResolvedIssues();
     issues.stream()
-      .filter(issue -> (!issue.isResolved() && issue.isValid()) || (locallyResolvedIssues && issue.isResolved() && issue.getServerFindingKey() == null))
+      .filter(issue -> (!issue.isResolved() && issue.isValid()) || locallyResolvedIssues)
       .forEach(issue -> {
         // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
         var validTextRange = issue.getValidTextRange();

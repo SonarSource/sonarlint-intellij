@@ -63,7 +63,7 @@ class ReopenIssueAction(
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark Issue as Resolved")
 
         fun canBeReopened(project: Project, issue: LiveIssue): Boolean {
-            return serverConnection(project) != null && issue.isResolved && issue.serverFindingKey == null
+            return serverConnection(project) != null && issue.isResolved
         }
 
         fun reopenIssueDialog(project: Project, issue: LiveFinding) {

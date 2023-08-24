@@ -108,14 +108,14 @@ public class IssueNode extends FindingNode {
   private void renderMessage(TreeCellRenderer renderer) {
     if (issue.isValid()) {
       renderer.setToolTipText("Double click to open location");
-      if (issue.isResolved() && issue.getServerFindingKey() == null) {
+      if (issue.isResolved()) {
         renderer.append(issue.getMessage(), SimpleTextAttributes.REGULAR_ITALIC_ATTRIBUTES);
       } else {
         renderer.append(issue.getMessage());
       }
     } else {
       renderer.setToolTipText("Issue is no longer valid");
-      if (issue.isResolved() && issue.getServerFindingKey() == null) {
+      if (issue.isResolved()) {
         renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ITALIC_ATTRIBUTES);
       } else {
         renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);

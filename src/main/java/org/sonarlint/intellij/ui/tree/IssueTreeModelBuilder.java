@@ -197,7 +197,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   private boolean accept(LiveIssue issue) {
-    return (!issue.isResolved() && issue.isValid()) || (includeLocallyResolvedIssues && issue.isResolved() && issue.getServerFindingKey() == null);
+    return (!issue.isResolved() && issue.isValid()) || includeLocallyResolvedIssues;
   }
 
   private static boolean accept(VirtualFile file) {
