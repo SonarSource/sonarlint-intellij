@@ -41,7 +41,6 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
-import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarlint.intellij.util.DataKeys
@@ -50,12 +49,8 @@ import org.sonarlint.intellij.util.displaySuccessfulNotification
 
 private const val SKIP_CONFIRM_REOPEN_DIALOG_PROPERTY = "SonarLint.reopenIssue.hideConfirmation"
 
-class ReopenIssueAction(
-    private var issue: LiveIssue? = null
-)  :
-    AbstractSonarAction(
-        "Reopen", "Reopen the issue", null
-    ), IntentionAction, PriorityAction, Iconable {
+class ReopenIssueAction(private var issue: LiveIssue? = null)
+    : AbstractSonarAction("Reopen", "Reopen the issue", null), IntentionAction, PriorityAction, Iconable {
     companion object {
         private const val errorTitle = "<b>SonarLint - Unable to reopen the issue</b>"
         private const val content = "The issue was successfully reopened"
@@ -66,7 +61,7 @@ class ReopenIssueAction(
             return serverConnection(project) != null && issue.isResolved
         }
 
-        fun reopenIssueDialog(project: Project, issue: LiveFinding) {
+        fun reopenIssueDialog(project: Project, issue: LiveIssue) {
             val connection = serverConnection(project) ?: return displayErrorNotification(
                 project,
                 errorTitle, "No connection could be found", GROUP
@@ -90,12 +85,7 @@ class ReopenIssueAction(
             }
         }
 
-        private fun reopenIssue(
-            project: Project,
-            module: Module,
-            issue: LiveFinding,
-            issueKey: String
-        ) {
+        private fun reopenIssue(project: Project, module: Module, issue: LiveIssue, issueKey: String, ) {
             SonarLintUtils.getService(BackendService::class.java)
                 .reopenIssue(module, issueKey)
                 .thenAccept {
@@ -109,10 +99,10 @@ class ReopenIssueAction(
                 }
         }
 
-        private fun updateUI(project: Project, issue: LiveFinding) {
+        private fun updateUI(project: Project, issue: LiveIssue) {
             UiUtils.runOnUiThread(project) {
                 issue.isResolved = false
-                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).reopenIssue()
+                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).reopenIssue(issue)
                 SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
             }
         }

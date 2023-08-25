@@ -34,7 +34,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
-import com.intellij.ui.scale.JBUIScale
+import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
@@ -57,7 +57,6 @@ import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.serverapi.UrlUtils.urlEncode
 import java.awt.BorderLayout
-import java.awt.Font
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.util.concurrent.TimeUnit
@@ -84,7 +83,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
     init {
         mainPanel.add(topPanel.apply {
             add(ruleNameLabel.apply {
-                font = UIUtil.getLabelFont().deriveFont((UIUtil.getLabelFont().size2D + JBUIScale.scale(3))).deriveFont(Font.BOLD)
+                font = JBFont.h3().asBold()
             }, BorderLayout.NORTH)
             add(headerPanel, BorderLayout.CENTER)
             add(securityHotspotHeaderMessage.apply {

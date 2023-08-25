@@ -82,9 +82,9 @@ import org.sonarsource.sonarlint.core.clientapi.backend.initialize.FeatureFlagsD
 import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.AddIssueCommentParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ChangeIssueStatusParams
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ReopenIssueParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ReopenIssueResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams
@@ -362,7 +362,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         )
     }
 
-    fun markAsResolved(module: Module, issueKey: String, newStatus: IssueStatus, isTaintVulnerability: Boolean): CompletableFuture<Void> {
+    fun markAsResolved(module: Module, issueKey: String, newStatus: ResolutionStatus, isTaintVulnerability: Boolean): CompletableFuture<Void> {
         return initializedBackend.issueService.changeStatus(
             ChangeIssueStatusParams(
                 moduleId(module),

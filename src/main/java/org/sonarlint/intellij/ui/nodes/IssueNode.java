@@ -109,14 +109,14 @@ public class IssueNode extends FindingNode {
     if (issue.isValid()) {
       renderer.setToolTipText("Double click to open location");
       if (issue.isResolved()) {
-        renderer.append(issue.getMessage(), SimpleTextAttributes.REGULAR_ITALIC_ATTRIBUTES);
+        renderer.append(issue.getMessage(), new SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, null));
       } else {
         renderer.append(issue.getMessage());
       }
     } else {
       renderer.setToolTipText("Issue is no longer valid");
       if (issue.isResolved()) {
-        renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ITALIC_ATTRIBUTES);
+        renderer.append(issue.getMessage(), new SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, UIUtil.getInactiveTextColor()));
       } else {
         renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
       }

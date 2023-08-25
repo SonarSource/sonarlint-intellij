@@ -361,6 +361,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     if (issue instanceof LiveIssue) {
       var liveIssue = (LiveIssue) issue;
       this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
+      this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
       this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));
     } else {
       var content = getTaintVulnerabilitiesContent();
@@ -370,8 +371,9 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     }
   }
 
-  public void reopenIssue() {
-    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
+  public void reopenIssue(LiveIssue issue) {
+    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(issue));
+    this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
   }
 
   @Override

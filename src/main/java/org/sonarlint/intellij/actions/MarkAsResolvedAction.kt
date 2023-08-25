@@ -54,7 +54,7 @@ import org.sonarlint.intellij.util.displayErrorNotification
 import org.sonarlint.intellij.util.displaySuccessfulNotification
 import org.sonarlint.intellij.util.displayWarningNotification
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
 
 private const val SKIP_CONFIRM_DIALOG_PROPERTY = "SonarLint.markIssueAsResolved.hideConfirmation"
 
@@ -154,7 +154,7 @@ class MarkAsResolvedAction(
             }
         }
 
-        private fun confirm(project: Project, productName: String, issueStatus: IssueStatus): Boolean {
+        private fun confirm(project: Project, productName: String, issueStatus: ResolutionStatus): Boolean {
             return shouldSkipConfirmationDialog() || MessageDialogBuilder.okCancel(
                 "Confirm marking issue as resolved",
                 "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be updated on $productName and synchronized with any contributor using SonarLint in connected mode"
