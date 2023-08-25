@@ -19,12 +19,14 @@
  */
 package org.sonarlint.intellij.ui.ruledescription
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.GotItTooltip
 import com.intellij.ui.Gray
+import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -79,6 +81,11 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     private val hotspotVulnerabilityValueLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
     private val changeStatusButton = JButton()
+    private val learnMore = HyperlinkLabel("Learn more")
+
+    init {
+        learnMore.addHyperlinkListener { BrowserUtil.browse(SonarLintDocumentation.CLEAN_CODE_LINK) }
+    }
 
     fun clear() {
         attributePanel.removeAll()
@@ -220,6 +227,9 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
 
         changeStatusPanel.add(changeStatusButton)
         wrappedPanel.add(changeStatusPanel)
+        if (newCct) {
+            wrappedPanel.add(learnMore)
+        }
         add(wrappedPanel, BorderLayout.CENTER)
     }
 
