@@ -168,6 +168,13 @@ public class ServerConnection {
     }
   }
 
+  public boolean hasSameCredentials(ServerConnection otherConnection) {
+    if (token != null) {
+      return Objects.equals(token, otherConnection.token);
+    }
+    return Objects.equals(password, otherConnection.password) && Objects.equals(login, otherConnection.login);
+  }
+
   public String getName() {
     return name;
   }

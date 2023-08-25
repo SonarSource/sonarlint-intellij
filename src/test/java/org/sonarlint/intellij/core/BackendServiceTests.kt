@@ -34,16 +34,21 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.never
+import org.mockito.kotlin.refEq
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
-import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.ConfigurationService
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidAddConfigurationScopesParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveConfigurationScopeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.ConnectionService
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidChangeCredentialsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
+import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializeParams
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
@@ -72,6 +77,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         service = BackendService(backend)
         ApplicationManager.getApplication().replaceService(BackendService::class.java, service, testRootDisposable)
     }
+
     @BeforeEach
     fun resetMockBackend() {
         // Ignore previous events caused by HeavyTestFrameworkOpening a project
@@ -266,6 +272,66 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             "updatedBinding.sonarProjectKey",
             "updatedBinding.bindingSuggestionDisabled"
         ).containsExactly(projectBackendId(project), null, null, true)
+    }
+
+    @Test
+    fun test_notify_backend_when_connection_token_changed() {
+        val previousSettings = SonarLintGlobalSettings()
+        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setToken("oldToken").build())
+        val newSettings = SonarLintGlobalSettings()
+        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setToken("newToken").build())
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+
+        verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+    }
+
+    @Test
+    fun test_notify_backend_when_connection_password_changed() {
+        val previousSettings = SonarLintGlobalSettings()
+        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("oldPass").build())
+        val newSettings = SonarLintGlobalSettings()
+        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("newPass").build())
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+
+        verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+    }
+
+    @Test
+    fun test_notify_backend_when_connection_login_changed() {
+        val previousSettings = SonarLintGlobalSettings()
+        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("oldLogin").setPassword("pass").build())
+        val newSettings = SonarLintGlobalSettings()
+        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("newLogin").setPassword("pass").build())
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+
+        verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+    }
+
+    @Test
+    fun test_do_not_notify_backend_of_credentials_change_when_connection_is_new() {
+        val previousSettings = SonarLintGlobalSettings()
+        previousSettings.serverConnections = emptyList()
+        val newSettings = SonarLintGlobalSettings()
+        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("newPass").build())
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+
+        verify(backendConnectionService, never()).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+    }
+
+    @Test
+    fun test_do_not_notify_backend_of_credentials_change_when_something_else_changed() {
+        val previousSettings = SonarLintGlobalSettings()
+        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("oldUrl").setToken("token").build())
+        val newSettings = SonarLintGlobalSettings()
+        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("newUrl").setToken("token").build())
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+
+        verify(backendConnectionService, never()).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
 
     @Test
