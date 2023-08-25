@@ -35,7 +35,6 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
-import org.sonarlint.intellij.actions.ReopenIssueAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -69,10 +68,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     var project = file.getProject();
     var issueManager = getService(project, FindingsCache.class);
     var issues = issueManager.getIssuesForFile(file.getVirtualFile());
-    var toolWindowService = getService(project, SonarLintToolWindow.class);
-    var locallyResolvedIssues = toolWindowService.shouldAnnotateLocallyResolvedIssues();
     issues.stream()
-      .filter(issue -> (!issue.isResolved() && issue.isValid()) || locallyResolvedIssues)
+      .filter(issue -> !issue.isResolved())
       .forEach(issue -> {
         // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
         var validTextRange = issue.getValidTextRange();
@@ -82,6 +79,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       });
 
     // only annotate the hotspots currently displayed in the tree
+    var toolWindowService = getService(project, SonarLintToolWindow.class);
     toolWindowService.getDisplayedSecurityHotspotsForFile(file.getVirtualFile())
       .forEach(securityHotspot -> {
         // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
@@ -137,7 +135,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     if (finding instanceof LiveIssue) {
       intentionActions.add(new MarkAsResolvedAction((LiveIssue) finding));
-      intentionActions.add(new ReopenIssueAction((LiveIssue) finding));
     }
 
     finding.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(finding, c)));

@@ -90,10 +90,6 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     refreshModel();
   }
 
-  public boolean shouldIncludeLocallyResolvedIssues() {
-    return treeBuilder.isShouldIncludeLocallyResolvedIssues();
-  }
-
   @Override
   public void dispose() {
     // Nothing to do

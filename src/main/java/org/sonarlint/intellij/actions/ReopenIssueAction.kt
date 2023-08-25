@@ -33,7 +33,6 @@ import com.intellij.openapi.ui.DoNotAskOption
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
-import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -100,7 +99,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
 
         private fun updateUI(project: Project, issue: LiveIssue) {
             UiUtils.runOnUiThread(project) {
-                issue.isResolved = false
+                issue.reopen()
                 SonarLintUtils.getService(project, SonarLintToolWindow::class.java).reopenIssue(issue)
                 SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
             }
@@ -109,7 +108,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
         private fun confirm(project: Project, productName: String): Boolean {
             return shouldSkipConfirmationDialogForReopening() || MessageDialogBuilder.okCancel(
                 "Confirm reopening the issue",
-                "Are you sure you want to reopen this issue? The status won't be updated on $productName"
+                "Are you sure you want to reopen this issue? The status will be updated on $productName and synchronized with any contributor using SonarLint in connected mode"
             )
                 .yesText("Confirm")
                 .noText("Cancel")
@@ -124,12 +123,6 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
             project,
             ProjectBindingManager::class.java
         ).tryGetServerConnection().orElse(null)
-    }
-
-    override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
-        val issue: LiveIssue = e.getData(DataKeys.ISSUE_DATA_KEY)
-            ?: return false
-        return canBeReopened(project, issue)
     }
 
     override fun updatePresentation(e: AnActionEvent, project: Project) {
@@ -174,8 +167,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
 
     override fun isVisible(e: AnActionEvent): Boolean {
         val project = e.project ?: return false
-        val issue: LiveIssue = e.getData(DataKeys.ISSUE_DATA_KEY)
-            ?: return false
+        val issue: LiveIssue = e.getData(DataKeys.ISSUE_DATA_KEY) ?: return false
         return canBeReopened(project, issue)
     }
 

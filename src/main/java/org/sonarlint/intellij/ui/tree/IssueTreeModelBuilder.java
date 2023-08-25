@@ -124,10 +124,6 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
   }
 
-  public boolean isShouldIncludeLocallyResolvedIssues() {
-    return includeLocallyResolvedIssues;
-  }
-
   private void setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
     if (!accept(file)) {
       removeFile(file);

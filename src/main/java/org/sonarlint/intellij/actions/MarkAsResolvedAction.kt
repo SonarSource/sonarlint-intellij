@@ -34,7 +34,6 @@ import com.intellij.openapi.ui.DoNotAskOption
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
-import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -125,7 +124,7 @@ class MarkAsResolvedAction(
 
         private fun updateUI(project: Project, issue: Issue) {
             runOnUiThread(project) {
-                issue.resolve(true)
+                issue.resolve()
                 getService(project, SonarLintToolWindow::class.java).markAsResolved(issue)
                 getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
             }
@@ -170,17 +169,6 @@ class MarkAsResolvedAction(
             project,
             ProjectBindingManager::class.java
         ).tryGetServerConnection().orElse(null)
-    }
-
-    override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
-        var issue: Issue? = e.getData(ISSUE_DATA_KEY)
-        if (issue == null) {
-            issue = e.getData(TAINT_VULNERABILITY_DATA_KEY)
-        }
-        if (issue == null) {
-            return false
-        }
-        return canBeMarkedAsResolved(project, issue)
     }
 
     override fun updatePresentation(e: AnActionEvent, project: Project) {
@@ -231,13 +219,7 @@ class MarkAsResolvedAction(
 
     override fun isVisible(e: AnActionEvent): Boolean {
         val project = e.project ?: return false
-        var issue: Issue? = e.getData(ISSUE_DATA_KEY)
-        if (issue == null) {
-            issue = e.getData(TAINT_VULNERABILITY_DATA_KEY)
-        }
-        if (issue == null) {
-            return false
-        }
+        val issue = e.getData(ISSUE_DATA_KEY) ?: e.getData(TAINT_VULNERABILITY_DATA_KEY) ?: return false
         return canBeMarkedAsResolved(project, issue)
     }
 

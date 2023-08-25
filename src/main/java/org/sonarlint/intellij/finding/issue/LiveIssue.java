@@ -23,6 +23,7 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.psi.PsiFile;
 import java.util.List;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
@@ -42,6 +43,7 @@ public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.fin
     this.type = issue.getType();
   }
 
+  @NotNull
   @Override
   public RuleType getType() {
     return type;
@@ -52,7 +54,13 @@ public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.fin
   }
 
   @Override
-  public void resolve(boolean isResolved) {
-    setResolved(isResolved);
+  public void resolve() {
+    setResolved(true);
   }
+
+  @Override
+  public void reopen() {
+    setResolved(false);
+  }
+
 }

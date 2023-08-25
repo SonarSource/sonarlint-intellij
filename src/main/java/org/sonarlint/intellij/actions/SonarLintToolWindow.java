@@ -347,16 +347,6 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     return Collections.emptyList();
   }
 
-  public boolean shouldAnnotateLocallyResolvedIssues() {
-    var currentFileTab = getCurrentFileTab();
-    var toolWindow = getToolWindow();
-    if (toolWindow != null && toolWindow.isVisible() && currentFileTab != null && currentFileTab.isSelected()) {
-      var currentFilePanel = (CurrentFilePanel) currentFileTab.getComponent();
-      return currentFilePanel.shouldIncludeLocallyResolvedIssues();
-    }
-    return false;
-  }
-
   public void markAsResolved(Issue issue) {
     if (issue instanceof LiveIssue) {
       var liveIssue = (LiveIssue) issue;

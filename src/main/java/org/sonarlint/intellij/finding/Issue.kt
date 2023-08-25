@@ -23,5 +23,6 @@ import java.util.UUID
 
 interface Issue : Finding {
     fun getId(): UUID?
-    fun resolve(isResolved: Boolean)
+    fun resolve()
+    fun reopen()
 }
