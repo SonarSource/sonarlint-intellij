@@ -21,7 +21,6 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
-import com.intellij.icons.AllIcons
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
@@ -163,7 +162,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
 
     override fun getPriority() = PriorityAction.Priority.NORMAL
 
-    override fun getIcon(flags: Int) = AllIcons.Actions.BuildLoadChanges
+    override fun getIcon(flags: Int) = null
 
     override fun startInWriteAction() = false
 

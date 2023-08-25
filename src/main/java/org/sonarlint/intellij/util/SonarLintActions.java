@@ -94,11 +94,11 @@ public final class SonarLintActions {
       AllIcons.General.Filter);
     includeResolvedHotspotsAction = new IncludeResolvedFindingsAction<>("Include Resolved Security Hotspots",
       "Include resolved Security Hotspots",
-      SonarLintIcons.HOTSPOT_CHECKED,
+      SonarLintIcons.RESOLVED,
       LiveSecurityHotspot.class);
     includeResolvedIssuesAction = new IncludeResolvedFindingsAction<>("Include Locally Resolved Issues",
       "Include locally resolved issues",
-      SonarLintIcons.HOTSPOT_CHECKED,
+      SonarLintIcons.RESOLVED,
       LiveIssue.class);
   }
 
