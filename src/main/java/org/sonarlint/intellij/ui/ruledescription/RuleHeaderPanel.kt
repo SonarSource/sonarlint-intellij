@@ -66,7 +66,8 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     companion object {
         private const val MARK_AS_RESOLVED = "Mark Issue as..."
         private const val CLEAN_CODE_TOOLTIP_ID = "sonarlint.clean.code.tooltip"
-        private const val CLEAN_CODE_TOOLTIP_TEXT = "This is the new Sonar solution that is designed to help you achieve a state of Clean Code!"
+        private const val CLEAN_CODE_TOOLTIP_TEXT = """We have refined Sonar issues: Clean Code attributes spotlight what characteristic of Clean Code was violated. 
+            Software qualities represent the impact of an issue on your application."""
         private const val REOPEN = "Reopen"
     }
 
@@ -200,7 +201,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
 
             GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
                 withHeader("SonarLint - Start your Clean Code journey")
-                withBrowserLink("Learn More", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
+                withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
                 withIcon(SonarLintIcons.SONARLINT)
                 withPosition(Balloon.Position.atLeft)
                 show(wrappedPanel, GotItTooltip.LEFT_MIDDLE)
