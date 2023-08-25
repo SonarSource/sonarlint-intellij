@@ -61,6 +61,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.connection.check.CheckSm
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.check.CheckSmartNotificationsSupportedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.TransientSonarCloudConnectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.TransientSonarQubeConnectionDto
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidChangeCredentialsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
@@ -140,6 +141,11 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
                     override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
                         connectionsUpdated(newSettings.serverConnections)
+                        val changedConnections = newSettings.serverConnections.filter { connection ->
+                            val previousConnection = previousSettings.getServerConnectionByName(connection.name)
+                            previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                        }
+                        credentialsChanged(changedConnections)
                     }
 
                     override fun changed(serverList: MutableList<ServerConnection>) {
@@ -188,6 +194,10 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         val scConnections = serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
         val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         backend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
+    }
+
+    private fun credentialsChanged(connections: List<ServerConnection>) {
+        connections.forEach { backend.connectionService.didChangeCredentials(DidChangeCredentialsParams(it.name)) }
     }
 
     private fun toSonarQubeBackendConnection(createdConnection: ServerConnection): SonarQubeConnectionConfigurationDto {
