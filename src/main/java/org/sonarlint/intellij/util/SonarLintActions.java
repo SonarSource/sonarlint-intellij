@@ -96,8 +96,8 @@ public final class SonarLintActions {
       "Include resolved Security Hotspots",
       SonarLintIcons.RESOLVED,
       LiveSecurityHotspot.class);
-    includeResolvedIssuesAction = new IncludeResolvedFindingsAction<>("Include Locally Resolved Issues",
-      "Include locally resolved issues",
+    includeResolvedIssuesAction = new IncludeResolvedFindingsAction<>("Include Resolved Issues",
+      "Include resolved issues",
       SonarLintIcons.RESOLVED,
       LiveIssue.class);
   }
