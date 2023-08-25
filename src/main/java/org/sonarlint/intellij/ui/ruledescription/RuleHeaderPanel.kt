@@ -64,7 +64,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     companion object {
         private const val MARK_AS_RESOLVED = "Mark Issue as..."
         private const val CLEAN_CODE_TOOLTIP_ID = "sonarlint.clean.code.tooltip"
-        private const val CLEAN_CODE_TOOLTIP_TEXT = """This is the new Sonar solution that is designed to help you achieve a state of Clean Code!"""
+        private const val CLEAN_CODE_TOOLTIP_TEXT = "This is the new Sonar solution that is designed to help you achieve a state of Clean Code!"
         private const val REOPEN = "Reopen"
     }
 
@@ -159,11 +159,17 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         val newCctEnabled = attribute != null && qualities.isNotEmpty()
         if (newCctEnabled) {
             val attributeLabel = JBLabel("<html><b>" + clean(attribute!!.attributeCategory.issueLabel) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
-            attributePanel.add(attributeLabel)
+            attributePanel.apply {
+                add(attributeLabel)
+                toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
+            }
             qualities.entries.forEach {
-                val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[it.value])
+                val cleanImpact = clean(it.value.displayLabel)
+                val cleanQuality = clean(it.key.displayLabel)
+                val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[it.value]).apply {
+                    toolTipText = "Issues found for this rule will have a $cleanImpact impact on the $cleanQuality of your software."
+                }
                 qualityPanel.add(JBLabel(clean(it.key.toString())).apply {
-                    setCopyable(true)
                     foreground = SonarLintIcons.fontColorsByImpact[it.value]
                 })
                 qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(it.value) })

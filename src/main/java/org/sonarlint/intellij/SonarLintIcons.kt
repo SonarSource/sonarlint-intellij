@@ -118,9 +118,9 @@ object SonarLintIcons {
     )
 
     val fontColorsByImpact = mapOf(
-        ImpactSeverity.HIGH to JBColor(Color(180, 35, 24, 0), Color.LIGHT_GRAY),
-        ImpactSeverity.MEDIUM to JBColor(Color(174, 122, 41, 0), Color.LIGHT_GRAY),
-        ImpactSeverity.LOW to JBColor(Color(49, 108, 146, 0), Color.LIGHT_GRAY)
+        ImpactSeverity.HIGH to JBColor(Color(128, 27, 20), Color.LIGHT_GRAY),
+        ImpactSeverity.MEDIUM to JBColor(Color(140, 94, 30), Color.LIGHT_GRAY),
+        ImpactSeverity.LOW to JBColor(Color(49, 108, 146), Color.LIGHT_GRAY)
     )
 
     private fun getIcon(path: String): Icon {
