@@ -21,7 +21,6 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
-import com.intellij.icons.AllIcons
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
@@ -35,7 +34,6 @@ import com.intellij.openapi.ui.DoNotAskOption
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
-import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -43,6 +41,7 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.Issue
+import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -53,7 +52,7 @@ import org.sonarlint.intellij.util.displayErrorNotification
 import org.sonarlint.intellij.util.displaySuccessfulNotification
 import org.sonarlint.intellij.util.displayWarningNotification
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
 
 private const val SKIP_CONFIRM_DIALOG_PROPERTY = "SonarLint.markIssueAsResolved.hideConfirmation"
 
@@ -70,6 +69,9 @@ class MarkAsResolvedAction(
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark Issue as Resolved")
 
         fun canBeMarkedAsResolved(project: Project, issue: Issue) : Boolean {
+            if (issue is LiveIssue && issue.isResolved) {
+                return false
+            }
             val serverConnection = serverConnection(project)
             return issue.isValid() && serverConnection != null && (serverConnection.isSonarQube || issue.getServerKey() != null)
         }
@@ -104,7 +106,7 @@ class MarkAsResolvedAction(
             module: Module,
             issue: Issue,
             resolution: MarkAsResolvedDialog.Resolution,
-            issueKey: String,
+            issueKey: String
         ) {
             getService(BackendService::class.java)
                 .markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
@@ -150,7 +152,7 @@ class MarkAsResolvedAction(
             }
         }
 
-        private fun confirm(project: Project, productName: String, issueStatus: IssueStatus): Boolean {
+        private fun confirm(project: Project, productName: String, issueStatus: ResolutionStatus): Boolean {
             return shouldSkipConfirmationDialog() || MessageDialogBuilder.okCancel(
                 "Confirm marking issue as resolved",
                 "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be updated on $productName and synchronized with any contributor using SonarLint in connected mode"
@@ -167,12 +169,6 @@ class MarkAsResolvedAction(
             project,
             ProjectBindingManager::class.java
         ).tryGetServerConnection().orElse(null)
-    }
-
-    override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
-        // always disabled for standalone mode
-        // the checks will be done inside the popup for connected mode
-        return serverConnection(project) != null
     }
 
     override fun updatePresentation(e: AnActionEvent, project: Project) {
@@ -209,10 +205,9 @@ class MarkAsResolvedAction(
         override fun getDoNotShowMessage() = "Don't show again"
     }
 
-
     override fun getPriority() = PriorityAction.Priority.NORMAL
 
-    override fun getIcon(flags: Int) = AllIcons.Actions.BuildLoadChanges
+    override fun getIcon(flags: Int) = null
 
     override fun startInWriteAction() = false
 
@@ -222,7 +217,15 @@ class MarkAsResolvedAction(
         return "SonarLint mark issue as..."
     }
 
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = issue?.getServerKey() != null
+    override fun isVisible(e: AnActionEvent): Boolean {
+        val project = e.project ?: return false
+        val issue = e.getData(ISSUE_DATA_KEY) ?: e.getData(TAINT_VULNERABILITY_DATA_KEY) ?: return false
+        return canBeMarkedAsResolved(project, issue)
+    }
+
+    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
+        return issue?.let { canBeMarkedAsResolved(project, it) } ?: false
+    }
 
     override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
         file?.let {

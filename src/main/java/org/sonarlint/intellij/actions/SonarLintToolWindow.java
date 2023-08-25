@@ -134,6 +134,23 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     return toolWindow;
   }
 
+  public void filterCurrentFileTab(boolean isResolved) {
+    var currentFileTab = getCurrentFileTab();
+    if (currentFileTab != null) {
+      var currentFilePanel = (CurrentFilePanel) currentFileTab.getComponent();
+      currentFilePanel.allowResolvedIssues(isResolved);
+    }
+  }
+
+  private Content getCurrentFileTab() {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      return contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
+    }
+    return null;
+  }
+
   /**
    * Must run in EDT
    */
@@ -334,6 +351,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     if (issue instanceof LiveIssue) {
       var liveIssue = (LiveIssue) issue;
       this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
+      this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
       this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));
     } else {
       var content = getTaintVulnerabilitiesContent();
@@ -341,6 +359,11 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
         ((TaintVulnerabilitiesPanel) content.getComponent()).remove((LocalTaintVulnerability) issue);
       }
     }
+  }
+
+  public void reopenIssue(LiveIssue issue) {
+    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(issue));
+    this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
   }
 
   @Override

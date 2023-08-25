@@ -25,26 +25,27 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.actions.filters.IncludeResolvedHotspotsAction
+import org.sonarlint.intellij.actions.filters.IncludeResolvedFindingsAction
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 
-class FilterSecurityHotspotActionTests : AbstractSonarLintLightTests() {
+class FilterFindingActionTests : AbstractSonarLintLightTests() {
 
     val event: AnActionEvent = Mockito.mock(AnActionEvent::class.java)
 
     @Test
     fun shouldNotBeSelectedByDefault() {
-        val includeResolvedHotspotsAction =
-            IncludeResolvedHotspotsAction("", "", null)
-        assertThat(includeResolvedHotspotsAction.isSelected(event)).isFalse();
+        val includeResolvedFindingsAction =
+            IncludeResolvedFindingsAction("", "", null, LiveSecurityHotspot::class.java)
+        assertThat(includeResolvedFindingsAction.isSelected(event)).isFalse();
     }
 
     @Test
     fun shouldChangeAfterUpdate() {
         `when`(event.project).thenReturn(project)
-        val includeResolvedHotspotsAction =
-            IncludeResolvedHotspotsAction("", "", null)
-        includeResolvedHotspotsAction.setSelected(event, true)
-        assertThat(includeResolvedHotspotsAction.isSelected(event)).isTrue()
+        val includeResolvedFindingsAction =
+            IncludeResolvedFindingsAction("", "", null, LiveSecurityHotspot::class.java)
+        includeResolvedFindingsAction.setSelected(event, true)
+        assertThat(includeResolvedFindingsAction.isSelected(event)).isTrue()
     }
 
 }

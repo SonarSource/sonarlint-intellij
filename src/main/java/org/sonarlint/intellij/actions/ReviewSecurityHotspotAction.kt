@@ -21,7 +21,6 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
-import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -130,7 +129,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     override fun getPriority() = PriorityAction.Priority.NORMAL
 
-    override fun getIcon(flags: Int) = AllIcons.Actions.BuildLoadChanges
+    override fun getIcon(flags: Int) = null
 
     private class CheckHotspotStatusChangePermission(
             project: Project,

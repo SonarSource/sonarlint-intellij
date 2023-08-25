@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2023 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+
+<svg height="16" width="16" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <polygon points="1.95,8.738 3.698,6.99 6.293,9.585 13.789,2.09 15.535,3.837 6.292,13.08 " style="fill:#59a869" transform="matrix(0.52506957,0,0,0.52506957,7.5390023,8.8012491)" />
+  </g>
+  <g fill="none" fill-rule="evenodd" transform="matrix(1.2369241,0,0,1.2369241,0.60360027,-0.8733532)">
+    <path style="fill:#afb1b3" d="M 0,6 C 1.0655059,3.6350527 3.35166,2 6,2 8.64834,2 10.934494,3.6350527 12,6 10.934494,8.3649473 8.64834,10 6,10 3.35166,10 1.0655059,8.3649473 0,6 Z M 6,9 C 7.6568543,9 9,7.6568543 9,6 9,4.3431457 7.6568543,3 6,3 4.3431457,3 3,4.3431457 3,6 3,7.6568543 4.3431457,9 6,9 Z" />
+  </g>
+</svg>

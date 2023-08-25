@@ -26,7 +26,7 @@ import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.options.OptionPanel
 import org.sonarlint.intellij.ui.options.addComponents
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.IssueStatus
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import javax.swing.ButtonGroup
@@ -37,18 +37,18 @@ import kotlin.properties.Delegates
 
 class MarkAsResolvedPanel(
     private val connection: ServerConnection,
-    allowedStatuses: List<IssueStatus>,
+    allowedStatuses: List<ResolutionStatus>,
     private val callbackForButton: (Boolean) -> Unit,
 ) : JPanel(),
     ActionListener {
-    var selectedStatus: IssueStatus? by Delegates.observable(null) { _, _, newValue -> callbackForButton(newValue != null) }
+    var selectedStatus: ResolutionStatus? by Delegates.observable(null) { _, _, newValue -> callbackForButton(newValue != null) }
     private lateinit var commentTextArea : JBTextArea
     init {
         layout = verticalLayout()
         display(allowedStatuses)
     }
 
-    fun display(allowedStatuses: List<IssueStatus>) {
+    fun display(allowedStatuses: List<ResolutionStatus>) {
         val buttonGroup = ButtonGroup()
         allowedStatuses.forEach { status ->
             val statusPanel = OptionPanel(status.name, status.title, status.description)
@@ -82,6 +82,6 @@ class MarkAsResolvedPanel(
 
     override fun actionPerformed(e: ActionEvent?) {
         e ?: return
-        selectedStatus = IssueStatus.valueOf(e.actionCommand)
+        selectedStatus = ResolutionStatus.valueOf(e.actionCommand)
     }
 }

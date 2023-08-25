@@ -33,8 +33,10 @@ import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
-import org.sonarlint.intellij.actions.filters.IncludeResolvedHotspotsAction;
+import org.sonarlint.intellij.actions.filters.IncludeResolvedFindingsAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 /**
  * Creates and keeps a single instance of actions used by SonarLint.
@@ -52,7 +54,8 @@ public final class SonarLintActions {
   private final AnAction analyzeChangedFilesAction;
   private final AnAction analyzeAllFilesAction;
   private final FilterSecurityHotspotActionGroup filterAction;
-  private final IncludeResolvedHotspotsAction includeResolvedHotspotAction;
+  private final IncludeResolvedFindingsAction<LiveSecurityHotspot> includeResolvedHotspotsAction;
+  private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -89,9 +92,14 @@ public final class SonarLintActions {
     filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
       "Filter Security Hotspots",
       AllIcons.General.Filter);
-    includeResolvedHotspotAction = new IncludeResolvedHotspotsAction("Include Resolved Security Hotspots",
+    includeResolvedHotspotsAction = new IncludeResolvedFindingsAction<>("Include Resolved Security Hotspots",
       "Include resolved Security Hotspots",
-      SonarLintIcons.HOTSPOT_CHECKED);
+      SonarLintIcons.RESOLVED,
+      LiveSecurityHotspot.class);
+    includeResolvedIssuesAction = new IncludeResolvedFindingsAction<>("Include Resolved Issues",
+      "Include resolved issues",
+      SonarLintIcons.RESOLVED,
+      LiveIssue.class);
   }
 
   public static SonarLintActions getInstance() {
@@ -130,7 +138,12 @@ public final class SonarLintActions {
     return filterAction;
   }
 
-  public IncludeResolvedHotspotsAction includeResolvedHotspotAction() {
-    return includeResolvedHotspotAction;
+  public IncludeResolvedFindingsAction<LiveSecurityHotspot> includeResolvedHotspotAction() {
+    return includeResolvedHotspotsAction;
   }
+
+  public IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction() {
+    return includeResolvedIssuesAction;
+  }
+
 }

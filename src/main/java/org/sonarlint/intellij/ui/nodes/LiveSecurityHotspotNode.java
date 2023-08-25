@@ -69,7 +69,12 @@ public class LiveSecurityHotspotNode extends FindingNode {
     }
 
     renderer.setToolTipText("Double click to open location");
-    renderer.append(securityHotspot.getMessage());
+    if (securityHotspot.isResolved()) {
+      renderer.append(securityHotspot.getMessage(), new SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, null));
+    } else {
+      renderer.append(securityHotspot.getMessage());
+    }
+
     if (appendFileName) {
       renderer.append(" " + securityHotspot.getFile().getName(), SimpleTextAttributes.GRAY_ATTRIBUTES);
     }

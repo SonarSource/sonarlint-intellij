@@ -30,9 +30,12 @@ import com.intellij.util.ui.WrapLayout
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.canBeMarkedAsResolved
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialog
+import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.canBeReopened
+import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.reopenIssueDialog
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
@@ -52,6 +55,7 @@ import javax.swing.SwingConstants
 class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(BorderLayout()) {
     companion object {
         private const val MARK_AS_RESOLVED = "Mark Issue as..."
+        private const val REOPEN = "Reopen"
     }
 
     private val wrappedPanel = JBPanel<JBPanel<*>>(WrapLayout(FlowLayout.LEFT))
@@ -94,7 +98,14 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(BorderLayout()) {
         updateCommonFields(type, issue.getCleanCodeAttribute(), issue.getImpacts(), issue.getRuleKey())
         updateRuleSeverity(severity)
 
-        if (canBeMarkedAsResolved(project, issue)) {
+        if (issue is LiveIssue && canBeReopened(project, issue)) {
+            changeStatusButton.isVisible = true
+            changeStatusButton.action = object : AbstractAction(REOPEN) {
+                override fun actionPerformed(e: ActionEvent?) {
+                    reopenIssueDialog(project, issue)
+                }
+            }
+        } else if (canBeMarkedAsResolved(project, issue)) {
             changeStatusButton.isVisible = true
             changeStatusButton.action = object : AbstractAction(MARK_AS_RESOLVED) {
                 override fun actionPerformed(e: ActionEvent?) {
