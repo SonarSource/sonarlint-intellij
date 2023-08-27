@@ -42,6 +42,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -207,6 +208,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     var issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()),
       node -> node instanceof IssueNode && ((IssueNode) node).issue().equals(issue));
     if (issueNode == null) {
+      SonarLintConsole.get(project).error("Cannot select issue in the tree");
       return;
     }
     tree.setSelectionPath(null);
