@@ -253,7 +253,7 @@ promote_task:
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 3
-    memory: 2G
+    memory: 4G
   env:
     GCF_ACCESS_TOKEN: VAULT[development/kv/data/promote data.token]
     PROMOTE_URL: VAULT[development/kv/data/promote data.url]
