@@ -55,7 +55,6 @@ public class LiveFindingCache<T extends LiveFinding> {
   }
 
   public void replaceFindings(Map<VirtualFile, Collection<T>> newFindingsPerFile) {
-    newFindingsPerFile.keySet().forEach(this::clear);
     cache.putAll(newFindingsPerFile);
   }
 
