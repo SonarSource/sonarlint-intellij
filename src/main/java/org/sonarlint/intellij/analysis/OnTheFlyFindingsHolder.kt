@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.analysis
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
@@ -41,7 +40,6 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
     private val currentSecurityHotspotsPerOpenFile: MutableMap<VirtualFile, Collection<LiveSecurityHotspot>> = ConcurrentHashMap()
 
     init {
-        ApplicationManager.getApplication().invokeAndWait { selectedFile = SonarLintUtils.getSelectedFile(project) }
         project.messageBus.connect()
             .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
     }
@@ -57,6 +55,9 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             currentIssuesPerOpenFile.putAll(issuesPerFile)
             currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
             runOnUiThread(project) {
+                if (selectedFile == null) {
+                    selectedFile = SonarLintUtils.getSelectedFile(project)
+                }
                 if (issuesPerFile.keys.contains(selectedFile)) {
                     updateCurrentFileTab()
                 }
@@ -95,6 +96,9 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
     }
 
     fun clearCurrentFile() {
+        if (selectedFile == null) {
+            selectedFile = SonarLintUtils.getSelectedFile(project)
+        }
         if (selectedFile != null) {
             currentIssuesPerOpenFile.remove(selectedFile)
         }
