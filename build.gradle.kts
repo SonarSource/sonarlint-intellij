@@ -205,7 +205,7 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.24.0.32100")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.5.1.22382")
-    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.31.0.9993")
+    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.32.0.10180")
     "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.7.0.12181")
     "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.17.0.2902")
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.14.0.4481")
