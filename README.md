@@ -98,11 +98,6 @@ As the `clean` task may be inconvenient, an easier workaround is to delete the j
 
     find build/idea-sandbox/ -name '*.jar' -delete
 
-How to release
---------------
-
-See the [release pipeline on GitHub](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/release.yml).
-
 License
 -------
 
