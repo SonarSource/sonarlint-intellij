@@ -350,7 +350,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     var rulePanel = new JBPanel<>(new BorderLayout());
     rulePanel.setBorder(JBUI.Borders.emptyLeft(5));
 
-    ruleHeaderPanel = new RuleHeaderPanel();
+    ruleHeaderPanel = new RuleHeaderPanel(this);
     rulePanel.add(ruleHeaderPanel, BorderLayout.NORTH);
 
     ruleDescription = new RuleDescriptionPanel(project, this);

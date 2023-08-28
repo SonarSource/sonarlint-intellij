@@ -60,15 +60,15 @@ public class IssueNode extends FindingNode {
     if (issue.getCleanCodeAttribute() != null && !issue.getImpacts().isEmpty()) {
       var highestQualityImpact = Collections.max(issue.getImpacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
       var impactText = StringUtil.capitalize(highestQualityImpact.getValue().toString().toLowerCase(Locale.ENGLISH));
-      var qualityText = highestQualityImpact.getKey().toString().toLowerCase(Locale.ENGLISH);
+      var qualityText = StringUtil.capitalize(highestQualityImpact.getKey().toString().toLowerCase(Locale.ENGLISH));
       var impactIcon = SonarLintIcons.impact(highestQualityImpact.getValue());
 
       if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();
-        renderer.setIconToolTip(impactText + " " + qualityText + " already detected by " + connection.getProductName() + " analysis");
+        renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " analysis");
         setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
       } else {
-        renderer.setIconToolTip(impactText + " " + qualityText);
+        renderer.setIconToolTip(impactText + " impact on " + qualityText);
         var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
         setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, impactIcon)));
       }
