@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.editor
 
 import com.intellij.openapi.command.WriteCommandAction
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.finding.QuickFix
@@ -49,5 +50,29 @@ class ApplyQuickFixIntentionActionTests : AbstractSonarLintLightTests() {
         WriteCommandAction.runWriteCommandAction(project) { intentionAction.invoke(project, myFixture.editor, file) }
 
         myFixture.checkResult("newText\nwith\nline\nreturnsText")
+    }
+
+    @Test
+    fun should_normalize_line_endings_before_application_preview() {
+        val file = myFixture.configureByText("file.ext", "Text")
+        val quickFix = QuickFix(
+            "message",
+            listOf(
+                VirtualFileEdit(
+                    file.virtualFile,
+                    listOf(
+                        RangeMarkerEdit(
+                            myFixture.getDocument(file).createRangeMarker(0, 0),
+                            "newText\rwith\r\nline\nreturns"
+                        )
+                    )
+                )
+            )
+        )
+        val intentionAction = ApplyQuickFixIntentionAction(quickFix, "ruleKey", file, true)
+
+        WriteCommandAction.runWriteCommandAction(project) { intentionAction.invoke(project, myFixture.editor, file) }
+
+        assertThat(myFixture.getIntentionPreviewText(intentionAction)).isEqualTo("newText\nwith\nline\nreturnsText");
     }
 }
