@@ -155,7 +155,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_closing_a_project() {
-        val newProject = ProjectManagerEx.getInstanceEx().openProject(Path.of("test"), OpenProjectTask.newProject())!!
+        val newProject = ProjectManagerEx.getInstanceEx().openProject(Path.of("test"), OpenProjectTask.build())!!
         service.projectOpened(newProject)
 
         ProjectManagerEx.getInstanceEx().closeAndDispose(newProject)
