@@ -78,14 +78,14 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(11))
+            languageVersion.set(JavaLanguageVersion.of(17))
         }
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
             apiVersion = "1.7"
-            jvmTarget = "11"
+            jvmTarget = "17"
         }
     }
 
@@ -126,12 +126,12 @@ intellij {
     version.set(intellijBuildVersion)
     pluginName.set("sonarlint-intellij")
     updateSinceUntilBuild.set(false)
-    plugins.set(listOf("java", "git4idea"))
+    plugins.set(listOf("java", "Git4Idea"))
 }
 
 tasks.runPluginVerifier {
     // Test oldest supported, and latest
-    ideVersions.set(listOf("IC-2021.3", "IC-2023.2.1"))
+    ideVersions.set(listOf("IC-2022.3.3", "IC-2023.2.1"))
     failureLevel.set(
         EnumSet.complementOf(
             EnumSet.of(
@@ -160,7 +160,7 @@ protobuf {
 tasks.test {
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(11))
+            languageVersion.set(JavaLanguageVersion.of(17))
         }
     }
     useJUnitPlatform()
