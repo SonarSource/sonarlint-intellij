@@ -26,7 +26,12 @@ import com.jetbrains.cidr.lang.CUDALanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.toolchains.CidrSwitchBuilder;
 import com.jetbrains.cidr.lang.toolchains.CidrToolEnvironment;
+import com.jetbrains.cidr.lang.workspace.compiler.AppleClangCompilerKind;
+import com.jetbrains.cidr.lang.workspace.compiler.ClangClCompilerKind;
+import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.CompilerSpecificSwitchBuilder;
+import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
+import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompiler;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.TempFilesPool;
@@ -86,11 +91,11 @@ class AnalyzerConfigurationTest {
 
   @Test
   void map_to_cfamily_compiler() {
-    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.CLANG));
-    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.GCC));
-    assertEquals("clang-cl", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.CLANG_CL));
-    assertEquals("msvc-cl", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.MSVC));
-    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(APPLE_CLANG_COMPILER));
+    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(ClangCompilerKind.INSTANCE));
+    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(GCCCompilerKind.INSTANCE));
+    assertEquals("clang-cl", AnalyzerConfiguration.mapToCFamilyCompiler(ClangClCompilerKind.INSTANCE));
+    assertEquals("msvc-cl", AnalyzerConfiguration.mapToCFamilyCompiler(MSVCCompilerKind.INSTANCE));
+    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(AppleClangCompilerKind.INSTANCE));
   }
 
   @Test

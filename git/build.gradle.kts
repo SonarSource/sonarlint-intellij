@@ -7,7 +7,7 @@ val sonarlintCoreVersion: String by project
 
 intellij {
     version.set(intellijBuildVersion)
-    plugins.set(listOf("git4idea"))
+    plugins.set(listOf("Git4Idea"))
 }
 
 dependencies {
