@@ -126,7 +126,16 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     if (shouldSuggestQuickFix(finding)) {
-      finding.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, finding.getRuleKey())));
+      finding.quickFixes().forEach(fix -> {
+        // Actions are only supported on quick fixes not spanning multiple files! If this is going to change at some
+        // point in the future to support cross-file spanning quick fix actions, then
+        // "ApplyQuickFixIntentionAction.invoke(...)" has to be changed by moving the guard into the method. This is due
+        // IntelliJ is currently only supporting the preview of quick fixes on ONE file at the time!
+        if (fix.isSingleFile()) {
+          intentionActions.add(
+            new ApplyQuickFixIntentionAction(fix, finding.getRuleKey(), finding.psiFile(), false));
+        }
+      });
     }
 
     if (finding instanceof LiveSecurityHotspot) {
