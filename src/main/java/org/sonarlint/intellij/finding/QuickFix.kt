@@ -28,6 +28,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFileEdit
 import org.sonarsource.sonarlint.core.analysis.api.TextEdit
+import java.util.stream.Collectors
 import org.sonarsource.sonarlint.core.analysis.api.QuickFix as CoreQuickFix
 
 fun convert(project: Project, coreQuickFix: CoreQuickFix): QuickFix? {
@@ -87,6 +88,10 @@ data class QuickFix(val message: String, val virtualFileEdits: List<VirtualFileE
     var applied = false
     fun isApplicable() =
         !applied && virtualFileEdits.all { it.target.isValid && it.edits.all { e -> e.rangeMarker.isValid } }
+
+    fun isSingleFile(): Boolean {
+        return this.virtualFileEdits.stream().map(VirtualFileEdit::target).collect(Collectors.toSet()).size == 1
+    }
 }
 
 data class VirtualFileEdit(val target: VirtualFile, val edits: List<RangeMarkerEdit>)
