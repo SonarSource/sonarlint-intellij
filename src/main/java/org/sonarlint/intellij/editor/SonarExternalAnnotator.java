@@ -30,8 +30,10 @@ import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
+
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
@@ -40,6 +42,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.VirtualFileEdit;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
@@ -126,7 +129,16 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     if (shouldSuggestQuickFix(finding)) {
-      finding.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, finding.getRuleKey())));
+      finding.quickFixes().forEach(fix -> {
+        // Actions are only supported on quick fixes not spanning multiple files! If this is going to change at some
+        // point in the future to support cross-file spanning quick fix actions, then
+        // "ApplyQuickFixIntentionAction.invoke(...)" has to be changed by moving the guard into the method. This is due
+        // IntelliJ is currently only supporting the preview of quick fixes on ONE file at the time!
+        if (fix.getVirtualFileEdits().stream().map(VirtualFileEdit::getTarget).collect(Collectors.toSet()).size() == 1) {
+          intentionActions.add(
+            new ApplyQuickFixIntentionAction(fix, finding.getRuleKey(), finding.psiFile(), false));
+        }
+      });
     }
 
     if (finding instanceof LiveSecurityHotspot) {
