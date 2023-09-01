@@ -155,14 +155,14 @@ qa_task:
     variable_name: GOLAND_KEY
   matrix:
     - env:
-        IDEA_VERSION: 'IC-2022.3.3'
-        QA_CATEGORY: 'Idea2022'
+        IDEA_VERSION: 'IC-2021.3.3'
+        QA_CATEGORY: 'Idea2021'
     - env:
-        IDEA_VERSION: 'CL-2022.3.3'
-        QA_CATEGORY: 'CLion2022'
+        IDEA_VERSION: 'CL-2021.3.3'
+        QA_CATEGORY: 'CLion2021'
     - env:
-        IDEA_VERSION: 'GO-2022.3.3'
-        QA_CATEGORY: 'GoLand2022'
+        IDEA_VERSION: 'GO-2021.3.3'
+        QA_CATEGORY: 'GO-2021.3.3'
     - env:
         IDEA_VERSION: 'IC-2023.2.1'
         QA_CATEGORY: 'Idea2023'
