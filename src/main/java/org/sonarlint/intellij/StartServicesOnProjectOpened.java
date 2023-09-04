@@ -26,8 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer;
-import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.core.server.events.ServerEventsService;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
@@ -47,15 +45,7 @@ public class StartServicesOnProjectOpened implements StartupActivity {
       getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
     }
     getService(project, SecurityHotspotsRefreshTrigger.class).subscribeToTriggeringEvents();
-    doSubscribeForServerEvents(project);
     // perform on bindings load
     getService(project, ConnectedModeStorageSynchronizer.class).init();
-  }
-
-  void doSubscribeForServerEvents(@NotNull Project project) {
-    var projectBinding = getService(project, ProjectBindingManager.class).getBinding();
-    if (projectBinding != null) {
-      getService(ServerEventsService.class).autoSubscribe(projectBinding);
-    }
   }
 }
