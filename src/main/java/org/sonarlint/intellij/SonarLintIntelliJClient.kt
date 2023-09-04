@@ -28,6 +28,7 @@ import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -39,6 +40,7 @@ import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -50,8 +52,8 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilities
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
+import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
-import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
@@ -64,6 +66,7 @@ import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreating
 import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentialsParams
 import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentialsResponse
+import org.sonarsource.sonarlint.core.clientapi.client.event.DidReceiveServerEventParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeResponse
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FoundFileDto
@@ -86,6 +89,14 @@ import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
 import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
+import org.sonarsource.sonarlint.core.commons.push.ServerEvent
+import org.sonarsource.sonarlint.core.serverapi.push.IssueChangedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotChangedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotClosedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotRaisedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.ServerHotspotEvent
+import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
 import java.io.ByteArrayInputStream
 import java.net.Authenticator
 import java.net.InetSocketAddress
@@ -391,5 +402,63 @@ object SonarLintIntelliJClient : SonarLintClient {
         return Messages.OK == ApplicationManager.getApplication().computeInEDT {
             Messages.showYesNoDialog(project, StringEscapeUtils.escapeHtml(message), title, confirmText, "Cancel", Messages.getWarningIcon())
         }
+    }
+
+    override fun didReceiveServerEvent(params: DidReceiveServerEventParams) {
+        val event = params.serverEvent
+        identifyProjectsImpactedByTaintEvent(event).forEach { project ->
+            getService(
+                project, TaintVulnerabilitiesPresenter::class.java
+            ).presentTaintVulnerabilitiesForOpenFiles()
+        }
+
+        identifyProjectsImpactedBySecurityHotspotEvent(event).forEach { project ->
+            val openFiles = FileEditorManager.getInstance(project).openFiles
+            val filePath = (event as ServerHotspotEvent).filePath
+            val impactedFiles = ArrayList<VirtualFile>()
+
+            ProjectRootManager.getInstance(project).contentRoots.forEach {
+                if (it.isDirectory) {
+                    val matchedFile = it.findFileByRelativePath(filePath)
+                    if (matchedFile != null && openFiles.contains(matchedFile)) {
+                        impactedFiles.add(matchedFile)
+                    }
+                } else {
+                    if (it.path.endsWith(filePath) && openFiles.contains(it)) {
+                        impactedFiles.add(it)
+                    }
+                }
+            }
+            getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(impactedFiles, TriggerType.SERVER_SENT_EVENT)
+        }
+    }
+
+    private fun identifyProjectsImpactedByTaintEvent(event: ServerEvent): Set<Project> {
+        val projectKey = when (event) {
+            is TaintVulnerabilityRaisedEvent -> event.projectKey
+            is TaintVulnerabilityClosedEvent -> event.projectKey
+            is IssueChangedEvent -> event.projectKey
+            else -> null
+        }
+        return ProjectManager.getInstance().openProjects.filter { project ->
+            getService(
+                project, ProjectBindingManager::class.java
+            ).uniqueProjectKeys.contains(projectKey)
+        }.toSet()
+    }
+
+    private fun identifyProjectsImpactedBySecurityHotspotEvent(event: ServerEvent): Set<Project> {
+        val projectKey = when (event) {
+            is SecurityHotspotChangedEvent -> event.projectKey
+            is SecurityHotspotClosedEvent -> event.projectKey
+            is SecurityHotspotRaisedEvent -> event.projectKey
+            else -> null
+        }
+
+        return ProjectManager.getInstance().openProjects.filter { project ->
+            getService(
+                project, ProjectBindingManager::class.java
+            ).uniqueProjectKeys.contains(projectKey)
+        }.toSet()
     }
 }

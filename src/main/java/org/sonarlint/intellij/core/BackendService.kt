@@ -124,7 +124,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                     TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
                     "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version
                 ),
-                FeatureFlagsDto(true, true, true, true, true),
+                FeatureFlagsDto(true, true, true, true, true, true),
                 getLocalStoragePath(),
                 SonarLintEngineFactory.getWorkDir(),
                 EmbeddedPlugins.findEmbeddedPlugins(),

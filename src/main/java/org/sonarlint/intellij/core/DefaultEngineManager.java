@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.core.server.events.ServerEventsService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
@@ -41,7 +40,6 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static com.intellij.openapi.progress.PerformInBackgroundOption.ALWAYS_BACKGROUND;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class DefaultEngineManager implements EngineManager, Disposable {
@@ -116,14 +114,9 @@ public class DefaultEngineManager implements EngineManager, Disposable {
 
   @NotNull
   private ConnectedSonarLintEngine createConnectedEngine(String connectionId) {
-    var configOpt = getGlobalSettings().getServerConnectionByName(connectionId);
-    if (configOpt.isPresent()) {
-      var config = configOpt.get();
-      var engine = factory.createEngine(connectionId, config.isSonarCloud());
-      getService(ServerEventsService.class).autoSubscribe(engine, config);
-      return engine;
-    }
-    throw new IllegalStateException("Unable to find a configured connection with id '" + connectionId + "'");
+    return getGlobalSettings().getServerConnectionByName(connectionId)
+      .map(connection -> factory.createEngine(connectionId, connection.isSonarCloud()))
+      .orElseThrow(() -> new IllegalStateException("Unable to find a configured connection with id '" + connectionId + "'"));
   }
 
   @Override
