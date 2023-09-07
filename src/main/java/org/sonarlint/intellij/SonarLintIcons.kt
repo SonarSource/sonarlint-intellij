@@ -52,6 +52,8 @@ object SonarLintIcons {
     @JvmField
     val SONARLINT = getIcon("/images/sonarlint.png")
     @JvmField
+    val SONARLINT_GREEN = getIcon("/images/sonarlint_green.png")
+    @JvmField
     val SONARLINT_32 = getIcon("/images/sonarlint@2x.png")
     @JvmField
     val PLAY = getIcon("/images/execute.png")

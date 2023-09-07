@@ -193,6 +193,7 @@
         <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
         <iw.actionProvider implementation="org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider"/>
+        <statusBarWidgetFactory implementation="org.sonarlint.intellij.ui.status.bar.SonarLintStatusBarWidgetFactory" id="SonarLint" />
 
         <!-- Empty language attribute corresponds to any language (see com.intellij.lang.Language.ANY) -->
         <externalAnnotator language="" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
