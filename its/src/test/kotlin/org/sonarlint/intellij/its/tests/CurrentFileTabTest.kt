@@ -100,9 +100,7 @@ class CurrentFileTabTest : BaseUiTest() {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
-                    content("IssueTree") {
-                        findText(issueMessage).rightClick()
-                    }
+                    findText(issueMessage).rightClick()
                 }
                 actionMenuItem("Mark Issue as...") {
                     click()
@@ -156,9 +154,7 @@ class CurrentFileTabTest : BaseUiTest() {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
-                    content("IssueTree") {
-                        expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                    }
+                    expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                 }
             }
         }

@@ -25,17 +25,21 @@ import java.util.stream.Collectors;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class SummaryNode extends AbstractNode {
+  private static final String FORMAT = "Found %d %s in %d %s";
   private String emptyText;
   private final boolean forSecurityHotspot;
+  private final boolean forOldIssues;
 
   public SummaryNode() {
     super();
+    forOldIssues = false;
     this.emptyText = "No issues to display";
     this.forSecurityHotspot = false;
   }
 
-  public SummaryNode(boolean forSecurityHotspot) {
+  public SummaryNode(boolean forSecurityHotspot, boolean forOldIssues) {
     super();
+    this.forOldIssues = forOldIssues;
     if (forSecurityHotspot) {
       this.emptyText = "No Security Hotspots to display";
     } else {
@@ -61,10 +65,12 @@ public class SummaryNode extends AbstractNode {
     }
 
     if (forSecurityHotspot) {
-      return String.format("Found %d %s in %d %s", findings, findings == 1 ? "Security Hotspot" : "Security Hotspots", files, files == 1 ? "file" : "files");
+      return String.format(FORMAT, findings, findings == 1 ? "Security Hotspot" : "Security Hotspots", files, files == 1 ? "file" : "files");
     }
 
-    return String.format("Found %d %s in %d %s", findings, findings == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");
+    var sinceText = forOldIssues ? "since old analysis" : "since new analysis";
+
+    return String.format(FORMAT, findings, findings == 1 ? "issue" : "issues", files, files == 1 ? ("file " + sinceText) : ("files " + sinceText));
   }
 
   public int insertFileNode(FileNode newChild, Comparator<FileNode> comparator) {
