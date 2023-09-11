@@ -112,7 +112,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         issuesPanel.add(cards.container, BorderLayout.CENTER)
         setContent(issuesPanel)
         val sonarLintActions = SonarLintActions.getInstance()
-        setupToolbar(listOf(RefreshTaintVulnerabilitiesAction(), sonarLintActions.configure(), OpenTaintVulnerabilityDocumentationAction()))
+        setupToolbar(listOf(ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
+            RefreshTaintVulnerabilitiesAction(), sonarLintActions.configure(), OpenTaintVulnerabilityDocumentationAction()))
     }
 
     private fun centeredLabel(textLabel: String, actionText: String?, action: AnAction?): JBPanelWithEmptyText {
