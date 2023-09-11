@@ -58,7 +58,7 @@ class CLionTests : BaseUiTest() {
         openFile("main.cpp")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 4 issues in 1 file",
+            "Found 4 issues in 1 file since new analysis",
             "main.cpp",
             "array designators are a C99 extension",
             "Replace this macro by \"const\", \"constexpr\" or an \"enum\".",

@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 
 class SummaryNodeTests {
   private final SummaryNode node = new SummaryNode();
-  private final SummaryNode nodeForSecurityHotspot = new SummaryNode(true);
+  private final SummaryNode nodeForSecurityHotspot = new SummaryNode(true, false);
 
   @Test
   void testTextIssue() {
@@ -40,7 +40,7 @@ class SummaryNodeTests {
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
-    verify(renderer).append("Found 3 issues in 1 file");
+    verify(renderer).append("Found 3 issues in 1 file since new analysis");
   }
 
   @Test
