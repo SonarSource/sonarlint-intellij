@@ -81,9 +81,7 @@ class PLSQLTest : BaseUiTest() {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
-                    content("IssueTree") {
-                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
-                    }
+                    expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
                 }
             }
         }
