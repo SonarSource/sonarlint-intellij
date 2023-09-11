@@ -272,6 +272,13 @@
             <!-- This group is programmatically added to AnalyzeMenu if it exists -->
         </group>
 
+        <action id="SonarLint.SetFocusNewCode"
+                class="org.sonarlint.intellij.actions.SonarFocusOnNewCode"
+                text="Set Focus on New Code"
+                description="Change the current SonarLint focus to new code"
+                icon="org.sonarlint.intellij.SonarLintIcons.SONARLINT_ACTION">
+        </action>
+
         <action id="SonarLint.AnalyzeFiles"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeFilesAction"
                 text="Analyze with SonarLint"
@@ -286,7 +293,7 @@
             <reference ref="SonarLint.AnalyzeFiles"/>
             <action id="SonarLint.Exclude"
                     class="org.sonarlint.intellij.actions.ExcludeFileAction"
-                    text="Exclude from SonarLint analysis"
+                    text="Exclude from SonarLint Analysis"
                     description="Adds resources to the list exclusions in the SonarLint project settings"
                     icon="org.sonarlint.intellij.SonarLintIcons.SONARLINT_ACTION">
             </action>

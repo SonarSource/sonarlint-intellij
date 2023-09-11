@@ -19,6 +19,9 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.util.xmlb.annotations.Attribute;
 import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Transient;
@@ -36,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.sonarlint.intellij.actions.SonarFocusOnNewCode;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTrailingSlash;
@@ -153,8 +157,13 @@ public final class SonarLintGlobalSettings {
     return isFocusOnNewCode;
   }
 
-  public void setFocusOnNewCode(boolean focusOnNewCode) {
+  public void setFocusOnNewCode(String place, DataContext dataContext, boolean focusOnNewCode) {
     isFocusOnNewCode = focusOnNewCode;
+    var action = (SonarFocusOnNewCode) ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode");
+    if (action.isFocusOnNewCode() != isFocusOnNewCode) {
+      var anActionEvent = AnActionEvent.createFromDataContext(place, null, dataContext);
+      action.setSelected(anActionEvent, focusOnNewCode);
+    }
   }
 
   public boolean isAutoTrigger() {
