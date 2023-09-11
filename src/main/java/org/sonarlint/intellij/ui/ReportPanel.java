@@ -272,7 +272,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   private void createIssuesTree() {
     treeBuilder = new IssueTreeModelBuilder();
-    var model = treeBuilder.createModel();
+    var model = treeBuilder.createModel(false);
     tree = new IssueTree(project, model);
     manageInteraction(tree);
   }
