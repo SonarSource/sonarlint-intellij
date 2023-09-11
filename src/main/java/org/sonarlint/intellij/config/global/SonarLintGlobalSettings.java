@@ -42,6 +42,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTr
 
 public final class SonarLintGlobalSettings {
 
+  private boolean isFocusOnNewCode = false;
   private boolean autoTrigger = true;
   private String nodejsPath = "";
   private List<ServerConnection> servers = new LinkedList<>();
@@ -146,6 +147,14 @@ public final class SonarLintGlobalSettings {
 
   public void setRulesByKey(Map<String, Rule> rules) {
     this.rulesByKey = new HashMap<>(rules);
+  }
+
+  public boolean isFocusOnNewCode() {
+    return isFocusOnNewCode;
+  }
+
+  public void setFocusOnNewCode(boolean focusOnNewCode) {
+    isFocusOnNewCode = focusOnNewCode;
   }
 
   public boolean isAutoTrigger() {
