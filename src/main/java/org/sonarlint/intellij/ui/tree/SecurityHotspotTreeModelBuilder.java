@@ -80,7 +80,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
    * Creates the model with a basic root
    */
   public DefaultTreeModel createModel() {
-    summary = new SummaryNode(true);
+    summary = new SummaryNode(true, false);
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     nonFilteredNodes = new ArrayList<>();

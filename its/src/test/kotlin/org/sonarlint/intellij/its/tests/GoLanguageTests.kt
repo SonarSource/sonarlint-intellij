@@ -34,7 +34,7 @@ class GoLanguageTests : BaseUiTest() {
         openFile("file.go")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
+            "Found 1 issue in 1 file since new analysis",
             "file.go",
             "Remove or correct this useless self-assignment."
         )

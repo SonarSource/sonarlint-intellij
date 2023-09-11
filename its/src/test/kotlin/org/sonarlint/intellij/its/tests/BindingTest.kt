@@ -71,7 +71,7 @@ class BindingTest : BaseUiTest() {
         }
         verifyCurrentFileShowsCard("ConnectedCard")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
+            "Found 1 issue in 1 file since new analysis",
             "HelloProject.scala",
         )
         clickCurrentFileIssue("Remove or correct this useless self-assignment.")
@@ -80,7 +80,7 @@ class BindingTest : BaseUiTest() {
         openFile("mod/src/HelloModule.scala", "HelloModule.scala")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
+            "Found 1 issue in 1 file since new analysis",
             "HelloModule.scala",
         )
         clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
