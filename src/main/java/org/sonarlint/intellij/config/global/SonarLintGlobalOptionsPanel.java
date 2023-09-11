@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.ide.DataManager;
+import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.components.JBCheckBox;
@@ -117,7 +119,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public void save(SonarLintGlobalSettings settings) {
     getComponent();
-    settings.setFocusOnNewCode(focusOnNewCode.isSelected());
+    settings.setFocusOnNewCode(ActionPlaces.MAIN_MENU, DataManager.getInstance().getDataContext(focusOnNewCode), focusOnNewCode.isSelected());
     settings.setAutoTrigger(autoTrigger.isSelected());
     settings.setNodejsPath(nodeJsPath.getText());
   }

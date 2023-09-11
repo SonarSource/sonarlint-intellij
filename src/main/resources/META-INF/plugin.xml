@@ -273,6 +273,13 @@
             <!-- This group is programmatically added to AnalyzeMenu if it exists -->
         </group>
 
+        <action id="SonarLint.SetFocusNewCode"
+                class="org.sonarlint.intellij.actions.SonarFocusOnNewCode"
+                text="Set Focus on New Code"
+                description="Change the current SonarLint focus to new code"
+                icon="org.sonarlint.intellij.SonarLintIcons.SONARLINT_ACTION">
+        </action>
+
         <action id="SonarLint.AnalyzeFiles"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeFilesAction"
                 text="Analyze with SonarLint"
