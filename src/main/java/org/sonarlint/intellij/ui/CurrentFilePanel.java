@@ -24,6 +24,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -65,7 +66,11 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     // Issues panel
     setToolbar(actions());
 
-    treeScrollPane = ScrollPaneFactory.createScrollPane(tree);
+    var treePanel = new JBPanel<CurrentFilePanel>(new VerticalFlowLayout(0, 0));
+    treePanel.add(tree);
+    treePanel.add(oldTree);
+
+    treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel);
 
     issuesPanel = new JBPanelWithEmptyText(new BorderLayout());
     var statusText = issuesPanel.getEmptyText();
@@ -130,9 +135,11 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     if (file == null) {
       disableEmptyDisplay(false);
       treeBuilder.updateModel(Map.of(), emptyText);
+      oldTreeBuilder.updateModel(Map.of(), emptyText);
     } else {
       disableEmptyDisplay(!issues.isEmpty());
       treeBuilder.updateModel(Map.of(file, issues), emptyText);
+      oldTreeBuilder.updateModel(Map.of(file, issues), emptyText);
     }
     expandTree();
     updateIcon(file, issues);
@@ -155,6 +162,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   }
 
   private void disableEmptyDisplay(boolean state) {
+    tree.setShowsRootHandles(true);
+    oldTree.setShowsRootHandles(true);
     treeScrollPane.setVisible(state);
   }
 
@@ -175,10 +184,12 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
   public void remove(LiveIssue issue) {
     treeBuilder.remove(issue);
+    oldTreeBuilder.remove(issue);
   }
 
   public void refreshModel() {
     treeBuilder.refreshModel(project);
+    oldTreeBuilder.refreshModel(project);
     expandTree();
   }
 }

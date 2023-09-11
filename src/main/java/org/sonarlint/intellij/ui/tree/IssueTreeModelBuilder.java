@@ -77,9 +77,14 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   /**
    * Creates the model with a basic root
    */
-  public DefaultTreeModel createModel() {
+  public DefaultTreeModel createModel(boolean isOldIssue) {
     latestIssues = Collections.emptyMap();
-    summary = new SummaryNode();
+    if (isOldIssue) {
+      summary = new SummaryNode(false, true);
+    } else {
+      summary = new SummaryNode();
+    }
+
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     return model;

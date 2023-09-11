@@ -37,6 +37,7 @@ import java.util.Collection;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Box;
+import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -45,6 +46,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
@@ -55,7 +57,9 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   private static final String ID = "SonarLint";
   protected final Project project;
   protected Tree tree;
+  protected Tree oldTree;
   protected IssueTreeModelBuilder treeBuilder;
+  protected IssueTreeModelBuilder oldTreeBuilder;
   private ActionToolbar mainToolbar;
   protected FindingDetailsPanel findingDetailsPanel;
 
@@ -64,7 +68,9 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     this.project = project;
 
     createIssuesTree();
+    createOldIssuesTree();
     createFindingDetailsPanel();
+    handleListener();
   }
 
   public void refreshToolbar() {
@@ -77,6 +83,18 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   private void issueTreeSelectionChanged() {
     var selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
+    if (selectedNodes.length > 0) {
+      var issue = selectedNodes[0].issue();
+      findingDetailsPanel.show(issue);
+    } else {
+      findingDetailsPanel.clear();
+      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+      highlighting.removeHighlights();
+    }
+  }
+
+  private void oldIssueTreeSelectionChanged() {
+    var selectedNodes = oldTree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
       var issue = selectedNodes[0].issue();
       findingDetailsPanel.show(issue);
@@ -109,7 +127,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   private void createIssuesTree() {
     treeBuilder = new IssueTreeModelBuilder();
-    var model = treeBuilder.createModel();
+    var model = treeBuilder.createModel(false);
     tree = new IssueTree(project, model);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
     tree.addKeyListener(new KeyAdapter() {
@@ -122,6 +140,23 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       }
     });
     tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+  }
+
+  private void createOldIssuesTree() {
+    oldTreeBuilder = new IssueTreeModelBuilder();
+    var model = oldTreeBuilder.createModel(true);
+    oldTree = new IssueTree(project, model);
+    oldTree.addTreeSelectionListener(e -> oldIssueTreeSelectionChanged());
+    oldTree.addKeyListener(new KeyAdapter() {
+      @Override
+      public void keyPressed(KeyEvent e) {
+        if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
+          var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+          highlighting.removeHighlights();
+        }
+      }
+    });
+    oldTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
   }
 
   @CheckForNull
@@ -223,4 +258,42 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     findingDetailsPanel.selectRulesTab();
   }
 
+  private void clearSelection() {
+    findingDetailsPanel.clear();
+    var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+    highlighting.removeHighlights();
+  }
+
+  private void issueTreeSelectionChanged(TreeSelectionEvent e) {
+    if (!tree.isSelectionEmpty()) {
+      oldTree.clearSelection();
+    }
+    var selectedIssueNodes = tree.getSelectedNodes(IssueNode.class, null);
+    if (selectedIssueNodes.length > 0) {
+      updateOnSelect(selectedIssueNodes[0].issue());
+    } else {
+      clearSelection();
+    }
+  }
+
+  private void oldIssueTreeSelectionChanged(TreeSelectionEvent e) {
+    if (!oldTree.isSelectionEmpty()) {
+      tree.clearSelection();
+    }
+    var selectedIssueNodes = oldTree.getSelectedNodes(IssueNode.class, null);
+    if (selectedIssueNodes.length > 0) {
+      updateOnSelect(selectedIssueNodes[0].issue());
+    } else {
+      clearSelection();
+    }
+  }
+
+  private void handleListener() {
+    tree.addTreeSelectionListener(this::issueTreeSelectionChanged);
+    oldTree.addTreeSelectionListener(this::oldIssueTreeSelectionChanged);
+  }
+
+  private void updateOnSelect(LiveFinding liveFinding) {
+    findingDetailsPanel.show(liveFinding);
+  }
 }
