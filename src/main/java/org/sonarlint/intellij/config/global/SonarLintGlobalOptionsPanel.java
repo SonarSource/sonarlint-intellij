@@ -21,34 +21,38 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.ui.components.JBCheckBox;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.util.ui.JBUI;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.nio.file.Path;
 import java.util.Objects;
 import javax.swing.BorderFactory;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.NodeJsManager;
-import org.sonarsource.sonarlint.core.commons.Version;
+
+import static java.awt.GridBagConstraints.WEST;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
     "this field blank to let SonarLint look for it using your PATH environment variable.";
   private JPanel rootPane;
-  private JCheckBox autoTrigger;
+  private JBCheckBox focusOnNewCode;
+  private JBCheckBox autoTrigger;
   private JBTextField nodeJsPath;
-  private JLabel nodeJsVersion;
+  private JBLabel nodeJsVersion;
 
   @Override
   public JComponent getComponent() {
     if (rootPane == null) {
-      rootPane = new JPanel(new BorderLayout());
+      rootPane = new JBPanel<>(new BorderLayout());
       rootPane.add(createTopPanel(), BorderLayout.NORTH);
     }
 
@@ -59,61 +63,61 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     var optionsPanel = new JPanel(new GridBagLayout());
     optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 
-    var constraints = new GridBagConstraints();
-    constraints.fill = GridBagConstraints.HORIZONTAL;
+    focusOnNewCode = new JBCheckBox("Set focus on New Code");
+    focusOnNewCode.setFocusable(false);
+    optionsPanel.add(focusOnNewCode, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
-    autoTrigger = new JCheckBox("Automatically trigger analysis");
+    autoTrigger = new JBCheckBox("Automatically trigger analysis");
     autoTrigger.setFocusable(false);
-    constraints.gridx = 0;
-    constraints.gridy = 0;
-    constraints.gridwidth = 3;
-    constraints.anchor = GridBagConstraints.WEST;
-    optionsPanel.add(autoTrigger, constraints);
+    optionsPanel.add(autoTrigger, new GridBagConstraints(0, 1, 3, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
-    constraints.gridx = 0;
-    constraints.gridy = 1;
-    constraints.gridwidth = 1;
     var label = new JLabel("Node.js path: ");
     label.setToolTipText(NODE_JS_TOOLTIP);
-    optionsPanel.add(label, constraints);
+    optionsPanel.add(label, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
     nodeJsPath = new JBTextField();
     var nodeJsPathWithBrowse = new TextFieldWithBrowseButton(nodeJsPath);
     nodeJsPathWithBrowse.setToolTipText(NODE_JS_TOOLTIP);
     var fileChooser = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
     nodeJsPathWithBrowse.addBrowseFolderListener("Select Node.js Binary", "Select Node.js binary to be used by SonarLint", null, fileChooser);
-    constraints.gridx = 1;
-    constraints.gridy = 1;
-    constraints.weightx = 1.0;
-    optionsPanel.add(nodeJsPathWithBrowse, constraints);
-    nodeJsVersion = new JLabel();
-    constraints.gridx = 2;
-    constraints.gridy = 1;
-    constraints.weightx = 0.0;
-    optionsPanel.add(nodeJsVersion, constraints);
+    optionsPanel.add(nodeJsPathWithBrowse, new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
+    nodeJsVersion = new JBLabel();
+    optionsPanel.add(nodeJsVersion, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
     return optionsPanel;
   }
 
   @Override
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();
-    return model.isAutoTrigger() != autoTrigger.isSelected() || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText());
+    return model.isFocusOnNewCode() != focusOnNewCode.isSelected()
+      || model.isAutoTrigger() != autoTrigger.isSelected()
+      || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText());
   }
 
   @Override
   public void load(SonarLintGlobalSettings model) {
     getComponent();
+    focusOnNewCode.setSelected(model.isFocusOnNewCode());
     autoTrigger.setSelected(model.isAutoTrigger());
     nodeJsPath.setText(model.getNodejsPath());
-    final NodeJsManager nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
-    final Path detectedNodeJsPath = nodeJsManager.getNodeJsPath();
+    final var nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
+    final var detectedNodeJsPath = nodeJsManager.getNodeJsPath();
     this.nodeJsPath.getEmptyText().setText(detectedNodeJsPath != null ? detectedNodeJsPath.toString() : "Node.js not found");
-    final Version detectedNodeJsVersion = nodeJsManager.getNodeJsVersion();
+    final var detectedNodeJsVersion = nodeJsManager.getNodeJsVersion();
     this.nodeJsVersion.setText(detectedNodeJsVersion != null ? detectedNodeJsVersion.toString() : "N/A");
   }
 
   @Override
   public void save(SonarLintGlobalSettings settings) {
     getComponent();
+    settings.setFocusOnNewCode(focusOnNewCode.isSelected());
     settings.setAutoTrigger(autoTrigger.isSelected());
     settings.setNodejsPath(nodeJsPath.getText());
   }
