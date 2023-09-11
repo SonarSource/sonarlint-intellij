@@ -102,6 +102,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
   private static Collection<AnAction> actions() {
     return List.of(
+      ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
       ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles"),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
       SonarLintActions.getInstance().includeResolvedIssuesAction(),
