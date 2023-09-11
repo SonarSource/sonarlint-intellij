@@ -225,6 +225,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private static SimpleActionGroup createActionGroup() {
     var sonarLintActions = SonarLintActions.getInstance();
     var actionGroup = new SimpleActionGroup();
+    actionGroup.add(ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"));
     actionGroup.add(sonarLintActions.analyzeChangedFiles());
     actionGroup.add(sonarLintActions.analyzeAllFiles());
     actionGroup.add(sonarLintActions.cancelAnalysis());
