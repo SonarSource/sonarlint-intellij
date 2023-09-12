@@ -158,6 +158,22 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     openTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
   }
 
+  public void openOrCloseCurrentFileTab() {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
+      if (content != null) {
+        if (content.getComponent().isShowing()) {
+          toolWindow.hide();
+        } else {
+          toolWindow.show(() -> contentManager.setSelectedContent(content));
+        }
+      }
+    }
+  }
+
   public void openSecurityHotspotsTab() {
     openTab(getSecurityHotspotContent());
   }
