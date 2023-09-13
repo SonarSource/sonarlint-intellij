@@ -19,26 +19,16 @@
  */
 package org.sonarlint.intellij.actions
 
-import com.intellij.ide.DataManager
-import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.config.Settings
 
-class SonarFocusOnNewCode(private var isFocusOnNewCode: Boolean) : AbstractSonarToggleAction() {
+class SonarFocusOnNewCode : AbstractSonarToggleAction() {
 
-    constructor() : this(false)
-
-    fun isFocusOnNewCode(): Boolean = isFocusOnNewCode
-
-    override fun isSelected(e: AnActionEvent): Boolean = isFocusOnNewCode
+    override fun isSelected(e: AnActionEvent): Boolean = Settings.getGlobalSettings().isFocusOnNewCode
 
     override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
-        if (isFocusOnNewCode != isSelected) {
-            isFocusOnNewCode = isSelected
-            DataManager.getInstance().dataContextFromFocusAsync
-                .onSuccess { Settings.getGlobalSettings().setFocusOnNewCode(ActionPlaces.TOOLWINDOW_CONTENT, it, isFocusOnNewCode) }
-                .onError { e.project?.let { SonarLintConsole.get(it).error("Could not get data context for action to focus on new code") } }
+        if (Settings.getGlobalSettings().isFocusOnNewCode != isSelected) {
+            Settings.getGlobalSettings().isFocusOnNewCode = isSelected
         }
     }
 
