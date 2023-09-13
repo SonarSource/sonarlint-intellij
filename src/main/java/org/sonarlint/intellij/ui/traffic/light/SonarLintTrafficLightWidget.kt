@@ -30,7 +30,6 @@ import com.intellij.openapi.actionSystem.ex.ActionButtonLook
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.ColorKey
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.JBColor
 import com.intellij.ui.scale.JBUIScale
@@ -39,14 +38,12 @@ import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.finding.persistence.FindingsCache
 import java.awt.Component
 import java.awt.Graphics
-import java.awt.Insets
 import java.awt.Rectangle
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.event.MouseListener
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.border.Border
@@ -60,7 +57,8 @@ class SonarLintTrafficLightWidget(
 ) : JPanel() {
 
     private val dashboardPopup = SonarLintDashboardPopup(editor)
-    private var iconAndFindingsCountLabel = JLabel()
+    private val mouseListener: MouseListener
+    private val iconAndFindingsCountLabel = JLabel()
     private var mousePressed = false
     private var mouseHover = false
 
@@ -78,7 +76,7 @@ class SonarLintTrafficLightWidget(
         }
         add(iconAndFindingsCountLabel)
 
-        addMouseListener(object : MouseAdapter() {
+        mouseListener = object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent?) {
                 mousePressed = true
                 repaint()
@@ -103,21 +101,24 @@ class SonarLintTrafficLightWidget(
                 repaint()
                 dashboardPopup.scheduleHide()
             }
-        })
+        }
 
         border = object : Border {
             override fun paintBorder(c: Component, g: Graphics, x: Int, y: Int, w: Int, h: Int) {
                 // Empty borders
             }
-
-            override fun isBorderOpaque(): Boolean {
-                return false
-            }
-
-            override fun getBorderInsets(c: Component): Insets {
-                return JBUI.insets(0, 2)
-            }
+            override fun isBorderOpaque() = false
+            override fun getBorderInsets(c: Component) = JBUI.insets(0, 2)
         }
+    }
+
+    override fun addNotify() {
+        super.addNotify()
+        addMouseListener(mouseListener)
+    }
+
+    override fun removeNotify() {
+        removeMouseListener(mouseListener)
     }
 
     override fun paintComponent(graphics: Graphics) {
@@ -134,15 +135,12 @@ class SonarLintTrafficLightWidget(
         ActionButtonLook.SYSTEM_LOOK.paintLookBackground(graphics, rect, color)
     }
 
-    fun refresh() {
-        val project = editor.project ?: return
-        val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
-        val findings = getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved }
-        if (findings.isEmpty()) {
+    fun refresh(findingsNumber: Int) {
+        if (findingsNumber == 0) {
             iconAndFindingsCountLabel.icon = SonarLintIcons.SONARLINT_ACTION_GREEN_12PX
         } else {
             iconAndFindingsCountLabel.icon = SonarLintIcons.SONARLINT_ACTION_12PX
-            iconAndFindingsCountLabel.text = findings.size.toString()
+            iconAndFindingsCountLabel.text = findingsNumber.toString()
         }
     }
 
