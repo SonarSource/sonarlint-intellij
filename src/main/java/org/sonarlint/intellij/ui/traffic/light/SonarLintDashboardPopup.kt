@@ -80,22 +80,26 @@ class SonarLintDashboardPopup(private val editor: Editor) {
         if (myPopupState.isRecentlyHidden) return  // do not show new popup
         dashboard.refresh()
         val myContent = dashboard.panel
+        
         val myPopupBuilder =
             JBPopupFactory.getInstance().createComponentPopupBuilder(myContent, null).setCancelOnClickOutside(true)
+
         val myPopupListener: JBPopupListener = object : JBPopupListener {
             override fun onClosed(event: LightweightWindowEvent) {
                 editor.component.removeAncestorListener(onAncestorChangedListener)
             }
         }
+
         myPopup = myPopupBuilder.createPopup()
         myPopup!!.addListener(myPopupListener)
-        myPopupState.prepareToShow(myPopup!!)
         editor.component.addAncestorListener(onAncestorChangedListener)
+
         val size: Dimension = myContent.preferredSize
         size.width = max(size.width, JBUIScale.scale(296))
         val targetBottom = target.y + target.height
         val point = RelativePoint(editor.component, Point(editor.component.width - 10 - size.width, targetBottom + 5))
         myPopup!!.size = size
+
         myPopup!!.show(point)
     }
 
