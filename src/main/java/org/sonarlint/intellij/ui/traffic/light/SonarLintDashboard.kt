@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui.traffic.light
 
 import com.intellij.codeInsight.hint.HintManagerImpl
 import com.intellij.icons.AllIcons
-import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
@@ -56,13 +55,7 @@ class SonarLintDashboard(private val editor: Editor) {
     private val focusOnNewCodeCheckbox = JBCheckBox("Focus on new code")
 
     init {
-        focusOnNewCodeCheckbox.addActionListener {
-            Settings.getGlobalSettings().setFocusOnNewCode(
-                ActionPlaces.EDITOR_TOOLBAR,
-                DataManager.getInstance().getDataContext(focusOnNewCodeCheckbox),
-                focusOnNewCodeCheckbox.isSelected
-            )
-        }
+        focusOnNewCodeCheckbox.addActionListener { Settings.getGlobalSettings().isFocusOnNewCode = focusOnNewCodeCheckbox.isSelected }
         focusOnNewCodeCheckbox.isOpaque = false
 
         val presentation = Presentation()
