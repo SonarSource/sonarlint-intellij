@@ -63,6 +63,7 @@ import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
+import org.sonarlint.intellij.util.SummaryNodeType;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -154,7 +155,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
   private void createSecurityHotspotsTree() {
     securityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
-    var model = securityHotspotTreeBuilder.createModel();
+    var model = securityHotspotTreeBuilder.createModel(SummaryNodeType.NEW_SECURITY_HOTSPOT);
     securityHotspotTree = new SecurityHotspotTree(project, model);
     manageInteraction(securityHotspotTree);
     securityHotspotTree.setRootVisible(false);

@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.nodes;
 
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
+import org.sonarlint.intellij.util.SummaryNodeType;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.when;
 
 class SummaryNodeTests {
   private final SummaryNode node = new SummaryNode();
-  private final SummaryNode nodeForSecurityHotspot = new SummaryNode(true, false);
+  private final SummaryNode nodeForSecurityHotspot = new SummaryNode(SummaryNodeType.NEW_SECURITY_HOTSPOT);
 
   @Test
   void testTextIssue() {
@@ -53,7 +54,7 @@ class SummaryNodeTests {
     var renderer = mock(TreeCellRenderer.class);
     nodeForSecurityHotspot.render(renderer);
 
-    verify(renderer).append("Found 3 Security Hotspots in 1 file");
+    verify(renderer).append("Found 3 Security Hotspots in 1 file since new analysis");
   }
 
   @Test

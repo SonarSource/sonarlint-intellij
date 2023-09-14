@@ -92,6 +92,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     if (content != null) {
       var reportPanel = (ReportPanel) content.getComponent();
       reportPanel.updateStatusForSecurityHotspot(securityHotspotKey, status);
+      reportPanel.updateStatusForOldSecurityHotspot(securityHotspotKey, status);
     }
   }
 

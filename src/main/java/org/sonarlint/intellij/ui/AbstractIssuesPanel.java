@@ -52,6 +52,7 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
+import org.sonarlint.intellij.util.SummaryNodeType;
 
 public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Disposable, OccurenceNavigator {
   private static final String ID = "SonarLint";
@@ -127,7 +128,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   private void createIssuesTree() {
     treeBuilder = new IssueTreeModelBuilder();
-    var model = treeBuilder.createModel(false);
+    var model = treeBuilder.createModel(SummaryNodeType.NEW_ISSUE);
     tree = new IssueTree(project, model);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
     tree.addKeyListener(new KeyAdapter() {
@@ -144,7 +145,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   private void createOldIssuesTree() {
     oldTreeBuilder = new IssueTreeModelBuilder();
-    var model = oldTreeBuilder.createModel(true);
+    var model = oldTreeBuilder.createModel(SummaryNodeType.OLD_ISSUE);
     oldTree = new IssueTree(project, model);
     oldTree.addTreeSelectionListener(e -> oldIssueTreeSelectionChanged());
     oldTree.addKeyListener(new KeyAdapter() {

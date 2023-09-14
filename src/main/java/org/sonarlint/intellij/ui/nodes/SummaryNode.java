@@ -23,29 +23,28 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
+import org.sonarlint.intellij.util.SummaryNodeType;
 
 public class SummaryNode extends AbstractNode {
   private static final String FORMAT = "Found %d %s in %d %s";
   private String emptyText;
-  private final boolean forSecurityHotspot;
-  private final boolean forOldIssues;
+  private final SummaryNodeType type;
 
   public SummaryNode() {
     super();
-    forOldIssues = false;
     this.emptyText = "No issues to display";
-    this.forSecurityHotspot = false;
+    this.type = SummaryNodeType.NEW_ISSUE;
   }
 
-  public SummaryNode(boolean forSecurityHotspot, boolean forOldIssues) {
+  public SummaryNode(SummaryNodeType type) {
     super();
-    this.forOldIssues = forOldIssues;
-    if (forSecurityHotspot) {
+    if (type.equals(SummaryNodeType.NEW_SECURITY_HOTSPOT) || type.equals(SummaryNodeType.OLD_SECURITY_HOTSPOT)) {
       this.emptyText = "No Security Hotspots to display";
     } else {
       this.emptyText = "No issues to display";
     }
-    this.forSecurityHotspot = forSecurityHotspot;
+
+    this.type = type;
   }
 
   public void setEmptyText(String emptyText) {
@@ -64,13 +63,19 @@ public class SummaryNode extends AbstractNode {
       return emptyText;
     }
 
-    if (forSecurityHotspot) {
-      return String.format(FORMAT, findings, findings == 1 ? "Security Hotspot" : "Security Hotspots", files, files == 1 ? "file" : "files");
+    return getTextString(findings, files, type);
+  }
+
+  private String getTextString(int findings, int files, SummaryNodeType type) {
+    if (type.equals(SummaryNodeType.NEW_SECURITY_HOTSPOT) || type.equals(SummaryNodeType.OLD_SECURITY_HOTSPOT)) {
+      var sinceTextHotspots = type.equals(SummaryNodeType.OLD_SECURITY_HOTSPOT) ? "since old analysis" : "since new analysis";
+      return String.format(FORMAT, findings, findings == 1 ? "Security Hotspot" : "Security Hotspots", files,
+        files == 1 ? ("file " + sinceTextHotspots) : ("files " + sinceTextHotspots));
+
     }
 
-    var sinceText = forOldIssues ? "since old analysis" : "since new analysis";
-
-    return String.format(FORMAT, findings, findings == 1 ? "issue" : "issues", files, files == 1 ? ("file " + sinceText) : ("files " + sinceText));
+    var sinceTextIssues = type.equals(SummaryNodeType.OLD_ISSUE) ? "since old analysis" : "since new analysis";
+    return String.format(FORMAT, findings, findings == 1 ? "issue" : "issues", files, files == 1 ? ("file " + sinceTextIssues) : ("files " + sinceTextIssues));
   }
 
   public int insertFileNode(FileNode newChild, Comparator<FileNode> comparator) {

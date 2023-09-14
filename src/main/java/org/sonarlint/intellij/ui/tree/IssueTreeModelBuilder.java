@@ -43,6 +43,7 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
+import org.sonarlint.intellij.util.SummaryNodeType;
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
@@ -77,13 +78,10 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   /**
    * Creates the model with a basic root
    */
-  public DefaultTreeModel createModel(boolean isOldIssue) {
+  public DefaultTreeModel createModel(SummaryNodeType type) {
     latestIssues = Collections.emptyMap();
-    if (isOldIssue) {
-      summary = new SummaryNode(false, true);
-    } else {
-      summary = new SummaryNode();
-    }
+
+    summary = new SummaryNode(type);
 
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);

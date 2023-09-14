@@ -44,6 +44,7 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
+import org.sonarlint.intellij.util.SummaryNodeType;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
@@ -79,8 +80,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   /**
    * Creates the model with a basic root
    */
-  public DefaultTreeModel createModel() {
-    summary = new SummaryNode(true, false);
+  public DefaultTreeModel createModel(SummaryNodeType type) {
+    summary = new SummaryNode(type);
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     nonFilteredNodes = new ArrayList<>();

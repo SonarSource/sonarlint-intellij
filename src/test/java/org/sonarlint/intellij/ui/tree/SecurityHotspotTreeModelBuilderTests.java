@@ -43,6 +43,7 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
+import org.sonarlint.intellij.util.SummaryNodeType;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
@@ -63,7 +64,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   @BeforeEach
   void init() {
     treeBuilder = new SecurityHotspotTreeModelBuilder();
-    model = treeBuilder.createModel();
+    model = treeBuilder.createModel(SummaryNodeType.NEW_SECURITY_HOTSPOT);
     treeBuilder.currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
     treeBuilder.shouldIncludeResolvedHotspots = false;
     replaceProjectService(CodeAnalyzerRestarter.class, codeAnalyzerRestarter);
@@ -71,7 +72,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
 
   @Test
   void createModel() {
-    var model = treeBuilder.createModel();
+    var model = treeBuilder.createModel(SummaryNodeType.NEW_SECURITY_HOTSPOT);
     assertThat(model.getRoot()).isNotNull();
   }
 

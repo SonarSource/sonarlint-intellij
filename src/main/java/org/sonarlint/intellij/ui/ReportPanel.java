@@ -56,6 +56,7 @@ import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
+import org.sonarlint.intellij.util.SummaryNodeType;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
@@ -67,10 +68,14 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   protected final Project project;
   private final LastAnalysisPanel lastAnalysisPanel;
   protected Tree tree;
+  protected Tree oldTree;
   protected IssueTreeModelBuilder treeBuilder;
+  protected IssueTreeModelBuilder oldTreeBuilder;
   private ActionToolbar mainToolbar;
   protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
+  protected SecurityHotspotTreeModelBuilder oldSecurityHotspotTreeBuilder;
   protected Tree securityHotspotTree;
+  protected Tree oldSecurityHotspotTree;
   private JScrollPane findingsTreePane;
   private FindingDetailsPanel findingDetailsPanel;
 
@@ -80,7 +85,9 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     this.lastAnalysisPanel = new LastAnalysisPanel();
 
     createIssuesTree();
+    createOldIssuesTree();
     createSecurityHotspotsTree();
+    createOldSecurityHotspotsTree();
     createFindingDetailsPanel();
     handleListener();
     disableSecurityHotspotTree();
@@ -98,7 +105,9 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
     var findings = analysisResult.getFindings();
     treeBuilder.updateModel(findings.getIssuesPerFile(), "No issues found");
+    oldTreeBuilder.updateModel(findings.getIssuesPerFile(), "No issues found");
     securityHotspotTreeBuilder.updateModel(findings.getSecurityHotspotsPerFile(), "No Security Hotspots found");
+    oldSecurityHotspotTreeBuilder.updateModel(findings.getSecurityHotspotsPerFile(), "No Security Hotspots found");
 
     disableEmptyDisplay(true);
 
@@ -116,7 +125,15 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   }
 
   public void updateStatusForSecurityHotspot(String securityHotspotKey, HotspotStatus status) {
-    var wasUpdated = securityHotspotTreeBuilder.updateStatusForHotspotWithFileNode(securityHotspotKey, status);
+    updateStatus(securityHotspotKey, status, securityHotspotTreeBuilder);
+  }
+
+  public void updateStatusForOldSecurityHotspot(String securityHotspotKey, HotspotStatus status) {
+    updateStatus(securityHotspotKey, status, oldSecurityHotspotTreeBuilder);
+  }
+
+  private void updateStatus(String securityHotspotKey, HotspotStatus status, SecurityHotspotTreeModelBuilder builder) {
+    var wasUpdated = builder.updateStatusForHotspotWithFileNode(securityHotspotKey, status);
     if (wasUpdated) {
       expandTree();
     }
@@ -131,6 +148,8 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     var treePanel = new JBPanel<ReportPanel>(new VerticalFlowLayout(0, 0));
     treePanel.add(tree);
     treePanel.add(securityHotspotTree);
+    treePanel.add(oldTree);
+    treePanel.add(oldSecurityHotspotTree);
     findingsTreePane = ScrollPaneFactory.createScrollPane(treePanel);
     findingsPanel.add(findingsTreePane, BorderLayout.CENTER);
     findingsPanel.add(lastAnalysisPanel, BorderLayout.SOUTH);
@@ -168,20 +187,41 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   private void enableHotspotTree() {
     tree.setShowsRootHandles(true);
+    oldTree.setShowsRootHandles(true);
     securityHotspotTree.setShowsRootHandles(true);
+    oldSecurityHotspotTree.setShowsRootHandles(true);
     securityHotspotTree.setVisible(true);
+    oldSecurityHotspotTree.setVisible(true);
   }
 
   private void disableSecurityHotspotTree() {
     tree.setShowsRootHandles(false);
+    oldTree.setShowsRootHandles(false);
     securityHotspotTree.setShowsRootHandles(false);
     securityHotspotTree.setVisible(false);
+    oldSecurityHotspotTree.setShowsRootHandles(false);
+    oldSecurityHotspotTree.setVisible(false);
   }
 
   private void issueTreeSelectionChanged(TreeSelectionEvent e) {
     if (!tree.isSelectionEmpty()) {
       securityHotspotTree.clearSelection();
+      oldTree.clearSelection();
+      oldSecurityHotspotTree.clearSelection();
     }
+    applyIssueChanges(tree);
+  }
+
+  private void oldIssueTreeSelectionChanged(TreeSelectionEvent e) {
+    if (!oldTree.isSelectionEmpty()) {
+      tree.clearSelection();
+      securityHotspotTree.clearSelection();
+      oldSecurityHotspotTree.clearSelection();
+    }
+    applyIssueChanges(oldTree);
+  }
+
+  private void applyIssueChanges(Tree tree) {
     var selectedIssueNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedIssueNodes.length > 0) {
       updateOnSelect(selectedIssueNodes[0].issue());
@@ -194,13 +234,31 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     if (e.getSource() instanceof SecurityHotspotTree) {
       if (!securityHotspotTree.isSelectionEmpty()) {
         tree.clearSelection();
+        oldTree.clearSelection();
+        oldSecurityHotspotTree.clearSelection();
       }
-      var selectedHotspotsNodes = securityHotspotTree.getSelectedNodes(LiveSecurityHotspotNode.class, null);
-      if (selectedHotspotsNodes.length > 0) {
-        updateOnSelect(selectedHotspotsNodes[0].getHotspot());
-      } else {
-        clearSelection();
+
+      applyHotspotChanges(securityHotspotTree);
+    }
+  }
+
+  private void oldSecurityHotspotTreeSelectionChanged(TreeSelectionEvent e) {
+    if (e.getSource() instanceof SecurityHotspotTree) {
+      if (!oldSecurityHotspotTree.isSelectionEmpty()) {
+        tree.clearSelection();
+        oldTree.clearSelection();
+        securityHotspotTree.clearSelection();
       }
+      applyHotspotChanges(oldSecurityHotspotTree);
+    }
+  }
+
+  private void applyHotspotChanges(Tree tree) {
+    var selectedHotspotsNodes = tree.getSelectedNodes(LiveSecurityHotspotNode.class, null);
+    if (selectedHotspotsNodes.length > 0) {
+      updateOnSelect(selectedHotspotsNodes[0].getHotspot());
+    } else {
+      clearSelection();
     }
   }
 
@@ -251,14 +309,23 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   private void handleListener() {
     tree.addTreeSelectionListener(this::issueTreeSelectionChanged);
+    oldTree.addTreeSelectionListener(this::oldIssueTreeSelectionChanged);
     securityHotspotTree.addTreeSelectionListener(this::securityHotspotTreeSelectionChanged);
+    oldSecurityHotspotTree.addTreeSelectionListener(this::oldSecurityHotspotTreeSelectionChanged);
   }
 
   private void createSecurityHotspotsTree() {
     securityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
-    var model = securityHotspotTreeBuilder.createModel();
+    var model = securityHotspotTreeBuilder.createModel(SummaryNodeType.NEW_SECURITY_HOTSPOT);
     securityHotspotTree = new SecurityHotspotTree(project, model);
     manageInteraction(securityHotspotTree);
+  }
+
+  private void createOldSecurityHotspotsTree() {
+    oldSecurityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
+    var model = oldSecurityHotspotTreeBuilder.createModel(SummaryNodeType.OLD_SECURITY_HOTSPOT);
+    oldSecurityHotspotTree = new SecurityHotspotTree(project, model);
+    manageInteraction(oldSecurityHotspotTree);
   }
 
   private void createFindingDetailsPanel() {
@@ -273,9 +340,16 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   private void createIssuesTree() {
     treeBuilder = new IssueTreeModelBuilder();
-    var model = treeBuilder.createModel(false);
+    var model = treeBuilder.createModel(SummaryNodeType.NEW_ISSUE);
     tree = new IssueTree(project, model);
     manageInteraction(tree);
+  }
+
+  private void createOldIssuesTree() {
+    oldTreeBuilder = new IssueTreeModelBuilder();
+    var model = oldTreeBuilder.createModel(SummaryNodeType.OLD_ISSUE);
+    oldTree = new IssueTree(project, model);
+    manageInteraction(oldTree);
   }
 
   private void manageInteraction(Tree tree) {
@@ -303,7 +377,9 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     }
     lastAnalysisPanel.clear();
     treeBuilder.clear();
+    oldTreeBuilder.clear();
     securityHotspotTreeBuilder.clear();
+    oldSecurityHotspotTreeBuilder.clear();
     disableEmptyDisplay(false);
   }
 

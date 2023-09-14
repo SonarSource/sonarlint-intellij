@@ -35,6 +35,7 @@ import javax.swing.tree.DefaultTreeModel;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import org.sonarlint.intellij.util.SummaryNodeType;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
@@ -53,11 +54,11 @@ import static org.sonarsource.sonarlint.core.commons.SoftwareQuality.MAINTAINABI
 
 class IssueTreeModelBuilderTests {
   private final IssueTreeModelBuilder treeBuilder = new IssueTreeModelBuilder();
-  private final DefaultTreeModel model = treeBuilder.createModel(false);
+  private final DefaultTreeModel model = treeBuilder.createModel(SummaryNodeType.NEW_ISSUE);
 
   @Test
   void createModel() {
-    var model = treeBuilder.createModel(false);
+    var model = treeBuilder.createModel(SummaryNodeType.NEW_ISSUE);
     assertThat(model.getRoot()).isNotNull();
   }
 
