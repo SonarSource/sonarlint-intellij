@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.mediumtests.fixtures.MockServer
@@ -53,17 +54,21 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
         mockServer = MockServer()
         mockServer.start()
         getService(project, FindingsCache::class.java).clearAllFindingsForAllFiles()
+        getService(BackendService::class.java).projectOpened(project)
+        getService(BackendService::class.java).moduleAdded(module)
         connectProjectTo(mockServer.url(""), "connection", "projectKey")
     }
 
     @AfterEach
     fun cleanUp() {
         mockServer.shutdown()
+        getService(BackendService::class.java).projectClosed(project)
     }
 
     @Test
     fun should_raise_new_security_hotspots_when_connected_to_compatible_sonarqube() {
         createStorage(serverVersion = "9.7", activeRuleKey = "ruby:S1313")
+        getService(BackendService::class.java).branchChanged(module, "newBranch")
 
         val raisedHotspots = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
@@ -72,11 +77,13 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
             { it.vulnerabilityProbability },
             { it.serverFindingKey },
             { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } },
-            { it.introductionDate }).containsExactly(
+            { it.introductionDate },
+            { it.isOnNewCode() }).containsExactly(
             tuple(
                 "ruby:S1313", "Make sure using this hardcoded IP address is safe here.", VulnerabilityProbability.LOW, null, Pair(5, 20),
                 // no creation date on new hotspots
-                null
+                null,
+                true
             )
         )
     }
@@ -159,6 +166,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
         branchName: String = "master",
     ) {
         createStorage(activeRuleKey = serverSecurityHotspot.ruleKey, projectKey = serverSecurityHotspot.projectKey, branchName = branchName)
+        getService(BackendService::class.java).branchChanged(module, branchName)
         mockServer.addProtobufResponse(
             "/api/hotspots/search.protobuf?projectKey=${serverSecurityHotspot.projectKey}&files=${serverSecurityHotspot.filePath}&branch=$branchName&ps=500&p=1",
             Hotspots.SearchWsResponse.newBuilder().setPaging(Common.Paging.newBuilder().setTotal(1).build()).addHotspots(

@@ -48,7 +48,9 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.EngineManager;
+import org.sonarlint.intellij.core.ProjectBinding;
 import org.sonarlint.intellij.core.TestEngineManager;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
@@ -84,6 +86,8 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
     getModuleSettings().clearBindingOverride();
+    getService(BackendService.class).connectionsUpdated(Collections.emptyList());
+    getService(BackendService.class).projectUnbound(getProject());
   }
 
   @RegisterExtension
@@ -177,6 +181,8 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     var connection = ServerConnection.newBuilder().setHostUrl(hostUrl).setName(connectionName).build();
     getGlobalSettings().addServerConnection(connection);
     getProjectSettings().bindTo(connection, projectKey);
+    getService(BackendService.class).connectionsUpdated(getGlobalSettings().getServerConnections());
+    getService(BackendService.class).projectBound(getProject(), new ProjectBinding(connectionName, projectKey, Collections.emptyMap()));
   }
 
   protected void connectModuleTo(String projectKey) {

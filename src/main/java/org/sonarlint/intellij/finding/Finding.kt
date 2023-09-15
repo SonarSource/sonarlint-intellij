@@ -43,4 +43,5 @@ interface Finding {
 
     fun isValid(): Boolean
 
+    fun isOnNewCode(): Boolean
 }
