@@ -36,12 +36,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.LiveFindings;
-import org.sonarlint.intellij.finding.hotspot.ServerSecurityHotspotUpdater;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
@@ -146,7 +144,7 @@ public class Analysis implements Cancelable {
       checkCanceled(indicator);
       matchWithServerIssuesIfNeeded(summary.filesHavingIssuesByModule);
       checkCanceled(indicator);
-      matchWithServerSecurityHotspotsIfNeeded(indicator, summary.filesHavingSecurityHotspotsByModule);
+      matchWithServerSecurityHotspotsIfNeeded(summary.filesHavingSecurityHotspotsByModule);
 
       var result = new AnalysisResult(summary.findings, files, trigger, Instant.now());
       callback.onSuccess(result);
@@ -168,15 +166,12 @@ public class Analysis implements Cancelable {
     }
   }
 
-  private void matchWithServerSecurityHotspotsIfNeeded(ProgressIndicator indicator,
-    Map<Module, Collection<VirtualFile>> filesHavingSecurityHotspotsByModule) {
+  private void matchWithServerSecurityHotspotsIfNeeded(Map<Module, Collection<VirtualFile>> filesHavingSecurityHotspotsByModule) {
     if (!filesHavingSecurityHotspotsByModule.isEmpty()) {
-      var updater = SonarLintUtils.getService(project, ServerSecurityHotspotUpdater.class);
-      if (trigger.isShouldUpdateServerIssues()) {
-        updater.fetchAndMatchServerSecurityHotspots(filesHavingSecurityHotspotsByModule, indicator);
-      } else {
-        updater.matchServerSecurityHotspots(filesHavingSecurityHotspotsByModule);
-      }
+      var backendService = getService(BackendService.class);
+      filesHavingSecurityHotspotsByModule.forEach((module, filesHavingHotspots) -> backendService.trackWithServerHotspots(module,
+        filesHavingHotspots.stream().collect(Collectors.toMap(Function.identity(),
+          file -> getService(module.getProject(), FindingsCache.class).getSecurityHotspotsForFile(file))), trigger.isShouldUpdateServerIssues()));
     }
   }
 
