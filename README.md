@@ -4,16 +4,16 @@ SonarLint IntelliJ Plugin
 [![Build Status](https://api.cirrus-ci.com/github/SonarSource/sonarlint-intellij.svg?branch=master)](https://cirrus-ci.com/github/SonarSource/sonarlint-intellij)
 [![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
 
-SonarLint is an IDE extension that helps you detect and fix quality issues as you write code.
+SonarLint is an IDE extension that supports you in writing [Clean Code](https://www.sonarsource.com/solutions/clean-code/), by detecting and helping you fix quality issues as you type. See documentation details for [Clean Code](https://docs.sonarsource.com/sonarlint/intellij/concepts/clean-code/).
 Like a spell checker, SonarLint squiggles flaws so they can be fixed before committing code.
 
 Useful links
 ------------
 
 - [Documentation](https://docs.sonarsource.com/sonarlint/intellij/)
-  - A full list of supported programming languages and links to the static code analysis rules associated with each language is available on the [Rules page](https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/rules/).
+  - A full list of supported programming languages and links to the static code analysis rules associated with each language are available on the [Rules page](https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/rules/).
 - [Community](https://community.sonarsource.com/c/help/sl)
-  - Report an issue, ask for some help or suggest new features
+  - Report an issue, ask for some help, or suggest new features.
 
 How to install
 --------------
@@ -27,7 +27,7 @@ Questions and Feedback?
 
 For SonarLint support questions ("How do I?", "I got this error, why?", ...), please first read the [FAQ](https://community.sonarsource.com/t/frequently-asked-questions/7204) to learn how to get your logs, and then head to the [SonarSource forum](https://community.sonarsource.com/c/help/sl). Before creating a new topic, please check if your question has already been answered because there is a chance that someone has already had the same issue.
 
-Be aware that this forum is a community, and the standard pleasantries are expected (_Hello, Thank you, I appreciate the reply, etc_). If you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing by, but the Teams and Community Managers know that your questions are important. :-)
+Be aware that this forum is a community, and the standard pleasantries are expected (_Hello, Thank you, I appreciate the reply, etc._). If you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing by, but the Teams and Community Managers know that your questions are important. :-)
 
 Contributing
 ------------
@@ -62,7 +62,7 @@ The above will start an IDE instance with the SonarLint plugin. Wait for the UI 
 
     ./gradlew :its:check
 
-Finally close the IDE.
+Finally, close the IDE.
 
 To test against a specific version of IntelliJ, the `ijVersion` property can be used, e.g.:
 
@@ -72,7 +72,7 @@ To test against a specific IDE, the `runIdeDirectory` property can be used as su
 
     ./gradlew :its:runIdeForUiTests -PrunIdeDirectory=<IDE_PATH> &
 
-Please note that the IDE must be in foreground while tests are executed.
+Please note that the IDE must be in the foreground while tests are executed.
 
 How to develop in IntelliJ
 --------------------------
@@ -93,7 +93,7 @@ To run against a specific IDE, the `runIdeDirectory` property can be used as suc
 Keep in mind that the `clean` task will wipe out the content of `build/idea-sandbox`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
 
-Whenever you change dependency version, the previous versions are not deleted from the sandbox, and the JVM might not load the version that you expect.
+Whenever you change the dependency version, the previous versions are not deleted from the sandbox, and the JVM might not load the version that you expect.
 As the `clean` task may be inconvenient, an easier workaround is to delete the jars in the sandbox, for example with:
 
     find build/idea-sandbox/ -name '*.jar' -delete
