@@ -21,9 +21,12 @@ package org.sonarlint.intellij
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.impl.ProjectUtil
+import com.intellij.ide.util.PropertiesComponent
+import com.intellij.notification.Notification
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
@@ -48,7 +51,10 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
+import org.sonarlint.intellij.notifications.DontShowAgainAction
+import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
@@ -81,6 +87,7 @@ import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesRespons
 import org.sonarsource.sonarlint.core.clientapi.client.info.GetClientInfoResponse
 import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
+import org.sonarsource.sonarlint.core.clientapi.client.message.ShowSoonUnsupportedMessageParams
 import org.sonarsource.sonarlint.core.clientapi.client.progress.ReportProgressParams
 import org.sonarsource.sonarlint.core.clientapi.client.progress.StartProgressParams
 import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
@@ -204,6 +211,11 @@ object SonarLintIntelliJClient : SonarLintClient {
         showBalloon(null, params.text, convert(params.type))
     }
 
+    override fun showSoonUnsupportedMessage(params: ShowSoonUnsupportedMessageParams) {
+        val project = BackendService.findModule(params.configurationScopeId)?.project ?: BackendService.findProject(params.configurationScopeId) ?: return
+        showOneTimeBalloon(project, params.text, params.doNotShowAgainId, OpenLinkAction(SonarLintDocumentation.SUPPORT_POLICY_LINK, "Learn more"))
+    }
+
     override fun showSmartNotification(params: ShowSmartNotificationParams) {
         val projects = params.scopeIds.mapNotNull { BackendService.findModule(it)?.project ?: BackendService.findProject(it) }.toSet()
         projects.map { SonarLintProjectNotifications.get(it).handle(params) }
@@ -215,14 +227,30 @@ object SonarLintIntelliJClient : SonarLintClient {
         return NotificationType.INFORMATION
     }
 
-    private fun showBalloon(project: Project?, message: String, type: NotificationType) {
-        val notification = GROUP.createNotification(
+    private fun getBalloon(message: String, type: NotificationType): Notification {
+        return GROUP.createNotification(
             "SonarLint message",
             message,
             type
-        )
-        notification.isImportant = type != NotificationType.INFORMATION
-        notification.notify(project)
+        ).apply {
+            isImportant = type != NotificationType.INFORMATION
+        }
+    }
+
+    private fun showBalloon(project: Project?, message: String, type: NotificationType) {
+        getBalloon(message, type).apply {
+            notify(project)
+        }
+    }
+
+    private fun showOneTimeBalloon(project: Project?, message: String, doNotShowAgainId: String, action: AnAction?) {
+        if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
+            getBalloon(message, NotificationType.WARNING).apply {
+                action?.let { addAction(it) }
+                addAction(DontShowAgainAction(doNotShowAgainId))
+                notify(project)
+            }
+        }
     }
 
     override fun getClientInfo(): CompletableFuture<GetClientInfoResponse> {

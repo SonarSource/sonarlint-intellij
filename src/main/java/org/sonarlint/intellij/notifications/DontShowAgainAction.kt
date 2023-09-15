@@ -17,13 +17,18 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.documentation
+package org.sonarlint.intellij.notifications
 
-object SonarLintDocumentation {
-    const val BASE_DOCS_URL = "https://docs.sonarsource.com/sonarlint/intellij"
-    const val CONNECTED_MODE_LINK = "${BASE_DOCS_URL}/team-features/connected-mode"
-    const val SECURITY_HOTSPOTS_LINK = "${BASE_DOCS_URL}/using-sonarlint/security-hotspots"
-    const val TAINT_VULNERABILITIES_LINK = "${BASE_DOCS_URL}/using-sonarlint/taint-vulnerabilities"
-    const val CLEAN_CODE_LINK = "${BASE_DOCS_URL}/concepts/clean-code/"
-    const val SUPPORT_POLICY_LINK = "${BASE_DOCS_URL}/team-features/connected-mode/#sonarlint-sonarqube-version-support-policy"
+import com.intellij.ide.util.PropertiesComponent
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+
+class DontShowAgainAction(private val id: String) : NotificationAction("Don't show again") {
+
+    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+        PropertiesComponent.getInstance().setValue(id, true)
+        notification.expire()
+    }
+
 }
