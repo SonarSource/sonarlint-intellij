@@ -42,6 +42,8 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.finding.LiveFinding
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
@@ -91,8 +93,9 @@ import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDe
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ListAllStandaloneRulesDefinitionsResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.tracking.ClientTrackedIssueDto
+import org.sonarsource.sonarlint.core.clientapi.backend.tracking.ClientTrackedFindingDto
 import org.sonarsource.sonarlint.core.clientapi.backend.tracking.LineWithHashDto
+import org.sonarsource.sonarlint.core.clientapi.backend.tracking.MatchWithServerSecurityHotspotsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.tracking.TextRangeWithHashDto
 import org.sonarsource.sonarlint.core.clientapi.backend.tracking.TrackWithServerIssuesParams
 import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
@@ -193,11 +196,11 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     fun connectionsUpdated(serverConnections: List<ServerConnection>) {
         val scConnections = serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
         val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
-        backend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
+        initializedBackend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
     }
 
     private fun credentialsChanged(connections: List<ServerConnection>) {
-        connections.forEach { backend.connectionService.didChangeCredentials(DidChangeCredentialsParams(it.name)) }
+        connections.forEach { initializedBackend.connectionService.didChangeCredentials(DidChangeCredentialsParams(it.name)) }
     }
 
     private fun toSonarQubeBackendConnection(createdConnection: ServerConnection): SonarQubeConnectionConfigurationDto {
@@ -466,7 +469,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 .entries.associate { (file, issues) ->
                     serverRelativePathByVirtualFile[file]!! to issues.map {
                         val textRangeWithHashDto = toTextRangeWithHashDto(module.project, it)
-                        ClientTrackedIssueDto(
+                        ClientTrackedFindingDto(
                             it.backendId,
                             it.serverFindingKey,
                             textRangeWithHashDto,
@@ -496,6 +499,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                         liveIssue.isResolved = serverIssue.isResolved
                         serverIssue.overriddenSeverity?.let { liveIssue.setSeverity(it) }
                         liveIssue.setType(serverIssue.type)
+                        liveIssue.setOnNewCode(serverIssue.isOnNewCode)
                     } else {
                         val localOnlyIssue = serverOrLocalIssue.right
                         liveIssue.backendId = localOnlyIssue.id
@@ -507,8 +511,66 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             .get()
     }
 
-    private fun toTextRangeWithHashDto(project: Project, issue: LiveIssue): TextRangeWithHashDto? {
-        val rangeMarker = issue.range ?: return null
+    fun trackWithServerHotspots(
+        module: Module,
+        liveHotspotsByFile: Map<VirtualFile, Collection<LiveSecurityHotspot>>,
+        shouldFetchHotspotsFromServer: Boolean,
+    ) {
+        val binding = getService(module, ModuleBindingManager::class.java).binding ?: return
+        val serverRelativePathByVirtualFile = getRelativePaths(module.project, liveHotspotsByFile.keys)
+            .mapValues { (_, ideRelativePath) -> IssueStorePaths.idePathToServerPath(binding, ideRelativePath) }
+            .mapNotNull { (key, value) -> value?.let { key to it } }
+            .toMap()
+        val virtualFileByServerRelativePath = serverRelativePathByVirtualFile.map { Pair(it.value, it.key) }.toMap()
+        val rawHotspotsByRelativePath =
+            liveHotspotsByFile
+                .filterKeys { file -> serverRelativePathByVirtualFile.containsKey(file) }
+                .entries.associate { (file, hotspots) ->
+                    serverRelativePathByVirtualFile[file]!! to hotspots.map {
+                        val textRangeWithHashDto = toTextRangeWithHashDto(module.project, it)
+                        ClientTrackedFindingDto(
+                            it.backendId,
+                            it.serverFindingKey,
+                            textRangeWithHashDto,
+                            textRangeWithHashDto?.let { range -> LineWithHashDto(range.startLine, it.lineHashString!!) },
+                            it.ruleKey,
+                            it.message
+                        )
+                    }
+                }
+
+        initializedBackend.securityHotspotMatchingService.matchWithServerSecurityHotspots(
+            MatchWithServerSecurityHotspotsParams(
+                moduleId(module),
+                rawHotspotsByRelativePath,
+                shouldFetchHotspotsFromServer
+            )
+        ).thenAccept { response ->
+            response.securityHotspotsByServerRelativePath.forEach { (serverRelativePath, trackedHotspots) ->
+                val file = virtualFileByServerRelativePath[serverRelativePath] ?: return@forEach
+                val liveHotspots = liveHotspotsByFile[file] ?: return@forEach
+                liveHotspots.zip(trackedHotspots).forEach { (liveHotspot, serverOrLocalHotspot) ->
+                    if (serverOrLocalHotspot.isLeft) {
+                        val serverHotspot = serverOrLocalHotspot.left
+                        liveHotspot.backendId = serverHotspot.id
+                        liveHotspot.introductionDate = serverHotspot.introductionDate
+                        liveHotspot.serverFindingKey = serverHotspot.serverKey
+                        liveHotspot.isResolved = serverHotspot.status == HotspotStatus.FIXED || serverHotspot.status == HotspotStatus.SAFE
+                        liveHotspot.setStatus(serverHotspot.status)
+                        liveHotspot.setOnNewCode(serverHotspot.isOnNewCode)
+                    } else {
+                        val localOnlyIssue = serverOrLocalHotspot.right
+                        liveHotspot.backendId = localOnlyIssue.id
+                        liveHotspot.setOnNewCode(true)
+                    }
+                }
+            }
+        }
+            .get()
+    }
+
+    private fun toTextRangeWithHashDto(project: Project, finding: LiveFinding): TextRangeWithHashDto? {
+        val rangeMarker = finding.range ?: return null
         if (!rangeMarker.isValid) {
             return null
         }
@@ -517,7 +579,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             val startLineOffset = rangeMarker.startOffset - rangeMarker.document.getLineStartOffset(startLine)
             val endLine = rangeMarker.document.getLineNumber(rangeMarker.endOffset)
             val endLineOffset = rangeMarker.endOffset - rangeMarker.document.getLineStartOffset(endLine)
-            TextRangeWithHashDto(startLine + 1, startLineOffset, endLine + 1, endLineOffset, issue.textRangeHashString)
+            TextRangeWithHashDto(startLine + 1, startLineOffset, endLine + 1, endLineOffset, finding.textRangeHashString)
         }
     }
 
