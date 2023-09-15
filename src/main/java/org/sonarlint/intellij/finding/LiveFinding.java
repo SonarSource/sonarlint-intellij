@@ -69,6 +69,7 @@ public abstract class LiveFinding implements Trackable, Finding {
   private Long introductionDate;
   private String serverFindingKey;
   private boolean resolved;
+  private boolean isOnNewCode;
 
 
   protected LiveFinding(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context,
@@ -284,5 +285,14 @@ public abstract class LiveFinding implements Trackable, Finding {
   @Override
   public String getRuleDescriptionContextKey() {
     return ruleDescriptionContextKey;
+  }
+
+  public void setOnNewCode(boolean onNewCode) {
+    isOnNewCode = onNewCode;
+  }
+
+  @Override
+  public boolean isOnNewCode() {
+    return isOnNewCode;
   }
 }
