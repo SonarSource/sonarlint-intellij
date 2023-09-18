@@ -23,6 +23,9 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.utils.waitFor
+import java.awt.Point
+import java.io.File
+import java.time.Duration
 import org.assertj.core.api.Assertions
 import org.assertj.swing.timing.Pause
 import org.junit.jupiter.api.BeforeEach
@@ -49,9 +52,6 @@ import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
 import org.sonarlint.intellij.its.utils.VisualTreeDumpOnFailure
 import org.sonarlint.intellij.its.utils.optionalStep
-import java.awt.Point
-import java.io.File
-import java.time.Duration
 
 const val robotUrl = "http://localhost:8082"
 
@@ -106,7 +106,7 @@ open class BaseUiTest {
             optionalStep {
                 sonarlintLogPanel(remoteRobot) {
                     println("SonarLint log outputs:")
-                    findAllText { true }.forEach { println(it.text) }
+                    println(console().text)
                     toolBarButton("Clear SonarLint Console").click()
                 }
             }
