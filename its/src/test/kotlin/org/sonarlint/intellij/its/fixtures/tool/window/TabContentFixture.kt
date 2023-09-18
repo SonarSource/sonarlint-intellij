@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.fixtures.tool.window
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.EditorFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
@@ -30,6 +31,7 @@ import org.sonarlint.intellij.its.fixtures.findElement
 @FixtureName(name = "Tool Window Tab Content")
 class TabContentFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
 
+  fun console() = findElement<EditorFixture>(EditorFixture.locator)
   fun toolBarButton(accessibleName: String) = findElement<JButtonFixture>(byXpath("//div[@accessiblename='$accessibleName' and @class='ActionButton']"))
 
 }
