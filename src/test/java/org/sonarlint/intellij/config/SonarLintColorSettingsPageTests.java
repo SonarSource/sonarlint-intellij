@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SonarLintColorSettingsPageTests {
-  private final static String[] SEVERITIES = {"INFO", "MINOR", "MAJOR", "CRITICAL", "BLOCKER"};
+  private final static String[] SEVERITIES = {"LOW", "MEDIUM", "HIGH", "OLD", "SELECTED"};
   private SonarLintColorSettingsPage colorSettingsPage;
 
   @BeforeEach
@@ -45,17 +45,15 @@ class SonarLintColorSettingsPageTests {
   @Test
   void testDescriptors() {
     assertThat(colorSettingsPage.getAdditionalHighlightingTagToDescriptorMap()).containsValues(
-      SonarLintTextAttributes.BLOCKER,
-      SonarLintTextAttributes.INFO,
-      SonarLintTextAttributes.MAJOR,
-      SonarLintTextAttributes.MINOR,
-      SonarLintTextAttributes.CRITICAL);
+      SonarLintTextAttributes.HIGH,
+      SonarLintTextAttributes.MEDIUM,
+      SonarLintTextAttributes.LOW);
   }
 
   @Test
   void testAttributeDescriptors() {
     // one per severity + selected
-    assertThat(colorSettingsPage.getAttributeDescriptors()).hasSize(6);
+    assertThat(colorSettingsPage.getAttributeDescriptors()).hasSize(5);
   }
 
   @Test
@@ -65,7 +63,7 @@ class SonarLintColorSettingsPageTests {
 
   @Test
   void testDemo() {
-    for (String txt : SEVERITIES) {
+    for (var txt : SEVERITIES) {
       assertThat(colorSettingsPage.getDemoText()).containsIgnoringCase(txt);
     }
   }

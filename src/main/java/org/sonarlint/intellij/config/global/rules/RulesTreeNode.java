@@ -34,6 +34,7 @@ import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
+
   protected Boolean activated;
 
   public Iterable<T> childrenIterable() {
@@ -102,11 +103,16 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   public static class Rule extends RulesTreeNode {
     private final RuleDefinitionDto details;
     private final Map<String, String> nonDefaultParams;
+    private final SoftwareQuality highestQuality;
+    private final ImpactSeverity highestImpact;
 
     public Rule(RuleDefinitionDto details, boolean activated, Map<String, String> nonDefaultParams) {
       this.details = details;
       this.activated = activated;
       this.nonDefaultParams = new HashMap<>(nonDefaultParams);
+      var highestQualityImpact = details.getDefaultImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
+      this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
+      this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
     }
 
     public String getKey() {
@@ -170,6 +176,14 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     @Override
     public int hashCode() {
       return Objects.hash(details.getKey(), activated, nonDefaultParams);
+    }
+
+    public SoftwareQuality getHighestQuality() {
+      return highestQuality;
+    }
+
+    public ImpactSeverity getHighestImpact() {
+      return highestImpact;
     }
   }
 

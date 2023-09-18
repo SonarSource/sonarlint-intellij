@@ -38,6 +38,7 @@ import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
@@ -46,6 +47,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.util.SonarLintSeverity;
+import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static java.util.Collections.emptyList;
@@ -149,7 +151,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     finding.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(finding, c)));
 
     var annotationBuilder = annotationHolder
-      .newAnnotation(getSeverity(finding.getUserSeverity()), finding.getMessage())
+      .newAnnotation(getSeverity(finding.getHighestImpact(), finding.getUserSeverity()), finding.getMessage())
       .range(validTextRange);
     for (IntentionAction action : intentionActions) {
       annotationBuilder = annotationBuilder.withFix(action);
@@ -158,10 +160,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (finding.getRange() == null) {
       annotationBuilder = annotationBuilder.fileLevel();
     } else {
-      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(finding.getUserSeverity()));
+      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(finding.getHighestImpact(), finding.getUserSeverity(), finding.isOnNewCode()));
     }
 
-    annotationBuilder.highlightType(getType(finding.getUserSeverity()))
+    annotationBuilder.highlightType(getType(finding.getHighestImpact(), finding.getUserSeverity()))
       .create();
   }
 
@@ -174,32 +176,47 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (textRange == null) {
       return;
     }
-    annotationHolder.newAnnotation(getSeverity(vulnerability.severity()), vulnerability.message())
+    annotationHolder.newAnnotation(getSeverity(vulnerability.getHighestImpact(), vulnerability.severity()), vulnerability.message())
       .range(textRange)
       .withFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability))
       .withFix(new MarkAsResolvedAction(vulnerability))
-      .textAttributes(getTextAttrsKey(vulnerability.severity()))
-      .highlightType(getType(vulnerability.severity()))
+      .textAttributes(getTextAttrsKey(vulnerability.getHighestImpact(), vulnerability.severity(), vulnerability.isOnNewCode()))
+      .highlightType(getType(vulnerability.getHighestImpact(), vulnerability.severity()))
       .create();
   }
 
-  static TextAttributesKey getTextAttrsKey(@Nullable IssueSeverity severity) {
-    if (severity == null) {
-      return SonarLintTextAttributes.MAJOR;
+  static TextAttributesKey getTextAttrsKey(@Nullable ImpactSeverity impact, @Nullable IssueSeverity severity, boolean isOnNewCode) {
+    if (Settings.getGlobalSettings().isFocusOnNewCode() && !isOnNewCode) {
+      return SonarLintTextAttributes.OLD_CODE;
     }
-    switch (severity) {
-      case MINOR:
-        return SonarLintTextAttributes.MINOR;
-      case BLOCKER:
-        return SonarLintTextAttributes.BLOCKER;
-      case INFO:
-        return SonarLintTextAttributes.INFO;
-      case CRITICAL:
-        return SonarLintTextAttributes.CRITICAL;
-      case MAJOR:
-      default:
-        return SonarLintTextAttributes.MAJOR;
+
+    if (impact != null) {
+      switch (impact) {
+        case HIGH:
+          return SonarLintTextAttributes.HIGH;
+        case LOW:
+          return SonarLintTextAttributes.LOW;
+        case MEDIUM:
+        default:
+          return SonarLintTextAttributes.MEDIUM;
+      }
     }
+
+    if (severity != null) {
+      switch (severity) {
+        case CRITICAL:
+        case BLOCKER:
+          return SonarLintTextAttributes.HIGH;
+        case MINOR:
+        case INFO:
+          return SonarLintTextAttributes.LOW;
+        case MAJOR:
+        default:
+          return SonarLintTextAttributes.MEDIUM;
+      }
+    }
+
+    return SonarLintTextAttributes.MEDIUM;
   }
 
   /**
@@ -207,12 +224,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    *
    * @see Annotation#getTextAttributes
    */
-  private static ProblemHighlightType getType(@Nullable IssueSeverity severity) {
-    if (severity == null) {
-      return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
+  private static ProblemHighlightType getType(@Nullable ImpactSeverity impact, @Nullable IssueSeverity severity) {
+    if (severity != null) {
+      return SonarLintSeverity.fromCoreSeverity(impact, severity).highlightType();
     }
 
-    return SonarLintSeverity.fromCoreSeverity(severity).highlightType();
+    return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
   }
 
   /**
@@ -220,12 +237,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    *
    * @see Annotation#getTextAttributes
    */
-  private static HighlightSeverity getSeverity(@Nullable IssueSeverity severity) {
-    if (severity == null) {
-      return HighlightSeverity.WARNING;
+  private static HighlightSeverity getSeverity(@Nullable ImpactSeverity impact, @Nullable IssueSeverity severity) {
+    if (severity != null) {
+      return SonarLintSeverity.fromCoreSeverity(impact, severity).highlightSeverity();
     }
 
-    return SonarLintSeverity.fromCoreSeverity(severity).highlightSeverity();
+    return HighlightSeverity.WARNING;
   }
 
   public static class AnnotationContext {

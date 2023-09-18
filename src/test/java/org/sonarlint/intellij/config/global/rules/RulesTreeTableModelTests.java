@@ -46,9 +46,9 @@ class RulesTreeTableModelTests {
   private final RulesTreeNode.Root root = new RulesTreeNode.Root();
   private final RulesTreeNode.Language lang = new RulesTreeNode.Language("lang");
   private final RuleDefinitionDto ruleDetails = mock(RuleDefinitionDto.class);
-  private final RulesTreeNode.Rule rule = new RulesTreeNode.Rule(ruleDetails, true, new HashMap<>());
   private final AbstractTableModel tableModel = mock(AbstractTableModel.class);
   private final RulesTreeTableModel model = new RulesTreeTableModel(root);
+  private RulesTreeNode.Rule rule;
 
   @BeforeEach
   void setUp() {
@@ -59,6 +59,7 @@ class RulesTreeTableModelTests {
     when(ruleDetails.getKey()).thenReturn("key");
     when(ruleDetails.isActiveByDefault()).thenReturn(false);
     root.add(lang);
+    rule = new RulesTreeNode.Rule(ruleDetails, true, new HashMap<>());
     lang.add(rule);
 
     // just to not give NPE when firing changes
