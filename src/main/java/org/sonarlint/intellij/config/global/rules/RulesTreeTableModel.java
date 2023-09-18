@@ -23,9 +23,6 @@ import com.intellij.ui.scale.JBUIScale;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.table.AbstractTableModel;
@@ -82,8 +79,8 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
       if (node instanceof RulesTreeNode.Rule) {
         var rule = (RulesTreeNode.Rule) node;
         var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
-        var highestQualityImpact = Collections.max(rule.impacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
-        return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.impact(highestQualityImpact.getValue()));
+        // Rules should always have the new CCT
+        return rule.getHighestImpact() != null ? new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.impact(rule.getHighestImpact())) : null;
       }
       return null;
     }

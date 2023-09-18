@@ -243,10 +243,10 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
         return dateCompare;
       }
 
-      if (o1.getCleanCodeAttribute() != null && !o1.getImpacts().isEmpty()
-        && o2.getCleanCodeAttribute() != null && !o2.getImpacts().isEmpty()) {
-        var highestQualityImpactO1 = Collections.max(o1.getImpacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal))).getValue();
-        var highestQualityImpactO2 = Collections.max(o2.getImpacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal))).getValue();
+      if (o1.getCleanCodeAttribute() != null && o1.getHighestImpact() != null
+        && o2.getCleanCodeAttribute() != null && o2.getHighestImpact() != null) {
+        var highestQualityImpactO1 = o1.getHighestImpact();
+        var highestQualityImpactO2 = o2.getHighestImpact();
         var impactCompare = Ordering.explicit(IMPACT_ORDER).compare(highestQualityImpactO1, highestQualityImpactO2);
         if (impactCompare != 0) {
           return impactCompare;
