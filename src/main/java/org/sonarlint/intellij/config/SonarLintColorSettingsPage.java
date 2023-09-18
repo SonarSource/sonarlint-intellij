@@ -36,11 +36,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class SonarLintColorSettingsPage implements ColorSettingsPage {
   private static final AttributesDescriptor[] DESCRIPTORS = new AttributesDescriptor[] {
-    new AttributesDescriptor("Major issue", SonarLintTextAttributes.MAJOR),
-    new AttributesDescriptor("Minor issue", SonarLintTextAttributes.MINOR),
-    new AttributesDescriptor("Critical issue", SonarLintTextAttributes.CRITICAL),
-    new AttributesDescriptor("Blocker issue", SonarLintTextAttributes.BLOCKER),
-    new AttributesDescriptor("Info issue", SonarLintTextAttributes.INFO),
+    new AttributesDescriptor("High impact issue", SonarLintTextAttributes.HIGH),
+    new AttributesDescriptor("Medium impact issue", SonarLintTextAttributes.MEDIUM),
+    new AttributesDescriptor("Low impact issue", SonarLintTextAttributes.LOW),
+    new AttributesDescriptor("Old issue", SonarLintTextAttributes.OLD_CODE),
     new AttributesDescriptor("Selected issue", SonarLintTextAttributes.SELECTED)
   };
 
