@@ -63,14 +63,15 @@ public abstract class LiveFinding implements Trackable, Finding {
   private final String ruleDescriptionContextKey;
   private final CleanCodeAttribute cleanCodeAttribute;
   private final Map<SoftwareQuality, ImpactSeverity> impacts;
-
   // tracked fields (mutable)
   private IssueSeverity severity;
+
   private Long introductionDate;
   private String serverFindingKey;
   private boolean resolved;
   private boolean isOnNewCode;
-
+  private SoftwareQuality highestQuality = null;
+  private ImpactSeverity highestImpact = null;
 
   protected LiveFinding(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context,
     List<QuickFix> quickFixes) {
@@ -86,6 +87,9 @@ public abstract class LiveFinding implements Trackable, Finding {
 
     this.cleanCodeAttribute = issue.getCleanCodeAttribute().orElse(null);
     this.impacts = issue.getImpacts();
+    var highestQualityImpact = getImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
+    this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
+    this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
 
     if (range != null) {
       var document = range.getDocument();
@@ -295,4 +299,15 @@ public abstract class LiveFinding implements Trackable, Finding {
   public boolean isOnNewCode() {
     return isOnNewCode;
   }
+
+  @Override
+  public SoftwareQuality getHighestQuality() {
+    return highestQuality;
+  }
+
+  @Override
+  public ImpactSeverity getHighestImpact() {
+    return highestImpact;
+  }
+
 }
