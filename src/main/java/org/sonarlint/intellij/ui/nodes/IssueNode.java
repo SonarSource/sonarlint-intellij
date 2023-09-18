@@ -24,10 +24,7 @@ import com.intellij.ui.OffsetIcon;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.UIUtil;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Locale;
-import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
 import org.sonarlint.intellij.SonarLintIcons;
@@ -56,12 +53,13 @@ public class IssueNode extends FindingNode {
   public void render(TreeCellRenderer renderer) {
     var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
     var serverConnection = getService(issue.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
+    var highestQuality = issue.getHighestQuality();
+    var highestImpact = issue.getHighestImpact();
 
-    if (issue.getCleanCodeAttribute() != null && !issue.getImpacts().isEmpty()) {
-      var highestQualityImpact = Collections.max(issue.getImpacts().entrySet(), Map.Entry.comparingByValue(Comparator.comparing(Enum::ordinal)));
-      var impactText = StringUtil.capitalize(highestQualityImpact.getValue().toString().toLowerCase(Locale.ENGLISH));
-      var qualityText = StringUtil.capitalize(highestQualityImpact.getKey().toString().toLowerCase(Locale.ENGLISH));
-      var impactIcon = SonarLintIcons.impact(highestQualityImpact.getValue());
+    if (issue.getCleanCodeAttribute() != null && highestQuality != null && highestImpact != null) {
+      var impactText = StringUtil.capitalize(highestImpact.toString().toLowerCase(Locale.ENGLISH));
+      var qualityText = StringUtil.capitalize(highestQuality.toString().toLowerCase(Locale.ENGLISH));
+      var impactIcon = SonarLintIcons.impact(highestImpact);
 
       if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();

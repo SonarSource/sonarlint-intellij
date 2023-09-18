@@ -31,6 +31,10 @@ interface Finding {
 
     fun getImpacts(): Map<SoftwareQuality, ImpactSeverity>
 
+    fun getHighestQuality(): SoftwareQuality?
+
+    fun getHighestImpact(): ImpactSeverity?
+
     fun getServerKey(): String?
 
     fun getRuleKey(): String
