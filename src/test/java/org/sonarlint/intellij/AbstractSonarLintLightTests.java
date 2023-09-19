@@ -94,6 +94,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     disposable = Disposer.newDisposable();
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
+    getGlobalSettings().setFocusOnNewCode(false);
     setGlobalLevelExclusions(Collections.emptyList());
     getProjectSettings().setConnectionName(null);
     getProjectSettings().setProjectKey(null);
