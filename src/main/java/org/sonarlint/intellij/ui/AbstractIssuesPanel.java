@@ -160,7 +160,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   @CheckForNull
-  private OccurenceNavigator.OccurenceInfo occurrence(@Nullable IssueNode node) {
+  private OccurenceNavigator.OccurenceInfo occurrence(Tree tree, @Nullable IssueNode node) {
     if (node == null) {
       return null;
     }
@@ -180,10 +180,16 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   @Override
   public boolean hasNextOccurence() {
     // relies on the assumption that a TreeNodes will always be the last row in the table view of the tree
-    var path = tree.getSelectionPath();
+    var isOldTree = tree.getSelectionPath() == null;
+    var path = isOldTree ? oldTree.getSelectionPath() : null;
     if (path == null) {
       return false;
     }
+
+    return isOldTree ? fetchNextOccurenceInfo(path, oldTree) : fetchNextOccurenceInfo(path, tree);
+  }
+
+  private boolean fetchNextOccurenceInfo(TreePath path, Tree tree) {
     var node = (DefaultMutableTreeNode) path.getLastPathComponent();
     if (node instanceof IssueNode) {
       return tree.getRowCount() != tree.getRowForPath(path) + 1;
@@ -194,7 +200,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   @Override
   public boolean hasPreviousOccurence() {
-    var path = tree.getSelectionPath();
+    var path = (tree.getSelectionPath() == null) ? oldTree.getSelectionPath() : null;
     if (path == null) {
       return false;
     }
@@ -210,21 +216,39 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   @CheckForNull
   @Override
   public OccurenceNavigator.OccurenceInfo goNextOccurence() {
-    var path = tree.getSelectionPath();
-    if (path == null) {
-      return null;
+    var info = fetchNextOccurenceInfo(tree, treeBuilder);
+    if (info == null) {
+      info = fetchNextOccurenceInfo(oldTree, oldTreeBuilder);
     }
-    return occurrence(treeBuilder.getNextIssue((AbstractNode) path.getLastPathComponent()));
+
+    return info;
   }
 
   @CheckForNull
   @Override
   public OccurenceNavigator.OccurenceInfo goPreviousOccurence() {
+    var info = fetchPreviousOccurenceInfo(tree, treeBuilder);
+    if (info == null)
+      ;
+    info = fetchPreviousOccurenceInfo(oldTree, oldTreeBuilder);
+
+    return info;
+  }
+
+  private OccurenceInfo fetchPreviousOccurenceInfo(Tree tree, IssueTreeModelBuilder treeBuilder) {
     var path = tree.getSelectionPath();
     if (path == null) {
       return null;
     }
-    return occurrence(treeBuilder.getPreviousIssue((AbstractNode) path.getLastPathComponent()));
+    return occurrence(tree, treeBuilder.getPreviousIssue((AbstractNode) path.getLastPathComponent()));
+  }
+
+  private OccurenceInfo fetchNextOccurenceInfo(Tree tree, IssueTreeModelBuilder treeBuilder) {
+    var path = tree.getSelectionPath();
+    if (path == null) {
+      return null;
+    }
+    return occurrence(tree, treeBuilder.getNextIssue((AbstractNode) path.getLastPathComponent()));
   }
 
   @Override
