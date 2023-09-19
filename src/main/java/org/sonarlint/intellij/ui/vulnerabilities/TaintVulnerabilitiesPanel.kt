@@ -32,9 +32,10 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.tools.SimpleActionGroup
-import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
+import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
@@ -75,7 +76,6 @@ import javax.swing.tree.TreeNode
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 
-
 private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_SPLIT_PROPORTION"
 private const val DEFAULT_SPLIT_PROPORTION = 0.5f
 
@@ -89,28 +89,40 @@ private const val TOOLBAR_GROUP_ID = "TaintVulnerabilities"
 class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindowPanel(false, true),
     OccurenceNavigator, DataProvider, Disposable {
 
-    private val rulePanel = SonarLintRulePanel(project, this)
     private lateinit var tree: TaintVulnerabilityTree
     private lateinit var treeBuilder: TaintVulnerabilityTreeModelBuilder
+    private lateinit var oldTree: TaintVulnerabilityTree
+    private lateinit var oldTreeBuilder: TaintVulnerabilityTreeModelBuilder
+    private lateinit var treeListeners: Map<TaintVulnerabilityTree, List<TreeSelectionListener>>
+    private val treePanel: JBPanel<TaintVulnerabilitiesPanel>
+    private val rulePanel = SonarLintRulePanel(project, this)
     private val cards = CardPanel()
     private val noVulnerabilitiesPanel: JBPanelWithEmptyText
 
     init {
+        val globalSettings = getGlobalSettings()
         cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
         noVulnerabilitiesPanel = centeredLabel("", "", null)
         cards.add(noVulnerabilitiesPanel, NO_ISSUES_CARD_ID)
         rulePanel.minimumSize = Dimension(350, 200)
-        cards.add(createSplitter(project, this, this, ScrollPaneFactory.createScrollPane(createTree()), rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
+
+        initTrees()
+        treePanel = JBPanel<TaintVulnerabilitiesPanel>(VerticalFlowLayout(0, 0))
+        treePanel.add(tree)
+        treePanel.add(oldTree)
+        setFocusOnNewCode(globalSettings.isFocusOnNewCode)
+        cards.add(createSplitter(project, this, this, treePanel, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
         )
+
         val issuesPanel = JPanel(BorderLayout())
-        val globalSettings = getGlobalSettings()
         if (!globalSettings.isTaintVulnerabilitiesTabDisclaimerDismissed) {
             issuesPanel.add(createDisclaimer(), BorderLayout.NORTH)
         }
         issuesPanel.add(cards.container, BorderLayout.CENTER)
         setContent(issuesPanel)
+
         val sonarLintActions = SonarLintActions.getInstance()
         setupToolbar(listOf(ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
             RefreshTaintVulnerabilitiesAction(), sonarLintActions.configure(), OpenTaintVulnerabilityDocumentationAction()))
@@ -134,6 +146,20 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             }
         }
         return labelPanel
+    }
+
+    private fun taintTreeSelectionChanged(tree: TaintVulnerabilityTree, secondTree: TaintVulnerabilityTree) {
+            if (!tree.isSelectionEmpty) {
+                secondTree.clearSelection()
+            }
+            val selectedTaintNode = tree.getSelectedNodes(LocalTaintVulnerabilityNode::class.java, null)
+            if (selectedTaintNode.isNotEmpty()) {
+                setSelectedVulnerability(selectedTaintNode[0].issue)
+            } else {
+                rulePanel.clear()
+                val highlighting = getService(project, EditorDecorator::class.java)
+                highlighting.removeHighlights()
+            }
     }
 
     private fun createDisclaimer(): StripePanel {
@@ -180,23 +206,35 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                     highlighting.removeHighlights()
                 } else {
                     showCard(TREE_CARD_ID)
-                    val expandedPaths = TreeUtil.collectExpandedPaths(tree)
-                    val selectionPath: TreePath? = tree.selectionPath
-                    // Temporarily remove the listener to avoid transcient selection events while changing the model
-                    tree.removeTreeSelectionListener(TREE_SELECTION_LISTENER)
-                    try {
-                        treeBuilder.updateModel(status.byFile)
-                        TreeUtil.restoreExpandedPaths(tree, expandedPaths)
-                        if (selectionPath != null) {
-                            TreeUtil.selectPath(tree, selectionPath)
-                        } else {
-                            expandDefault()
-                        }
-                    } finally {
-                        tree.addTreeSelectionListener(TREE_SELECTION_LISTENER)
-                        updateRulePanelContent()
-                    }
+                    populateTree(status)
                 }
+            }
+        }
+    }
+
+    private fun populateTree(status: FoundTaintVulnerabilities) {
+        val valuesByNewCode = if (getGlobalSettings().isFocusOnNewCode) {
+            mapOf(Pair(tree, treeBuilder) to status.newVulnerabilities(), Pair(oldTree, oldTreeBuilder) to status.oldVulnerabilities())
+        } else {
+            mapOf(Pair(tree, treeBuilder) to status.byFile)
+        }
+        valuesByNewCode.forEach {
+            val tree = it.key.first
+            val expandedPaths = TreeUtil.collectExpandedPaths(tree)
+            val selectionPath: TreePath? = tree.selectionPath
+            // Temporarily remove the listener to avoid transient selection events while changing the model
+            treeListeners[tree]?.forEach { listener -> tree.removeTreeSelectionListener(listener) }
+            try {
+                it.key.second.updateModel(it.value)
+                TreeUtil.restoreExpandedPaths(tree, expandedPaths)
+                if (selectionPath != null) {
+                    TreeUtil.selectPath(tree, selectionPath)
+                } else {
+                    expandDefault()
+                }
+            } finally {
+                treeListeners[tree]?.forEach { listener -> tree.addTreeSelectionListener(listener) }
+                updateRulePanelContent(tree)
             }
         }
     }
@@ -207,6 +245,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         } else {
             tree.expandRow(0)
         }
+        oldTree.collapseRow(0)
     }
 
     private fun showNoVulnerabilitiesLabel() {
@@ -216,17 +255,19 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     fun setSelectedVulnerability(vulnerability: LocalTaintVulnerability) {
-        val vulnerabilityNode = TreeUtil.findNode(tree.model.root as DefaultMutableTreeNode)
-        { it is LocalTaintVulnerabilityNode && it.issue.key() == vulnerability.key() }
-            ?: return
-        TreeUtil.selectPath(tree, TreePath(vulnerabilityNode.path))
+        if (getGlobalSettings().isFocusOnNewCode && !vulnerability.isOnNewCode()) {
+            oldTree.setSelectedVulnerability(vulnerability)
+        } else {
+            tree.setSelectedVulnerability(vulnerability)
+        }
     }
 
     fun remove(taintVulnerability: LocalTaintVulnerability) {
         treeBuilder.remove(taintVulnerability)
+        oldTreeBuilder.remove(taintVulnerability)
     }
 
-    private fun updateRulePanelContent() {
+    private fun updateRulePanelContent(tree: TaintVulnerabilityTree) {
         val highlighting = getService(project, EditorDecorator::class.java)
         val issue = tree.getIssueFromSelectedNode()
         if (issue == null) {
@@ -250,36 +291,47 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         }
     }
 
-    private val TREE_SELECTION_LISTENER = TreeSelectionListener {
-        updateRulePanelContent()
+    fun setFocusOnNewCode(isFocusOnNewCode: Boolean) {
+        tree.showsRootHandles = isFocusOnNewCode
+        oldTree.showsRootHandles = isFocusOnNewCode
+        oldTree.isVisible = isFocusOnNewCode
     }
 
-    private fun createTree(): TaintVulnerabilityTree {
-        treeBuilder = TaintVulnerabilityTreeModelBuilder()
+    private fun initTrees() {
+        treeBuilder = TaintVulnerabilityTreeModelBuilder(true)
         tree = TaintVulnerabilityTree(project, treeBuilder.model)
-        tree.addTreeSelectionListener(TREE_SELECTION_LISTENER)
-        tree.addKeyListener(object : KeyAdapter() {
-            override fun keyPressed(e: KeyEvent) {
-                if (KeyEvent.VK_ESCAPE == e.keyCode) {
-                    val highlighting = getService(
-                        project,
-                        EditorDecorator::class.java
-                    )
-                    highlighting.removeHighlights()
+        oldTreeBuilder = TaintVulnerabilityTreeModelBuilder(false)
+        oldTree = TaintVulnerabilityTree(project, oldTreeBuilder.model)
+
+        treeListeners = mapOf(
+            tree to listOf(TreeSelectionListener { updateRulePanelContent(tree) }, TreeSelectionListener { taintTreeSelectionChanged(tree, oldTree) }),
+            oldTree to listOf(TreeSelectionListener { updateRulePanelContent(oldTree) }, TreeSelectionListener { taintTreeSelectionChanged(oldTree, tree) })
+        )
+
+        listOf(tree, oldTree).forEach {
+            treeListeners[it]?.forEach { listener -> it.addTreeSelectionListener(listener) }
+            it.addKeyListener(object : KeyAdapter() {
+                override fun keyPressed(e: KeyEvent) {
+                    if (KeyEvent.VK_ESCAPE == e.keyCode) {
+                        val highlighting = getService(
+                            project,
+                            EditorDecorator::class.java
+                        )
+                        highlighting.removeHighlights()
+                    }
                 }
-            }
-        })
-        tree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
-        return tree
+            })
+            it.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
+        }
     }
 
-    private fun occurrence(node: IssueNode?): OccurenceInfo? {
+    private fun occurrence(taintTree: TaintVulnerabilityTree, node: IssueNode?): OccurenceInfo? {
         if (node == null) {
             return null
         }
         val path = TreePath(node.path)
-        tree.selectionModel.selectionPath = path
-        tree.scrollPathToVisible(path)
+        taintTree.selectionModel.selectionPath = path
+        taintTree.scrollPathToVisible(path)
         val range = node.issue().range
         val startOffset = range?.startOffset ?: 0
         return OccurenceInfo(
@@ -291,17 +343,25 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     override fun hasNextOccurence(): Boolean {
         // relies on the assumption that a TreeNodes will always be the last row in the table view of the tree
-        val path = tree.selectionPath ?: return false
-        val node = path.lastPathComponent as DefaultMutableTreeNode
-        return if (node is IssueNode) {
-            tree.rowCount != tree.getRowForPath(path) + 1
-        } else {
-            node.childCount > 0
-        }
+        return tree.selectionPath?.let {
+            val node = it.lastPathComponent as DefaultMutableTreeNode
+            if (node is IssueNode) {
+                tree.rowCount != tree.getRowForPath(it) + 1
+            } else {
+                node.childCount > 0
+            }
+        } ?: oldTree.selectionPath?.let {
+            val node = it.lastPathComponent as DefaultMutableTreeNode
+            if (node is IssueNode) {
+                oldTree.rowCount != oldTree.getRowForPath(it) + 1
+            } else {
+                node.childCount > 0
+            }
+        } ?: false
     }
 
     override fun hasPreviousOccurence(): Boolean {
-        val path = tree.selectionPath ?: return false
+        val path = tree.selectionPath ?: oldTree.selectionPath ?: return false
         val node = path.lastPathComponent as DefaultMutableTreeNode
         return node is IssueNode && !isFirst(node)
     }
@@ -312,13 +372,19 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     override fun goNextOccurence(): OccurenceInfo? {
-        val path = tree.selectionPath ?: return null
-        return occurrence(treeBuilder.getNextIssue(path.lastPathComponent as AbstractNode))
+        return tree.selectionPath?.let {
+            occurrence(tree, treeBuilder.getNextIssue(it.lastPathComponent as AbstractNode))
+        } ?: oldTree.selectionPath?.let {
+            occurrence(oldTree, oldTreeBuilder.getNextIssue(it.lastPathComponent as AbstractNode))
+        }
     }
 
     override fun goPreviousOccurence(): OccurenceInfo? {
-        val path = tree.selectionPath ?: return null
-        return occurrence(treeBuilder.getPreviousIssue(path.lastPathComponent as AbstractNode))
+        return tree.selectionPath?.let {
+            occurrence(tree, treeBuilder.getPreviousIssue(it.lastPathComponent as AbstractNode))
+        } ?: oldTree.selectionPath?.let {
+            occurrence(oldTree, oldTreeBuilder.getPreviousIssue(it.lastPathComponent as AbstractNode))
+        }
     }
 
     override fun getNextOccurenceActionName(): String {
@@ -331,7 +397,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     override fun getData(dataId: String): Any? {
         return if (TAINT_VULNERABILITY_DATA_KEY.`is`(dataId)) {
-            tree.getSelectedIssue()
+            tree.getSelectedIssue() ?: oldTree.getSelectedIssue()
         } else null
     }
 
