@@ -44,8 +44,8 @@ import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
 
 sealed class TaintVulnerabilitiesStatus {
-  fun isEmpty() = count() == 0
-  open fun count() = 0
+  fun isEmpty() = count(false) == 0
+  open fun count(newCode: Boolean) = 0
 }
 
 object NoBinding : TaintVulnerabilitiesStatus()
@@ -53,7 +53,15 @@ object NoBinding : TaintVulnerabilitiesStatus()
 object InvalidBinding : TaintVulnerabilitiesStatus()
 
 data class FoundTaintVulnerabilities(val byFile: Map<VirtualFile, Collection<LocalTaintVulnerability>>) : TaintVulnerabilitiesStatus() {
-  override fun count() = byFile.values.stream().mapToInt { it.size }.sum()
+  override fun count(newCode: Boolean): Int {
+    return if (newCode) {
+      newVulnerabilities().values.stream().mapToInt { it.size }.sum()
+    } else {
+      byFile.values.stream().mapToInt { it.size }.sum()
+    }
+  }
+  fun newVulnerabilities() = byFile.flatMap { (key, values) -> values.filter { it.isOnNewCode() }.map { key to it } }.groupBy({ it.first }, { it.second })
+  fun oldVulnerabilities() = byFile.flatMap { (key, values) -> values.filter { !it.isOnNewCode() }.map { key to it } }.groupBy({ it.first }, { it.second })
 }
 
 const val TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE = "Error refreshing taint vulnerabilities"

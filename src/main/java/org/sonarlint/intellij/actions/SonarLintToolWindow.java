@@ -47,6 +47,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesLoader;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesStatus;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
@@ -57,6 +58,8 @@ import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintToolWindow implements ContentManagerListenerAdapter {
@@ -135,20 +138,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
   }
 
   public void filterCurrentFileTab(boolean isResolved) {
-    var currentFileTab = getCurrentFileTab();
-    if (currentFileTab != null) {
-      var currentFilePanel = (CurrentFilePanel) currentFileTab.getComponent();
-      currentFilePanel.allowResolvedIssues(isResolved);
-    }
-  }
-
-  private Content getCurrentFileTab() {
-    var toolWindow = getToolWindow();
-    if (toolWindow != null) {
-      var contentManager = toolWindow.getContentManager();
-      return contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
-    }
-    return null;
+    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.allowResolvedIssues(isResolved));
   }
 
   /**
@@ -182,6 +172,29 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     openTab(SonarLintToolWindowFactory.LOG_TAB_TITLE);
   }
 
+  public void setFocusOnNewCode(boolean isFocusOnNewCode) {
+    // TODO
+    // this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::setFocusOnNewCode);
+    // this.updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::setFocusOnNewCode);
+
+    /*
+    var hotspotContent = getSecurityHotspotContent();
+    if (hotspotContent != null) {
+      hotspotContent.setDisplayName(buildTabName(HOTSPOT_COUNT***, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+      var hotspotPanel = (SecurityHotspotsPanel) hotspotContent.getComponent();
+      hotspotPanel.setFocusOnNewCode();
+    }
+     */
+
+    var taintContent = getTaintVulnerabilitiesContent();
+    if (taintContent != null) {
+      var taintStatus = TaintVulnerabilitiesLoader.INSTANCE.getTaintVulnerabilitiesByOpenedFiles(project);
+      var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
+      taintPanel.setFocusOnNewCode(isFocusOnNewCode);
+      populateTaintVulnerabilitiesTab(taintStatus);
+    }
+  }
+
   private void openTab(String name) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();
@@ -202,31 +215,13 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     return SonarLintToolWindowFactory.getSonarLintToolWindow(project);
   }
 
-  private Content getTaintVulnerabilitiesContent() {
-    var toolWindow = getToolWindow();
-    if (taintVulnerabilitiesContent == null && toolWindow != null) {
-      taintVulnerabilitiesContent = toolWindow.getContentManager()
-        .findContent(buildTabName(0, SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
-    }
-    return taintVulnerabilitiesContent;
-  }
-
   public void populateTaintVulnerabilitiesTab(TaintVulnerabilitiesStatus status) {
     var content = getTaintVulnerabilitiesContent();
     if (content != null) {
-      content.setDisplayName(buildTabName(status.count(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+      content.setDisplayName(buildTabName(status.count(getGlobalSettings().isFocusOnNewCode()), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
       var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
       taintVulnerabilitiesPanel.populate(status);
     }
-  }
-
-  private Content getSecurityHotspotContent() {
-    var toolWindow = getToolWindow();
-    if (securityHotspotsContent == null && toolWindow != null) {
-      securityHotspotsContent = toolWindow.getContentManager()
-        .findContent(buildTabName(0, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
-    }
-    return securityHotspotsContent;
   }
 
   public void populateSecurityHotspotsTab(SecurityHotspotsLocalDetectionSupport status) {
@@ -387,4 +382,23 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     // Introduced in the context of Security Hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
   }
+
+  private Content getSecurityHotspotContent() {
+    var toolWindow = getToolWindow();
+    if (securityHotspotsContent == null && toolWindow != null) {
+      securityHotspotsContent = toolWindow.getContentManager()
+        .findContent(buildTabName(0, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+    }
+    return securityHotspotsContent;
+  }
+
+  private Content getTaintVulnerabilitiesContent() {
+    var toolWindow = getToolWindow();
+    if (taintVulnerabilitiesContent == null && toolWindow != null) {
+      taintVulnerabilitiesContent = toolWindow.getContentManager()
+        .findContent(buildTabName(0, SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+    }
+    return taintVulnerabilitiesContent;
+  }
+
 }

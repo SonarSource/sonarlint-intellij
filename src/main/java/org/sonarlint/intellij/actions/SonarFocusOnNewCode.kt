@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 
 class SonarFocusOnNewCode : AbstractSonarToggleAction() {
@@ -27,9 +28,8 @@ class SonarFocusOnNewCode : AbstractSonarToggleAction() {
     override fun isSelected(e: AnActionEvent): Boolean = Settings.getGlobalSettings().isFocusOnNewCode
 
     override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
-        if (Settings.getGlobalSettings().isFocusOnNewCode != isSelected) {
-            Settings.getGlobalSettings().isFocusOnNewCode = isSelected
-        }
+        Settings.getGlobalSettings().isFocusOnNewCode = isSelected
+        e.project?.let { SonarLintUtils.getService(it, SonarLintToolWindow::class.java).setFocusOnNewCode(isSelected) }
     }
 
 }
