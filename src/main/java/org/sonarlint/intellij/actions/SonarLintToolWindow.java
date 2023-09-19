@@ -173,8 +173,8 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
   }
 
   public void setFocusOnNewCode(boolean isFocusOnNewCode) {
+    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.setFocusOnNewCode(isFocusOnNewCode));
     // TODO
-    // this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::setFocusOnNewCode);
     // this.updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::setFocusOnNewCode);
 
     /*
