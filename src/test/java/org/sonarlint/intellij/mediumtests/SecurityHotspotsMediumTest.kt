@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.mediumtests
 
 import com.intellij.openapi.application.PathManager
+import java.nio.file.Path
+import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.AfterEach
@@ -38,9 +40,6 @@ import org.sonarsource.sonarlint.core.commons.TextRange
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import org.sonarsource.sonarlint.core.serverapi.proto.sonarqube.ws.Common
 import org.sonarsource.sonarlint.core.serverapi.proto.sonarqube.ws.Hotspots
-import org.sonarsource.sonarlint.core.serverconnection.FileUtils
-import java.nio.file.Path
-import java.nio.file.Paths
 
 class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     private lateinit var storageFolderPath: Path
@@ -49,7 +48,6 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     @BeforeEach
     fun prepare() {
         storageFolderPath = Paths.get(PathManager.getSystemPath()).resolve("sonarlint")
-        FileUtils.deleteRecursively(storageFolderPath)
         engineManager.stopAllEngines(false)
         mockServer = MockServer()
         mockServer.start()
@@ -68,7 +66,6 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     @Test
     fun should_raise_new_security_hotspots_when_connected_to_compatible_sonarqube() {
         createStorage(serverVersion = "9.7", activeRuleKey = "ruby:S1313")
-        getService(BackendService::class.java).branchChanged(module, "newBranch")
 
         val raisedHotspots = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
