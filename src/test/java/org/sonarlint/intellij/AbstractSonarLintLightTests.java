@@ -22,6 +22,7 @@ package org.sonarlint.intellij;
 import com.intellij.lang.Language;
 import com.intellij.notification.Notification;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -29,13 +30,19 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.commons.io.file.PathUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
@@ -56,6 +63,8 @@ import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -63,10 +72,18 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
 
   private Disposable disposable;
+  protected static final Path storageRoot = Paths.get(PathManager.getSystemPath()).resolve("sonarlint").resolve("storage");
 
   @Override
   protected final String getTestDataPath() {
     return Paths.get("src/test/testData/" + this.getClass().getSimpleName()).toAbsolutePath().toString();
+  }
+
+  @BeforeAll
+  static void clearStorageRoot() throws IOException {
+    if (Files.exists(storageRoot)) {
+      PathUtils.deleteDirectory(storageRoot);
+    }
   }
 
   @BeforeEach
@@ -87,6 +104,11 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getModuleSettings().setSqPathPrefix("");
     getModuleSettings().clearBindingOverride();
     getService(BackendService.class).connectionsUpdated(Collections.emptyList());
+    // the line before might remove connections, let time for the storage to be cleaned up by the backend
+    await().atMost(Duration.ofSeconds(3))
+      .untilAsserted(() -> assertThat(storageRoot).satisfiesAnyOf(
+        root -> assertThat(root).doesNotExist(),
+        root -> assertThat(root).isEmptyDirectory()));
     getService(BackendService.class).projectUnbound(getProject());
   }
 
