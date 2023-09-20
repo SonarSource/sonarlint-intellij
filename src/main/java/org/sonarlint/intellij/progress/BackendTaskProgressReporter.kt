@@ -19,17 +19,21 @@
  */
 package org.sonarlint.intellij.progress
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.progress.PerformInBackgroundOption
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.clientapi.client.progress.ProgressUpdateNotification
 import org.sonarsource.sonarlint.core.clientapi.client.progress.StartProgressParams
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
 
 class BackendTaskProgressReporter {
     private val taskPool = ConcurrentHashMap<String, AwaitingBackgroundTask>()
@@ -50,7 +54,12 @@ class BackendTaskProgressReporter {
             taskPool.remove(taskId)
         })
         taskPool[taskId] = task
-        task.queue()
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            // in headless mode the task is run on the same thread, run on a pooled thread instead
+            ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, EmptyProgressIndicator())
+        } else {
+            task.queue()
+        }
         return taskStartedFuture
     }
 
@@ -79,7 +88,7 @@ private class AwaitingBackgroundTask(
     private val taskStartedFuture: CompletableFuture<Void>,
     private val onCompletion: () -> Unit,
 ) :
-    Task.Backgroundable(project, params.title, params.isCancellable) {
+    Task.Backgroundable(project, params.title, params.isCancellable, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
     var progressIndicator: ProgressIndicator? = null
     private val waitMonitor = Object()
     private val complete = AtomicBoolean(false)
