@@ -93,5 +93,4 @@ public class LiveSecurityHotspot extends LiveFinding {
   public boolean isResolved() {
     return status.isResolved();
   }
-
 }

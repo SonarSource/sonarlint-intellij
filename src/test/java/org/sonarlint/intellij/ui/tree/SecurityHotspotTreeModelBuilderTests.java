@@ -143,7 +143,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     addFileWithStatusAndFindingKeyForHotspot(data, "file4", 1, HotspotReviewStatus.FIXED, "keyC");
     addFileWithStatusAndFindingKeyForHotspot(data, "file5", 1, HotspotReviewStatus.SAFE, "keyD");
 
-    treeBuilder.updateModelWithoutFileNode(data, "empty");
+    treeBuilder.updateModelWithoutFileNode(data, "empty", true);
 
     assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.SHOW_ALL)).isEqualTo(3);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(3);
@@ -164,7 +164,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     addFileWithStatusAndFindingKeyForHotspot(data, "file3", 1, HotspotReviewStatus.FIXED, "keyC");
     addFileWithStatusAndFindingKeyForHotspot(data, "file4", 1, HotspotReviewStatus.SAFE, "keyD");
 
-    treeBuilder.updateModelWithoutFileNode(data, "empty");
+    treeBuilder.updateModelWithoutFileNode(data, "empty", true);
 
     assertThat(treeBuilder.filterSecurityHotspots(getProject(), false)).isEqualTo(2);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
@@ -182,7 +182,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
       Assertions.fail();
     }
 
-    treeBuilder.updateModelWithoutFileNode(data, "empty");
+    treeBuilder.updateModelWithoutFileNode(data, "empty",true);
 
     var result = treeBuilder.updateStatusAndApplyCurrentFiltering(getProject(), Objects.requireNonNull(hotspot.get().getServerFindingKey()), HotspotStatus.FIXED);
     assertThat(result).isZero();
@@ -199,7 +199,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
       Assertions.fail();
     }
 
-    treeBuilder.updateModelWithoutFileNode(data, "empty");
+    treeBuilder.updateModelWithoutFileNode(data, "empty", true);
 
     var filteredResultBeforeFiltering = treeBuilder.findFilteredHotspotByKey(Objects.requireNonNull(hotspot.get().getServerFindingKey()));
     var resultBeforeFiltering = treeBuilder.findHotspotByKey(Objects.requireNonNull(hotspot.get().getServerFindingKey()));
