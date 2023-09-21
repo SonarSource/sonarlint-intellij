@@ -28,6 +28,7 @@ import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.Orchestrator
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
+import java.time.Duration.ofSeconds
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -48,7 +49,6 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsCl
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
-import java.time.Duration.ofSeconds
 
 @DisabledIf("isCLionOrGoLand")
 class BindingTest : BaseUiTest() {
@@ -71,7 +71,7 @@ class BindingTest : BaseUiTest() {
         }
         verifyCurrentFileShowsCard("ConnectedCard")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file since new analysis",
+            "Found 1 issue in 1 file",
             "HelloProject.scala",
         )
         clickCurrentFileIssue("Remove or correct this useless self-assignment.")
@@ -80,7 +80,7 @@ class BindingTest : BaseUiTest() {
         openFile("mod/src/HelloModule.scala", "HelloModule.scala")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file since new analysis",
+            "Found 1 issue in 1 file",
             "HelloModule.scala",
         )
         clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
