@@ -32,17 +32,17 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.GridBag
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import javax.swing.JPanel
 import org.sonarlint.intellij.actions.ShowLogAction
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.pluralize
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.persistence.FindingsCache
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import java.lang.Boolean
-import javax.swing.JPanel
 
 class SonarLintDashboard(private val editor: Editor) {
 
@@ -55,12 +55,16 @@ class SonarLintDashboard(private val editor: Editor) {
     private val focusOnNewCodeCheckbox = JBCheckBox("Focus on new code")
 
     init {
-        focusOnNewCodeCheckbox.addActionListener { Settings.getGlobalSettings().isFocusOnNewCode = focusOnNewCodeCheckbox.isSelected }
+        focusOnNewCodeCheckbox.addActionListener {
+            Settings.getGlobalSettings().isFocusOnNewCode = focusOnNewCodeCheckbox.isSelected
+            val project = editor.project ?: return@addActionListener
+            getService(project, SonarLintToolWindow::class.java).setFocusOnNewCode(focusOnNewCodeCheckbox.isSelected)
+        }
         focusOnNewCodeCheckbox.isOpaque = false
 
         val presentation = Presentation()
         presentation.icon = AllIcons.Actions.More
-        presentation.putClientProperty(ActionButton.HIDE_DROPDOWN_ICON, Boolean.TRUE)
+        presentation.putClientProperty(ActionButton.HIDE_DROPDOWN_ICON, true)
 
         val menuButton = ActionButton(
             MenuAction(),
@@ -84,7 +88,7 @@ class SonarLintDashboard(private val editor: Editor) {
         val isFocusOnNewCode = Settings.getGlobalSettings().isFocusOnNewCode
         focusOnNewCodeCheckbox.isSelected = isFocusOnNewCode
 
-        val findings = SonarLintUtils.getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved }
+        val findings = getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved }
         if (findings.isEmpty()) {
             findingsSummaryLabel.text = NO_FINDINGS_TEXT
         } else {
@@ -100,7 +104,7 @@ class SonarLintDashboard(private val editor: Editor) {
                 }
                 text += hotspotsCount.toString() + pluralize(" hotspot", hotspotsCount.toLong())
             }
-            findingsSummaryLabel.text= text
+            findingsSummaryLabel.text = text
         }
     }
 

@@ -60,8 +60,8 @@ data class FoundTaintVulnerabilities(val byFile: Map<VirtualFile, Collection<Loc
       byFile.values.stream().mapToInt { it.size }.sum()
     }
   }
-  fun newVulnerabilities() = byFile.flatMap { (key, values) -> values.filter { it.isOnNewCode() }.map { key to it } }.groupBy({ it.first }, { it.second })
-  fun oldVulnerabilities() = byFile.flatMap { (key, values) -> values.filter { !it.isOnNewCode() }.map { key to it } }.groupBy({ it.first }, { it.second })
+  fun newVulnerabilities() = byFile.mapValues { (_, issues) -> issues.filter { it.isOnNewCode() }}.filterValues { it.isNotEmpty() }
+  fun oldVulnerabilities() = byFile.mapValues { (_, issues) -> issues.filter { !it.isOnNewCode() }}.filterValues { it.isNotEmpty() }
 }
 
 const val TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE = "Error refreshing taint vulnerabilities"
