@@ -177,14 +177,12 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     // this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::setFocusOnNewCode);
     // this.updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::setFocusOnNewCode);
 
-    /*
     var hotspotContent = getSecurityHotspotContent();
     if (hotspotContent != null) {
-      hotspotContent.setDisplayName(buildTabName(HOTSPOT_COUNT***, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
-      var hotspotPanel = (SecurityHotspotsPanel) hotspotContent.getComponent();
-      hotspotPanel.setFocusOnNewCode();
+      var hotspotsPanel = (SecurityHotspotsPanel) hotspotContent.getComponent();
+      hotspotsPanel.setFocusOnNewCode(isFocusOnNewCode);
+      hotspotContent.setDisplayName(buildTabName(hotspotsPanel.getSecurityHotspotCount(), SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
-     */
 
     var taintContent = getTaintVulnerabilitiesContent();
     if (taintContent != null) {
