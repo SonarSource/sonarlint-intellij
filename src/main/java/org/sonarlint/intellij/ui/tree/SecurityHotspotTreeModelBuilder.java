@@ -39,6 +39,7 @@ import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -46,6 +47,8 @@ import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 /**
  * Responsible for maintaining the tree model and send change events when needed.
@@ -188,18 +191,41 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       .findFirst();
   }
 
-  public int updateModelWithoutFileNode(Map<VirtualFile, Collection<LiveSecurityHotspot>> map, String emptyText) {
+  public int updateModelWithoutFileNode(Map<VirtualFile, Collection<LiveSecurityHotspot>> map, String emptyText, boolean isNewTree) {
     summary.setEmptyText(emptyText);
     summary.removeAllChildren();
 
     for (var e : map.entrySet()) {
-      setSecurityHotspots(e.getKey(), e.getValue());
+      var value = new ArrayList<LiveSecurityHotspot>();
+
+      if (getGlobalSettings().isFocusOnNewCode()) {
+        value = getLiveSecurityHotspots(isNewTree, e);
+      } else {
+        value = (ArrayList<LiveSecurityHotspot>) e.getValue();
+      }
+
+      setSecurityHotspots(e.getKey(), value);
     }
 
     copyToFilteredNodes();
     model.nodeChanged(summary);
 
     return summary.getFindingCount();
+  }
+  
+  private static ArrayList<LiveSecurityHotspot> getLiveSecurityHotspots(boolean isNewTree, Map.Entry<VirtualFile, Collection<LiveSecurityHotspot>> e) {
+    ArrayList<LiveSecurityHotspot> value;
+    if (isNewTree) {
+      value = (ArrayList<LiveSecurityHotspot>) e.getValue().stream()
+        .filter(LiveFinding::isOnNewCode)
+        .collect(Collectors.toList());
+    } else {
+      value = (ArrayList<LiveSecurityHotspot>) e.getValue().stream()
+        .filter(node -> !node.isOnNewCode())
+        .collect(Collectors.toList());
+    }
+
+    return value;
   }
 
   private void setSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
