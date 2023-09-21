@@ -39,6 +39,18 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
+import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.event.ActionEvent
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import javax.swing.Box
+import javax.swing.JPanel
+import javax.swing.event.TreeSelectionListener
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreeNode
+import javax.swing.tree.TreePath
+import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
@@ -59,22 +71,11 @@ import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.nodes.AbstractNode
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LocalTaintVulnerabilityNode
+import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTree
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTreeModelBuilder
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarlint.intellij.util.SonarLintActions
-import java.awt.BorderLayout
-import java.awt.Dimension
-import java.awt.event.ActionEvent
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import javax.swing.Box
-import javax.swing.JPanel
-import javax.swing.event.TreeSelectionListener
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.TreeNode
-import javax.swing.tree.TreePath
-import javax.swing.tree.TreeSelectionModel
 
 private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_SPLIT_PROPORTION"
 private const val DEFAULT_SPLIT_PROPORTION = 0.5f
@@ -93,11 +94,14 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private lateinit var treeBuilder: TaintVulnerabilityTreeModelBuilder
     private lateinit var oldTree: TaintVulnerabilityTree
     private lateinit var oldTreeBuilder: TaintVulnerabilityTreeModelBuilder
+    private val treeSummaryNode = SummaryNode(false, false)
+    private val oldTreeSummaryNode = SummaryNode(false, true)
     private lateinit var treeListeners: Map<TaintVulnerabilityTree, List<TreeSelectionListener>>
     private val treePanel: JBPanel<TaintVulnerabilitiesPanel>
     private val rulePanel = SonarLintRulePanel(project, this)
     private val cards = CardPanel()
     private val noVulnerabilitiesPanel: JBPanelWithEmptyText
+    private var currentStatus: FoundTaintVulnerabilities? = null
 
     init {
         val globalSettings = getGlobalSettings()
@@ -213,6 +217,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     private fun populateTree(status: FoundTaintVulnerabilities) {
+        currentStatus = status
         val valuesByNewCode = if (getGlobalSettings().isFocusOnNewCode) {
             mapOf(Pair(tree, treeBuilder) to status.newVulnerabilities(), Pair(oldTree, oldTreeBuilder) to status.oldVulnerabilities())
         } else {
@@ -295,12 +300,15 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         tree.showsRootHandles = isFocusOnNewCode
         oldTree.showsRootHandles = isFocusOnNewCode
         oldTree.isVisible = isFocusOnNewCode
+        treeSummaryNode.emptyText = if (isFocusOnNewCode) "No issues since new analysis" else "No issues to display"
+        oldTreeSummaryNode.emptyText = if (isFocusOnNewCode) "No older issues" else "No issues to display"
+        currentStatus?.let { populateTree(it) }
     }
 
     private fun initTrees() {
-        treeBuilder = TaintVulnerabilityTreeModelBuilder(true)
+        treeBuilder = TaintVulnerabilityTreeModelBuilder(treeSummaryNode)
         tree = TaintVulnerabilityTree(project, treeBuilder.model)
-        oldTreeBuilder = TaintVulnerabilityTreeModelBuilder(false)
+        oldTreeBuilder = TaintVulnerabilityTreeModelBuilder(oldTreeSummaryNode)
         oldTree = TaintVulnerabilityTree(project, oldTreeBuilder.model)
 
         treeListeners = mapOf(

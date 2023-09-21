@@ -20,13 +20,14 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import org.junit.jupiter.api.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class SummaryNodeTests {
+class SummaryNodeTests extends AbstractSonarLintLightTests {
   private final SummaryNode node = new SummaryNode();
   private final SummaryNode nodeForSecurityHotspot = new SummaryNode(true, false);
 
@@ -40,7 +41,7 @@ class SummaryNodeTests {
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
-    verify(renderer).append("Found 3 issues in 1 file since new analysis");
+    verify(renderer).append("Found 3 issues in 1 file");
   }
 
   @Test

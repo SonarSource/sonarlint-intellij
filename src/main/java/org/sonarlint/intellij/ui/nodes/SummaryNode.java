@@ -24,22 +24,24 @@ import java.util.Comparator;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+
 public class SummaryNode extends AbstractNode {
-  private static final String FORMAT = "Found %d %s in %d %s";
+  private static final String FORMAT = "Found %d %s%s in %d %s%s";
   private String emptyText;
   private final boolean forSecurityHotspot;
-  private final boolean forOldIssues;
+  private final boolean containsOldFindings;
 
   public SummaryNode() {
     super();
-    forOldIssues = false;
+    containsOldFindings = false;
     this.emptyText = "No issues to display";
     this.forSecurityHotspot = false;
   }
 
-  public SummaryNode(boolean forSecurityHotspot, boolean forOldIssues) {
+  public SummaryNode(boolean forSecurityHotspot, boolean containsOldFindings) {
     super();
-    this.forOldIssues = forOldIssues;
+    this.containsOldFindings = containsOldFindings;
     if (forSecurityHotspot) {
       this.emptyText = "No Security Hotspots to display";
     } else {
@@ -64,13 +66,18 @@ public class SummaryNode extends AbstractNode {
       return emptyText;
     }
 
-    if (forSecurityHotspot) {
-      return String.format(FORMAT, findings, findings == 1 ? "Security Hotspot" : "Security Hotspots", files, files == 1 ? "file" : "files");
+    String sinceText = "";
+    String newOrOldOrNothing = "";
+    if (getGlobalSettings().isFocusOnNewCode()) {
+      sinceText = containsOldFindings ? "" : " since [XXX use NCD from backend]";
+      newOrOldOrNothing = containsOldFindings ? "older " : "new ";
     }
 
-    var sinceText = forOldIssues ? "since old analysis" : "since new analysis";
+    return String.format(FORMAT, findings, newOrOldOrNothing, pluralize(forSecurityHotspot ? "Security Hotspot" : "issue", findings), files, pluralize("file", files), sinceText);
+  }
 
-    return String.format(FORMAT, findings, findings == 1 ? "issue" : "issues", files, files == 1 ? ("file " + sinceText) : ("files " + sinceText));
+  private static String pluralize(String word, int count) {
+    return count == 1 ? word : word + "s";
   }
 
   public int insertFileNode(FileNode newChild, Comparator<FileNode> comparator) {
