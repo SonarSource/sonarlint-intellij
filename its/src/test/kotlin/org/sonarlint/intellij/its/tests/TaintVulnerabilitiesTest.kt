@@ -59,7 +59,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
 
         verifyTaintTabContainsMessages(
             this,
-            "Found 1 issue in 1 file since new analysis",
+            "Found 1 issue in 1 file",
             "FileWithSink.java",
             "Change this code to not construct SQL queries directly from user-controlled data."
         )
