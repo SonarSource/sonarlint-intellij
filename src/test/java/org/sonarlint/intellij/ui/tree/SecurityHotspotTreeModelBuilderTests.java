@@ -63,7 +63,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   @BeforeEach
   void init() {
     treeBuilder = new SecurityHotspotTreeModelBuilder();
-    model = treeBuilder.createModel();
+    model = treeBuilder.createModel(getProject(), true);
     treeBuilder.currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
     treeBuilder.shouldIncludeResolvedHotspots = false;
     replaceProjectService(CodeAnalyzerRestarter.class, codeAnalyzerRestarter);
@@ -71,7 +71,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
 
   @Test
   void createModel() {
-    var model = treeBuilder.createModel();
+    var model = treeBuilder.createModel(getProject(), true);
     assertThat(model.getRoot()).isNotNull();
   }
 
@@ -85,7 +85,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     addFile(data, "file2", 2);
     addFile(data, "file3", 2);
 
-    treeBuilder.updateModel(data, "empty");
+    treeBuilder.updateModel(data);
     var first = treeBuilder.getNextHotspot((AbstractNode) model.getRoot());
     assertThat(first).isNotNull();
 
@@ -143,7 +143,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     addFileWithStatusAndFindingKeyForHotspot(data, "file4", 1, HotspotReviewStatus.FIXED, "keyC");
     addFileWithStatusAndFindingKeyForHotspot(data, "file5", 1, HotspotReviewStatus.SAFE, "keyD");
 
-    treeBuilder.updateModelWithoutFileNode(data, "empty", true);
+    treeBuilder.updateModelWithoutFileNode(data);
 
     assertThat(treeBuilder.filterSecurityHotspots(getProject(), SecurityHotspotFilters.SHOW_ALL)).isEqualTo(3);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(3);
@@ -164,7 +164,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     addFileWithStatusAndFindingKeyForHotspot(data, "file3", 1, HotspotReviewStatus.FIXED, "keyC");
     addFileWithStatusAndFindingKeyForHotspot(data, "file4", 1, HotspotReviewStatus.SAFE, "keyD");
 
-    treeBuilder.updateModelWithoutFileNode(data, "empty", true);
+    treeBuilder.updateModelWithoutFileNode(data);
 
     assertThat(treeBuilder.filterSecurityHotspots(getProject(), false)).isEqualTo(2);
     assertThat(treeBuilder.getFilteredNodes()).hasSize(2);
@@ -182,7 +182,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
       Assertions.fail();
     }
 
-    treeBuilder.updateModelWithoutFileNode(data, "empty",true);
+    treeBuilder.updateModelWithoutFileNode(data);
 
     var result = treeBuilder.updateStatusAndApplyCurrentFiltering(getProject(), Objects.requireNonNull(hotspot.get().getServerFindingKey()), HotspotStatus.FIXED);
     assertThat(result).isZero();
@@ -199,7 +199,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
       Assertions.fail();
     }
 
-    treeBuilder.updateModelWithoutFileNode(data, "empty", true);
+    treeBuilder.updateModelWithoutFileNode(data);
 
     var filteredResultBeforeFiltering = treeBuilder.findFilteredHotspotByKey(Objects.requireNonNull(hotspot.get().getServerFindingKey()));
     var resultBeforeFiltering = treeBuilder.findHotspotByKey(Objects.requireNonNull(hotspot.get().getServerFindingKey()));

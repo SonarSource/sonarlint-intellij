@@ -126,7 +126,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   private void createIssuesTree() {
-    treeBuilder = new IssueTreeModelBuilder();
+    treeBuilder = new IssueTreeModelBuilder(project);
     var model = treeBuilder.createModel(false);
     tree = new IssueTree(project, model);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
@@ -143,7 +143,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   private void createOldIssuesTree() {
-    oldTreeBuilder = new IssueTreeModelBuilder();
+    oldTreeBuilder = new IssueTreeModelBuilder(project);
     var model = oldTreeBuilder.createModel(true);
     oldTree = new IssueTree(project, model);
     oldTree.addTreeSelectionListener(e -> oldIssueTreeSelectionChanged());
