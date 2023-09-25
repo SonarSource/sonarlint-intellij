@@ -99,6 +99,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     if (content != null) {
       var reportPanel = (ReportPanel) content.getComponent();
       reportPanel.updateStatusForSecurityHotspot(securityHotspotKey, status);
+      reportPanel.updateStatusForOldSecurityHotspots(securityHotspotKey, status);
     }
   }
 
@@ -177,9 +178,10 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
   }
 
   public void setFocusOnNewCode(boolean isFocusOnNewCode) {
-    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.setFocusOnNewCode(isFocusOnNewCode));
-    // TODO
-    // this.updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::setFocusOnNewCode);
+    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.setFocusOnNewCode(getService(project, CleanAsYouCodeService.class)
+      .shouldFocusOnNewCode()));
+    this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.setFocusOnNewCode(getService(project, CleanAsYouCodeService.class)
+      .shouldFocusOnNewCode()));
 
     var hotspotContent = getSecurityHotspotContent();
     if (hotspotContent != null) {
