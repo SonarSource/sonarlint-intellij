@@ -23,61 +23,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
-
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import org.sonarlint.intellij.ui.tree.TreeSummary;
 
 public class SummaryNode extends AbstractNode {
-  private static final String FORMAT = "Found %d %s%s in %d %s%s";
-  private String emptyText;
-  private final boolean forSecurityHotspot;
-  private final boolean containsOldFindings;
+  private final TreeSummary treeSummary;
 
-  public SummaryNode() {
-    super();
-    containsOldFindings = false;
-    this.emptyText = "No issues to display";
-    this.forSecurityHotspot = false;
-  }
-
-  public SummaryNode(boolean forSecurityHotspot, boolean containsOldFindings) {
-    super();
-    this.containsOldFindings = containsOldFindings;
-    if (forSecurityHotspot) {
-      this.emptyText = "No Security Hotspots to display";
-    } else {
-      this.emptyText = "No issues to display";
-    }
-    this.forSecurityHotspot = forSecurityHotspot;
-  }
-
-  public void setEmptyText(String emptyText) {
-    this.emptyText = emptyText;
-  }
-
-  public String getEmptyText() {
-    return emptyText;
-  }
-
-  public String getText() {
-    var findings = getFindingCount();
-    var files = getChildCount();
-
-    if (findings == 0) {
-      return emptyText;
-    }
-
-    String sinceText = "";
-    String newOrOldOrNothing = "";
-    if (getGlobalSettings().isFocusOnNewCode()) {
-      sinceText = containsOldFindings ? "" : " since [XXX use NCD from backend]";
-      newOrOldOrNothing = containsOldFindings ? "older " : "new ";
-    }
-
-    return String.format(FORMAT, findings, newOrOldOrNothing, pluralize(forSecurityHotspot ? "Security Hotspot" : "issue", findings), files, pluralize("file", files), sinceText);
-  }
-
-  private static String pluralize(String word, int count) {
-    return count == 1 ? word : word + "s";
+  public SummaryNode(TreeSummary treeSummary) {
+    this.treeSummary = treeSummary;
   }
 
   public int insertFileNode(FileNode newChild, Comparator<FileNode> comparator) {
@@ -116,12 +68,12 @@ public class SummaryNode extends AbstractNode {
 
   @Override
   public void render(TreeCellRenderer renderer) {
-    renderer.append(getText());
+    renderer.append(treeSummary.getText());
     renderer.setToolTipText(null);
   }
 
   @Override
   public String toString() {
-    return getText();
+    return treeSummary.getText();
   }
 }

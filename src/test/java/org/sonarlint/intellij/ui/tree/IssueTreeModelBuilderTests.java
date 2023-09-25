@@ -32,7 +32,9 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -51,9 +53,15 @@ import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MAJOR;
 import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR;
 import static org.sonarsource.sonarlint.core.commons.SoftwareQuality.MAINTAINABILITY;
 
-class IssueTreeModelBuilderTests {
-  private final IssueTreeModelBuilder treeBuilder = new IssueTreeModelBuilder();
-  private final DefaultTreeModel model = treeBuilder.createModel(false);
+class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
+  private IssueTreeModelBuilder treeBuilder;
+  private DefaultTreeModel model;
+
+  @BeforeEach
+  void prepare() {
+    treeBuilder = new IssueTreeModelBuilder(getProject());
+    model = treeBuilder.createModel(false);
+  }
 
   @Test
   void createModel() {
@@ -71,7 +79,7 @@ class IssueTreeModelBuilderTests {
     addFile(data, "file2", 2);
     addFile(data, "file3", 2);
 
-    treeBuilder.updateModel(data, "empty");
+    treeBuilder.updateModel(data);
     var first = treeBuilder.getNextIssue((AbstractNode) model.getRoot());
     assertThat(first).isNotNull();
 

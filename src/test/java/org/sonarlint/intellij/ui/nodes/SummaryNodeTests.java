@@ -19,22 +19,34 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
+import org.sonarlint.intellij.ui.tree.TreeContentKind;
+import org.sonarlint.intellij.ui.tree.TreeSummary;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class SummaryNodeTests extends AbstractSonarLintLightTests {
-  private final SummaryNode node = new SummaryNode();
-  private final SummaryNode nodeForSecurityHotspot = new SummaryNode(true, false);
+  private SummaryNode node;
+  private SummaryNode nodeForSecurityHotspot;
+  private TreeSummary treeSummary;
+  private TreeSummary hotspotsTreeSummary;
+
+  @BeforeEach
+  void prepare() {
+    treeSummary = new TreeSummary(getProject(), TreeContentKind.ISSUES, false);
+    node = new SummaryNode(treeSummary);
+    hotspotsTreeSummary = new TreeSummary(getProject(), TreeContentKind.SECURITY_HOTSPOTS, false);
+    nodeForSecurityHotspot = new SummaryNode(hotspotsTreeSummary);
+  }
 
   @Test
   void testTextIssue() {
     var child1 = mock(AbstractNode.class);
-    when(child1.getFindingCount()).thenReturn(3);
+    treeSummary.refresh(1, 3);
 
     node.add(child1);
 
@@ -47,7 +59,7 @@ class SummaryNodeTests extends AbstractSonarLintLightTests {
   @Test
   void testTextSecurityHotspot() {
     var child1 = mock(AbstractNode.class);
-    when(child1.getFindingCount()).thenReturn(3);
+    hotspotsTreeSummary.refresh(1, 3);
 
     nodeForSecurityHotspot.add(child1);
 
@@ -60,6 +72,7 @@ class SummaryNodeTests extends AbstractSonarLintLightTests {
   @Test
   void testNoIssues() {
     var renderer = mock(TreeCellRenderer.class);
+    treeSummary.refresh(1, 0);
     node.render(renderer);
 
     verify(renderer).append("No issues to display");
@@ -68,6 +81,7 @@ class SummaryNodeTests extends AbstractSonarLintLightTests {
   @Test
   void testNoSecurityHotspots() {
     var renderer = mock(TreeCellRenderer.class);
+    hotspotsTreeSummary.refresh(1, 0);
     nodeForSecurityHotspot.render(renderer);
 
     verify(renderer).append("No Security Hotspots to display");
@@ -76,9 +90,8 @@ class SummaryNodeTests extends AbstractSonarLintLightTests {
   @Test
   void testEmptyText() {
     var renderer = mock(TreeCellRenderer.class);
-    node.setEmptyText("Empty");
     node.render(renderer);
 
-    verify(renderer).append("Empty");
+    verify(renderer).append("No analysis done");
   }
 }

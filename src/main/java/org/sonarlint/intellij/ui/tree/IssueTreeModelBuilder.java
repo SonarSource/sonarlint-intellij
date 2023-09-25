@@ -65,12 +65,15 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
   private final FindingTreeIndex index;
+  private final Project project;
   private DefaultTreeModel model;
-  private SummaryNode summary;
+  private SummaryNode summaryNode;
   protected boolean includeLocallyResolvedIssues = false;
   private Map<VirtualFile, Collection<LiveIssue>> latestIssues;
+  private TreeSummary treeSummary;
 
-  public IssueTreeModelBuilder() {
+  public IssueTreeModelBuilder(Project project) {
+    this.project = project;
     this.index = new FindingTreeIndex();
   }
 
@@ -79,42 +82,44 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
    */
   public DefaultTreeModel createModel(boolean isOldIssue) {
     latestIssues = Collections.emptyMap();
-    if (isOldIssue) {
-      summary = new SummaryNode(false, true);
-    } else {
-      summary = new SummaryNode();
-    }
-
-    model = new DefaultTreeModel(summary);
-    model.setRoot(summary);
+    treeSummary = new TreeSummary(project, TreeContentKind.ISSUES, isOldIssue);
+    summaryNode = new SummaryNode(treeSummary);
+    model = new DefaultTreeModel(summaryNode);
+    model.setRoot(summaryNode);
     return model;
   }
 
   public int numberIssues() {
-    return summary.getFindingCount();
+    return summaryNode.getFindingCount();
   }
 
   private SummaryNode getFilesParent() {
-    return summary;
+    return summaryNode;
   }
 
   public void clear() {
-    updateModel(Collections.emptyMap(), "No analysis done");
+    updateModel(Collections.emptyMap());
   }
 
-  public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map, String emptyText) {
+  public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map) {
     latestIssues = map;
-    summary.setEmptyText(emptyText);
 
     var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
 
     toRemove.forEach(this::removeFile);
 
+    var fileWithIssuesCount = 0;
+    var issuesCount = 0;
     for (var e : map.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue());
+      var fileIssuesCount = setFileIssues(e.getKey(), e.getValue());
+      if (fileIssuesCount > 0) {
+        issuesCount += fileIssuesCount;
+        fileWithIssuesCount++;
+      }
     }
 
-    model.nodeChanged(summary);
+    treeSummary.refresh(fileWithIssuesCount, issuesCount);
+    model.nodeChanged(summaryNode);
   }
 
   public void allowResolvedIssues(boolean allowResolved) {
@@ -124,21 +129,21 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   public void refreshModel(Project project) {
-    updateModel(latestIssues, summary.getEmptyText());
+    updateModel(latestIssues);
     var fileList = new HashSet<>(latestIssues.keySet());
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
   }
 
-  private void setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
+  private int setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
     if (!accept(file)) {
       removeFile(file);
-      return;
+      return 0;
     }
 
     var filtered = filter(issues);
     if (filtered.isEmpty()) {
       removeFile(file);
-      return;
+      return 0;
     }
 
     var newFile = false;
@@ -160,6 +165,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     } else {
       model.nodeStructureChanged(fNode);
     }
+    return filtered.size();
   }
 
   private void removeFile(VirtualFile file) {

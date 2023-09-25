@@ -97,8 +97,8 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     }
     lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
     var findings = analysisResult.getFindings();
-    treeBuilder.updateModel(findings.getIssuesPerFile(), "No issues found");
-    securityHotspotTreeBuilder.updateModel(findings.getSecurityHotspotsPerFile(), "No Security Hotspots found");
+    treeBuilder.updateModel(findings.getIssuesPerFile());
+    securityHotspotTreeBuilder.updateModel(findings.getSecurityHotspotsPerFile());
 
     disableEmptyDisplay(true);
 
@@ -256,7 +256,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   private void createSecurityHotspotsTree() {
     securityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
-    var model = securityHotspotTreeBuilder.createModel();
+    var model = securityHotspotTreeBuilder.createModel(project, true);
     securityHotspotTree = new SecurityHotspotTree(project, model);
     manageInteraction(securityHotspotTree);
   }
@@ -272,7 +272,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   }
 
   private void createIssuesTree() {
-    treeBuilder = new IssueTreeModelBuilder();
+    treeBuilder = new IssueTreeModelBuilder(project);
     var model = treeBuilder.createModel(false);
     tree = new IssueTree(project, model);
     manageInteraction(tree);
