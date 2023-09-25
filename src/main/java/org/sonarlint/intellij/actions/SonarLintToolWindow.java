@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.Issue;
 import org.sonarlint.intellij.finding.LiveFinding;
@@ -59,7 +59,8 @@ import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintToolWindow implements ContentManagerListenerAdapter {
@@ -216,7 +217,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
   public void populateTaintVulnerabilitiesTab(TaintVulnerabilitiesStatus status) {
     var content = getTaintVulnerabilitiesContent();
     if (content != null) {
-      content.setDisplayName(buildTabName(status.count(getGlobalSettings().isFocusOnNewCode()), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+      content.setDisplayName(buildTabName(status.count(getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode()), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
       var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
       taintVulnerabilitiesPanel.populate(status);
     }
@@ -342,7 +343,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     var content = getSecurityHotspotContent();
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      var count = hotspotsPanel.updateFindings(currentSecurityHotspotsPerOpenFile);
+      var count = hotspotsPanel.updateHotspots(currentSecurityHotspotsPerOpenFile);
       content.setDisplayName(buildTabName(count, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
   }
@@ -378,7 +379,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
   @Override
   public void selectionChanged(@NotNull ContentManagerEvent event) {
     // Introduced in the context of Security Hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
-    SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
+    getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
   }
 
   private Content getSecurityHotspotContent() {
