@@ -55,6 +55,7 @@ import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarConfigureProject
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -71,9 +72,10 @@ import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.nodes.AbstractNode
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LocalTaintVulnerabilityNode
-import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTree
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTreeModelBuilder
+import org.sonarlint.intellij.ui.tree.TreeContentKind
+import org.sonarlint.intellij.ui.tree.TreeSummary
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarlint.intellij.util.SonarLintActions
 
@@ -94,8 +96,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private lateinit var treeBuilder: TaintVulnerabilityTreeModelBuilder
     private lateinit var oldTree: TaintVulnerabilityTree
     private lateinit var oldTreeBuilder: TaintVulnerabilityTreeModelBuilder
-    private val treeSummaryNode = SummaryNode(false, false)
-    private val oldTreeSummaryNode = SummaryNode(false, true)
+    private val treeSummary = TreeSummary(project, TreeContentKind.ISSUES, false)
+    private val oldTreeSummary = TreeSummary(project, TreeContentKind.ISSUES, true)
     private lateinit var treeListeners: Map<TaintVulnerabilityTree, List<TreeSelectionListener>>
     private val treePanel: JBPanel<TaintVulnerabilitiesPanel>
     private val rulePanel = SonarLintRulePanel(project, this)
@@ -115,7 +117,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         treePanel = JBPanel<TaintVulnerabilitiesPanel>(VerticalFlowLayout(0, 0))
         treePanel.add(tree)
         treePanel.add(oldTree)
-        setFocusOnNewCode(globalSettings.isFocusOnNewCode)
+        setFocusOnNewCode(getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode())
         cards.add(createSplitter(project, this, this, treePanel, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
         )
@@ -218,7 +220,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private fun populateTree(status: FoundTaintVulnerabilities) {
         currentStatus = status
-        val valuesByNewCode = if (getGlobalSettings().isFocusOnNewCode) {
+        val valuesByNewCode = if (getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
             mapOf(Pair(tree, treeBuilder) to status.newVulnerabilities(), Pair(oldTree, oldTreeBuilder) to status.oldVulnerabilities())
         } else {
             mapOf(Pair(tree, treeBuilder) to status.byFile)
@@ -260,7 +262,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     fun setSelectedVulnerability(vulnerability: LocalTaintVulnerability) {
-        if (getGlobalSettings().isFocusOnNewCode && !vulnerability.isOnNewCode()) {
+        if (getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode() && !vulnerability.isOnNewCode()) {
             oldTree.setSelectedVulnerability(vulnerability)
         } else {
             tree.setSelectedVulnerability(vulnerability)
@@ -300,15 +302,13 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         tree.showsRootHandles = isFocusOnNewCode
         oldTree.showsRootHandles = isFocusOnNewCode
         oldTree.isVisible = isFocusOnNewCode
-        treeSummaryNode.emptyText = if (isFocusOnNewCode) "No issues since new analysis" else "No issues to display"
-        oldTreeSummaryNode.emptyText = if (isFocusOnNewCode) "No older issues" else "No issues to display"
         currentStatus?.let { populateTree(it) }
     }
 
     private fun initTrees() {
-        treeBuilder = TaintVulnerabilityTreeModelBuilder(treeSummaryNode)
+        treeBuilder = TaintVulnerabilityTreeModelBuilder(treeSummary)
         tree = TaintVulnerabilityTree(project, treeBuilder.model)
-        oldTreeBuilder = TaintVulnerabilityTreeModelBuilder(oldTreeSummaryNode)
+        oldTreeBuilder = TaintVulnerabilityTreeModelBuilder(oldTreeSummary)
         oldTree = TaintVulnerabilityTree(project, oldTreeBuilder.model)
 
         treeListeners = mapOf(

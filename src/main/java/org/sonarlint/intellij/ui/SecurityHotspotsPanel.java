@@ -41,6 +41,7 @@ import java.awt.Dimension;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -52,6 +53,7 @@ import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.actions.OpenSecurityHotspotDocumentationAction;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.LiveFinding;
@@ -65,8 +67,8 @@ import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 
+import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
@@ -114,11 +116,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   private void initPanel() {
-    var globalSettings = getGlobalSettings();
     var treePanel = new JPanel(new VerticalFlowLayout(0, 0));
     treePanel.add(securityHotspotTree);
     treePanel.add(oldSecurityHotspotTree);
-    setFocusOnNewCode(globalSettings.isFocusOnNewCode());
+    setFocusOnNewCode(getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode());
 
     findingDetailsPanel.setMinimumSize(new Dimension(350, 200));
     var findingsPanel = new JPanel(new BorderLayout());
@@ -151,21 +152,38 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     findingDetailsPanel = new FindingDetailsPanel(project, this, FindingKind.SECURITY_HOTSPOT);
   }
 
-  public int updateFindings(Map<VirtualFile, Collection<LiveSecurityHotspot>> findings) {
-    currentFindings = findings;
+  public int updateHotspots(Map<VirtualFile, Collection<LiveSecurityHotspot>> hotspots) {
+    currentFindings = hotspots;
 
     if (project.isDisposed()) {
       return 0;
     }
 
     if (status instanceof Supported) {
-      securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No Security Hotspots found", true);
-      oldSecurityHotspotCount = oldSecurityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No Security Hotspots found", false);
+      var isFocusOnNewCode = getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode();
+      if (isFocusOnNewCode) {
+        var oldHotspots = hotspots.entrySet().stream()
+          .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList())))
+          .filter(e -> !e.getValue().isEmpty())
+          .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveSecurityHotspot>) e.getValue()));
+        var newHotspots = hotspots.entrySet().stream()
+          .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList())))
+          .filter(e -> !e.getValue().isEmpty())
+          .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveSecurityHotspot>) e.getValue()));
+        securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(newHotspots);
+        oldSecurityHotspotCount = oldSecurityHotspotTreeBuilder.updateModelWithoutFileNode(oldHotspots);
+      } else {
+        securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(hotspots);
+        oldSecurityHotspotCount = oldSecurityHotspotTreeBuilder.updateModelWithoutFileNode(Collections.emptyMap());
+      }
       TreeUtil.expandAll(securityHotspotTree);
       displaySecurityHotspots();
 
-      oldSecurityHotspotTreeBuilder.applyCurrentFiltering(project);
-      return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.applyCurrentFiltering(project));
+      var oldHotspotsAfterFiltering = oldSecurityHotspotTreeBuilder.applyCurrentFiltering(project);
+      var newHotspotsAfterFiltering = securityHotspotTreeBuilder.applyCurrentFiltering(project);
+      var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
+      displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
+      return isFocusOnNewCode? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     } else {
       return 0;
     }
@@ -173,7 +191,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
   private void createSecurityHotspotsTree() {
     securityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
-    var model = securityHotspotTreeBuilder.createModel();
+    var model = securityHotspotTreeBuilder.createModel(project, false);
     securityHotspotTree = new SecurityHotspotTree(project, model);
     manageInteraction(securityHotspotTree);
     securityHotspotTree.setRootVisible(true);
@@ -182,7 +200,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
   private void createOldSecurityHotspotsTree() {
     oldSecurityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
-    var model = oldSecurityHotspotTreeBuilder.createModel();
+    var model = oldSecurityHotspotTreeBuilder.createModel(project, true);
     oldSecurityHotspotTree = new SecurityHotspotTree(project, model);
     manageInteraction(oldSecurityHotspotTree);
     oldSecurityHotspotTree.setRootVisible(true);
@@ -289,7 +307,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     }
   }
 
-  private int displaySecurityHotspotsAfterFiltering(int filteredCount) {
+  private boolean displaySecurityHotspotsAfterFiltering(int filteredCount) {
     if (status instanceof Supported) {
       if (filteredCount == 0 && (securityHotspotCount > 0 || oldSecurityHotspotCount > 0)) {
         cardPanel.show(NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
@@ -298,9 +316,9 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       } else {
         cardPanel.show(SECURITY_HOTSPOTS_LIST_CARD_ID);
       }
-      return filteredCount;
+      return true;
     }
-    return 0;
+    return false;
   }
 
   public boolean trySelectFilteredSecurityHotspot(String securityHotspotKey) {
@@ -317,8 +335,12 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public int updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
-    oldSecurityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(project, securityHotspotKey, status);
-    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(project, securityHotspotKey, status));
+    var oldHotspotsAfterFiltering = oldSecurityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(project, securityHotspotKey, status);
+    var newHotspotsAfterFiltering = securityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(project, securityHotspotKey, status);
+    var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
+    var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
+    var focusedCount = getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    return anyDisplayed ? focusedCount : 0;
   }
 
   public void selectAndHighlightSecurityHotspot(LiveSecurityHotspot securityHotspot) {
@@ -326,13 +348,21 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public int filterSecurityHotspots(Project project, SecurityHotspotFilters filter) {
-    oldSecurityHotspotTreeBuilder.filterSecurityHotspots(project, filter);
-    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.filterSecurityHotspots(project, filter));
+    var oldHotspotsAfterFiltering = oldSecurityHotspotTreeBuilder.filterSecurityHotspots(project, filter);
+    var newHotspotsAfterFiltering = securityHotspotTreeBuilder.filterSecurityHotspots(project, filter);
+    var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
+    var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
+    var focusedCount = getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    return anyDisplayed ? focusedCount : 0;
   }
 
   public int filterSecurityHotspots(Project project, boolean isResolved) {
-    oldSecurityHotspotTreeBuilder.filterSecurityHotspots(project, isResolved);
-    return displaySecurityHotspotsAfterFiltering(securityHotspotTreeBuilder.filterSecurityHotspots(project, isResolved));
+    var oldHotspotsAfterFiltering = oldSecurityHotspotTreeBuilder.filterSecurityHotspots(project, isResolved);
+    var newHotspotsAfterFiltering = securityHotspotTreeBuilder.filterSecurityHotspots(project, isResolved);
+    var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
+    var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
+    var focusedCount = getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    return anyDisplayed ? focusedCount : 0;
   }
 
   public void selectLocationsTab() {
@@ -360,8 +390,8 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     securityHotspotTree.setShowsRootHandles(isFocusOnNewCode);
     oldSecurityHotspotTree.setShowsRootHandles(isFocusOnNewCode);
     oldSecurityHotspotTree.setVisible(isFocusOnNewCode);
-    if(currentFindings != null) {
-      updateFindings(currentFindings);
+    if (currentFindings != null) {
+      updateHotspots(currentFindings);
     }
   }
 }

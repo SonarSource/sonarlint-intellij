@@ -45,6 +45,7 @@ import javax.annotation.Nullable;
 import javax.swing.JScrollPane;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -52,7 +53,7 @@ import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static java.util.function.Predicate.not;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
@@ -120,48 +121,36 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     currentFile = null;
     currentIssues = null;
     var statusText = issuesPanel.getEmptyText();
-    String emptyText;
-    Collection<LiveIssue> liveIssues = issues;
-    if (file != null) {
-      var focusWord = getGlobalSettings().isFocusOnNewCode() ? "new " : "";
-      var sinceText = getGlobalSettings().isFocusOnNewCode() ? "since XXX " : "";
-      emptyText = liveIssues == null ? "No analysis done on the current opened file" : "No " + focusWord + "issues " + sinceText + "found in the current opened file";
-      statusText.setText(emptyText);
-      if (liveIssues == null && (analyzeCurrentFileAction.getTemplateText() != null)) {
-        statusText.appendLine(analyzeCurrentFileAction.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+    if (file == null) {
+      statusText.setText("No file opened in the editor");
+      disableEmptyDisplay(false);
+      treeBuilder.updateModel(Map.of());
+      oldTreeBuilder.updateModel(Map.of());
+      return;
+    }
+    if (issues == null) {
+      statusText.setText("No analysis done on the current opened file");
+      var templateText = analyzeCurrentFileAction.getTemplateText();
+      if (templateText != null) {
+        statusText.appendLine(templateText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
           ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
       }
-    } else {
-      emptyText = "No file opened in the editor";
-      statusText.setText(emptyText);
+      issues = Collections.emptyList();
     }
 
-    if (liveIssues == null) {
-      liveIssues = Collections.emptyList();
-    }
-    update(file, List.copyOf(liveIssues), emptyText);
-  }
-
-  private void update(@Nullable VirtualFile file, Collection<LiveIssue> issues, String emptyText) {
-    if (file == null) {
-      disableEmptyDisplay(false);
-      treeBuilder.updateModel(Map.of(), emptyText);
-      oldTreeBuilder.updateModel(Map.of(), emptyText);
+    this.currentFile = file;
+    this.currentIssues = issues;
+    disableEmptyDisplay(!issues.isEmpty());
+    if (getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode()) {
+      var oldIssues = issues.stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList());
+      var newIssues = issues.stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList());
+      treeBuilder.updateModel(Map.of(file, newIssues));
+      oldTreeBuilder.updateModel(Map.of(file, oldIssues));
+      oldTree.setVisible(true);
     } else {
-      this.currentFile = file;
-      this.currentIssues = issues;
-      disableEmptyDisplay(!issues.isEmpty());
-      if (getGlobalSettings().isFocusOnNewCode()) {
-        var oldIssues = issues.stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList());
-        var newIssues = issues.stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList());
-        treeBuilder.updateModel(Map.of(file, newIssues), emptyText);
-        oldTreeBuilder.updateModel(Map.of(file, oldIssues), "No older issues");
-        oldTree.setVisible(true);
-      } else {
-        treeBuilder.updateModel(Map.of(file, issues), emptyText);
-        oldTreeBuilder.updateModel(Collections.emptyMap(), emptyText);
-        oldTree.setVisible(false);
-      }
+      treeBuilder.updateModel(Map.of(file, issues));
+      oldTreeBuilder.updateModel(Collections.emptyMap());
+      oldTree.setVisible(false);
     }
     expandTree();
     updateIcon(file, issues);
