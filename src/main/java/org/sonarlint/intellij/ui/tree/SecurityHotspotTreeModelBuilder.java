@@ -48,6 +48,7 @@ import org.sonarlint.intellij.ui.nodes.SummaryNode;
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
+import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 /**
@@ -75,15 +76,22 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private List<LiveSecurityHotspotNode> nonFilteredNodes;
   private List<LiveSecurityHotspotNode> filteredNodes;
 
+  protected boolean isOldTree;
+
   public SecurityHotspotTreeModelBuilder() {
     this.index = new FindingTreeIndex();
+  }
+
+  public SecurityHotspotTreeModelBuilder(boolean isOldTree) {
+    this.index = new FindingTreeIndex();
+    this.isOldTree = true;
   }
 
   /**
    * Creates the model with a basic root
    */
   public DefaultTreeModel createModel() {
-    summary = new SummaryNode(true, false);
+    summary = new SummaryNode(true, isOldTree);
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     nonFilteredNodes = new ArrayList<>();
@@ -108,7 +116,15 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     toRemove.forEach(this::removeFile);
 
     for (var e : map.entrySet()) {
-      setFileSecurityHotspots(e.getKey(), e.getValue());
+      var value = new ArrayList<LiveSecurityHotspot>();
+
+      if (getGlobalSettings().isFocusOnNewCode()) {
+        value = getLiveSecurityHotspots(!isOldTree, e);
+      } else {
+        value = (ArrayList<LiveSecurityHotspot>) e.getValue();
+      }
+
+      setFileSecurityHotspots(e.getKey(), value);
     }
 
     model.nodeChanged(summary);
@@ -221,7 +237,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
         .collect(Collectors.toList());
     } else {
       value = (ArrayList<LiveSecurityHotspot>) e.getValue().stream()
-        .filter(node -> !node.isOnNewCode())
+        .filter(not(LiveFinding::isOnNewCode))
         .collect(Collectors.toList());
     }
 

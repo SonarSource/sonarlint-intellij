@@ -23,6 +23,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -38,6 +39,7 @@ import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -46,6 +48,8 @@ import org.sonarlint.intellij.ui.nodes.SummaryNode;
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
+import static java.util.function.Predicate.not;
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.HIGH;
 import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.LOW;
 import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.MEDIUM;
@@ -68,22 +72,27 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private DefaultTreeModel model;
   private SummaryNode summary;
   protected boolean includeLocallyResolvedIssues = false;
+
+  protected boolean isOldTree;
   private Map<VirtualFile, Collection<LiveIssue>> latestIssues;
 
   public IssueTreeModelBuilder() {
     this.index = new FindingTreeIndex();
   }
 
+  public IssueTreeModelBuilder(boolean isOldTree) {
+    this.index = new FindingTreeIndex();
+    this.isOldTree = isOldTree;
+  }
+
+
   /**
    * Creates the model with a basic root
    */
-  public DefaultTreeModel createModel(boolean isOldIssue) {
+  public DefaultTreeModel createModel() {
     latestIssues = Collections.emptyMap();
-    if (isOldIssue) {
-      summary = new SummaryNode(false, true);
-    } else {
-      summary = new SummaryNode();
-    }
+
+    summary = new SummaryNode(false, isOldTree);
 
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
@@ -111,10 +120,33 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     toRemove.forEach(this::removeFile);
 
     for (var e : map.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue());
+      Collection value;
+
+      if (getGlobalSettings().isFocusOnNewCode()) {
+        value = getLiveIssues(!isOldTree, e);
+      } else {
+        value = e.getValue();
+      }
+
+      setFileIssues(e.getKey(), value);
     }
 
     model.nodeChanged(summary);
+  }
+
+  private static ArrayList<LiveIssue> getLiveIssues(boolean isNewTree, Map.Entry<VirtualFile, Collection<LiveIssue>> e) {
+    ArrayList<LiveIssue> value;
+    if (isNewTree) {
+      value = (ArrayList<LiveIssue>) e.getValue().stream()
+        .filter(LiveFinding::isOnNewCode)
+        .collect(Collectors.toList());
+    } else {
+      value = (ArrayList<LiveIssue>) e.getValue().stream()
+        .filter(not(LiveFinding::isOnNewCode))
+        .collect(Collectors.toList());
+    }
+
+    return value;
   }
 
   public void allowResolvedIssues(boolean allowResolved) {

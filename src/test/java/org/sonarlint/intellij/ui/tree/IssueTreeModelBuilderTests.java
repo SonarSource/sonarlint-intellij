@@ -53,11 +53,11 @@ import static org.sonarsource.sonarlint.core.commons.SoftwareQuality.MAINTAINABI
 
 class IssueTreeModelBuilderTests {
   private final IssueTreeModelBuilder treeBuilder = new IssueTreeModelBuilder();
-  private final DefaultTreeModel model = treeBuilder.createModel(false);
+  private final DefaultTreeModel model = treeBuilder.createModel();
 
   @Test
   void createModel() {
-    var model = treeBuilder.createModel(false);
+    var model = treeBuilder.createModel();
     assertThat(model.getRoot()).isNotNull();
   }
 

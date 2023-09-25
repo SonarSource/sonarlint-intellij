@@ -181,7 +181,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   private void createOldSecurityHotspotsTree() {
-    oldSecurityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
+    oldSecurityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder(true);
     var model = oldSecurityHotspotTreeBuilder.createModel();
     oldSecurityHotspotTree = new SecurityHotspotTree(project, model);
     manageInteraction(oldSecurityHotspotTree);
