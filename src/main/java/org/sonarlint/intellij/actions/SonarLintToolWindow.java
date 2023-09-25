@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
+import org.sonarlint.intellij.core.ProjectBinding;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.Issue;
 import org.sonarlint.intellij.finding.LiveFinding;
@@ -47,8 +48,9 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesLoader;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesStatus;
+import org.sonarlint.intellij.messages.ProjectBindingListener;
+import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
@@ -63,7 +65,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 @Service(Service.Level.PROJECT)
-public final class SonarLintToolWindow implements ContentManagerListenerAdapter {
+public final class SonarLintToolWindow implements ContentManagerListenerAdapter, ProjectBindingListener {
 
   private final Project project;
   private Content taintVulnerabilitiesContent;
@@ -71,6 +73,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
 
   public SonarLintToolWindow(Project project) {
     this.project = project;
+    project.getMessageBus().connect().subscribe(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC(), this);
   }
 
   /**
@@ -187,10 +190,8 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
 
     var taintContent = getTaintVulnerabilitiesContent();
     if (taintContent != null) {
-      var taintStatus = TaintVulnerabilitiesLoader.INSTANCE.getTaintVulnerabilitiesByOpenedFiles(project);
       var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
       taintPanel.setFocusOnNewCode(isFocusOnNewCode);
-      populateTaintVulnerabilitiesTab(taintStatus);
     }
   }
 
@@ -217,7 +218,8 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
   public void populateTaintVulnerabilitiesTab(TaintVulnerabilitiesStatus status) {
     var content = getTaintVulnerabilitiesContent();
     if (content != null) {
-      content.setDisplayName(buildTabName(status.count(getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode()), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+      content.setDisplayName(buildTabName(status.count(getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode()),
+        SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
       var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
       taintVulnerabilitiesPanel.populate(status);
     }
@@ -400,4 +402,8 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter 
     return taintVulnerabilitiesContent;
   }
 
+  @Override
+  public void bindingChanged(@Nullable ProjectBinding previousBinding, @Nullable ProjectBinding newBinding) {
+    runOnUiThread(project, () -> setFocusOnNewCode(getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode()));
+  }
 }
