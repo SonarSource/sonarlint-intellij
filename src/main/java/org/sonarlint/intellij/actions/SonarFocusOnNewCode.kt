@@ -20,16 +20,25 @@
 package org.sonarlint.intellij.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.project.Project
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 
 class SonarFocusOnNewCode : AbstractSonarToggleAction() {
 
-    override fun isSelected(e: AnActionEvent): Boolean = Settings.getGlobalSettings().isFocusOnNewCode
+    override fun isSelected(e: AnActionEvent): Boolean = e.project?.let { getService(it, CleanAsYouCodeService::class.java).shouldFocusOnNewCode() }
+            ?: false
 
     override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
         Settings.getGlobalSettings().isFocusOnNewCode = isSelected
-        e.project?.let { SonarLintUtils.getService(it, SonarLintToolWindow::class.java).setFocusOnNewCode(isSelected) }
+        e.project?.let { getService(it, SonarLintToolWindow::class.java).setFocusOnNewCode(isSelected) }
     }
 
+    override fun updatePresentation(project: Project, presentation: Presentation) {
+        val enabled = Settings.getSettingsFor(project).isBound
+        presentation.setEnabled(enabled)
+        presentation.text = "Set Focus on New Code" + if (enabled) "" else " (connected mode only)"
+    }
 }
