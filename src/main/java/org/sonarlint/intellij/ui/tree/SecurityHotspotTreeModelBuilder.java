@@ -196,12 +196,12 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     summary.removeAllChildren();
 
     for (var e : map.entrySet()) {
-      var value = new ArrayList<LiveSecurityHotspot>();
+      Iterable<LiveSecurityHotspot> value;
 
       if (getGlobalSettings().isFocusOnNewCode()) {
         value = getLiveSecurityHotspots(isNewTree, e);
       } else {
-        value = (ArrayList<LiveSecurityHotspot>) e.getValue();
+        value = e.getValue();
       }
 
       setSecurityHotspots(e.getKey(), value);
