@@ -25,17 +25,17 @@ import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.finding.Flow;
 import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
-import org.sonarlint.intellij.ui.nodes.SummaryNode;
 
 public class FlowsTreeModelBuilder {
-  private SummaryNode summary;
+  private FlowSummaryNode summary;
   private DefaultTreeModel model;
 
   public DefaultTreeModel createModel() {
-    summary = new SummaryNode();
+    summary = new FlowSummaryNode();
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     return model;
@@ -63,7 +63,7 @@ public class FlowsTreeModelBuilder {
   }
 
   private void setMultipleFlows(List<Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
-    summary = new SummaryNode();
+    summary = new FlowSummaryNode();
     var primaryLocationNode = new PrimaryLocationNode(rangeMarker, message, flows.get(0));
     summary.add(primaryLocationNode);
 
@@ -84,7 +84,7 @@ public class FlowsTreeModelBuilder {
   }
 
   private void setSingleFlow(Flow flow, RangeMarker rangeMarker, @Nullable String message) {
-    summary = new SummaryNode();
+    summary = new FlowSummaryNode();
     var primaryLocation = new PrimaryLocationNode(rangeMarker, message, flow);
     primaryLocation.setBold(true);
     summary.add(primaryLocation);
@@ -97,5 +97,12 @@ public class FlowsTreeModelBuilder {
     }
 
     model.setRoot(summary);
+  }
+
+  private static class FlowSummaryNode extends AbstractNode {
+    @Override
+    public void render(TreeCellRenderer renderer) {
+      // nothing to show for the root
+    }
   }
 }

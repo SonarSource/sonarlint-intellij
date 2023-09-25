@@ -31,6 +31,11 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.concurrent.CompletableFuture
 import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
@@ -88,6 +93,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.issue.ChangeIssueStatusP
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ReopenIssueParams
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
+import org.sonarsource.sonarlint.core.clientapi.backend.newcode.GetNewCodeDefinitionParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams
@@ -102,11 +108,6 @@ import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
 import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.http.HttpClient
 import org.sonarsource.sonarlint.core.serverconnection.IssueStorePaths
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.concurrent.CompletableFuture
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse as CheckIssueStatusChangePermittedResponse
 
 @Service(Service.Level.APP)
@@ -137,7 +138,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 sonarQubeConnections,
                 sonarCloudConnections,
                 null,
-                mapOf()
+                mapOf(),
+                getGlobalSettings().isFocusOnNewCode
             )
         ).thenRun {
             ApplicationManager.getApplication().messageBus.connect()
@@ -580,6 +582,16 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             val endLine = rangeMarker.document.getLineNumber(rangeMarker.endOffset)
             val endLineOffset = rangeMarker.endOffset - rangeMarker.document.getLineStartOffset(endLine)
             TextRangeWithHashDto(startLine + 1, startLineOffset, endLine + 1, endLineOffset, finding.textRangeHashString)
+        }
+    }
+
+    fun getNewCodePeriodText(project: Project): String? {
+        // simplification as we ignore module bindings
+        return try {
+            initializedBackend.newCodeService.getNewCodeDefinition(GetNewCodeDefinitionParams(projectId(project)))
+                    .thenApply { response -> response.description + if (response.isSupported) "" else " (not supported)" }.get()
+        } catch (e: Exception) {
+            "(unknown code period)"
         }
     }
 

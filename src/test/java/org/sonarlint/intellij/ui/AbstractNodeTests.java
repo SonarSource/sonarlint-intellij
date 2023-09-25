@@ -23,10 +23,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Comparator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
+import org.sonarlint.intellij.ui.tree.TreeContentKind;
+import org.sonarlint.intellij.ui.tree.TreeSummary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -34,11 +37,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class AbstractNodeTests {
+class AbstractNodeTests extends AbstractSonarLintLightTests {
   private AbstractNode testNode;
 
   @BeforeEach
-  void setUp() {
+  void prepare() {
     testNode = new AbstractNode() {
       @Override public void render(TreeCellRenderer renderer) {
         // do nothing
@@ -48,7 +51,7 @@ class AbstractNodeTests {
 
   @Test
   void testInsertion() {
-    var summaryNode = new SummaryNode();
+    var summaryNode = new SummaryNode(new TreeSummary(getProject(), TreeContentKind.ISSUES, false));
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("name"), false), nameComparator)).isZero();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("file"), false), nameComparator)).isZero();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("test"), false), nameComparator)).isEqualTo(2);
