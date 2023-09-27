@@ -100,7 +100,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
     createFindingDetailsPanel();
     handleListener();
-    disableTrees(getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode());
 
     initPanel();
 
@@ -149,11 +148,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
     disableEmptyDisplay(true);
 
-    if (findings.getSecurityHotspotsPerFile().isEmpty()) {
-      disableTrees(currentFocus);
-    } else {
-      enableTrees(currentFocus);
-    }
+    setTrees(currentFocus);
 
     expandTree();
   }
@@ -222,27 +217,15 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     mainToolbar.updateActionsImmediately();
   }
 
-  private void enableTrees(boolean isFocusOnNewCode) {
-    oldTree.setVisible(isFocusOnNewCode);
-    oldSecurityHotspotTree.setVisible(isFocusOnNewCode);
+  private void setTrees(boolean isFocusOnNewCode) {
     tree.setShowsRootHandles(true);
     oldTree.setShowsRootHandles(true);
     securityHotspotTree.setShowsRootHandles(true);
-    securityHotspotTree.setVisible(true);
-    if (isFocusOnNewCode) {
-      oldSecurityHotspotTree.setShowsRootHandles(true);
-      tree.setVisible(true);
-    }
-  }
-
-  private void disableTrees(boolean isFocusOnNewCode) {
-    if (!isFocusOnNewCode) {
-      tree.setShowsRootHandles(false);
-    }
+    oldSecurityHotspotTree.setShowsRootHandles(true);
+    tree.setVisible(true);
     oldTree.setVisible(isFocusOnNewCode);
+    securityHotspotTree.setVisible(true);
     oldSecurityHotspotTree.setVisible(isFocusOnNewCode);
-    securityHotspotTree.setVisible(false);
-    oldSecurityHotspotTree.setVisible(false);
   }
 
   private void issueTreeSelectionChanged(TreeSelectionEvent e) {
