@@ -506,6 +506,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                         val localOnlyIssue = serverOrLocalIssue.right
                         liveIssue.backendId = localOnlyIssue.id
                         liveIssue.isResolved = localOnlyIssue.resolutionStatus != null
+                        liveIssue.setOnNewCode(true)
                     }
                 }
             }
@@ -585,11 +586,11 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         }
     }
 
-    fun getNewCodePeriodText(project: Project): String? {
+    fun getNewCodePeriodText(project: Project): String {
         // simplification as we ignore module bindings
         return try {
             initializedBackend.newCodeService.getNewCodeDefinition(GetNewCodeDefinitionParams(projectId(project)))
-                    .thenApply { response -> response.description + if (response.isSupported) "" else " (not supported)" }.get()
+                    .thenApply { response -> if (response.isSupported) response.description else " (unsupported new code definition)" }.get()
         } catch (e: Exception) {
             "(unknown code period)"
         }

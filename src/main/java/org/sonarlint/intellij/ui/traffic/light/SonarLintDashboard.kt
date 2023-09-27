@@ -58,7 +58,7 @@ class SonarLintDashboard(private val editor: Editor) {
         focusOnNewCodeCheckbox.addActionListener {
             Settings.getGlobalSettings().isFocusOnNewCode = focusOnNewCodeCheckbox.isSelected
             val project = editor.project ?: return@addActionListener
-            getService(project, SonarLintToolWindow::class.java).setFocusOnNewCode(focusOnNewCodeCheckbox.isSelected)
+            getService(project, SonarLintToolWindow::class.java).refreshViews()
         }
         focusOnNewCodeCheckbox.isOpaque = false
 
