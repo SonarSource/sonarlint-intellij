@@ -55,9 +55,7 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
         return String.format(FORMAT, findingsCount, newOrOldOrNothing, pluralize(treeContentKind.displayName, findingsCount), filesCount, pluralize("file", filesCount), sinceText)
     }
 
-    private fun getCodePeriod() = getService(BackendService::class.java)
-            .getNewCodePeriodText(project)?.let { " " + it.replaceFirstChar { char -> char.lowercase(Locale.getDefault()) } }
-            ?: ""
+    private fun getCodePeriod() = " " + getService(BackendService::class.java).getNewCodePeriodText(project).replaceFirstChar { char -> char.lowercase(Locale.getDefault()) }
 
     private fun computeEmptyText(): String {
         if (isFocusOnNewCode()) {

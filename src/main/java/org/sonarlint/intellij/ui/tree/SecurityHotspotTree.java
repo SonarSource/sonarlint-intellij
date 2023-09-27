@@ -55,7 +55,6 @@ public class SecurityHotspotTree extends FindingTree implements DataProvider {
   private void init() {
     this.setShowsRootHandles(false);
     this.setCellRenderer(new TreeCellRenderer());
-    this.expandRow(0);
 
     var group = new DefaultActionGroup();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
