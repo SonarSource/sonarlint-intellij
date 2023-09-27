@@ -277,7 +277,7 @@
                 class="org.sonarlint.intellij.actions.SonarFocusOnNewCode"
                 text="Set Focus on New Code"
                 description="Change the current SonarLint focus to new code"
-                icon="org.sonarlint.intellij.SonarLintIcons.SONARLINT_ACTION">
+                icon="org.sonarlint.intellij.SonarLintIcons.FOCUS">
         </action>
 
         <action id="SonarLint.AnalyzeFiles"

@@ -21,19 +21,14 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.JBColor
+import java.awt.Color
+import javax.swing.Icon
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
-import java.awt.Color
-import javax.swing.Icon
 
 object SonarLintIcons {
-
-    // From IntelliJ Platform UI Guidelines
-    private val red60Color = Color(224, 85, 85, 60)
-    private val orange60Color = Color(242, 101, 34, 60)
-    private val yellow60Color = Color(244, 175, 61, 60)
 
     @JvmField
     val ICON_SONARQUBE = getIcon("/images/SonarQube.png")
@@ -81,6 +76,8 @@ object SonarLintIcons {
     val CONNECTION_ERROR = getIcon("/images/io_error.svg")
     @JvmField
     val RESOLVED = getIcon("/images/resolved.svg")
+    @JvmField
+    val FOCUS = getIcon("/images/focus.svg")
 
     private val SEVERITY_ICONS = mapOf(
         IssueSeverity.BLOCKER to getIcon("/images/severity/blocker.svg"),
@@ -107,12 +104,6 @@ object SonarLintIcons {
         VulnerabilityProbability.HIGH to getIcon("/images/type/hotspotHigh.svg"),
         VulnerabilityProbability.MEDIUM to getIcon("/images/type/hotspotMedium.svg"),
         VulnerabilityProbability.LOW to getIcon("/images/type/hotspotLow.svg")
-    )
-
-    val colorsByProbability = mapOf(
-        VulnerabilityProbability.HIGH to JBColor(red60Color, red60Color),
-        VulnerabilityProbability.MEDIUM to JBColor(orange60Color, orange60Color),
-        VulnerabilityProbability.LOW to JBColor(yellow60Color, yellow60Color)
     )
 
     val backgroundColorsByImpact = mapOf(
