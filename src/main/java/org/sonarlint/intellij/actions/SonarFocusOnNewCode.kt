@@ -33,7 +33,7 @@ class SonarFocusOnNewCode : AbstractSonarToggleAction() {
 
     override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
         Settings.getGlobalSettings().isFocusOnNewCode = isSelected
-        e.project?.let { getService(it, SonarLintToolWindow::class.java).setFocusOnNewCode(isSelected) }
+        e.project?.let { getService(it, SonarLintToolWindow::class.java).refreshViews() }
     }
 
     override fun updatePresentation(project: Project, presentation: Presentation) {

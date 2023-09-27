@@ -177,23 +177,21 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     openTab(SonarLintToolWindowFactory.LOG_TAB_TITLE);
   }
 
-  public void setFocusOnNewCode(boolean isFocusOnNewCode) {
-    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.setFocusOnNewCode(getService(project, CleanAsYouCodeService.class)
-      .shouldFocusOnNewCode()));
-    this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.setFocusOnNewCode(getService(project, CleanAsYouCodeService.class)
-      .shouldFocusOnNewCode()));
+  public void refreshViews() {
+    this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshView);
+    this.updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::refreshView);
 
     var hotspotContent = getSecurityHotspotContent();
     if (hotspotContent != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) hotspotContent.getComponent();
-      hotspotsPanel.setFocusOnNewCode(isFocusOnNewCode);
+      hotspotsPanel.refreshView();
       hotspotContent.setDisplayName(buildTabName(hotspotsPanel.getSecurityHotspotCount(), SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
 
     var taintContent = getTaintVulnerabilitiesContent();
     if (taintContent != null) {
       var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-      taintPanel.setFocusOnNewCode(isFocusOnNewCode);
+      taintPanel.refreshView();
     }
   }
 
@@ -406,6 +404,6 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
 
   @Override
   public void bindingChanged(@Nullable ProjectBinding previousBinding, @Nullable ProjectBinding newBinding) {
-    runOnUiThread(project, () -> setFocusOnNewCode(getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode()));
+    runOnUiThread(project, this::refreshViews);
   }
 }

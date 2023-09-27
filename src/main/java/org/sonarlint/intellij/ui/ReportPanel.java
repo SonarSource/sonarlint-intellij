@@ -94,8 +94,8 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     this.lastAnalysisPanel = new LastAnalysisPanel();
 
     createIssuesTree();
-    createOldIssuesTree();
     createSecurityHotspotsTree();
+    createOldIssuesTree();
     createOldSecurityHotspotsTree();
 
     createFindingDetailsPanel();
@@ -184,8 +184,8 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
     var treePanel = new JBPanel<ReportPanel>(new VerticalFlowLayout(0, 0));
     treePanel.add(tree);
-    treePanel.add(oldTree);
     treePanel.add(securityHotspotTree);
+    treePanel.add(oldTree);
     treePanel.add(oldSecurityHotspotTree);
     findingsTreePane = ScrollPaneFactory.createScrollPane(treePanel);
     findingsPanel.add(findingsTreePane, BorderLayout.CENTER);
@@ -438,7 +438,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     lastAnalysisPanel.dispose();
   }
 
-  public void setFocusOnNewCode(Boolean isFocusOnNewCode) {
+  public void refreshView() {
     if(lastAnalysisResult != null) {
       updateFindings(lastAnalysisResult);
     }
