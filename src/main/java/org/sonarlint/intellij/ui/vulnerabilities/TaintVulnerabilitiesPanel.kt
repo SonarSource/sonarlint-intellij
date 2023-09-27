@@ -33,6 +33,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.tools.SimpleActionGroup
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanel
@@ -117,7 +118,6 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         treePanel = JBPanel<TaintVulnerabilitiesPanel>(VerticalFlowLayout(0, 0))
         treePanel.add(tree)
         treePanel.add(oldTree)
-        setFocusOnNewCode(getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode())
         cards.add(createSplitter(project, this, this, treePanel, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
         )
@@ -212,37 +212,42 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                     highlighting.removeHighlights()
                 } else {
                     showCard(TREE_CARD_ID)
-                    populateTree(status)
+                    populateTrees(status)
                 }
             }
         }
     }
 
-    private fun populateTree(status: FoundTaintVulnerabilities) {
+    private fun populateTrees(status: FoundTaintVulnerabilities) {
         currentStatus = status
-        val valuesByNewCode = if (getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
-            mapOf(Pair(tree, treeBuilder) to status.newVulnerabilities(), Pair(oldTree, oldTreeBuilder) to status.oldVulnerabilities())
+        if (getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
+            populateSubTree(tree, treeBuilder, status.newVulnerabilities())
+            populateSubTree(oldTree, oldTreeBuilder, status.oldVulnerabilities())
+            oldTree.isVisible = true
         } else {
-            mapOf(Pair(tree, treeBuilder) to status.byFile)
+            populateSubTree(tree, treeBuilder, status.byFile.mapValues { (_, issues) -> issues.toList() })
+            populateSubTree(oldTree, oldTreeBuilder, mapOf())
+            oldTree.isVisible = false
         }
-        valuesByNewCode.forEach {
-            val tree = it.key.first
-            val expandedPaths = TreeUtil.collectExpandedPaths(tree)
-            val selectionPath: TreePath? = tree.selectionPath
-            // Temporarily remove the listener to avoid transient selection events while changing the model
-            treeListeners[tree]?.forEach { listener -> tree.removeTreeSelectionListener(listener) }
-            try {
-                it.key.second.updateModel(it.value)
-                TreeUtil.restoreExpandedPaths(tree, expandedPaths)
-                if (selectionPath != null) {
-                    TreeUtil.selectPath(tree, selectionPath)
-                } else {
-                    expandDefault()
-                }
-            } finally {
-                treeListeners[tree]?.forEach { listener -> tree.addTreeSelectionListener(listener) }
-                updateRulePanelContent(tree)
+    }
+
+    private fun populateSubTree(tree: TaintVulnerabilityTree, model: TaintVulnerabilityTreeModelBuilder, taintIssues: Map<VirtualFile, List<LocalTaintVulnerability>>) {
+        val expandedPaths = TreeUtil.collectExpandedPaths(tree)
+        val selectionPath: TreePath? = tree.selectionPath
+        // Temporarily remove the listener to avoid transient selection events while changing the model
+        treeListeners[tree]?.forEach { listener -> tree.removeTreeSelectionListener(listener) }
+        try {
+            model.updateModel(taintIssues)
+            tree.showsRootHandles = taintIssues.isNotEmpty()
+            TreeUtil.restoreExpandedPaths(tree, expandedPaths)
+            if (selectionPath != null) {
+                TreeUtil.selectPath(tree, selectionPath)
+            } else {
+                expandDefault()
             }
+        } finally {
+            treeListeners[tree]?.forEach { listener -> tree.addTreeSelectionListener(listener) }
+            updateRulePanelContent(tree)
         }
     }
 
@@ -298,11 +303,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         }
     }
 
-    fun setFocusOnNewCode(isFocusOnNewCode: Boolean) {
-        tree.showsRootHandles = isFocusOnNewCode
-        oldTree.showsRootHandles = isFocusOnNewCode
-        oldTree.isVisible = isFocusOnNewCode
-        currentStatus?.let { populateTree(it) }
+    fun refreshView() {
+        currentStatus?.let { populateTrees(it) }
     }
 
     private fun initTrees() {

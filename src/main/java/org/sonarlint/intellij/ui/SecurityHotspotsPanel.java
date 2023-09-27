@@ -119,7 +119,6 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var treePanel = new JPanel(new VerticalFlowLayout(0, 0));
     treePanel.add(securityHotspotTree);
     treePanel.add(oldSecurityHotspotTree);
-    setFocusOnNewCode(getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode());
 
     findingDetailsPanel.setMinimumSize(new Dimension(350, 200));
     var findingsPanel = new JPanel(new BorderLayout());
@@ -170,11 +169,13 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
           .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList())))
           .filter(e -> !e.getValue().isEmpty())
           .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveSecurityHotspot>) e.getValue()));
-        securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(newHotspots);
-        oldSecurityHotspotCount = oldSecurityHotspotTreeBuilder.updateModelWithoutFileNode(oldHotspots);
+        securityHotspotCount = populateSubTree(securityHotspotTree, securityHotspotTreeBuilder, newHotspots);
+        oldSecurityHotspotCount = populateSubTree(oldSecurityHotspotTree, oldSecurityHotspotTreeBuilder, oldHotspots);
+        oldSecurityHotspotTree.setVisible(true);
       } else {
-        securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(hotspots);
-        oldSecurityHotspotCount = oldSecurityHotspotTreeBuilder.updateModelWithoutFileNode(Collections.emptyMap());
+        securityHotspotCount = populateSubTree(securityHotspotTree, securityHotspotTreeBuilder, hotspots);
+        oldSecurityHotspotCount = populateSubTree(oldSecurityHotspotTree, oldSecurityHotspotTreeBuilder, Collections.emptyMap());
+        oldSecurityHotspotTree.setVisible(false);
       }
       TreeUtil.expandAll(securityHotspotTree);
       displaySecurityHotspots();
@@ -187,6 +188,11 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     } else {
       return 0;
     }
+  }
+
+  private int populateSubTree(Tree tree, SecurityHotspotTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveSecurityHotspot>> hotspots) {
+    tree.setShowsRootHandles(!hotspots.isEmpty());
+    return treeBuilder.updateModelWithoutFileNode(hotspots);
   }
 
   private void createSecurityHotspotsTree() {
@@ -386,10 +392,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     // Nothing to do
   }
 
-  public void setFocusOnNewCode(Boolean isFocusOnNewCode) {
-    securityHotspotTree.setShowsRootHandles(isFocusOnNewCode);
-    oldSecurityHotspotTree.setShowsRootHandles(isFocusOnNewCode);
-    oldSecurityHotspotTree.setVisible(isFocusOnNewCode);
+  public void refreshView() {
     if (currentFindings != null) {
       updateHotspots(currentFindings);
     }

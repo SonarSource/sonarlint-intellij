@@ -32,6 +32,7 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBPanelWithEmptyText;
+import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -50,6 +51,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.messages.StatusListener;
+import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static java.util.function.Predicate.not;
@@ -124,8 +126,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     if (file == null) {
       statusText.setText("No file opened in the editor");
       disableEmptyDisplay(false);
-      treeBuilder.updateModel(Map.of());
-      oldTreeBuilder.updateModel(Map.of());
+      populateSubTree(tree, treeBuilder, Map.of());
+      populateSubTree(oldTree, oldTreeBuilder, Map.of());
       return;
     }
     if (issues == null) {
@@ -144,16 +146,21 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     if (getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode()) {
       var oldIssues = issues.stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList());
       var newIssues = issues.stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList());
-      treeBuilder.updateModel(Map.of(file, newIssues));
-      oldTreeBuilder.updateModel(Map.of(file, oldIssues));
+      populateSubTree(tree, treeBuilder, Map.of(file, newIssues));
+      populateSubTree(oldTree, oldTreeBuilder, Map.of(file, oldIssues));
       oldTree.setVisible(true);
     } else {
-      treeBuilder.updateModel(Map.of(file, issues));
-      oldTreeBuilder.updateModel(Collections.emptyMap());
+      populateSubTree(tree, treeBuilder, Map.of(file, issues));
+      populateSubTree(oldTree, oldTreeBuilder, Collections.emptyMap());
       oldTree.setVisible(false);
     }
     expandTree();
     updateIcon(file, issues);
+  }
+
+  private void populateSubTree(Tree tree, IssueTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveIssue>> issues) {
+    treeBuilder.updateModel(issues);
+    tree.setShowsRootHandles(!issues.isEmpty());
   }
 
   private void updateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues) {
@@ -173,8 +180,6 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   }
 
   private void disableEmptyDisplay(boolean state) {
-    tree.setShowsRootHandles(true);
-    oldTree.setShowsRootHandles(true);
     treeScrollPane.setVisible(state);
   }
 
@@ -204,9 +209,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     expandTree();
   }
 
-  public void setFocusOnNewCode(boolean isFocusOnNewCode) {
-    tree.setShowsRootHandles(isFocusOnNewCode);
-    oldTree.setShowsRootHandles(isFocusOnNewCode);
+  public void refreshView() {
     update(currentFile, currentIssues);
   }
 }
