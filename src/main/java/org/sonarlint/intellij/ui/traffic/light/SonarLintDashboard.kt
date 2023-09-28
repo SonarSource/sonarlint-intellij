@@ -29,12 +29,10 @@ import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.GridBag
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import javax.swing.JPanel
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -43,18 +41,23 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.persistence.FindingsCache
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import javax.swing.JPanel
 
 class SonarLintDashboard(private val editor: Editor) {
 
     companion object {
         private const val NO_FINDINGS_TEXT = "SonarLint found no findings, keep up the good job!"
+        private const val CHECKBOX_TITLE = "Focus on new code"
     }
 
     val panel = JPanel(GridBagLayout())
     private val findingsSummaryLabel = JBLabel(NO_FINDINGS_TEXT)
-    private val focusOnNewCodeCheckbox = JBCheckBox("Focus on new code")
+    private val focusOnNewCodeCheckbox = JBCheckBox(CHECKBOX_TITLE)
 
     init {
+        editor.project?.let { refreshCheckbox(it) }
         focusOnNewCodeCheckbox.addActionListener {
             Settings.getGlobalSettings().isFocusOnNewCode = focusOnNewCodeCheckbox.isSelected
             val project = editor.project ?: return@addActionListener
@@ -85,8 +88,7 @@ class SonarLintDashboard(private val editor: Editor) {
         val project = editor.project ?: return
         val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
 
-        val isFocusOnNewCode = Settings.getGlobalSettings().isFocusOnNewCode
-        focusOnNewCodeCheckbox.isSelected = isFocusOnNewCode
+        refreshCheckbox(project)
 
         val findings = getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved }
         if (findings.isEmpty()) {
@@ -106,6 +108,15 @@ class SonarLintDashboard(private val editor: Editor) {
             }
             findingsSummaryLabel.text = text
         }
+    }
+
+    private fun refreshCheckbox(project: Project) {
+        Settings.getSettingsFor(project).isBound.let {
+            focusOnNewCodeCheckbox.isEnabled = it
+            focusOnNewCodeCheckbox.text = if (it) CHECKBOX_TITLE else "$CHECKBOX_TITLE (connected mode only)"
+        }
+        val isFocusOnNewCode = Settings.getGlobalSettings().isFocusOnNewCode
+        focusOnNewCodeCheckbox.isSelected = isFocusOnNewCode
     }
 
     private class MenuAction : DefaultActionGroup(), HintManagerImpl.ActionToIgnore {
