@@ -29,7 +29,6 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.util.messages.Topic;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,9 +47,9 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.messages.ServerBranchesListenerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -137,7 +136,6 @@ public class BindingStorageUpdateTask {
 
     projectsToUpdate.forEach(p -> updatePathPrefixesForAllModules(engine, p));
     projectsToUpdate.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
-    projectsToUpdate.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);
 
     if (!failures.isEmpty()) {
       var errorMsg = "Failed to update the storage for some projects: \n"
@@ -215,10 +213,6 @@ public class BindingStorageUpdateTask {
         .collect(Collectors.toList());
   }
 
-  private static void notifyBindingStorageUpdated(Project project) {
-    project.getMessageBus().syncPublisher(Listener.TOPIC).updateFinished();
-  }
-
   private static void updatePathPrefixesForAllModules(ConnectedSonarLintEngine engine, Project project) {
     if (!project.isDisposed()) {
       Stream.of(ModuleManager.getInstance(project).getModules())
@@ -236,12 +230,6 @@ public class BindingStorageUpdateTask {
 
       getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE);
     }
-  }
-
-  public interface Listener {
-    Topic<Listener> TOPIC = Topic.create("SonarLint Binding Update Status", Listener.class);
-
-    void updateFinished();
   }
 
   private static class ProjectStorageUpdateFailure {
