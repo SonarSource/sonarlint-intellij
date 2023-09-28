@@ -189,7 +189,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     return isOldTree ? fetchNextOccurenceInfo(path, oldTree) : fetchNextOccurenceInfo(path, tree);
   }
 
-  private boolean fetchNextOccurenceInfo(TreePath path, Tree tree) {
+  private static boolean fetchNextOccurenceInfo(TreePath path, Tree tree) {
     var node = (DefaultMutableTreeNode) path.getLastPathComponent();
     if (node instanceof IssueNode) {
       return tree.getRowCount() != tree.getRowForPath(path) + 1;
@@ -228,9 +228,9 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   @Override
   public OccurenceNavigator.OccurenceInfo goPreviousOccurence() {
     var info = fetchPreviousOccurenceInfo(tree, treeBuilder);
-    if (info == null)
-      ;
-    info = fetchPreviousOccurenceInfo(oldTree, oldTreeBuilder);
+    if (info == null) {
+      info = fetchPreviousOccurenceInfo(oldTree, oldTreeBuilder);
+    }
 
     return info;
   }
