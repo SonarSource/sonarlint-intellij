@@ -190,7 +190,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     }
   }
 
-  private int populateSubTree(Tree tree, SecurityHotspotTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveSecurityHotspot>> hotspots) {
+  private static int populateSubTree(Tree tree, SecurityHotspotTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveSecurityHotspot>> hotspots) {
     tree.setShowsRootHandles(!hotspots.isEmpty());
     return treeBuilder.updateModelWithoutFileNode(hotspots);
   }
