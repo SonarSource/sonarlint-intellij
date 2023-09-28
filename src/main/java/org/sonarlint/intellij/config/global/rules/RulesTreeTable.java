@@ -52,13 +52,19 @@ public class RulesTreeTable extends TreeTable {
     this.treeTableModel = treeTableModel;
 
     setUpColumns();
-    setListeners();
+    installListeners();
 
     getTableHeader().setReorderingAllowed(false);
     getEmptyText().setText("No rules available");
   }
 
-  private void setListeners() {
+  private void installListeners() {
+    installDoubleClickListener();
+    installKeyboardListener();
+    installMouseListener();
+  }
+
+  private void installDoubleClickListener() {
     new DoubleClickListener() {
       @Override
       protected boolean onDoubleClick(MouseEvent event) {
@@ -72,7 +78,9 @@ public class RulesTreeTable extends TreeTable {
         return true;
       }
     }.installOn(this);
+  }
 
+  private void installKeyboardListener() {
     registerKeyboardAction(e -> {
       final var path = getTree().getPathForRow(getTree().getLeadSelectionRow());
       if (path != null) {
@@ -80,7 +88,9 @@ public class RulesTreeTable extends TreeTable {
       }
       updateUI();
     }, KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), JComponent.WHEN_FOCUSED);
+  }
 
+  private void installMouseListener() {
     addMouseMotionListener(new MouseAdapter() {
       @Override
       public void mouseMoved(final MouseEvent e) {
