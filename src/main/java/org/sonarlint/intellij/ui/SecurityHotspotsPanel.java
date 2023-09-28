@@ -180,10 +180,14 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       TreeUtil.expandAll(securityHotspotTree);
       displaySecurityHotspots();
 
+      boolean isExpanded = oldSecurityHotspotTree.isExpanded(0);
       var oldHotspotsAfterFiltering = oldSecurityHotspotTreeBuilder.applyCurrentFiltering(project);
       var newHotspotsAfterFiltering = securityHotspotTreeBuilder.applyCurrentFiltering(project);
       var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
       displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
+      if (!isExpanded) {
+        oldSecurityHotspotTree.collapseRow(0);
+      }
       return isFocusOnNewCode? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     } else {
       return 0;
