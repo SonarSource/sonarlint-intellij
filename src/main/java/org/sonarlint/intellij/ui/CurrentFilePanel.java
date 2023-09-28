@@ -159,7 +159,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     updateIcon(file, issues);
   }
 
-  private void populateSubTree(Tree tree, IssueTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveIssue>> issues) {
+  private static void populateSubTree(Tree tree, IssueTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveIssue>> issues) {
     treeBuilder.updateModel(issues);
     tree.setShowsRootHandles(!issues.isEmpty());
   }
