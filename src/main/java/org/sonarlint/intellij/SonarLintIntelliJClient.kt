@@ -41,6 +41,17 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.URI
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.stream.Collectors
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
@@ -104,17 +115,6 @@ import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotRaisedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.ServerHotspotEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
-import java.io.ByteArrayInputStream
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.URI
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
-import java.util.stream.Collectors
 
 object SonarLintIntelliJClient : SonarLintClient {
 
@@ -367,11 +367,14 @@ object SonarLintIntelliJClient : SonarLintClient {
             params.configurationScopeIds.mapNotNull { scopeId ->
                     BackendService.findModule(scopeId)?.project ?: BackendService.findProject(scopeId)
             }
+                .toSet()
                 .forEach { project ->
                     getService(
                         project,
                         TaintVulnerabilitiesPresenter::class.java
                     ).presentTaintVulnerabilitiesForOpenFiles()
+                    // trigger new analysis as some things might have changed (findings, new code period)
+                    getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
                 }
         }
     }
