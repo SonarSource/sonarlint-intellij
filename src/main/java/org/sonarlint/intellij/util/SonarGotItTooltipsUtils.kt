@@ -31,29 +31,28 @@ import javax.swing.JComponent
 object SonarGotItTooltipsUtils {
 
     private const val FOCUS_NEW_CODE_TOOLTIP_ID = "sonarlint.focus.new.code.tooltip"
-    private const val FOCUS_NEW_CODE_TOOLTIP_TEXT = """SonarLint now helps you to focus on the new code definition set by your SonarQube/SonarCloud connection."""
+    private const val FOCUS_NEW_CODE_TOOLTIP_TEXT = """Deliver clean code by focusing on code that was recently modified"""
 
     private const val CLEAN_CODE_TOOLTIP_ID = "sonarlint.clean.code.tooltip"
     private const val CLEAN_CODE_TOOLTIP_TEXT = """We have refined Sonar issues: Clean Code attributes spotlight what characteristic of Clean Code was violated. 
             Software qualities represent the impact of an issue on your application."""
 
     private const val TRAFFIC_LIGHT_TOOLTIP_ID = "sonarlint.traffic.light.tooltip"
-    private const val TRAFFIC_LIGHT_TOOLTIP_TEXT = """This new SonarLint icon enables you to see all Sonar issues currently highlighted at a first glance."""
+    private const val TRAFFIC_LIGHT_TOOLTIP_TEXT = """See how many items need your attention. Click to display the SonarLint tool window, and hover to have access to more actions."""
 
     fun showFocusOnNewCodeToolTip(component: JComponent, parent: Disposable) {
         GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent).apply {
             withIcon(SonarLintIcons.SONARLINT)
             withPosition(Balloon.Position.above)
-            withShowCount(50)
-            withBrowserLink("Learn More", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
-            show(component) { it, _ -> Point(it.width / 2, -10) }
+            withBrowserLink("Learn more about Clean as you Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
+            show(component) { it, _ -> Point(it.width / 2, -5) }
         }
     }
 
     fun showCleanCodeToolTip(component: JComponent, parent: Disposable) {
         GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
             withHeader("SonarLint - Start your Clean Code journey")
-            withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
+            withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.FOCUS_CLEAN_CODE_LINK))
             withIcon(SonarLintIcons.SONARLINT)
             withPosition(Balloon.Position.atLeft)
             show(component, GotItTooltip.LEFT_MIDDLE)
@@ -63,9 +62,8 @@ object SonarGotItTooltipsUtils {
     fun showTrafficLightToolTip(component: JComponent, parent: Disposable) {
         GotItTooltip(TRAFFIC_LIGHT_TOOLTIP_ID, TRAFFIC_LIGHT_TOOLTIP_TEXT, parent).apply {
             withIcon(SonarLintIcons.SONARLINT)
-            withPosition(Balloon.Position.atLeft)
-            withShowCount(50)
-            show(component, GotItTooltip.TOP_MIDDLE)
+            withPosition(Balloon.Position.above)
+            show(component) { it, _ -> Point(-5, it.height / 2) }
         }
     }
 
