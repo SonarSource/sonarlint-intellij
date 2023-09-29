@@ -289,8 +289,8 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                     { it.message },
                     { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
                 .containsExactlyInAnyOrder(
-                    tuple("devenv.js", "secrets:S6290", "Make sure this AWS Access Key ID gets revoked, changed, and removed from the code.", Pair(286, 306)),
-                    tuple("devenv_unversionned.js", "secrets:S6290", "Make sure this AWS Access Key ID gets revoked, changed, and removed from the code.", Pair(286, 306)),
+                    tuple("devenv.js", "secrets:S6290", "Make sure the access granted with this AWS access key ID is restricted", Pair(286, 306)),
+                    tuple("devenv_unversionned.js", "secrets:S6290", "Make sure the access granted with this AWS access key ID is restricted", Pair(286, 306)),
                     tuple("devenv.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72)),
                     tuple("devenv_unversionned.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72)),
                 )
