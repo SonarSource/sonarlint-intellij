@@ -25,6 +25,7 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.util.ui.JBUI;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -35,6 +36,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
+import org.sonarlint.intellij.cayc.FocusModeHelpLabel;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.NodeJsManager;
 
@@ -66,9 +68,12 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
 
     focusOnNewCode = new JBCheckBox("Set focus on new code (connected mode only)");
     focusOnNewCode.setFocusable(false);
-    optionsPanel.add(focusOnNewCode, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
+    var helpLabel = FocusModeHelpLabel.create();
+    var horizontalLayout = new JPanel(new HorizontalLayout(5));
+    horizontalLayout.add(focusOnNewCode);
+    horizontalLayout.add(helpLabel);
+    optionsPanel.add(horizontalLayout, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
-
     autoTrigger = new JBCheckBox("Automatically trigger analysis");
     autoTrigger.setFocusable(false);
     optionsPanel.add(autoTrigger, new GridBagConstraints(0, 1, 3, 1, 0.0, 0.0,
