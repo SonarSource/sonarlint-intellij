@@ -52,6 +52,7 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
+import org.sonarlint.intellij.util.SonarGotItTooltipsUtils;
 
 public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Disposable, OccurenceNavigator {
   private static final String ID = "SonarLint";
@@ -117,6 +118,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     toolBarBox.add(mainToolbar.getComponent());
     super.setToolbar(toolBarBox);
     mainToolbar.getComponent().setVisible(true);
+
+    SonarGotItTooltipsUtils.INSTANCE.showFocusOnNewCodeToolTip(toolBarBox, this);
   }
 
   private static ActionGroup createActionGroup(Collection<AnAction> actions) {
