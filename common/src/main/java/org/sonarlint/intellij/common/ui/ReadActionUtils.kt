@@ -37,6 +37,13 @@ class ReadActionUtils {
         }
 
         @JvmStatic
+        fun <T> computeReadActionSafely(action: ThrowableComputable<T, out Exception>): T {
+            return ReadAction.compute<T, Exception> {
+                action.compute()
+            }
+        }
+
+        @JvmStatic
         fun <T> computeReadActionSafely(project: Project, action: ThrowableComputable<T, out Exception>): T? {
             if (!project.isDisposed) {
                 return ReadAction.compute<T?, Exception> {
@@ -61,6 +68,16 @@ class ReadActionUtils {
             if (!project.isDisposed && virtualFile.isValid) {
                 return ReadAction.compute<T?, Exception> {
                     if (project.isDisposed || !virtualFile.isValid) null else action.compute()
+                }
+            }
+            return null
+        }
+
+        @JvmStatic
+        fun <T> computeReadActionSafely(virtualFile: VirtualFile, action: ThrowableComputable<T, out Exception>): T? {
+            if (virtualFile.isValid) {
+                return ReadAction.compute<T?, Exception> {
+                    if (!virtualFile.isValid) null else action.compute()
                 }
             }
             return null

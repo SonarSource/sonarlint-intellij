@@ -41,6 +41,8 @@ import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
+
 public class FlowsTree extends Tree {
   private final Project project;
 
@@ -106,22 +108,26 @@ public class FlowsTree extends Tree {
     if (node == null) {
       return;
     }
-    RangeMarker rangeMarker = null;
+    RangeMarker rangeMarker;
     if (node instanceof FlowNode) {
       var flowNode = (FlowNode) node;
       rangeMarker = flowNode.getFlow().getLocations().stream().findFirst().map(Location::getRange).orElse(null);
     } else if (node instanceof PrimaryLocationNode) {
       var locationNode = (PrimaryLocationNode) node;
       rangeMarker = locationNode.rangeMarker();
+    } else {
+      rangeMarker = null;
     }
     if (rangeMarker == null || !rangeMarker.isValid()) {
       return;
     }
 
-    var psiFile = PsiDocumentManager.getInstance(project).getPsiFile(rangeMarker.getDocument());
-    if (psiFile != null && psiFile.isValid()) {
-      new OpenFileDescriptor(project, psiFile.getVirtualFile(), rangeMarker.getStartOffset()).navigate(false);
-    }
+    runReadActionSafely(project, () -> {
+      var psiFile = PsiDocumentManager.getInstance(project).getPsiFile(rangeMarker.getDocument());
+      if (psiFile != null && psiFile.isValid()) {
+        new OpenFileDescriptor(project, psiFile.getVirtualFile(), rangeMarker.getStartOffset()).navigate(false);
+      }
+    });
   }
 
   @CheckForNull

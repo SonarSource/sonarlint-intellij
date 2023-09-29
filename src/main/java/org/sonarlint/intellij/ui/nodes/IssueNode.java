@@ -39,6 +39,7 @@ import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class IssueNode extends FindingNode {
@@ -150,10 +151,12 @@ public class IssueNode extends FindingNode {
       return "(-, -) ";
     }
 
-    var doc = range.getDocument();
-    var line = doc.getLineNumber(range.getStartOffset());
-    var offset = range.getStartOffset() - doc.getLineStartOffset(line);
-    return String.format("(%d, %d) ", line + 1, offset);
+    return computeReadActionSafely(issue.psiFile(), () -> {
+      var doc = range.getDocument();
+      var line = doc.getLineNumber(range.getStartOffset());
+      var offset = range.getStartOffset() - doc.getLineStartOffset(line);
+      return String.format("(%d, %d) ", line + 1, offset);
+    });
   }
 
   @Override
