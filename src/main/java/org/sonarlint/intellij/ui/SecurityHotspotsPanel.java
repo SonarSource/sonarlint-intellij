@@ -159,7 +159,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     }
 
     if (status instanceof Supported) {
-      var isFocusOnNewCode = getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode();
+      var isFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
       if (isFocusOnNewCode) {
         var oldHotspots = hotspots.entrySet().stream()
           .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList())))
@@ -345,7 +345,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var newHotspotsAfterFiltering = securityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(project, securityHotspotKey, status);
     var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
     var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
-    var focusedCount = getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     return anyDisplayed ? focusedCount : 0;
   }
 
@@ -358,7 +358,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var newHotspotsAfterFiltering = securityHotspotTreeBuilder.filterSecurityHotspots(project, filter);
     var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
     var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
-    var focusedCount = getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     return anyDisplayed ? focusedCount : 0;
   }
 
@@ -367,7 +367,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var newHotspotsAfterFiltering = securityHotspotTreeBuilder.filterSecurityHotspots(project, isResolved);
     var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
     var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
-    var focusedCount = getService(project, CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     return anyDisplayed ? focusedCount : 0;
   }
 
