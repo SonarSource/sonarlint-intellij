@@ -31,12 +31,14 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.GridBag
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.JPanel
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
+import org.sonarlint.intellij.cayc.FocusModeHelpLabel
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.FindingType.ISSUE
@@ -76,7 +78,10 @@ class SonarLintDashboardPanel(private val editor: Editor) {
 
         panel.add(findingsSummaryLabel, gc)
         panel.add(menuButton, gc.next().anchor(GridBagConstraints.LINE_END).weightx(0.0).insets(10, 6, 10, 6))
-        panel.add(focusOnNewCodeCheckbox,
+        val focusPanel = JPanel(HorizontalLayout(5))
+        focusPanel.add(focusOnNewCodeCheckbox)
+        focusPanel.add(FocusModeHelpLabel.create())
+        panel.add(focusPanel,
             gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 0))
     }
 
