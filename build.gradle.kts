@@ -216,7 +216,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.14.0.4481")
     "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.20.0.5654")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.48.0.62520")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.49.0.62722")
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // workaround for light tests in 2020.3, might remove later
