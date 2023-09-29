@@ -17,14 +17,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.documentation
+package org.sonarlint.intellij.cayc
 
-object SonarLintDocumentation {
-    const val BASE_DOCS_URL = "https://docs.sonarsource.com/sonarlint/intellij"
-    const val CONNECTED_MODE_LINK = "${BASE_DOCS_URL}/team-features/connected-mode"
-    const val SECURITY_HOTSPOTS_LINK = "${BASE_DOCS_URL}/using-sonarlint/security-hotspots"
-    const val TAINT_VULNERABILITIES_LINK = "${BASE_DOCS_URL}/using-sonarlint/taint-vulnerabilities"
-    const val CLEAN_CODE_LINK = "${BASE_DOCS_URL}/concepts/clean-code/"
-    const val SUPPORT_POLICY_LINK = "${BASE_DOCS_URL}/team-features/connected-mode/#sonarlint-sonarqube-version-support-policy"
-    const val FOCUS_ON_NEW_CODE_LINK = "${BASE_DOCS_URL}/investigating-issues/#focusing-on-new-code"
+import com.intellij.ide.BrowserUtil
+import com.intellij.ui.ContextHelpLabel
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
+
+class FocusModeHelpLabel {
+    companion object {
+        @JvmStatic
+        fun create() =
+                ContextHelpLabel.createWithLink(null,
+                        "Deliver clean code by focusing on code that was recently modified",
+                        "Learn more about Clean as You Code", true) { BrowserUtil.browse(SonarLintDocumentation.FOCUS_ON_NEW_CODE_LINK) };
+
+    }
 }
