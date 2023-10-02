@@ -138,7 +138,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
 
     private fun updateRuleSeverity(severity: IssueSeverity) {
         ruleSeverityIcon.icon = SonarLintIcons.severity(severity)
-        ruleSeverityLabel.text = clean(severity.toString())
+        ruleSeverityLabel.text = cleanCapitalized(severity.toString())
         ruleSeverityLabel.setCopyable(true)
     }
 
@@ -166,18 +166,18 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     private fun updateCommonFields(type: RuleType, attribute: CleanCodeAttribute?, qualities: Map<SoftwareQuality, ImpactSeverity>, ruleKey: String) {
         val newCctEnabled = attribute != null && qualities.isNotEmpty()
         if (newCctEnabled) {
-            val attributeLabel = JBLabel("<html><b>" + clean(attribute!!.attributeCategory.issueLabel) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
+            val attributeLabel = JBLabel("<html><b>" + cleanCapitalized(attribute!!.attributeCategory.issueLabel) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
             attributePanel.apply {
                 add(attributeLabel)
                 toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
             }
             qualities.entries.forEach {
-                val cleanImpact = clean(it.value.displayLabel)
-                val cleanQuality = clean(it.key.displayLabel)
+                val cleanImpact = cleanCapitalized(it.value.displayLabel)
+                val cleanQuality = cleanCapitalized(it.key.displayLabel)
                 val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[it.value]).apply {
                     toolTipText = "Issues found for this rule will have a $cleanImpact impact on the $cleanQuality of your software."
                 }
-                qualityPanel.add(JBLabel(clean(it.key.toString())).apply {
+                qualityPanel.add(JBLabel(cleanCapitalized(it.key.toString())).apply {
                     foreground = SonarLintIcons.fontColorsByImpact[it.value]
                 })
                 qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(it.value) })
@@ -185,7 +185,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             }
         } else {
             ruleTypeIcon.icon = SonarLintIcons.type(type)
-            ruleTypeLabel.text = clean(type.toString())
+            ruleTypeLabel.text = cleanCapitalized(type.toString())
             ruleTypeLabel.setCopyable(true)
         }
         ruleKeyLabel.text = ruleKey
@@ -239,8 +239,12 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         ruleTypeLabel.text = msg
     }
 
+    private fun cleanCapitalized(txt: String): String {
+        return StringUtil.capitalizeWords(clean(txt), true)
+    }
+
     private fun clean(txt: String): String {
-        return StringUtil.capitalizeWords(txt.lowercase().replace("_", " "), true)
+        return txt.lowercase().replace("_", " ")
     }
 
 }
