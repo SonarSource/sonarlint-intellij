@@ -27,14 +27,18 @@ import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.Key
 import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.persistence.FindingsCache
 import javax.swing.JComponent
 
 class SonarLintTrafficLightAction(private val editor: Editor) : AnAction(), CustomComponentAction {
 
     companion object {
-        private val FINDINGS_NUMBER = Key<Int>("FINDINGS_NUMBER")
+        private val DASHBOARD_MODEL = Key<SonarLintDashboardModel>("DASHBOARD_MODEL")
     }
 
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
@@ -42,20 +46,25 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AnAction(), Cust
     }
 
     override fun updateCustomComponent(component: JComponent, presentation: Presentation) {
-        presentation.getClientProperty(FINDINGS_NUMBER)?.let { (component as SonarLintTrafficLightWidget).refresh(it) }
+        presentation.getClientProperty(DASHBOARD_MODEL)?.let { (component as SonarLintTrafficLightWidget).refresh(it) }
     }
 
     override fun update(e: AnActionEvent) {
         val project = e.project ?: return
         e.getData(CommonDataKeys.VIRTUAL_FILE)?.let { file ->
             val presentation = e.presentation
-            val findingsNumber = SonarLintUtils.getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved }.size
-            presentation.putClientProperty(FINDINGS_NUMBER, findingsNumber)
+            val isFocusOnNewCode = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+            val relevantFindings = getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved && (!isFocusOnNewCode || it.isOnNewCode()) }
+            val issues = relevantFindings.filterIsInstance<LiveIssue>()
+            val hotspots = relevantFindings.filterIsInstance<LiveSecurityHotspot>()
+            val taintVulnerabilitiesCount = TaintVulnerabilitiesCache.getStatus(project)?.count(isFocusOnNewCode) ?: 0
+            val model = SonarLintDashboardModel(issues.size, hotspots.size, taintVulnerabilitiesCount, isFocusOnNewCode)
+            presentation.putClientProperty(DASHBOARD_MODEL, model)
         }
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        editor.project?.let { SonarLintUtils.getService(it, SonarLintToolWindow::class.java).openOrCloseCurrentFileTab() }
+        editor.project?.let { getService(it, SonarLintToolWindow::class.java).openOrCloseCurrentFileTab() }
     }
 
 }
