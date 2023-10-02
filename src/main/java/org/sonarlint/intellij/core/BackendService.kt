@@ -590,7 +590,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         // simplification as we ignore module bindings
         return try {
             initializedBackend.newCodeService.getNewCodeDefinition(GetNewCodeDefinitionParams(projectId(project)))
-                    .thenApply { response -> if (response.isSupported) response.description else " (unsupported new code definition)" }.get()
+                    .thenApply { response -> if (response.isSupported) response.description else "(unsupported new code definition)" }.get()
         } catch (e: Exception) {
             "(unknown code period)"
         }
