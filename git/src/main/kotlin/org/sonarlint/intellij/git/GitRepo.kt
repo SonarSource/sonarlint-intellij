@@ -51,11 +51,12 @@ class GitRepo(private val repo: GitRepository, private val project: Project, pri
                 return null
             }
             val minDistance = branchesPerDistance.keys.stream().min(Comparator.naturalOrder()).get()
-            val bestCandidates: Set<String?> = branchesPerDistance[minDistance]!!
-            if (bestCandidates.contains(serverMainBranch)) {
-                // Favor the main branch when there are multiple candidates with the same distance
-                serverMainBranch
-            } else bestCandidates.first()
+            branchesPerDistance[minDistance]?.let {
+                if (it.contains(serverMainBranch)) {
+                    // Favor the main branch when there are multiple candidates with the same distance
+                    serverMainBranch
+                } else it.first()
+            } ?: throw Exception("Could not find the branch with the minimum distance")
         } catch (e: Exception) {
             logger.error("Couldn't find best matching branch", e)
             null

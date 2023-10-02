@@ -60,11 +60,9 @@ class LocalHistoryFindingTracker(private val previousFindings: CachedFindings) {
     }
 
     private fun <T : Trackable, L : LiveFinding> matchWithPreviousFinding(baseInput: MutableCollection<T>, rawInput: L): T? {
-        if (!baseInput.isEmpty()) {
+        if (baseInput.isNotEmpty()) {
             val tracking = Tracker<L, T>().track({ listOf(rawInput) }) { baseInput }
-            if (tracking.matchedRaws.isNotEmpty()) {
-                return tracking.matchedRaws[rawInput]!!
-            }
+            tracking.matchedRaws[rawInput]?.let { return it }
         }
         return null;
     }

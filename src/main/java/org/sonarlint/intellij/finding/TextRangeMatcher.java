@@ -79,6 +79,10 @@ public class TextRangeMatcher {
 
   private static TextRange getIssueTextRange(PsiFile file, Document doc, @Nullable Integer startLine, @Nullable Integer startLineOffset, @Nullable Integer endLine,
     @Nullable Integer endLineOffset) throws NoMatchException {
+    if (startLine == null || endLine == null) {
+      throw new NoMatchException("Start line and end line should not be null");
+    }
+
     var ijStartLine = startLine - 1;
     var ijEndLine = endLine - 1;
     var lineCount = doc.getLineCount();

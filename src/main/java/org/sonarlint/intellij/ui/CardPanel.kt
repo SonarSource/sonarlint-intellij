@@ -24,6 +24,7 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 
 class CardPanel {
+
     val container = JPanel()
     private var subPanels = mutableMapOf<String, JComponent>()
 
@@ -41,8 +42,7 @@ class CardPanel {
 
     fun show(id: String) {
         subPanels.values.forEach { it.isVisible = false }
-        subPanels[id]!!.isVisible = true
+        subPanels[id]?.isVisible = true
     }
-
 
 }
