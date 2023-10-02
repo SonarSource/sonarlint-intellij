@@ -21,6 +21,7 @@ package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.Fixture
 import com.intellij.remoterobot.fixtures.JRadioButtonFixture
@@ -45,6 +46,8 @@ fun ContainerFixture.jRadioButtons() = findAll<JRadioButtonFixture>(byXpath("//d
 fun ContainerFixture.jbTextField() = findElement<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
 
 fun ContainerFixture.jbTable() = findElement<JBTableFixture>(byXpath("//div[@class='JBTable']"))
+
+fun ContainerFixture.editorComponent() = findElement<ComponentFixture>(byXpath("//div[@class='PsiAwareTextEditorComponent']"))
 
 fun CommonContainerFixture.jPasswordField() = textField(byXpath("//div[@class='JPasswordField']"))
 
