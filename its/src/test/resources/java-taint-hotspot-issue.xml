@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<profile>
+  <name>SonarLint IT Java Taint Hotspot Issue</name>
+  <language>java</language>
+  <rules>
+    <!-- Database queries should not be vulnerable to injection attacks -->
+    <rule>
+      <repositoryKey>javasecurity</repositoryKey>
+      <key>S3649</key>
+      <priority>BLOCKER</priority>
+    </rule>
+    <!-- Using hardcoded IP addresses is security-sensitive. Hotspot that should not be visible in SonarLint -->
+    <rule>
+      <repositoryKey>java</repositoryKey>
+      <key>S1313</key>
+      <priority>MAJOR</priority>
+    </rule>
+    <!-- Move this trailing comment on the previous empty line -->
+    <rule>
+      <repositoryKey>java</repositoryKey>
+      <key>S139</key>
+      <priority>MINOR</priority>
+    </rule>
+  </rules>
+</profile>
