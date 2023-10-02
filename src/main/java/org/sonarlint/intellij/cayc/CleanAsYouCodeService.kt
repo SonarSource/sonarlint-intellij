@@ -19,14 +19,28 @@
  */
 package org.sonarlint.intellij.cayc
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 
-@Service(Service.Level.PROJECT)
-class CleanAsYouCodeService(private val project: Project) {
-    fun shouldFocusOnNewCode(): Boolean {
+@Service(Service.Level.APP)
+class CleanAsYouCodeService {
+    fun shouldFocusOnNewCode(project: Project): Boolean {
         return getGlobalSettings().isFocusOnNewCode && getSettingsFor(project).isBound
+    }
+
+    fun setFocusOnNewCode(isFocusOnNewCode: Boolean) {
+        getGlobalSettings().isFocusOnNewCode = isFocusOnNewCode
+        ProjectManager.getInstance().openProjects.forEach { project ->
+            if (!project.isDisposed) {
+                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).refreshViews()
+                DaemonCodeAnalyzer.getInstance(project).restart()
+            }
+        }
     }
 }

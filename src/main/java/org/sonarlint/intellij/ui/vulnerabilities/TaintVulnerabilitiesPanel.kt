@@ -220,7 +220,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private fun populateTrees(status: FoundTaintVulnerabilities) {
         currentStatus = status
-        if (getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
+        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)) {
             populateSubTree(tree, treeBuilder, status.newVulnerabilities())
             populateSubTree(oldTree, oldTreeBuilder, status.oldVulnerabilities())
             oldTree.isVisible = true
@@ -267,7 +267,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     fun setSelectedVulnerability(vulnerability: LocalTaintVulnerability) {
-        if (getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode() && !vulnerability.isOnNewCode()) {
+        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project) && !vulnerability.isOnNewCode()) {
             oldTree.setSelectedVulnerability(vulnerability)
         } else {
             tree.setSelectedVulnerability(vulnerability)
