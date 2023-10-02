@@ -63,6 +63,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>9.1 - 1 new quick fix for JS/TS. 2 new C++ MISRA 2023 rules. Detection of 42 new secrets. 8 new rules and 3 new quick fixes for Python. 16 new rules for Docker. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>9.0 - Support Clean Code attributes and software qualities. Allow the reopening of resolved issues and add ability to resolve issues not yet known by SonarQube (version 10.2+). Support of PHP 8.3. 9 new rules for Python. 15 new rules for JS/TS. Detection of 50 new patterns and 22 new types for secrets. Support of Bicep in Azure. 5 new rules for Azure Resource Manager templates. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.5.1 - Fix an error when creating or updating a connection to SonarCloud. Fix SSL issues related to our HTTP client. Fix an error when using a proxy.</li>
         <li>8.5 - Support PL/SQL analysis in connected mode when 'Database Tools and SQL' plugin is enabled. 43 new MISRA rules for C++. 12 new rules for CloudFormation, Docker, Kubernetes and Terraform. 9 new rules and one quick fix for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>

@@ -204,19 +204,19 @@ dependencies {
     }
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.24.0.32100")
-    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.5.1.22382")
+    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.6.0.22520")
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.32.0.10180")
-    "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.7.0.12181")
+    "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.8.0.12420")
     "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.17.0.2902")
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.14.0.4481")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.9.0.3600")
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.10.0.4108")
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.13.0.76953")
-    "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.3.0.1632")
+    "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.4.0.2120")
     "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.14.0.4481")
-    "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.20.0.5654")
+    "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.21.0.5999")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.48.0.62520")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.49.0.62722")
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // workaround for light tests in 2020.3, might remove later
