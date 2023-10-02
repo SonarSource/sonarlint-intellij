@@ -33,17 +33,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.GridBag
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import javax.swing.JPanel
 import org.sonarlint.intellij.actions.ShowLogAction
-import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.pluralize
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.persistence.FindingsCache
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import javax.swing.JPanel
 
 class SonarLintDashboard(private val editor: Editor) {
 
@@ -59,9 +59,7 @@ class SonarLintDashboard(private val editor: Editor) {
     init {
         editor.project?.let { refreshCheckbox(it) }
         focusOnNewCodeCheckbox.addActionListener {
-            Settings.getGlobalSettings().isFocusOnNewCode = focusOnNewCodeCheckbox.isSelected
-            val project = editor.project ?: return@addActionListener
-            getService(project, SonarLintToolWindow::class.java).refreshViews()
+            getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCodeCheckbox.isSelected)
         }
         focusOnNewCodeCheckbox.isOpaque = false
 

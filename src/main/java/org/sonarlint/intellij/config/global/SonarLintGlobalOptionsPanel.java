@@ -34,11 +34,12 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.NodeJsManager;
 
 import static java.awt.GridBagConstraints.WEST;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
@@ -107,7 +108,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
     autoTrigger.setSelected(model.isAutoTrigger());
     nodeJsPath.setText(model.getNodejsPath());
-    final var nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
+    final var nodeJsManager = getService(NodeJsManager.class);
     final var detectedNodeJsPath = nodeJsManager.getNodeJsPath();
     this.nodeJsPath.getEmptyText().setText(detectedNodeJsPath != null ? detectedNodeJsPath.toString() : "Node.js not found");
     final var detectedNodeJsVersion = nodeJsManager.getNodeJsVersion();
@@ -117,7 +118,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public void save(SonarLintGlobalSettings settings) {
     getComponent();
-    settings.setFocusOnNewCode(focusOnNewCode.isSelected());
+    getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected());
     settings.setAutoTrigger(autoTrigger.isSelected());
     settings.setNodejsPath(nodeJsPath.getText());
   }

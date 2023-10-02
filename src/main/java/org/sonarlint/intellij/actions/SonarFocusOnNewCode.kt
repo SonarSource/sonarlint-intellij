@@ -28,12 +28,11 @@ import org.sonarlint.intellij.config.Settings
 
 class SonarFocusOnNewCode : AbstractSonarToggleAction() {
 
-    override fun isSelected(e: AnActionEvent): Boolean = e.project?.let { getService(it, CleanAsYouCodeService::class.java).shouldFocusOnNewCode() }
+    override fun isSelected(e: AnActionEvent): Boolean = e.project?.let { getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(it) }
             ?: false
 
     override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
-        Settings.getGlobalSettings().isFocusOnNewCode = isSelected
-        e.project?.let { getService(it, SonarLintToolWindow::class.java).refreshViews() }
+        getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(isSelected)
     }
 
     override fun updatePresentation(project: Project, presentation: Presentation) {
