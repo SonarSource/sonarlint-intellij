@@ -28,7 +28,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
@@ -39,16 +38,15 @@ import javax.swing.JPanel
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.common.util.SonarLintUtils.pluralize
 import org.sonarlint.intellij.config.Settings
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.finding.persistence.FindingsCache
+import org.sonarlint.intellij.finding.FindingType.ISSUE
+import org.sonarlint.intellij.finding.FindingType.SECURITY_HOTSPOT
+import org.sonarlint.intellij.finding.FindingType.TAINT_VULNERABILITY
 
-class SonarLintDashboard(private val editor: Editor) {
+class SonarLintDashboardPanel(private val editor: Editor) {
 
     companion object {
-        private const val NO_FINDINGS_TEXT = "SonarLint found no findings, keep up the good job!"
+        private const val NO_FINDINGS_TEXT = "No problems found, keep up the good work!"
         private const val CHECKBOX_TITLE = "Focus on new code"
     }
 
@@ -68,10 +66,10 @@ class SonarLintDashboard(private val editor: Editor) {
         presentation.putClientProperty(ActionButton.HIDE_DROPDOWN_ICON, true)
 
         val menuButton = ActionButton(
-            MenuAction(),
-            presentation,
-            ActionPlaces.EDITOR_POPUP,
-            ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE
+                MenuAction(),
+                presentation,
+                ActionPlaces.EDITOR_POPUP,
+                ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE
         )
 
         val gc = GridBag().nextLine().next().anchor(GridBagConstraints.LINE_START).weightx(1.0).fillCellHorizontally().insets(10, 10, 10, 0)
@@ -82,29 +80,25 @@ class SonarLintDashboard(private val editor: Editor) {
             gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 0))
     }
 
-    fun refresh() {
+    fun refresh(summary: SonarLintDashboardModel) {
         val project = editor.project ?: return
-        val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
-
         refreshCheckbox(project)
-
-        val findings = getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved }
-        if (findings.isEmpty()) {
+        if (summary.findingsCount() == 0) {
             findingsSummaryLabel.text = NO_FINDINGS_TEXT
         } else {
-            val issuesCount = findings.filterIsInstance<LiveIssue>().size
-            val hotspotsCount = findings.filterIsInstance<LiveSecurityHotspot>().size
-            var text = "SonarLint found "
-            if (issuesCount > 0) {
-                text += issuesCount.toString() + pluralize(" issue", issuesCount.toLong())
-            }
-            if (hotspotsCount > 0) {
+            val fragments = mutableListOf<String>()
+            with(summary) {
                 if (issuesCount > 0) {
-                    text += " and "
+                    fragments.add(ISSUE.display(issuesCount))
                 }
-                text += hotspotsCount.toString() + pluralize(" hotspot", hotspotsCount.toLong())
+                if (hotspotsCount > 0) {
+                    fragments.add(SECURITY_HOTSPOT.display(hotspotsCount))
+                }
+                if (taintVulnerabilitiesCount > 0) {
+                    fragments.add(TAINT_VULNERABILITY.display(taintVulnerabilitiesCount))
+                }
+                findingsSummaryLabel.text = fragments.joinToString()
             }
-            findingsSummaryLabel.text = text
         }
     }
 
