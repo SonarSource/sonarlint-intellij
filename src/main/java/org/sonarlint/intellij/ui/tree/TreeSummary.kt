@@ -70,7 +70,7 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
         return "No ${treeContentKind.displayName}s to display"
     }
 
-    private fun isFocusOnNewCode() = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
+    private fun isFocusOnNewCode() = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
 
     companion object {
         private const val DEFAULT_EMPTY_TEXT = "No analysis done"
