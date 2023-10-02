@@ -27,7 +27,6 @@ import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.ui.AncestorListenerAdapter
 import com.intellij.ui.awt.RelativePoint
-import com.intellij.ui.popup.PopupState
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.Alarm
 import java.awt.Component
@@ -46,11 +45,10 @@ class SonarLintDashboardPopup(private val editor: Editor) {
             hidePopup()
         }
     }
-    private val myPopupState = PopupState.forPopup()
     private val popupAlarm = Alarm()
     private var myPopup: JBPopup? = null
     private var insidePopup = false
-    private val dashboard = SonarLintDashboard(editor)
+    private val dashboard = SonarLintDashboardPanel(editor)
 
     init {
         dashboard.panel.addMouseListener(object : MouseAdapter() {
@@ -77,12 +75,10 @@ class SonarLintDashboardPopup(private val editor: Editor) {
 
     private fun showPopup(target: Component) {
         hidePopup()
-        if (myPopupState.isRecentlyHidden) return  // do not show new popup
-        dashboard.refresh()
         val myContent = dashboard.panel
-        
+
         val myPopupBuilder =
-            JBPopupFactory.getInstance().createComponentPopupBuilder(myContent, null).setCancelOnClickOutside(true)
+                JBPopupFactory.getInstance().createComponentPopupBuilder(myContent, null).setCancelOnClickOutside(true)
 
         val myPopupListener: JBPopupListener = object : JBPopupListener {
             override fun onClosed(event: LightweightWindowEvent) {
@@ -121,5 +117,9 @@ class SonarLintDashboardPopup(private val editor: Editor) {
             myPopup!!.cancel()
         }
         myPopup = null
+    }
+
+    fun refresh(model: SonarLintDashboardModel) {
+        dashboard.refresh(model)
     }
 }
