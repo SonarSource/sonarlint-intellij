@@ -135,13 +135,15 @@ class SonarLintTrafficLightWidget(
         ActionButtonLook.SYSTEM_LOOK.paintLookBackground(graphics, rect, color)
     }
 
-    fun refresh(findingsNumber: Int) {
-        if (findingsNumber == 0) {
-            iconAndFindingsCountLabel.icon = SonarLintIcons.SONARLINT_ACTION_GREEN_12PX
-        } else {
+    fun refresh(model: SonarLintDashboardModel) {
+        if (model.hasFindings()) {
             iconAndFindingsCountLabel.icon = SonarLintIcons.SONARLINT_ACTION_12PX
-            iconAndFindingsCountLabel.text = findingsNumber.toString()
+            iconAndFindingsCountLabel.text = model.findingsCount().toString()
+        } else {
+            iconAndFindingsCountLabel.icon = SonarLintIcons.SONARLINT_ACTION_GREEN_12PX
+            iconAndFindingsCountLabel.text = null
         }
+        dashboardPopup.refresh(model)
     }
 
 }
