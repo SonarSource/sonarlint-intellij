@@ -119,7 +119,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     super.setToolbar(toolBarBox);
     mainToolbar.getComponent().setVisible(true);
 
-    SonarGotItTooltipsUtils.INSTANCE.showFocusOnNewCodeToolTip(toolBarBox, this);
+    SonarGotItTooltipsUtils.INSTANCE.showFocusOnNewCodeToolTip(mainToolbar.getComponent(), this);
   }
 
   private static ActionGroup createActionGroup(Collection<AnAction> actions) {

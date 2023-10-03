@@ -21,6 +21,7 @@ package org.sonarlint.intellij.util
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.ui.popup.Balloon
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.GotItTooltip
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
@@ -38,32 +39,38 @@ object SonarGotItTooltipsUtils {
             Software qualities represent the impact of an issue on your application."""
 
     private const val TRAFFIC_LIGHT_TOOLTIP_ID = "sonarlint.traffic.light.tooltip"
-    private const val TRAFFIC_LIGHT_TOOLTIP_TEXT = """See how many items need your attention. Click to display the SonarLint tool window, and hover to have access to more actions."""
+    private const val TRAFFIC_LIGHT_TOOLTIP_TEXT = """See how many issues need your attention in the current file. 
+        Click the icon to show/hide the SonarLint tool window, and hover to view more actions."""
 
     fun showFocusOnNewCodeToolTip(component: JComponent, parent: Disposable) {
-        GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent).apply {
-            withIcon(SonarLintIcons.SONARLINT)
-            withPosition(Balloon.Position.above)
-            withBrowserLink("Learn more about Clean as You Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
-            show(component) { it, _ -> Point(it.width / 2, -5) }
+        if (!Disposer.isDisposed(parent)) {
+            Disposer.register(parent, GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent).apply {
+                withIcon(SonarLintIcons.SONARLINT)
+                withPosition(Balloon.Position.above)
+                withBrowserLink("Learn more about Clean as You Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
+                show(component) { it, _ -> Point(it.width / 2, -5) }
+            })
         }
     }
 
     fun showCleanCodeToolTip(component: JComponent, parent: Disposable) {
-        GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
-            withHeader("SonarLint - Start your Clean Code journey")
-            withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.FOCUS_CLEAN_CODE_LINK))
-            withIcon(SonarLintIcons.SONARLINT)
-            withPosition(Balloon.Position.atLeft)
-            show(component, GotItTooltip.LEFT_MIDDLE)
+        if (!Disposer.isDisposed(parent)) {
+            Disposer.register(parent, GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
+                withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.FOCUS_CLEAN_CODE_LINK))
+                withIcon(SonarLintIcons.SONARLINT)
+                withPosition(Balloon.Position.atLeft)
+                show(component, GotItTooltip.LEFT_MIDDLE)
+            })
         }
     }
 
     fun showTrafficLightToolTip(component: JComponent, parent: Disposable) {
-        GotItTooltip(TRAFFIC_LIGHT_TOOLTIP_ID, TRAFFIC_LIGHT_TOOLTIP_TEXT, parent).apply {
-            withIcon(SonarLintIcons.SONARLINT)
-            withPosition(Balloon.Position.above)
-            show(component) { it, _ -> Point(-5, it.height / 2) }
+        if (!Disposer.isDisposed(parent)) {
+            Disposer.register(parent, GotItTooltip(TRAFFIC_LIGHT_TOOLTIP_ID, TRAFFIC_LIGHT_TOOLTIP_TEXT, parent).apply {
+                withIcon(SonarLintIcons.SONARLINT)
+                withPosition(Balloon.Position.above)
+                show(component) { it, _ -> Point(-5, it.height / 2) }
+            })
         }
     }
 
