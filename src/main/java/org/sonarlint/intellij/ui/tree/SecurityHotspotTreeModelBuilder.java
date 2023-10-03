@@ -104,29 +104,23 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     nonFilteredNodes.clear();
     toRemove.forEach(this::removeFile);
 
-    var fileWithIssuesCount = 0;
-    var issuesCount = 0;
     for (var e : map.entrySet()) {
-      var fileIssuesCount = setFileSecurityHotspots(e.getKey(), e.getValue());
-      if (fileIssuesCount > 0) {
-        issuesCount += fileIssuesCount;
-        fileWithIssuesCount++;
-      }
+      setFileSecurityHotspots(e.getKey(), e.getValue());
     }
-    treeSummary.refresh(fileWithIssuesCount, issuesCount);
+
     model.nodeChanged(summaryNode);
   }
 
-  private int setFileSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
+  private void setFileSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
     if (!accept(file)) {
       removeFile(file);
-      return 0;
+      return;
     }
 
     var filtered = filter(securityHotspots, false);
     if (filtered.isEmpty()) {
       removeFile(file);
-      return 0;
+      return;
     }
 
     var newFile = false;
@@ -148,7 +142,6 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     } else {
       model.nodeStructureChanged(fNode);
     }
-    return filtered.size();
   }
 
   private void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
@@ -304,6 +297,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       }
     }
     model.reload();
+    treeSummary.refresh(fileList.size(), filteredNodes.size());
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
     return filteredNodes.size();
   }
