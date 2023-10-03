@@ -46,9 +46,10 @@ object SonarGotItTooltipsUtils {
         if (!Disposer.isDisposed(parent)) {
             Disposer.register(parent, GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent).apply {
                 withIcon(SonarLintIcons.SONARLINT)
-                withPosition(Balloon.Position.above)
-                withBrowserLink("Learn more about Clean as You Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
-                show(component) { it, _ -> Point(it.width / 2, -5) }
+                withPosition(Balloon.Position.atRight)
+                withBrowserLink("Learn more about Clean as You Code", URL(SonarLintDocumentation.FOCUS_CLEAN_CODE_LINK))
+                // Point at the first action level
+                show(component) { _, _ -> Point(0, 15) }
             })
         }
     }
@@ -56,7 +57,7 @@ object SonarGotItTooltipsUtils {
     fun showCleanCodeToolTip(component: JComponent, parent: Disposable) {
         if (!Disposer.isDisposed(parent)) {
             Disposer.register(parent, GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
-                withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.FOCUS_CLEAN_CODE_LINK))
+                withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
                 withIcon(SonarLintIcons.SONARLINT)
                 withPosition(Balloon.Position.atLeft)
                 show(component, GotItTooltip.LEFT_MIDDLE)
