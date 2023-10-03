@@ -26,10 +26,9 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import org.assertj.core.api.Assertions
+import org.sonarlint.intellij.its.fixtures.GotItTooltipFixture
 import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.stripeButton
 import java.time.Duration
@@ -63,6 +62,7 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
 
   fun ensureOpen() {
     stripeButton(title).open()
+    findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton()).forEach { it.click() }
   }
 
 }
