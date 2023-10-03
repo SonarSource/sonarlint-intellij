@@ -47,11 +47,7 @@ class GitRepo(private val repo: GitRepository, private val project: Project, pri
                 val distance = distance(project, repo, head, localBranchHash.asString()) ?: continue
                 branchesPerDistance.computeIfAbsent(distance) { HashSet() }.add(serverBranchName)
             }
-            if (branchesPerDistance.isEmpty()) {
-                return null
-            }
-            val minDistance = branchesPerDistance.keys.stream().min(Comparator.naturalOrder()).get()
-            val bestCandidates: Set<String?> = branchesPerDistance[minDistance]!!
+            val bestCandidates = branchesPerDistance.minByOrNull { it.key }?.value ?: return null
             if (bestCandidates.contains(serverMainBranch)) {
                 // Favor the main branch when there are multiple candidates with the same distance
                 serverMainBranch

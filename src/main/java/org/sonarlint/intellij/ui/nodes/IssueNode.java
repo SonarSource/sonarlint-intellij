@@ -74,9 +74,13 @@ public class IssueNode extends FindingNode {
       }
     } else {
       var severity = issue.getUserSeverity();
-      var severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
+      var severityText = "";
+      Icon severityIcon = null;
+      if (severity != null) {
+        severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
+        severityIcon = SonarLintIcons.severity(severity);
+      }
       var type = issue.getType();
-      var severityIcon = SonarLintIcons.severity(severity);
       var typeIcon = SonarLintIcons.type(type);
       var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
 

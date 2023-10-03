@@ -47,15 +47,14 @@ class DefaultVcsService @NonInjectable constructor(
     constructor(project: Project) : this(project, Executors.newSingleThreadExecutor())
 
     override fun getServerBranchName(module: Module): String? {
-        if (resolvedBranchPerModule.containsKey(module)) {
-            return resolvedBranchPerModule[module]!!
+        return resolvedBranchPerModule.getOrElse(module) {
+            val branchName = resolveServerBranchName(module)
+            branchName?.let {
+                resolvedBranchPerModule[module] = it
+                getService(BackendService::class.java).branchChanged(module, it)
+            }
+            return branchName
         }
-        val branchName = resolveServerBranchName(module)
-        branchName?.let {
-            resolvedBranchPerModule[module] = it
-            getService(BackendService::class.java).branchChanged(module, it)
-        }
-        return branchName
     }
 
     private fun resolveServerBranchName(module: Module): String? {
