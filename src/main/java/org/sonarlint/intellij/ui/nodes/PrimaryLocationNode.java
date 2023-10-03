@@ -27,8 +27,6 @@ import javax.annotation.Nullable;
 import org.sonarlint.intellij.finding.Flow;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
-import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
-
 public class PrimaryLocationNode extends AbstractNode {
   private final String message;
   private final Flow associatedFlow;
@@ -78,20 +76,7 @@ public class PrimaryLocationNode extends AbstractNode {
   }
 
   private String issueCoordinates() {
-    if (rangeMarker == null) {
-      return "(0, 0) ";
-    }
-
-    if (!rangeMarker.isValid()) {
-      return "(-, -) ";
-    }
-
-    return computeReadActionSafely(() -> {
-      var doc = rangeMarker.getDocument();
-      var line = doc.getLineNumber(rangeMarker.getStartOffset());
-      var offset = rangeMarker.getStartOffset() - doc.getLineStartOffset(line);
-      return String.format("(%d, %d) ", line + 1, offset);
-    });
+    return formatRangeMarker(rangeMarker);
   }
 
   @Override

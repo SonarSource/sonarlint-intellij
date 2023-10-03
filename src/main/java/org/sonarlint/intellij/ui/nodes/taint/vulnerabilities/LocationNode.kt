@@ -21,7 +21,7 @@ package org.sonarlint.intellij.ui.nodes.taint.vulnerabilities
 
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.util.ui.JBUI
-import org.sonarlint.intellij.common.ui.ReadActionUtils
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.finding.Flow
 import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
@@ -57,7 +57,7 @@ class LocationNode(private val number: Int?, val location: Location, val associa
     }
 
     return location.file?.let {
-      ReadActionUtils.Companion.computeReadActionSafely(it) {
+      computeReadActionSafely(it) {
         val rangeMarker = location.range!!
         val doc = rangeMarker.document
         val line = doc.getLineNumber(rangeMarker.startOffset)

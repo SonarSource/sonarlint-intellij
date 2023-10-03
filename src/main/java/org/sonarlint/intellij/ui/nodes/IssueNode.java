@@ -39,7 +39,6 @@ import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
-import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class IssueNode extends FindingNode {
@@ -141,22 +140,9 @@ public class IssueNode extends FindingNode {
     return issue;
   }
 
-  private static String issueCoordinates(@Nonnull LiveIssue issue) {
+  private String issueCoordinates(@Nonnull LiveIssue issue) {
     var range = issue.getRange();
-    if (range == null) {
-      return "(0, 0) ";
-    }
-
-    if (!issue.isValid()) {
-      return "(-, -) ";
-    }
-
-    return computeReadActionSafely(issue.psiFile(), () -> {
-      var doc = range.getDocument();
-      var line = doc.getLineNumber(range.getStartOffset());
-      var offset = range.getStartOffset() - doc.getLineStartOffset(line);
-      return String.format("(%d, %d) ", line + 1, offset);
-    });
+    return formatRangeMarker(range);
   }
 
   @Override
