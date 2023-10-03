@@ -220,6 +220,7 @@ open class BaseUiTest {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
+                    closeAllGotItTooltips()
                     content("CurrentFilePanel") {
                         findText(issueMessage).click()
                     }
