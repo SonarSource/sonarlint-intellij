@@ -140,20 +140,9 @@ public class IssueNode extends FindingNode {
     return issue;
   }
 
-  private static String issueCoordinates(@Nonnull LiveIssue issue) {
+  private String issueCoordinates(@Nonnull LiveIssue issue) {
     var range = issue.getRange();
-    if (range == null) {
-      return "(0, 0) ";
-    }
-
-    if (!issue.isValid()) {
-      return "(-, -) ";
-    }
-
-    var doc = range.getDocument();
-    var line = doc.getLineNumber(range.getStartOffset());
-    var offset = range.getStartOffset() - doc.getLineStartOffset(line);
-    return String.format("(%d, %d) ", line + 1, offset);
+    return formatRangeMarker(range);
   }
 
   @Override

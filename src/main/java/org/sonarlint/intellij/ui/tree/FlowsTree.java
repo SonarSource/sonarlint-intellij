@@ -20,9 +20,7 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiDocumentManager;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
@@ -37,6 +35,7 @@ import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.Location;
+import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
@@ -102,34 +101,30 @@ public class FlowsTree extends Tree {
     }
   }
 
-  private void navigateToEditor(@Nullable DefaultMutableTreeNode node) {
+  private void navigateToEditor(@Nullable AbstractNode node) {
     if (node == null) {
       return;
     }
-    RangeMarker rangeMarker = null;
+    RangeMarker rangeMarker;
     if (node instanceof FlowNode) {
       var flowNode = (FlowNode) node;
       rangeMarker = flowNode.getFlow().getLocations().stream().findFirst().map(Location::getRange).orElse(null);
     } else if (node instanceof PrimaryLocationNode) {
       var locationNode = (PrimaryLocationNode) node;
       rangeMarker = locationNode.rangeMarker();
-    }
-    if (rangeMarker == null || !rangeMarker.isValid()) {
-      return;
+    } else {
+      rangeMarker = null;
     }
 
-    var psiFile = PsiDocumentManager.getInstance(project).getPsiFile(rangeMarker.getDocument());
-    if (psiFile != null && psiFile.isValid()) {
-      new OpenFileDescriptor(project, psiFile.getVirtualFile(), rangeMarker.getStartOffset()).navigate(false);
-    }
+    node.openFileFromRangeMarker(project, rangeMarker);
   }
 
   @CheckForNull
-  private DefaultMutableTreeNode getSelectedNode() {
+  private AbstractNode getSelectedNode() {
     var path = getSelectionPath();
     if (path == null) {
       return null;
     }
-    return (DefaultMutableTreeNode) path.getLastPathComponent();
+    return (AbstractNode) path.getLastPathComponent();
   }
 }

@@ -76,18 +76,7 @@ public class PrimaryLocationNode extends AbstractNode {
   }
 
   private String issueCoordinates() {
-    if (rangeMarker == null) {
-      return "(0, 0) ";
-    }
-
-    if (!rangeMarker.isValid()) {
-      return "(-, -) ";
-    }
-
-    var doc = rangeMarker.getDocument();
-    var line = doc.getLineNumber(rangeMarker.getStartOffset());
-    var offset = rangeMarker.getStartOffset() - doc.getLineStartOffset(line);
-    return String.format("(%d, %d) ", line + 1, offset);
+    return formatRangeMarker(rangeMarker);
   }
 
   @Override
