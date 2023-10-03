@@ -47,16 +47,11 @@ class GitRepo(private val repo: GitRepository, private val project: Project, pri
                 val distance = distance(project, repo, head, localBranchHash.asString()) ?: continue
                 branchesPerDistance.computeIfAbsent(distance) { HashSet() }.add(serverBranchName)
             }
-            if (branchesPerDistance.isEmpty()) {
-                return null
-            }
-            val minDistance = branchesPerDistance.keys.stream().min(Comparator.naturalOrder()).get()
-            branchesPerDistance[minDistance]?.let {
-                if (it.contains(serverMainBranch)) {
-                    // Favor the main branch when there are multiple candidates with the same distance
-                    serverMainBranch
-                } else it.first()
-            } ?: throw Exception("Could not find the branch with the minimum distance")
+            val bestCandidates = branchesPerDistance.minByOrNull { it.key }?.value ?: return null
+            if (bestCandidates.contains(serverMainBranch)) {
+                // Favor the main branch when there are multiple candidates with the same distance
+                serverMainBranch
+            } else bestCandidates.first()
         } catch (e: Exception) {
             logger.error("Couldn't find best matching branch", e)
             null
