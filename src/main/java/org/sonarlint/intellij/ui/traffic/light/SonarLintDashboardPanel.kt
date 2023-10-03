@@ -47,7 +47,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
 
     companion object {
         private const val NO_FINDINGS_TEXT = "No problems found, keep up the good work!"
-        private const val CHECKBOX_TITLE = "Focus on new code"
+        private const val CHECKBOX_TITLE = "Focus on New Code"
     }
 
     val panel = JPanel(GridBagLayout())

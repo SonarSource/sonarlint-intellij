@@ -44,7 +44,7 @@ object SonarGotItTooltipsUtils {
         GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent).apply {
             withIcon(SonarLintIcons.SONARLINT)
             withPosition(Balloon.Position.above)
-            withBrowserLink("Learn more about Clean as you Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
+            withBrowserLink("Learn more about Clean as You Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
             show(component) { it, _ -> Point(it.width / 2, -5) }
         }
     }
