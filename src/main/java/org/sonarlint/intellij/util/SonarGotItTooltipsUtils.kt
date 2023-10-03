@@ -57,7 +57,7 @@ object SonarGotItTooltipsUtils {
     fun showCleanCodeToolTip(component: JComponent, parent: Disposable) {
         if (!Disposer.isDisposed(parent)) {
             Disposer.register(parent, GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
-                withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
+                withBrowserLink("Learn more about Clean Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
                 withIcon(SonarLintIcons.SONARLINT)
                 withPosition(Balloon.Position.atLeft)
                 show(component, GotItTooltip.LEFT_MIDDLE)
