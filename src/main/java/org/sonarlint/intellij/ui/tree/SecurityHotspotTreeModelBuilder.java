@@ -104,23 +104,29 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     nonFilteredNodes.clear();
     toRemove.forEach(this::removeFile);
 
+    var fileWithIssuesCount = 0;
+    var issuesCount = 0;
     for (var e : map.entrySet()) {
-      setFileSecurityHotspots(e.getKey(), e.getValue());
+      var fileIssuesCount = setFileSecurityHotspots(e.getKey(), e.getValue());
+      if (fileIssuesCount > 0) {
+        issuesCount += fileIssuesCount;
+        fileWithIssuesCount++;
+      }
     }
-
+    treeSummary.refresh(fileWithIssuesCount, issuesCount);
     model.nodeChanged(summaryNode);
   }
 
-  private void setFileSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
+  private int setFileSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
     if (!accept(file)) {
       removeFile(file);
-      return;
+      return 0;
     }
 
     var filtered = filter(securityHotspots, false);
     if (filtered.isEmpty()) {
       removeFile(file);
-      return;
+      return 0;
     }
 
     var newFile = false;
@@ -142,6 +148,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     } else {
       model.nodeStructureChanged(fNode);
     }
+    return filtered.size();
   }
 
   private void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
@@ -191,16 +198,9 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   public int updateModelWithoutFileNode(Map<VirtualFile, Collection<LiveSecurityHotspot>> map) {
     summaryNode.removeAllChildren();
 
-    var fileWithIssuesCount = 0;
-    var issuesCount = 0;
     for (var e : map.entrySet()) {
-      var fileIssuesCount = setSecurityHotspots(e.getKey(), e.getValue());
-      if (fileIssuesCount > 0) {
-        issuesCount += fileIssuesCount;
-        fileWithIssuesCount++;
-      }
+      setSecurityHotspots(e.getKey(), e.getValue());
     }
-    treeSummary.refresh(fileWithIssuesCount, issuesCount);
 
     copyToFilteredNodes();
     model.nodeChanged(summaryNode);
@@ -208,18 +208,17 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     return summaryNode.getFindingCount();
   }
 
-  private int setSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
+  private void setSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
     if (!accept(file)) {
-      return 0;
+      return;
     }
 
     var filtered = filter(securityHotspots, true);
     if (filtered.isEmpty()) {
-      return 0;
+      return;
     }
 
     setRootSecurityHotspots(filtered);
-    return filtered.size();
   }
 
   private void setRootSecurityHotspots(Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
@@ -314,7 +313,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
   public void clear() {
     treeSummary.reset();
-    updateModel(Collections.emptyMap());
+    updateModelWithoutFileNode(Collections.emptyMap());
   }
 
   private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots, boolean allowResolved) {
