@@ -23,11 +23,11 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.GotItTooltip
-import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import java.awt.Point
 import java.net.URL
 import javax.swing.JComponent
+import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 object SonarGotItTooltipsUtils {
 
@@ -47,7 +47,7 @@ object SonarGotItTooltipsUtils {
             Disposer.register(parent, GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent).apply {
                 withIcon(SonarLintIcons.SONARLINT)
                 withPosition(Balloon.Position.atRight)
-                withBrowserLink("Learn more about Clean as You Code", URL(SonarLintDocumentation.FOCUS_CLEAN_CODE_LINK))
+                withBrowserLink("Learn more about Clean as You Code", URL(SonarLintDocumentation.FOCUS_ON_NEW_CODE_LINK))
                 // Point at the first action level
                 show(component) { _, _ -> Point(0, 15) }
             })
