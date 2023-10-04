@@ -422,7 +422,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   }
 
   public void refreshView() {
-    if(lastAnalysisResult != null) {
+    if (lastAnalysisResult != null) {
       updateFindings(lastAnalysisResult);
     }
   }
