@@ -52,6 +52,7 @@ import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
+import org.sonarlint.intellij.util.SonarGotItTooltipsUtils;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static java.util.function.Predicate.not;
@@ -97,6 +98,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     super.setContent(splitter);
     project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> runOnUiThread(project, this::refreshToolbar));
+
+    SonarGotItTooltipsUtils.INSTANCE.showFocusOnNewCodeToolTip(mainPanel, this);
   }
 
   public void allowResolvedIssues(boolean allowResolved) {

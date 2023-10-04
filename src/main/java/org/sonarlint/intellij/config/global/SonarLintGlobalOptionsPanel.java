@@ -66,7 +66,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     var optionsPanel = new JPanel(new GridBagLayout());
     optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 
-    focusOnNewCode = new JBCheckBox("Set focus on new code (connected mode only)");
+    focusOnNewCode = new JBCheckBox("Focus on new code (connected mode only)");
     focusOnNewCode.setFocusable(false);
     var helpLabel = FocusModeHelpLabel.create();
     var horizontalLayout = new JPanel(new HorizontalLayout(5));

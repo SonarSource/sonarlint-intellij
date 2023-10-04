@@ -38,6 +38,7 @@ import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 import java.awt.Component
 import java.awt.Graphics
 import java.awt.Rectangle
@@ -110,6 +111,8 @@ class SonarLintTrafficLightWidget(
             override fun isBorderOpaque() = false
             override fun getBorderInsets(c: Component) = JBUI.insets(0, 2)
         }
+
+        editor.project?.let { SonarGotItTooltipsUtils.showTrafficLightToolTip(iconAndFindingsCountLabel, it) }
     }
 
     override fun addNotify() {
