@@ -22,9 +22,7 @@ package org.sonarlint.intellij.ui.ruledescription
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.ui.GotItTooltip
 import com.intellij.ui.Gray
 import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.JBColor
@@ -45,6 +43,7 @@ import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
+import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
@@ -53,7 +52,6 @@ import org.sonarsource.sonarlint.core.commons.SoftwareQuality
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.event.ActionEvent
-import java.net.URL
 import java.util.LinkedList
 import javax.swing.AbstractAction
 import javax.swing.BorderFactory
@@ -65,9 +63,6 @@ import javax.swing.SwingConstants
 class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayout()) {
     companion object {
         private const val MARK_AS_RESOLVED = "Mark Issue as..."
-        private const val CLEAN_CODE_TOOLTIP_ID = "sonarlint.clean.code.tooltip"
-        private const val CLEAN_CODE_TOOLTIP_TEXT = """We have refined Sonar issues: Clean Code attributes spotlight what characteristic of Clean Code was violated. 
-            Software qualities represent the impact of an issue on your application."""
         private const val REOPEN = "Reopen"
     }
 
@@ -199,13 +194,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             wrappedPanel.add(attributePanel.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 15) })
             qualityLabels.forEach { wrappedPanel.add(it) }
 
-            GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
-                withHeader("SonarLint - Start your Clean Code journey")
-                withBrowserLink("Learn More about Clean Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
-                withIcon(SonarLintIcons.SONARLINT)
-                withPosition(Balloon.Position.atLeft)
-                show(wrappedPanel, GotItTooltip.LEFT_MIDDLE)
-            }
+            SonarGotItTooltipsUtils.showCleanCodeToolTip(wrappedPanel, parent)
         } else {
             wrappedPanel.add(ruleTypeIcon)
             wrappedPanel.add(ruleTypeLabel.apply {

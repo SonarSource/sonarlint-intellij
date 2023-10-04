@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.fixtures.closeAllGotItTooltips
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
@@ -99,6 +100,7 @@ class CurrentFileTabTest : BaseUiTest() {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
+                    closeAllGotItTooltips()
                     tabTitleContains("Current File") { select() }
                     findText(issueMessage).rightClick()
                 }
