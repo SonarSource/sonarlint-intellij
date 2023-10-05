@@ -113,8 +113,7 @@ public final class AnalysisSubmitter {
   public void analyzeFilesOnUserAction(Collection<VirtualFile> files, AnActionEvent actionEvent) {
     AnalysisCallback callback;
 
-    if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(actionEvent.getPlace())
-      || ActionPlaces.isMainMenuOrActionSearch(actionEvent.getPlace())) {
+    if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(actionEvent.getPlace())) {
       callback = new ShowUpdatedCurrentFileCallable(project, onTheFlyFindingsHolder);
     } else {
       callback = new ShowReportCallable(project);
