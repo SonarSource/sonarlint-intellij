@@ -333,6 +333,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
   public boolean trySelectFilteredSecurityHotspot(String securityHotspotKey) {
     var foundHotspot = securityHotspotTreeBuilder.findFilteredHotspotByKey(securityHotspotKey);
+    if (foundHotspot == null) {
+      foundHotspot = oldSecurityHotspotTreeBuilder.findFilteredHotspotByKey(securityHotspotKey);
+    }
+
     if (foundHotspot != null) {
       updateOnSelect(foundHotspot);
       return true;
