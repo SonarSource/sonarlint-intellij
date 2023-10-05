@@ -23,9 +23,11 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.UpdateInBackground
 import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.Key
+import javax.swing.JComponent
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -33,9 +35,8 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.persistence.FindingsCache
-import javax.swing.JComponent
 
-class SonarLintTrafficLightAction(private val editor: Editor) : AnAction(), CustomComponentAction {
+class SonarLintTrafficLightAction(private val editor: Editor) : AnAction(), UpdateInBackground, CustomComponentAction {
 
     companion object {
         private val DASHBOARD_MODEL = Key<SonarLintDashboardModel>("DASHBOARD_MODEL")
