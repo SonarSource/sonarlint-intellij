@@ -373,8 +373,6 @@ object SonarLintIntelliJClient : SonarLintClient {
                         project,
                         TaintVulnerabilitiesPresenter::class.java
                     ).presentTaintVulnerabilitiesForOpenFiles()
-                    // trigger new analysis as some things might have changed (findings, new code period)
-                    getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
                 }
         }
     }
