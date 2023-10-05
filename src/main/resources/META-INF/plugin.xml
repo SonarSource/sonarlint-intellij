@@ -287,7 +287,7 @@
             <reference ref="SonarLint.AnalyzeFiles"/>
             <action id="SonarLint.Exclude"
                     class="org.sonarlint.intellij.actions.ExcludeFileAction"
-                    text="Exclude from SonarLint analysis"
+                    text="Exclude from SonarLint Analysis"
                     description="Adds resources to the list exclusions in the SonarLint project settings"
                     icon="org.sonarlint.intellij.SonarLintIcons.SONARLINT_ACTION">
             </action>

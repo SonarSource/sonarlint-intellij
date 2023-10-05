@@ -57,7 +57,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final JBPanelWithEmptyText issuesPanel;
   private final JScrollPane treeScrollPane;
-  private final AnAction analyzeFilesAction = ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles");
+  private final AnAction analyzeCurrentFileAction = SonarLintActions.getInstance().analyzeCurrentFileAction();
 
   public CurrentFilePanel(Project project) {
     super(project);
@@ -97,7 +97,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
   private static Collection<AnAction> actions() {
     return List.of(
-      ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles"),
+      SonarLintActions.getInstance().analyzeCurrentFileAction(),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
       SonarLintActions.getInstance().includeResolvedIssuesAction(),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"),
@@ -111,10 +111,9 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     if (file != null) {
       emptyText = liveIssues == null ? "No analysis done on the current opened file" : "No issues found in the current opened file";
       statusText.setText(emptyText);
-      if (liveIssues == null && (analyzeFilesAction.getTemplateText() != null)) {
-        statusText.appendLine(analyzeFilesAction.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-          ignore -> ActionUtil.invokeAction(analyzeFilesAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
-        statusText.appendText(" (Ctrl+Shift+S)");
+      if (liveIssues == null && (analyzeCurrentFileAction.getTemplateText() != null)) {
+        statusText.appendLine(analyzeCurrentFileAction.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+          ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
       }
     } else {
       emptyText = "No file opened in the editor";

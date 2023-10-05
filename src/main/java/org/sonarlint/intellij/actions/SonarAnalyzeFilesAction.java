@@ -30,15 +30,19 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
-import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarAnalyzeFilesAction extends AbstractSonarAction {
+
+  public SonarAnalyzeFilesAction(String text, String description, Icon icon) {
+    super(text, description, icon);
+  }
+
   public SonarAnalyzeFilesAction() {
     super();
   }
@@ -52,13 +56,6 @@ public class SonarAnalyzeFilesAction extends AbstractSonarAction {
   @Override
   protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
     return !status.isRunning();
-  }
-
-  @Override
-  protected void updatePresentation(AnActionEvent e, Project project) {
-    if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(e.getPlace())) {
-      e.getPresentation().setIcon(SonarLintIcons.PLAY);
-    }
   }
 
   @Override

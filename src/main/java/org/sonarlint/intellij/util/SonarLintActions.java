@@ -32,6 +32,7 @@ import org.sonarlint.intellij.actions.ClearReportAction;
 import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
+import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
 import org.sonarlint.intellij.actions.filters.IncludeResolvedFindingsAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -56,6 +57,7 @@ public final class SonarLintActions {
   private final FilterSecurityHotspotActionGroup filterAction;
   private final IncludeResolvedFindingsAction<LiveSecurityHotspot> includeResolvedHotspotsAction;
   private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
+  private final AnAction analyzeCurrentFileAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -100,6 +102,9 @@ public final class SonarLintActions {
       "Include resolved issues",
       SonarLintIcons.RESOLVED,
       LiveIssue.class);
+    analyzeCurrentFileAction = new SonarAnalyzeFilesAction("Analyze Current File",
+      "Run SonarLint analysis on the current file",
+      SonarLintIcons.PLAY);
   }
 
   public static SonarLintActions getInstance() {
@@ -144,6 +149,10 @@ public final class SonarLintActions {
 
   public IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction() {
     return includeResolvedIssuesAction;
+  }
+
+  public AnAction analyzeCurrentFileAction() {
+    return analyzeCurrentFileAction;
   }
 
 }
