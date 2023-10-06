@@ -104,6 +104,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
   public void allowResolvedIssues(boolean allowResolved) {
     treeBuilder.allowResolvedIssues(allowResolved);
+    oldTreeBuilder.allowResolvedIssues(allowResolved);
     refreshModel();
   }
 
