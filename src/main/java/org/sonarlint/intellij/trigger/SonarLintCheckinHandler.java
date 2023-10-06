@@ -44,11 +44,13 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.Language;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
@@ -103,15 +105,18 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
   private ReturnResult processResult(AnalysisResult result) {
     var issuesPerFile = result.getFindings().getIssuesPerFile();
+    var shouldFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
 
     var numIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
       .filter(Predicate.not(LiveIssue::isResolved))
+      .filter(issue -> !shouldFocusOnNewCode || issue.isOnNewCode())
       .count();
 
     var numBlockerIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
       .filter(Predicate.not(LiveIssue::isResolved))
+      .filter(issue -> !shouldFocusOnNewCode || issue.isOnNewCode())
       .filter(i -> IssueSeverity.BLOCKER.equals(i.getUserSeverity()))
       .count();
 
@@ -122,7 +127,11 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var numFiles = issuesPerFile.keySet().size();
 
     var issues = issuesPerFile.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-    var numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().startsWith(Language.SECRETS.getLanguageKey())).count();
+    var numSecretsIssues = issues.stream()
+      .filter(issue -> !shouldFocusOnNewCode || issue.isOnNewCode())
+      .filter(issue -> issue.getRuleKey()
+        .startsWith(Language.SECRETS.getLanguageKey()))
+      .count();
     var msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
 
     var choice = showYesNoCancel(msg);

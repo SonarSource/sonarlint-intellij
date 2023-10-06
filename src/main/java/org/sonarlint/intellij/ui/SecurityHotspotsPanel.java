@@ -89,11 +89,6 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private SecurityHotspotsLocalDetectionSupport status;
   private int securityHotspotCount;
   private Map<VirtualFile, Collection<LiveSecurityHotspot>> currentFindings;
-
-  public int getSecurityHotspotCount() {
-    return securityHotspotCount;
-  }
-
   private int oldSecurityHotspotCount;
   private JBPanelWithEmptyText notSupportedPanel;
   private AnAction sonarConfigureProject;
@@ -400,9 +395,11 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     // Nothing to do
   }
 
-  public void refreshView() {
+  public int refreshView() {
     if (currentFindings != null) {
-      updateHotspots(currentFindings);
+      return updateHotspots(currentFindings);
     }
+    return 0;
   }
+
 }
