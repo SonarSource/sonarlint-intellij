@@ -88,10 +88,11 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private ActionToolbar mainToolbar;
   private SecurityHotspotsLocalDetectionSupport status;
   private int securityHotspotCount;
+  private int securityHotspotTabCount;
   private Map<VirtualFile, Collection<LiveSecurityHotspot>> currentFindings;
 
-  public int getSecurityHotspotCount() {
-    return securityHotspotCount;
+  public int getSecurityHotspotTabCount() {
+    return securityHotspotTabCount;
   }
 
   private int oldSecurityHotspotCount;
@@ -104,6 +105,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     this.project = project;
     securityHotspotCount = 0;
     oldSecurityHotspotCount = 0;
+    securityHotspotTabCount = 0;
     cardPanel = new CardPanel();
     mainPanel = new JPanel(new BorderLayout());
 
@@ -185,6 +187,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       var newHotspotsAfterFiltering = securityHotspotTreeBuilder.applyCurrentFiltering(project);
       var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
       displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
+      securityHotspotTabCount = newHotspotsAfterFiltering;
       if (!isExpanded) {
         oldSecurityHotspotTree.collapseRow(0);
       }

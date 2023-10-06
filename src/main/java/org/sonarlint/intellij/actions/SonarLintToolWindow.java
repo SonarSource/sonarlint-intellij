@@ -185,7 +185,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     if (hotspotContent != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) hotspotContent.getComponent();
       hotspotsPanel.refreshView();
-      hotspotContent.setDisplayName(buildTabName(hotspotsPanel.getSecurityHotspotCount(), SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+      hotspotContent.setDisplayName(buildTabName(hotspotsPanel.getSecurityHotspotTabCount(), SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
 
     var taintContent = getTaintVulnerabilitiesContent();
