@@ -20,7 +20,7 @@ plugins {
     jacoco
     id("com.github.hierynomus.license") version "0.16.1"
     id("com.jfrog.artifactory") version "4.30.1"
-    id("com.google.protobuf") version "0.9.1"
+    id("com.google.protobuf") version "0.9.4"
     idea
     signing
     id("de.undercouch.download") version "5.3.0"
