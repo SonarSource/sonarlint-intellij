@@ -23,7 +23,7 @@ plugins {
     id("com.google.protobuf") version "0.9.4"
     idea
     signing
-    id("de.undercouch.download") version "5.3.0"
+    id("de.undercouch.download") version "5.5.0"
     id("org.cyclonedx.bom") version "1.7.3"
 }
 
