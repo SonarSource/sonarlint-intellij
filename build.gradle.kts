@@ -15,7 +15,7 @@ import java.util.zip.ZipOutputStream
 plugins {
     kotlin("jvm") version "1.8.10"
     id("org.jetbrains.intellij") version "1.15.0"
-    id("org.sonarqube") version "3.4.0.2513"
+    id("org.sonarqube") version "4.4.1.3373"
     java
     jacoco
     id("com.github.hierynomus.license") version "0.16.1"
@@ -344,7 +344,7 @@ tasks.artifactoryPublish {
     )
 }
 
-sonarqube {
+sonar {
     properties {
         property("sonar.projectName", "SonarLint for IntelliJ IDEA")
     }
