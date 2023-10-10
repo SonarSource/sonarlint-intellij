@@ -31,12 +31,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.actions.ShowFindingCallable;
 import org.sonarlint.intellij.actions.ShowReportCallable;
-import org.sonarlint.intellij.actions.ShowSecurityHotspotCallable;
 import org.sonarlint.intellij.actions.ShowUpdatedCurrentFileCallable;
 import org.sonarlint.intellij.actions.UpdateOnTheFlyFindingsCallable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.finding.Finding;
+import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.tasks.TaskRunnerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
@@ -127,9 +129,9 @@ public final class AnalysisSubmitter {
     }
   }
 
-  public void analyzeFileAndTrySelectHotspot(VirtualFile file, String securityHotspotKey) {
-    AnalysisCallback callback = new ShowSecurityHotspotCallable(project, onTheFlyFindingsHolder, securityHotspotKey);
-    var task = new Analysis(project, List.of(file), TriggerType.OPEN_SECURITY_HOTSPOT, callback);
+  public <T extends Finding> void analyzeFileAndTrySelectFinding(ShowFinding<T> showFinding) {
+    AnalysisCallback callback = new ShowFindingCallable<>(project, onTheFlyFindingsHolder, showFinding);
+    var task = new Analysis(project, List.of(showFinding.getFile()), TriggerType.OPEN_FINDING, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, task::run);
   }
 

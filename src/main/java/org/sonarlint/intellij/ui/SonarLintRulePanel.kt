@@ -79,6 +79,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
     private val ruleDetailsLoader = RuleDetailsLoader()
     private var finding: Finding? = null
     private var ruleDetails: EffectiveRuleDetailsDto? = null
+    private var ruleKey: String? = null
 
     init {
         mainPanel.add(topPanel.apply {
@@ -130,8 +131,8 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             state = RuleDetailsLoaderState(null, null, null)
         }
 
-        fun updateActiveRuleDetailsIfNeeded(module: Module, finding: Finding) {
-            val newState = RuleDetailsLoaderState(module, finding.getRuleKey(), finding.getRuleDescriptionContextKey())
+        fun updateActiveRuleDetailsIfNeeded(module: Module, ruleKey: String, ruleDescriptionContextKey: String?) {
+            val newState = RuleDetailsLoaderState(module, ruleKey, ruleDescriptionContextKey)
             if (state == newState) {
                 // Still force a refresh of the UI, as some other fields of the finding may be different
                 runOnUiThread(project) {
@@ -144,7 +145,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description...", false) {
                 override fun run(progressIndicator: ProgressIndicator) {
                     SonarLintUtils.getService(BackendService::class.java)
-                        .getActiveRuleDetails(module, finding.getRuleKey(), finding.getRuleDescriptionContextKey())
+                        .getActiveRuleDetails(module, ruleKey, ruleDescriptionContextKey)
                         .orTimeout(30, TimeUnit.SECONDS)
                         .handle { response, error ->
                             stopLoading()
@@ -179,28 +180,25 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
 
     private fun clearValues() {
         finding = null
+        ruleKey = null
         ruleDetails = null
         ruleDetailsLoader.clearState()
     }
 
-    fun setSelectedFinding(module: Module, finding: Finding) {
+    fun setSelectedFinding(module: Module, finding: Finding?, ruleKey: String, ruleDescriptionContextKey: String?) {
         this.finding = finding
-        ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, finding)
+        this.ruleKey = ruleKey
+        ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, ruleKey, ruleDescriptionContextKey)
     }
 
     private fun updateUiComponents() {
         ApplicationManager.getApplication().assertIsDispatchThread()
         val finding = this.finding
+        val ruleKey = this.ruleKey
         val ruleDetails = this.ruleDetails
-        if (finding == null || ruleDetails == null) {
-            val errorLoadingRuleDetails = finding != null
-            descriptionPanel.removeAll()
-            ruleNameLabel.text = ""
-            disableEmptyDisplay(false)
-            mainPanel.withEmptyText(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
-        } else {
+        if (ruleDetails != null && (finding != null || ruleKey != null)) {
             disableEmptyDisplay(true)
-            updateHeader(finding, ruleDetails)
+            finding?.let { updateHeader(finding, finding.getRuleKey(), ruleDetails) } ?: ruleKey?.let { updateHeader(null, ruleKey, ruleDetails) }
             descriptionPanel.removeAll()
             val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language.languageKey)
             ruleDetails.description.map(
@@ -208,43 +206,51 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 { withSections -> descriptionPanel.addSections(withSections, fileType) }
             )
             updateParams(ruleDetails)
+        } else {
+            val errorLoadingRuleDetails = finding != null
+            descriptionPanel.removeAll()
+            ruleNameLabel.text = ""
+            disableEmptyDisplay(false)
+            mainPanel.withEmptyText(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
         }
     }
 
-    private fun updateHeader(finding: Finding, ruleDescription: EffectiveRuleDetailsDto) {
+    private fun updateHeader(finding: Finding?, ruleKey: String, ruleDescription: EffectiveRuleDetailsDto) {
         ruleNameLabel.text = StringEscapeUtils.escapeHtml(ruleDescription.name)
         ruleNameLabel.setCopyable(true)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
-        if (finding is LiveSecurityHotspot) {
-            val serverConnection =
-                SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
-            val htmlStringBuilder = StringBuilder(
-                """
+        when (finding) {
+            null -> headerPanel.updateForServerIssue(ruleDescription, ruleKey)
+            is LiveSecurityHotspot -> {
+                val serverConnection =
+                    SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
+                val htmlStringBuilder = StringBuilder(
+                    """
                 A ${securityHotspotsDocLink()} highlights a security-sensitive piece of code that the developer <b>needs to review</b>.
                 Upon review, you’ll either find there is no threat or you need to apply a fix to secure the code.
                 """.trimIndent()
-            )
-            val serverFindingKey = finding.serverFindingKey
-            if (serverFindingKey != null) {
-                val projectKey = Settings.getSettingsFor(project).projectKey
-                if (projectKey != null) {
-                    htmlStringBuilder.append(
-                        """
+                )
+                val serverFindingKey = finding.serverFindingKey
+                if (serverFindingKey != null) {
+                    val projectKey = Settings.getSettingsFor(project).projectKey
+                    if (projectKey != null) {
+                        htmlStringBuilder.append(
+                            """
                          Click ${
-                            externalLink(
-                                "here",
-                                securityHotspotDetailsLink(serverConnection, projectKey, serverFindingKey)
-                            )
-                        }
+                                externalLink(
+                                    "here",
+                                    securityHotspotDetailsLink(serverConnection, projectKey, serverFindingKey)
+                                )
+                            }
                         to open it on '${serverConnection.name}' server.""".trimIndent()
-                    )
-                }
+                        )
+                    }
 
+                }
+                SwingHelper.setHtml(securityHotspotHeaderMessage, htmlStringBuilder.toString(), JBUI.CurrentTheme.ContextHelp.FOREGROUND)
+                headerPanel.updateForSecurityHotspot(project, ruleDescription.key, ruleDescription.type, finding)
             }
-            SwingHelper.setHtml(securityHotspotHeaderMessage, htmlStringBuilder.toString(), JBUI.CurrentTheme.ContextHelp.FOREGROUND)
-            headerPanel.updateForSecurityHotspot(project, ruleDescription.key, ruleDescription.type, finding)
-        } else {
-            headerPanel.updateForIssue(project, ruleDescription.type, ruleDescription.severity, finding as Issue)
+            else -> headerPanel.updateForIssue(project, ruleDescription.type, ruleDescription.severity, finding as Issue)
         }
     }
 

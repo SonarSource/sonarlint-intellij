@@ -57,9 +57,9 @@ public final class SonarLintProjectNotifications {
   private volatile boolean shown = false;
   private final Project myProject;
 
-  private Notification currentOpenHotspotNotification;
+  private Notification currentOpenFindingNotification;
 
-  protected SonarLintProjectNotifications(Project project) {
+  private SonarLintProjectNotifications(Project project) {
     this.myProject = project;
   }
 
@@ -124,22 +124,22 @@ public final class SonarLintProjectNotifications {
     notification.notify(myProject);
   }
 
-  public void notifyUnableToOpenSecurityHotspot(String message, AnAction... mainActions) {
-    expireCurrentHotspotNotificationIfNeeded();
-    currentOpenHotspotNotification = OPEN_IN_IDE_GROUP.createNotification(
-      "<b>SonarLint - Unable to open Security Hotspot</b>",
+  public void notifyUnableToOpenFinding(String type, String message, AnAction... mainActions) {
+    expireCurrentFindingNotificationIfNeeded();
+    currentOpenFindingNotification = OPEN_IN_IDE_GROUP.createNotification(
+      "<b>SonarLint - Unable to open " + type + "</b>",
       message,
       NotificationType.INFORMATION);
-    Arrays.stream(mainActions).forEach(currentOpenHotspotNotification::addAction);
-    currentOpenHotspotNotification.setImportant(true);
-    currentOpenHotspotNotification.setIcon(SonarLintIcons.SONARLINT);
-    currentOpenHotspotNotification.notify(myProject);
+    Arrays.stream(mainActions).forEach(currentOpenFindingNotification::addAction);
+    currentOpenFindingNotification.setImportant(true);
+    currentOpenFindingNotification.setIcon(SonarLintIcons.SONARLINT);
+    currentOpenFindingNotification.notify(myProject);
   }
 
-  public void expireCurrentHotspotNotificationIfNeeded() {
-    if (currentOpenHotspotNotification != null) {
-      currentOpenHotspotNotification.expire();
-      currentOpenHotspotNotification = null;
+  public void expireCurrentFindingNotificationIfNeeded() {
+    if (currentOpenFindingNotification != null) {
+      currentOpenFindingNotification.expire();
+      currentOpenFindingNotification = null;
     }
   }
 

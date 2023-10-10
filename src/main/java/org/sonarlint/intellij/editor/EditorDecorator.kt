@@ -82,6 +82,12 @@ class EditorDecorator(private val project: Project) {
         finding.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
     }
 
+    fun highlightRange(range: RangeMarker) {
+        createHighlight(range, null)?.let {
+            updateHighlights(listOf(it))
+        }
+    }
+
     fun highlight(vulnerability: LocalTaintVulnerability) {
         val highlights = createHighlights(vulnerability.flows[0].locations)
         createHighlight(vulnerability.rangeMarker(), vulnerability.message())?.let(highlights::add)

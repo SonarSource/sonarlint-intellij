@@ -46,12 +46,18 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
+import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.ShowFinding;
+import org.sonarlint.intellij.finding.TextRangeMatcher;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
+
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Disposable, OccurenceNavigator {
   private static final String ID = "SonarLint";
@@ -317,7 +323,28 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     oldTree.addTreeSelectionListener(this::oldIssueTreeSelectionChanged);
   }
 
-  private void updateOnSelect(LiveFinding liveFinding) {
+  public void updateOnSelect(LiveFinding liveFinding) {
     findingDetailsPanel.show(liveFinding);
   }
+
+  public <T extends Finding> void updateOnSelect(@Nullable LiveFinding issue, ShowFinding<T> showFinding) {
+    if (issue != null) {
+      updateOnSelect(issue);
+    } else {
+      if (showFinding.getCodeSnippet() == null) {
+        SonarLintProjectNotifications.get(project)
+          .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarLint in the current code.");
+        return;
+      }
+      var matcher = new TextRangeMatcher(project);
+      var rangeMarker = computeReadActionSafely(project, () -> matcher.matchWithCode(showFinding.getFile(), showFinding.getTextRange(), showFinding.getCodeSnippet()));
+      if (rangeMarker == null) {
+        SonarLintProjectNotifications.get(project)
+          .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarLint in the current code.");
+        return;
+      }
+      findingDetailsPanel.showServerOnlyIssue(showFinding.getFile(), showFinding.getRuleKey(), rangeMarker, showFinding.getFlows(), showFinding.getFlowMessage());
+    }
+   }
+
 }

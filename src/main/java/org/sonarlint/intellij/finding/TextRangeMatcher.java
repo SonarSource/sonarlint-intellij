@@ -30,7 +30,7 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiWhiteSpace;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.clientapi.client.hotspot.HotspotDetailsDto;
+import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto;
 import org.sonarsource.sonarlint.core.commons.TextRangeWithHash;
 
 import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
@@ -54,8 +54,23 @@ public class TextRangeMatcher {
     return match(toPsiFile(project, file), textRange);
   }
 
-  public RangeMarker match(VirtualFile file, HotspotDetailsDto.TextRangeDto textRange) throws NoMatchException {
+  public RangeMarker match(VirtualFile file, TextRangeDto textRange) throws NoMatchException {
     return match(toPsiFile(project, file), textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
+  }
+
+  public RangeMarker matchWithCode(VirtualFile file, TextRangeDto textRange, String codeSnippet) throws NoMatchException {
+    var psiFile = toPsiFile(project, file);
+    var docManager = PsiDocumentManager.getInstance(project);
+    var doc = docManager.getDocument(psiFile);
+    if (doc == null) {
+      throw new NoMatchException("No document found for file: " + file.getName());
+    }
+    var range = getIssueTextRange(psiFile, doc, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
+    var codeAtRange = doc.getText(range);
+    if (!codeAtRange.equals(codeSnippet)) {
+      return null;
+    }
+    return doc.createRangeMarker(range.getStartOffset(), range.getEndOffset());
   }
 
   public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.commons.TextRange textRange) throws NoMatchException {

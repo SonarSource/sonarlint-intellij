@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -222,6 +223,17 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
           }
         });
     }
+  }
+
+  public Optional<LiveIssue> findIssueByKey(String issueKey) {
+    var virtualFile = index.getAllFiles().stream().findFirst();
+    if (virtualFile.isPresent()) {
+      var fileNode = index.getFileNode(virtualFile.get());
+      if (fileNode != null) {
+        return fileNode.findChildren(c -> Objects.equals(c.getServerKey(), issueKey)).map(node -> ((IssueNode) node).issue());
+      }
+    }
+    return Optional.empty();
   }
 
   private static class FileNodeComparator implements Comparator<FileNode> {
