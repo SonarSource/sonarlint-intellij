@@ -1,7 +1,6 @@
 
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
-import groovy.lang.GroovyObject
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
@@ -10,7 +9,6 @@ import java.util.EnumSet
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
-import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 
 plugins {
     kotlin("jvm") version "1.8.10"
@@ -19,7 +17,7 @@ plugins {
     java
     jacoco
     id("com.github.hierynomus.license") version "0.16.1"
-    id("com.jfrog.artifactory") version "4.30.1"
+    id("com.jfrog.artifactory") version "5.1.10"
     id("com.google.protobuf") version "0.9.4"
     idea
     signing
@@ -360,13 +358,13 @@ artifactory {
         "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip,org.sonarsource.sonarlint.intellij:sonarlint-intellij:json:cyclonedx"
     )
     setContextUrl(System.getenv("ARTIFACTORY_URL"))
-    publish(delegateClosureOf<PublisherConfig> {
-        repository(delegateClosureOf<GroovyObject> {
-            setProperty("repoKey", System.getenv("ARTIFACTORY_DEPLOY_REPO"))
-            setProperty("username", System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
-            setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_PASSWORD"))
-        })
-        defaults(delegateClosureOf<GroovyObject> {
+    publish {
+        repository {
+            setRepoKey(System.getenv("ARTIFACTORY_DEPLOY_REPO"))
+            setUsername(System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
+            setPassword(System.getenv("ARTIFACTORY_DEPLOY_PASSWORD"))
+        }
+        defaults {
             setProperty(
                 "properties", mapOf(
                     "vcs.revision" to System.getenv("CIRRUS_CHANGE_IN_REPO"),
@@ -376,11 +374,11 @@ artifactory {
                     "build.number" to System.getenv("BUILD_ID")
                 )
             )
-            invokeMethod("publishConfigs", "archives")
-            setProperty("publishPom", true) // Publish generated POM files to Artifactory (true by default)
-            setProperty("publishIvy", false) // Publish generated Ivy descriptor files to Artifactory (true by default)
-        })
-    })
+            publications(configurations.archives)
+            setPublishPom(true) // Publish generated POM files to Artifactory (true by default)
+            setPublishIvy(false) // Publish generated Ivy descriptor files to Artifactory (true by default)
+        }
+    }
 }
 
 signing {
