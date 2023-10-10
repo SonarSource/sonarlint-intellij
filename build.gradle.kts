@@ -24,7 +24,7 @@ plugins {
     idea
     signing
     id("de.undercouch.download") version "5.5.0"
-    id("org.cyclonedx.bom") version "1.7.3"
+    id("org.cyclonedx.bom") version "1.7.4"
 }
 
 buildscript {
