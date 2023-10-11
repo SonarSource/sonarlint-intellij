@@ -22,7 +22,7 @@ package org.sonarlint.intellij.its.tests
 import com.google.protobuf.InvalidProtocolBufferException
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.utils.keyboard
-import com.sonar.orchestrator.Orchestrator
+import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
 import org.assertj.core.api.Assertions.assertThat
@@ -143,7 +143,7 @@ class OpenInIdeTest : BaseUiTest() {
         private var firstHotspotKey: String? = null
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = defaultBuilderEnv()
+        private val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .addPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", ItUtils.javaVersion))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
             .build()
@@ -162,7 +162,7 @@ class OpenInIdeTest : BaseUiTest() {
             executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR);
 
             firstHotspotKey = getFirstHotspotKey(adminWsClient)
-            token = generateToken(adminWsClient)
+            token = generateToken(adminWsClient, "OpenInIdeTest")
         }
 
         @AfterAll

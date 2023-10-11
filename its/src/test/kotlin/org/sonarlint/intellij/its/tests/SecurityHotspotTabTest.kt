@@ -20,8 +20,8 @@
 package org.sonarlint.intellij.its.tests
 
 import com.intellij.remoterobot.RemoteRobot
-import com.sonar.orchestrator.Orchestrator
 import com.sonar.orchestrator.container.Edition
+import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -158,7 +158,7 @@ class SecurityHotspotTabTest : BaseUiTest() {
 
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = defaultBuilderEnv()
+        private val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
             .keepBundledPlugins()
@@ -182,7 +182,7 @@ class SecurityHotspotTabTest : BaseUiTest() {
             // Build and analyze project to raise hotspot
             executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR);
 
-            token = generateToken(adminWsClient)
+            token = generateToken(adminWsClient, "SecurityHotspotTabTest")
         }
 
         @AfterAll

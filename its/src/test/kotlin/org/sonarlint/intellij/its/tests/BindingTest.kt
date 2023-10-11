@@ -25,10 +25,9 @@ import com.intellij.remoterobot.fixtures.JButtonFixture.Companion.byText
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
-import com.sonar.orchestrator.Orchestrator
+import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
-import java.time.Duration.ofSeconds
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -49,6 +48,7 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsCl
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
+import java.time.Duration.ofSeconds
 
 @DisabledIf("isCLionOrGoLand")
 class BindingTest : BaseUiTest() {
@@ -152,7 +152,7 @@ class BindingTest : BaseUiTest() {
 
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = defaultBuilderEnv()
+        private val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .addPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.8.3.2219"))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))
@@ -182,7 +182,7 @@ class BindingTest : BaseUiTest() {
             executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY);
             executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY);
 
-            token = generateToken(adminWsClient)
+            token = generateToken(adminWsClient, "BindingTest")
 
             val searchRequest = SearchRequest()
             searchRequest.s = "FILE_LINE"

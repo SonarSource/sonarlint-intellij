@@ -20,9 +20,9 @@
 package org.sonarlint.intellij.its.tests
 
 import com.intellij.remoterobot.RemoteRobot
-import com.sonar.orchestrator.Orchestrator
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.http.HttpMethod
+import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.AfterAll
@@ -159,7 +159,7 @@ class FocusOnNewCodeTest : BaseUiTest() {
 
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
+        private val ORCHESTRATOR: OrchestratorExtension = OrchestratorUtils.defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
             .keepBundledPlugins()
@@ -192,7 +192,7 @@ class FocusOnNewCodeTest : BaseUiTest() {
             // Analyze a second time for the measure to be returned by the web API
             OrchestratorUtils.executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
 
-            token = OrchestratorUtils.generateToken(adminWsClient)
+            token = OrchestratorUtils.generateToken(adminWsClient, "FocusOnNewCodeTest")
         }
 
         @AfterAll
