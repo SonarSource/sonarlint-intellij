@@ -27,8 +27,8 @@ import java.util.Properties
 
 object ItUtils {
 
+  private var javaVersion: String
   val SONAR_VERSION: String = sonarVersion
-  lateinit var javaVersion: String
 
   private val sonarVersion: String
     get() {

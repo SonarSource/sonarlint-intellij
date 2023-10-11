@@ -20,8 +20,8 @@
 package org.sonarlint.intellij.its.tests
 
 import com.intellij.remoterobot.RemoteRobot
-import com.sonar.orchestrator.Orchestrator
 import com.sonar.orchestrator.container.Edition
+import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.AfterAll
@@ -105,7 +105,7 @@ class PLSQLTest : BaseUiTest() {
 
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
+        private val ORCHESTRATOR: OrchestratorExtension = OrchestratorUtils.defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
             .keepBundledPlugins()
@@ -129,7 +129,7 @@ class PLSQLTest : BaseUiTest() {
             // Build and analyze project to raise issue
             OrchestratorUtils.executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY);
 
-            token = OrchestratorUtils.generateToken(adminWsClient)
+            token = OrchestratorUtils.generateToken(adminWsClient, "PLSQLTest")
         }
 
         @AfterAll
