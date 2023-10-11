@@ -31,7 +31,6 @@ import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.http.HttpMethod
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
-import com.sonar.orchestrator.locator.MavenLocation
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
@@ -79,8 +78,12 @@ class AllTest : BaseUiTest() {
         val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
+            //.addPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.13.0.4374"))
             .addBundledPluginToKeep("sonar-java")
-            .addPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.13.0.4374"))
+            .addBundledPluginToKeep("sonar-security")
+            .addBundledPluginToKeep("sonar-scala")
+            .addBundledPluginToKeep("sonar-php")
+            .addBundledPluginToKeep("sonar-python")
             .build()
 
         private lateinit var adminWsClient: WsClient
