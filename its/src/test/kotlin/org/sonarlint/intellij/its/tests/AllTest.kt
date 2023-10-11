@@ -366,9 +366,6 @@ class AllTest : BaseUiTest() {
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
 
-            // Build and analyze project to raise hotspot
-            executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
-
             token = generateToken(adminWsClient, "SecurityHotspotTabTest")
         }
 
@@ -474,78 +471,6 @@ class AllTest : BaseUiTest() {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand", disabledReason = "No taint vulnerabilities in CLion or GoLand")
-    inner class TaintVulnerabilitiesTest : BaseUiTest() {
-
-        @BeforeAll
-        fun initProfile() {
-            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml"))
-
-            // Build and analyze project to raise hotspot
-            executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
-
-            token = generateToken(adminWsClient, "TaintVulnerabilitiesTest")
-        }
-
-        @Test
-        fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
-            openExistingProject("sample-java-taint-vulnerability", true)
-
-            verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
-        }
-
-        @Test
-        fun should_display_sink() = uiTest {
-            openExistingProject("sample-java-taint-vulnerability", true)
-            bindProjectFromPanel()
-
-            openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
-
-            verifyTaintTabContainsMessages(
-                this,
-                "Found 1 issue in 1 file",
-                "FileWithSink.java",
-                "Change this code to not construct SQL queries directly from user-controlled data."
-            )
-        }
-
-        private fun bindProjectFromPanel() {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tab("Taint Vulnerabilities") { select() }
-                        content("TaintVulnerabilitiesPanel") {
-                            findText("Configure Binding").click()
-                        }
-                    }
-
-                    bindProjectToSonarQube(
-                        ORCHESTRATOR.server.url,
-                        token,
-                        TAINT_VULNERABILITY_PROJECT_KEY
-                    )
-                }
-            }
-        }
-
-        private fun verifyTaintTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Taint Vulnerabilities") { select() }
-                        content("TaintVulnerabilitiesPanel") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
@@ -833,6 +758,77 @@ class AllTest : BaseUiTest() {
                         content("CurrentFilePanel") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                             toolBarButton("Set Focus on New Code").click()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @DisabledIf("isCLionOrGoLand", disabledReason = "No taint vulnerabilities in CLion or GoLand")
+    inner class TaintVulnerabilitiesTest : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml"))
+
+            token = generateToken(adminWsClient, "TaintVulnerabilitiesTest")
+        }
+
+        @Test
+        fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
+            openExistingProject("sample-java-taint-vulnerability", true)
+
+            verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
+        }
+
+        @Test
+        fun should_display_sink() = uiTest {
+            openExistingProject("sample-java-taint-vulnerability", true)
+            bindProjectFromPanel()
+
+            openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+
+            verifyTaintTabContainsMessages(
+                this,
+                "Found 1 issue in 1 file",
+                "FileWithSink.java",
+                "Change this code to not construct SQL queries directly from user-controlled data."
+            )
+        }
+
+        private fun bindProjectFromPanel() {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tab("Taint Vulnerabilities") { select() }
+                        content("TaintVulnerabilitiesPanel") {
+                            findText("Configure Binding").click()
+                        }
+                    }
+
+                    bindProjectToSonarQube(
+                        ORCHESTRATOR.server.url,
+                        token,
+                        TAINT_VULNERABILITY_PROJECT_KEY
+                    )
+                }
+            }
+        }
+
+        private fun verifyTaintTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Taint Vulnerabilities") { select() }
+                        content("TaintVulnerabilitiesPanel") {
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
                 }
