@@ -32,15 +32,18 @@ import com.sonar.orchestrator.http.HttpMethod
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.DisabledIf
+import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
+import org.sonarlint.intellij.its.fixtures.closeAllGotItTooltips
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
@@ -57,6 +60,7 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuild
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
 import org.sonarlint.intellij.its.utils.optionalStep
 import org.sonarqube.ws.client.WsClient
@@ -75,8 +79,8 @@ class AllTest : BaseUiTest() {
         val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
-            .addBundledPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.13.0.4374"))
-            .keepBundledPlugins()
+            .addBundledPluginToKeep("sonar-java")
+            .addPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.13.0.4374"))
             .build()
 
         private lateinit var adminWsClient: WsClient
@@ -86,6 +90,7 @@ class AllTest : BaseUiTest() {
         const val PROJECT_KEY = "sample-scala"
         const val MODULE_PROJECT_KEY = "sample-scala-mod"
         const val ISSUE_PROJECT_KEY = "sample-java-issues"
+        const val PLSQL_PROJECT_KEY = "sample-plsql"
 
         private var firstHotspotKey: String? = null
         lateinit var token: String
@@ -438,9 +443,7 @@ class AllTest : BaseUiTest() {
         private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
             with(remoteRobot) {
                 idea {
-                    notification {
-                        hasText("The Security Hotspot status was successfully updated")
-                    }
+                    notification("The Security Hotspot status was successfully updated")
                     toolWindow("SonarLint") {
                         content("SecurityHotspotsPanel") {
                             hasText("No Security Hotspot found.")
@@ -594,6 +597,22 @@ class AllTest : BaseUiTest() {
             verifyStatusWasSuccessfullyChanged(this)
         }
 
+        @Test
+        fun should_not_analyze_when_power_save_mode_enabled() = uiTest {
+            openExistingProject("sample-java-issues")
+
+            clickPowerSaveMode()
+
+            openFile("src/main/java/foo/Foo.java", "Foo.java")
+
+            verifyCurrentFileTabContainsMessages(
+                "No analysis done on the current opened file",
+                "This file is not automatically analyzed because power save mode is enabled",
+            )
+
+            clickPowerSaveMode()
+        }
+
         private fun bindProjectFromPanel() {
             with(remoteRobot) {
                 idea {
@@ -618,12 +637,11 @@ class AllTest : BaseUiTest() {
                 idea {
                     toolWindow("SonarLint") {
                         ensureOpen()
+                        closeAllGotItTooltips()
                         tabTitleContains("Current File") { select() }
-                        content("IssueTree") {
-                            findText(issueMessage).rightClick()
-                        }
+                        findText(issueMessage).rightClick()
                     }
-                    actionMenuItem("Mark as Resolved") {
+                    actionMenuItem("Mark Issue as...") {
                         click()
                     }
                 }
@@ -638,7 +656,7 @@ class AllTest : BaseUiTest() {
                             click()
                         }
 
-                        pressButton("Mark as Resolved")
+                        pressButton("Mark Issue as...")
                     }
                 }
             }
@@ -657,9 +675,7 @@ class AllTest : BaseUiTest() {
         private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
             with(remoteRobot) {
                 idea {
-                    notification {
-                        hasText("The issue was successfully marked as resolved")
-                    }
+                    notification("The issue was successfully marked as resolved")
                     toolWindow("SonarLint") {
                         content("CurrentFilePanel") {
                             hasText("No issues found in the current opened file")
@@ -675,9 +691,7 @@ class AllTest : BaseUiTest() {
                     toolWindow("SonarLint") {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
-                        content("IssueTree") {
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                        }
+                        expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                     }
                 }
             }
@@ -831,6 +845,92 @@ class AllTest : BaseUiTest() {
                 }
             }
         }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @EnabledIf("isSQLPlugin")
+    inner class PLSQLTest : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/plsql-issue.xml"))
+
+            ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                PLSQL_PROJECT_KEY,
+                "plsql",
+                "SonarLint IT PLSQL Issue"
+            )
+
+            // Build and analyze project to raise issue
+            executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY);
+
+            token = generateToken(adminWsClient, "PLSQLTest")
+        }
+
+        @Test
+        fun should_display_issue() = uiTest {
+            openExistingProject("sample-plsql")
+            bindProjectFromPanel()
+
+            openFile("file.pkb")
+            verifyIssueTreeContainsMessages(this, "Remove this commented out code.")
+        }
+
+        @Test
+        fun should_not_display_issue() = uiTest {
+            openExistingProject("sample-plsql")
+
+            openFile("file.pkb")
+            verifyNoIssuesFoundWhenNotConnected(this)
+        }
+
+        private fun bindProjectFromPanel() {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tab("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            toolBarButton("Configure SonarLint").click()
+                        }
+                    }
+                    ProjectBindingUtils.bindProjectToSonarQube(
+                        ORCHESTRATOR.server.url,
+                        token,
+                        PLSQL_PROJECT_KEY
+                    )
+                }
+            }
+        }
+
+        private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                    }
+                }
+            }
+        }
+
+        private fun verifyNoIssuesFoundWhenNotConnected(remoteRobot: RemoteRobot) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            hasText("No issues found in the current opened file")
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
 }
