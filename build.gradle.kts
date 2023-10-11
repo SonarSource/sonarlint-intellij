@@ -2,8 +2,6 @@
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask
-import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
@@ -11,6 +9,8 @@ import java.io.FileOutputStream
 import java.util.EnumSet
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 
 plugins {
     kotlin("jvm") version "1.8.10"
@@ -119,6 +119,15 @@ allprojects {
             listOf("**/*.jar", "**/*.png", "**/README", "**/proto/*.java")
         )
         strictCheck = true
+    }
+}
+
+subprojects {
+    tasks {
+        buildSearchableOptions {
+            // the only module contributing settings is the root one
+            enabled = false
+        }
     }
 }
 
