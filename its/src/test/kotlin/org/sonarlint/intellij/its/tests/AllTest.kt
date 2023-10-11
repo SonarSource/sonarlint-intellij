@@ -111,6 +111,35 @@ class AllTest : BaseUiTest() {
         @BeforeAll
         fun createSonarLintUser() {
             adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
+
+            ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
+            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
+
+            ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                PLSQL_PROJECT_KEY,
+                "plsql",
+                "SonarLint IT PLSQL Issue"
+            )
+
+            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
+
+            ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                TAINT_VULNERABILITY_PROJECT_KEY,
+                "java",
+                "SonarLint IT Java Taint Vulnerability"
+            )
+
+            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "Sample Java Issues")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                ISSUE_PROJECT_KEY,
+                "java",
+                "SonarLint IT Java Issue"
+            )
         }
     }
 
@@ -123,11 +152,6 @@ class AllTest : BaseUiTest() {
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))
-
-            ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
-            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
 
             val excludeFileRequest = SetRequest()
             excludeFileRequest.key = "sonar.exclusions"
@@ -254,9 +278,6 @@ class AllTest : BaseUiTest() {
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
 
-            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
-
             // Build and analyze project to raise hotspot
             executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
 
@@ -365,9 +386,6 @@ class AllTest : BaseUiTest() {
         @BeforeAll
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
-
-            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java Hotspot")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
 
             // Build and analyze project to raise hotspot
             executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
@@ -494,13 +512,6 @@ class AllTest : BaseUiTest() {
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml"))
 
-            ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(
-                TAINT_VULNERABILITY_PROJECT_KEY,
-                "java",
-                "SonarLint IT Java Taint Vulnerability"
-            )
-
             // Build and analyze project to raise hotspot
             executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
 
@@ -572,13 +583,6 @@ class AllTest : BaseUiTest() {
         @BeforeAll
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-issue.xml"))
-
-            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "Sample Java Issues")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(
-                ISSUE_PROJECT_KEY,
-                "java",
-                "SonarLint IT Java Issue"
-            )
 
             // Build and analyze project to raise issue
             executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR);
@@ -710,12 +714,6 @@ class AllTest : BaseUiTest() {
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-taint-hotspot-issue.xml"))
 
-            ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(
-                TAINT_VULNERABILITY_PROJECT_KEY,
-                "java",
-                "SonarLint IT Java Taint Hotspot Issue"
-            )
             ORCHESTRATOR.server.newHttpCall("/api/new_code_periods/set")
                 .setMethod(HttpMethod.POST)
                 .setAdminCredentials()
@@ -858,13 +856,6 @@ class AllTest : BaseUiTest() {
         @BeforeAll
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/plsql-issue.xml"))
-
-            ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(
-                PLSQL_PROJECT_KEY,
-                "plsql",
-                "SonarLint IT PLSQL Issue"
-            )
 
             // Build and analyze project to raise issue
             executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY);
