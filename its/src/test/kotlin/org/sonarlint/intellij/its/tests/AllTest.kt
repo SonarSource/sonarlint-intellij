@@ -28,6 +28,7 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.container.Edition
+import com.sonar.orchestrator.http.HttpMethod
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
@@ -676,6 +677,155 @@ class AllTest : BaseUiTest() {
                         tabTitleContains("Current File") { select() }
                         content("IssueTree") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
+    inner class FocusOnNewCodeTest : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-taint-hotspot-issue.xml"))
+
+            ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                TAINT_VULNERABILITY_PROJECT_KEY,
+                "java",
+                "SonarLint IT Java Taint Hotspot Issue"
+            )
+            ORCHESTRATOR.server.newHttpCall("/api/new_code_periods/set")
+                .setMethod(HttpMethod.POST)
+                .setAdminCredentials()
+                .setParam("type", "NUMBER_OF_DAYS")
+                .setParam("value", 1.toString())
+                .execute()
+
+            // Build and analyze project to raise hotspot
+            executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
+
+            // Analyze a second time for the measure to be returned by the web API
+            executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
+
+            token = generateToken(adminWsClient, "FocusOnNewCodeTest")
+        }
+
+        @Test
+        fun should_display_new_focus_mode() = uiTest {
+            openExistingProject("sample-java-taint-vulnerability", true)
+            bindProjectFromPanel()
+
+            openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+
+            verifyReportTabContainsMessages(
+                this,
+                "Found 2 new issues in 1 file from last 1 days",
+                "No older issues",
+                "Found 1 new Security Hotspot in 1 file from last 1 days",
+                "No older Security Hotspots"
+            )
+
+            verifyTaintTabContainsMessages(
+                this,
+                "Found 1 new issue in 1 file from last 1 days",
+                "FileWithSink.java",
+                "Change this code to not construct SQL queries directly from user-controlled data.",
+                "No older issues"
+            )
+
+            verifyHotspotTabContainsMessages(
+                this,
+                "Found 1 new Security Hotspot in 1 file from last 1 days",
+                "No older Security Hotspots"
+            )
+
+            verifyIssueTreeContainsMessages(
+                this,
+                "Found 2 new issues in 1 file from last 1 days",
+                "No older issues"
+            )
+        }
+
+        private fun bindProjectFromPanel() {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tab("Taint Vulnerabilities") { select() }
+                        content("TaintVulnerabilitiesPanel") {
+                            findText("Configure Binding").click()
+                        }
+                    }
+
+                    bindProjectToSonarQube(
+                        ORCHESTRATOR.server.url,
+                        token,
+                        TAINT_VULNERABILITY_PROJECT_KEY
+                    )
+                }
+            }
+        }
+
+        private fun verifyTaintTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Taint Vulnerabilities") { select() }
+                        content("TaintVulnerabilitiesPanel") {
+                            expectedMessages.forEach {
+                                assertThat(hasText(it)).isTrue()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun verifyHotspotTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Security Hotspots") { select() }
+                        content("SecurityHotspotsPanel") {
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun verifyReportTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    analyzeFile()
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Report") { select() }
+                        content("ReportPanel") {
+                            toolBarButton("Set Focus on New Code").click()
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
+                            toolBarButton("Set Focus on New Code").click()
                         }
                     }
                 }
