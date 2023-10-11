@@ -352,7 +352,7 @@ class AllTest : BaseUiTest() {
         }
 
         private fun triggerOpenHotspotRequest() {
-            URL("http://localhost:64121/sonarlint/api/hotspots/show?project=$PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
+            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
                 .readText()
         }
     }
