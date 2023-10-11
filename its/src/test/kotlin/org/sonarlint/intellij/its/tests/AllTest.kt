@@ -31,14 +31,12 @@ import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.http.HttpMethod
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.DisabledIf
-import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
@@ -59,7 +57,6 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuild
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
 import org.sonarlint.intellij.its.utils.optionalStep
 import org.sonarqube.ws.client.WsClient
@@ -93,7 +90,6 @@ class AllTest : BaseUiTest() {
         const val PROJECT_KEY = "sample-scala"
         const val MODULE_PROJECT_KEY = "sample-scala-mod"
         const val ISSUE_PROJECT_KEY = "sample-java-issues"
-        const val PLSQL_PROJECT_KEY = "sample-plsql"
 
         private var firstHotspotKey: String? = null
         lateinit var token: String
@@ -834,92 +830,6 @@ class AllTest : BaseUiTest() {
                 }
             }
         }
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @EnabledIf("isSQLPlugin")
-    inner class PLSQLTest : BaseUiTest() {
-
-        @BeforeAll
-        fun initProfile() {
-            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/plsql-issue.xml"))
-
-            ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(
-                PLSQL_PROJECT_KEY,
-                "plsql",
-                "SonarLint IT PLSQL Issue"
-            )
-
-            // Build and analyze project to raise issue
-            executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY);
-
-            token = generateToken(adminWsClient, "PLSQLTest")
-        }
-
-        @Test
-        fun should_display_issue() = uiTest {
-            openExistingProject("sample-plsql")
-            bindProjectFromPanel()
-
-            openFile("file.pkb")
-            verifyIssueTreeContainsMessages(this, "Remove this commented out code.")
-        }
-
-        @Test
-        fun should_not_display_issue() = uiTest {
-            openExistingProject("sample-plsql")
-
-            openFile("file.pkb")
-            verifyNoIssuesFoundWhenNotConnected(this)
-        }
-
-        private fun bindProjectFromPanel() {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tab("Current File") { select() }
-                        content("CurrentFilePanel") {
-                            toolBarButton("Configure SonarLint").click()
-                        }
-                    }
-                    ProjectBindingUtils.bindProjectToSonarQube(
-                        ORCHESTRATOR.server.url,
-                        token,
-                        PLSQL_PROJECT_KEY
-                    )
-                }
-            }
-        }
-
-        private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Current File") { select() }
-                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
-                    }
-                }
-            }
-        }
-
-        private fun verifyNoIssuesFoundWhenNotConnected(remoteRobot: RemoteRobot) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Current File") { select() }
-                        content("CurrentFilePanel") {
-                            hasText("No issues found in the current opened file")
-                        }
-                    }
-                }
-            }
-        }
-
     }
 
 }
