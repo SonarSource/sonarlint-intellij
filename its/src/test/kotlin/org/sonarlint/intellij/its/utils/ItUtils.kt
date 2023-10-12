@@ -27,28 +27,30 @@ import java.util.Properties
 
 object ItUtils {
 
-  private var javaVersion: String
-  val SONAR_VERSION: String = sonarVersion
+    private var javaVersion: String
+    val SONAR_VERSION: String = sonarVersion
 
-  private val sonarVersion: String
-    get() {
-      val versionProperty = System.getProperty("sonar.runtimeVersion")
-      return versionProperty ?: "LATEST_RELEASE"
-    }
-
-  init {
-    if ("LATEST_RELEASE[6.7]" == System.getProperty("sonar.runtimeVersion")) {
-      val props = Properties()
-      try {
-        Files.newBufferedReader(Paths.get("../../core/src/main/resources/plugins_min_versions.txt"), StandardCharsets.UTF_8).use { r ->
-          props.load(r)
-          javaVersion = props.getProperty("java")
+    private val sonarVersion: String
+        get() {
+            val versionProperty = System.getProperty("sonar.runtimeVersion")
+            return versionProperty ?: "LATEST_RELEASE"
         }
-      } catch (e: IOException) {
-        throw IllegalStateException(e)
-      }
-    } else {
-      javaVersion = "LATEST_RELEASE"
+
+    init {
+        if ("LATEST_RELEASE[6.7]" == System.getProperty("sonar.runtimeVersion")) {
+            val props = Properties()
+            try {
+                Files.newBufferedReader(Paths.get("../../core/src/main/resources/plugins_min_versions.txt"), StandardCharsets.UTF_8)
+                    .use { r ->
+                        props.load(r)
+                        javaVersion = props.getProperty("java")
+                    }
+            } catch (e: IOException) {
+                throw IllegalStateException(e)
+            }
+        } else {
+            javaVersion = "LATEST_RELEASE"
+        }
     }
-  }
+
 }

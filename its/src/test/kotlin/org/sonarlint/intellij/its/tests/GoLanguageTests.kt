@@ -22,6 +22,9 @@ package org.sonarlint.intellij.its.tests
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
+import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyCurrentFileTabContainsMessages
 
 
 /** Tests for Go language support (not limited to GoLand) */
@@ -29,11 +32,12 @@ import org.sonarlint.intellij.its.BaseUiTest
 class GoLanguageTests : BaseUiTest() {
     @Test
     fun should_analyze_go() = uiTest {
-        openExistingProject("sample-go")
+        openExistingProject(remoteRobot, "sample-go")
 
-        openFile("file.go")
+        openFile(remoteRobot, "file.go")
 
         verifyCurrentFileTabContainsMessages(
+            remoteRobot,
             "Found 1 issue in 1 file",
             "file.go",
             "Remove or correct this useless self-assignment."
