@@ -75,5 +75,21 @@ class ProjectBindingUtils {
                 }
             }
         }
+
+        fun unbindProjectToSonarQube() {
+            with(BaseUiTest.remoteRobot) {
+                idea {
+                    dialog("Project Settings") {
+                        checkBox("Bind project to SonarQube / SonarCloud").select()
+                        button("Configure the connection...").click()
+                        dialog("SonarLint") {
+                            actionButton(ActionButtonFixture.byTooltipText("Remove")).clickWhenEnabled()
+                            button("OK").click()
+                        }
+                        button("OK").click()
+                    }
+                }
+            }
+        }
     }
 }
