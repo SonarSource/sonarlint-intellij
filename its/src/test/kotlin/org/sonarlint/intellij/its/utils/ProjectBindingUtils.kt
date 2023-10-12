@@ -89,6 +89,7 @@ class ProjectBindingUtils {
                         button("Configure the connection...").click()
                         dialog("SonarLint") {
                             actionButton(ActionButtonFixture.byTooltipText("Remove")).clickWhenEnabled()
+                            button("Yes").click()
                             button("OK").click()
                         }
                         button("OK").click()
