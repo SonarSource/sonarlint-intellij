@@ -224,17 +224,17 @@ class AllUiTests : BaseUiTest() {
             openExistingProject(this, "sample-java-hotspot", true)
 
             // Open In Ide Security Hotspot Test
-            triggerOpenHotspotRequest(PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
+            triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
             createConnection(this)
             bindRecentProject(this)
             verifyHotspotOpened(this)
 
             // Should Propose To Bind
-            enableConnectedModeFromSecurityHotspotPanel(this, PROJECT_KEY, false)
+            enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, false)
             verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
 
             // Review Security Hotspot Test
-            enableConnectedModeFromSecurityHotspotPanel(this, PROJECT_KEY, true)
+            enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, true)
             openFile(this, "src/main/java/foo/Foo.java", "Foo.java")
             verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
             openSecurityHotspotReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
