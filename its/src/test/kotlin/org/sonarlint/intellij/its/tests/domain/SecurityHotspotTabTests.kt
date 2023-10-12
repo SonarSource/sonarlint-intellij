@@ -6,6 +6,10 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.tests.AllUiTests.Companion.ORCHESTRATOR
+import org.sonarlint.intellij.its.tests.AllUiTests.Companion.SECURITY_HOTSPOT_PROJECT_KEY
+import org.sonarlint.intellij.its.tests.AllUiTests.Companion.token
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils
 
 class SecurityHotspotTabTests {
 
@@ -24,6 +28,26 @@ class SecurityHotspotTabTests {
                     actionMenuItem("Review Security Hotspot") {
                         click()
                     }
+                }
+            }
+        }
+
+        fun bindProjectFromSecurityHotspotPanel(remoteRobot: RemoteRobot) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tab("Security Hotspots") { select() }
+                        content("SecurityHotspotsPanel") {
+                            findText("Configure Binding").click()
+                        }
+                    }
+                    ProjectBindingUtils.bindProjectToSonarQube(
+                        remoteRobot,
+                        ORCHESTRATOR.server.url,
+                        token,
+                        SECURITY_HOTSPOT_PROJECT_KEY
+                    )
                 }
             }
         }
