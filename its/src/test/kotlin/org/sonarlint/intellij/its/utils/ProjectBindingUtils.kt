@@ -96,7 +96,7 @@ class ProjectBindingUtils {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
-                        checkBox("Bind project to SonarQube / SonarCloud").unselect()
+                        checkBox("Bind project to SonarQube / SonarCloud").select()
                         comboBox("Connection:").click()
                         remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
                             waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
