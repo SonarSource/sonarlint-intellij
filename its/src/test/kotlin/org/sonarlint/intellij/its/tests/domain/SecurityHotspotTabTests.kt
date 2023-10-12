@@ -133,7 +133,7 @@ class SecurityHotspotTabTests {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
-                            findText("Configure Binding").click()
+                            toolBarButton("Configure SonarLint").click()
                         }
                     }
                     unbindProjectToSonarQube(remoteRobot)
