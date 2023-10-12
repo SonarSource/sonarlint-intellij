@@ -33,9 +33,12 @@ import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.condition.DisabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
@@ -58,6 +61,7 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuild
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.unbindProjectToSonarQube
 import org.sonarlint.intellij.its.utils.optionalStep
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.issues.DoTransitionRequest
@@ -67,7 +71,8 @@ import java.net.URL
 import java.time.Duration.ofSeconds
 
 @DisabledIf("isCLionOrGoLand")
-class AllTest : BaseUiTest() {
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
+class AllUiTests : BaseUiTest() {
 
     companion object {
         @JvmField
@@ -75,7 +80,6 @@ class AllTest : BaseUiTest() {
         val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
-            //.addPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.13.0.4374"))
             .addBundledPluginToKeep("sonar-java")
             .addBundledPluginToKeep("sonar-security")
             .addBundledPluginToKeep("sonar-scala")
@@ -110,10 +114,11 @@ class AllTest : BaseUiTest() {
         }
     }
 
+    @Order(1)
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand")
-    inner class BindingTest : BaseUiTest() {
+    inner class BindingTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -241,10 +246,11 @@ class AllTest : BaseUiTest() {
 
     }
 
+    @Order(2)
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
-    inner class OpenInIdeTest : BaseUiTest() {
+    inner class SecurityHotspotAndOpenInIdeTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -270,6 +276,11 @@ class AllTest : BaseUiTest() {
             createConnection(this)
             bindRecentProject(this)
             verifyHotspotOpened(this)
+
+            unbindProjectToSonarQube()
+
+            should_request_the_user_to_bind_project_when_not_bound()
+            should_display_security_hotspots_and_review_it_successfully()
         }
 
         private fun createConnection(robot: RemoteRobot) {
@@ -350,26 +361,6 @@ class AllTest : BaseUiTest() {
         private fun triggerOpenHotspotRequest() {
             URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
                 .readText()
-        }
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
-    inner class SecurityHotspotTabTest : BaseUiTest() {
-
-        @BeforeAll
-        fun initProfile() {
-            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
-
-            token = generateToken(adminWsClient, "SecurityHotspotTabTest")
-        }
-
-        @Test
-        fun security_hotspot_tab_test() = uiTest {
-            openExistingProject("sample-java-hotspot", true)
-            should_request_the_user_to_bind_project_when_not_bound()
-            should_display_security_hotspots_and_review_it_successfully()
         }
 
         private fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
@@ -476,12 +467,14 @@ class AllTest : BaseUiTest() {
                 }
             }
         }
+
     }
 
+    @Order(3)
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
-    inner class CurrentFileTabTest : BaseUiTest() {
+    inner class IssueAndPowerSaveModeTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -501,35 +494,39 @@ class AllTest : BaseUiTest() {
         }
 
         @Test
-        fun current_file_tab_test() {
+        fun current_file_tab_test() = uiTest {
             openExistingProject("sample-java-issues")
             should_display_issues_and_review_it_successfully()
             should_not_analyze_when_power_save_mode_enabled()
         }
 
-        private fun should_display_issues_and_review_it_successfully() = uiTest {
-            bindProjectFromPanel()
+        private fun should_display_issues_and_review_it_successfully() {
+            with(remoteRobot) {
+                bindProjectFromPanel()
 
-            openFile("src/main/java/foo/Foo.java", "Foo.java")
-            verifyIssueTreeContainsMessages(this, "Move this trailing comment on the previous empty line.")
+                openFile("src/main/java/foo/Foo.java", "Foo.java")
+                verifyIssueTreeContainsMessages(this, "Move this trailing comment on the previous empty line.")
 
-            openReviewDialogFromList(this, "Move this trailing comment on the previous empty line.")
-            changeStatusAndPressChange(this, "False Positive")
-            confirm(this)
-            verifyStatusWasSuccessfullyChanged(this)
+                openReviewDialogFromList(this, "Move this trailing comment on the previous empty line.")
+                changeStatusAndPressChange(this, "False Positive")
+                confirm(this)
+                verifyStatusWasSuccessfullyChanged(this)
+            }
         }
 
-        private fun should_not_analyze_when_power_save_mode_enabled() = uiTest {
-            clickPowerSaveMode()
+        private fun should_not_analyze_when_power_save_mode_enabled() {
+            with(remoteRobot) {
+                clickPowerSaveMode()
 
-            openFile("src/main/java/foo/Foo.java", "Foo.java")
+                openFile("src/main/java/foo/Foo.java", "Foo.java")
 
-            verifyCurrentFileTabContainsMessages(
-                "No analysis done on the current opened file",
-                "This file is not automatically analyzed because power save mode is enabled",
-            )
+                verifyCurrentFileTabContainsMessages(
+                    "No analysis done on the current opened file",
+                    "This file is not automatically analyzed because power save mode is enabled",
+                )
 
-            clickPowerSaveMode()
+                clickPowerSaveMode()
+            }
         }
 
         private fun bindProjectFromPanel() {
@@ -617,10 +614,11 @@ class AllTest : BaseUiTest() {
         }
     }
 
+    @Order(4)
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
-    inner class FocusOnNewCodeTest : BaseUiTest() {
+    inner class TaintVulnerabilityAndFocusOnNewCodeTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -682,6 +680,11 @@ class AllTest : BaseUiTest() {
                 "Found 2 new issues in 1 file from last 1 days",
                 "No older issues"
             )
+
+            unbindProjectToSonarQube()
+
+            should_request_the_user_to_bind_project_when_not_bound()
+            should_display_sink()
         }
 
         private fun bindProjectFromPanel() {
@@ -764,79 +767,28 @@ class AllTest : BaseUiTest() {
                 }
             }
         }
-    }
 
-
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand", disabledReason = "No taint vulnerabilities in CLion or GoLand")
-    inner class TaintVulnerabilitiesTest : BaseUiTest() {
-
-        @BeforeAll
-        fun initProfile() {
-            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml"))
-
-            token = generateToken(adminWsClient, "TaintVulnerabilitiesTest")
-        }
-
-        @Test
-        fun taint_vulnerabilities_test() {
-            openExistingProject("sample-java-taint-vulnerability", true)
-            should_request_the_user_to_bind_project_when_not_bound()
-            should_display_sink()
-        }
-
-        fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
-            verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
-        }
-
-        fun should_display_sink() = uiTest {
-            bindProjectFromPanel()
-
-            openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
-
-            verifyTaintTabContainsMessages(
-                this,
-                "Found 1 issue in 1 file",
-                "FileWithSink.java",
-                "Change this code to not construct SQL queries directly from user-controlled data."
-            )
-        }
-
-        private fun bindProjectFromPanel() {
+        private fun should_request_the_user_to_bind_project_when_not_bound() {
             with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tab("Taint Vulnerabilities") { select() }
-                        content("TaintVulnerabilitiesPanel") {
-                            findText("Configure Binding").click()
-                        }
-                    }
-
-                    bindProjectToSonarQube(
-                        ORCHESTRATOR.server.url,
-                        token,
-                        TAINT_VULNERABILITY_PROJECT_KEY
-                    )
-                }
+                verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
             }
         }
 
-        private fun verifyTaintTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+        private fun should_display_sink() {
             with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Taint Vulnerabilities") { select() }
-                        content("TaintVulnerabilitiesPanel") {
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                        }
-                    }
-                }
+                bindProjectFromPanel()
+
+                openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+
+                verifyTaintTabContainsMessages(
+                    this,
+                    "Found 1 issue in 1 file",
+                    "FileWithSink.java",
+                    "Change this code to not construct SQL queries directly from user-controlled data."
+                )
             }
         }
+
     }
 
 }
