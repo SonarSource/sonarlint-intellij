@@ -27,13 +27,12 @@ import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 class ReportTabTests {
 
     companion object {
-        fun verifyReportTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+        fun analyzeAndVerifyReportTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
                     analyzeFile()
                     toolWindow("SonarLint") {
                         ensureOpen()
-                        tabTitleContains("Report") { select() }
                         content("ReportPanel") {
                             expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
                         }
