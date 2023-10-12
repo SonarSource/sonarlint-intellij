@@ -131,7 +131,7 @@ class SecurityHotspotTabTests {
                 idea {
                     toolWindow("SonarLint") {
                         ensureOpen()
-                        tab("Security Hotspots") { select() }
+                        tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
                             findText("Configure Binding").click()
                         }
