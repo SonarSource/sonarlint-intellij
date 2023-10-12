@@ -35,7 +35,6 @@ import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.AllUiTests
 import java.time.Duration
 
@@ -94,26 +93,6 @@ class ProjectBindingUtils {
                         }
                         button("OK").click()
                     }
-                }
-            }
-        }
-
-        fun bindProjectFromPanel(remoteRobot: RemoteRobot) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tab("Security Hotspots") { select() }
-                        content("SecurityHotspotsPanel") {
-                            findText("Configure Binding").click()
-                        }
-                    }
-                    bindProjectToSonarQube(
-                        remoteRobot,
-                        AllUiTests.ORCHESTRATOR.server.url,
-                        AllUiTests.token,
-                        AllUiTests.SECURITY_HOTSPOT_PROJECT_KEY
-                    )
                 }
             }
         }

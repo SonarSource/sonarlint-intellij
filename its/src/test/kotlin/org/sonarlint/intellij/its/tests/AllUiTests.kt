@@ -35,6 +35,7 @@ import org.junit.jupiter.api.condition.DisabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.bindProjectFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusAndPressChange
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
@@ -46,11 +47,13 @@ import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createCo
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyHotspotOpened
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.verifyReportTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.bindProjectFromSecurityHotspotPanel
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.changeSecurityHotspotStatusAndPressChange
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.openSecurityHotspotReviewDialogFromList
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
+import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.bindProjectFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
@@ -60,7 +63,6 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuild
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectAndModuleInFileSettings
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectFromPanel
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.unbindProjectToSonarQube
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
 import org.sonarlint.intellij.its.utils.TabUtils.Companion.clickCurrentFileIssue
@@ -232,7 +234,7 @@ class AllUiTests : BaseUiTest() {
             verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
 
             // Review Security Hotspot Test
-            bindProjectFromPanel(this)
+            bindProjectFromSecurityHotspotPanel(this)
             openFile(remoteRobot, "src/main/java/foo/Foo.java", "Foo.java")
             verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
             openSecurityHotspotReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
@@ -270,7 +272,7 @@ class AllUiTests : BaseUiTest() {
             openExistingProject(remoteRobot, "sample-java-issues")
 
             // Issue Analysis Test
-            bindProjectFromPanel(remoteRobot)
+            bindProjectFromCurrentFilePanel(remoteRobot)
             openFile(remoteRobot, "src/main/java/foo/Foo.java", "Foo.java")
             verifyIssueTreeContainsMessages(this, "Move this trailing comment on the previous empty line.")
 
@@ -329,7 +331,7 @@ class AllUiTests : BaseUiTest() {
             openExistingProject(remoteRobot, "sample-java-taint-vulnerability", true)
 
             // Focus On New Code Test
-            bindProjectFromPanel(remoteRobot)
+            bindProjectFromTaintPanel(remoteRobot)
             openFile(remoteRobot, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode(remoteRobot)
             verifyReportTabContainsMessages(
@@ -361,7 +363,7 @@ class AllUiTests : BaseUiTest() {
             // Taint Vulnerability Test
             unbindProjectToSonarQube(remoteRobot)
             verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
-            bindProjectFromPanel(remoteRobot)
+            bindProjectFromTaintPanel(remoteRobot)
             openFile(remoteRobot, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             verifyTaintTabContainsMessages(
                 this,

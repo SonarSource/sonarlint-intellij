@@ -7,6 +7,10 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.tests.AllUiTests.Companion.ISSUE_PROJECT_KEY
+import org.sonarlint.intellij.its.tests.AllUiTests.Companion.ORCHESTRATOR
+import org.sonarlint.intellij.its.tests.AllUiTests.Companion.token
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
 
 class CurrentFileTabTests {
 
@@ -21,6 +25,26 @@ class CurrentFileTabTests {
 
                         pressButton("Mark Issue as...")
                     }
+                }
+            }
+        }
+
+        fun bindProjectFromCurrentFilePanel(remoteRobot: RemoteRobot) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tab("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            toolBarButton("Configure SonarLint").click()
+                        }
+                    }
+                    bindProjectToSonarQube(
+                        remoteRobot,
+                        ORCHESTRATOR.server.url,
+                        token,
+                        ISSUE_PROJECT_KEY
+                    )
                 }
             }
         }
