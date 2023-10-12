@@ -29,7 +29,8 @@ import org.sonarlint.intellij.its.tests.AllUiTests.Companion.ORCHESTRATOR
 import org.sonarlint.intellij.its.tests.AllUiTests.Companion.SECURITY_HOTSPOT_PROJECT_KEY
 import org.sonarlint.intellij.its.tests.AllUiTests.Companion.token
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.unbindProjectToSonarQube
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
 
 class SecurityHotspotTabTests {
 
@@ -126,7 +127,7 @@ class SecurityHotspotTabTests {
             }
         }
 
-        fun unbindProjectFromSecurityHotspotPanel(remoteRobot: RemoteRobot) {
+        fun enableConnectedModeFromSecurityHotspotPanel(remoteRobot: RemoteRobot, projectKey: String, enabled: Boolean) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -136,7 +137,11 @@ class SecurityHotspotTabTests {
                             toolBarButton("Configure SonarLint").click()
                         }
                     }
-                    unbindProjectToSonarQube(remoteRobot)
+                    if (enabled) {
+                        enableConnectedMode(remoteRobot, projectKey)
+                    } else {
+                        disableConnectedMode(remoteRobot)
+                    }
                 }
             }
         }

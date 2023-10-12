@@ -49,15 +49,14 @@ import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createCo
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyHotspotOpened
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.verifyReportTabContainsMessages
-import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.bindProjectFromSecurityHotspotPanel
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.changeSecurityHotspotStatusAndPressChange
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.enableConnectedModeFromSecurityHotspotPanel
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.openSecurityHotspotReviewDialogFromList
-import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.unbindProjectFromSecurityHotspotPanel
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.bindProjectFromTaintPanel
-import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.unbindProjectFromTaintPanel
+import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
@@ -231,11 +230,11 @@ class AllUiTests : BaseUiTest() {
             verifyHotspotOpened(this)
 
             // Should Propose To Bind
-            unbindProjectFromSecurityHotspotPanel(this)
+            enableConnectedModeFromSecurityHotspotPanel(this, PROJECT_KEY, false)
             verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
 
             // Review Security Hotspot Test
-            bindProjectFromSecurityHotspotPanel(this)
+            enableConnectedModeFromSecurityHotspotPanel(this, PROJECT_KEY, true)
             openFile(this, "src/main/java/foo/Foo.java", "Foo.java")
             verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
             openSecurityHotspotReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
@@ -364,9 +363,9 @@ class AllUiTests : BaseUiTest() {
             setFocusOnNewCode(this)
 
             // Taint Vulnerability Test
-            unbindProjectFromTaintPanel(this)
+            enableConnectedModeFromTaintPanel(this, TAINT_VULNERABILITY_PROJECT_KEY, false)
             verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
-            bindProjectFromTaintPanel(this)
+            enableConnectedModeFromTaintPanel(this, TAINT_VULNERABILITY_PROJECT_KEY, true)
             openFile(this, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             verifyTaintTabContainsMessages(
                 this,
