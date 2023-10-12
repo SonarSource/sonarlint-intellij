@@ -20,18 +20,10 @@
 package org.sonarlint.intellij.its.tests
 
 import com.google.protobuf.InvalidProtocolBufferException
-import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
-import com.intellij.remoterobot.fixtures.ContainerFixture
-import com.intellij.remoterobot.fixtures.JButtonFixture.Companion.byText
-import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.utils.keyboard
-import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.http.HttpMethod
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Nested
@@ -42,33 +34,43 @@ import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.condition.DisabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
-import org.sonarlint.intellij.its.fixtures.closeAllGotItTooltips
-import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.editor
-import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.jPasswordField
-import org.sonarlint.intellij.its.fixtures.jRadioButtons
-import org.sonarlint.intellij.its.fixtures.jbTable
-import org.sonarlint.intellij.its.fixtures.jbTextField
-import org.sonarlint.intellij.its.fixtures.jbTextFields
-import org.sonarlint.intellij.its.fixtures.notification
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusAndPressChange
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueTreeContainsMessages
+import org.sonarlint.intellij.its.tests.domain.FocusOnNewCodeTests.Companion.setFocusOnNewCode
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.bindRecentProject
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyHotspotOpened
+import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.verifyReportTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.changeSecurityHotspotStatusAndPressChange
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.openSecurityHotspotReviewDialogFromList
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
+import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectAndModuleInFileSettings
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectFromPanel
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.unbindProjectToSonarQube
-import org.sonarlint.intellij.its.utils.optionalStep
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
+import org.sonarlint.intellij.its.utils.TabUtils.Companion.clickCurrentFileIssue
+import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyCurrentFileShowsCard
+import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyRuleDescriptionTabContains
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
-import java.net.URL
-import java.time.Duration.ofSeconds
 
 @DisabledIf("isCLionOrGoLand")
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
@@ -118,7 +120,7 @@ class AllUiTests : BaseUiTest() {
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand")
-    inner class BindingTests : BaseUiTest() {
+    inner class OpenInIdeTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -151,12 +153,12 @@ class AllUiTests : BaseUiTest() {
 
         @Test
         fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
-            // scala should only be supported in connected mode
-            openExistingProject("sample-scala", true)
-            verifyCurrentFileShowsCard("EmptyCard")
+            // Scala should only be supported in connected mode
+            openExistingProject(remoteRobot, "sample-scala", true)
+            verifyCurrentFileShowsCard(remoteRobot, "EmptyCard")
 
-            openFile("HelloProject.scala")
-            verifyCurrentFileShowsCard("NotConnectedCard")
+            openFile(remoteRobot, "HelloProject.scala")
+            verifyCurrentFileShowsCard(remoteRobot, "NotConnectedCard")
 
             bindProjectAndModuleInFileSettings()
             // Wait for re-analysis to happen
@@ -165,83 +167,31 @@ class AllUiTests : BaseUiTest() {
                     waitBackgroundTasksFinished()
                 }
             }
-            verifyCurrentFileShowsCard("ConnectedCard")
+            verifyCurrentFileShowsCard(remoteRobot, "ConnectedCard")
             verifyCurrentFileTabContainsMessages(
+                remoteRobot,
                 "Found 1 issue in 1 file",
                 "HelloProject.scala",
             )
-            clickCurrentFileIssue("Remove or correct this useless self-assignment.")
-            verifyRuleDescriptionTabContains("Variables should not be self-assigned")
+            clickCurrentFileIssue(remoteRobot, "Remove or correct this useless self-assignment.")
+            verifyRuleDescriptionTabContains(remoteRobot, "Variables should not be self-assigned")
 
-            openFile("mod/src/HelloModule.scala", "HelloModule.scala")
+            openFile(remoteRobot, "mod/src/HelloModule.scala", "HelloModule.scala")
 
             verifyCurrentFileTabContainsMessages(
+                remoteRobot,
                 "Found 1 issue in 1 file",
                 "HelloModule.scala",
             )
-            clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
-            verifyRuleDescriptionTabContains("Methods should not be empty")
+            clickCurrentFileIssue(remoteRobot, "Add a nested comment explaining why this function is empty or complete the implementation.")
+            verifyRuleDescriptionTabContains(remoteRobot, "Methods should not be empty")
 
-            openFile("mod/src/Excluded.scala", "Excluded.scala")
+            openFile(remoteRobot, "mod/src/Excluded.scala", "Excluded.scala")
             verifyCurrentFileTabContainsMessages(
+                remoteRobot,
                 "No analysis done on the current opened file",
                 "This file is not automatically analyzed",
             )
-        }
-
-        private fun bindProjectAndModuleInFileSettings() {
-            sonarLintGlobalSettings {
-                actionButton(byTooltipText("Add")).clickWhenEnabled()
-                dialog("New Connection: Server Details") {
-                    keyboard { enterText("Orchestrator") }
-                    jRadioButtons()[1].select()
-                    jbTextFields()[1].text = ORCHESTRATOR.server.url
-                    button("Next").click()
-                }
-                dialog("New Connection: Authentication") {
-                    jPasswordField().text = token
-                    button("Next").click()
-                }
-                dialog("New Connection: Configure Notifications") {
-                    button("Next").click()
-                }
-                dialog("New Connection: Configuration completed") {
-                    pressFinishOrCreate()
-                }
-                tree {
-                    clickPath("Tools", "SonarLint", "Project Settings")
-                }
-                checkBox("Bind project to SonarQube / SonarCloud").select()
-                pressOk()
-                errorMessage("Connection should not be empty")
-
-                comboBox("Connection:").click()
-                remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                    waitFor(ofSeconds(5)) { hasText("Orchestrator") }
-                    findText("Orchestrator").click()
-                }
-                pressOk()
-                errorMessage("Project key should not be empty")
-
-                jbTextField().text = PROJECT_KEY
-
-                actionButton(byTooltipText("Add")).clickWhenEnabled()
-                dialog("Select module") {
-                    jbTable().selectItemContaining("sample-scala-module")
-                    pressOk()
-                }
-
-                pressOk()
-                errorMessage("Project key for module 'sample-scala-module' should not be empty")
-                buttons(byText("Search in list..."))[1].click()
-                dialog("Select SonarQube Project To Bind") {
-                    jList {
-                        clickItem(MODULE_PROJECT_KEY, false)
-                    }
-                    pressOk()
-                }
-                pressOk()
-            }
         }
 
     }
@@ -269,203 +219,25 @@ class AllUiTests : BaseUiTest() {
 
         @Test
         fun opensHotspotAfterConfiguringConnectionAndBinding() = uiTest {
-            openExistingProject("sample-java-hotspot", true)
+            openExistingProject(remoteRobot, "sample-java-hotspot", true)
 
-            triggerOpenHotspotRequest()
-
+            // Open In Ide Security Hotspot Test
+            triggerOpenHotspotRequest(PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
             createConnection(this)
             bindRecentProject(this)
             verifyHotspotOpened(this)
 
-            unbindProjectToSonarQube()
-
-            should_request_the_user_to_bind_project_when_not_bound()
-            should_display_security_hotspots_and_review_it_successfully()
-        }
-
-        private fun createConnection(robot: RemoteRobot) {
-            with(robot) {
-                idea {
-                    dialog("Opening finding...") {
-                        button("Create connection").click()
-                    }
-                    dialog("New Connection: Server Details") {
-                        keyboard { enterText("Orchestrator") }
-                        button("Next").click()
-                    }
-                    dialog("New Connection: Authentication") {
-                        jPasswordField().text = token
-                        button("Next").click()
-                    }
-                    dialog("New Connection: Configure Notifications") {
-                        button("Next").click()
-                    }
-                    dialog("New Connection: Configuration completed") {
-                        pressFinishOrCreate()
-                    }
-                }
-            }
-        }
-
-        private fun bindRecentProject(robot: RemoteRobot) {
-            with(robot) {
-                idea {
-                    dialog("Opening finding...") {
-                        button("Select project").click()
-                    }
-                    dialog("Select a project") {
-                        button("Open or import").click()
-                    }
-                    fileBrowserDialog(arrayOf("Select Path")) {
-                        selectProjectFile("sample-java-hotspot", true)
-                    }
-                    optionalStep {
-                        dialog("Open Project") {
-                            button("This Window").click()
-                        }
-                    }
-                    dialog("Opening finding...") {
-                        button("Yes").click()
-                    }
-                }
-            }
-        }
-
-        private fun verifyHotspotOpened(robot: RemoteRobot) {
-            verifyEditorOpened(robot)
-            verifyToolWindowFilled(robot)
-        }
-
-        private fun verifyEditorOpened(robot: RemoteRobot) {
-            with(robot) {
-                idea {
-                    editor("Foo.java")
-                }
-            }
-        }
-
-        private fun verifyToolWindowFilled(robot: RemoteRobot) {
-            with(robot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        tabTitleContains("Security Hotspots") {
-                            content("SecurityHotspotsPanel") {
-                                assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun triggerOpenHotspotRequest() {
-            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
-                .readText()
-        }
-
-        private fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
+            // Should Propose To Bind
+            unbindProjectToSonarQube(remoteRobot)
             verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
-        }
 
-        private fun should_display_security_hotspots_and_review_it_successfully() = uiTest {
-            bindProjectFromPanel()
-
-            openFile("src/main/java/foo/Foo.java", "Foo.java")
+            // Review Security Hotspot Test
+            bindProjectFromPanel(this)
+            openFile(remoteRobot, "src/main/java/foo/Foo.java", "Foo.java")
             verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
-
-            openReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
-            changeStatusAndPressChange(this, "Acknowledged")
-            verifyStatusWasSuccessfullyChanged(this)
-        }
-
-        private fun bindProjectFromPanel() {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tab("Security Hotspots") { select() }
-                        content("SecurityHotspotsPanel") {
-                            findText("Configure Binding").click()
-                        }
-                    }
-                    bindProjectToSonarQube(
-                        ORCHESTRATOR.server.url,
-                        token,
-                        SECURITY_HOTSPOT_PROJECT_KEY
-                    )
-                }
-            }
-        }
-
-        private fun openReviewDialogFromList(remoteRobot: RemoteRobot, securityHotspotMessage: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Security Hotspots") { select() }
-                        content("SecurityHotspotTree") {
-                            findText(securityHotspotMessage).rightClick()
-                        }
-                    }
-                    actionMenuItem("Review Security Hotspot") {
-                        click()
-                    }
-                }
-            }
-        }
-
-        private fun changeStatusAndPressChange(remoteRobot: RemoteRobot, status: String) {
-            with(remoteRobot) {
-                idea {
-                    dialog("Change Security Hotspot Status on SonarQube") {
-                        content(status) {
-                            click()
-                        }
-                        pressButton("Change Status")
-                    }
-                }
-            }
-        }
-
-        private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
-            with(remoteRobot) {
-                idea {
-                    notification("The Security Hotspot status was successfully updated")
-                    toolWindow("SonarLint") {
-                        content("SecurityHotspotsPanel") {
-                            hasText("No Security Hotspot found.")
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun verifySecurityHotspotTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Security Hotspots") { select() }
-                        content("SecurityHotspotsPanel") {
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun verifySecurityHotspotTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Security Hotspots") { select() }
-                        content("SecurityHotspotTree") {
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                        }
-                    }
-                }
-            }
+            openSecurityHotspotReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
+            changeSecurityHotspotStatusAndPressChange(this, "Acknowledged")
+            verifySecurityHotspotStatusWasSuccessfullyChanged(this)
         }
 
     }
@@ -495,122 +267,28 @@ class AllUiTests : BaseUiTest() {
 
         @Test
         fun current_file_tab_test() = uiTest {
-            openExistingProject("sample-java-issues")
-            should_display_issues_and_review_it_successfully()
-            should_not_analyze_when_power_save_mode_enabled()
-        }
+            openExistingProject(remoteRobot, "sample-java-issues")
 
-        private fun should_display_issues_and_review_it_successfully() {
-            with(remoteRobot) {
-                bindProjectFromPanel()
+            // Issue Analysis Test
+            bindProjectFromPanel(remoteRobot)
+            openFile(remoteRobot, "src/main/java/foo/Foo.java", "Foo.java")
+            verifyIssueTreeContainsMessages(this, "Move this trailing comment on the previous empty line.")
 
-                openFile("src/main/java/foo/Foo.java", "Foo.java")
-                verifyIssueTreeContainsMessages(this, "Move this trailing comment on the previous empty line.")
+            // Issue Reviewing Test
+            openIssueReviewDialogFromList(this, "Move this trailing comment on the previous empty line.")
+            changeStatusAndPressChange(this, "False Positive")
+            confirm(this)
+            verifyIssueStatusWasSuccessfullyChanged(this)
 
-                openReviewDialogFromList(this, "Move this trailing comment on the previous empty line.")
-                changeStatusAndPressChange(this, "False Positive")
-                confirm(this)
-                verifyStatusWasSuccessfullyChanged(this)
-            }
-        }
-
-        private fun should_not_analyze_when_power_save_mode_enabled() {
-            with(remoteRobot) {
-                clickPowerSaveMode()
-
-                openFile("src/main/java/foo/Foo.java", "Foo.java")
-
-                verifyCurrentFileTabContainsMessages(
-                    "No analysis done on the current opened file",
-                    "This file is not automatically analyzed because power save mode is enabled",
-                )
-
-                clickPowerSaveMode()
-            }
-        }
-
-        private fun bindProjectFromPanel() {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tab("Current File") { select() }
-                        content("CurrentFilePanel") {
-                            toolBarButton("Configure SonarLint").click()
-                        }
-                    }
-                    bindProjectToSonarQube(
-                        ORCHESTRATOR.server.url,
-                        token,
-                        ISSUE_PROJECT_KEY
-                    )
-                }
-            }
-        }
-
-        private fun openReviewDialogFromList(remoteRobot: RemoteRobot, issueMessage: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        closeAllGotItTooltips()
-                        tabTitleContains("Current File") { select() }
-                        findText(issueMessage).rightClick()
-                    }
-                    actionMenuItem("Mark Issue as...") {
-                        click()
-                    }
-                }
-            }
-        }
-
-        private fun changeStatusAndPressChange(remoteRobot: RemoteRobot, status: String) {
-            with(remoteRobot) {
-                idea {
-                    dialog("Mark Issue as Resolved on SonarQube") {
-                        content(status) {
-                            click()
-                        }
-
-                        pressButton("Mark Issue as...")
-                    }
-                }
-            }
-        }
-
-        private fun confirm(remoteRobot: RemoteRobot) {
-            with(remoteRobot) {
-                idea {
-                    dialog("Confirm marking issue as resolved") {
-                        pressButton("Confirm")
-                    }
-                }
-            }
-        }
-
-        private fun verifyStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
-            with(remoteRobot) {
-                idea {
-                    notification("The issue was successfully marked as resolved")
-                    toolWindow("SonarLint") {
-                        content("CurrentFilePanel") {
-                            hasText("No issues found in the current opened file")
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Current File") { select() }
-                        expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                    }
-                }
-            }
+            // Power Save Mode Test
+            clickPowerSaveMode(remoteRobot)
+            openFile(remoteRobot, "src/main/java/foo/Foo.java", "Foo.java")
+            verifyCurrentFileTabContainsMessages(
+                remoteRobot,
+                "No analysis done on the current opened file",
+                "This file is not automatically analyzed because power save mode is enabled"
+            )
+            clickPowerSaveMode(remoteRobot)
         }
     }
 
@@ -648,11 +326,12 @@ class AllUiTests : BaseUiTest() {
 
         @Test
         fun should_display_new_focus_mode() = uiTest {
-            openExistingProject("sample-java-taint-vulnerability", true)
-            bindProjectFromPanel()
+            openExistingProject(remoteRobot, "sample-java-taint-vulnerability", true)
 
-            openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
-
+            // Focus On New Code Test
+            bindProjectFromPanel(remoteRobot)
+            openFile(remoteRobot, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+            setFocusOnNewCode(remoteRobot)
             verifyReportTabContainsMessages(
                 this,
                 "Found 2 new issues in 1 file from last 1 days",
@@ -660,7 +339,6 @@ class AllUiTests : BaseUiTest() {
                 "Found 1 new Security Hotspot in 1 file from last 1 days",
                 "No older Security Hotspots"
             )
-
             verifyTaintTabContainsMessages(
                 this,
                 "Found 1 new issue in 1 file from last 1 days",
@@ -668,125 +346,29 @@ class AllUiTests : BaseUiTest() {
                 "Change this code to not construct SQL queries directly from user-controlled data.",
                 "No older issues"
             )
-
-            verifyHotspotTabContainsMessages(
+            verifySecurityHotspotTabContainsMessages(
                 this,
                 "Found 1 new Security Hotspot in 1 file from last 1 days",
                 "No older Security Hotspots"
             )
-
             verifyIssueTreeContainsMessages(
                 this,
                 "Found 2 new issues in 1 file from last 1 days",
                 "No older issues"
             )
+            setFocusOnNewCode(remoteRobot)
 
-            unbindProjectToSonarQube()
-
-            should_request_the_user_to_bind_project_when_not_bound()
-            should_display_sink()
-        }
-
-        private fun bindProjectFromPanel() {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tab("Taint Vulnerabilities") { select() }
-                        content("TaintVulnerabilitiesPanel") {
-                            findText("Configure Binding").click()
-                        }
-                    }
-
-                    bindProjectToSonarQube(
-                        ORCHESTRATOR.server.url,
-                        token,
-                        TAINT_VULNERABILITY_PROJECT_KEY
-                    )
-                }
-            }
-        }
-
-        private fun verifyTaintTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Taint Vulnerabilities") { select() }
-                        content("TaintVulnerabilitiesPanel") {
-                            expectedMessages.forEach {
-                                assertThat(hasText(it)).isTrue()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun verifyHotspotTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Security Hotspots") { select() }
-                        content("SecurityHotspotsPanel") {
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun verifyReportTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    analyzeFile()
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Report") { select() }
-                        content("ReportPanel") {
-                            toolBarButton("Set Focus on New Code").click()
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Current File") { select() }
-                        content("CurrentFilePanel") {
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                            toolBarButton("Set Focus on New Code").click()
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun should_request_the_user_to_bind_project_when_not_bound() {
-            with(remoteRobot) {
-                verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
-            }
-        }
-
-        private fun should_display_sink() {
-            with(remoteRobot) {
-                bindProjectFromPanel()
-
-                openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
-
-                verifyTaintTabContainsMessages(
-                    this,
-                    "Found 1 issue in 1 file",
-                    "FileWithSink.java",
-                    "Change this code to not construct SQL queries directly from user-controlled data."
-                )
-            }
+            // Taint Vulnerability Test
+            unbindProjectToSonarQube(remoteRobot)
+            verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
+            bindProjectFromPanel(remoteRobot)
+            openFile(remoteRobot, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+            verifyTaintTabContainsMessages(
+                this,
+                "Found 1 issue in 1 file",
+                "FileWithSink.java",
+                "Change this code to not construct SQL queries directly from user-controlled data."
+            )
         }
 
     }

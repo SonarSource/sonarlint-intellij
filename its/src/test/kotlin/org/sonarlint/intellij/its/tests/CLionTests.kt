@@ -19,22 +19,25 @@
  */
 package org.sonarlint.intellij.its.tests
 
-import java.time.Duration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
+import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.optionalStep
+import java.time.Duration
 
 @EnabledIf("isCLion")
 class CLionTests : BaseUiTest() {
 
     @Test
     fun should_analyze_cpp() = uiTest {
-        openExistingProject("sample-cpp")
+        openExistingProject(remoteRobot, "sample-cpp")
 
-        openFile("CMakeLists.txt")
+        openFile(remoteRobot, "CMakeLists.txt")
 
         optionalStep {
             idea {
@@ -55,9 +58,10 @@ class CLionTests : BaseUiTest() {
             waitBackgroundTasksFinished()
         }
 
-        openFile("main.cpp")
+        openFile(remoteRobot, "main.cpp")
 
         verifyCurrentFileTabContainsMessages(
+            remoteRobot,
             "Found 4 issues in 1 file",
             "main.cpp",
             "array designators are a C99 extension",

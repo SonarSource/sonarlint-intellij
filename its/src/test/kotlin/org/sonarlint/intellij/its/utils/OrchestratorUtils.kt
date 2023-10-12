@@ -32,6 +32,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
 
 class OrchestratorUtils {
+
     companion object {
         private const val SONARLINT_USER = "sonarlint"
         private const val SONARLINT_PWD = "sonarlintpwd"
@@ -80,4 +81,5 @@ class OrchestratorUtils {
             return wsClient.userTokens().generate(generateRequest).token
         }
     }
+
 }
