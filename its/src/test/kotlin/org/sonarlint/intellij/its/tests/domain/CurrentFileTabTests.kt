@@ -91,18 +91,6 @@ class CurrentFileTabTests {
             }
         }
 
-        fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Current File") { select() }
-                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
-                    }
-                }
-            }
-        }
-
         fun openIssueReviewDialogFromList(remoteRobot: RemoteRobot, issueMessage: String) {
             with(remoteRobot) {
                 idea {
@@ -114,6 +102,37 @@ class CurrentFileTabTests {
                     }
                     actionMenuItem("Mark Issue as...") {
                         click()
+                    }
+                }
+            }
+        }
+
+        fun verifyCurrentFileTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            expectedMessages.forEach {
+                                Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        fun clickCurrentFileIssue(remoteRobot: RemoteRobot, issueMessage: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        closeAllGotItTooltips()
+                        content("CurrentFilePanel") {
+                            findText(issueMessage).click()
+                        }
                     }
                 }
             }
