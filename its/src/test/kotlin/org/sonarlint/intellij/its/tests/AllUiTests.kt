@@ -52,10 +52,12 @@ import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.verifyRe
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.bindProjectFromSecurityHotspotPanel
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.changeSecurityHotspotStatusAndPressChange
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.openSecurityHotspotReviewDialogFromList
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.unbindProjectFromSecurityHotspotPanel
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.bindProjectFromTaintPanel
+import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.unbindProjectFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
@@ -65,7 +67,6 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuild
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectAndModuleInFileSettings
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.unbindProjectToSonarQube
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
 import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyCurrentFileShowsCard
 import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyRuleDescriptionTabContains
@@ -230,7 +231,7 @@ class AllUiTests : BaseUiTest() {
             verifyHotspotOpened(this)
 
             // Should Propose To Bind
-            unbindProjectToSonarQube(this)
+            unbindProjectFromSecurityHotspotPanel(this)
             verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
 
             // Review Security Hotspot Test
@@ -363,7 +364,7 @@ class AllUiTests : BaseUiTest() {
             setFocusOnNewCode(this)
 
             // Taint Vulnerability Test
-            unbindProjectToSonarQube(this)
+            unbindProjectFromTaintPanel(this)
             verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
             bindProjectFromTaintPanel(this)
             openFile(this, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
