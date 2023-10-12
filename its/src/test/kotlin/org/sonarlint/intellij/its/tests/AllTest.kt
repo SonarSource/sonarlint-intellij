@@ -366,14 +366,17 @@ class AllTest : BaseUiTest() {
         }
 
         @Test
-        fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
+        fun security_hotspot_tab_test() = uiTest {
             openExistingProject("sample-java-hotspot", true)
+            should_request_the_user_to_bind_project_when_not_bound()
+            should_display_security_hotspots_and_review_it_successfully()
+        }
+
+        private fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
             verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
         }
 
-        @Test
-        fun should_display_security_hotspots_and_review_it_successfully() = uiTest {
-            openExistingProject("sample-java-hotspot", true)
+        private fun should_display_security_hotspots_and_review_it_successfully() = uiTest {
             bindProjectFromPanel()
 
             openFile("src/main/java/foo/Foo.java", "Foo.java")
@@ -498,8 +501,13 @@ class AllTest : BaseUiTest() {
         }
 
         @Test
-        fun should_display_issues_and_review_it_successfully() = uiTest {
-            openExistingProject("sample-java-issues", true)
+        fun current_file_tab_test() {
+            openExistingProject("sample-java-issues")
+            should_display_issues_and_review_it_successfully()
+            should_not_analyze_when_power_save_mode_enabled()
+        }
+
+        private fun should_display_issues_and_review_it_successfully() = uiTest {
             bindProjectFromPanel()
 
             openFile("src/main/java/foo/Foo.java", "Foo.java")
@@ -511,10 +519,7 @@ class AllTest : BaseUiTest() {
             verifyStatusWasSuccessfullyChanged(this)
         }
 
-        @Test
-        fun should_not_analyze_when_power_save_mode_enabled() = uiTest {
-            openExistingProject("sample-java-issues")
-
+        private fun should_not_analyze_when_power_save_mode_enabled() = uiTest {
             clickPowerSaveMode()
 
             openFile("src/main/java/foo/Foo.java", "Foo.java")
@@ -776,15 +781,17 @@ class AllTest : BaseUiTest() {
         }
 
         @Test
-        fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
+        fun taint_vulnerabilities_test() {
             openExistingProject("sample-java-taint-vulnerability", true)
+            should_request_the_user_to_bind_project_when_not_bound()
+            should_display_sink()
+        }
 
+        fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
             verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
         }
 
-        @Test
         fun should_display_sink() = uiTest {
-            openExistingProject("sample-java-taint-vulnerability", true)
             bindProjectFromPanel()
 
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
