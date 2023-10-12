@@ -81,18 +81,31 @@ class ProjectBindingUtils {
             }
         }
 
-        fun unbindProjectToSonarQube(remoteRobot: RemoteRobot) {
+        fun disableConnectedMode(remoteRobot: RemoteRobot) {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
-                        checkBox("Bind project to SonarQube / SonarCloud").select()
-                        button("Configure the connection...").click()
-                        dialog("SonarLint") {
-                            actionButton(ActionButtonFixture.byTooltipText("Remove")).clickWhenEnabled()
-                            button("Yes").click()
-                            button("OK").click()
-                        }
+                        checkBox("Bind project to SonarQube / SonarCloud").unselect()
                         button("OK").click()
+                    }
+                }
+            }
+        }
+
+        fun enableConnectedMode(remoteRobot: RemoteRobot, projectKey: String) {
+            with(remoteRobot) {
+                idea {
+                    dialog("Project Settings") {
+                        checkBox("Bind project to SonarQube / SonarCloud").unselect()
+                        comboBox("Connection:").click()
+                        remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
+                            waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
+                            findText("Orchestrator").click()
+                        }
+                        jbTextField().text = projectKey
+                        button("OK").click()
+                        // wait for binding fully established
+                        waitFor(Duration.ofSeconds(20)) { !isShowing }
                     }
                 }
             }
