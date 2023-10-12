@@ -48,7 +48,7 @@ import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.bindRece
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyHotspotOpened
-import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.verifyReportTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.changeSecurityHotspotStatusAndPressChange
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.enableConnectedModeFromSecurityHotspotPanel
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.openSecurityHotspotReviewDialogFromList
@@ -336,7 +336,7 @@ class AllUiTests : BaseUiTest() {
             bindProjectFromTaintPanel(this)
             openFile(this, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode(this)
-            verifyReportTabContainsMessages(
+            analyzeAndVerifyReportTabContainsMessages(
                 this,
                 "Found 2 new issues in 1 file from last 1 days",
                 "No older issues",
@@ -363,16 +363,14 @@ class AllUiTests : BaseUiTest() {
             setFocusOnNewCode(this)
 
             // Taint Vulnerability Test
-            enableConnectedModeFromTaintPanel(this, TAINT_VULNERABILITY_PROJECT_KEY, false)
-            verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
-            enableConnectedModeFromTaintPanel(this, TAINT_VULNERABILITY_PROJECT_KEY, true)
-            openFile(this, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             verifyTaintTabContainsMessages(
                 this,
                 "Found 1 issue in 1 file",
                 "FileWithSink.java",
                 "Change this code to not construct SQL queries directly from user-controlled data."
             )
+            enableConnectedModeFromTaintPanel(this, TAINT_VULNERABILITY_PROJECT_KEY, false)
+            verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
         }
 
     }
