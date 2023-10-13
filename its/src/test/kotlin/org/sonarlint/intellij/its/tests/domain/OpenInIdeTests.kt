@@ -21,7 +21,6 @@ package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.utils.keyboard
-import com.intellij.remoterobot.utils.waitFor
 import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
@@ -29,9 +28,9 @@ import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotRuleDescriptionTabContains
 import org.sonarlint.intellij.its.utils.optionalStep
 import java.net.URL
-import java.time.Duration
 
 class OpenInIdeTests {
 
@@ -105,21 +104,6 @@ class OpenInIdeTests {
                         tabTitleContains("Security Hotspots") {
                             content("SecurityHotspotsPanel") {
                                 assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        fun verifySecurityHotspotRuleDescriptionTabContains(remoteRobot: RemoteRobot, expectedMessage: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        content("SecurityHotspotsPanel") {
-                            waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
-                                hasText(expectedMessage)
                             }
                         }
                     }
