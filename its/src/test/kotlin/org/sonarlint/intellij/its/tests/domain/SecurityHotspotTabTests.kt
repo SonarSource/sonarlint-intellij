@@ -68,7 +68,7 @@ class SecurityHotspotTabTests {
                     notification("The Security Hotspot status was successfully updated")
                     toolWindow("SonarLint") {
                         content("SecurityHotspotsPanel") {
-                            hasText("No Security Hotspot found.")
+                            hasText("No Security Hotspots shown due to the current filtering")
                         }
                     }
                 }
