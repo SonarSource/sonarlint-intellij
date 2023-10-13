@@ -50,7 +50,7 @@ class PLSQLTest : BaseUiTest() {
     fun should_display_issue() = uiTest {
         openExistingProject(remoteRobot, "sample-plsql")
         openFile(remoteRobot, "file.pkb")
-        verifyCurrentFileTabContainsMessages(this, "No issues found in the current opened file")
+        verifyCurrentFileTabContainsMessages(this, "No analysis done on the current opened file")
 
         enableConnectedModeFromCurrentFilePanel(this, PLSQL_PROJECT_KEY, true)
         verifyIssueTreeContainsMessages(this, )
