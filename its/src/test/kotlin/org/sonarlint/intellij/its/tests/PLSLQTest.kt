@@ -35,6 +35,7 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ena
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
+import org.sonarlint.intellij.its.utils.OrchestratorUtils
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
@@ -45,6 +46,19 @@ const val PLSQL_PROJECT_KEY = "sample-plsql"
 
 @EnabledIf("isSQLPlugin")
 class PLSQLTest : BaseUiTest() {
+
+    @BeforeAll
+    fun initProfile() {
+        AllUiTests.ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
+
+        AllUiTests.ORCHESTRATOR.server.provisionProject(AllUiTests.SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java")
+        AllUiTests.ORCHESTRATOR.server.associateProjectToQualityProfile(AllUiTests.SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
+
+        // Build and analyze project to raise hotspot
+        OrchestratorUtils.executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", AllUiTests.ORCHESTRATOR)
+
+        AllUiTests.firstHotspotKey = AllUiTests.getFirstHotspotKey(AllUiTests.adminWsClient)
+    }
 
     @Test
     fun should_display_issue() = uiTest {
@@ -79,6 +93,7 @@ class PLSQLTest : BaseUiTest() {
         @BeforeAll
         @JvmStatic
         fun prepare() {
+            ORCHESTRATOR.start()
 
             ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
