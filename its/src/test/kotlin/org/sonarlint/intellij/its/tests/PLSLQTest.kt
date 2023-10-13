@@ -31,10 +31,10 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils
 
 const val PLSQL_PROJECT_KEY = "sample-plsql"
 
@@ -44,38 +44,11 @@ class PLSQLTest : BaseUiTest() {
     @Test
     fun should_display_issue() = uiTest {
         openExistingProject(remoteRobot, "sample-plsql")
-        bindProjectFromPanel()
-
-        openFile(remoteRobot, "file.pkb")
-        verifyIssueTreeContainsMessages(this, "Remove this commented out code.")
-    }
-
-    @Test
-    fun should_not_display_issue() = uiTest {
-        openExistingProject(remoteRobot, "sample-plsql")
-
         openFile(remoteRobot, "file.pkb")
         verifyNoIssuesFoundWhenNotConnected(this)
-    }
 
-    private fun bindProjectFromPanel() {
-        with(remoteRobot) {
-            idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
-                    tab("Current File") { select() }
-                    content("CurrentFilePanel") {
-                        toolBarButton("Configure SonarLint").click()
-                    }
-                }
-                ProjectBindingUtils.bindProjectToSonarQube(
-                    remoteRobot,
-                    ORCHESTRATOR.server.url,
-                    token,
-                    PLSQL_PROJECT_KEY
-                )
-            }
-        }
+        enableConnectedModeFromCurrentFilePanel(this, PLSQL_PROJECT_KEY, true)
+        verifyIssueTreeContainsMessages(this, "Remove this commented out code.")
     }
 
     private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
@@ -106,7 +79,7 @@ class PLSQLTest : BaseUiTest() {
 
     companion object {
 
-        lateinit var token: String
+        private lateinit var token: String
 
         private val ORCHESTRATOR: OrchestratorExtension = OrchestratorUtils.defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
