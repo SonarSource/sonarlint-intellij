@@ -23,7 +23,7 @@ import com.intellij.remoterobot.RemoteRobot
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -62,7 +62,7 @@ class PLSQLTest : BaseUiTest() {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
-                    Assertions.assertThat(hasText("Remove this commented out code.")).isTrue()
+                    assertThat(hasText("Remove this commented out code.")).isTrue()
                 }
             }
         }

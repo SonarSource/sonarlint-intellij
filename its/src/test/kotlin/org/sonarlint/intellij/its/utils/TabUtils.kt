@@ -20,31 +20,13 @@
 package org.sonarlint.intellij.its.utils
 
 import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.utils.waitFor
 import org.assertj.core.api.Assertions
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import java.time.Duration
 
 class TabUtils {
 
     companion object {
-        fun verifyRuleDescriptionTabContains(remoteRobot: RemoteRobot, expectedMessage: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        content("CurrentFilePanel") {
-                            waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
-                                hasText(
-                                    expectedMessage
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         fun verifyCurrentFileShowsCard(remoteRobot: RemoteRobot, expectedClass: String) {
             with(remoteRobot) {
@@ -56,6 +38,7 @@ class TabUtils {
                 }
             }
         }
+
     }
 
 }

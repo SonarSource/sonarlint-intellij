@@ -20,7 +20,8 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.RemoteRobot
-import org.assertj.core.api.Assertions
+import com.intellij.remoterobot.utils.waitFor
+import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.fixtures.closeAllGotItTooltips
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
@@ -28,6 +29,7 @@ import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
+import java.time.Duration
 
 class CurrentFileTabTests {
 
@@ -93,7 +95,7 @@ class CurrentFileTabTests {
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
                             expectedMessages.forEach {
-                                Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue()
+                                assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue()
                             }
                         }
                     }
@@ -130,6 +132,23 @@ class CurrentFileTabTests {
                         projectKey?.let { enableConnectedMode(remoteRobot, it) }
                     } else {
                         disableConnectedMode(remoteRobot)
+                    }
+                }
+            }
+        }
+
+        fun verifyCurrentFileRuleDescriptionTabContains(remoteRobot: RemoteRobot, expectedMessage: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        content("CurrentFilePanel") {
+                            waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
+                                hasText(
+                                    expectedMessage
+                                )
+                            }
+                        }
                     }
                 }
             }
