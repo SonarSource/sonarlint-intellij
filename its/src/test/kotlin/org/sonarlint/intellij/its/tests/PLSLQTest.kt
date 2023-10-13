@@ -76,9 +76,9 @@ class PLSQLTest : BaseUiTest() {
             .restoreProfileAtStartup(FileLocation.ofClasspath("/plsql-issue.xml"))
             .build()
 
-        @BeforeAll
         @JvmStatic
-        fun prepare() {
+        @BeforeAll
+        fun createSonarLintUser() {
             ORCHESTRATOR.start()
 
             ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
@@ -90,21 +90,17 @@ class PLSQLTest : BaseUiTest() {
 
             // Build and analyze project to raise issue
             executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY)
+
+            val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
+            val token = generateToken(adminWsClient, "sonarlintUser")
+
+            clearConnectionsAndAddSonarQubeConnection(remoteRobot, ORCHESTRATOR.server.url, token)
         }
 
         @AfterAll
         @JvmStatic
         fun teardown() {
             ORCHESTRATOR.stop()
-        }
-
-        @JvmStatic
-        @BeforeAll
-        fun createSonarLintUser() {
-            val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
-            val token = generateToken(adminWsClient, "sonarlintUser")
-
-            clearConnectionsAndAddSonarQubeConnection(remoteRobot, ORCHESTRATOR.server.url, token)
         }
     }
 

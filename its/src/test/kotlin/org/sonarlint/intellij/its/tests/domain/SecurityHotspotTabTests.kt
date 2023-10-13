@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.RemoteRobot
+import com.intellij.remoterobot.utils.waitFor
 import org.assertj.core.api.Assertions
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
@@ -27,6 +28,7 @@ import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
+import java.time.Duration
 
 class SecurityHotspotTabTests {
 
@@ -121,6 +123,22 @@ class SecurityHotspotTabTests {
                 }
             }
         }
+
+        fun verifySecurityHotspotRuleDescriptionTabContains(remoteRobot: RemoteRobot, expectedMessage: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        content("SecurityHotspotsPanel") {
+                            waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
+                                hasText(expectedMessage)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
 }

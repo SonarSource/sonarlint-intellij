@@ -144,9 +144,7 @@ class CurrentFileTabTests {
                         ensureOpen()
                         content("CurrentFilePanel") {
                             waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
-                                hasText(
-                                    expectedMessage
-                                )
+                                hasText(expectedMessage)
                             }
                         }
                     }
