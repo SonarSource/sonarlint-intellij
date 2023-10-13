@@ -37,6 +37,7 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.cli
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.FiltersTests.Companion.setFocusOnNewCode
@@ -66,7 +67,6 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
 import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyCurrentFileShowsCard
-import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyRuleDescriptionTabContains
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
@@ -143,7 +143,7 @@ class AllUiTests : BaseUiTest() {
 
             // Open In Ide Security Hotspot Test
             triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
-            createConnection(this)
+            createConnection(this, token)
             bindRecentProject(this)
             verifyHotspotOpened(this)
 
@@ -219,7 +219,7 @@ class AllUiTests : BaseUiTest() {
                 "HelloProject.scala",
             )
             clickCurrentFileIssue(this, "Remove or correct this useless self-assignment.")
-            verifyRuleDescriptionTabContains(this, "Variables should not be self-assigned")
+            verifyCurrentFileRuleDescriptionTabContains(this, "Variables should not be self-assigned")
 
             openFile(this, "mod/src/HelloModule.scala", "HelloModule.scala")
 
@@ -229,7 +229,7 @@ class AllUiTests : BaseUiTest() {
                 "HelloModule.scala",
             )
             clickCurrentFileIssue(this, "Add a nested comment explaining why this function is empty or complete the implementation.")
-            verifyRuleDescriptionTabContains(this, "Methods should not be empty")
+            verifyCurrentFileRuleDescriptionTabContains(this, "Methods should not be empty")
 
             openFile(this, "mod/src/Excluded.scala", "Excluded.scala")
             verifyCurrentFileTabContainsMessages(

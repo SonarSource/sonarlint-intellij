@@ -35,7 +35,8 @@ import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
-import org.sonarlint.intellij.its.tests.AllUiTests
+import org.sonarlint.intellij.its.tests.AllUiTests.Companion.MODULE_PROJECT_KEY
+import org.sonarlint.intellij.its.tests.AllUiTests.Companion.PROJECT_KEY
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.sonarLintGlobalSettings
 import java.time.Duration
 
@@ -129,7 +130,7 @@ class ProjectBindingUtils {
                 pressOk()
                 errorMessage("Project key should not be empty")
 
-                jbTextField().text = AllUiTests.PROJECT_KEY
+                jbTextField().text = PROJECT_KEY
 
                 actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
                 dialog("Select module") {
@@ -142,7 +143,7 @@ class ProjectBindingUtils {
                 buttons(JButtonFixture.byText("Search in list..."))[1].click()
                 dialog("Select SonarQube Project To Bind") {
                     jList {
-                        clickItem(AllUiTests.MODULE_PROJECT_KEY, false)
+                        clickItem(MODULE_PROJECT_KEY, false)
                     }
                     pressOk()
                 }

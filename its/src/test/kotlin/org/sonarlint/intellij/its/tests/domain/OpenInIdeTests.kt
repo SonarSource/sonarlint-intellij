@@ -21,21 +21,22 @@ package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.utils.keyboard
-import org.assertj.core.api.Assertions
+import com.intellij.remoterobot.utils.waitFor
+import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.tests.AllUiTests
 import org.sonarlint.intellij.its.utils.optionalStep
 import java.net.URL
+import java.time.Duration
 
 class OpenInIdeTests {
 
     companion object {
-        fun createConnection(robot: RemoteRobot) {
+        fun createConnection(robot: RemoteRobot, token: String) {
             with(robot) {
                 idea {
                     dialog("Opening Security Hotspot...") {
@@ -46,7 +47,7 @@ class OpenInIdeTests {
                         button("Next").click()
                     }
                     dialog("New Connection: Authentication") {
-                        jPasswordField().text = AllUiTests.token
+                        jPasswordField().text = token
                         button("Next").click()
                     }
                     dialog("New Connection: Configure Notifications") {
@@ -86,6 +87,7 @@ class OpenInIdeTests {
         fun verifyHotspotOpened(robot: RemoteRobot) {
             verifyEditorOpened(robot)
             verifyToolWindowFilled(robot)
+            verifySecurityHotspotRuleDescriptionTabContains(robot, "What's the risk?")
         }
 
         fun verifyEditorOpened(robot: RemoteRobot) {
@@ -102,7 +104,22 @@ class OpenInIdeTests {
                     toolWindow("SonarLint") {
                         tabTitleContains("Security Hotspots") {
                             content("SecurityHotspotsPanel") {
-                                Assertions.assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
+                                assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        fun verifySecurityHotspotRuleDescriptionTabContains(remoteRobot: RemoteRobot, expectedMessage: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        content("SecurityHotspotsPanel") {
+                            waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
+                                hasText(expectedMessage)
                             }
                         }
                     }
@@ -111,7 +128,7 @@ class OpenInIdeTests {
         }
 
         fun triggerOpenHotspotRequest(projectKey: String, firstHotspotKey: String?, serverUrl: String) {
-            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$projectKey&hotspot=$firstHotspotKey&server=$serverUrl")
+            URL("http://localhost:64121/sonarlint/api/hotspots/show?project=$projectKey&hotspot=$firstHotspotKey&server=$serverUrl")
                 .readText()
         }
     }
