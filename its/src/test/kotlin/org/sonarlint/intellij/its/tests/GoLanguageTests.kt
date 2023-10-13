@@ -30,6 +30,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 /** Tests for Go language support (not limited to GoLand) */
 @EnabledIf("isGoPlugin")
 class GoLanguageTests : BaseUiTest() {
+
     @Test
     fun should_analyze_go() = uiTest {
         openExistingProject(remoteRobot, "sample-go")
@@ -43,4 +44,5 @@ class GoLanguageTests : BaseUiTest() {
             "Remove or correct this useless self-assignment."
         )
     }
+
 }

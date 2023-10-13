@@ -32,9 +32,14 @@ import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
-import org.sonarlint.intellij.its.utils.OrchestratorUtils
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
 
 const val PLSQL_PROJECT_KEY = "sample-plsql"
 
@@ -45,43 +50,26 @@ class PLSQLTest : BaseUiTest() {
     fun should_display_issue() = uiTest {
         openExistingProject(remoteRobot, "sample-plsql")
         openFile(remoteRobot, "file.pkb")
-        verifyNoIssuesFoundWhenNotConnected(this)
+        verifyCurrentFileTabContainsMessages(this, "No issues found in the current opened file")
 
         enableConnectedModeFromCurrentFilePanel(this, PLSQL_PROJECT_KEY, true)
-        verifyIssueTreeContainsMessages(this, "Remove this commented out code.")
+        verifyIssueTreeContainsMessages(this, )
     }
 
-    private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+    private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot) {
         with(remoteRobot) {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
-                    expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
-                }
-            }
-        }
-    }
-
-    private fun verifyNoIssuesFoundWhenNotConnected(remoteRobot: RemoteRobot) {
-        with(remoteRobot) {
-            idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
-                    tabTitleContains("Current File") { select() }
-                    content("CurrentFilePanel") {
-                        hasText("No issues found in the current opened file")
-                    }
+                    Assertions.assertThat(hasText("Remove this commented out code.")).isTrue()
                 }
             }
         }
     }
 
     companion object {
-
-        private lateinit var token: String
-
-        private val ORCHESTRATOR: OrchestratorExtension = OrchestratorUtils.defaultBuilderEnv()
+        private val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
             .keepBundledPlugins()
@@ -91,9 +79,6 @@ class PLSQLTest : BaseUiTest() {
         @BeforeAll
         @JvmStatic
         fun prepare() {
-            ORCHESTRATOR.start()
-
-            val adminWsClient = OrchestratorUtils.newAdminWsClientWithUser(ORCHESTRATOR.server)
 
             ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
@@ -103,15 +88,22 @@ class PLSQLTest : BaseUiTest() {
             )
 
             // Build and analyze project to raise issue
-            OrchestratorUtils.executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY);
-
-            token = OrchestratorUtils.generateToken(adminWsClient, "PLSQLTest")
+            executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY)
         }
 
         @AfterAll
         @JvmStatic
         fun teardown() {
             ORCHESTRATOR.stop()
+        }
+
+        @JvmStatic
+        @BeforeAll
+        fun createSonarLintUser() {
+            val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
+            val token = generateToken(adminWsClient, "sonarlintUser")
+
+            clearConnectionsAndAddSonarQubeConnection(remoteRobot, ORCHESTRATOR.server.url, token)
         }
     }
 
