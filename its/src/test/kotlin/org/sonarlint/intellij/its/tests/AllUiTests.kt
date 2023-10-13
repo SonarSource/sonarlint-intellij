@@ -25,12 +25,10 @@ import com.sonar.orchestrator.http.HttpMethod
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.condition.DisabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
@@ -75,7 +73,6 @@ import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
 
 @DisabledIf("isCLionOrGoLand")
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class AllUiTests : BaseUiTest() {
 
     companion object {
@@ -118,11 +115,10 @@ class AllUiTests : BaseUiTest() {
         }
     }
 
-    @Order(1)
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand")
-    inner class OpenInIdeTests : BaseUiTest() {
+    inner class SampleScalaTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -198,11 +194,10 @@ class AllUiTests : BaseUiTest() {
 
     }
 
-    @Order(2)
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
-    inner class SecurityHotspotAndOpenInIdeTests : BaseUiTest() {
+    inner class SampleJavaHotspotTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -220,7 +215,7 @@ class AllUiTests : BaseUiTest() {
         }
 
         @Test
-        fun opensHotspotAfterConfiguringConnectionAndBinding() = uiTest {
+        fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
             openExistingProject(this, "sample-java-hotspot", true)
 
             // Open In Ide Security Hotspot Test
@@ -244,11 +239,10 @@ class AllUiTests : BaseUiTest() {
 
     }
 
-    @Order(3)
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
-    inner class IssueAndPowerSaveModeTests : BaseUiTest() {
+    inner class SampleJavaIssuesTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -268,7 +262,7 @@ class AllUiTests : BaseUiTest() {
         }
 
         @Test
-        fun current_file_tab_test() = uiTest {
+        fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
             openExistingProject(this, "sample-java-issues")
 
             // Issue Analysis Test
@@ -296,11 +290,10 @@ class AllUiTests : BaseUiTest() {
         }
     }
 
-    @Order(4)
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
-    inner class TaintVulnerabilityAndFiltersTests : BaseUiTest() {
+    inner class SampleJavaTaintVulnerabilityTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
@@ -329,7 +322,7 @@ class AllUiTests : BaseUiTest() {
         }
 
         @Test
-        fun should_display_new_focus_mode() = uiTest {
+        fun should_focus_on_new_code_in_each_tabs_then_should_find_taint_vulnerability_in_connected_mode() = uiTest {
             openExistingProject(this, "sample-java-taint-vulnerability", true)
 
             // Focus On New Code Test
