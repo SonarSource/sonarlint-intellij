@@ -55,7 +55,7 @@ class FileBrowserDialogFixture(
   }
 
   fun selectProjectFile(projectName: String, isMaven: Boolean) {
-    val projectsDir = Paths.get("build/projects").toAbsolutePath()
+    val projectsDir = Paths.get("/home/dev/test_resources").toAbsolutePath()
     val projectBaseDir = projectsDir.resolve(projectName)
     val projectFile = if (isMaven && remoteRobot.ideMajorVersion() < 201) projectBaseDir.resolve("pom.xml") else projectBaseDir
     val button = button("OK")

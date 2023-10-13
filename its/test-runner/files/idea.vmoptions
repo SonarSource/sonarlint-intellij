@@ -1,0 +1,12 @@
+# required for the robot and skip some wizards
+-Drobot-server.host.public=true
+-Drobot-server.port=8082
+-Dsonarlint.telemetry.disabled=true
+-Didea.trust.all.projects=true
+-Dide.show.tips.on.startup.default.value=false
+-Djb.privacy.policy.text="<!--999.999-->"
+-Djb.consents.confirmation.enabled=false
+-Deap.require.license=true
+# required for older versions
+-Didea.config.path="/home/dev/config"
+-Didea.plugins.path="/home/dev/user_plugins"
