@@ -26,10 +26,8 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.tests.AllUiTests.Companion.ISSUE_PROJECT_KEY
-import org.sonarlint.intellij.its.tests.AllUiTests.Companion.ORCHESTRATOR
-import org.sonarlint.intellij.its.tests.AllUiTests.Companion.token
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectToSonarQube
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
 
 class CurrentFileTabTests {
 
@@ -44,26 +42,6 @@ class CurrentFileTabTests {
 
                         pressButton("Mark Issue as...")
                     }
-                }
-            }
-        }
-
-        fun bindProjectFromCurrentFilePanel(remoteRobot: RemoteRobot) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tab("Current File") { select() }
-                        content("CurrentFilePanel") {
-                            toolBarButton("Configure SonarLint").click()
-                        }
-                    }
-                    bindProjectToSonarQube(
-                        remoteRobot,
-                        ORCHESTRATOR.server.url,
-                        token,
-                        ISSUE_PROJECT_KEY
-                    )
                 }
             }
         }
@@ -137,6 +115,26 @@ class CurrentFileTabTests {
                 }
             }
         }
+
+        fun enableConnectedModeFromCurrentFilePanel(remoteRobot: RemoteRobot, projectKey: String?, enabled: Boolean) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            toolBarButton("Configure SonarLint").click()
+                        }
+                    }
+                    if (enabled) {
+                        projectKey?.let { enableConnectedMode(remoteRobot, it) }
+                    } else {
+                        disableConnectedMode(remoteRobot)
+                    }
+                }
+            }
+        }
+
     }
 
 }

@@ -36,6 +36,7 @@ import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.tests.AllUiTests
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.sonarLintGlobalSettings
 import java.time.Duration
 
 class ProjectBindingUtils {
@@ -112,24 +113,7 @@ class ProjectBindingUtils {
         }
 
         fun bindProjectAndModuleInFileSettings() {
-            SettingsUtils.sonarLintGlobalSettings(BaseUiTest.remoteRobot) {
-                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
-                dialog("New Connection: Server Details") {
-                    keyboard { enterText("Orchestrator") }
-                    jRadioButtons()[1].select()
-                    jbTextFields()[1].text = AllUiTests.ORCHESTRATOR.server.url
-                    button("Next").click()
-                }
-                dialog("New Connection: Authentication") {
-                    jPasswordField().text = AllUiTests.token
-                    button("Next").click()
-                }
-                dialog("New Connection: Configure Notifications") {
-                    button("Next").click()
-                }
-                dialog("New Connection: Configuration completed") {
-                    pressFinishOrCreate()
-                }
+            sonarLintGlobalSettings(BaseUiTest.remoteRobot) {
                 tree {
                     clickPath("Tools", "SonarLint", "Project Settings")
                 }
