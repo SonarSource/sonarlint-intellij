@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.utils
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.JListFixture
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import org.assertj.swing.timing.Pause
 import org.sonarlint.intellij.its.fixtures.IdeaFrame
@@ -29,6 +30,9 @@ import org.sonarlint.intellij.its.fixtures.PreferencesDialog
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.jPasswordField
+import org.sonarlint.intellij.its.fixtures.jRadioButtons
+import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.fixtures.preferencesDialog
 import org.sonarlint.intellij.its.fixtures.waitUntilLoaded
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
@@ -72,6 +76,40 @@ class SettingsUtils {
                             }
                         }
                     }
+                }
+                pressOk()
+            }
+        }
+
+        fun clearConnectionsAndAddSonarQubeConnection(remoteRobot: RemoteRobot, serverUrl: String, token: String) {
+            sonarLintGlobalSettings(remoteRobot) {
+                val removeButton = actionButton(ActionButtonFixture.byTooltipText("Remove"))
+                jList(JListFixture.byType()) {
+                    while (collectItems().isNotEmpty()) {
+                        removeButton.clickWhenEnabled()
+                        optionalStep {
+                            dialog("Connection In Use") {
+                                button("Yes").click()
+                            }
+                        }
+                    }
+                }
+                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
+                dialog("New Connection: Server Details") {
+                    keyboard { enterText("Orchestrator") }
+                    jRadioButtons()[1].select()
+                    jbTextFields()[1].text = serverUrl
+                    button("Next").click()
+                }
+                dialog("New Connection: Authentication") {
+                    jPasswordField().text = token
+                    button("Next").click()
+                }
+                dialog("New Connection: Configure Notifications") {
+                    button("Next").click()
+                }
+                dialog("New Connection: Configuration completed") {
+                    pressFinishOrCreate()
                 }
                 pressOk()
             }

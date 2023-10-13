@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
@@ -31,7 +32,7 @@ import org.sonarlint.intellij.its.fixtures.isGoPlugin
 import org.sonarlint.intellij.its.fixtures.isSQLPlugin
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.goBackToWelcomeScreen
 import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
@@ -80,6 +81,12 @@ open class BaseUiTest {
 
         @JvmStatic
         fun isSQLPlugin(): Boolean = remoteRobot.isSQLPlugin()
+
+        private fun closeAllDialogs() {
+            remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
+                it.close()
+            }
+        }
     }
 
 
@@ -162,16 +169,14 @@ open class BaseUiTest {
     }
 
     @BeforeEach
-    fun cleanProject() {
+    fun quitProject() {
         closeAllDialogs()
         goBackToWelcomeScreen(remoteRobot)
-        clearConnections(remoteRobot)
     }
 
-    private fun closeAllDialogs() {
-        remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
-            it.close()
-        }
+    @AfterEach
+    fun disableConnectedMode() {
+        enableConnectedModeFromCurrentFilePanel(remoteRobot, null, false)
     }
 
 }

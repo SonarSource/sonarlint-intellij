@@ -32,10 +32,10 @@ import org.junit.jupiter.api.condition.DisabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.bindProjectFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusAndPressChange
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.clickCurrentFileIssue
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
@@ -52,7 +52,6 @@ import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
-import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.bindProjectFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
@@ -63,6 +62,8 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuild
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectAndModuleInFileSettings
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
 import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyCurrentFileShowsCard
 import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyRuleDescriptionTabContains
@@ -111,7 +112,56 @@ class AllUiTests : BaseUiTest() {
         @BeforeAll
         fun createSonarLintUser() {
             adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
+            token = generateToken(adminWsClient, "sonarlintUser")
+
+            clearConnectionsAndAddSonarQubeConnection(remoteRobot, ORCHESTRATOR.server.url, token)
         }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
+    inner class SampleJavaHotspotTests : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
+
+            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
+
+            // Build and analyze project to raise hotspot
+            executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
+
+            firstHotspotKey = getFirstHotspotKey(adminWsClient)
+        }
+
+        @Test
+        fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
+            clearConnections(this)
+            openExistingProject(this, "sample-java-hotspot", true)
+
+            // Open In Ide Security Hotspot Test
+            triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
+            createConnection(this)
+            bindRecentProject(this)
+            verifyHotspotOpened(this)
+
+            // Should Propose To Bind
+            enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, false)
+            verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
+
+            // Review Security Hotspot Test
+            enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, true)
+            verifySecurityHotspotTreeContainsMessages(
+                this,
+                "Make sure using this hardcoded IP address is safe here."
+            )
+            openSecurityHotspotReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
+            changeSecurityHotspotStatusAndPressChange(this, "Fixed")
+            verifySecurityHotspotStatusWasSuccessfullyChanged(this)
+        }
+
     }
 
     @Nested
@@ -137,8 +187,6 @@ class AllUiTests : BaseUiTest() {
 
             executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY)
             executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY)
-
-            token = generateToken(adminWsClient, "BindingTest")
 
             val searchRequest = SearchRequest()
             searchRequest.s = "FILE_LINE"
@@ -195,50 +243,6 @@ class AllUiTests : BaseUiTest() {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
-    inner class SampleJavaHotspotTests : BaseUiTest() {
-
-        @BeforeAll
-        fun initProfile() {
-            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
-
-            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
-
-            // Build and analyze project to raise hotspot
-            executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
-
-            firstHotspotKey = getFirstHotspotKey(adminWsClient)
-
-            token = generateToken(adminWsClient, "OpenInIdeTest")
-        }
-
-        @Test
-        fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
-            openExistingProject(this, "sample-java-hotspot", true)
-
-            // Open In Ide Security Hotspot Test
-            triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
-            createConnection(this)
-            bindRecentProject(this)
-            verifyHotspotOpened(this)
-
-            // Should Propose To Bind
-            enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, false)
-            verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
-
-            // Review Security Hotspot Test
-            enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, true)
-            verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
-            openSecurityHotspotReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
-            changeSecurityHotspotStatusAndPressChange(this, "Fixed")
-            verifySecurityHotspotStatusWasSuccessfullyChanged(this)
-        }
-
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
     inner class SampleJavaIssuesTests : BaseUiTest() {
 
@@ -254,9 +258,7 @@ class AllUiTests : BaseUiTest() {
             )
 
             // Build and analyze project to raise issue
-            executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR);
-
-            token = generateToken(adminWsClient, "CurrentFileTabTest")
+            executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR)
         }
 
         @Test
@@ -264,7 +266,7 @@ class AllUiTests : BaseUiTest() {
             openExistingProject(this, "sample-java-issues")
 
             // Issue Analysis Test
-            bindProjectFromCurrentFilePanel(this)
+            enableConnectedModeFromCurrentFilePanel(this, ISSUE_PROJECT_KEY, true)
             openFile(this, "src/main/java/foo/Foo.java", "Foo.java")
             verifyCurrentFileTabContainsMessages(this, "Move this trailing comment on the previous empty line.")
 
@@ -275,6 +277,7 @@ class AllUiTests : BaseUiTest() {
             verifyIssueStatusWasSuccessfullyChanged(this)
             showResolvedIssues(this)
             verifyCurrentFileTabContainsMessages(this, "Move this trailing comment on the previous empty line.")
+            showResolvedIssues(this)
 
             // Power Save Mode Test
             clickPowerSaveMode(this)
@@ -315,8 +318,6 @@ class AllUiTests : BaseUiTest() {
 
             // Analyze a second time for the measure to be returned by the web API
             executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
-
-            token = generateToken(adminWsClient, "FocusOnNewCodeTest")
         }
 
         @Test
@@ -324,7 +325,7 @@ class AllUiTests : BaseUiTest() {
             openExistingProject(this, "sample-java-taint-vulnerability", true)
 
             // Focus On New Code Test
-            bindProjectFromTaintPanel(this)
+            enableConnectedModeFromTaintPanel(this, TAINT_VULNERABILITY_PROJECT_KEY, true)
             openFile(this, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode(this)
             analyzeAndVerifyReportTabContainsMessages(
