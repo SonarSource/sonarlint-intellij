@@ -81,6 +81,9 @@ class PLSQLTest : BaseUiTest() {
         fun createSonarLintUser() {
             ORCHESTRATOR.start()
 
+            val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
+            val token = generateToken(adminWsClient, "sonarlintUser")
+
             ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
                 PLSQL_PROJECT_KEY,
@@ -90,9 +93,6 @@ class PLSQLTest : BaseUiTest() {
 
             // Build and analyze project to raise issue
             executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY)
-
-            val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
-            val token = generateToken(adminWsClient, "sonarlintUser")
 
             clearConnectionsAndAddSonarQubeConnection(remoteRobot, ORCHESTRATOR.server.url, token)
         }
