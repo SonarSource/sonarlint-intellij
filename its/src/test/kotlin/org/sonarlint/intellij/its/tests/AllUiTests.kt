@@ -26,7 +26,6 @@ import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.DisabledIf
@@ -230,10 +229,9 @@ class AllUiTests : BaseUiTest() {
 
             // Review Security Hotspot Test
             enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, true)
-            openFile(this, "src/main/java/foo/Foo.java", "Foo.java")
             verifySecurityHotspotTreeContainsMessages(this, "Make sure using this hardcoded IP address is safe here.")
             openSecurityHotspotReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
-            changeSecurityHotspotStatusAndPressChange(this, "Acknowledged")
+            changeSecurityHotspotStatusAndPressChange(this, "Fixed")
             verifySecurityHotspotStatusWasSuccessfullyChanged(this)
         }
 
