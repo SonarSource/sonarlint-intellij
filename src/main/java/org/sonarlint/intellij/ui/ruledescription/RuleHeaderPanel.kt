@@ -44,6 +44,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
@@ -129,6 +130,12 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
                 }
             }
         }
+    }
+
+    fun updateForServerIssue(ruleDescription: EffectiveRuleDetailsDto, ruleKey: String) {
+        clear()
+        updateCommonFields(ruleDescription.type, ruleDescription.cleanCodeAttribute.orElse(null), ruleDescription.defaultImpacts, ruleKey)
+        updateRuleSeverity(ruleDescription.severity)
     }
 
     private fun updateRuleSeverity(severity: IssueSeverity) {

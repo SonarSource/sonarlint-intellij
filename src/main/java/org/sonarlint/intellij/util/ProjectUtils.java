@@ -91,6 +91,23 @@ public class ProjectUtils {
     });
   }
 
+  public static VirtualFile tryFindFile(Project project, String filePath) {
+    for (var contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
+      if (contentRoot.isDirectory()) {
+        var matchedFile = contentRoot.findFileByRelativePath(filePath);
+        if (matchedFile != null) {
+          return matchedFile;
+        }
+      } else {
+        // On Rider, all source files are returned as individual content roots, so simply check for equality
+        if (contentRoot.getPath().endsWith(filePath)) {
+          return contentRoot;
+        }
+      }
+    }
+    return null;
+  }
+
   private ProjectUtils() {
     // utility class
   }

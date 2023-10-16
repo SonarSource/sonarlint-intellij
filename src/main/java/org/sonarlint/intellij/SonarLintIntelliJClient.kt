@@ -41,17 +41,6 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import java.io.ByteArrayInputStream
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.URI
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
-import java.util.stream.Collectors
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
@@ -63,6 +52,11 @@ import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.finding.Finding
+import org.sonarlint.intellij.finding.ShowFinding
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
 import org.sonarlint.intellij.notifications.DontShowAgainAction
 import org.sonarlint.intellij.notifications.OpenLinkAction
@@ -72,6 +66,7 @@ import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
@@ -96,6 +91,7 @@ import org.sonarsource.sonarlint.core.clientapi.client.http.ProxyDto
 import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesParams
 import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesResponse
 import org.sonarsource.sonarlint.core.clientapi.client.info.GetClientInfoResponse
+import org.sonarsource.sonarlint.core.clientapi.client.issue.ShowIssueParams
 import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowSoonUnsupportedMessageParams
@@ -103,6 +99,8 @@ import org.sonarsource.sonarlint.core.clientapi.client.progress.ReportProgressPa
 import org.sonarsource.sonarlint.core.clientapi.client.progress.StartProgressParams
 import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
 import org.sonarsource.sonarlint.core.clientapi.client.sync.DidSynchronizeConfigurationScopeParams
+import org.sonarsource.sonarlint.core.clientapi.common.FlowDto
+import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto
 import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
 import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
@@ -115,9 +113,21 @@ import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotRaisedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.ServerHotspotEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.URI
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.stream.Collectors
 
 object SonarLintIntelliJClient : SonarLintClient {
 
+    private const val OPENING_FINDING_TITLE = "Opening finding..."
     private val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint")
     private val backendTaskProgressReporter = BackendTaskProgressReporter()
 
@@ -268,47 +278,46 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun showHotspot(params: ShowHotspotParams) {
-        val configurationScopeId = params.configurationScopeId
-        val project =
-            findProject(configurationScopeId) ?: throw IllegalStateException("Unable to find project with id '$configurationScopeId'")
-        SonarLintProjectNotifications.get(project).expireCurrentHotspotNotificationIfNeeded()
-        val file = tryFindFile(project, params.hotspotDetails.filePath)
+        showFinding(params.configurationScopeId, params.hotspotDetails.filePath, params.hotspotDetails.key,
+            params.hotspotDetails.rule.key, params.hotspotDetails.textRange, params.hotspotDetails.codeSnippet, LiveSecurityHotspot::class.java, emptyList(), params.hotspotDetails.message
+        )
+    }
+
+    override fun showIssue(params: ShowIssueParams) {
+        if (params.isTaint) {
+            showFinding(params.configScopeId, params.serverRelativeFilePath,
+                params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, LocalTaintVulnerability::class.java, params.flows, params.message)
+        } else {
+            showFinding(params.configScopeId, params.serverRelativeFilePath,
+                params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, LiveIssue::class.java, params.flows, params.message)
+        }
+    }
+
+    private fun <T: Finding> showFinding(configScopeId: String, filePath: String, findingKey: String, ruleKey: String,
+        textRange: TextRangeDto, codeSnippet: String?, type: Class<T>, flows: List<FlowDto>, flowMessage: String) {
+        val project = findProject(configScopeId) ?: throw IllegalStateException("Unable to find project with id '$configScopeId'")
+        SonarLintProjectNotifications.get(project).expireCurrentFindingNotificationIfNeeded()
+        val file = tryFindFile(project, filePath)
         if (file == null) {
-            showBalloon(project, "Unable to open Security Hotspot. Can't find the file: ${params.hotspotDetails.filePath}", NotificationType.WARNING)
+            showBalloon(project, "Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
             return
         }
         ApplicationManager.getApplication().invokeAndWait {
-            openFile(project, file)
+            openFile(project, file, textRange.startLine)
         }
-        getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectHotspot(file, params.hotspotDetails.key)
+        val showFinding = ShowFinding(project, ruleKey, findingKey, file, textRange, codeSnippet, flows, flowMessage, type)
+        getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(showFinding)
     }
 
-    private fun tryFindFile(project: Project, filePath: String): VirtualFile? {
-        for (contentRoot in ProjectRootManager.getInstance(project).contentRoots) {
-            if (contentRoot.isDirectory) {
-                val matchedFile = contentRoot.findFileByRelativePath(filePath)
-                if (matchedFile != null) {
-                    return matchedFile
-                }
-            } else {
-                // On Rider, all source files are returned as individual content roots, so simply check for equality
-                if (contentRoot.path.endsWith(filePath)) {
-                    return contentRoot
-                }
-            }
-        }
-        return null
-    }
-
-    private fun openFile(project: Project, file: VirtualFile) {
-        OpenFileDescriptor(project, file).navigate(true)
+    private fun openFile(project: Project, file: VirtualFile, line: Int) {
+        OpenFileDescriptor(project, file, line - 1, -1).navigate(true)
     }
 
     override fun assistCreatingConnection(params: AssistCreatingConnectionParams): CompletableFuture<AssistCreatingConnectionResponse> {
         return CompletableFuture.supplyAsync {
             val serverUrl = params.serverUrl
             val message = "No connections configured to '$serverUrl'."
-            if (!showConfirmModal("Opening Security Hotspot...", message, "Create connection", null)) {
+            if (!showConfirmModal(OPENING_FINDING_TITLE, message, "Create connection", null)) {
                 throw CancellationException("Connection creation rejected by the user")
             }
             val newConnection = ApplicationManager.getApplication().computeInEDT {
@@ -328,7 +337,7 @@ object SonarLintIntelliJClient : SonarLintClient {
                 "  • Project: $projectKey\n" +
                 "  • Connection: $connectionId\n" +
                 "Please manually select a project."
-            if (!showConfirmModal("Opening Security Hotspot...", message, "Select project", null)) {
+            if (!showConfirmModal(OPENING_FINDING_TITLE, message, "Select project", null)) {
                 throw CancellationException("Project selection rejected by the user")
             }
             val selectedProject = ApplicationManager.getApplication().computeInEDT {
@@ -337,7 +346,7 @@ object SonarLintIntelliJClient : SonarLintClient {
                 }
             } ?: throw CancellationException("Project selection cancelled by the user")
             val confirmed = showConfirmModal(
-                "Opening Security Hotspot...",
+                OPENING_FINDING_TITLE,
                 "You are going to bind current project to '${connection.hostUrl}'. Do you agree?",
                 "Yes",
                 selectedProject

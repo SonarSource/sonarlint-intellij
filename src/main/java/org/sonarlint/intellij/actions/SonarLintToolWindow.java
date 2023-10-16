@@ -42,8 +42,10 @@ import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.core.ProjectBinding;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
+import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.Issue;
 import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -151,6 +153,20 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
    */
   public void openCurrentFileTab() {
     openTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
+  }
+
+  /**
+   * Must run in EDT
+   */
+  public void openTaintVulnerabilityTab() {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var taintContent = getTaintVulnerabilitiesContent();
+      if (taintContent != null) {
+        toolWindow.show(() -> toolWindow.getContentManager().setSelectedContent(taintContent));
+      }
+    }
   }
 
   public void openOrCloseCurrentFileTab() {
@@ -317,6 +333,31 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
       return sonarLintHotspotsPanel.doesSecurityHotspotExist(securityHotspotKey);
     }
     return false;
+  }
+
+  public <T extends Finding> void trySelectIssue(ShowFinding<T> showFinding) {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
+      if (content != null) {
+        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var issue = currentFilePanel.doesIssueExist(showFinding.getFindingKey());
+        currentFilePanel.trySelectFilteredIssue(issue, showFinding);
+      }
+    }
+  }
+
+  public <T extends Finding> void trySelectTaintVulnerability(ShowFinding<T> showFinding) {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var taintContent = getTaintVulnerabilitiesContent();
+      if (taintContent != null) {
+        var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
+        var taint = taintPanel.findTaintVulnerabilityByKey(showFinding.getFindingKey());
+        taintPanel.trySelectFilteredTaintVulnerability(taint, showFinding);
+      }
+    }
   }
 
   public boolean trySelectSecurityHotspot(String securityHotspotKey) {

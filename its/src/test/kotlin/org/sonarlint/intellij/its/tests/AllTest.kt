@@ -275,7 +275,7 @@ class AllTest : BaseUiTest() {
         private fun createConnection(robot: RemoteRobot) {
             with(robot) {
                 idea {
-                    dialog("Opening Security Hotspot...") {
+                    dialog("Opening finding...") {
                         button("Create connection").click()
                     }
                     dialog("New Connection: Server Details") {
@@ -299,7 +299,7 @@ class AllTest : BaseUiTest() {
         private fun bindRecentProject(robot: RemoteRobot) {
             with(robot) {
                 idea {
-                    dialog("Opening Security Hotspot...") {
+                    dialog("Opening finding...") {
                         button("Select project").click()
                     }
                     dialog("Select a project") {
@@ -313,7 +313,7 @@ class AllTest : BaseUiTest() {
                             button("This Window").click()
                         }
                     }
-                    dialog("Opening Security Hotspot...") {
+                    dialog("Opening finding...") {
                         button("Yes").click()
                     }
                 }

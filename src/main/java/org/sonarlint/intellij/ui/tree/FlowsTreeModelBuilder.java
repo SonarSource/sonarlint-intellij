@@ -47,18 +47,24 @@ public class FlowsTreeModelBuilder {
   }
 
   public void populateForFinding(LiveFinding finding) {
-    var rangeMarker = finding.getRange();
     var context = finding.context();
-    if (rangeMarker == null || context.isEmpty()) {
+    if (context.isEmpty()) {
       clearFlows();
       return;
     }
     var findingContext = context.get();
-    var message = finding.getMessage();
-    if (findingContext.hasUniqueFlow()) {
-      setSingleFlow(findingContext.flows().get(0), rangeMarker, message);
+    populateForFinding(finding.getRange(), finding.getMessage(), findingContext.flows());
+  }
+
+  public void populateForFinding(@Nullable RangeMarker rangeMarker, String summaryDescription, List<Flow> flows) {
+    if (rangeMarker == null || flows.isEmpty()) {
+      clearFlows();
+      return;
+    }
+    if (flows.size() == 1) {
+      setSingleFlow(flows.get(0), rangeMarker, summaryDescription);
     } else {
-      setMultipleFlows(findingContext.flows(), rangeMarker, message);
+      setMultipleFlows(flows, rangeMarker, summaryDescription);
     }
   }
 

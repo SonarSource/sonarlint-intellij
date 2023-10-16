@@ -48,7 +48,9 @@ import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
@@ -142,11 +144,13 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
           ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
       }
       issues = Collections.emptyList();
+    } else {
+      statusText.setText("No issues to display");
     }
+    disableEmptyDisplay(!issues.isEmpty());
 
     this.currentFile = file;
     this.currentIssues = issues;
-    disableEmptyDisplay(!issues.isEmpty());
     if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)) {
       var oldIssues = issues.stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList());
       var newIssues = issues.stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList());
@@ -165,6 +169,18 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private static void populateSubTree(Tree tree, IssueTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveIssue>> issues) {
     treeBuilder.updateModel(issues);
     tree.setShowsRootHandles(!issues.isEmpty());
+  }
+
+  public LiveIssue doesIssueExist(String issueKey) {
+    var issue = treeBuilder.findIssueByKey(issueKey);
+    if (issue.isEmpty()) {
+      issue = oldTreeBuilder.findIssueByKey(issueKey);
+    }
+    return issue.orElse(null);
+  }
+
+  public <T extends Finding> void trySelectFilteredIssue(LiveIssue issue, ShowFinding<T> showFinding) {
+    updateOnSelect(issue, showFinding);
   }
 
   private void updateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues) {
