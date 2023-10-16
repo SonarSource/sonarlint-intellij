@@ -20,11 +20,13 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.fixtures.DialogFixture
+import org.sonarlint.intellij.its.fixtures.GotItTooltipFixture
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
@@ -168,8 +170,13 @@ open class BaseUiTest {
         }
     }
 
+    private fun closeAllGotItTooltips() {
+        remoteRobot.findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton()).forEach { it.click() }
+    }
+
     @BeforeEach
     fun quitProject() {
+        closeAllGotItTooltips()
         closeAllDialogs()
         goBackToWelcomeScreen(remoteRobot)
     }
