@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -131,7 +132,6 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
   @AfterEach
   final void afterEachLightTest() throws Exception {
     try {
-      getEngineManager().stopAllEngines(false);
       if (!getProject().isDisposed()) {
         AnalysisStatus.get(getProject()).stopRun();
       }
@@ -139,6 +139,16 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
 
     } finally {
       super.tearDown();
+    }
+  }
+
+  @AfterAll
+  static void stopEngines() {
+    try {
+      getEngineManager().stopAllEngines(false);
+    } catch (Exception e) {
+      System.out.println("Error stoping all engines");
+      e.printStackTrace();
     }
   }
 
@@ -172,7 +182,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     return getSettingsFor(getModule());
   }
 
-  protected TestEngineManager getEngineManager() {
+  protected static TestEngineManager getEngineManager() {
     return (TestEngineManager) getService(EngineManager.class);
   }
 

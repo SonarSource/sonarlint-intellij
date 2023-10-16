@@ -36,7 +36,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.jetbrains.annotations.NotNull
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
@@ -48,13 +47,7 @@ import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
-
     private val diamondQuickFix = "SonarLint: Replace with <>"
-
-    @BeforeEach
-    fun prepare() {
-        engineManager.stopAllEngines(false)
-    }
 
     @Test
     fun should_analyze_xml_file() {

@@ -36,8 +36,8 @@ class ModuleBindingManagerTests : AbstractSonarLintLightTests() {
     fun prepare() {
         standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
         connectedEngine = mock(ConnectedSonarLintEngine::class.java)
-        engineManager.registerEngine(standaloneEngine)
-        engineManager.registerEngine(connectedEngine, "server1")
+        getEngineManager().registerEngine(standaloneEngine)
+        getEngineManager().registerEngine(connectedEngine, "server1")
         moduleBindingManager = ModuleBindingManager(module)
         replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
     }
