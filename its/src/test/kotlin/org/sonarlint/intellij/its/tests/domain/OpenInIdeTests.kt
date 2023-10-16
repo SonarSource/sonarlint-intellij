@@ -38,7 +38,7 @@ class OpenInIdeTests {
         fun createConnection(token: String) {
             with(remoteRobot) {
                 idea {
-                    dialog("Opening Security Hotspot...") {
+                    dialog("Opening finding...") {
                         button("Create connection").click()
                     }
                     dialog("New Connection: Server Details") {
@@ -62,7 +62,7 @@ class OpenInIdeTests {
         fun bindRecentProject() {
             with(remoteRobot) {
                 idea {
-                    dialog("Opening Security Hotspot...") {
+                    dialog("Opening finding...") {
                         button("Select project").click()
                     }
                     dialog("Select a project") {
@@ -76,7 +76,7 @@ class OpenInIdeTests {
                             button("This Window").click()
                         }
                     }
-                    dialog("Opening Security Hotspot...") {
+                    dialog("Opening finding...") {
                         button("Yes").click()
                     }
                 }
