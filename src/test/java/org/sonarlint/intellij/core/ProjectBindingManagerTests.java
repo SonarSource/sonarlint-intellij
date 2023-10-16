@@ -49,6 +49,7 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
     var notifications = mock(SonarLintProjectNotifications.class);
     replaceProjectService(SonarLintConsole.class, console);
     replaceProjectService(SonarLintProjectNotifications.class, notifications);
+    getEngineManager().stopAllEngines(false);
 
     projectBindingManager = new ProjectBindingManager(getProject(), mock(ProgressManager.class));
   }

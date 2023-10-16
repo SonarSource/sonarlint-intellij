@@ -48,7 +48,6 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     @BeforeEach
     fun prepare() {
         storageFolderPath = Paths.get(PathManager.getSystemPath()).resolve("sonarlint")
-        engineManager.stopAllEngines(false)
         mockServer = MockServer()
         mockServer.start()
         getService(project, FindingsCache::class.java).clearAllFindingsForAllFiles()

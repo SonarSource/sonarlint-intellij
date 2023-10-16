@@ -78,8 +78,8 @@ class ModuleChangeListenerTests : AbstractSonarLintLightTests() {
         moduleChangeListener.moduleAdded(project, module)
         val standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
         val connectedEngine = mock(ConnectedSonarLintEngine::class.java)
-        engineManager.registerEngine(standaloneEngine)
-        engineManager.registerEngine(connectedEngine, "connection1")
+        getEngineManager().registerEngine(standaloneEngine)
+        getEngineManager().registerEngine(connectedEngine, "connection1")
         project.messageBus.syncPublisher(PROJECT_BINDING_TOPIC)
             .bindingChanged(null, ProjectBinding("connection1", "projectKey", emptyMap()))
 

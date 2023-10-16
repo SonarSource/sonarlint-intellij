@@ -39,7 +39,7 @@ class EditorFileChangeListenerTests : AbstractSonarLintLightTests() {
     @Test
     fun should_notify_of_file_system_event_when_a_change_occurs_in_editor() {
         val fakeEngine = mock(StandaloneSonarLintEngine::class.java)
-        engineManager.registerEngine(fakeEngine)
+        getEngineManager().registerEngine(fakeEngine)
         val fileEventsNotifier = mock(ModuleFileEventsNotifier::class.java)
         val eventsCaptor = ArgumentCaptor.forClass(List::class.java) as ArgumentCaptor<List<ClientModuleFileEvent>>
         val fileName = "file.py"
