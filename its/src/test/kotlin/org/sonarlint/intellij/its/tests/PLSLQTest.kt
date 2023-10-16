@@ -49,7 +49,7 @@ class PLSQLTest : BaseUiTest() {
     fun should_display_issue() = uiTest {
         openExistingProject("sample-plsql")
         openFile("file.pkb")
-        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
+        verifyCurrentFileTabContainsMessages("No issues to display")
 
         enableConnectedModeFromCurrentFilePanel(PLSQL_PROJECT_KEY, true)
         verifyIssueTreeContainsMessages()
