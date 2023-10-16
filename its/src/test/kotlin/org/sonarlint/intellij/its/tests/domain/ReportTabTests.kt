@@ -19,22 +19,22 @@
  */
 package org.sonarlint.intellij.its.tests.domain
 
-import com.intellij.remoterobot.RemoteRobot
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 
 class ReportTabTests {
 
     companion object {
-        fun analyzeAndVerifyReportTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+        fun analyzeAndVerifyReportTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
                     analyzeFile()
                     toolWindow("SonarLint") {
                         ensureOpen()
                         content("ReportPanel") {
-                            expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
                 }

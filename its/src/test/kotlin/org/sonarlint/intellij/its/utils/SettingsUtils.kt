@@ -19,12 +19,12 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import org.assertj.swing.timing.Pause
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.IdeaFrame
 import org.sonarlint.intellij.its.fixtures.PreferencesDialog
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
@@ -41,8 +41,8 @@ import java.time.Duration
 class SettingsUtils {
 
     companion object {
-        fun sonarLintGlobalSettings(remoteRobot: RemoteRobot, function: PreferencesDialog.() -> Unit) {
-            settings(remoteRobot) {
+        fun sonarLintGlobalSettings(function: PreferencesDialog.() -> Unit) {
+            settings {
                 // let the dialog settle (if we type the search query too soon it might be cleared for no reason)
                 Pause.pause(3000)
 
@@ -64,8 +64,8 @@ class SettingsUtils {
             }
         }
 
-        fun clearConnections(remoteRobot: RemoteRobot) {
-            sonarLintGlobalSettings(remoteRobot) {
+        fun clearConnections() {
+            sonarLintGlobalSettings {
                 val removeButton = actionButton(ActionButtonFixture.byTooltipText("Remove"))
                 jList(JListFixture.byType()) {
                     while (collectItems().isNotEmpty()) {
@@ -81,8 +81,8 @@ class SettingsUtils {
             }
         }
 
-        fun clearConnectionsAndAddSonarQubeConnection(remoteRobot: RemoteRobot, serverUrl: String, token: String) {
-            sonarLintGlobalSettings(remoteRobot) {
+        fun clearConnectionsAndAddSonarQubeConnection(serverUrl: String, token: String) {
+            sonarLintGlobalSettings {
                 val removeButton = actionButton(ActionButtonFixture.byTooltipText("Remove"))
                 jList(JListFixture.byType()) {
                     while (collectItems().isNotEmpty()) {
@@ -115,33 +115,29 @@ class SettingsUtils {
             }
         }
 
-        fun clickPowerSaveMode(remoteRobot: RemoteRobot) {
-            with(remoteRobot) {
-                optionalIdeaFrame(this)?.apply {
-                    actionMenu("File") {
-                        open()
-                        item("Power Save Mode") {
-                            click()
-                        }
+        fun clickPowerSaveMode() {
+            optionalIdeaFrame()?.apply {
+                actionMenu("File") {
+                    open()
+                    item("Power Save Mode") {
+                        click()
                     }
                 }
             }
         }
 
-        fun goBackToWelcomeScreen(remoteRobot: RemoteRobot) {
-            with(remoteRobot) {
-                optionalIdeaFrame(this)?.apply {
-                    actionMenu("File") {
-                        open()
-                        item("Close Project") {
-                            click()
-                        }
+        fun goBackToWelcomeScreen() {
+            optionalIdeaFrame()?.apply {
+                actionMenu("File") {
+                    open()
+                    item("Close Project") {
+                        click()
                     }
                 }
             }
         }
 
-        private fun optionalIdeaFrame(remoteRobot: RemoteRobot): IdeaFrame? {
+        private fun optionalIdeaFrame(): IdeaFrame? {
             var ideaFrame: IdeaFrame? = null
             with(remoteRobot) {
                 optionalStep {
@@ -152,7 +148,7 @@ class SettingsUtils {
             return ideaFrame
         }
 
-        private fun settings(remoteRobot: RemoteRobot, function: PreferencesDialog.() -> Unit) {
+        private fun settings(function: PreferencesDialog.() -> Unit) {
             with(remoteRobot) {
                 try {
                     welcomeFrame {

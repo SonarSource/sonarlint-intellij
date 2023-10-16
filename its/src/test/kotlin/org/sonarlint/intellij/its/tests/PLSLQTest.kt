@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.its.tests
 
-import com.intellij.remoterobot.RemoteRobot
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
@@ -48,15 +47,15 @@ class PLSQLTest : BaseUiTest() {
 
     @Test
     fun should_display_issue() = uiTest {
-        openExistingProject(remoteRobot, "sample-plsql")
-        openFile(remoteRobot, "file.pkb")
-        verifyCurrentFileTabContainsMessages(this, "No analysis done on the current opened file")
+        openExistingProject("sample-plsql")
+        openFile("file.pkb")
+        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
 
-        enableConnectedModeFromCurrentFilePanel(this, PLSQL_PROJECT_KEY, true)
-        verifyIssueTreeContainsMessages(this, )
+        enableConnectedModeFromCurrentFilePanel(PLSQL_PROJECT_KEY, true)
+        verifyIssueTreeContainsMessages()
     }
 
-    private fun verifyIssueTreeContainsMessages(remoteRobot: RemoteRobot) {
+    private fun verifyIssueTreeContainsMessages() {
         with(remoteRobot) {
             idea {
                 toolWindow("SonarLint") {
@@ -94,7 +93,7 @@ class PLSQLTest : BaseUiTest() {
             // Build and analyze project to raise issue
             executeBuildWithSonarScanner("projects/sample-plsql/", ORCHESTRATOR, PLSQL_PROJECT_KEY)
 
-            clearConnectionsAndAddSonarQubeConnection(remoteRobot, ORCHESTRATOR.server.url, token)
+            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, token)
         }
 
         @AfterAll

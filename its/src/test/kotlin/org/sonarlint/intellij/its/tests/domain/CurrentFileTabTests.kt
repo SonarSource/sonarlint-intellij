@@ -19,9 +19,9 @@
  */
 package org.sonarlint.intellij.its.tests.domain
 
-import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.utils.waitFor
 import org.assertj.core.api.Assertions.assertThat
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.closeAllGotItTooltips
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
@@ -34,7 +34,18 @@ import java.time.Duration
 class CurrentFileTabTests {
 
     companion object {
-        fun changeStatusAndPressChange(remoteRobot: RemoteRobot, status: String) {
+        fun verifyCurrentFileShowsCard(expectedClass: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        assertThat(findCard(expectedClass)).isNotNull
+                    }
+                }
+            }
+        }
+
+        fun changeStatusAndPressChange(status: String) {
             with(remoteRobot) {
                 idea {
                     dialog("Mark Issue as Resolved on SonarQube") {
@@ -48,7 +59,7 @@ class CurrentFileTabTests {
             }
         }
 
-        fun confirm(remoteRobot: RemoteRobot) {
+        fun confirm() {
             with(remoteRobot) {
                 idea {
                     dialog("Confirm marking issue as resolved") {
@@ -58,7 +69,7 @@ class CurrentFileTabTests {
             }
         }
 
-        fun verifyIssueStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
+        fun verifyIssueStatusWasSuccessfullyChanged() {
             with(remoteRobot) {
                 idea {
                     notification("The issue was successfully marked as resolved")
@@ -71,7 +82,7 @@ class CurrentFileTabTests {
             }
         }
 
-        fun openIssueReviewDialogFromList(remoteRobot: RemoteRobot, issueMessage: String) {
+        fun openIssueReviewDialogFromList(issueMessage: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -87,7 +98,7 @@ class CurrentFileTabTests {
             }
         }
 
-        fun verifyCurrentFileTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+        fun verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -103,7 +114,7 @@ class CurrentFileTabTests {
             }
         }
 
-        fun clickCurrentFileIssue(remoteRobot: RemoteRobot, issueMessage: String) {
+        fun clickCurrentFileIssue(issueMessage: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -118,7 +129,7 @@ class CurrentFileTabTests {
             }
         }
 
-        fun enableConnectedModeFromCurrentFilePanel(remoteRobot: RemoteRobot, projectKey: String?, enabled: Boolean) {
+        fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -129,15 +140,15 @@ class CurrentFileTabTests {
                         }
                     }
                     if (enabled) {
-                        projectKey?.let { enableConnectedMode(remoteRobot, it) }
+                        projectKey?.let { enableConnectedMode(it) }
                     } else {
-                        disableConnectedMode(remoteRobot)
+                        disableConnectedMode()
                     }
                 }
             }
         }
 
-        fun verifyCurrentFileRuleDescriptionTabContains(remoteRobot: RemoteRobot, expectedMessage: String) {
+        fun verifyCurrentFileRuleDescriptionTabContains(expectedMessage: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -151,7 +162,6 @@ class CurrentFileTabTests {
                 }
             }
         }
-
     }
 
 }
