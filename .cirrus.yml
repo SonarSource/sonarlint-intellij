@@ -46,7 +46,7 @@ ec2_instance: &WINVM_DEFINITION
   platform: windows
   region: eu-central-1
   subnet_id: ${CIRRUS_AWS_SUBNET}
-  type: t3.xlarge
+  type: t3a.2xlarge
 
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
@@ -138,7 +138,7 @@ qa_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 4
+    cpu: 6
     memory: 16G
   env:
     CLION_KEY: VAULT[development/team/sonarlint/kv/data/clion.key data.key]
