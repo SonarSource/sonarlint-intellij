@@ -46,7 +46,7 @@ ec2_instance: &WINVM_DEFINITION
   platform: windows
   region: eu-central-1
   subnet_id: ${CIRRUS_AWS_SUBNET}
-  type: c5.4xlarge
+  type: t4g.xlarge
 
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
