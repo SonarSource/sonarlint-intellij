@@ -35,9 +35,9 @@ class CLionTests : BaseUiTest() {
 
     @Test
     fun should_analyze_cpp() = uiTest {
-        openExistingProject(remoteRobot, "sample-cpp")
+        openExistingProject("sample-cpp")
 
-        openFile(remoteRobot, "CMakeLists.txt")
+        openFile("CMakeLists.txt")
 
         optionalStep {
             idea {
@@ -58,10 +58,9 @@ class CLionTests : BaseUiTest() {
             waitBackgroundTasksFinished()
         }
 
-        openFile(remoteRobot, "main.cpp")
+        openFile("main.cpp")
 
         verifyCurrentFileTabContainsMessages(
-            remoteRobot,
             "Found 4 issues in 1 file",
             "main.cpp",
             "array designators are a C99 extension",

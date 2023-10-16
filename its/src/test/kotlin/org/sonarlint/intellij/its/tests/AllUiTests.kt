@@ -38,10 +38,9 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.con
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileRuleDescriptionTabContains
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileShowsCard
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
-import org.sonarlint.intellij.its.tests.domain.FiltersTests.Companion.setFocusOnNewCode
-import org.sonarlint.intellij.its.tests.domain.FiltersTests.Companion.showResolvedIssues
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.bindRecentProject
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
@@ -55,6 +54,8 @@ import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
+import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
+import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.showResolvedIssues
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
@@ -66,7 +67,6 @@ import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjec
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
-import org.sonarlint.intellij.its.utils.TabUtils.Companion.verifyCurrentFileShowsCard
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
@@ -114,7 +114,7 @@ class AllUiTests : BaseUiTest() {
             adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
             token = generateToken(adminWsClient, "sonarlintUser")
 
-            clearConnectionsAndAddSonarQubeConnection(remoteRobot, ORCHESTRATOR.server.url, token)
+            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, token)
         }
     }
 
@@ -138,28 +138,25 @@ class AllUiTests : BaseUiTest() {
 
         @Test
         fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
-            clearConnections(this)
-            openExistingProject(this, "sample-java-hotspot", true)
+            clearConnections()
+            openExistingProject("sample-java-hotspot", true)
 
             // Open In Ide Security Hotspot Test
             triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
-            createConnection(this, token)
-            bindRecentProject(this)
-            verifyHotspotOpened(this)
+            createConnection(token)
+            bindRecentProject()
+            verifyHotspotOpened()
 
             // Should Propose To Bind
-            enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, false)
-            verifySecurityHotspotTabContainsMessages(this, "The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, false)
+            verifySecurityHotspotTabContainsMessages("The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
 
             // Review Security Hotspot Test
-            enableConnectedModeFromSecurityHotspotPanel(this, SECURITY_HOTSPOT_PROJECT_KEY, true)
-            verifySecurityHotspotTreeContainsMessages(
-                this,
-                "Make sure using this hardcoded IP address is safe here."
-            )
-            openSecurityHotspotReviewDialogFromList(this, "Make sure using this hardcoded IP address is safe here.")
-            changeSecurityHotspotStatusAndPressChange(this, "Fixed")
-            verifySecurityHotspotStatusWasSuccessfullyChanged(this)
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, true)
+            verifySecurityHotspotTreeContainsMessages("Make sure using this hardcoded IP address is safe here.")
+            openSecurityHotspotReviewDialogFromList("Make sure using this hardcoded IP address is safe here.")
+            changeSecurityHotspotStatusAndPressChange("Fixed")
+            verifySecurityHotspotStatusWasSuccessfullyChanged()
         }
 
     }
@@ -199,11 +196,11 @@ class AllUiTests : BaseUiTest() {
         @Test
         fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
             // Scala should only be supported in connected mode
-            openExistingProject(this, "sample-scala", true)
-            verifyCurrentFileShowsCard(this, "EmptyCard")
+            openExistingProject("sample-scala", true)
+            verifyCurrentFileShowsCard("EmptyCard")
 
-            openFile(this, "HelloProject.scala")
-            verifyCurrentFileShowsCard(this, "NotConnectedCard")
+            openFile("HelloProject.scala")
+            verifyCurrentFileShowsCard("NotConnectedCard")
 
             bindProjectAndModuleInFileSettings()
             // Wait for re-analysis to happen
@@ -212,28 +209,25 @@ class AllUiTests : BaseUiTest() {
                     waitBackgroundTasksFinished()
                 }
             }
-            verifyCurrentFileShowsCard(this, "ConnectedCard")
+            verifyCurrentFileShowsCard("ConnectedCard")
             verifyCurrentFileTabContainsMessages(
-                this,
                 "Found 1 issue in 1 file",
                 "HelloProject.scala",
             )
-            clickCurrentFileIssue(this, "Remove or correct this useless self-assignment.")
-            verifyCurrentFileRuleDescriptionTabContains(this, "Variables should not be self-assigned")
+            clickCurrentFileIssue("Remove or correct this useless self-assignment.")
+            verifyCurrentFileRuleDescriptionTabContains("Variables should not be self-assigned")
 
-            openFile(this, "mod/src/HelloModule.scala", "HelloModule.scala")
+            openFile("mod/src/HelloModule.scala", "HelloModule.scala")
 
             verifyCurrentFileTabContainsMessages(
-                this,
                 "Found 1 issue in 1 file",
                 "HelloModule.scala",
             )
-            clickCurrentFileIssue(this, "Add a nested comment explaining why this function is empty or complete the implementation.")
-            verifyCurrentFileRuleDescriptionTabContains(this, "Methods should not be empty")
+            clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
+            verifyCurrentFileRuleDescriptionTabContains("Methods should not be empty")
 
-            openFile(this, "mod/src/Excluded.scala", "Excluded.scala")
+            openFile("mod/src/Excluded.scala", "Excluded.scala")
             verifyCurrentFileTabContainsMessages(
-                this,
                 "No analysis done on the current opened file",
                 "This file is not automatically analyzed",
             )
@@ -263,31 +257,30 @@ class AllUiTests : BaseUiTest() {
 
         @Test
         fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
-            openExistingProject(this, "sample-java-issues")
+            openExistingProject("sample-java-issues")
 
             // Issue Analysis Test
-            enableConnectedModeFromCurrentFilePanel(this, ISSUE_PROJECT_KEY, true)
-            openFile(this, "src/main/java/foo/Foo.java", "Foo.java")
-            verifyCurrentFileTabContainsMessages(this, "Move this trailing comment on the previous empty line.")
+            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true)
+            openFile("src/main/java/foo/Foo.java", "Foo.java")
+            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
 
             // Issue Reviewing Test
-            openIssueReviewDialogFromList(this, "Move this trailing comment on the previous empty line.")
-            changeStatusAndPressChange(this, "False Positive")
-            confirm(this)
-            verifyIssueStatusWasSuccessfullyChanged(this)
-            showResolvedIssues(this)
-            verifyCurrentFileTabContainsMessages(this, "Move this trailing comment on the previous empty line.")
-            showResolvedIssues(this)
+            openIssueReviewDialogFromList("Move this trailing comment on the previous empty line.")
+            changeStatusAndPressChange("False Positive")
+            confirm()
+            verifyIssueStatusWasSuccessfullyChanged()
+            showResolvedIssues()
+            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+            showResolvedIssues()
 
             // Power Save Mode Test
-            clickPowerSaveMode(this)
-            openFile(this, "src/main/java/foo/Bar.java", "Bar.java")
+            clickPowerSaveMode()
+            openFile("src/main/java/foo/Bar.java", "Bar.java")
             verifyCurrentFileTabContainsMessages(
-                this,
                 "No analysis done on the current opened file",
                 "This file is not automatically analyzed because power save mode is enabled"
             )
-            clickPowerSaveMode(this)
+            clickPowerSaveMode()
         }
     }
 
@@ -322,47 +315,42 @@ class AllUiTests : BaseUiTest() {
 
         @Test
         fun should_focus_on_new_code_in_each_tabs_then_should_find_taint_vulnerability_in_connected_mode() = uiTest {
-            openExistingProject(this, "sample-java-taint-vulnerability", true)
+            openExistingProject("sample-java-taint-vulnerability", true)
 
             // Focus On New Code Test
-            enableConnectedModeFromTaintPanel(this, TAINT_VULNERABILITY_PROJECT_KEY, true)
-            openFile(this, "src/main/java/foo/FileWithSink.java", "FileWithSink.java")
-            setFocusOnNewCode(this)
+            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, true)
+            openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+            setFocusOnNewCode()
             analyzeAndVerifyReportTabContainsMessages(
-                this,
                 "Found 2 new issues in 1 file from last 1 days",
                 "No older issues",
                 "Found 1 new Security Hotspot in 1 file from last 1 days",
                 "No older Security Hotspots"
             )
             verifyTaintTabContainsMessages(
-                this,
                 "Found 1 new issue in 1 file from last 1 days",
                 "FileWithSink.java",
                 "Change this code to not construct SQL queries directly from user-controlled data.",
                 "No older issues"
             )
             verifySecurityHotspotTabContainsMessages(
-                this,
                 "Found 1 new Security Hotspot in 1 file from last 1 days",
                 "No older Security Hotspots"
             )
             verifyCurrentFileTabContainsMessages(
-                this,
                 "Found 2 new issues in 1 file from last 1 days",
                 "No older issues"
             )
-            setFocusOnNewCode(this)
+            setFocusOnNewCode()
 
             // Taint Vulnerability Test
             verifyTaintTabContainsMessages(
-                this,
                 "Found 1 issue in 1 file",
                 "FileWithSink.java",
                 "Change this code to not construct SQL queries directly from user-controlled data."
             )
-            enableConnectedModeFromTaintPanel(this, TAINT_VULNERABILITY_PROJECT_KEY, false)
-            verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
+            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false)
+            verifyTaintTabContainsMessages("The project is not bound to SonarQube/SonarCloud")
         }
 
     }

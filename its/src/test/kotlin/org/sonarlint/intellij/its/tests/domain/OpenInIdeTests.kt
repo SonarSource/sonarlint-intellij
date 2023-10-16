@@ -19,9 +19,9 @@
  */
 package org.sonarlint.intellij.its.tests.domain
 
-import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.utils.keyboard
 import org.assertj.core.api.Assertions.assertThat
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
@@ -35,8 +35,8 @@ import java.net.URL
 class OpenInIdeTests {
 
     companion object {
-        fun createConnection(robot: RemoteRobot, token: String) {
-            with(robot) {
+        fun createConnection(token: String) {
+            with(remoteRobot) {
                 idea {
                     dialog("Opening Security Hotspot...") {
                         button("Create connection").click()
@@ -59,8 +59,8 @@ class OpenInIdeTests {
             }
         }
 
-        fun bindRecentProject(robot: RemoteRobot) {
-            with(robot) {
+        fun bindRecentProject() {
+            with(remoteRobot) {
                 idea {
                     dialog("Opening Security Hotspot...") {
                         button("Select project").click()
@@ -83,22 +83,22 @@ class OpenInIdeTests {
             }
         }
 
-        fun verifyHotspotOpened(robot: RemoteRobot) {
-            verifyEditorOpened(robot)
-            verifyToolWindowFilled(robot)
-            verifySecurityHotspotRuleDescriptionTabContains(robot, "What's the risk?")
+        fun verifyHotspotOpened() {
+            verifyEditorOpened()
+            verifyToolWindowFilled()
+            verifySecurityHotspotRuleDescriptionTabContains("What's the risk?")
         }
 
-        fun verifyEditorOpened(robot: RemoteRobot) {
-            with(robot) {
+        private fun verifyEditorOpened() {
+            with(remoteRobot) {
                 idea {
                     editor("Foo.java")
                 }
             }
         }
 
-        fun verifyToolWindowFilled(robot: RemoteRobot) {
-            with(robot) {
+        private fun verifyToolWindowFilled() {
+            with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
                         tabTitleContains("Security Hotspots") {

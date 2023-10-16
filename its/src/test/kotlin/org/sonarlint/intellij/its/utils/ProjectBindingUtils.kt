@@ -19,22 +19,17 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
-import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.jPasswordField
-import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
-import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.tests.AllUiTests.Companion.MODULE_PROJECT_KEY
 import org.sonarlint.intellij.its.tests.AllUiTests.Companion.PROJECT_KEY
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.sonarLintGlobalSettings
@@ -43,47 +38,7 @@ import java.time.Duration
 class ProjectBindingUtils {
 
     companion object {
-        fun bindProjectToSonarQube(remoteRobot: RemoteRobot, serverUrl: String, token: String, projectKey: String) {
-            with(remoteRobot) {
-                idea {
-                    dialog("Project Settings") {
-                        checkBox("Bind project to SonarQube / SonarCloud").select()
-                        button("Configure the connection...").click()
-                        dialog("SonarLint") {
-                            actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
-                            dialog("New Connection: Server Details") {
-                                keyboard { enterText("Orchestrator") }
-                                jRadioButtons()[1].select()
-                                jbTextFields()[1].text = serverUrl
-                                button("Next").click()
-                            }
-                            dialog("New Connection: Authentication") {
-                                jPasswordField().text = token
-                                button("Next").click()
-                            }
-                            dialog("New Connection: Configure Notifications") {
-                                button("Next").click()
-                            }
-                            dialog("New Connection: Configuration completed") {
-                                pressFinishOrCreate()
-                            }
-                            button("OK").click()
-                        }
-                        comboBox("Connection:").click()
-                        remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                            waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
-                            findText("Orchestrator").click()
-                        }
-                        jbTextField().text = projectKey
-                        button("OK").click()
-                        // wait for binding fully established
-                        waitFor(Duration.ofSeconds(20)) { !isShowing }
-                    }
-                }
-            }
-        }
-
-        fun disableConnectedMode(remoteRobot: RemoteRobot) {
+        fun disableConnectedMode() {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
@@ -94,7 +49,7 @@ class ProjectBindingUtils {
             }
         }
 
-        fun enableConnectedMode(remoteRobot: RemoteRobot, projectKey: String) {
+        fun enableConnectedMode(projectKey: String) {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
@@ -114,7 +69,7 @@ class ProjectBindingUtils {
         }
 
         fun bindProjectAndModuleInFileSettings() {
-            sonarLintGlobalSettings(BaseUiTest.remoteRobot) {
+            sonarLintGlobalSettings {
                 tree {
                     clickPath("Tools", "SonarLint", "Project Settings")
                 }

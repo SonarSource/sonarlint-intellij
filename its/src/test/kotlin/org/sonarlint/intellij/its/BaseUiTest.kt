@@ -98,7 +98,7 @@ open class BaseUiTest {
         } finally {
             closeAllDialogs()
             optionalStep {
-                sonarlintLogPanel(remoteRobot) {
+                sonarlintLogPanel {
                     println("SonarLint log outputs:")
                     println(console().text)
                     toolBarButton("Clear SonarLint Console").click()
@@ -106,7 +106,7 @@ open class BaseUiTest {
             }
             if (remoteRobot.isCLion()) {
                 optionalStep {
-                    cmakePanel(remoteRobot) {
+                    cmakePanel {
                         println("CMake log outputs:")
                         findAllText { true }.forEach { println(it.text) }
                         toolBarButton("Clear All").click()
@@ -142,7 +142,7 @@ open class BaseUiTest {
         remoteRobot.runJs("com.intellij.diagnostic.MessagePool.getInstance().clearErrors()")
     }
 
-    private fun sonarlintLogPanel(remoteRobot: RemoteRobot, function: TabContentFixture.() -> Unit = {}) {
+    private fun sonarlintLogPanel(function: TabContentFixture.() -> Unit = {}) {
         with(remoteRobot) {
             idea {
                 toolWindow("SonarLint") {
@@ -156,7 +156,7 @@ open class BaseUiTest {
         }
     }
 
-    private fun cmakePanel(remoteRobot: RemoteRobot, function: TabContentFixture.() -> Unit = {}) {
+    private fun cmakePanel(function: TabContentFixture.() -> Unit = {}) {
         with(remoteRobot) {
             idea {
                 toolWindow("CMake") {
@@ -178,12 +178,12 @@ open class BaseUiTest {
     fun quitProject() {
         closeAllGotItTooltips()
         closeAllDialogs()
-        goBackToWelcomeScreen(remoteRobot)
+        goBackToWelcomeScreen()
     }
 
     @AfterEach
     fun disableConnectedMode() {
-        enableConnectedModeFromCurrentFilePanel(remoteRobot, null, false)
+        enableConnectedModeFromCurrentFilePanel(null, false)
     }
 
 }

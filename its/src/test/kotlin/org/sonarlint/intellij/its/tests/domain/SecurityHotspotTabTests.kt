@@ -19,9 +19,9 @@
  */
 package org.sonarlint.intellij.its.tests.domain
 
-import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.utils.waitFor
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
@@ -33,8 +33,7 @@ import java.time.Duration
 class SecurityHotspotTabTests {
 
     companion object {
-
-        fun openSecurityHotspotReviewDialogFromList(remoteRobot: RemoteRobot, securityHotspotMessage: String) {
+        fun openSecurityHotspotReviewDialogFromList(securityHotspotMessage: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -51,7 +50,7 @@ class SecurityHotspotTabTests {
             }
         }
 
-        fun changeSecurityHotspotStatusAndPressChange(remoteRobot: RemoteRobot, status: String) {
+        fun changeSecurityHotspotStatusAndPressChange(status: String) {
             with(remoteRobot) {
                 idea {
                     dialog("Change Security Hotspot Status on SonarQube") {
@@ -64,7 +63,7 @@ class SecurityHotspotTabTests {
             }
         }
 
-        fun verifySecurityHotspotStatusWasSuccessfullyChanged(remoteRobot: RemoteRobot) {
+        fun verifySecurityHotspotStatusWasSuccessfullyChanged() {
             with(remoteRobot) {
                 idea {
                     notification("The Security Hotspot status was successfully updated")
@@ -77,35 +76,35 @@ class SecurityHotspotTabTests {
             }
         }
 
-        fun verifySecurityHotspotTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+        fun verifySecurityHotspotTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
-                            expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
                 }
             }
         }
 
-        fun verifySecurityHotspotTreeContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+        fun verifySecurityHotspotTreeContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
-                            expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }
                     }
                 }
             }
         }
 
-        fun enableConnectedModeFromSecurityHotspotPanel(remoteRobot: RemoteRobot, projectKey: String, enabled: Boolean) {
+        fun enableConnectedModeFromSecurityHotspotPanel(projectKey: String, enabled: Boolean) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -116,15 +115,15 @@ class SecurityHotspotTabTests {
                         }
                     }
                     if (enabled) {
-                        enableConnectedMode(remoteRobot, projectKey)
+                        enableConnectedMode(projectKey)
                     } else {
-                        disableConnectedMode(remoteRobot)
+                        disableConnectedMode()
                     }
                 }
             }
         }
 
-        fun verifySecurityHotspotRuleDescriptionTabContains(remoteRobot: RemoteRobot, expectedMessage: String) {
+        fun verifySecurityHotspotRuleDescriptionTabContains(expectedMessage: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -138,7 +137,6 @@ class SecurityHotspotTabTests {
                 }
             }
         }
-
     }
 
 }

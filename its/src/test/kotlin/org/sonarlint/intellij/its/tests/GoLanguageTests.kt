@@ -33,12 +33,11 @@ class GoLanguageTests : BaseUiTest() {
 
     @Test
     fun should_analyze_go() = uiTest {
-        openExistingProject(remoteRobot, "sample-go")
+        openExistingProject("sample-go")
 
-        openFile(remoteRobot, "file.go")
+        openFile("file.go")
 
         verifyCurrentFileTabContainsMessages(
-            remoteRobot,
             "Found 1 issue in 1 file",
             "file.go",
             "Remove or correct this useless self-assignment."

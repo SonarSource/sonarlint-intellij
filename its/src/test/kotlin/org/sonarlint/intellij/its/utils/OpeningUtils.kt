@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.utils.waitFor
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.idea
@@ -34,7 +34,7 @@ import java.time.Duration
 class OpeningUtils {
 
     companion object {
-        fun openFile(remoteRobot: RemoteRobot, filePath: String, fileName: String = filePath) {
+        fun openFile(filePath: String, fileName: String = filePath) {
             with(remoteRobot) {
                 idea {
                     runJs(
@@ -55,7 +55,7 @@ class OpeningUtils {
             }
         }
 
-        fun openExistingProject(remoteRobot: RemoteRobot, projectName: String, isMaven: Boolean = false) {
+        fun openExistingProject(projectName: String, isMaven: Boolean = false) {
             copyProjectFiles(projectName)
             with(remoteRobot) {
                 welcomeFrame {
