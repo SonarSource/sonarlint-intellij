@@ -46,7 +46,7 @@ ec2_instance: &WINVM_DEFINITION
   platform: windows
   region: eu-central-1
   subnet_id: ${CIRRUS_AWS_SUBNET}
-  type: im4gn.2xlarge
+  type: t3.xlarge
 
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
@@ -118,6 +118,8 @@ validate_windows_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   ec2_instance:
     <<: *WINVM_DEFINITION
+    cpu: 8
+    memory: 16G
   <<: *SETUP_GRADLE_CACHE
   build_script: |
     source cirrus-env QA
