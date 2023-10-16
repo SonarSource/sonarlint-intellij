@@ -24,7 +24,7 @@ import org.sonarlint.intellij.analysis.AnalysisCallback
 import org.sonarlint.intellij.analysis.AnalysisIntermediateResult
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -53,7 +53,7 @@ class ShowFindingCallable<T: Finding>(private val project: Project, onTheFlyFind
 
     private fun showFinding() {
         runOnUiThread(project) {
-            val toolWindow = SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
+            val toolWindow = getService(project, SonarLintToolWindow::class.java)
             when (showFinding.type) {
                 LiveSecurityHotspot::class.java -> showSecurityHotspot(toolWindow)
                 LiveIssue::class.java -> showIssue(toolWindow)
@@ -68,7 +68,7 @@ class ShowFindingCallable<T: Finding>(private val project: Project, onTheFlyFind
         toolWindow.openSecurityHotspotsTab()
         toolWindow.bringToFront()
 
-        val found = SonarLintUtils.getService(project, SonarLintToolWindow::class.java).doesSecurityHotspotExist(showFinding.findingKey)
+        val found = getService(project, SonarLintToolWindow::class.java).doesSecurityHotspotExist(showFinding.findingKey)
         if (!found) {
             SonarLintProjectNotifications.get(project)
                 .notifyUnableToOpenFinding(
@@ -77,7 +77,7 @@ class ShowFindingCallable<T: Finding>(private val project: Project, onTheFlyFind
                 )
         } else {
             val selected =
-                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).trySelectSecurityHotspot(showFinding.findingKey)
+                getService(project, SonarLintToolWindow::class.java).trySelectSecurityHotspot(showFinding.findingKey)
             if (!selected) {
                 SonarLintProjectNotifications.get(project)
                     .notifyUnableToOpenFinding(
@@ -92,13 +92,13 @@ class ShowFindingCallable<T: Finding>(private val project: Project, onTheFlyFind
         toolWindow.openCurrentFileTab()
         toolWindow.bringToFront()
 
-        SonarLintUtils.getService(project, SonarLintToolWindow::class.java).getAndSelectIssue(showFinding)
+        getService(project, SonarLintToolWindow::class.java).trySelectIssue(showFinding)
     }
 
     private fun showTaintVulnerability(toolWindow: SonarLintToolWindow) {
         toolWindow.openTaintVulnerabilityTab()
         toolWindow.bringToFront()
 
-        SonarLintUtils.getService(project, SonarLintToolWindow::class.java).getAndSelectTaintVulnerability(showFinding)
+        getService(project, SonarLintToolWindow::class.java).trySelectTaintVulnerability(showFinding)
     }
 }

@@ -66,6 +66,7 @@ import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
@@ -306,23 +307,6 @@ object SonarLintIntelliJClient : SonarLintClient {
         }
         val showFinding = ShowFinding(project, ruleKey, findingKey, file, textRange, codeSnippet, flows, flowMessage, type)
         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(showFinding)
-    }
-
-    fun tryFindFile(project: Project, filePath: String): VirtualFile? {
-        for (contentRoot in ProjectRootManager.getInstance(project).contentRoots) {
-            if (contentRoot.isDirectory) {
-                val matchedFile = contentRoot.findFileByRelativePath(filePath)
-                if (matchedFile != null) {
-                    return matchedFile
-                }
-            } else {
-                // On Rider, all source files are returned as individual content roots, so simply check for equality
-                if (contentRoot.path.endsWith(filePath)) {
-                    return contentRoot
-                }
-            }
-        }
-        return null
     }
 
     private fun openFile(project: Project, file: VirtualFile, line: Int) {

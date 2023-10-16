@@ -59,7 +59,7 @@ public final class SonarLintProjectNotifications {
 
   private Notification currentOpenFindingNotification;
 
-  private SonarLintProjectNotifications(Project project) {
+  public SonarLintProjectNotifications(Project project) {
     this.myProject = project;
   }
 

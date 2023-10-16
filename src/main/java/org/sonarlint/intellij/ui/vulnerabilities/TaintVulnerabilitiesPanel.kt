@@ -313,11 +313,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         currentStatus?.let { populateTrees(it) }
     }
 
-    fun doesTaintExist(taintKey: String): LocalTaintVulnerability? {
-        val issue = treeBuilder.findTaintByKey(taintKey)?.let {
-            oldTreeBuilder.findTaintByKey(taintKey)
-        }
-        return issue
+    fun findTaintVulnerabilityByKey(taintKey: String): LocalTaintVulnerability? {
+        return treeBuilder.findTaintByKey(taintKey) ?: oldTreeBuilder.findTaintByKey(taintKey)
     }
 
     fun <T: Finding> trySelectFilteredTaintVulnerability(taintVulnerability: LocalTaintVulnerability?, showFinding: ShowFinding<T>) {
@@ -337,7 +334,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         }
         if (rangeMarker == null) {
             SonarLintProjectNotifications.get(project)
-                .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarLint in the current code.")
+                .notifyUnableToOpenFinding("taint vulnerability", "The taint vulnerability could not be detected by SonarLint in the current code.")
             return
         }
         ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(showFinding.file)?.let {

@@ -335,7 +335,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     return false;
   }
 
-  public <T extends Finding> void getAndSelectIssue(ShowFinding<T> showFinding) {
+  public <T extends Finding> void trySelectIssue(ShowFinding<T> showFinding) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
@@ -348,13 +348,13 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     }
   }
 
-  public <T extends Finding> void getAndSelectTaintVulnerability(ShowFinding<T> showFinding) {
+  public <T extends Finding> void trySelectTaintVulnerability(ShowFinding<T> showFinding) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var taintContent = getTaintVulnerabilitiesContent();
       if (taintContent != null) {
         var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-        var taint = taintPanel.doesTaintExist(showFinding.getFindingKey());
+        var taint = taintPanel.findTaintVulnerabilityByKey(showFinding.getFindingKey());
         taintPanel.trySelectFilteredTaintVulnerability(taint, showFinding);
       }
     }
