@@ -39,11 +39,11 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
+import java.awt.BorderLayout
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_ADDITION
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_REMOVAL
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
-import java.awt.BorderLayout
 
 
 class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, private val codeExampleFragment: CodeExampleFragment) :
@@ -74,6 +74,8 @@ class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, 
         settings.isRightMarginShown = false
         settings.isCaretRowShown = false
         settings.isLineNumbersShown = false
+        settings.isVirtualSpace = false
+        settings.isAdditionalPageAtBottom = false
         editor.setCaretEnabled(false)
         editor.contextMenuGroupId = null
 
