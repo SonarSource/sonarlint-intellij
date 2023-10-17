@@ -10,7 +10,7 @@ env:
   BURGR_PASSWORD: VAULT[development/kv/data/burgr data.cirrus_password]
   SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
   SONAR_TOKEN: VAULT[development/kv/data/next data.token]
-  GRADLE_VERSION: "7.6"
+  GRADLE_VERSION: "7.6.3"
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
 
 auto_cancellation: $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
@@ -159,13 +159,13 @@ qa_task:
     variable_name: GOLAND_KEY
   matrix:
     - env:
-        IDEA_VERSION: 'IC-2021.3.3'
+        IDEA_VERSION: 'IC-2022.3'
         QA_CATEGORY: 'Idea2021'
     - env:
-        IDEA_VERSION: 'CL-2021.3.3'
+        IDEA_VERSION: 'CL-2022.3'
         QA_CATEGORY: 'CLion2021'
     - env:
-        IDEA_VERSION: 'GO-2021.3.3'
+        IDEA_VERSION: 'GO-2022.3'
         QA_CATEGORY: 'GoLand2021'
     - env:
         IDEA_VERSION: 'IC-2023.2.1'
