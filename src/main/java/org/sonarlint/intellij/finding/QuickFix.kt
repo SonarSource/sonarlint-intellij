@@ -89,6 +89,19 @@ data class QuickFix(val message: String, val virtualFileEdits: List<VirtualFileE
     fun isApplicable() =
         !applied && virtualFileEdits.all { it.target.isValid && it.edits.all { e -> e.rangeMarker.isValid } }
 
+    fun isWithinBounds(document: Document): Boolean {
+        return virtualFileEdits.flatMap { it.edits }.all { (rangeMarker, _) ->
+            val startOffsetInBound = rangeMarker.startOffset >= 0 && rangeMarker.startOffset <= document.textLength
+            val endOffsetInBound = rangeMarker.endOffset >= 0 && rangeMarker.endOffset <= document.textLength
+
+            return if (startOffsetInBound && endOffsetInBound) {
+                rangeMarker.endOffset >= rangeMarker.startOffset
+            } else {
+                false
+            }
+        }
+    }
+
     fun isSingleFile(): Boolean {
         return this.virtualFileEdits.stream().map(VirtualFileEdit::target).collect(Collectors.toSet()).size == 1
     }

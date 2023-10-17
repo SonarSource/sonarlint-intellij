@@ -63,7 +63,7 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
      *  interacting with the telemetry.
      */
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
-        if (!fix.isApplicable()) {
+        if (!fix.isApplicable() || !fix.isWithinBounds(editor.document)) {
             // the editor could have changed between the isAvailable and invoke calls
             return
         }
