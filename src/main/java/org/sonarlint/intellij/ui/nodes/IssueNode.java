@@ -25,9 +25,11 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.UIUtil;
 import java.util.Locale;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.tracking.Trackable;
@@ -51,8 +53,13 @@ public class IssueNode extends FindingNode {
 
   @Override
   public void render(TreeCellRenderer renderer) {
+    var project = issue.psiFile().getProject();
+    Optional<ServerConnection> serverConnection = Optional.empty();
+    if (!project.isDisposed()) {
+      serverConnection = getService(issue.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
+    }
+
     var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
-    var serverConnection = getService(issue.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
     var highestQuality = issue.getHighestQuality();
     var highestImpact = issue.getHighestImpact();
 
