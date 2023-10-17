@@ -23,6 +23,7 @@ import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import org.apache.commons.codec.digest.DigestUtils
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import java.nio.file.Paths
 import java.util.regex.Pattern
 
@@ -40,7 +41,7 @@ fun resolvedLocation(file: VirtualFile?, range: RangeMarker?, message: String?, 
 
 data class Location(val file: VirtualFile?, val range: RangeMarker?, val message: String?, val originalFileName: String? = null, val textRangeHash: String?) {
   fun exists() = file != null && file.isValid && range != null && range.isValid && range.startOffset != range.endOffset
-  fun codeMatches() = exists() && (textRangeHash == null || textRangeHash == hash(range!!.document.getText(range.range)))
+  fun codeMatches() = exists() && (textRangeHash == null || textRangeHash == computeReadActionSafely { hash(range!!.document.getText(range.range)) })
 }
 
 private val MATCH_ALL_WHITESPACES = Pattern.compile("\\s")

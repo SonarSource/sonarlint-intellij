@@ -92,17 +92,24 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
 
     if (range != null) {
-      var document = range.getDocument();
-      var lineContent = document.getText(new TextRange(range.getStartOffset(), range.getEndOffset()));
-      this.textRangeHash = checksum(lineContent);
-      this.textRangeHashString = md5Hex(lineContent.replaceAll("[\\s]", ""));
+      var document = computeReadActionSafely(psiFile, range::getDocument);
+      if (document != null) {
+        var lineContent = document.getText(new TextRange(range.getStartOffset(), range.getEndOffset()));
+        this.textRangeHash = checksum(lineContent);
+        this.textRangeHashString = md5Hex(lineContent.replaceAll("[\\s]", ""));
 
-      var line = document.getLineNumber(range.getStartOffset());
-      var lineStartOffset = document.getLineStartOffset(line);
-      var lineEndOffset = document.getLineEndOffset(line);
-      var rangeContent = document.getText(new TextRange(lineStartOffset, lineEndOffset));
-      this.lineHash = checksum(rangeContent);
-      this.lineHashString = md5Hex(rangeContent.replaceAll("[\\s]", ""));
+        var line = document.getLineNumber(range.getStartOffset());
+        var lineStartOffset = document.getLineStartOffset(line);
+        var lineEndOffset = document.getLineEndOffset(line);
+        var rangeContent = document.getText(new TextRange(lineStartOffset, lineEndOffset));
+        this.lineHash = checksum(rangeContent);
+        this.lineHashString = md5Hex(rangeContent.replaceAll("[\\s]", ""));
+      } else {
+        this.textRangeHash = null;
+        this.textRangeHashString = null;
+        this.lineHash = null;
+        this.lineHashString = null;
+      }
     } else {
       this.textRangeHash = null;
       this.textRangeHashString = null;
@@ -132,11 +139,11 @@ public abstract class LiveFinding implements Trackable, Finding {
 
   @Override
   public boolean isValid() {
-    if (!psiFile.isValid()) {
+    if (Boolean.TRUE.equals(computeReadActionSafely(psiFile, psiFile::isValid))) {
+      return range == null || range.isValid();
+    } else {
       return false;
     }
-
-    return range == null || range.isValid();
   }
 
   @Override
@@ -193,23 +200,28 @@ public abstract class LiveFinding implements Trackable, Finding {
 
   @CheckForNull
   public static TextRange toValidTextRange(@Nullable PsiFile psiFile, @Nullable RangeMarker rangeMarker) {
-    if (psiFile == null || !psiFile.isValid()) {
+    if (psiFile == null) {
       return null;
     }
-    if (rangeMarker == null) {
-      return psiFile.getTextRange();
-    }
-    if (rangeMarker.isValid()) {
-      var startOffset = rangeMarker.getStartOffset();
-      var endOffset = rangeMarker.getEndOffset();
-      if (startOffset < endOffset && startOffset >= 0) {
-        var textRange = new TextRange(startOffset, endOffset);
-        if (psiFile.getTextRange().contains(textRange)) {
-          return textRange;
+    return computeReadActionSafely(psiFile, () -> {
+      if (!psiFile.isValid()) {
+        return null;
+      }
+      if (rangeMarker == null) {
+        return psiFile.getTextRange();
+      }
+      if (rangeMarker.isValid()) {
+        var startOffset = rangeMarker.getStartOffset();
+        var endOffset = rangeMarker.getEndOffset();
+        if (startOffset < endOffset && startOffset >= 0) {
+          var textRange = new TextRange(startOffset, endOffset);
+          if (psiFile.getTextRange().contains(textRange)) {
+            return textRange;
+          }
         }
       }
-    }
-    return null;
+      return null;
+    });
   }
 
   public PsiFile psiFile() {
