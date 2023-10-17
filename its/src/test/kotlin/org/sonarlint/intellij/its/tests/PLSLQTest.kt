@@ -52,6 +52,11 @@ class PLSQLTest : BaseUiTest() {
         verifyCurrentFileTabContainsMessages("No issues to display")
 
         enableConnectedModeFromCurrentFilePanel(PLSQL_PROJECT_KEY, true)
+
+        idea {
+            waitBackgroundTasksFinished()
+        }
+        
         verifyIssueTreeContainsMessages()
     }
 
