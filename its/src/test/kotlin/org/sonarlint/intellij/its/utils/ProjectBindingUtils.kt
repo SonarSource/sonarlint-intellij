@@ -21,47 +21,39 @@ package org.sonarlint.intellij.its.utils
 
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
+import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
-import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.jPasswordField
-import org.sonarlint.intellij.its.fixtures.jRadioButtons
+import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
-import org.sonarlint.intellij.its.fixtures.jbTextFields
+import org.sonarlint.intellij.its.tests.IdeaTests.Companion.MODULE_PROJECT_KEY
+import org.sonarlint.intellij.its.tests.IdeaTests.Companion.PROJECT_KEY
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.sonarLintGlobalSettings
 import java.time.Duration
 
 class ProjectBindingUtils {
+
     companion object {
-        fun bindProjectToSonarQube(serverUrl: String, token: String, projectKey: String) {
-            with(BaseUiTest.remoteRobot) {
+        fun disableConnectedMode() {
+            with(remoteRobot) {
+                idea {
+                    dialog("Project Settings") {
+                        checkBox("Bind project to SonarQube / SonarCloud").unselect()
+                        button("OK").click()
+                    }
+                }
+            }
+        }
+
+        fun enableConnectedMode(projectKey: String) {
+            with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
                         checkBox("Bind project to SonarQube / SonarCloud").select()
-                        button("Configure the connection...").click()
-                        dialog("SonarLint") {
-                            actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
-                            dialog("New Connection: Server Details") {
-                                keyboard { enterText("Orchestrator") }
-                                jRadioButtons()[1].select()
-                                jbTextFields()[1].text = serverUrl
-                                button("Next").click()
-                            }
-                            dialog("New Connection: Authentication") {
-                                jPasswordField().text = token
-                                button("Next").click()
-                            }
-                            dialog("New Connection: Configure Notifications") {
-                                button("Next").click()
-                            }
-                            dialog("New Connection: Configuration completed") {
-                                pressFinishOrCreate()
-                            }
-                            button("OK").click()
-                        }
                         comboBox("Connection:").click()
                         remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
                             waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
@@ -75,5 +67,44 @@ class ProjectBindingUtils {
                 }
             }
         }
+
+        fun bindProjectAndModuleInFileSettings() {
+            sonarLintGlobalSettings {
+                tree {
+                    clickPath("Tools", "SonarLint", "Project Settings")
+                }
+                checkBox("Bind project to SonarQube / SonarCloud").select()
+                pressOk()
+                errorMessage("Connection should not be empty")
+
+                comboBox("Connection:").click()
+                remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
+                    waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
+                    findText("Orchestrator").click()
+                }
+                pressOk()
+                errorMessage("Project key should not be empty")
+
+                jbTextField().text = PROJECT_KEY
+
+                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
+                dialog("Select module") {
+                    jbTable().selectItemContaining("sample-scala-module")
+                    pressOk()
+                }
+
+                pressOk()
+                errorMessage("Project key for module 'sample-scala-module' should not be empty")
+                buttons(JButtonFixture.byText("Search in list..."))[1].click()
+                dialog("Select SonarQube Project To Bind") {
+                    jList {
+                        clickItem(MODULE_PROJECT_KEY, false)
+                    }
+                    pressOk()
+                }
+                pressOk()
+            }
+        }
     }
+
 }

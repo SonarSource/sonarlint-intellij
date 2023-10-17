@@ -17,19 +17,29 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.utils
+package org.sonarlint.intellij.its.tests.domain
 
-import com.intellij.remoterobot.stepsProcessing.StepLogger
-import com.intellij.remoterobot.stepsProcessing.StepWorker
+import org.assertj.core.api.Assertions.assertThat
+import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
+import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 
-object StepsLogger {
-    private var initialized = false
+class ReportTabTests {
 
-    @JvmStatic
-    fun init() = synchronized(initialized) {
-        if (initialized.not()) {
-            StepWorker.registerProcessor(StepLogger())
-            initialized = true
+    companion object {
+        fun analyzeAndVerifyReportTabContainsMessages(vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    analyzeFile()
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        content("ReportPanel") {
+                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
+                        }
+                    }
+                }
+            }
         }
     }
+
 }

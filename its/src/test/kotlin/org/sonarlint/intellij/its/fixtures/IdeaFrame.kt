@@ -97,7 +97,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
 
   fun waitBackgroundTasksFinished() {
     println("Check background tasks")
-    waitFor(Duration.ofMinutes(5), Duration.ofSeconds(2), "Some background tasks are still running") {
+    waitFor(Duration.ofMinutes(5), Duration.ofSeconds(1), "Some background tasks are still running") {
       !isBackgroundTaskRunning()
     }
     println("Check background tasks - done")

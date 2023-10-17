@@ -24,6 +24,7 @@ import com.sonar.orchestrator.build.SonarScanner
 import com.sonar.orchestrator.container.Server
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.junit5.OrchestratorExtensionBuilder
+import org.sonarlint.intellij.its.utils.ItUtils.SONAR_VERSION
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
@@ -32,6 +33,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
 
 class OrchestratorUtils {
+
     companion object {
         private const val SONARLINT_USER = "sonarlint"
         private const val SONARLINT_PWD = "sonarlintpwd"
@@ -40,7 +42,7 @@ class OrchestratorUtils {
             return OrchestratorExtension.builderEnv()
                 .defaultForceAuthentication()
                 .useDefaultAdminCredentialsForBuilds(true)
-                .setSonarVersion(ItUtils.SONAR_VERSION)
+                .setSonarVersion(SONAR_VERSION)
         }
 
         fun newAdminWsClientWithUser(server: Server): WsClient {
@@ -80,4 +82,5 @@ class OrchestratorUtils {
             return wsClient.userTokens().generate(generateRequest).token
         }
     }
+
 }

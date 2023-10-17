@@ -1,0 +1,354 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015-2023 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
+package org.sonarlint.intellij.its.tests
+
+import com.google.protobuf.InvalidProtocolBufferException
+import com.sonar.orchestrator.container.Edition
+import com.sonar.orchestrator.http.HttpMethod
+import com.sonar.orchestrator.junit5.OrchestratorExtension
+import com.sonar.orchestrator.locator.FileLocation
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.condition.DisabledIf
+import org.junit.jupiter.api.extension.RegisterExtension
+import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusAndPressChange
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.clickCurrentFileIssue
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileRuleDescriptionTabContains
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileShowsCard
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.bindRecentProject
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyHotspotOpened
+import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.changeSecurityHotspotStatusAndPressChange
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.enableConnectedModeFromSecurityHotspotPanel
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.openSecurityHotspotReviewDialogFromList
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
+import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
+import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
+import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
+import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.showResolvedIssues
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectAndModuleInFileSettings
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
+import org.sonarqube.ws.client.WsClient
+import org.sonarqube.ws.client.issues.DoTransitionRequest
+import org.sonarqube.ws.client.issues.SearchRequest
+import org.sonarqube.ws.client.settings.SetRequest
+
+@DisabledIf("isCLionOrGoLand")
+class IdeaTests : BaseUiTest() {
+
+    companion object {
+        @JvmField
+        @RegisterExtension
+        val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
+            .setEdition(Edition.DEVELOPER)
+            .activateLicense()
+            .addBundledPluginToKeep("sonar-java")
+            .addBundledPluginToKeep("sonar-security")
+            .addBundledPluginToKeep("sonar-scala")
+            .addBundledPluginToKeep("sonar-php")
+            .addBundledPluginToKeep("sonar-python")
+            .build()
+
+        private lateinit var adminWsClient: WsClient
+
+        const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
+        const val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
+        const val PROJECT_KEY = "sample-scala"
+        const val MODULE_PROJECT_KEY = "sample-scala-mod"
+        const val ISSUE_PROJECT_KEY = "sample-java-issues"
+
+        private var firstHotspotKey: String? = null
+        lateinit var token: String
+
+        @Throws(InvalidProtocolBufferException::class)
+        private fun getFirstHotspotKey(client: WsClient): String? {
+            val searchRequest = org.sonarqube.ws.client.hotspots.SearchRequest()
+            searchRequest.projectKey = SECURITY_HOTSPOT_PROJECT_KEY
+            val searchResults = client.hotspots().search(searchRequest)
+            val hotspot = searchResults.hotspotsList[0]
+            return hotspot.key
+        }
+
+        @JvmStatic
+        @BeforeAll
+        fun createSonarLintUser() {
+            adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
+            token = generateToken(adminWsClient, "sonarlintUser")
+
+            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, token)
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class SampleJavaHotspotTests : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
+
+            ORCHESTRATOR.server.provisionProject(SECURITY_HOTSPOT_PROJECT_KEY, "Sample Java")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(SECURITY_HOTSPOT_PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
+
+            // Build and analyze project to raise hotspot
+            executeBuildWithMaven("projects/sample-java-hotspot/pom.xml", ORCHESTRATOR)
+
+            firstHotspotKey = getFirstHotspotKey(adminWsClient)
+        }
+
+        @Test
+        fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
+            clearConnections()
+            openExistingProject("sample-java-hotspot", true)
+
+            // Open In Ide Security Hotspot Test
+            triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
+            createConnection(token)
+            bindRecentProject()
+            verifyHotspotOpened()
+
+            // Should Propose To Bind
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, false)
+            verifySecurityHotspotTabContainsMessages("The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
+
+            // Review Security Hotspot Test
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, true)
+            verifySecurityHotspotTreeContainsMessages("Make sure using this hardcoded IP address is safe here.")
+            openSecurityHotspotReviewDialogFromList("Make sure using this hardcoded IP address is safe here.")
+            changeSecurityHotspotStatusAndPressChange("Fixed")
+            verifySecurityHotspotStatusWasSuccessfullyChanged()
+        }
+
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class SampleScalaTests : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))
+
+            ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
+            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
+
+            val excludeFileRequest = SetRequest()
+            excludeFileRequest.key = "sonar.exclusions"
+            excludeFileRequest.component = MODULE_PROJECT_KEY
+            excludeFileRequest.values = listOf("src/Excluded.scala")
+            adminWsClient.settings().set(excludeFileRequest)
+
+            executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY)
+            executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY)
+
+            val searchRequest = SearchRequest()
+            searchRequest.s = "FILE_LINE"
+            searchRequest.projects = listOf(MODULE_PROJECT_KEY)
+            val response = adminWsClient.issues().search(searchRequest)
+            val firstIssueKey = response.issuesList[0].key
+            adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
+        }
+
+        @Test
+        fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
+            // Scala should only be supported in connected mode
+            openExistingProject("sample-scala", true)
+            verifyCurrentFileShowsCard("EmptyCard")
+
+            openFile("HelloProject.scala")
+            verifyCurrentFileShowsCard("NotConnectedCard")
+
+            bindProjectAndModuleInFileSettings()
+            // Wait for re-analysis to happen
+            with(this) {
+                idea {
+                    waitBackgroundTasksFinished()
+                }
+            }
+            verifyCurrentFileShowsCard("ConnectedCard")
+            verifyCurrentFileTabContainsMessages(
+                "Found 1 issue in 1 file",
+                "HelloProject.scala",
+            )
+            clickCurrentFileIssue("Remove or correct this useless self-assignment.")
+            verifyCurrentFileRuleDescriptionTabContains("Variables should not be self-assigned")
+
+            openFile("mod/src/HelloModule.scala", "HelloModule.scala")
+
+            verifyCurrentFileTabContainsMessages(
+                "Found 1 issue in 1 file",
+                "HelloModule.scala",
+            )
+            clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
+            verifyCurrentFileRuleDescriptionTabContains("Methods should not be empty")
+
+            openFile("mod/src/Excluded.scala", "Excluded.scala")
+            verifyCurrentFileTabContainsMessages(
+                "No analysis done on the current opened file",
+                "This file is not automatically analyzed",
+            )
+        }
+
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class SampleJavaIssuesTests : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-issue.xml"))
+
+            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "Sample Java Issues")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                ISSUE_PROJECT_KEY,
+                "java",
+                "SonarLint IT Java Issue"
+            )
+
+            // Build and analyze project to raise issue
+            executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR)
+        }
+
+        @Test
+        fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
+            openExistingProject("sample-java-issues")
+
+            // Issue Analysis Test
+            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true)
+            openFile("src/main/java/foo/Foo.java", "Foo.java")
+            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+
+            // Issue Reviewing Test
+            openIssueReviewDialogFromList("Move this trailing comment on the previous empty line.")
+            changeStatusAndPressChange("False Positive")
+            confirm()
+            verifyIssueStatusWasSuccessfullyChanged()
+            showResolvedIssues()
+            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+            showResolvedIssues()
+
+            // Power Save Mode Test
+            clickPowerSaveMode()
+            openFile("src/main/java/foo/Bar.java", "Bar.java")
+            verifyCurrentFileTabContainsMessages(
+                "No analysis done on the current opened file",
+                "This file is not automatically analyzed because power save mode is enabled"
+            )
+            clickPowerSaveMode()
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class SampleJavaTaintVulnerabilityTests : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-taint-hotspot-issue.xml"))
+
+            ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                TAINT_VULNERABILITY_PROJECT_KEY,
+                "java",
+                "SonarLint IT Java Taint Hotspot Issue"
+            )
+            ORCHESTRATOR.server.newHttpCall("/api/new_code_periods/set")
+                .setMethod(HttpMethod.POST)
+                .setAdminCredentials()
+                .setParam("type", "NUMBER_OF_DAYS")
+                .setParam("value", 1.toString())
+                .execute()
+
+            // Build and analyze project to raise hotspot
+            executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
+
+            // Analyze a second time for the measure to be returned by the web API
+            executeBuildWithMaven("projects/sample-java-taint-vulnerability/pom.xml", ORCHESTRATOR)
+        }
+
+        @Test
+        fun should_focus_on_new_code_in_each_tabs_then_should_find_taint_vulnerability_in_connected_mode() = uiTest {
+            openExistingProject("sample-java-taint-vulnerability", true)
+
+            // Focus On New Code Test
+            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, true)
+            openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+            setFocusOnNewCode()
+            analyzeAndVerifyReportTabContainsMessages(
+                "Found 2 new issues in 1 file from last 1 days",
+                "No older issues",
+                "Found 1 new Security Hotspot in 1 file from last 1 days",
+                "No older Security Hotspots"
+            )
+            verifyTaintTabContainsMessages(
+                "Found 1 new issue in 1 file from last 1 days",
+                "FileWithSink.java",
+                "Change this code to not construct SQL queries directly from user-controlled data.",
+                "No older issues"
+            )
+            verifySecurityHotspotTabContainsMessages(
+                "Found 1 new Security Hotspot in 1 file from last 1 days",
+                "No older Security Hotspots"
+            )
+            verifyCurrentFileTabContainsMessages(
+                "Found 2 new issues in 1 file from last 1 days",
+                "No older issues"
+            )
+            setFocusOnNewCode()
+
+            // Taint Vulnerability Test
+            verifyTaintTabContainsMessages(
+                "Found 1 issue in 1 file",
+                "FileWithSink.java",
+                "Change this code to not construct SQL queries directly from user-controlled data."
+            )
+            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false)
+            verifyTaintTabContainsMessages("The project is not bound to SonarQube/SonarCloud")
+        }
+
+    }
+
+}

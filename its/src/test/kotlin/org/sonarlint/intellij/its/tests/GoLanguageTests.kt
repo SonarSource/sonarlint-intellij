@@ -22,11 +22,15 @@ package org.sonarlint.intellij.its.tests
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 
 
 /** Tests for Go language support (not limited to GoLand) */
 @EnabledIf("isGoPlugin")
 class GoLanguageTests : BaseUiTest() {
+
     @Test
     fun should_analyze_go() = uiTest {
         openExistingProject("sample-go")
@@ -39,4 +43,5 @@ class GoLanguageTests : BaseUiTest() {
             "Remove or correct this useless self-assignment."
         )
     }
+
 }
