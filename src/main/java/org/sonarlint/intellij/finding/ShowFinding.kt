@@ -54,7 +54,7 @@ data class ShowFinding<T : Finding>(
                             resolvedLocation(file, rangeMarker, it.message, textRangeHashString)
                         } ?: fileOnlyLocation(file, it.message)
                     }
-                }.filter { it != null }.collect(Collectors.toList())
+                }.filter { it != null }.collect(Collectors.toList()).apply { reverse() }
             }.map { Flow(it) }.collect(Collectors.toList())
         }
 

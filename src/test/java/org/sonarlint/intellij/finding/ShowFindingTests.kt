@@ -19,10 +19,11 @@
  */
 package org.sonarlint.intellij.finding
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.finding.ShowFinding.Companion.handleFlows
 import org.sonarsource.sonarlint.core.clientapi.common.FlowDto
 import org.sonarsource.sonarlint.core.clientapi.common.LocationDto
 import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto
@@ -42,7 +43,7 @@ class ShowFindingTests : AbstractSonarLintLightTests() {
             )
         )
 
-        val flowsResult = ShowFinding.handleFlows(project, listFlowDto)
+        val flowsResult = handleFlows(project, listFlowDto)
 
         assertThat(flowsResult[0].locations).extracting(
             { it.file },
@@ -53,8 +54,8 @@ class ShowFindingTests : AbstractSonarLintLightTests() {
             { it.range?.document?.text },
             { it.textRangeHash },
         ).containsExactly(
-            Assertions.tuple(file.virtualFile, "msg", null, 0, 4, "Text", "9dffbf69ffba8bc38bc4e01abf4b1675"),
-            Assertions.tuple(file.virtualFile, "msg", null, null, null, null, null)
+            tuple(file.virtualFile, "msg", null, null, null, null, null),
+            tuple(file.virtualFile, "msg", null, 0, 4, "Text", "9dffbf69ffba8bc38bc4e01abf4b1675")
         )
     }
 
