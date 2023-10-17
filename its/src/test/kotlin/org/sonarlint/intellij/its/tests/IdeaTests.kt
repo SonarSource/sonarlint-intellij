@@ -73,7 +73,7 @@ import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
 
 @DisabledIf("isCLionOrGoLand")
-class AllUiTests : BaseUiTest() {
+class IdeaTests : BaseUiTest() {
 
     companion object {
         @JvmField
@@ -120,7 +120,6 @@ class AllUiTests : BaseUiTest() {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand", disabledReason = "No Java security hotspots in CLion or GoLand")
     inner class SampleJavaHotspotTests : BaseUiTest() {
 
         @BeforeAll
@@ -163,7 +162,6 @@ class AllUiTests : BaseUiTest() {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand")
     inner class SampleScalaTests : BaseUiTest() {
 
         @BeforeAll
@@ -237,7 +235,6 @@ class AllUiTests : BaseUiTest() {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
     inner class SampleJavaIssuesTests : BaseUiTest() {
 
         @BeforeAll
@@ -286,7 +283,6 @@ class AllUiTests : BaseUiTest() {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @DisabledIf("isCLionOrGoLand", disabledReason = "No Java Issues in CLion or GoLand")
     inner class SampleJavaTaintVulnerabilityTests : BaseUiTest() {
 
         @BeforeAll
