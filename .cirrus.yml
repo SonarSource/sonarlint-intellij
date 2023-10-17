@@ -24,7 +24,7 @@ only_main_branches: &ONLY_MAIN_BRANCHES
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && ($CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*")
 
 eks_container: &CONTAINER_DEFINITION
-  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-g7-latest
+  image: 460386131003.dkr.ecr.eu-central-1.amazonaws.com/base-pr-370:j11-g7-latest
   region: eu-central-1
   cluster_name: ${CIRRUS_CLUSTER_NAME}
   namespace: default
@@ -42,7 +42,7 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
 
 ec2_instance: &WINVM_DEFINITION
   experimental: true
-  image: base-windows-jdk17-v*
+  image: pr-370-base-windows-jdk17-v*
   platform: windows
   region: eu-central-1
   subnet_id: ${CIRRUS_AWS_SUBNET}
