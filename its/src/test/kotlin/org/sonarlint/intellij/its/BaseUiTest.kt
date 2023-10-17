@@ -171,10 +171,13 @@ open class BaseUiTest {
     }
 
     private fun closeAllGotItTooltips() {
-        remoteRobot.findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton()).forEach {
-            it.click()
-            // Quick hack because another Got It Tooltip might not be visible directly
-            Thread.sleep(500)
+        for (i in 0..1) {
+            remoteRobot.findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton()).forEach {
+                if (it.isShowing) {
+                    it.click()
+                }
+            }
+            Thread.sleep(200)
         }
     }
 
