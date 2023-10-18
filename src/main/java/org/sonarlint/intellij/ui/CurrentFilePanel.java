@@ -150,20 +150,20 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     disableEmptyDisplay(!issues.isEmpty());
 
     this.currentFile = file;
-    this.currentIssues = issues;
+    this.currentIssues = List.copyOf(issues);
     if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)) {
-      var oldIssues = issues.stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList());
-      var newIssues = issues.stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList());
+      var oldIssues = this.currentIssues.stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList());
+      var newIssues = this.currentIssues.stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList());
       populateSubTree(tree, treeBuilder, Map.of(file, newIssues));
       populateSubTree(oldTree, oldTreeBuilder, Map.of(file, oldIssues));
       oldTree.setVisible(true);
     } else {
-      populateSubTree(tree, treeBuilder, Map.of(file, issues));
+      populateSubTree(tree, treeBuilder, Map.of(file, this.currentIssues));
       populateSubTree(oldTree, oldTreeBuilder, Collections.emptyMap());
       oldTree.setVisible(false);
     }
     expandTree();
-    updateIcon(file, issues);
+    updateIcon(file, this.currentIssues);
   }
 
   private static void populateSubTree(Tree tree, IssueTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveIssue>> issues) {
