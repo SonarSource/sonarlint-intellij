@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -142,9 +141,9 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     data.put(file, issueList);
   }
 
-  private static LiveIssue mockIssuePointer(int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) {
-    var psiFile = mock(PsiFile.class);
-    when(psiFile.isValid()).thenReturn(true);
+  private LiveIssue mockIssuePointer(int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) {
+    var file = mock(VirtualFile.class);
+    when(file.isValid()).thenReturn(true);
 
     var issue = mock(Issue.class);
     when(issue.getRuleKey()).thenReturn(rule);
@@ -154,14 +153,14 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
 
-    var liveIssue = new LiveIssue(issue, psiFile, Collections.emptyList());
+    var liveIssue = new LiveIssue(getModule(), issue, file, Collections.emptyList());
     liveIssue.setIntroductionDate(introductionDate);
     return liveIssue;
   }
 
-  private static LiveIssue mockIssuePointer(int startOffset, String rule, Map<SoftwareQuality, ImpactSeverity> impacts, @Nullable Long introductionDate) {
-    var psiFile = mock(PsiFile.class);
-    when(psiFile.isValid()).thenReturn(true);
+  private LiveIssue mockIssuePointer(int startOffset, String rule, Map<SoftwareQuality, ImpactSeverity> impacts, @Nullable Long introductionDate) {
+    var file = mock(VirtualFile.class);
+    when(file.isValid()).thenReturn(true);
 
     var issue = mock(Issue.class);
     when(issue.getRuleKey()).thenReturn(rule);
@@ -172,7 +171,7 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
 
-    var liveIssue = new LiveIssue(issue, psiFile, Collections.emptyList());
+    var liveIssue = new LiveIssue(getModule(), issue, file, Collections.emptyList());
     liveIssue.setIntroductionDate(introductionDate);
     return liveIssue;
   }

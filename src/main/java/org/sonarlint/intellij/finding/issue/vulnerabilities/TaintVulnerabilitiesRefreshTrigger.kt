@@ -31,6 +31,7 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.getOpenFiles
+import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.PROJECT)
 class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
@@ -53,8 +54,10 @@ class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
         }
       })
       subscribe(VcsListener.TOPIC, VcsListener { module, _ ->
-        if (project.getOpenFiles().any { module == findModuleForFile(it, project) }) {
-          triggerRefresh()
+        runOnPooledThread(project) {
+          if (project.getOpenFiles().any { module == findModuleForFile(it, project) }) {
+            triggerRefresh()
+          }
         }
       })
     }

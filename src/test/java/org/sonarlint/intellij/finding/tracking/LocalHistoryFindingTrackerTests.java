@@ -23,7 +23,6 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -131,8 +130,8 @@ class LocalHistoryFindingTrackerTests extends AbstractSonarLintLightTests {
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
-    var psiFile = mock(PsiFile.class);
-    when(psiFile.isValid()).thenReturn(true);
-    return new LiveIssue(issue, psiFile, range, null, Collections.emptyList());
+    var file = mock(VirtualFile.class);
+    when(file.isValid()).thenReturn(true);
+    return new LiveIssue(getModule(), issue, file, range, null, Collections.emptyList());
   }
 }

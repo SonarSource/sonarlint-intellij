@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.finding.issue;
 
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -34,12 +36,12 @@ public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.fin
 
   private RuleType type;
 
-  public LiveIssue(Issue issue, PsiFile psiFile, List<QuickFix> quickFixes) {
-    this(issue, psiFile, null, null, quickFixes);
+  public LiveIssue(Module module, Issue issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
+    this(module, issue, virtualFile, null, null, quickFixes);
   }
 
-  public LiveIssue(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
-    super(issue, psiFile, range, context, quickFixes);
+  public LiveIssue(Module module, Issue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
+    super(module, issue, virtualFile, range, context, quickFixes);
     this.type = issue.getType();
   }
 

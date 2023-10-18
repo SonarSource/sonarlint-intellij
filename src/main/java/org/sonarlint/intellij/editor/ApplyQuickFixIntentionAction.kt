@@ -30,13 +30,11 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
-import com.intellij.psi.util.PsiTreeUtil
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.finding.QuickFix
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 
-class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKey: String,
-                                   private val file: PsiFile, private val invokedInPreview: Boolean) : IntentionAction, PriorityAction, Iconable {
+class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKey: String, private val invokedInPreview: Boolean) : IntentionAction, PriorityAction, Iconable {
     override fun getText() = "SonarLint: " + fix.message
     override fun getFamilyName() = "SonarLint quick fix"
     override fun startInWriteAction() = true
@@ -54,7 +52,7 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
      *  we have to link the Psi of the actual file to the virtual one.
      */
     override fun getFileModifierForPreview(target: PsiFile): FileModifier {
-        return ApplyQuickFixIntentionAction(fix, ruleKey, PsiTreeUtil.findSameElementInCopy(file, target), true)
+        return ApplyQuickFixIntentionAction(fix, ruleKey, true)
     }
 
     /**

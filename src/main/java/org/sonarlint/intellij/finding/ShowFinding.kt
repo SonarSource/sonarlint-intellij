@@ -19,16 +19,18 @@
  */
 package org.sonarlint.intellij.finding
 
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.util.stream.Collectors
 import org.apache.commons.codec.digest.DigestUtils
 import org.sonarlint.intellij.common.ui.ReadActionUtils
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarsource.sonarlint.core.clientapi.common.FlowDto
 import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto
-import java.util.stream.Collectors
 
 data class ShowFinding<T : Finding>(
+    val module: Module,
     val ruleKey: String,
     val findingKey: String,
     val file: VirtualFile,
@@ -59,10 +61,5 @@ data class ShowFinding<T : Finding>(
         }
 
     }
-
-    constructor(
-        project: Project, ruleKey: String, findingKey: String, file: VirtualFile, textRange: TextRangeDto,
-        codeSnippet: String?, flows: List<FlowDto>, flowMessage: String, type: Class<T>,
-    ) : this(ruleKey, findingKey, file, textRange, codeSnippet, handleFlows(project, flows), flowMessage, type)
 
 }

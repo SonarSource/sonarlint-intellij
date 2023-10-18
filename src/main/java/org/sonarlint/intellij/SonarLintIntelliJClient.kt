@@ -41,6 +41,16 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.URI
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
@@ -67,6 +77,7 @@ import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
@@ -113,16 +124,6 @@ import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotRaisedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.ServerHotspotEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
-import java.io.ByteArrayInputStream
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.URI
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
 
 object SonarLintIntelliJClient : SonarLintClient {
 
@@ -198,6 +199,7 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     private fun findProject(configScopeId: String): Project? {
+        // XXX modules?
         return ProjectManager.getInstance().openProjects.find { configScopeId == BackendService.projectId(it) }
     }
 
@@ -283,13 +285,9 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun showIssue(params: ShowIssueParams) {
-        if (params.isTaint) {
-            showFinding(params.configScopeId, params.serverRelativeFilePath,
-                params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, LocalTaintVulnerability::class.java, params.flows, params.message)
-        } else {
-            showFinding(params.configScopeId, params.serverRelativeFilePath,
-                params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, LiveIssue::class.java, params.flows, params.message)
-        }
+        val findingType = if (params.isTaint) LocalTaintVulnerability::class.java else LiveIssue::class.java
+        showFinding(params.configScopeId, params.serverRelativeFilePath,
+                params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, findingType, params.flows, params.message)
     }
 
     private fun <T: Finding> showFinding(configScopeId: String, filePath: String, findingKey: String, ruleKey: String,
@@ -301,10 +299,16 @@ object SonarLintIntelliJClient : SonarLintClient {
             showBalloon(project, "Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
             return
         }
+
+        val module = findModuleForFile(file, project)
+        if (module == null) {
+            showBalloon(project, "Unable to open finding. Can't find the module corresponding to file: $filePath", NotificationType.WARNING)
+            return
+        }
         ApplicationManager.getApplication().invokeAndWait {
             openFile(project, file, textRange.startLine)
         }
-        val showFinding = ShowFinding(project, ruleKey, findingKey, file, textRange, codeSnippet, flows, flowMessage, type)
+        val showFinding = ShowFinding(module, ruleKey, findingKey, file, textRange, codeSnippet, ShowFinding.handleFlows(module.project, flows), flowMessage, type)
         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(showFinding)
     }
 

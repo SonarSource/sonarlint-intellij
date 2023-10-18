@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,18 +70,6 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
     assertThat(cache.contains(myFixture.copyFileToProject("foo.php", "foo2.php"))).isFalse();
 
     verifyNoInteractions(store);
-  }
-
-  @Test
-  void should_return_contains_even_if_empty() {
-    var file = myFixture.copyFileToProject("foo.php", "foo.php");
-    var issue = createTestIssue("r1");
-
-    cache.insertFinding(file, issue);
-    cache.removeFindings(file, List.of(issue));
-
-    assertThat(cache.contains(file)).isTrue();
-    assertThat(cache.getLive(file)).isEmpty();
   }
 
   @Test
@@ -134,30 +124,11 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void should_clear_specific_files() throws IOException {
+  void replace_findings_should_flush_all() throws IOException {
     var issue1 = createTestIssue("r1");
     var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
-    cache.insertFinding(file0, issue1);
-
-    var issue2 = createTestIssue("r2");
     var file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
-    cache.insertFinding(file1, issue2);
-
-    cache.clear(file1);
-    verify(store).clear("foo1.php");
-    assertThat(cache.getLive(file1)).isNull();
-    assertThat(cache.getLive(file0)).isNotNull();
-  }
-
-  @Test
-  void should_flush_all() throws IOException {
-    var issue1 = createTestIssue("r1");
-    var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
-    cache.insertFinding(file0, issue1);
-    var file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
-    cache.insertFinding(file1, issue1);
-
-    cache.flushAll();
+    cache.replaceFindings(Map.of(file0, List.of(issue1), file1, List.of(issue1)));
 
     verify(store).save(eq("foo0.php"), anyCollection());
     verify(store).save(eq("foo1.php"), anyCollection());
@@ -171,8 +142,9 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
     var issue1 = createTestIssue("r1");
     var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
     cache.insertFinding(file0, issue1);
+    cache.replaceFindings(Map.of(file0, List.of(issue1)));
 
-    assertThrows(IllegalStateException.class, () -> cache.flushAll());
+    assertThat(((SonarLintConsoleTestImpl)getConsole()).getLastMessage()).contains("Cannot flush issues");
   }
 
   @Test
@@ -195,12 +167,10 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
     var file2 = myFixture.copyFileToProject("foo.php", "foo2.php");
 
     Runnable r = () -> {
-      cache.clear(file1);
       LiveIssue issue1 = createTestIssue("r1");
       cache.insertFinding(file1, issue1);
       LiveIssue issue2 = createTestIssue("r2");
       cache.insertFinding(file1, issue2);
-      cache.clear(file2);
       LiveIssue issue3 = createTestIssue("r3");
       cache.insertFinding(file2, issue3);
       LiveIssue issue4 = createTestIssue("r4");

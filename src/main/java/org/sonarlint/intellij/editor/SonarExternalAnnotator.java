@@ -135,7 +135,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         // IntelliJ is currently only supporting the preview of quick fixes on ONE file at the time!
         if (fix.isSingleFile()) {
           intentionActions.add(
-            new ApplyQuickFixIntentionAction(fix, finding.getRuleKey(), finding.psiFile(), false));
+            new ApplyQuickFixIntentionAction(fix, finding.getRuleKey(), false));
         }
       });
     }

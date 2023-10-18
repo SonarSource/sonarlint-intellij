@@ -21,7 +21,9 @@ package org.sonarlint.intellij.finding.issue
 
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
+import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiFile
+import java.util.Optional
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
@@ -37,14 +39,14 @@ import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.SoftwareQuality
 import org.sonarsource.sonarlint.core.commons.TextRange
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
-import java.util.Optional
 
 fun aLiveIssue(
+    module: Module,
     file: PsiFile,
     rangeMarker: RangeMarker? = file.virtualFile.getDocument()!!.createRangeMarker(0, 1),
     coreIssue: Issue = aCoreIssue(file, toTextRange(rangeMarker))
 ): LiveIssue {
-    val liveIssue = LiveIssue(coreIssue, file, rangeMarker, null, emptyList())
+    val liveIssue = LiveIssue(module, coreIssue, file.virtualFile, rangeMarker, null, emptyList())
     liveIssue.serverFindingKey = "serverIssueKey"
     return liveIssue
 }

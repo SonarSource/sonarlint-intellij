@@ -40,9 +40,11 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.tasks.FutureAwaitingTask
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
 import org.sonarlint.intellij.util.displayErrorNotification
 import org.sonarlint.intellij.util.displaySuccessfulNotification
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
@@ -81,10 +83,16 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
         serverFindingKey = securityHotspot.serverFindingKey
         status = securityHotspot.status
 
-        openReviewingDialog(project, securityHotspot.file)
+        openReviewingDialogAsync(project, securityHotspot.file())
     }
 
-    fun openReviewingDialog(project: Project, file: VirtualFile) {
+    fun openReviewingDialogAsync(project: Project, file: VirtualFile) {
+        runOnPooledThread(project) {
+            openReviewingDialog(project, file)
+        }
+    }
+
+    private fun openReviewingDialog(project: Project, file: VirtualFile) {
         val connection = serverConnection(project) ?: return displayErrorNotification(project, errorTitle, "No connection could be found", GROUP)
         val hotspotKey = serverFindingKey ?: return displayErrorNotification(
             project,
@@ -97,8 +105,10 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
         val response = checkPermission(project, connection, hotspotKey) ?: return
         val newStatus = HotspotStatus.valueOf(currentStatus.name)
-        if (ReviewSecurityHotspotDialog(project, connection.productName, module, hotspotKey, response, newStatus).showAndGet()) {
-            displaySuccessfulNotification(project, content, GROUP)
+        runOnUiThread(project) {
+            if (ReviewSecurityHotspotDialog(project, connection.productName, module, hotspotKey, response, newStatus).showAndGet()) {
+                displaySuccessfulNotification(project, content, GROUP)
+            }
         }
     }
 
@@ -123,7 +133,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
         file?.let {
-            openReviewingDialog(project, it.virtualFile)
+            openReviewingDialogAsync(project, it.virtualFile)
         }
     }
 

@@ -20,8 +20,10 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.util.ui.UIUtil;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -30,10 +32,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
-import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
 
 public abstract class AbstractNode extends DefaultMutableTreeNode {
+  public static final String UNKNOWN_RANGE_COORDINATES = "(-, -) ";
   protected int findingCount;
   protected int fileCount;
 
@@ -93,21 +95,23 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
     }
   }
 
-  public String formatRangeMarker(@Nullable RangeMarker rangeMarker) {
+  public String formatRangeMarker(@Nullable VirtualFile file, @Nullable RangeMarker rangeMarker) {
     if (rangeMarker == null) {
       return "(0, 0) ";
     }
 
-    if (!rangeMarker.isValid()) {
-      return "(-, -) ";
+    if (!rangeMarker.isValid() || file == null || !file.isValid()) {
+      return UNKNOWN_RANGE_COORDINATES;
     }
 
-    return computeReadActionSafely(() -> {
-      var doc = rangeMarker.getDocument();
-      var line = doc.getLineNumber(rangeMarker.getStartOffset());
-      var offset = rangeMarker.getStartOffset() - doc.getLineStartOffset(line);
-      return String.format("(%d, %d) ", line + 1, offset);
-    });
+    var cachedDocument = FileDocumentManager.getInstance().getCachedDocument(file);
+    if (cachedDocument == null) {
+      return UNKNOWN_RANGE_COORDINATES;
+    }
+
+    var line = cachedDocument.getLineNumber(rangeMarker.getStartOffset());
+    var offset = rangeMarker.getStartOffset() - cachedDocument.getLineStartOffset(line);
+    return String.format("(%d, %d) ", line + 1, offset);
   }
 
   public void openFileFromRangeMarker(Project project, @Nullable RangeMarker rangeMarker) {

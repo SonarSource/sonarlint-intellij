@@ -241,15 +241,12 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     return file;
   }
 
-  private static LiveSecurityHotspot mockSecurityHotspot(String path, int startOffset, String rule,
+  private LiveSecurityHotspot mockSecurityHotspot(String path, int startOffset, String rule,
     VulnerabilityProbability vulnerability, @Nullable Long introductionDate, HotspotReviewStatus status, @Nullable String serverFindingKey) {
 
     var virtualFile = mock(VirtualFile.class);
     when(virtualFile.getPath()).thenReturn(path);
     when(virtualFile.isValid()).thenReturn(true);
-    var psiFile = mock(PsiFile.class);
-    when(psiFile.isValid()).thenReturn(true);
-    when(psiFile.getVirtualFile()).thenReturn(virtualFile);
 
     var issue = mock(Issue.class);
     when(issue.getRuleKey()).thenReturn(rule);
@@ -264,7 +261,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     when(marker.getDocument()).thenReturn(document);
     when(marker.isValid()).thenReturn(true);
 
-    var securityHotspot = new LiveSecurityHotspot(issue, psiFile, marker, null, Collections.emptyList());
+    var securityHotspot = new LiveSecurityHotspot(getModule(), issue, virtualFile, marker, null, Collections.emptyList());
     securityHotspot.setIntroductionDate(introductionDate);
     securityHotspot.setStatus(status);
     securityHotspot.setServerFindingKey(serverFindingKey);
@@ -272,12 +269,12 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     return securityHotspot;
   }
 
-  private static LiveSecurityHotspot mockSecurityHotspot(String path, int startOffset, String rule,
+  private LiveSecurityHotspot mockSecurityHotspot(String path, int startOffset, String rule,
     VulnerabilityProbability vulnerability, @Nullable Long introductionDate) {
     return mockSecurityHotspot(path, startOffset, rule, vulnerability, introductionDate, HotspotReviewStatus.TO_REVIEW, null);
   }
 
-  private static LiveSecurityHotspotNode mockSecurityHotspotNode(String path, int startOffset, String rule,
+  private LiveSecurityHotspotNode mockSecurityHotspotNode(String path, int startOffset, String rule,
     VulnerabilityProbability vulnerability) {
     var securityHotspot = mockSecurityHotspot(path, startOffset, rule, vulnerability, null, HotspotReviewStatus.TO_REVIEW, null);
     return new LiveSecurityHotspotNode(securityHotspot, false);

@@ -20,9 +20,11 @@
 package org.sonarlint.intellij.finding;
 
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
+import com.intellij.util.DocumentUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,8 +51,9 @@ public abstract class LiveFinding implements Trackable, Finding {
 
   private final long uid;
   private UUID backendId;
+  private final Module module;
   private final RangeMarker range;
-  private final PsiFile psiFile;
+  private final VirtualFile virtualFile;
   private final Integer textRangeHash;
   private final String textRangeHashString;
   private final Integer lineHash;
@@ -73,13 +76,14 @@ public abstract class LiveFinding implements Trackable, Finding {
   private SoftwareQuality highestQuality = null;
   private ImpactSeverity highestImpact = null;
 
-  protected LiveFinding(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context,
-    List<QuickFix> quickFixes) {
+  protected LiveFinding(Module module, Issue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
+                        List<QuickFix> quickFixes) {
+    this.module = module;
     this.range = range;
     this.message = issue.getMessage();
     this.ruleKey = issue.getRuleKey();
     this.severity = issue.getSeverity();
-    this.psiFile = psiFile;
+    this.virtualFile = virtualFile;
     this.uid = UID_GEN.getAndIncrement();
     this.context = context;
     this.quickFixes = quickFixes;
@@ -92,7 +96,7 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
 
     if (range != null) {
-      var document = computeReadActionSafely(psiFile, range::getDocument);
+      var document = computeReadActionSafely(virtualFile, range::getDocument);
       if (document != null) {
         var lineContent = document.getText(new TextRange(range.getStartOffset(), range.getEndOffset()));
         this.textRangeHash = checksum(lineContent);
@@ -128,6 +132,10 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.backendId = backendId;
   }
 
+  public Module getModule() {
+    return module;
+  }
+
   @CheckForNull
   public UUID getBackendId() {
     return backendId;
@@ -139,7 +147,7 @@ public abstract class LiveFinding implements Trackable, Finding {
 
   @Override
   public boolean isValid() {
-    if (Boolean.TRUE.equals(computeReadActionSafely(psiFile, psiFile::isValid))) {
+    if (Boolean.TRUE.equals(computeReadActionSafely(virtualFile, virtualFile::isValid))) {
       return range == null || range.isValid();
     } else {
       return false;
@@ -149,7 +157,7 @@ public abstract class LiveFinding implements Trackable, Finding {
   @Override
   public Integer getLine() {
     if (range != null) {
-      return computeReadActionSafely(psiFile, () -> range.getDocument().getLineNumber(range.getStartOffset()) + 1);
+      return computeReadActionSafely(virtualFile, () -> range.getDocument().getLineNumber(range.getStartOffset()) + 1);
     }
 
     return null;
@@ -195,45 +203,35 @@ public abstract class LiveFinding implements Trackable, Finding {
 
   @CheckForNull
   public TextRange getValidTextRange() {
-    return toValidTextRange(psiFile, range);
+    return toValidTextRange(range);
   }
 
   @CheckForNull
-  public static TextRange toValidTextRange(@Nullable PsiFile psiFile, @Nullable RangeMarker rangeMarker) {
-    if (psiFile == null) {
-      return null;
+  public static TextRange toValidTextRange(@Nullable RangeMarker rangeMarker) {
+    if (rangeMarker == null) {
+      return new TextRange(0, 0);
     }
-    return computeReadActionSafely(psiFile, () -> {
-      if (!psiFile.isValid()) {
-        return null;
-      }
-      if (rangeMarker == null) {
-        return psiFile.getTextRange();
-      }
-      if (rangeMarker.isValid()) {
-        var startOffset = rangeMarker.getStartOffset();
-        var endOffset = rangeMarker.getEndOffset();
-        if (startOffset < endOffset && startOffset >= 0) {
-          var textRange = new TextRange(startOffset, endOffset);
-          if (psiFile.getTextRange().contains(textRange)) {
-            return textRange;
-          }
+    if (rangeMarker.isValid()) {
+      var startOffset = rangeMarker.getStartOffset();
+      var endOffset = rangeMarker.getEndOffset();
+      if (startOffset < endOffset && startOffset >= 0) {
+        var document = rangeMarker.getDocument();
+        if (DocumentUtil.isValidOffset(startOffset, document) && DocumentUtil.isValidOffset(endOffset, document)) {
+          return new TextRange(startOffset, endOffset);
         }
       }
-      return null;
-    });
+    }
+    return null;
   }
 
-  public PsiFile psiFile() {
-    return psiFile;
-  }
-
-  public VirtualFile getFile() {
-    return psiFile().getVirtualFile();
-  }
-
+  @NotNull
   public VirtualFile file() {
-    return getFile();
+    return virtualFile;
+  }
+
+  @NotNull
+  public Project project() {
+    return module.getProject();
   }
 
   @Override

@@ -268,7 +268,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   private Collection<VirtualFile> getFilesForNodes() {
-    return nonFilteredNodes.stream().map(LiveSecurityHotspotNode::getHotspot).map(LiveSecurityHotspot::getFile).collect(Collectors.toSet());
+    return nonFilteredNodes.stream().map(LiveSecurityHotspotNode::getHotspot).map(LiveSecurityHotspot::file).collect(Collectors.toSet());
   }
 
   public int updateStatusAndApplyCurrentFiltering(Project project, String securityHotspotKey, HotspotStatus status) {
@@ -287,7 +287,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     Collections.list(summaryNode.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
     for (var securityHotspotNode : nonFilteredNodes) {
       if (currentFilter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot()) && (shouldIncludeResolvedHotspots || !securityHotspotNode.getHotspot().isResolved())) {
-        fileList.add(securityHotspotNode.getHotspot().getFile());
+        fileList.add(securityHotspotNode.getHotspot().file());
         var idx = summaryNode.insertLiveSecurityHotspotNode(securityHotspotNode, SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR);
         var newIdx = new int[] {idx};
         model.nodesWereInserted(summaryNode, newIdx);
@@ -361,7 +361,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       var rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
 
       return ComparisonChain.start()
-        .compare(o1.getHotspot().getFile().getPath(), o2.getHotspot().getFile().getPath())
+        .compare(o1.getHotspot().file().getPath(), o2.getHotspot().file().getPath())
         .compare(rangeStart1, rangeStart2)
         .compare(o1.getHotspot().getRuleKey(), o2.getHotspot().getRuleKey())
         .compare(o1.getHotspot().uid(), o2.getHotspot().uid())

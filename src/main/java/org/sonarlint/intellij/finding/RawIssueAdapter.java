@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.finding;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
@@ -41,8 +42,9 @@ import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
 
 public class RawIssueAdapter {
 
-  public static LiveSecurityHotspot toLiveSecurityHotspot(Project project, Issue rawHotspot, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
-    return computeReadActionSafely(project, () -> {
+  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, Issue rawHotspot, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
+    return computeReadActionSafely(module, () -> {
+      var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
       var psiFile = toPsiFile(project, inputFile.getClientObject());
       var textRange = rawHotspot.getTextRange();
@@ -50,15 +52,16 @@ public class RawIssueAdapter {
       if (textRange != null) {
         var rangeMarker = matcher.match(psiFile, textRange);
         var context = transformFlows(project, matcher, psiFile, rawHotspot.flows(), rawHotspot.getRuleKey());
-        return new LiveSecurityHotspot(rawHotspot, psiFile, rangeMarker, context.orElse(null), quickFixes);
+        return new LiveSecurityHotspot(module, rawHotspot, inputFile.getClientObject(), rangeMarker, context.orElse(null), quickFixes);
       } else {
-        return new LiveSecurityHotspot(rawHotspot, psiFile, quickFixes);
+        return new LiveSecurityHotspot(module, rawHotspot, inputFile.getClientObject(), quickFixes);
       }
     });
   }
 
-  public static LiveIssue toLiveIssue(Project project, Issue rawIssue, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
-    return computeReadActionSafely(project, () -> {
+  public static LiveIssue toLiveIssue(Module module, Issue rawIssue, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
+    return computeReadActionSafely(module, () -> {
+      var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
       var psiFile = toPsiFile(project, inputFile.getClientObject());
       var textRange = rawIssue.getTextRange();
@@ -66,9 +69,9 @@ public class RawIssueAdapter {
       if (textRange != null) {
         var rangeMarker = matcher.match(psiFile, textRange);
         var context = transformFlows(project, matcher, psiFile, rawIssue.flows(), rawIssue.getRuleKey());
-        return new LiveIssue(rawIssue, psiFile, rangeMarker, context.orElse(null), quickFixes);
+        return new LiveIssue(module, rawIssue, inputFile.getClientObject(), rangeMarker, context.orElse(null), quickFixes);
       } else {
-        return new LiveIssue(rawIssue, psiFile, quickFixes);
+        return new LiveIssue(module, rawIssue, inputFile.getClientObject(), quickFixes);
       }
     });
   }

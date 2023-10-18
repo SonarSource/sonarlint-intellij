@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.psi.PsiFile;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -43,13 +43,13 @@ class IssueNodeTests {
   }
 
   private static LiveIssue createIssue(long date, String message) {
-    var file = mock(PsiFile.class);
+    var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
     var issue = mock(Issue.class);
     when(issue.getMessage()).thenReturn(message);
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getType()).thenReturn(RuleType.BUG);
-    var issuePointer = new LiveIssue(issue, file, Collections.emptyList());
+    var issuePointer = new LiveIssue(null, issue, file, Collections.emptyList());
     issuePointer.setIntroductionDate(date);
     return issuePointer;
   }

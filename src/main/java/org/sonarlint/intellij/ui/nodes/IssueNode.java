@@ -38,6 +38,7 @@ import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class IssueNode extends FindingNode {
@@ -53,9 +54,9 @@ public class IssueNode extends FindingNode {
   }
 
   private Optional<ServerConnection> retrieveServerConnection() {
-    var project = issue.psiFile().getProject();
+    var project = issue.project();
     if (!project.isDisposed()) {
-      return getService(issue.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
+      return getService(project, ProjectBindingManager.class).tryGetServerConnection();
     } else {
       return Optional.empty();
     }
@@ -63,6 +64,10 @@ public class IssueNode extends FindingNode {
 
   @Override
   public void render(TreeCellRenderer renderer) {
+    runReadActionSafely(issue.project(), () -> doRender(renderer));
+  }
+
+  private void doRender(TreeCellRenderer renderer) {
     var serverConnection = retrieveServerConnection();
     var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
     var highestQuality = issue.getHighestQuality();
@@ -157,8 +162,7 @@ public class IssueNode extends FindingNode {
   }
 
   private String issueCoordinates(@Nonnull LiveIssue issue) {
-    var range = issue.getRange();
-    return formatRangeMarker(range);
+    return formatRangeMarker(issue.file(), issue.getRange());
   }
 
   @Override

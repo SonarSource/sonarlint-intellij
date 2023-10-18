@@ -108,7 +108,7 @@ public class IssueTree extends FindingTree implements DataProvider {
     } else {
       offset = 0;
     }
-    return new OpenFileDescriptor(project, issue.psiFile().getVirtualFile(), offset);
+    return new OpenFileDescriptor(project, issue.file(), offset);
   }
 
   @CheckForNull

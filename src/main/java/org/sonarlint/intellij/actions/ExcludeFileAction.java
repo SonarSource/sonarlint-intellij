@@ -39,6 +39,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class ExcludeFileAction extends AbstractSonarAction {
   public ExcludeFileAction() {
@@ -73,20 +74,21 @@ public class ExcludeFileAction extends AbstractSonarAction {
       return;
     }
 
-    var settings = getSettingsFor(project);
-    var exclusions = new ArrayList<>(settings.getFileExclusions());
+    runOnPooledThread(project, () -> {
+      var settings = getSettingsFor(project);
+      var exclusions = new ArrayList<>(settings.getFileExclusions());
 
-    var newExclusions = toStringStream(project, files)
-      .filter(path -> !exclusions.contains(path))
-      .toList();
-
-    if (!newExclusions.isEmpty()) {
-      exclusions.addAll(newExclusions);
-      settings.setFileExclusions(exclusions);
-      var projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
-      projectListener.changed(settings);
-      SonarLintUtils.getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE);
-    }
+      var newExclusions = toStringStream(project, files)
+        .filter(path -> !exclusions.contains(path))
+        .toList();
+      if (!newExclusions.isEmpty()) {
+        exclusions.addAll(newExclusions);
+        settings.setFileExclusions(exclusions);
+        var projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
+        projectListener.changed(settings);
+        SonarLintUtils.getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE);
+      }
+    });
   }
 
   private static Stream<String> toStringStream(Project project, VirtualFile[] files) {

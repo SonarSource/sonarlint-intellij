@@ -26,7 +26,6 @@ import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.SoftwareQuality
 
 interface Finding {
-
     fun getCleanCodeAttribute(): CleanCodeAttribute?
 
     fun getImpacts(): Map<SoftwareQuality, ImpactSeverity>

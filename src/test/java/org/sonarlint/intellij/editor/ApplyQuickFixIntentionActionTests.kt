@@ -44,7 +44,7 @@ class ApplyQuickFixIntentionActionTests : AbstractSonarLintLightTests() {
                 )
             )
         )
-        val intentionAction = ApplyQuickFixIntentionAction(quickFix, "ruleKey", file, false)
+        val intentionAction = ApplyQuickFixIntentionAction(quickFix, "ruleKey", false)
 
         WriteCommandAction.runWriteCommandAction(project) { intentionAction.invoke(project, myFixture.editor, file) }
 

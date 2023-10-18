@@ -209,10 +209,11 @@ public class Analysis implements Cancelable {
     var results = new LinkedHashMap<Module, ModuleAnalysisResult>();
     RawFindingHandler rawFindingHandler;
     try (var findingStreamer = new FindingStreamer(callback)) {
-      rawFindingHandler = new RawFindingHandler(project, findingStreamer, cachedFindings);
+      rawFindingHandler = new RawFindingHandler(findingStreamer, cachedFindings);
 
       for (var entry : scope.getFilesByModule().entrySet()) {
         var module = entry.getKey();
+        rawFindingHandler.setCurrentModule(module);
         results.put(module, analyzer.analyzeModule(module, entry.getValue(), rawFindingHandler, progressMonitor));
         checkCanceled(indicator);
       }
