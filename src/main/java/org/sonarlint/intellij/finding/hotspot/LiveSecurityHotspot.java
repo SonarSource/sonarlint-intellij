@@ -20,8 +20,8 @@
 package org.sonarlint.intellij.finding.hotspot;
 
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,12 +43,12 @@ public class LiveSecurityHotspot extends LiveFinding {
   private final VulnerabilityProbability vulnerabilityProbability;
   private HotspotReviewStatus status;
 
-  public LiveSecurityHotspot(Issue issue, PsiFile psiFile, List<QuickFix> quickFixes) {
-    this(issue, psiFile, null, null, quickFixes);
+  public LiveSecurityHotspot(Module module, Issue issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
+    this(module, issue, virtualFile, null, null, quickFixes);
   }
 
-  public LiveSecurityHotspot(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
-    super(issue, psiFile, range, context, quickFixes);
+  public LiveSecurityHotspot(Module module, Issue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
+    super(module, issue, virtualFile, range, context, quickFixes);
     this.vulnerabilityProbability = issue.getVulnerabilityProbability().get();
     this.status = HotspotReviewStatus.TO_REVIEW;
   }
@@ -71,10 +71,6 @@ public class LiveSecurityHotspot extends LiveFinding {
   @Override
   public RuleType getType() {
     return RuleType.SECURITY_HOTSPOT;
-  }
-
-  public VirtualFile getFile() {
-    return psiFile().getVirtualFile();
   }
 
   public void setStatus(HotspotReviewStatus status) {

@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.common.ui
 
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.ThrowableComputable
 import com.intellij.openapi.vfs.VirtualFile
@@ -48,6 +49,16 @@ class ReadActionUtils {
             if (!project.isDisposed) {
                 return ReadAction.compute<T?, Exception> {
                     if (project.isDisposed) null else action.compute()
+                }
+            }
+            return null
+        }
+
+        @JvmStatic
+        fun <T> computeReadActionSafely(module: Module, action: ThrowableComputable<T, out Exception>): T? {
+            if (!module.isDisposed) {
+                return ReadAction.compute<T?, Exception> {
+                    if (module.isDisposed) null else action.compute()
                 }
             }
             return null

@@ -277,7 +277,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
             assertThat(issues)
                 .extracting(
-                    { it.psiFile().name },
+                    { it.file().name },
                     { it.ruleKey },
                     { it.message },
                     { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })

@@ -19,12 +19,12 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.mock.MockDocument;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.ui.SimpleTextAttributes;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.finding.Flow;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
@@ -32,15 +32,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class PrimaryLocationNodeTests {
+class PrimaryLocationNodeTests extends AbstractSonarLintLightTests {
   private PrimaryLocationNode node;
   private RangeMarker range = mock(RangeMarker.class);
 
   @BeforeEach
-  void setUp() {
-    var doc = new MockDocument();
-    doc.replaceText("my document test", System.currentTimeMillis());
-    when(range.getDocument()).thenReturn(doc);
+  void prepare() {
+    myFixture.configureByText("file.txt", "my document test");
+
     when(range.isValid()).thenReturn(true);
     when(range.getStartOffset()).thenReturn(3);
     when(range.getEndOffset()).thenReturn(10);
@@ -48,7 +47,7 @@ class PrimaryLocationNodeTests {
 
   @Test
   void testRenderer() {
-    node = new PrimaryLocationNode(3, range, "msg", new Flow(Collections.emptyList()));
+    node = new PrimaryLocationNode(myFixture.getFile().getVirtualFile(), 3, range, "msg", new Flow(Collections.emptyList()));
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
@@ -60,11 +59,21 @@ class PrimaryLocationNodeTests {
 
   @Test
   void testNoMessage() {
-    node = new PrimaryLocationNode(3, range, "...", new Flow(Collections.emptyList()));
+    node = new PrimaryLocationNode(myFixture.getFile().getVirtualFile(), 3, range, "...", new Flow(Collections.emptyList()));
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES);
+    verify(renderer).append("3:", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+  }
+
+  @Test
+  void testNoFile() {
+    node = new PrimaryLocationNode(null, 3, range, "...", new Flow(Collections.emptyList()));
+    var renderer = mock(TreeCellRenderer.class);
+    node.render(renderer);
+
+    verify(renderer).append("(-, -) ", SimpleTextAttributes.GRAY_ATTRIBUTES);
     verify(renderer).append("3:", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
   }
 }

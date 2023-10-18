@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
@@ -53,24 +54,24 @@ public class FlowsTreeModelBuilder {
       return;
     }
     var findingContext = context.get();
-    populateForFinding(finding.getRange(), finding.getMessage(), findingContext.flows());
+    populateForFinding(finding.file(), finding.getRange(), finding.getMessage(), findingContext.flows());
   }
 
-  public void populateForFinding(@Nullable RangeMarker rangeMarker, String summaryDescription, List<Flow> flows) {
+  public void populateForFinding(VirtualFile file, @Nullable RangeMarker rangeMarker, String summaryDescription, List<Flow> flows) {
     if (rangeMarker == null || flows.isEmpty()) {
       clearFlows();
       return;
     }
     if (flows.size() == 1) {
-      setSingleFlow(flows.get(0), rangeMarker, summaryDescription);
+      setSingleFlow(file, flows.get(0), rangeMarker, summaryDescription);
     } else {
-      setMultipleFlows(flows, rangeMarker, summaryDescription);
+      setMultipleFlows(file, flows, rangeMarker, summaryDescription);
     }
   }
 
-  private void setMultipleFlows(List<Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
+  private void setMultipleFlows(VirtualFile file, List<Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
     summary = new FlowSummaryNode();
-    var primaryLocationNode = new PrimaryLocationNode(rangeMarker, message, flows.get(0));
+    var primaryLocationNode = new PrimaryLocationNode(file, rangeMarker, message, flows.get(0));
     summary.add(primaryLocationNode);
 
     var flowIndex = 1;
@@ -89,9 +90,9 @@ public class FlowsTreeModelBuilder {
     model.setRoot(summary);
   }
 
-  private void setSingleFlow(Flow flow, RangeMarker rangeMarker, @Nullable String message) {
+  private void setSingleFlow(VirtualFile file, Flow flow, RangeMarker rangeMarker, @Nullable String message) {
     summary = new FlowSummaryNode();
-    var primaryLocation = new PrimaryLocationNode(rangeMarker, message, flow);
+    var primaryLocation = new PrimaryLocationNode(file, rangeMarker, message, flow);
     primaryLocation.setBold(true);
     summary.add(primaryLocation);
 

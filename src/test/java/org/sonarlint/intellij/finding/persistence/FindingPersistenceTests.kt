@@ -48,7 +48,7 @@ class FindingPersistenceTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_clear() {
-        persistence.save("key", setOf(aLiveIssue(psiFile)))
+        persistence.save("key", setOf(aLiveIssue(module, psiFile)))
 
         persistence.clear()
 
@@ -57,8 +57,8 @@ class FindingPersistenceTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_clear_specific_key() {
-        persistence.save("key1", setOf(aLiveIssue(psiFile)))
-        persistence.save("key2", setOf(aLiveIssue(psiFile)))
+        persistence.save("key1", setOf(aLiveIssue(module, psiFile)))
+        persistence.save("key2", setOf(aLiveIssue(module, psiFile)))
 
         persistence.clear("key2")
 
@@ -73,7 +73,7 @@ class FindingPersistenceTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_store_read() {
-        persistence.save("key", setOf(aLiveIssue(psiFile)))
+        persistence.save("key", setOf(aLiveIssue(module, psiFile)))
 
         val issues = persistence.read("key")
 
@@ -89,7 +89,7 @@ class FindingPersistenceTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_save_invalid_file_from_background_thread_without_error() {
-        val liveIssue = aLiveIssue(psiFile)
+        val liveIssue = aLiveIssue(module, psiFile)
 
         // simulate analysis task
         val futureSuccess = ApplicationManager.getApplication().executeOnPooledThread<Boolean> {

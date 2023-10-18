@@ -22,8 +22,6 @@ package org.sonarlint.intellij.finding.persistence;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -35,8 +33,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
@@ -66,20 +62,6 @@ public final class FindingsCache {
     myProject = project;
     this.liveIssueCache = liveIssueCache;
     this.liveSecurityHotspotCache = new LiveFindingCache<>(project, new FindingPersistence<>(project, "securityhotspot"));
-    project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
-      @Override
-      public void projectClosing(@NotNull Project project) {
-        try {
-          if (project == myProject) {
-            // Flush findings before project is closed, because we need to resolve module paths to compute the key
-            liveIssueCache.flushAll();
-            liveSecurityHotspotCache.flushAll();
-          }
-        } catch (Exception e) {
-          SonarLintConsole.get(myProject).error("Cannot flush issues", e);
-        }
-      }
-    });
   }
 
   public void clearAllIssuesForAllFiles() {

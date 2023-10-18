@@ -21,9 +21,8 @@ package org.sonarlint.intellij.ui
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.RangeMarker
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.util.text.StringUtil.capitalize
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBTabbedPane
@@ -74,26 +73,16 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
     }
 
     fun show(liveFinding: LiveFinding) {
-        val moduleForFile = ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(liveFinding.psiFile().virtualFile)
-        if (moduleForFile == null) {
-            showInvalidFindingMessage()
-            return
-        }
-        rulePanel.setSelectedFinding(moduleForFile, liveFinding, liveFinding.ruleKey, liveFinding.getRuleDescriptionContextKey())
+        rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.ruleKey, liveFinding.getRuleDescriptionContextKey())
         flowsTreeBuilder.populateForFinding(liveFinding)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightFinding(liveFinding)
         flowsTree.emptyText.setText("Selected $findingKindText doesn't have flows")
         flowsTree.expandAll()
     }
 
-    fun showServerOnlyIssue(file: VirtualFile, ruleKey: String, range: RangeMarker, flows: List<Flow>, flowMessage: String) {
-        val moduleForFile = ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(file)
-        if (moduleForFile == null) {
-            showInvalidFindingMessage()
-            return
-        }
-        rulePanel.setSelectedFinding(moduleForFile, null, ruleKey, null)
-        flowsTreeBuilder.populateForFinding(range, flowMessage, flows)
+    fun showServerOnlyIssue(module: Module, file: VirtualFile, ruleKey: String, range: RangeMarker, flows: MutableList<Flow>, flowMessage: String) {
+        rulePanel.setSelectedFinding(module, null, ruleKey, null)
+        flowsTreeBuilder.populateForFinding(file, range, flowMessage, flows)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightRange(range)
         flowsTree.emptyText.setText("Selected $findingKindText doesn't have flows")
         flowsTree.expandAll()
@@ -111,12 +100,6 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
 
     fun selectLocationsTab() {
         selectedIndex = LOCATIONS_TAB_INDEX
-    }
-
-    private fun showInvalidFindingMessage() {
-        flowsTreeBuilder.clearFlows()
-        flowsTree.emptyText.setText("${capitalize(findingKindText)} location has been deleted")
-        rulePanel.clearDeletedFile()
     }
 
     companion object {

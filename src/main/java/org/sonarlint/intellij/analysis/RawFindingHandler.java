@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,17 +43,20 @@ import org.sonarsource.sonarlint.core.commons.Language;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 
 class RawFindingHandler implements IssueListener {
-  private final Project project;
+  private Module module;
   private final ConcurrentHashMap<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile = new ConcurrentHashMap<>();
   private final AtomicInteger rawIssueCounter = new AtomicInteger();
   private final FindingStreamer findingStreamer;
   private final LocalHistoryFindingTracker localHistoryFindingTracker;
 
-  public RawFindingHandler(Project project, FindingStreamer findingStreamer, CachedFindings previousFindings) {
-    this.project = project;
+  public RawFindingHandler(FindingStreamer findingStreamer, CachedFindings previousFindings) {
     this.localHistoryFindingTracker = new LocalHistoryFindingTracker(previousFindings);
     this.findingStreamer = findingStreamer;
+  }
+
+  public void setCurrentModule(Module module) {
+    this.module = module;
   }
 
   @Override
@@ -82,18 +85,18 @@ class RawFindingHandler implements IssueListener {
     LiveSecurityHotspot liveSecurityHotspot;
     VirtualFile file = inputFile.getClientObject();
     try {
-      liveSecurityHotspot = RawIssueAdapter.toLiveSecurityHotspot(project, rawIssue, inputFile);
+      liveSecurityHotspot = RawIssueAdapter.toLiveSecurityHotspot(module, rawIssue, inputFile);
       if (liveSecurityHotspot == null) {
         return;
       }
     } catch (TextRangeMatcher.NoMatchException e) {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
-      SonarLintConsole.get(project).debug("Failed to find location of Security Hotspot for file: '" + file.getName() + "'." + e.getMessage());
+      SonarLintConsole.get(module.getProject()).debug("Failed to find location of Security Hotspot for file: '" + file.getName() + "'." + e.getMessage());
       return;
     } catch (ProcessCanceledException e) {
       throw e;
     } catch (Exception e) {
-      SonarLintConsole.get(project).error("Error finding location for Security Hotspot", e);
+      SonarLintConsole.get(module.getProject()).error("Error finding location for Security Hotspot", e);
       return;
     }
 
@@ -106,18 +109,18 @@ class RawFindingHandler implements IssueListener {
     LiveIssue liveIssue;
     VirtualFile file = inputFile.getClientObject();
     try {
-      liveIssue = RawIssueAdapter.toLiveIssue(project, rawIssue, inputFile);
+      liveIssue = RawIssueAdapter.toLiveIssue(module, rawIssue, inputFile);
       if (liveIssue == null) {
         return;
       }
     } catch (TextRangeMatcher.NoMatchException e) {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
-      SonarLintConsole.get(project).debug("Failed to find location of issue for file: '" + file.getName() + "'." + e.getMessage());
+      SonarLintConsole.get(module.getProject()).debug("Failed to find location of issue for file: '" + file.getName() + "'." + e.getMessage());
       return;
     } catch (ProcessCanceledException e) {
       throw e;
     } catch (Exception e) {
-      SonarLintConsole.get(project).error("Error finding location for issue", e);
+      SonarLintConsole.get(module.getProject()).error("Error finding location for issue", e);
       return;
     }
 
@@ -127,7 +130,7 @@ class RawFindingHandler implements IssueListener {
 
     var sonarLintGlobalSettings = Settings.getGlobalSettings();
     if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains(Language.SECRETS.getPluginKey())) {
-      SecretsNotifications.sendNotification(project);
+      SecretsNotifications.sendNotification(module.getProject());
       sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
     }
   }

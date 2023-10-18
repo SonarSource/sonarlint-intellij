@@ -24,20 +24,16 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VirtualFile
-import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import java.util.concurrent.atomic.AtomicReference
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 
 fun Project.getOpenFiles() = FileEditorManager.getInstance(this).openFiles.toList()
 
 fun Project.getRelativePathOf(file: VirtualFile) = SonarLintAppUtils.getRelativePathForAnalysis(this, file)
 
 fun Project.findModuleOf(file: VirtualFile): Module? {
-    return computeReadActionSafely(this) {
-        return@computeReadActionSafely if (!isOpen) null else
-            ProjectFileIndex.SERVICE.getInstance(this).getModuleForFile(file, false)
-    }
+    return findModuleForFile(file, this)
 }
 
 fun VirtualFile.getDocument() = FileDocumentManager.getInstance().getDocument(this)

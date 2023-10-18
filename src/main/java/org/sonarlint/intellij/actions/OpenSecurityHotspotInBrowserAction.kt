@@ -55,7 +55,7 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
     val project = e.project ?: return
     val securityHotspot = e.getData(SECURITY_HOTSPOT_DATA_KEY)
     val key = securityHotspot?.serverFindingKey ?: return
-    val localFile = securityHotspot.psiFile().virtualFile ?: return
+    val localFile = securityHotspot.file()
     val localFileModule = ModuleUtil.findModuleForFile(localFile, project) ?: return
     getService(BackendService::class.java).openHotspotInBrowser(localFileModule, key)
   }

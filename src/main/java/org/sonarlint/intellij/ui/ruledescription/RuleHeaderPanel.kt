@@ -32,9 +32,18 @@ import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.WrapLayout
+import java.awt.BorderLayout
+import java.awt.FlowLayout
+import java.awt.event.ActionEvent
+import java.util.LinkedList
+import javax.swing.AbstractAction
+import javax.swing.BorderFactory
+import javax.swing.JButton
+import javax.swing.JPanel
+import javax.swing.SwingConstants
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.canBeMarkedAsResolved
-import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialog
+import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialogAsync
 import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.canBeReopened
 import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.reopenIssueDialog
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
@@ -49,15 +58,6 @@ import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.SoftwareQuality
-import java.awt.BorderLayout
-import java.awt.FlowLayout
-import java.awt.event.ActionEvent
-import java.util.LinkedList
-import javax.swing.AbstractAction
-import javax.swing.BorderFactory
-import javax.swing.JButton
-import javax.swing.JPanel
-import javax.swing.SwingConstants
 
 
 class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayout()) {
@@ -125,7 +125,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             changeStatusButton.isVisible = true
             changeStatusButton.action = object : AbstractAction(MARK_AS_RESOLVED) {
                 override fun actionPerformed(e: ActionEvent?) {
-                    openMarkAsResolvedDialog(project, issue)
+                    openMarkAsResolvedDialogAsync(project, issue)
                 }
             }
         }
@@ -157,7 +157,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         securityHotspot.serverFindingKey?.let {
             changeStatusButton.action = object : AbstractAction("Change Status") {
                 override fun actionPerformed(e: ActionEvent?) {
-                    ReviewSecurityHotspotAction(it, securityHotspot.status).openReviewingDialog(project, securityHotspot.file)
+                    ReviewSecurityHotspotAction(it, securityHotspot.status).openReviewingDialogAsync(project, securityHotspot.file())
                 }
             }
             changeStatusButton.isVisible = securityHotspot.isValid()

@@ -397,7 +397,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   public Collection<LiveSecurityHotspotNode> getDisplayedNodesForFile(VirtualFile file) {
     return securityHotspotTreeBuilder.getFilteredNodes()
       .stream()
-      .filter(node -> node.getHotspot().getFile().equals(file))
+      .filter(node -> node.getHotspot().file().equals(file))
       .toList();
   }
 

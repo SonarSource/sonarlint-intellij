@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JScrollPane;
 import org.jetbrains.annotations.NonNls;
@@ -170,6 +171,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     tree.setShowsRootHandles(!issues.isEmpty());
   }
 
+  @CheckForNull
   public LiveIssue doesIssueExist(String issueKey) {
     var issue = treeBuilder.findIssueByKey(issueKey);
     if (issue.isEmpty()) {
@@ -178,7 +180,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     return issue.orElse(null);
   }
 
-  public <T extends Finding> void trySelectFilteredIssue(LiveIssue issue, ShowFinding<T> showFinding) {
+  public <T extends Finding> void trySelectFilteredIssue(@Nullable LiveIssue issue, ShowFinding<T> showFinding) {
     updateOnSelect(issue, showFinding);
   }
 

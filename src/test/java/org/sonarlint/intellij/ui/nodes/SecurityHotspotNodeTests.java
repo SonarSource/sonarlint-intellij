@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.psi.PsiFile;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -43,12 +43,12 @@ class SecurityHotspotNodeTests {
   }
 
   private static LiveSecurityHotspot createSecurityHotspot() {
-    var file = mock(PsiFile.class);
+    var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
     var issue = mock(Issue.class);
     when(issue.getMessage()).thenReturn("rule");
     when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(VulnerabilityProbability.HIGH));
     when(issue.getType()).thenReturn(RuleType.BUG);
-    return new LiveSecurityHotspot(issue, file, Collections.emptyList());
+    return new LiveSecurityHotspot(null, issue, file, Collections.emptyList());
   }
 }

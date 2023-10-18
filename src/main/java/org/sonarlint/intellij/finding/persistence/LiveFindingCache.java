@@ -56,6 +56,7 @@ public class LiveFindingCache<T extends LiveFinding> {
 
   public void replaceFindings(Map<VirtualFile, Collection<T>> newFindingsPerFile) {
     cache.putAll(newFindingsPerFile);
+    flushAll();
   }
 
   /**
@@ -131,15 +132,11 @@ public class LiveFindingCache<T extends LiveFinding> {
     cache.computeIfAbsent(virtualFile, f -> new ArrayList<>()).add(finding);
   }
 
-  public synchronized void removeFindings(VirtualFile virtualFile, Collection<T> findings) {
-    cache.computeIfAbsent(virtualFile, f -> new ArrayList<>()).removeAll(findings);
-  }
-
   /**
    * Flushes all cached entries to disk.
    * It does not clear the cache.
    */
-  public synchronized void flushAll() {
+  private void flushAll() {
     SonarLintConsole.get(project).debug("Persisting all findings");
     cache.forEach((virtualFile, liveFindings) -> {
       if (virtualFile.isValid()) {
@@ -148,7 +145,7 @@ public class LiveFindingCache<T extends LiveFinding> {
           try {
             persistence.save(key, liveFindings);
           } catch (IOException e) {
-            throw new IllegalStateException("Failed to flush cache", e);
+            SonarLintConsole.get(project).error("Cannot flush issues", e);
           }
         }
       }
@@ -161,18 +158,6 @@ public class LiveFindingCache<T extends LiveFinding> {
   public synchronized void clear() {
     persistence.clear();
     cache.clear();
-  }
-
-  public synchronized void clear(VirtualFile virtualFile) {
-    var key = createKey(virtualFile);
-    if (key != null) {
-      cache.remove(virtualFile);
-      try {
-        persistence.clear(key);
-      } catch (IOException e) {
-        throw new IllegalStateException("Failed to clear cache", e);
-      }
-    }
   }
 
   public synchronized boolean contains(VirtualFile virtualFile) {

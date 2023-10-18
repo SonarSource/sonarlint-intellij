@@ -31,7 +31,6 @@ import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.vfs.VirtualFile
@@ -41,6 +40,18 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
+import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.event.ActionEvent
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import javax.swing.Box
+import javax.swing.JPanel
+import javax.swing.event.TreeSelectionListener
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreeNode
+import javax.swing.tree.TreePath
+import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
@@ -64,6 +75,7 @@ import org.sonarlint.intellij.ui.CardPanel
 import org.sonarlint.intellij.ui.CurrentFilePanel
 import org.sonarlint.intellij.ui.SonarLintRulePanel
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.nodes.AbstractNode
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LocalTaintVulnerabilityNode
@@ -73,18 +85,8 @@ import org.sonarlint.intellij.ui.tree.TreeContentKind
 import org.sonarlint.intellij.ui.tree.TreeSummary
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarlint.intellij.util.SonarLintActions
-import java.awt.BorderLayout
-import java.awt.Dimension
-import java.awt.event.ActionEvent
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import javax.swing.Box
-import javax.swing.JPanel
-import javax.swing.event.TreeSelectionListener
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.TreeNode
-import javax.swing.tree.TreePath
-import javax.swing.tree.TreeSelectionModel
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarlint.intellij.util.runOnPooledThread
 
 private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_SPLIT_PROPORTION"
 private const val DEFAULT_SPLIT_PROPORTION = 0.5f
@@ -327,12 +329,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 rulePanel.clear()
                 highlighting.removeHighlights()
             } else {
-                val moduleForFile = ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(file)
-                if (moduleForFile != null) {
-                    rulePanel.setSelectedFinding(moduleForFile, issue, issue.getRuleKey(), issue.getRuleDescriptionContextKey())
-                } else {
-                    rulePanel.clear()
-                }
+                issue.module?.let { module -> rulePanel.setSelectedFinding(module, issue, issue.getRuleKey(), issue.getRuleDescriptionContextKey()) }
+                        ?: rulePanel.clear()
                 highlighting.highlight(issue)
             }
         }
@@ -346,29 +344,34 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         return treeBuilder.findTaintByKey(taintKey) ?: oldTreeBuilder.findTaintByKey(taintKey)
     }
 
-    fun <T: Finding> trySelectFilteredTaintVulnerability(taintVulnerability: LocalTaintVulnerability?, showFinding: ShowFinding<T>) {
+    fun <T : Finding> trySelectFilteredTaintVulnerability(taintVulnerability: LocalTaintVulnerability?, showFinding: ShowFinding<T>) {
         taintVulnerability?.let {
             setSelectedVulnerability(it)
             return
         }
-        if (showFinding.codeSnippet == null) {
-            SonarLintProjectNotifications.get(project)
-                .notifyUnableToOpenFinding("taint vulnerability",
-                    "The taint vulnerability could not be detected by SonarLint in the current code.")
-            return
-        }
-        val matcher = TextRangeMatcher(project)
-        val rangeMarker = computeReadActionSafely<RangeMarker>(project) {
-            matcher.matchWithCode(showFinding.file, showFinding.textRange, showFinding.codeSnippet)
-        }
-        if (rangeMarker == null) {
-            SonarLintProjectNotifications.get(project)
-                .notifyUnableToOpenFinding("taint vulnerability", "The taint vulnerability could not be detected by SonarLint in the current code.")
-            return
-        }
-        ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(showFinding.file)?.let {
-            rulePanel.setSelectedFinding(it, null, showFinding.ruleKey, null)
-            getService(project, EditorDecorator::class.java).highlightRange(rangeMarker)
+        runOnPooledThread(project) {
+            if (showFinding.codeSnippet == null) {
+                SonarLintProjectNotifications.get(project)
+                        .notifyUnableToOpenFinding("taint vulnerability",
+                                "The taint vulnerability could not be detected by SonarLint in the current code.")
+                return@runOnPooledThread
+            }
+            val matcher = TextRangeMatcher(project)
+            val rangeMarker = computeReadActionSafely<RangeMarker>(project) {
+                matcher.matchWithCode(showFinding.file, showFinding.textRange, showFinding.codeSnippet)
+            }
+            if (rangeMarker == null) {
+                SonarLintProjectNotifications.get(project)
+                        .notifyUnableToOpenFinding("taint vulnerability", "The taint vulnerability could not be detected by SonarLint in the current code.")
+                return@runOnPooledThread
+            }
+
+            findModuleForFile(showFinding.file, project)?.let {
+                runOnUiThread(project) {
+                    rulePanel.setSelectedFinding(it, null, showFinding.ruleKey, null)
+                    getService(project, EditorDecorator::class.java).highlightRange(rangeMarker)
+                }
+            }
         }
     }
 
@@ -410,7 +413,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         val range = node.issue().range
         val startOffset = range?.startOffset ?: 0
         return OccurenceInfo(
-            OpenFileDescriptor(project, node.issue().psiFile().virtualFile, startOffset),
+            OpenFileDescriptor(project, node.issue().file(), startOffset),
             -1,
             -1
         )

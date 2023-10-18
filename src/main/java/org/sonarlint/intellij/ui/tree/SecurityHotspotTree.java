@@ -99,7 +99,7 @@ public class SecurityHotspotTree extends FindingTree implements DataProvider {
     } else {
       offset = 0;
     }
-    return new OpenFileDescriptor(project, securityHotspot.psiFile().getVirtualFile(), offset);
+    return new OpenFileDescriptor(project, securityHotspot.file(), offset);
   }
 
   @CheckForNull

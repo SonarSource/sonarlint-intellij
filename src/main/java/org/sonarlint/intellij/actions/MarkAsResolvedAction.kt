@@ -50,6 +50,7 @@ import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_K
 import org.sonarlint.intellij.util.displayErrorNotification
 import org.sonarlint.intellij.util.displaySuccessfulNotification
 import org.sonarlint.intellij.util.displayWarningNotification
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
 
@@ -75,7 +76,13 @@ class MarkAsResolvedAction(
             return issue.isValid() && serverConnection != null && (serverConnection.isSonarQube || issue.getServerKey() != null)
         }
 
-        fun openMarkAsResolvedDialog(project: Project, issue: Issue) {
+        fun openMarkAsResolvedDialogAsync(project: Project, issue: Issue) {
+            runOnPooledThread(project) {
+                openMarkAsResolvedDialog(project, issue)
+            }
+        }
+
+        private fun openMarkAsResolvedDialog(project: Project, issue: Issue) {
             val connection = serverConnection(project) ?: return displayErrorNotification(
                 project,
                 ERROR_TITLE, "No connection could be found", GROUP
@@ -90,13 +97,15 @@ class MarkAsResolvedAction(
                 issue.getServerKey() ?: issue.getId()?.toString() ?: return displayErrorNotification(project, ERROR_TITLE, "The issue key could not be found", GROUP)
             val response = checkPermission(project, connection, serverKey) ?: return
 
-            val resolution = MarkAsResolvedDialog(
-                project,
-                connection,
-                response,
-            ).chooseResolution() ?: return
-            if (confirm(project, connection.productName, resolution.newStatus)) {
-                markAsResolved(project, module, issue, resolution, serverKey)
+            runOnUiThread(project) {
+                val resolution = MarkAsResolvedDialog(
+                        project,
+                        connection,
+                        response,
+                ).chooseResolution() ?: return@runOnUiThread
+                if (confirm(project, connection.productName, resolution.newStatus)) {
+                    markAsResolved(project, module, issue, resolution, serverKey)
+                }
             }
         }
 
@@ -186,7 +195,7 @@ class MarkAsResolvedAction(
             return displayErrorNotification(project, ERROR_TITLE, "The issue could not be found", GROUP)
         }
 
-        openMarkAsResolvedDialog(project, issue)
+        openMarkAsResolvedDialogAsync(project, issue)
     }
 
 
@@ -228,7 +237,7 @@ class MarkAsResolvedAction(
 
     override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
         file?.let {
-            issue?.let { openMarkAsResolvedDialog(project, it) }
+            issue?.let { openMarkAsResolvedDialogAsync(project, it) }
         }
     }
 
