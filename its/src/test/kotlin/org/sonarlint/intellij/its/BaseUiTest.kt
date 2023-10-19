@@ -21,6 +21,7 @@ package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ComponentFixture
+import com.intellij.remoterobot.utils.waitFor
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -40,6 +41,7 @@ import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
 import org.sonarlint.intellij.its.utils.VisualTreeDumpOnFailure
 import org.sonarlint.intellij.its.utils.optionalStep
+import java.time.Duration
 
 const val robotUrl = "http://localhost:8082"
 
@@ -171,11 +173,19 @@ open class BaseUiTest {
     }
 
     private fun closeAllGotItTooltips() {
-        remoteRobot.findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton()).forEach {
-            it.click()
-            // Quick hack because another Got It Tooltip might not be visible directly
-            Thread.sleep(500)
+        var tries = 5
+        var allGotItTooltips = remoteRobot.findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton())
+        while (allGotItTooltips.isNotEmpty() && tries > 0) {
+            allGotItTooltips.forEach {
+                waitFor(Duration.ofSeconds(1)) {
+                    it.isShowing
+                }
+                it.click()
+            }
+            allGotItTooltips = remoteRobot.findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton())
+            tries--
         }
+        println("Closed all Got It tooltips in ${5 - tries} tries")
     }
 
     @BeforeEach
