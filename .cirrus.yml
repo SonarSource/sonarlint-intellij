@@ -71,7 +71,7 @@ build_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
     <<: *CONTAINER_DEFINITION
-    cpu: 4
+    cpu: 6
     memory: 8G
   env:
     ARTIFACTORY_DEPLOY_REPO: sonarsource-public-qa
@@ -97,7 +97,7 @@ validate_task:
     JDK_VERSION: "11"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 4
+    cpu: 6
     memory: 8G
   <<: *SETUP_GRADLE_CACHE
   build_script: |
