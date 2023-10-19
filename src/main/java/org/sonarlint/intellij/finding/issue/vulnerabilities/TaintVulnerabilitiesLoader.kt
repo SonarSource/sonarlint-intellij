@@ -69,7 +69,7 @@ object TaintVulnerabilitiesLoader {
       return emptyList()
     }
     return try {
-      connectedEngine.getServerTaintIssues(projectBinding, branchName, filePath)
+      connectedEngine.getServerTaintIssues(projectBinding, branchName, filePath, true)
     } catch(e: Exception) {
       // can happen if binding is invalid, user should already be notified
       SonarLintConsole.get(project).debug("Unable to load server issues: " + e.message)

@@ -41,7 +41,6 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.Issue
-import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -63,13 +62,13 @@ class MarkAsResolvedAction(
         "Mark Issue as...", "Change the issue resolution status", null
     ), IntentionAction, PriorityAction, Iconable {
     companion object {
-        private const val errorTitle = "<b>SonarLint - Unable to mark the issue as resolved</b>"
-        private const val content = "The issue was successfully marked as resolved"
+        private const val ERROR_TITLE = "<b>SonarLint - Unable to mark the issue as resolved</b>"
+        private const val CONTENT = "The issue was successfully marked as resolved"
 
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark Issue as Resolved")
 
         fun canBeMarkedAsResolved(project: Project, issue: Issue) : Boolean {
-            if (issue is LiveIssue && issue.isResolved) {
+            if (issue.isResolved()) {
                 return false
             }
             val serverConnection = serverConnection(project)
@@ -79,16 +78,16 @@ class MarkAsResolvedAction(
         fun openMarkAsResolvedDialog(project: Project, issue: Issue) {
             val connection = serverConnection(project) ?: return displayErrorNotification(
                 project,
-                errorTitle, "No connection could be found", GROUP
+                ERROR_TITLE, "No connection could be found", GROUP
             )
 
-            val file = issue.file() ?: return displayErrorNotification(project, errorTitle, "The file could not be found", GROUP)
+            val file = issue.file() ?: return displayErrorNotification(project, ERROR_TITLE, "The file could not be found", GROUP)
 
             val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
-                project, errorTitle, "No module could be found for this file", GROUP
+                project, ERROR_TITLE, "No module could be found for this file", GROUP
             )
             val serverKey =
-                issue.getServerKey() ?: issue.getId()?.toString() ?: return displayErrorNotification(project, errorTitle, "The issue key could not be found", GROUP)
+                issue.getServerKey() ?: issue.getId()?.toString() ?: return displayErrorNotification(project, ERROR_TITLE, "The issue key could not be found", GROUP)
             val response = checkPermission(project, connection, serverKey) ?: return
 
             val resolution = MarkAsResolvedDialog(
@@ -112,7 +111,7 @@ class MarkAsResolvedAction(
                 .markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
                 .thenAccept {
                     updateUI(project, issue)
-                    val comment = resolution.comment ?: return@thenAccept displaySuccessfulNotification(project, content, GROUP)
+                    val comment = resolution.comment ?: return@thenAccept displaySuccessfulNotification(project, CONTENT, GROUP)
                     addComment(project, module, issueKey, comment)
                 }
                 .exceptionally { error ->
@@ -133,7 +132,7 @@ class MarkAsResolvedAction(
         private fun addComment(project: Project, module: Module, issueKey: String, comment: String) {
             getService(BackendService::class.java)
                 .addCommentOnIssue(module, issueKey, comment)
-                .thenAccept { displaySuccessfulNotification(project, content, GROUP) }
+                .thenAccept { displaySuccessfulNotification(project, CONTENT, GROUP) }
                 .exceptionally { error ->
                     SonarLintConsole.get(project).error("Error while adding a comment on the issue", error)
                     displayWarningNotification(project, "The issue was marked as resolved but there was an error adding the comment", GROUP)
@@ -184,7 +183,7 @@ class MarkAsResolvedAction(
             issue = e.getData(TAINT_VULNERABILITY_DATA_KEY)
         }
         if (issue == null) {
-            return displayErrorNotification(project, errorTitle, "The issue could not be found", GROUP)
+            return displayErrorNotification(project, ERROR_TITLE, "The issue could not be found", GROUP)
         }
 
         openMarkAsResolvedDialog(project, issue)

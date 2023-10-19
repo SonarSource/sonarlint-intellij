@@ -90,6 +90,7 @@ private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_S
 private const val DEFAULT_SPLIT_PROPORTION = 0.5f
 
 private const val NO_BINDING_CARD_ID = "NO_BINDING_CARD"
+private const val NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID = "NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID"
 private const val INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD"
 private const val NO_ISSUES_CARD_ID = "NO_ISSUES_CARD"
 private const val TREE_CARD_ID = "TREE_CARD"
@@ -116,6 +117,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         val globalSettings = getGlobalSettings()
         cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
+        cards.add(centeredLabel("No taint vulnerabilities shown due to the current filtering", "Show Resolved Taint Vulnerabilities",
+            SonarLintActions.getInstance().includeResolvedTaintVulnerabilitiesAction()), NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
         noVulnerabilitiesPanel = centeredLabel("", "", null)
         cards.add(noVulnerabilitiesPanel, NO_ISSUES_CARD_ID)
         rulePanel.minimumSize = Dimension(350, 200)
@@ -136,8 +139,13 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         setContent(issuesPanel)
 
         val sonarLintActions = SonarLintActions.getInstance()
-        setupToolbar(listOf(ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
-            RefreshTaintVulnerabilitiesAction(), sonarLintActions.configure(), OpenTaintVulnerabilityDocumentationAction()))
+        setupToolbar(listOf(
+            ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
+            RefreshTaintVulnerabilitiesAction(),
+            sonarLintActions.includeResolvedTaintVulnerabilitiesAction(),
+            sonarLintActions.configure(),
+            OpenTaintVulnerabilityDocumentationAction()
+        ))
     }
 
     private fun centeredLabel(textLabel: String, actionText: String?, action: AnAction?): JBPanelWithEmptyText {
@@ -201,6 +209,23 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         cards.show(id)
     }
 
+    fun allowResolvedTaintVulnerabilities(allowResolved: Boolean) {
+        treeBuilder.allowResolvedIssues(allowResolved)
+        oldTreeBuilder.allowResolvedIssues(allowResolved)
+        refreshModel()
+    }
+
+    fun refreshModel() {
+        treeBuilder.refreshModel(project)
+        oldTreeBuilder.refreshModel(project)
+        if (treeBuilder.isEmptyWithFilteredIssues() || oldTreeBuilder.isEmptyWithFilteredIssues()) {
+            showCard(NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
+        } else {
+            showCard(TREE_CARD_ID)
+        }
+        expandDefault()
+    }
+
     fun populate(status: TaintVulnerabilitiesStatus) {
         val highlighting = getService(project, EditorDecorator::class.java)
         when (status) {
@@ -217,8 +242,12 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                     showNoVulnerabilitiesLabel()
                     highlighting.removeHighlights()
                 } else {
-                    showCard(TREE_CARD_ID)
                     populateTrees(status)
+                    if (treeBuilder.isEmptyWithFilteredIssues() || oldTreeBuilder.isEmptyWithFilteredIssues()) {
+                        showCard(NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
+                    } else {
+                        showCard(TREE_CARD_ID)
+                    }
                 }
             }
         }

@@ -69,7 +69,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private final Project project;
   private DefaultTreeModel model;
   private SummaryNode summaryNode;
-  protected boolean includeLocallyResolvedIssues = false;
+  private boolean includeLocallyResolvedIssues = false;
   private Map<VirtualFile, Collection<LiveIssue>> latestIssues;
   private TreeSummary treeSummary;
 
