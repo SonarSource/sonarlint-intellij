@@ -366,12 +366,24 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public int filterSecurityHotspots(Project project, boolean isResolved) {
+    var isOldTreeExpanded = oldSecurityHotspotTree.isExpanded(0);
+    var isTreeExpanded = securityHotspotTree.isExpanded(0);
     var oldHotspotsAfterFiltering = oldSecurityHotspotTreeBuilder.filterSecurityHotspots(project, isResolved);
     var newHotspotsAfterFiltering = securityHotspotTreeBuilder.filterSecurityHotspots(project, isResolved);
+    adjustRows(isOldTreeExpanded, isTreeExpanded);
     var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
     var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
     var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     return anyDisplayed ? focusedCount : 0;
+  }
+
+  private void adjustRows(boolean isOldTreeExpanded, boolean isTreeExpanded) {
+    if (!isOldTreeExpanded) {
+      oldSecurityHotspotTree.collapseRow(0);
+    }
+    if (!isTreeExpanded) {
+      securityHotspotTree.collapseRow(0);
+    }
   }
 
   public void selectLocationsTab() {
