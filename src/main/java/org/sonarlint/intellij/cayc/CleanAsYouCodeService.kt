@@ -27,6 +27,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 
 @Service(Service.Level.APP)
 class CleanAsYouCodeService {
@@ -35,7 +36,15 @@ class CleanAsYouCodeService {
     }
 
     fun setFocusOnNewCode(isFocusOnNewCode: Boolean) {
-        getGlobalSettings().isFocusOnNewCode = isFocusOnNewCode
+        refresh(getGlobalSettings(), isFocusOnNewCode)
+    }
+
+    fun setFocusOnNewCode(isFocusOnNewCode: Boolean, settings: SonarLintGlobalSettings) {
+        refresh(settings, isFocusOnNewCode)
+    }
+
+    private fun refresh(settings: SonarLintGlobalSettings, isFocusOnNewCode: Boolean) {
+        settings.isFocusOnNewCode = isFocusOnNewCode
         ProjectManager.getInstance().openProjects.forEach { project ->
             if (!project.isDisposed) {
                 SonarLintUtils.getService(project, SonarLintToolWindow::class.java).refreshViews()
