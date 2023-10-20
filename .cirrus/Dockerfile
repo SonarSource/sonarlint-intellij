@@ -8,7 +8,8 @@ ENV NODE_VERSION=18
 RUN apt-get update && apt-get install -y metacity xvfb xauth ffmpeg \
     nodejs=${NODE_VERSION}.* \
     build-essential \
-    gettext-base
+    gettext-base \
+    jq
 
 COPY --chmod=755 .cirrus/xvfb /etc/init.d/
 

@@ -138,9 +138,15 @@ intellij {
     plugins.set(listOf("java", "Git4Idea"))
 }
 
+val verifierVersions: String by project
+
 tasks.runPluginVerifier {
-    // Test oldest supported, and latest
-    ideVersions.set(listOf("IC-2022.3.1", "IC-2023.2.1"))
+    if (project.hasProperty("verifierVersions")) {
+        ideVersions.set(verifierVersions.split(','))
+    } else {
+        // Test oldest supported, and latest
+        ideVersions.set(listOf("IC-2022.3.1", "IC-2023.2.1"))
+    }
     failureLevel.set(
         EnumSet.complementOf(
             EnumSet.of(
