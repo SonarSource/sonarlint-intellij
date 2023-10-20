@@ -23,7 +23,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.finding.issue.*
+import org.sonarlint.intellij.finding.issue.aClientInputFile
+import org.sonarlint.intellij.finding.issue.aFileEdit
+import org.sonarlint.intellij.finding.issue.aQuickFix
+import org.sonarlint.intellij.finding.issue.aTextEdit
+import org.sonarlint.intellij.finding.issue.aTextRange
 
 class QuickFixTests : AbstractSonarLintLightTests() {
     @Test
@@ -42,7 +46,7 @@ class QuickFixTests : AbstractSonarLintLightTests() {
         val convertedFix = convert(project, fix)
 
         assertThat(convertedFix).isNotNull
-        assertThat(convertedFix!!.isApplicable()).isTrue
+        assertThat(convertedFix!!.isApplicable(myFixture.getDocument(file))).isTrue
         assertThat(convertedFix.applied).isFalse
         assertThat(convertedFix.message).isEqualTo("Fix message")
         assertThat(convertedFix.virtualFileEdits).extracting({ it.target }).containsOnly(tuple(file.virtualFile))
