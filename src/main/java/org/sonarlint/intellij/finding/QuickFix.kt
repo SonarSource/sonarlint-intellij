@@ -86,10 +86,12 @@ private fun convert(document: Document, textEdit: TextEdit): RangeMarkerEdit? {
 
 data class QuickFix(val message: String, val virtualFileEdits: List<VirtualFileEdit>) {
     var applied = false
-    fun isApplicable() =
-        !applied && virtualFileEdits.all { it.target.isValid && it.edits.all { e -> e.rangeMarker.isValid } }
 
-    fun isWithinBounds(document: Document): Boolean {
+    fun isApplicable(document: Document) = !applied
+            && virtualFileEdits.all { it.target.isValid && it.edits.all { e -> e.rangeMarker.isValid } }
+            && isWithinBounds(document)
+
+    private fun isWithinBounds(document: Document): Boolean {
         return virtualFileEdits.flatMap { it.edits }.all { (rangeMarker, _) ->
             val startOffsetInBound = rangeMarker.startOffset >= 0 && rangeMarker.startOffset <= document.textLength
             val endOffsetInBound = rangeMarker.endOffset >= 0 && rangeMarker.endOffset <= document.textLength

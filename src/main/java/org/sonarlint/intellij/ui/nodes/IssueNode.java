@@ -42,7 +42,8 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class IssueNode extends FindingNode {
   // not available in IJ15
-  private static final SimpleTextAttributes GRAYED_SMALL_ATTRIBUTES = new SimpleTextAttributes(STYLE_SMALLER, UIUtil.getInactiveTextColor());
+  private static final SimpleTextAttributes GRAYED_SMALL_ATTRIBUTES = new SimpleTextAttributes(STYLE_SMALLER,
+    UIUtil.getInactiveTextColor());
 
   private final LiveIssue issue;
 
@@ -51,14 +52,18 @@ public class IssueNode extends FindingNode {
     this.issue = ((LiveIssue) issue);
   }
 
+  private Optional<ServerConnection> retrieveServerConnection() {
+    var project = issue.psiFile().getProject();
+    if (!project.isDisposed()) {
+      return getService(issue.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
+    } else {
+      return Optional.empty();
+    }
+  }
+
   @Override
   public void render(TreeCellRenderer renderer) {
-    var project = issue.psiFile().getProject();
-    Optional<ServerConnection> serverConnection = Optional.empty();
-    if (!project.isDisposed()) {
-      serverConnection = getService(issue.psiFile().getProject(), ProjectBindingManager.class).tryGetServerConnection();
-    }
-
+    var serverConnection = retrieveServerConnection();
     var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
     var highestQuality = issue.getHighestQuality();
     var highestImpact = issue.getHighestImpact();
@@ -70,7 +75,8 @@ public class IssueNode extends FindingNode {
 
       if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();
-        renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " analysis");
+        renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " " +
+          "analysis");
         setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
       } else {
         renderer.setIconToolTip(impactText + " impact on " + qualityText);
@@ -101,17 +107,9 @@ public class IssueNode extends FindingNode {
     }
 
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
-
     renderMessage(renderer);
-
     issue.context().ifPresent(context -> renderer.append(context.getSummaryDescription(), GRAYED_SMALL_ATTRIBUTES));
-
-    var introductionDate = issue.getIntroductionDate();
-    if (introductionDate != null) {
-      renderer.append(" ");
-      var age = DateUtils.toAge(introductionDate);
-      renderer.append(age, SimpleTextAttributes.GRAY_ATTRIBUTES);
-    }
+    renderIntroductionDate(renderer);
   }
 
   private void renderMessage(TreeCellRenderer renderer) {
@@ -129,6 +127,15 @@ public class IssueNode extends FindingNode {
       } else {
         renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
       }
+    }
+  }
+
+  private void renderIntroductionDate(TreeCellRenderer renderer) {
+    var introductionDate = issue.getIntroductionDate();
+    if (introductionDate != null) {
+      renderer.append(" ");
+      var age = DateUtils.toAge(introductionDate);
+      renderer.append(age, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
   }
 

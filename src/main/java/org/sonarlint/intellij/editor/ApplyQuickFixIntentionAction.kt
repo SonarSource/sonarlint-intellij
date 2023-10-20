@@ -42,7 +42,7 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
     override fun startInWriteAction() = true
     override fun getIcon(flags: Int) = AllIcons.Actions.IntentionBulb
     override fun getPriority() = PriorityAction.Priority.TOP
-    override fun isAvailable(project: Project, editor: Editor, file: PsiFile) = fix.isApplicable()
+    override fun isAvailable(project: Project, editor: Editor, file: PsiFile) = fix.isApplicable(editor.document)
 
     /** To differentiate if the quick fix was actually applied or only virtually for the preview */
     private fun invokedInPreview() = invokedInPreview
@@ -63,7 +63,7 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
      *  interacting with the telemetry.
      */
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
-        if (!fix.isApplicable() || !fix.isWithinBounds(editor.document)) {
+        if (!fix.isApplicable(editor.document)) {
             // the editor could have changed between the isAvailable and invoke calls
             return
         }
