@@ -123,7 +123,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public void save(SonarLintGlobalSettings settings) {
     getComponent();
-    getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected());
+    getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
     settings.setNodejsPath(nodeJsPath.getText());
   }
