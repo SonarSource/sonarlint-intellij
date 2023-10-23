@@ -94,7 +94,7 @@ validate_task:
     - build
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
-    JDK_VERSION: "11"
+    JDK_VERSION: "17"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 6
@@ -118,7 +118,7 @@ validate_windows_task:
     - build
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
-    JDK_VERSION: "11"
+    JDK_VERSION: "17"
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
