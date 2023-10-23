@@ -408,8 +408,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
   }
 
   public void markAsResolved(Issue issue) {
-    if (issue instanceof LiveIssue) {
-      var liveIssue = (LiveIssue) issue;
+    if (issue instanceof LiveIssue liveIssue) {
       this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
       this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
       this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));
@@ -423,14 +422,14 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
   }
 
   public void reopenIssue(Issue issue) {
-    if (issue instanceof LiveIssue) {
-      this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove((LiveIssue) issue));
+    if (issue instanceof LiveIssue liveIssue) {
+      this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
       this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
-    } else if (issue instanceof LocalTaintVulnerability) {
+    } else if (issue instanceof LocalTaintVulnerability taintVulnerability) {
       var taintContent = getTaintVulnerabilitiesContent();
       if (taintContent != null) {
         var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-        taintPanel.remove((LocalTaintVulnerability) issue);
+        taintPanel.remove(taintVulnerability);
         taintPanel.refreshModel();
       }
     }
