@@ -177,7 +177,7 @@ public final class ProjectBindingManager {
     moduleBindingsOverrides.forEach((module, overriddenProjectKey) -> getSettingsFor(module).setProjectKey(overriddenProjectKey));
     var modulesToClearOverride = allModules().stream()
       .filter(m -> !moduleBindingsOverrides.containsKey(m));
-    unbind(modulesToClearOverride.collect(Collectors.toList()));
+    unbind(modulesToClearOverride.toList());
 
     SonarLintProjectNotifications.get(myProject).reset();
     var newBinding = requireNonNull(getBinding());
@@ -244,40 +244,20 @@ public final class ProjectBindingManager {
     return Set.of();
   }
 
-  public static class ProjectKeyAndBranch {
-    private final String projectKey;
-    private final String branchName;
+  public record ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {
 
-    public ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {
-      this.projectKey = projectKey;
-      this.branchName = branchName;
-    }
-
-    public String getProjectKey() {
-      return projectKey;
-    }
-
-    @CheckForNull
-    public String getBranchName() {
-      return branchName;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
+      @Override
+      public boolean equals(Object o) {
+        if (this == o) {
+          return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+          return false;
+        }
+        ProjectKeyAndBranch that = (ProjectKeyAndBranch) o;
+        return projectKey.equals(that.projectKey) && Objects.equals(branchName, that.branchName);
       }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      ProjectKeyAndBranch that = (ProjectKeyAndBranch) o;
-      return projectKey.equals(that.projectKey) && Objects.equals(branchName, that.branchName);
-    }
 
-    @Override
-    public int hashCode() {
-      return Objects.hash(projectKey, branchName);
-    }
   }
 
   private static Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {

@@ -156,8 +156,7 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
     var lib = PsiTestUtil.addLibrary(model, libraryName, libraryPath.getParent().toString(), libraryPath.getFileName().toString());
     // workaround as ModifiableRootModel#findLibraryOrderEntry does not work
     for (OrderEntry entry : model.getOrderEntries()) {
-      if (entry instanceof LibraryOrderEntry) {
-        var libraryEntry = (LibraryOrderEntry) entry;
+      if (entry instanceof LibraryOrderEntry libraryEntry) {
         if (libraryName.equals(libraryEntry.getLibraryName())) {
           libraryEntry.setScope(scope);
           libraryEntry.setExported(exported);

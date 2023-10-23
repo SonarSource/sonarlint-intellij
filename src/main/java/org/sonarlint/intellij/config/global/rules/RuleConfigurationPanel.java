@@ -562,23 +562,12 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       constraints.anchor = GridBagConstraints.BASELINE_LEADING;
       constraints.gridwidth = 1;
       switch (param.getType()) {
-        case TEXT:
-          createTextParam(rule, configPanel, constraints, param);
-          break;
-        case STRING:
-          createStringParam(rule, configPanel, constraints, param);
-          break;
-        case INTEGER:
-          createIntParam(rule, configPanel, constraints, param);
-          break;
-        case FLOAT:
-          createFloatParam(rule, configPanel, constraints, param);
-          break;
-        case BOOLEAN:
-          createBooleanParam(rule, configPanel, constraints, param);
-          break;
-        default:
-          GlobalLogOutput.get().log("Unknown rule parameter type: " + param.getType() + " for rule " + rule.getKey(), ClientLogOutput.Level.ERROR);
+        case TEXT -> createTextParam(rule, configPanel, constraints, param);
+        case STRING -> createStringParam(rule, configPanel, constraints, param);
+        case INTEGER -> createIntParam(rule, configPanel, constraints, param);
+        case FLOAT -> createFloatParam(rule, configPanel, constraints, param);
+        case BOOLEAN -> createBooleanParam(rule, configPanel, constraints, param);
+        default -> GlobalLogOutput.get().log("Unknown rule parameter type: " + param.getType() + " for rule " + rule.getKey(), ClientLogOutput.Level.ERROR);
       }
       constraints.gridy++;
     }
@@ -686,8 +675,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private RulesTreeNode.Rule getStrictlySelectedToolNode() {
     var paths = table.getTree().getSelectionPaths();
-    return paths != null && paths.length == 1 && paths[0].getLastPathComponent() instanceof RulesTreeNode.Rule
-      ? (RulesTreeNode.Rule) paths[0].getLastPathComponent()
+    return paths != null && paths.length == 1 && paths[0].getLastPathComponent() instanceof RulesTreeNode.Rule rule
+      ? rule
       : null;
   }
 
@@ -715,8 +704,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
           if (current.isEnabled()) {
             myEnableRequiredComponent.add(current);
           }
-          if (current instanceof Container) {
-            for (var child : ((Container) current).getComponents()) {
+          if (current instanceof Container container) {
+            for (var child : container.getComponents()) {
               q.addLast(child);
             }
           }

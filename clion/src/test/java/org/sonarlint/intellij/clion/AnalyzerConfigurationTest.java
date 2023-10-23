@@ -110,13 +110,13 @@ class AnalyzerConfigurationTest {
       Language.CPP,
       Map.of("isHeaderFile", "true"));
 
-    assertEquals(file, configuration.virtualFile);
-    assertEquals("compilerExecutable", configuration.compilerExecutable);
-    assertEquals("compilerWorkingDir", configuration.compilerWorkingDir);
-    assertEquals(List.of("s1", "s2"), configuration.compilerSwitches);
-    assertEquals("compilerKind", configuration.compilerKind);
-    assertEquals(Language.CPP, configuration.sonarLanguage);
-    assertEquals("true", configuration.properties.get("isHeaderFile"));
+    assertEquals(file, configuration.virtualFile());
+    assertEquals("compilerExecutable", configuration.compilerExecutable());
+    assertEquals("compilerWorkingDir", configuration.compilerWorkingDir());
+    assertEquals(List.of("s1", "s2"), configuration.compilerSwitches());
+    assertEquals("compilerKind", configuration.compilerKind());
+    assertEquals(Language.CPP, configuration.sonarLanguage());
+    assertEquals("true", configuration.properties().get("isHeaderFile"));
   }
 
   @Test

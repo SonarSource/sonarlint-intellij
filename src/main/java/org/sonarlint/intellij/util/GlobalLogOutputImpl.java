@@ -31,17 +31,9 @@ public class GlobalLogOutputImpl implements GlobalLogOutput {
   @Override
   public void log(String msg, Level level) {
     switch (level) {
-      case TRACE:
-      case DEBUG:
-        getConsolesOfOpenedProjects().forEach(console -> console.debug(msg));
-        break;
-      case ERROR:
-        getConsolesOfOpenedProjects().forEach(console -> console.error(msg));
-        break;
-      case INFO:
-      case WARN:
-      default:
-        getConsolesOfOpenedProjects().forEach(console -> console.info(msg));
+      case TRACE, DEBUG -> getConsolesOfOpenedProjects().forEach(console -> console.debug(msg));
+      case ERROR -> getConsolesOfOpenedProjects().forEach(console -> console.error(msg));
+      default -> getConsolesOfOpenedProjects().forEach(console -> console.info(msg));
     }
   }
 

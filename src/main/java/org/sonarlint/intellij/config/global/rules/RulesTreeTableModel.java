@@ -56,16 +56,12 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   @Override
   public Class getColumnClass(int column) {
-    switch (column) {
-      case TREE_COLUMN:
-        return TreeTableModel.class;
-      case ICONS_COLUMN:
-        return Icon.class;
-      case IS_ENABLED_COLUMN:
-        return Boolean.class;
-      default:
-        throw new IllegalArgumentException();
-    }
+    return switch (column) {
+      case TREE_COLUMN -> TreeTableModel.class;
+      case ICONS_COLUMN -> Icon.class;
+      case IS_ENABLED_COLUMN -> Boolean.class;
+      default -> throw new IllegalArgumentException();
+    };
   }
 
   @Nullable
@@ -76,8 +72,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     }
 
     if (column == ICONS_COLUMN) {
-      if (node instanceof RulesTreeNode.Rule) {
-        var rule = (RulesTreeNode.Rule) node;
+      if (node instanceof RulesTreeNode.Rule rule) {
         var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
         // Rules should always have the new CCT
         return rule.getHighestImpact() != null ? new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.impact(rule.getHighestImpact())) : null;
@@ -102,11 +97,9 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
   public void setValueAt(Object aValue, Object node, int column) {
     if (column == IS_ENABLED_COLUMN) {
       var value = (boolean) aValue;
-      if (node instanceof RulesTreeNode.Rule) {
-        var rule = (RulesTreeNode.Rule) node;
+      if (node instanceof RulesTreeNode.Rule rule) {
         activateRule(rule, value);
-      } else if (node instanceof RulesTreeNode.Language) {
-        var lang = (RulesTreeNode.Language) node;
+      } else if (node instanceof RulesTreeNode.Language lang) {
         activateLanguage(lang, value);
       }
 
@@ -157,11 +150,9 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
   }
 
   public void swapAndRefresh(Object node) {
-    if (node instanceof RulesTreeNode.Rule) {
-      var rule = (RulesTreeNode.Rule) node;
+    if (node instanceof RulesTreeNode.Rule rule) {
       activateRule(rule, !rule.isActivated());
-    } else if (node instanceof RulesTreeNode.Language) {
-      var lang = (RulesTreeNode.Language) node;
+    } else if (node instanceof RulesTreeNode.Language lang) {
       activateLanguage(lang, lang.isActivated() == null || !lang.isActivated());
     }
     ((AbstractTableModel) treeTable.getModel()).fireTableDataChanged();

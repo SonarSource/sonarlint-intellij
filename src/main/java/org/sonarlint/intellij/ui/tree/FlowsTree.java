@@ -89,14 +89,11 @@ public class FlowsTree extends Tree {
 
   private void highlightInEditor(DefaultMutableTreeNode node) {
     var highlighter = SonarLintUtils.getService(project, EditorDecorator.class);
-    if (node instanceof FlowNode) {
-      var flowNode = (FlowNode) node;
+    if (node instanceof FlowNode flowNode) {
       highlighter.highlightFlow(flowNode.getFlow());
-    } else if (node instanceof FlowSecondaryLocationNode) {
-      var locationNode = (FlowSecondaryLocationNode) node;
+    } else if (node instanceof FlowSecondaryLocationNode locationNode) {
       highlighter.highlightSecondaryLocation(locationNode.getSecondaryLocation(), locationNode.getAssociatedFlow());
-    } else if (node instanceof PrimaryLocationNode) {
-      var primaryLocationNode = (PrimaryLocationNode) node;
+    } else if (node instanceof PrimaryLocationNode primaryLocationNode) {
       highlighter.highlightPrimaryLocation(primaryLocationNode.rangeMarker(), primaryLocationNode.message(), primaryLocationNode.getAssociatedFlow());
     }
   }
@@ -106,11 +103,9 @@ public class FlowsTree extends Tree {
       return;
     }
     RangeMarker rangeMarker;
-    if (node instanceof FlowNode) {
-      var flowNode = (FlowNode) node;
+    if (node instanceof FlowNode flowNode) {
       rangeMarker = flowNode.getFlow().getLocations().stream().findFirst().map(Location::getRange).orElse(null);
-    } else if (node instanceof PrimaryLocationNode) {
-      var locationNode = (PrimaryLocationNode) node;
+    } else if (node instanceof PrimaryLocationNode locationNode) {
       rangeMarker = locationNode.rangeMarker();
     } else {
       rangeMarker = null;

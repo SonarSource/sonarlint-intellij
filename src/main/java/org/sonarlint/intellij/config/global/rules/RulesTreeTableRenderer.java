@@ -53,8 +53,7 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
     if (value instanceof RulesTreeNode.Language) {
       style = SimpleTextAttributes.STYLE_BOLD;
       text = node.toString();
-    } else if (value instanceof RulesTreeNode.Rule) {
-      var rule = (RulesTreeNode.Rule) value;
+    } else if (value instanceof RulesTreeNode.Rule rule) {
       text = rule.getName();
     }
 

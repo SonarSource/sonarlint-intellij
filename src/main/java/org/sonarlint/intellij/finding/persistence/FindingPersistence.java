@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.tracking.LocalFindingTrackable;
@@ -104,7 +103,7 @@ public class FindingPersistence<T extends LiveFinding> {
   private static Collection<LocalFindingTrackable> transform(Sonarlint.Findings protoFindings) {
     return protoFindings.getFindingList().stream()
       .map(FindingPersistence::transform)
-      .collect(Collectors.toList());
+      .toList();
   }
 
   private Sonarlint.Findings transform(Collection<T> localFindings) {

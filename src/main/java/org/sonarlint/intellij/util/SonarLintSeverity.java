@@ -65,16 +65,10 @@ public enum SonarLintSeverity {
     if (impact != null) {
       return cache.get(impact.toString());
     }
-    switch (severity) {
-      case BLOCKER:
-      case CRITICAL:
-        return cache.get(ImpactSeverity.HIGH.toString());
-      case MINOR:
-      case INFO:
-        return cache.get(ImpactSeverity.LOW.toString());
-      case MAJOR:
-      default:
-        return cache.get(ImpactSeverity.MEDIUM.toString());
-    }
+    return switch (severity) {
+      case BLOCKER, CRITICAL -> cache.get(ImpactSeverity.HIGH.toString());
+      case MINOR, INFO -> cache.get(ImpactSeverity.LOW.toString());
+      default -> cache.get(ImpactSeverity.MEDIUM.toString());
+    };
   }
 }

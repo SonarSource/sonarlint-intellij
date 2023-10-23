@@ -44,18 +44,19 @@ public class BuildWrapperJsonGenerator {
   }
 
   private void appendEntry(AnalyzerConfiguration.Configuration entry) {
-    var quotedCompilerExecutable = quote(entry.compilerExecutable);
+    var quotedCompilerExecutable = quote(entry.compilerExecutable());
     builder.append("{")
       .append("\"compiler\":\"")
-      .append(entry.compilerKind)
+      .append(entry.compilerKind())
       .append("\",")
-      .append("\"cwd\":" + quote(entry.compilerWorkingDir) + ",")
+      .append("\"cwd\":")
+      .append(quote(entry.compilerWorkingDir())).append(",")
       .append("\"executable\":")
       .append(quotedCompilerExecutable)
       .append(",");
     builder.append("\"properties\":{");
     var firstProp = true;
-    for (Map.Entry<String, String> prop : entry.properties.entrySet()) {
+    for (Map.Entry<String, String> prop : entry.properties().entrySet()) {
       if (!firstProp) {
         builder.append(",");
       } else {
@@ -66,8 +67,9 @@ public class BuildWrapperJsonGenerator {
     builder.append("},");
     builder.append("\"cmd\":[")
       .append(quotedCompilerExecutable)
-      .append("," + quote(entry.virtualFile.getCanonicalPath()));
-    entry.compilerSwitches.forEach(s -> builder.append(",").append(quote(s)));
+      .append(",")
+      .append(quote(entry.virtualFile().getCanonicalPath()));
+    entry.compilerSwitches().forEach(s -> builder.append(",").append(quote(s)));
     builder.append("]}");
   }
 
@@ -76,7 +78,7 @@ public class BuildWrapperJsonGenerator {
   }
 
   static String quote(@Nullable String string) {
-    if (string == null || string.length() == 0) {
+    if (string == null || string.isEmpty()) {
       return "\"\"";
     }
 
@@ -90,33 +92,23 @@ public class BuildWrapperJsonGenerator {
     for (i = 0; i < len; i += 1) {
       c = string.charAt(i);
       switch (c) {
-        case '\\':
-        case '"':
+        case '\\', '"' -> {
           sb.append('\\');
           sb.append(c);
-          break;
-        case '\b':
-          sb.append("\\b");
-          break;
-        case '\t':
-          sb.append("\\t");
-          break;
-        case '\n':
-          sb.append("\\n");
-          break;
-        case '\f':
-          sb.append("\\f");
-          break;
-        case '\r':
-          sb.append("\\r");
-          break;
-        default:
+        }
+        case '\b' -> sb.append("\\b");
+        case '\t' -> sb.append("\\t");
+        case '\n' -> sb.append("\\n");
+        case '\f' -> sb.append("\\f");
+        case '\r' -> sb.append("\\r");
+        default -> {
           if (c < ' ') {
             t = "000" + Integer.toHexString(c);
-            sb.append("\\u" + t.substring(t.length() - 4));
+            sb.append("\\u").append(t.substring(t.length() - 4));
           } else {
             sb.append(c);
           }
+        }
       }
     }
     sb.append('"');

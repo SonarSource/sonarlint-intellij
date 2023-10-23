@@ -119,19 +119,19 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
     if (currentFocus) {
       var oldHotspots = findings.getSecurityHotspotsPerFile().entrySet().stream()
-        .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList())))
+        .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).toList()))
         .filter(e -> !e.getValue().isEmpty())
         .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveSecurityHotspot>) e.getValue()));
       var newHotspots = findings.getSecurityHotspotsPerFile().entrySet().stream()
-        .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList())))
+        .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(LiveFinding::isOnNewCode).toList()))
         .filter(e -> !e.getValue().isEmpty())
         .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveSecurityHotspot>) e.getValue()));
       var oldIssues = findings.getIssuesPerFile().entrySet().stream()
-        .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList())))
+        .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).toList()))
         .filter(e -> !e.getValue().isEmpty())
         .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveIssue>) e.getValue()));
       var newIssues = findings.getIssuesPerFile().entrySet().stream()
-        .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList())))
+        .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(LiveFinding::isOnNewCode).toList()))
         .filter(e -> !e.getValue().isEmpty())
         .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveIssue>) e.getValue()));
 

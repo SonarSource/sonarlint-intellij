@@ -49,7 +49,6 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.commons.progress.CanceledException;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -273,7 +272,7 @@ public class Analysis implements Cancelable {
 
       for (var entry : filesByModule.entrySet()) {
         var moduleFilesWithIssues =
-          entry.getValue().stream().filter(f -> !issuesPerFile.getOrDefault(f, Collections.emptyList()).isEmpty()).collect(toList());
+          entry.getValue().stream().filter(f -> !issuesPerFile.getOrDefault(f, Collections.emptyList()).isEmpty()).toList();
         if (!moduleFilesWithIssues.isEmpty()) {
           filesWithIssuesPerModule.put(entry.getKey(), moduleFilesWithIssues);
         }

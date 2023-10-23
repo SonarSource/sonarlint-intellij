@@ -67,9 +67,8 @@ public final class SonarLintActions {
   SonarLintActions(ActionManager actionManager) {
     var analyzeMenu = actionManager.getAction(IdeActions.GROUP_ANALYZE);
     // some flavors of IDEA don't have the Analyze menu, register at runtime to avoid error if declared in plugin.xml
-    if (analyzeMenu instanceof DefaultActionGroup) {
+    if (analyzeMenu instanceof DefaultActionGroup analyzeMenuGroup) {
       var sonarLintAnalyzeMenu = actionManager.getAction("SonarLint.AnalyzeMenu");
-      var analyzeMenuGroup = (DefaultActionGroup) analyzeMenu;
       analyzeMenuGroup.add(sonarLintAnalyzeMenu);
     }
 

@@ -33,15 +33,10 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import java.awt.GraphicsEnvironment;
-import java.awt.Image;
-import java.awt.Transparency;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
@@ -106,23 +101,6 @@ public class SonarLintUtils {
       return str + '/';
     }
     return str;
-  }
-
-  public static Image iconToImage(Icon icon) {
-    if (icon instanceof ImageIcon) {
-      return ((ImageIcon) icon).getImage();
-    } else {
-      var w = icon.getIconWidth();
-      var h = icon.getIconHeight();
-      var ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-      var gd = ge.getDefaultScreenDevice();
-      var gc = gd.getDefaultConfiguration();
-      var image = gc.createCompatibleImage(w, h, Transparency.TRANSLUCENT);
-      var g = image.createGraphics();
-      icon.paintIcon(null, g, 0, 0);
-      g.dispose();
-      return image;
-    }
   }
 
   /**

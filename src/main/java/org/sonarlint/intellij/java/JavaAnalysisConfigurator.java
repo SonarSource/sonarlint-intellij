@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -90,7 +89,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
 
   private static void setMultiValuePropertyIfNonEmpty(Map<String, String> properties, String propKey, Set<String> values) {
     if (!values.isEmpty()) {
-      var joinedLibs = StringUtils.join(values.stream().map(JavaAnalysisConfigurator::csvEscape).collect(Collectors.toList()), SEPARATOR);
+      var joinedLibs = StringUtils.join(values.stream().map(JavaAnalysisConfigurator::csvEscape).toList(), SEPARATOR);
       properties.put(propKey, joinedLibs);
     }
   }
@@ -131,12 +130,12 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
       if ((!topLevel && !isExported(entry)) || !entry.isValid()) {
         continue;
       }
-      if (entry instanceof ModuleOrderEntry) {
-        processModuleOrderEntry(moduleClasspath, testClasspathOnly, (ModuleOrderEntry) entry);
-      } else if (entry instanceof LibraryOrderEntry) {
-        processLibraryOrderEntry(moduleClasspath, (LibraryOrderEntry) entry, testClasspathOnly);
-      } else if (entry instanceof JdkOrderEntry) {
-        processJdkOrderEntry(module, moduleClasspath, ((JdkOrderEntry) entry).getJdk());
+      if (entry instanceof ModuleOrderEntry moduleEntry) {
+        processModuleOrderEntry(moduleClasspath, testClasspathOnly, moduleEntry);
+      } else if (entry instanceof LibraryOrderEntry libraryEntry) {
+        processLibraryOrderEntry(moduleClasspath, libraryEntry, testClasspathOnly);
+      } else if (entry instanceof JdkOrderEntry jdkEntry && jdkEntry.getJdk() != null) {
+        processJdkOrderEntry(module, moduleClasspath, jdkEntry.getJdk());
       }
     }
   }
@@ -206,7 +205,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   }
 
   private static boolean isExported(OrderEntry entry) {
-    return (entry instanceof ExportableOrderEntry) && ((ExportableOrderEntry) entry).isExported();
+    return (entry instanceof ExportableOrderEntry exportableEntry) && exportableEntry.isExported();
   }
 
   private static void processJdkOrderEntry(final Module module, JavaModuleClasspath moduleClasspath, Sdk jdk) {

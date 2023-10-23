@@ -140,12 +140,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       });
     }
 
-    if (finding instanceof LiveSecurityHotspot) {
-      intentionActions.add(new ReviewSecurityHotspotAction(finding.getServerFindingKey(), ((LiveSecurityHotspot) finding).getStatus()));
+    if (finding instanceof LiveSecurityHotspot hotspot) {
+      intentionActions.add(new ReviewSecurityHotspotAction(finding.getServerFindingKey(), hotspot.getStatus()));
     }
 
-    if (finding instanceof LiveIssue) {
-      intentionActions.add(new MarkAsResolvedAction((LiveIssue) finding));
+    if (finding instanceof LiveIssue liveIssue) {
+      intentionActions.add(new MarkAsResolvedAction(liveIssue));
     }
 
     finding.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(finding, c)));
@@ -191,29 +191,19 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     if (impact != null) {
-      switch (impact) {
-        case HIGH:
-          return SonarLintTextAttributes.HIGH;
-        case LOW:
-          return SonarLintTextAttributes.LOW;
-        case MEDIUM:
-        default:
-          return SonarLintTextAttributes.MEDIUM;
-      }
+      return switch (impact) {
+        case HIGH -> SonarLintTextAttributes.HIGH;
+        case LOW -> SonarLintTextAttributes.LOW;
+        default -> SonarLintTextAttributes.MEDIUM;
+      };
     }
 
     if (severity != null) {
-      switch (severity) {
-        case CRITICAL:
-        case BLOCKER:
-          return SonarLintTextAttributes.HIGH;
-        case MINOR:
-        case INFO:
-          return SonarLintTextAttributes.LOW;
-        case MAJOR:
-        default:
-          return SonarLintTextAttributes.MEDIUM;
-      }
+      return switch (severity) {
+        case CRITICAL, BLOCKER -> SonarLintTextAttributes.HIGH;
+        case MINOR, INFO -> SonarLintTextAttributes.LOW;
+        default -> SonarLintTextAttributes.MEDIUM;
+      };
     }
 
     return SonarLintTextAttributes.MEDIUM;

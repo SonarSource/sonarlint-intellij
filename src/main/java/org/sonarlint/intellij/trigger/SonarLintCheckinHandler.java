@@ -36,7 +36,6 @@ import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -126,7 +125,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     var numFiles = issuesPerFile.keySet().size();
 
-    var issues = issuesPerFile.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+    var issues = issuesPerFile.values().stream().flatMap(Collection::stream).toList();
     var numSecretsIssues = issues.stream()
       .filter(issue -> !shouldFocusOnNewCode || issue.isOnNewCode())
       .filter(issue -> issue.getRuleKey()
@@ -149,8 +148,10 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var warningAboutLeakedSecrets = "";
     if (numSecretsIssues > 0) {
       var secretWord = SonarLintUtils.pluralize("secret", numSecretsIssues);
-      warningAboutLeakedSecrets = String.format("\n\nSonarLint analysis found %d %s. " +
-        "Committed secrets may lead to unauthorized system access.", numSecretsIssues, secretWord);
+      warningAboutLeakedSecrets = String.format("""
+        
+
+        SonarLint analysis found %d %s. Committed secrets may lead to unauthorized system access.""", numSecretsIssues, secretWord);
     }
     var message = new StringBuilder();
     if (numBlockerIssues > 0) {

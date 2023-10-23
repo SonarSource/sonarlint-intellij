@@ -28,7 +28,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
@@ -79,7 +78,7 @@ public class ExcludeFileAction extends AbstractSonarAction {
 
     var newExclusions = toStringStream(project, files)
       .filter(path -> !exclusions.contains(path))
-      .collect(Collectors.toList());
+      .toList();
 
     if (!newExclusions.isEmpty()) {
       exclusions.addAll(newExclusions);

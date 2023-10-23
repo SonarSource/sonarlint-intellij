@@ -99,7 +99,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   }
 
   public void updateModel(Map<VirtualFile, Collection<LiveSecurityHotspot>> map) {
-    var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
+    var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).toList();
 
     nonFilteredNodes.clear();
     toRemove.forEach(this::removeFile);
@@ -319,7 +319,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots, boolean allowResolved) {
     return StreamSupport.stream(securityHotspots.spliterator(), false)
       .filter(hotspot -> accept(hotspot, allowResolved))
-      .collect(Collectors.toList());
+      .toList();
   }
 
   private static boolean accept(LiveSecurityHotspot securityHotspot, boolean allowResolved) {
@@ -406,8 +406,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       return null;
     }
 
-    if (next instanceof LiveSecurityHotspotNode) {
-      return (LiveSecurityHotspotNode) next;
+    if (next instanceof LiveSecurityHotspotNode hotspotNode) {
+      return hotspotNode;
     }
 
     return firstHotspotDown(next);
@@ -422,8 +422,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       return null;
     }
 
-    if (next instanceof LiveSecurityHotspotNode) {
-      return (LiveSecurityHotspotNode) next;
+    if (next instanceof LiveSecurityHotspotNode hotspotNode) {
+      return hotspotNode;
     }
 
     return lastHotspotDown(next);
@@ -434,8 +434,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
    */
   @CheckForNull
   private static LiveSecurityHotspotNode firstHotspotDown(AbstractNode node) {
-    if (node instanceof LiveSecurityHotspotNode) {
-      return (LiveSecurityHotspotNode) node;
+    if (node instanceof LiveSecurityHotspotNode hotspotNode) {
+      return hotspotNode;
     }
 
     if (node.getChildCount() > 0) {
@@ -451,8 +451,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
    */
   @CheckForNull
   private static LiveSecurityHotspotNode lastHotspotDown(AbstractNode node) {
-    if (node instanceof LiveSecurityHotspotNode) {
-      return (LiveSecurityHotspotNode) node;
+    if (node instanceof LiveSecurityHotspotNode hotspotNode) {
+      return hotspotNode;
     }
 
     var lastChild = node.getLastChild();

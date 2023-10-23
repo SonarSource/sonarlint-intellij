@@ -71,10 +71,9 @@ public class AnalyzerConfiguration {
    */
   public ConfigurationResult getConfigurationAction(VirtualFile file) {
     var psiFile = PsiManager.getInstance(project).findFile(file);
-    if (!(psiFile instanceof OCPsiFile)) {
+    if (!(psiFile instanceof OCPsiFile ocFile)) {
       return new ConfigurationResult(psiFile + " not an OCPsiFile");
     }
-    var ocFile = ((OCPsiFile) psiFile).getOCFile();
     if (!ocFile.isInProjectSources()) {
       return new ConfigurationResult(ocFile + " not in project sources");
     }
@@ -175,18 +174,12 @@ public class AnalyzerConfiguration {
 
   @Nullable
   static String mapToCFamilyCompiler(OCCompilerKind compilerKind) {
-    switch (compilerKind.getDisplayName()) {
-      case "AppleClang":
-      case "Clang":
-      case "GCC":
-        return "clang";
-      case "clang-cl":
-        return "clang-cl";
-      case "MSVC":
-        return "msvc-cl";
-      default:
-        return null;
-    }
+    return switch (compilerKind.getDisplayName()) {
+      case "AppleClang", "Clang", "GCC" -> "clang";
+      case "clang-cl" -> "clang-cl";
+      case "MSVC" -> "msvc-cl";
+      default -> null;
+    };
   }
 
   @Nullable
@@ -206,8 +199,8 @@ public class AnalyzerConfiguration {
     final var initializedWorkspaces = CidrWorkspace.getInitializedWorkspaces(project);
     CPPEnvironment cppEnvironment = null;
     for (var initializedWorkspace : initializedWorkspaces) {
-      if (initializedWorkspace instanceof CMakeWorkspace) {
-        cppEnvironment = getCMakeCppEnvironment((CMakeWorkspace) initializedWorkspace, configuration);
+      if (initializedWorkspace instanceof CMakeWorkspace cMakeWorkspace) {
+        cppEnvironment = getCMakeCppEnvironment(cMakeWorkspace, configuration);
       } else {
         cppEnvironment = tryReflection(initializedWorkspace);
         if (cppEnvironment != null) {
@@ -236,16 +229,16 @@ public class AnalyzerConfiguration {
       return null;
     }
     result = unWrapList(result);
-    if (result instanceof CPPEnvironment) {
-      return (CPPEnvironment) result;
+    if (result instanceof CPPEnvironment cppEnvironment) {
+      return cppEnvironment;
     }
     return null;
   }
 
   private static Object unWrapList(Object result) {
-    if (result instanceof List) {
+    if (result instanceof List<?> list) {
       // getEnvironment returns a singleton list
-      result = ((List<?>) result).get(0);
+      result = list.get(0);
     }
     return result;
   }
@@ -301,7 +294,7 @@ public class AnalyzerConfiguration {
     // Starting from 2021.3 com.jetbrains.cidr.lang.workspace.OCResolveConfigurations.getPreselectedConfiguration
     Class<?> ocResolveConfigurationsClass;
     try {
-      ocResolveConfigurationsClass = OCResolveConfiguration.class.forName("com.jetbrains.cidr.lang.workspace.OCResolveConfigurations");
+      ocResolveConfigurationsClass = Class.forName("com.jetbrains.cidr.lang.workspace.OCResolveConfigurations");
     } catch (ClassNotFoundException e) {
       SonarLintConsole.get(project).debug("com.jetbrains.cidr.lang.workspace.OCResolveConfigurations not found");
       return FALLBACK_CONFIGURATION_RESOLVER;
@@ -365,31 +358,7 @@ public class AnalyzerConfiguration {
     }
   }
 
-  public static class Configuration {
-    final VirtualFile virtualFile;
-    final String compilerExecutable;
-    final String compilerWorkingDir;
-    final List<String> compilerSwitches;
-    final String compilerKind;
-    @Nullable
-    final Language sonarLanguage;
-    final Map<String, String> properties;
+  public record Configuration(VirtualFile virtualFile, String compilerExecutable, String compilerWorkingDir, List<String> compilerSwitches,
+                              String compilerKind, @Nullable Language sonarLanguage, Map<String, String> properties) {}
 
-    public Configuration(
-      VirtualFile virtualFile,
-      String compilerExecutable,
-      String compilerWorkingDir,
-      List<String> compilerSwitches,
-      String compilerKind,
-      @Nullable Language sonarLanguage,
-      Map<String, String> properties) {
-      this.virtualFile = virtualFile;
-      this.compilerExecutable = compilerExecutable;
-      this.compilerWorkingDir = compilerWorkingDir;
-      this.compilerSwitches = compilerSwitches;
-      this.compilerKind = compilerKind;
-      this.sonarLanguage = sonarLanguage;
-      this.properties = properties;
-    }
-  }
 }

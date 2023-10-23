@@ -39,8 +39,8 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
       .map(AnalyzerConfiguration.ConfigurationResult::getConfiguration)
       .forEach(configuration -> {
         buildWrapperJsonGenerator.add(configuration);
-        if (configuration.sonarLanguage != null) {
-          result.forcedLanguages.put(configuration.virtualFile, configuration.sonarLanguage);
+        if (configuration.sonarLanguage() != null) {
+          result.forcedLanguages.put(configuration.virtualFile(), configuration.sonarLanguage());
         }
       });
     result.extraProperties.put("sonar.cfamily.build-wrapper-content", buildWrapperJsonGenerator.build());

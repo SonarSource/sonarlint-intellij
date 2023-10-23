@@ -30,8 +30,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -95,6 +96,11 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     AnalysisStatus.get(getProject()).stopRun();
   }
 
+  @AfterEach
+  void close() throws Exception {
+    MockitoAnnotations.openMocks(this).close();
+  }
+
   @Test
   void testTask() {
     task.run(progress);
@@ -134,7 +140,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
       try {
         vFile.delete(null);
       } catch (IOException e) {
-        fail("Cannot delete file");
+        Assertions.fail("Cannot delete file");
       }
     });
     var listener = mock(AnalysisListener.class);
@@ -215,7 +221,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
     ExtensionPoint<LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
-    return extensionPoint.extensions().collect(Collectors.toList());
+    return extensionPoint.extensions().toList();
   }
 
   @NotNull

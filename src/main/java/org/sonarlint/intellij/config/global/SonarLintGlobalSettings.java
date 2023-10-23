@@ -182,7 +182,7 @@ public final class SonarLintGlobalSettings {
   public void setServerConnections(List<ServerConnection> servers) {
     this.servers = servers.stream()
       .filter(s -> !SonarLintUtils.isBlank(s.getName()))
-      .collect(Collectors.toUnmodifiableList());
+      .toList();
   }
 
   public Optional<ServerConnection> getServerConnectionByName(String name) {
@@ -250,7 +250,7 @@ public final class SonarLintGlobalSettings {
   public List<ServerConnection> getConnectionsTo(String serverUrl) {
     return servers.stream()
       .filter(it -> equalsIgnoringTrailingSlash(it.getHostUrl(), serverUrl))
-      .collect(Collectors.toList());
+      .toList();
   }
 
   public static class Rule {

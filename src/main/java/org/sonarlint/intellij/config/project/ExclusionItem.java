@@ -50,16 +50,12 @@ public class ExclusionItem {
     if (StringUtils.trimToNull(item) == null) {
       return null;
     }
-    switch (text.substring(0, i).toUpperCase(Locale.ENGLISH)) {
-      case "FILE":
-        return new ExclusionItem(FILE, item);
-      case "DIRECTORY":
-        return new ExclusionItem(DIRECTORY, item);
-      case "GLOB":
-        return new ExclusionItem(GLOB, item);
-      default:
-        return null;
-    }
+    return switch (text.substring(0, i).toUpperCase(Locale.ENGLISH)) {
+      case "FILE" -> new ExclusionItem(FILE, item);
+      case "DIRECTORY" -> new ExclusionItem(DIRECTORY, item);
+      case "GLOB" -> new ExclusionItem(GLOB, item);
+      default -> null;
+    };
   }
 
   public String item() {

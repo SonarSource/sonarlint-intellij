@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class Tracking<RAW extends Trackable, BASE extends Trackable> {
 
@@ -49,7 +48,7 @@ public class Tracking<RAW extends Trackable, BASE extends Trackable> {
   public Iterable<RAW> getUnmatchedRaws() {
     return raws.stream()
       .filter(Predicate.not(rawToBase::containsKey))
-      .collect(Collectors.toList());
+      .toList();
   }
 
   public Map<RAW, BASE> getMatchedRaws() {
@@ -66,7 +65,7 @@ public class Tracking<RAW extends Trackable, BASE extends Trackable> {
   public Iterable<BASE> getUnmatchedBases() {
     return bases.stream()
       .filter(Predicate.not(baseToRaw::containsKey))
-      .collect(Collectors.toList());
+      .toList();
   }
 
   boolean containsUnmatchedBase(BASE base) {

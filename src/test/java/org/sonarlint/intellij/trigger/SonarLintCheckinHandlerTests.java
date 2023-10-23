@@ -47,13 +47,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
-  private SonarLintCheckinHandler handler;
-  private CompletableFuture<Void> future = new CompletableFuture<>();
 
-  private VirtualFile file = mock(VirtualFile.class);
-  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
-  private SonarLintToolWindow toolWindow = mock(SonarLintToolWindow.class);
-  private CheckinProjectPanel checkinProjectPanel = mock(CheckinProjectPanel.class);
+  private final CompletableFuture<Void> future = new CompletableFuture<>();
+  private final VirtualFile file = mock(VirtualFile.class);
+  private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
+  private final SonarLintToolWindow toolWindow = mock(SonarLintToolWindow.class);
+  private final CheckinProjectPanel checkinProjectPanel = mock(CheckinProjectPanel.class);
+  private SonarLintCheckinHandler handler;
 
   @BeforeEach
   void prepare() {
