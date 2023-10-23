@@ -244,21 +244,7 @@ public final class ProjectBindingManager {
     return Set.of();
   }
 
-  public record ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {
-
-      @Override
-      public boolean equals(Object o) {
-        if (this == o) {
-          return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-          return false;
-        }
-        ProjectKeyAndBranch that = (ProjectKeyAndBranch) o;
-        return projectKey.equals(that.projectKey) && Objects.equals(branchName, that.branchName);
-      }
-
-  }
+  public record ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {}
 
   private static Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
     return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())

@@ -135,14 +135,23 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
               "issue": {
                 "status_changed_count": 3
               },
+              "cayc": {
+                "new_code_focus": {
+                  "enabled": true,
+                  "changes": 2
+                },
+              },
               "show_hotspot": {
                 "requests_count": 3
               },
-                "taint_vulnerabilities": {
-                  "investigated_remotely_count": 1,
-                  "investigated_locally_count": 4
-                },
-               "rules": {
+              "show_issue": {
+                "requests_count": 4
+              },
+              "taint_vulnerabilities": {
+                "investigated_remotely_count": 1,
+                "investigated_locally_count": 4
+              },
+              "rules": {
                 "raised_issues": [
                   "secrets:S6290",
                   "javascript:S3353",
