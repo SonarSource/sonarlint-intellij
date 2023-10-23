@@ -61,17 +61,17 @@ allprojects {
     }
 
     repositories {
-        mavenCentral {
-            content {
-                excludeGroupByRegex("com\\.sonarsource.*")
-            }
-        }
         maven("https://repox.jfrog.io/repox/sonarsource") {
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
                 credentials {
                     username = artifactoryUsername
                     password = artifactoryPassword
                 }
+            }
+        }
+        mavenCentral {
+            content {
+                excludeGroupByRegex("com\\.sonarsource.*")
             }
         }
     }
