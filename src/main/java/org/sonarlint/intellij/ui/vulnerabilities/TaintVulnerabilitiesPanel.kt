@@ -218,7 +218,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     fun refreshModel() {
         treeBuilder.refreshModel(project)
         oldTreeBuilder.refreshModel(project)
-        if (treeBuilder.isEmptyWithFilteredIssues() || oldTreeBuilder.isEmptyWithFilteredIssues()) {
+        if (treeBuilder.isEmptyWithFilteredIssues() && oldTreeBuilder.isEmptyWithFilteredIssues()) {
             showCard(NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
         } else {
             showCard(TREE_CARD_ID)

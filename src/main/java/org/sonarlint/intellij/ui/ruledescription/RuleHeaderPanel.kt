@@ -41,8 +41,6 @@ import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
@@ -116,7 +114,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         updateCommonFields(type, issue.getCleanCodeAttribute(), issue.getImpacts(), issue.getRuleKey())
         updateRuleSeverity(severity)
 
-        if (issue is LiveIssue && canBeReopened(project, issue) || issue is LocalTaintVulnerability && canBeReopened(project, issue)) {
+        if (canBeReopened(project, issue)) {
             changeStatusButton.isVisible = true
             changeStatusButton.action = object : AbstractAction(REOPEN) {
                 override fun actionPerformed(e: ActionEvent?) {
