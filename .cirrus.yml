@@ -258,8 +258,7 @@ promote_task:
     cpu: 3
     memory: 4G
   env:
-    GCF_ACCESS_TOKEN: VAULT[development/kv/data/promote data.token]
-    PROMOTE_URL: VAULT[development/kv/data/promote data.url]
+    ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
     # artifacts which will have downloadable links in burgr
     ARTIFACTS: org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip
