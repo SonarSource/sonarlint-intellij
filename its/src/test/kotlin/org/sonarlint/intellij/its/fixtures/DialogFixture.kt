@@ -97,13 +97,8 @@ open class DialogFixture(
   fun content(text: String, function: ComponentFixture.() -> Unit = {}) =
     findElement<ComponentFixture>(byXpath("dialog with content text '$text'", "//div[@text='$text']")).apply(function)
 
-  open fun pressFinishOrCreate() {
-    // https://github.com/JetBrains/intellij-community/commit/b0392e7871d6f310d89a25b5c69b67d4c1244e05
-    if (remoteRobot.ideMajorVersion() < 221) {
-      button("Finish").click()
-    } else {
-      button("Create").click()
-    }
+  open fun pressCreate() {
+    button("Create").click()
   }
 
 }

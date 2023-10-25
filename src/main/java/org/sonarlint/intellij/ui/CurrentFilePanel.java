@@ -207,11 +207,6 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
-    // workaround for https://youtrack.jetbrains.com/issue/IDEA-262818
-    // remove if fixed before the official 2021.1
-    if (!EventQueue.isDispatchThread()) {
-      return null;
-    }
     if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
       return SonarLintUtils.getSelectedFile(project);
     }

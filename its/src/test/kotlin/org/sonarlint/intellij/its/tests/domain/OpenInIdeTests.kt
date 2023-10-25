@@ -53,7 +53,7 @@ class OpenInIdeTests {
                         button("Next").click()
                     }
                     dialog("New Connection: Configuration completed") {
-                        pressFinishOrCreate()
+                        pressCreate()
                     }
                 }
             }

@@ -19,29 +19,16 @@
  */
 package org.sonarlint.intellij.clion;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.CUDALanguageKind;
-import com.jetbrains.cidr.lang.OCLanguageKind;
-import com.jetbrains.cidr.lang.toolchains.CidrSwitchBuilder;
-import com.jetbrains.cidr.lang.toolchains.CidrToolEnvironment;
 import com.jetbrains.cidr.lang.workspace.compiler.AppleClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangClCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
-import com.jetbrains.cidr.lang.workspace.compiler.CompilerSpecificSwitchBuilder;
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
-import com.jetbrains.cidr.lang.workspace.compiler.OCCompiler;
-import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
-import com.jetbrains.cidr.lang.workspace.compiler.TempFilesPool;
-
-import java.io.File;
 import java.util.List;
 import java.util.Map;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.sonarlint.core.commons.Language;
 
@@ -53,32 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 class AnalyzerConfigurationTest {
-
-  /**
-   * 2021.3 differentiates AppleClang from Clang
-   */
-  private static final OCCompilerKind APPLE_CLANG_COMPILER = new OCCompilerKind() {
-    @Override
-    public @NotNull String getDisplayName() {
-      return "AppleClang";
-    }
-
-    @Override
-    public @Nullable OCLanguageKind resolveLanguage(@NotNull List<String> list) {
-      return null;
-    }
-
-    @Override
-    public @Nullable CompilerSpecificSwitchBuilder getSwitchBuilder(@NotNull CidrSwitchBuilder cidrSwitchBuilder) {
-      return null;
-    }
-
-    @Override
-    public @NotNull OCCompiler getCompilerInstance(@NotNull Project project, @NotNull File file, @NotNull File file1, @NotNull CidrToolEnvironment cidrToolEnvironment, @NotNull TempFilesPool tempFilesPool) {
-      return null;
-    }
-
-  };
 
   @Test
   void get_sonar_language() {
