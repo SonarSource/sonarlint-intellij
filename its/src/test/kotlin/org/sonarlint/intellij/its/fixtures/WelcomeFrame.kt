@@ -21,7 +21,6 @@ package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
-import com.intellij.remoterobot.fixtures.ActionLinkFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
@@ -39,46 +38,15 @@ fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
 @DefaultXpath("type", "//div[@class='FlatWelcomeFrame']")
 class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
 
-    // from 201 up to 202
-    private val openOrImportLink
-        get() = actionLink(ActionLinkFixture.byText("Open or Import"))
-
     fun openProjectButton(): ComponentFixture {
-        val ideMajorVersion = remoteRobot.ideMajorVersion()
-        return when {
-            ideMajorVersion <= 202 -> openOrImportLink
-            else -> {
-                selectTab("Projects")
-                // This can match two things: If no previous projects, its a SVG icon, else a jbutton
-                findAll<ComponentFixture>(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]")).first()
-            }
-        }
+        selectTab("Projects")
+        // This can match two things: If no previous projects, its a SVG icon, else a jbutton
+        return findAll<ComponentFixture>(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]")).first()
     }
 
     fun openPreferences() = step("Opening preferences dialog") {
-        // TODO: Remove FIX_WHEN_MIN_IS_203
-        if (remoteRobot.ideMajorVersion() <= 202) {
-            actionLink("Configure").click()
-
-            // MyList finds both the list of actions and the most recently used file list, so get all candidates
-            val found = findAll(ComponentFixture::class.java, byXpath("//div[@class='MyList']"))
-                .any {
-                    try {
-                        it.findText(remoteRobot.preferencesTitle()).click()
-                        true
-                    } catch (e: NoSuchElementException) {
-                        false
-                    }
-                }
-
-            if (!found) {
-                throw IllegalStateException("Unable to find ${remoteRobot.preferencesTitle()} in the configure menu")
-            }
-        } else {
-            selectTab("Customize")
-            findElement<ComponentFixture>(byXpath("//div[@accessiblename='All settings…']")).click()
-        }
-
+        selectTab("Customize")
+        findElement<ComponentFixture>(byXpath("//div[@accessiblename='All settings…']")).click()
         log.info("Successfully opened the preferences dialog")
     }
 

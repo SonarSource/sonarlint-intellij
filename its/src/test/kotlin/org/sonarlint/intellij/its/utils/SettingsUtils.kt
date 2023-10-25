@@ -109,7 +109,7 @@ class SettingsUtils {
                     button("Next").click()
                 }
                 dialog("New Connection: Configuration completed") {
-                    pressFinishOrCreate()
+                    pressCreate()
                 }
                 pressOk()
             }

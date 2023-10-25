@@ -22,7 +22,6 @@ package org.sonarlint.intellij.common.util;
 import com.intellij.lang.Language;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -164,22 +163,6 @@ public class SonarLintUtils {
 
   public static boolean isPhpFile(@NotNull PsiFile file) {
     return "php".equalsIgnoreCase(file.getFileType().getName());
-  }
-
-  @CheckForNull
-  public static String getIdeVersionForTelemetry() {
-    String ideVersion;
-    try {
-      var appInfo = getAppInfo();
-      ideVersion = appInfo.getVersionName() + " " + appInfo.getFullVersion();
-      var edition = ApplicationNamesInfo.getInstance().getEditionName();
-      if (edition != null) {
-        ideVersion += " (" + edition + ")";
-      }
-    } catch (NullPointerException noAppInfo) {
-      return null;
-    }
-    return ideVersion;
   }
 
   private static ApplicationInfo getAppInfo() {

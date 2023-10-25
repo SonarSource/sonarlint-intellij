@@ -2,8 +2,6 @@
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask
-import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
@@ -11,6 +9,8 @@ import java.io.FileOutputStream
 import java.util.EnumSet
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 
 plugins {
     kotlin("jvm") version "1.8.10"
@@ -235,8 +235,6 @@ dependencies {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.49.0.62722")
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    // workaround for light tests in 2020.3, might remove later
-    testRuntimeOnly("org.jetbrains.kotlin:kotlin-reflect")
     constraints {
         testImplementation("com.squareup.okio:okio-jvm:3.4.0") {
             because("this transitive dependency of okhttp3 has a high severity vulnerability not yet patched")

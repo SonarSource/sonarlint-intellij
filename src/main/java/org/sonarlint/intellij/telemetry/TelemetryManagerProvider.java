@@ -20,11 +20,12 @@
 package org.sonarlint.intellij.telemetry;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.application.PathManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.sonarlint.intellij.SonarLintPlugin;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryHttpClient;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
@@ -40,9 +41,20 @@ public class TelemetryManagerProvider {
 
   public TelemetryManager get() {
     var plugin = getService(SonarLintPlugin.class);
-    var client = new TelemetryHttpClient(PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry(), null, System.getProperty("os.arch"),
+    var client = new TelemetryHttpClient(PRODUCT, plugin.getVersion(), getIdeVersionForTelemetry(), null, System.getProperty("os.arch"),
       getService(BackendService.class).getHttpClientNoAuth());
     return new TelemetryManager(getStorageFilePath(), client, new TelemetryClientAttributeProviderImpl());
+  }
+
+  private static String getIdeVersionForTelemetry() {
+    String ideVersion;
+    var appInfo = ApplicationInfo.getInstance();
+    ideVersion = appInfo.getVersionName() + " " + appInfo.getFullVersion();
+    var edition = ApplicationNamesInfo.getInstance().getEditionName();
+    if (edition != null) {
+      ideVersion += " (" + edition + ")";
+    }
+    return ideVersion;
   }
 
   @VisibleForTesting

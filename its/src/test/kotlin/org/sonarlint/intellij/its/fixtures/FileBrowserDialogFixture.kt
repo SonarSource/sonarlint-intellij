@@ -57,7 +57,6 @@ class FileBrowserDialogFixture(
   fun selectProjectFile(projectName: String, isMaven: Boolean) {
     val projectsDir = Paths.get("build/projects").toAbsolutePath()
     val projectBaseDir = projectsDir.resolve(projectName)
-    val projectFile = if (isMaven && remoteRobot.ideMajorVersion() < 201) projectBaseDir.resolve("pom.xml") else projectBaseDir
     val button = button("OK")
     waitFor { button.isEnabled() }
 
@@ -68,7 +67,7 @@ class FileBrowserDialogFixture(
     // Give some time for the refresh to work
     Thread.sleep(2000)
 
-    textField.text = projectFile.normalize().toString()
+    textField.text = projectBaseDir.normalize().toString()
     // Give some time for the refresh to work
     Thread.sleep(2000)
     button.click()
