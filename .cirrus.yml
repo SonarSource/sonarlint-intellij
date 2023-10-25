@@ -15,14 +15,22 @@ env:
 
 auto_cancellation: $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
 
-only_pr_and_maintained_branches: &ONLY_PR_AND_MAINTAINED_BRANCHES
+only_if_nightly: &ONLY_IF_NIGHTLY
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_CRON == "nightly"
+
+only_pr_and_maintained_branches_including_nightly: &ONLY_PR_AND_MAINTAINED_BRANCHES_INCLUDING_NIGHTLY
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
     && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
 
+only_pr_and_maintained_branches: &ONLY_PR_AND_MAINTAINED_BRANCHES
+  skip: "changesIncludeOnly('*.txt', '**/README.md')"
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
+    && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*") && $CIRRUS_BUILD_SOURCE != "cron"
+
 only_main_branches: &ONLY_MAIN_BRANCHES
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && ($CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*")
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && ($CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*") && $CIRRUS_BUILD_SOURCE != "cron"
 
 eks_container: &CONTAINER_DEFINITION
   image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-g7-latest
@@ -68,7 +76,7 @@ cleanup_gradle_cache_script_template: &CLEANUP_GRADLE_CACHE_SCRIPT
 
 build_task:
   #  name: "Build and stage to repox"
-  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES_INCLUDING_NIGHTLY
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 6
@@ -103,7 +111,7 @@ validate_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish :runPluginVerifier sonar jacocoTestReport
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     reports_artifacts:
@@ -134,6 +142,41 @@ validate_windows_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
+
+plugin_verifier_task:
+  #  name: "Run plugin verifier on all IDEs"
+  depends_on:
+    - build
+  <<: *ONLY_IF_NIGHTLY
+  env:
+    JDK_VERSION: "11"
+    ALLOWED_IDE: "AS|CL|DG|GO|IIU|IIC|IIE|PS|PCP|PCC|PCE|RDCPPP|RD|RM|WS"
+  eks_container:
+    <<: *BUILDER_CONTAINER_DEFINITION
+    cpu: 4
+    memory: 8G
+  matrix:
+    - env:
+        IDEA_VERSION: '2022.3.1'
+    - env:
+        IDEA_VERSION: '2023.2'
+    - env:
+        # This is for EAP, it automatically retrieves the latest version available
+        IDEA_VERSION: '2023'
+  <<: *SETUP_GRADLE_CACHE
+  # The versions are retrieved by querying JB API, we only keep the IDE flavors we handle, then we filter by our specified version.
+  # Since there can be multiple 2021.3 (2021.3.1, 2021.3.2, etc.) we only keep the latest one.
+  build_script: |
+    echo "Run plugin verifier on ${IDEA_VERSION}"
+    source cirrus-env QA
+    source .cirrus/use-gradle-wrapper.sh
+    VERSIONS=$(curl -s -L https://jb.gg/intellij-platform-builds-list | jq '.[] | "\(.code) \(.releases[].version)"' | grep -Ew "${ALLOWED_IDE}" | grep "${IDEA_VERSION}" | tr -d '"' | awk '{k=$1} $2>a[k]{a[k]=$2} END{for (i in a) print i, a[i]}' | sort -u | sed 's/ /-/' | paste -s -d',')
+    echo ${VERSIONS}
+    ./gradlew :runPluginVerifier -PverifierVersions=${VERSIONS}
+  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  on_failure:
+    reports_artifacts:
+      path: "**/reports/**/*"
 
 qa_task:
   #  name: "Run ITs"
@@ -274,7 +317,7 @@ dogfood_task:
   #  alias: "update_dogfood_repo"
   depends_on:
     - promote
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH && $CIRRUS_BUILD_SOURCE != "cron"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 1
