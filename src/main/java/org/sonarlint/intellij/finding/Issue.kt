@@ -25,4 +25,5 @@ interface Issue : Finding {
     fun getId(): UUID?
     fun resolve()
     fun reopen()
+    fun isResolved(): Boolean
 }

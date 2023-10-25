@@ -388,8 +388,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         )
     }
 
-    fun reopenIssue(module: Module, issueId: String): CompletableFuture<ReopenIssueResponse> {
-        return initializedBackend.issueService.reopenIssue(ReopenIssueParams(moduleId(module), issueId))
+    fun reopenIssue(module: Module, issueId: String, isTaintIssue: Boolean): CompletableFuture<ReopenIssueResponse> {
+        return initializedBackend.issueService.reopenIssue(ReopenIssueParams(moduleId(module), issueId, isTaintIssue))
     }
 
     fun addCommentOnIssue(module: Module, issueKey: String, comment: String): CompletableFuture<Void> {

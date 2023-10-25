@@ -39,7 +39,9 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarlint.intellij.util.DataKeys
 import org.sonarlint.intellij.util.displayErrorNotification
@@ -50,45 +52,51 @@ private const val SKIP_CONFIRM_REOPEN_DIALOG_PROPERTY = "SonarLint.reopenIssue.h
 class ReopenIssueAction(private var issue: LiveIssue? = null)
     : AbstractSonarAction("Reopen", "Reopen the issue", null), IntentionAction, PriorityAction, Iconable {
     companion object {
-        private const val errorTitle = "<b>SonarLint - Unable to reopen the issue</b>"
-        private const val content = "The issue was successfully reopened"
+        private const val ERROR_TITLE = "<b>SonarLint - Unable to reopen the issue</b>"
+        private const val CONTENT = "The issue was successfully reopened"
 
         val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark Issue as Resolved")
 
-        fun canBeReopened(project: Project, issue: LiveIssue): Boolean {
-            return serverConnection(project) != null && issue.isResolved
+        fun canBeReopened(project: Project, issue: Issue): Boolean {
+            return serverConnection(project) != null && issue.isResolved()
         }
 
-        fun reopenIssueDialog(project: Project, issue: LiveIssue) {
+        fun reopenIssueDialog(project: Project, issue: Issue) {
             val connection = serverConnection(project) ?: return displayErrorNotification(
                 project,
-                errorTitle, "No connection could be found", GROUP
+                ERROR_TITLE, "No connection could be found", GROUP
             )
 
-            val file = issue.file() ?: return displayErrorNotification(project, errorTitle, "The file could not be found", GROUP)
+            val file = issue.file() ?: return displayErrorNotification(project, ERROR_TITLE, "The file could not be found", GROUP)
 
             val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
-                project, errorTitle, "No module could be found for this file", GROUP
+                project, ERROR_TITLE, "No module could be found for this file", GROUP
             )
-            val serverKey =
-                issue.getServerKey() ?: issue.id?.toString() ?: return displayErrorNotification(
-                    project,
-                    errorTitle,
-                    "The issue key could not be found",
-                    GROUP
-                )
+
+            var serverKey: String? = null
+            if (issue is LiveIssue) {
+                serverKey = issue.getServerKey() ?: issue.id?.toString()
+            } else if (issue is LocalTaintVulnerability) {
+                serverKey = issue.key()
+            }
+            serverKey ?: return displayErrorNotification(
+                project,
+                ERROR_TITLE,
+                "The issue key could not be found",
+                GROUP
+            )
 
             if (confirm(project, connection.productName)) {
-                reopenIssue(project, module, issue, serverKey)
+                reopenFinding(project, module, issue, serverKey)
             }
         }
 
-        private fun reopenIssue(project: Project, module: Module, issue: LiveIssue, issueKey: String, ) {
+        private fun reopenFinding(project: Project, module: Module, issue: Issue, issueKey: String) {
             SonarLintUtils.getService(BackendService::class.java)
-                .reopenIssue(module, issueKey)
+                .reopenIssue(module, issueKey, issue is LocalTaintVulnerability)
                 .thenAccept {
                     updateUI(project, issue)
-                    displaySuccessfulNotification(project, content, GROUP)
+                    displaySuccessfulNotification(project, CONTENT, GROUP)
                 }
                 .exceptionally { error ->
                     SonarLintConsole.get(project).error("Error while reopening the issue", error)
@@ -97,7 +105,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
                 }
         }
 
-        private fun updateUI(project: Project, issue: LiveIssue) {
+        private fun updateUI(project: Project, issue: Issue) {
             UiUtils.runOnUiThread(project) {
                 issue.reopen()
                 SonarLintUtils.getService(project, SonarLintToolWindow::class.java).reopenIssue(issue)
@@ -132,8 +140,8 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val issue: LiveIssue = e.getData(DataKeys.ISSUE_DATA_KEY)
-            ?: return displayErrorNotification(project, errorTitle, "The issue could not be found", GROUP)
+        val issue = e.getData(DataKeys.ISSUE_DATA_KEY) ?: e.getData(DataKeys.TAINT_VULNERABILITY_DATA_KEY)
+            ?: return displayErrorNotification(project, ERROR_TITLE, "The issue could not be found", GROUP)
 
         reopenIssueDialog(project, issue)
     }
@@ -167,7 +175,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
 
     override fun isVisible(e: AnActionEvent): Boolean {
         val project = e.project ?: return false
-        val issue: LiveIssue = e.getData(DataKeys.ISSUE_DATA_KEY) ?: return false
+        val issue = e.getData(DataKeys.ISSUE_DATA_KEY) ?: e.getData(DataKeys.TAINT_VULNERABILITY_DATA_KEY) ?: return false
         return canBeReopened(project, issue)
     }
 

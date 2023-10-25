@@ -38,6 +38,7 @@ import org.sonarlint.intellij.actions.filters.IncludeResolvedFindingsAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 
 /**
  * Creates and keeps a single instance of actions used by SonarLint.
@@ -57,6 +58,7 @@ public final class SonarLintActions {
   private final FilterSecurityHotspotActionGroup filterAction;
   private final IncludeResolvedFindingsAction<LiveSecurityHotspot> includeResolvedHotspotsAction;
   private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
+  private final IncludeResolvedFindingsAction<LocalTaintVulnerability> includeResolvedTaintVulnerabilitiesAction;
   private final AnAction analyzeCurrentFileAction;
 
   public SonarLintActions() {
@@ -101,6 +103,10 @@ public final class SonarLintActions {
       "Include resolved issues",
       SonarLintIcons.RESOLVED,
       LiveIssue.class);
+    includeResolvedTaintVulnerabilitiesAction = new IncludeResolvedFindingsAction<>("Include Resolved Taint Vulnerabilities",
+      "Include resolved taint vulnerabilities",
+      SonarLintIcons.RESOLVED,
+      LocalTaintVulnerability.class);
     analyzeCurrentFileAction = new SonarAnalyzeFilesAction("Analyze Current File",
       "Run SonarLint analysis on the current file",
       SonarLintIcons.PLAY);
@@ -148,6 +154,10 @@ public final class SonarLintActions {
 
   public IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction() {
     return includeResolvedIssuesAction;
+  }
+
+  public IncludeResolvedFindingsAction<LocalTaintVulnerability> includeResolvedTaintVulnerabilitiesAction() {
+    return includeResolvedTaintVulnerabilitiesAction;
   }
 
   public AnAction analyzeCurrentFileAction() {

@@ -24,13 +24,14 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
-import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class IncludeResolvedFindingsAction<T extends LiveFinding> extends AbstractSonarToggleAction {
+public class IncludeResolvedFindingsAction<T extends Finding> extends AbstractSonarToggleAction {
 
   private final Class<T> type;
   private boolean isResolved;
@@ -56,6 +57,9 @@ public class IncludeResolvedFindingsAction<T extends LiveFinding> extends Abstra
       } else if (type == LiveIssue.class) {
         isResolved = flag;
         getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
+      } else if (type == LocalTaintVulnerability.class) {
+        isResolved = flag;
+        getService(p, SonarLintToolWindow.class).filterTaintVulnerabilityTab(isResolved);
       }
     }
   }
