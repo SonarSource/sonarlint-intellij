@@ -2,6 +2,8 @@
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
+import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
@@ -9,8 +11,6 @@ import java.io.FileOutputStream
 import java.util.EnumSet
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask
-import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 
 plugins {
     kotlin("jvm") version "1.8.10"
@@ -228,7 +228,7 @@ dependencies {
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.9.0.3600")
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.10.0.4108")
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.14.0.79083")
-    "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.5.0.2293")
+    "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.6.1.1316")
     "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.15.0.4655")
     "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.21.0.5999")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
