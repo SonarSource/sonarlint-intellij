@@ -22,7 +22,6 @@ package org.sonarlint.intellij.finding.issue;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;

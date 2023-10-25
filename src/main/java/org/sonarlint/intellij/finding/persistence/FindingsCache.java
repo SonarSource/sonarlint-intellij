@@ -49,7 +49,6 @@ import static java.util.Collections.emptyList;
 @ThreadSafe
 @Service(Service.Level.PROJECT)
 public final class FindingsCache {
-  private final Project myProject;
   private final LiveFindingCache<LiveIssue> liveIssueCache;
   private final LiveFindingCache<LiveSecurityHotspot> liveSecurityHotspotCache;
 
@@ -59,7 +58,6 @@ public final class FindingsCache {
 
   @NonInjectable
   FindingsCache(Project project, LiveFindingCache<LiveIssue> liveIssueCache) {
-    myProject = project;
     this.liveIssueCache = liveIssueCache;
     this.liveSecurityHotspotCache = new LiveFindingCache<>(project, new FindingPersistence<>(project, "securityhotspot"));
   }
