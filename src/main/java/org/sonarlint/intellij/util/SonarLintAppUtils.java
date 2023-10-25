@@ -34,7 +34,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -66,7 +65,7 @@ public class SonarLintAppUtils {
       if (!project.isOpen()) {
         return Collections.<VirtualFile>emptyList();
       }
-      return files.stream().filter(f -> FileEditorManager.getInstance(project).isFileOpen(f)).collect(Collectors.toList());
+      return files.stream().filter(f -> FileEditorManager.getInstance(project).isFileOpen(f)).toList();
     });
     return openFiles != null ? openFiles : Collections.emptyList();
   }
@@ -142,7 +141,7 @@ public class SonarLintAppUtils {
   static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
     var filePath = Paths.get(file.getPath());
     var moduleContentRoots = Arrays.stream(ModuleRootManager.getInstance(module).getContentRoots())
-            .filter(contentRoot -> contentRoot.getPath().trim().length() > 0)
+            .filter(contentRoot -> !contentRoot.getPath().trim().isEmpty())
             .toArray(VirtualFile[]::new);
 
     // There can be multiple content roots (based on the IntelliJ SDK), e.g. for a Gradle project the project directory

@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui.nodes;
 
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.stream.Collectors;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.ui.tree.TreeSummary;
 
@@ -38,7 +37,7 @@ public class SummaryNode extends AbstractNode {
       return 0;
     }
 
-    var nodes = children.stream().map(n -> (FileNode) n).collect(Collectors.<FileNode>toList());
+    var nodes = children.stream().map(n -> (FileNode) n).toList();
     var foundIndex = Collections.binarySearch(nodes, newChild, comparator);
     if (foundIndex >= 0) {
       throw new IllegalArgumentException("Child already exists");
@@ -55,7 +54,7 @@ public class SummaryNode extends AbstractNode {
       return 0;
     }
 
-    var nodes = children.stream().map(n -> (LiveSecurityHotspotNode) n).collect(Collectors.<LiveSecurityHotspotNode>toList());
+    var nodes = children.stream().map(n -> (LiveSecurityHotspotNode) n).toList();
     var foundIndex = Collections.binarySearch(nodes, newChild, comparator);
     if (foundIndex >= 0) {
       throw new IllegalArgumentException("Child already exists");

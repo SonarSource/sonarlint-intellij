@@ -166,11 +166,10 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof Rule)) {
-        return false;
+      if (o instanceof Rule rule) {
+        return details.getKey().equals(rule.details.getKey()) && activated == rule.activated && nonDefaultParams.equals(rule.nonDefaultParams);
       }
-      var rule = (Rule) o;
-      return details.getKey().equals(rule.details.getKey()) && activated == rule.activated && nonDefaultParams.equals(rule.nonDefaultParams);
+      return false;
     }
 
     @Override

@@ -43,17 +43,9 @@ public class ProjectLogOutput implements ClientLogOutput {
       return;
     }
     switch (level) {
-      case TRACE:
-      case DEBUG:
-        console.debug(msg);
-        break;
-      case ERROR:
-        console.error(msg);
-        break;
-      case INFO:
-      case WARN:
-      default:
-        console.info(msg);
+      case TRACE, DEBUG -> console.debug(msg);
+      case ERROR -> console.error(msg);
+      default -> console.info(msg);
     }
   }
 }

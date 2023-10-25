@@ -28,7 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -129,7 +128,7 @@ public class RawIssueAdapter {
     return new Flow(flows.stream()
       .flatMap(f -> f.getLocations().stream())
       .sorted(Comparator.comparing(i -> i.getRange().getStartOffset()))
-      .collect(Collectors.toList()));
+      .toList());
   }
 
   private static List<Flow> reverse(List<Flow> flows) {
@@ -137,7 +136,7 @@ public class RawIssueAdapter {
       var reorderedLocations = new ArrayList<>(f.getLocations());
       Collections.reverse(reorderedLocations);
       return new Flow(reorderedLocations);
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
   private static List<QuickFix> transformQuickFixes(Project project,
@@ -145,7 +144,7 @@ public class RawIssueAdapter {
     return quickFixes
       .stream().map(fix -> convert(project, fix))
       .filter(Objects::nonNull)
-      .collect(Collectors.toList());
+      .toList();
   }
 
   private RawIssueAdapter() {

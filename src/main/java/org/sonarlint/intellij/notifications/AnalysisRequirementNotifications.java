@@ -62,8 +62,7 @@ public class AnalysisRequirementNotifications {
     attemptedLanguages.forEach(l -> {
       final var correspondingPlugin = allPlugins.stream().filter(p -> p.key().equals(l.getPluginKey())).findFirst();
       correspondingPlugin.flatMap(PluginDetails::skipReason).ifPresent(skipReason -> {
-        if (skipReason instanceof SkipReason.UnsatisfiedRuntimeRequirement) {
-          final var runtimeRequirement = (SkipReason.UnsatisfiedRuntimeRequirement) skipReason;
+        if (skipReason instanceof SkipReason.UnsatisfiedRuntimeRequirement runtimeRequirement) {
           final var title = "<b>SonarLint failed to analyze " + l.getLabel() + " code</b>";
           if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE) {
             var content = String.format(

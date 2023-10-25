@@ -87,10 +87,9 @@ public class ServerConnection {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof ServerConnection)) {
+    if (!(o instanceof ServerConnection other)) {
       return false;
     }
-    var other = (ServerConnection) o;
 
     return Objects.equals(getHostUrl(), other.getHostUrl()) &&
       Objects.equals(getPassword(), other.getPassword()) &&

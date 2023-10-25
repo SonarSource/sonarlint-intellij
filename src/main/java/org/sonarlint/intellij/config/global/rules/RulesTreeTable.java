@@ -107,17 +107,13 @@ public class RulesTreeTable extends TreeTable {
 
         var obj = path.getLastPathComponent();
 
-        if (obj instanceof RulesTreeNode.Rule) {
-          var rule = (RulesTreeNode.Rule) obj;
-          // Rules should always have the new CCT
-          if (rule.getHighestQuality() != null && rule.getHighestImpact() != null) {
+        if (obj instanceof RulesTreeNode.Rule rule && (rule.getHighestQuality() != null && rule.getHighestImpact() != null)) {
             var label = new JLabel();
             var qualityText = StringUtil.capitalize(rule.getHighestQuality().toString().toLowerCase(Locale.ENGLISH));
             var impactText = StringUtil.capitalize(rule.getHighestImpact().toString().toLowerCase(Locale.ENGLISH));
             var text = impactText + " impact on " + qualityText;
             label.setText(StringUtil.capitalize(text.replace('_', ' ').toLowerCase(Locale.ENGLISH)));
             IdeTooltipManager.getInstance().show(new IdeTooltip(RulesTreeTable.this, point, label), false);
-          }
         }
       }
     });

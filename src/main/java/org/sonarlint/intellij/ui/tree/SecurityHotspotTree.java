@@ -105,10 +105,10 @@ public class SecurityHotspotTree extends FindingTree implements DataProvider {
   @CheckForNull
   private LiveSecurityHotspot getSelectedSecurityHotspot() {
     var node = getSelectedNode();
-    if (!(node instanceof LiveSecurityHotspotNode)) {
-      return null;
+    if (node instanceof LiveSecurityHotspotNode hotspotNode) {
+      return hotspotNode.getHotspot();
     }
-    return ((LiveSecurityHotspotNode) node).getHotspot();
+    return null;
   }
 
 }

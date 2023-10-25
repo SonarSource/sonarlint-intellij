@@ -250,7 +250,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       return Stream.of(openProjects)
         .filter(p -> server.getName().equals(getSettingsFor(p).getConnectionName()))
         .map(Project::getName)
-        .collect(Collectors.toList());
+        .toList();
     }
   }
 }

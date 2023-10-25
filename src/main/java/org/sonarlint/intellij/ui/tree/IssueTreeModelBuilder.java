@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -105,7 +104,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map) {
     latestIssues = map;
 
-    var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
+    var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).toList();
 
     toRemove.forEach(this::removeFile);
 
@@ -201,7 +200,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private List<LiveIssue> filter(Iterable<LiveIssue> issues) {
     return StreamSupport.stream(issues.spliterator(), false)
       .filter(this::accept)
-      .collect(Collectors.toList());
+      .toList();
   }
 
   private boolean accept(LiveIssue issue) {
@@ -303,8 +302,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
       return null;
     }
 
-    if (next instanceof IssueNode) {
-      return (IssueNode) next;
+    if (next instanceof IssueNode node) {
+      return node;
     }
 
     return firstIssueDown(next);
@@ -319,8 +318,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
       return null;
     }
 
-    if (next instanceof IssueNode) {
-      return (IssueNode) next;
+    if (next instanceof IssueNode node) {
+      return node;
     }
 
     return lastIssueDown(next);
@@ -331,8 +330,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
    */
   @CheckForNull
   private static IssueNode firstIssueDown(AbstractNode node) {
-    if (node instanceof IssueNode) {
-      return (IssueNode) node;
+    if (node instanceof IssueNode issueNode) {
+      return issueNode;
     }
 
     if (node.getChildCount() > 0) {
@@ -348,8 +347,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
    */
   @CheckForNull
   private static IssueNode lastIssueDown(AbstractNode node) {
-    if (node instanceof IssueNode) {
-      return (IssueNode) node;
+    if (node instanceof IssueNode issueNode) {
+      return issueNode;
     }
 
     var lastChild = node.getLastChild();

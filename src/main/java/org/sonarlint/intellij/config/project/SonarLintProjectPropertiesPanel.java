@@ -78,14 +78,11 @@ public class SonarLintProjectPropertiesPanel {
 
     @Override
     public String getColumnName(int column) {
-      switch (column) {
-        case 0:
-          return "Property Name";
-        case 1:
-          return "Value";
-        default:
-          return super.getColumnName(column);
-      }
+      return switch (column) {
+        case 0 -> "Property Name";
+        case 1 -> "Value";
+        default -> super.getColumnName(column);
+      };
     }
 
     @Override
@@ -110,14 +107,11 @@ public class SonarLintProjectPropertiesPanel {
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-      switch (columnIndex) {
-        case 0:
-          return myRows.get(rowIndex).key;
-        case 1:
-          return myRows.get(rowIndex).value;
-        default:
-          return null;
-      }
+      return switch (columnIndex) {
+        case 0 -> myRows.get(rowIndex).key;
+        case 1 -> myRows.get(rowIndex).value;
+        default -> null;
+      };
     }
 
     @Override
@@ -174,7 +168,7 @@ public class SonarLintProjectPropertiesPanel {
       if (!options.isEmpty()) {
         myRows.addAll(options.entrySet().stream()
           .map(e -> new KeyValuePair(e.getKey(), e.getValue()))
-          .collect(Collectors.toList()));
+          .toList());
         myRows.sort(new KeyValueComparator());
         fireTableRowsInserted(0, options.size() - 1);
       }

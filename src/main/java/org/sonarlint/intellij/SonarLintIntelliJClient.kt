@@ -123,7 +123,6 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
-import java.util.stream.Collectors
 
 object SonarLintIntelliJClient : SonarLintClient {
 
@@ -412,7 +411,7 @@ object SonarLintIntelliJClient : SonarLintClient {
         val certificateFactory = CertificateFactory.getInstance("X.509")
         val certificates: Array<X509Certificate> = params.chain.stream()
             .map { certificateFactory.generateCertificate(ByteArrayInputStream(it.pem.toByteArray())) as X509Certificate }
-            .collect(Collectors.toList()).toTypedArray()
+            .toList().toTypedArray()
         return try {
             CertificateManager.getInstance().trustManager.checkServerTrusted(certificates, params.authType)
             CompletableFuture.completedFuture(CheckServerTrustedResponse(true))
@@ -432,7 +431,7 @@ object SonarLintIntelliJClient : SonarLintClient {
                 } else {
                     ProxyDto.NO_PROXY
                 }
-            }.collect(Collectors.toList()))
+            }.toList())
         return CompletableFuture.completedFuture(proxiesResponse)
     }
 

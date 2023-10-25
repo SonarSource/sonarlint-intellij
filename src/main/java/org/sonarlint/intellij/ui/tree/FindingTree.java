@@ -58,11 +58,10 @@ public abstract class FindingTree extends Tree {
   @CheckForNull
   protected VirtualFile getSelectedFile() {
     var node = getSelectedNode();
-    if (!(node instanceof FileNode)) {
-      return null;
+    if (node instanceof FileNode fileNode) {
+      return fileNode.file();
     }
-    var fileNode = (FileNode) node;
-    return fileNode.file();
+    return null;
   }
 
   @CheckForNull

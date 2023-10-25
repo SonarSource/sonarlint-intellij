@@ -118,8 +118,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
   AfterTestExecutionCallback afterTestExecutionCallback = context -> {
     Optional<Throwable> exception = context.getExecutionException();
     var console = getConsole();
-    if (console instanceof SonarLintConsoleTestImpl && exception.isPresent()) {
-      var testConsole = (SonarLintConsoleTestImpl) console;
+    if (console instanceof SonarLintConsoleTestImpl testConsole && exception.isPresent()) {
       var testName = context.getDisplayName();
       System.out.println("Test '" + testName + "' failed. Logs:");
       testConsole.flushTo(System.out);

@@ -139,7 +139,7 @@ public class BindingStorageUpdateTask {
 
     if (!failures.isEmpty()) {
       var errorMsg = "Failed to update the storage for some projects: \n"
-        + failures.stream().map(f -> " - " + f.getReason().getMessage() + " (" + f.getProjectKey() + ")").collect(Collectors.joining("\n"));
+        + failures.stream().map(f -> " - " + f.reason().getMessage() + " (" + f.projectKey() + ")").collect(Collectors.joining("\n"));
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
         @Override
@@ -187,16 +187,16 @@ public class BindingStorageUpdateTask {
     var httpClient = getService(BackendService.class).getHttpClient(connection.getName());
     allProjectAndBranchesToSync
       .forEach(pb -> {
-        var branchName = pb.getBranchName();
+        var branchName = pb.branchName();
         if (branchName == null) {
           GlobalLogOutput.get().log("Skip synchronizing issues, branch is unknown", ClientLogOutput.Level.DEBUG);
           return;
         }
-        engine.downloadAllServerIssues(connection.getEndpointParams(), httpClient, pb.getProjectKey(), branchName, monitor);
-        engine.downloadAllServerHotspots(connection.getEndpointParams(), httpClient, pb.getProjectKey(), branchName, monitor);
+        engine.downloadAllServerIssues(connection.getEndpointParams(), httpClient, pb.projectKey(), branchName, monitor);
+        engine.downloadAllServerHotspots(connection.getEndpointParams(), httpClient, pb.projectKey(), branchName, monitor);
 
         if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-          engine.syncServerTaintIssues(connection.getEndpointParams(), httpClient, pb.getProjectKey(), branchName, monitor);
+          engine.syncServerTaintIssues(connection.getEndpointParams(), httpClient, pb.projectKey(), branchName, monitor);
         }
       });
 
@@ -210,7 +210,7 @@ public class BindingStorageUpdateTask {
     return onlyForProject != null ? Collections.singleton(onlyForProject)
       : Stream.of(ProjectManager.getInstance().getOpenProjects())
         .filter(p -> getSettingsFor(p).isBoundTo(connection))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private static void updatePathPrefixesForAllModules(ConnectedSonarLintEngine engine, Project project) {
@@ -232,23 +232,6 @@ public class BindingStorageUpdateTask {
     }
   }
 
-  private static class ProjectStorageUpdateFailure {
+  private record ProjectStorageUpdateFailure(String projectKey, Exception reason) {}
 
-    private final String projectKey;
-    private final Exception reason;
-
-    public ProjectStorageUpdateFailure(String projectKey, Exception reason) {
-      this.projectKey = projectKey;
-      this.reason = reason;
-    }
-
-    public String getProjectKey() {
-      return projectKey;
-    }
-
-    public Exception getReason() {
-      return reason;
-    }
-
-  }
 }

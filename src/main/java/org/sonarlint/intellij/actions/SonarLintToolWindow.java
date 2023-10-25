@@ -33,7 +33,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -394,14 +393,13 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     var toolWindow = getToolWindow();
     if (toolWindow != null && toolWindow.isVisible() && securityHotspotsContent != null && securityHotspotsContent.isSelected()) {
       var securityHotspotPanel = (SecurityHotspotsPanel) securityHotspotsContent.getComponent();
-      return securityHotspotPanel.getDisplayedNodesForFile(file).stream().map(LiveSecurityHotspotNode::getHotspot).collect(Collectors.toList());
+      return securityHotspotPanel.getDisplayedNodesForFile(file).stream().map(LiveSecurityHotspotNode::getHotspot).toList();
     }
     return Collections.emptyList();
   }
 
   public void markAsResolved(Issue issue) {
-    if (issue instanceof LiveIssue) {
-      var liveIssue = (LiveIssue) issue;
+    if (issue instanceof LiveIssue liveIssue) {
       this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
       this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
       this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));

@@ -84,7 +84,7 @@ public final class LocalFileExclusions {
     var projectExclusionsItems = settings.getFileExclusions().stream()
       .map(ExclusionItem::parse)
       .filter(Objects::nonNull)
-      .collect(Collectors.toList());
+      .toList();
 
     var projectFileExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.FILE);
     var projectDirExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.DIRECTORY);
@@ -178,7 +178,7 @@ public final class LocalFileExclusions {
 
     var exclusionCheckers = Stream.concat(
       defaultExclusionCheckers(file, module),
-      forcedAnalysis ? Stream.empty() : onTheFlyExclusionCheckers(file, module)).collect(Collectors.toList());
+      forcedAnalysis ? Stream.empty() : onTheFlyExclusionCheckers(file, module)).toList();
 
     for (var exclusionChecker : exclusionCheckers) {
       var result = computeReadActionSafely(module.getProject(), exclusionChecker::get);

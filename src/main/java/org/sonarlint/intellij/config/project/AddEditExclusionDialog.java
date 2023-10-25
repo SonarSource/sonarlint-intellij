@@ -144,18 +144,18 @@ public class AddEditExclusionDialog extends DialogWrapper {
 
     if (item != null) {
       switch (item.type()) {
-        case DIRECTORY:
+        case DIRECTORY -> {
           directoryTextField.setText(item.item());
           directoryRadioButton.setSelected(true);
-          break;
-        case FILE:
+        }
+        case FILE -> {
           fileTextField.setText(item.item());
           fileRadioButton.setSelected(true);
-          break;
-        case GLOB:
+        }
+        case GLOB -> {
           globTextField.setText(item.item());
           globRadioButton.setSelected(true);
-          break;
+        }
       }
       updateControls();
     }

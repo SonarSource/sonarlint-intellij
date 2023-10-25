@@ -41,7 +41,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.swing.JScrollPane;
 import org.jetbrains.annotations.NonNls;
@@ -152,8 +151,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     this.currentFile = file;
     this.currentIssues = List.copyOf(issues);
     if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)) {
-      var oldIssues = this.currentIssues.stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList());
-      var newIssues = this.currentIssues.stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList());
+      var oldIssues = this.currentIssues.stream().filter(not(LiveFinding::isOnNewCode)).toList();
+      var newIssues = this.currentIssues.stream().filter(LiveFinding::isOnNewCode).toList();
       populateSubTree(tree, treeBuilder, Map.of(file, newIssues));
       populateSubTree(oldTree, oldTreeBuilder, Map.of(file, oldIssues));
       oldTree.setVisible(true);

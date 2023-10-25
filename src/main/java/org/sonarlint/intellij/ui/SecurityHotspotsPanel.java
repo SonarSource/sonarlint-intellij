@@ -157,11 +157,11 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       var isFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
       if (isFocusOnNewCode) {
         var oldHotspots = hotspots.entrySet().stream()
-          .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).collect(Collectors.toList())))
+          .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).toList()))
           .filter(e -> !e.getValue().isEmpty())
           .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveSecurityHotspot>) e.getValue()));
         var newHotspots = hotspots.entrySet().stream()
-          .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(LiveFinding::isOnNewCode).collect(Collectors.toList())))
+          .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(LiveFinding::isOnNewCode).toList()))
           .filter(e -> !e.getValue().isEmpty())
           .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveSecurityHotspot>) e.getValue()));
         securityHotspotCount = populateSubTree(securityHotspotTree, securityHotspotTreeBuilder, newHotspots);
@@ -296,8 +296,8 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     this.status = status;
     var highlighting = getService(project, EditorDecorator.class);
     highlighting.removeHighlights();
-    if (status instanceof NotSupported) {
-      updateNotSupportedText(((NotSupported) status).getReason());
+    if (status instanceof NotSupported notSupported) {
+      updateNotSupportedText(notSupported.getReason());
       cardPanel.show(NOT_SUPPORTED_CARD_ID);
     } else if (status instanceof Supported) {
       displaySecurityHotspots();
@@ -398,7 +398,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return securityHotspotTreeBuilder.getFilteredNodes()
       .stream()
       .filter(node -> node.getHotspot().getFile().equals(file))
-      .collect(Collectors.toList());
+      .toList();
   }
 
   @Override

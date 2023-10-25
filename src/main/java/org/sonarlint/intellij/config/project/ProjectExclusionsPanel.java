@@ -22,10 +22,8 @@ package org.sonarlint.intellij.config.project;
 import com.intellij.openapi.project.Project;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.config.ConfigurationPanel;
@@ -77,14 +75,14 @@ public class ProjectExclusionsPanel implements ConfigurationPanel<SonarLintProje
     List<ExclusionItem> list = settings.getFileExclusions().stream()
       .map(ExclusionItem::parse)
       .filter(Objects::nonNull)
-      .collect(Collectors.toList());
+      .toList();
     table.set(list);
   }
 
   private List<String> tableToString() {
     return table.get().stream()
       .map(ExclusionItem::toStringWithType)
-      .collect(Collectors.toList());
+      .toList();
   }
 
   @Override

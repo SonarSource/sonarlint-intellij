@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -139,14 +138,14 @@ public final class SonarLintAnalyzer {
         console.debug("Configuring analysis with " + config.getClass().getName());
         return config.configure(module, filesToAnalyze);
       })
-      .collect(Collectors.toList());
+      .toList();
   }
 
   private List<ClientInputFile> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze, Map<VirtualFile, Language> contributedLanguages) {
     return computeReadActionSafely(module.getProject(), () -> filesToAnalyze.stream()
       .map(f -> createClientInputFile(module, f, contributedLanguages.get(f)))
       .filter(Objects::nonNull)
-      .collect(Collectors.toList()));
+      .toList());
   }
 
   @CheckForNull
