@@ -149,7 +149,7 @@ plugin_verifier_task:
     - build
   <<: *ONLY_IF_NIGHTLY
   env:
-    JDK_VERSION: "11"
+    JDK_VERSION: "17"
     ALLOWED_IDE: "AS|CL|DG|GO|IIU|IIC|IIE|PS|PCP|PCC|PCE|RDCPPP|RD|RM|WS"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
