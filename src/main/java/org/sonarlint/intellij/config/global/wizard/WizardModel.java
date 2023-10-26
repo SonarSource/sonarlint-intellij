@@ -41,7 +41,6 @@ public class WizardModel {
   private char[] password;
   private String name;
   private String organizationKey;
-  private boolean proxyEnabled;
   private boolean notificationsDisabled = false;
   private boolean notificationsSupported = false;
 
@@ -63,7 +62,6 @@ public class WizardModel {
       serverType = ServerType.SONARQUBE;
       serverUrl = connectionToEdit.getHostUrl();
     }
-    this.proxyEnabled = connectionToEdit.enableProxy();
     this.token = connectionToEdit.getToken();
     this.login = connectionToEdit.getLogin();
     var pass = connectionToEdit.getPassword();
@@ -158,15 +156,6 @@ public class WizardModel {
     return this;
   }
 
-  public boolean isProxyEnabled() {
-    return proxyEnabled;
-  }
-
-  public WizardModel setProxyEnabled(boolean proxyEnabled) {
-    this.proxyEnabled = proxyEnabled;
-    return this;
-  }
-
   public List<OrganizationDto> getOrganizationList() {
     return organizationList;
   }
@@ -247,7 +236,6 @@ public class WizardModel {
   private ServerConnection.Builder createUnauthenticatedConnection(@Nullable String organizationKey) {
     var builder = ServerConnection.newBuilder()
       .setOrganizationKey(organizationKey)
-      .setEnableProxy(proxyEnabled)
       .setName(name);
 
     if (serverType == ServerType.SONARCLOUD) {

@@ -52,14 +52,12 @@ class WizardModelTests {
     model.setOrganizationKey("org");
     model.setServerUrl("url");
     model.setLogin("login");
-    model.setProxyEnabled(true);
     model.setPassword(new char[] {'p', 'a', 's', 's'});
 
     model.setServerType(WizardModel.ServerType.SONARQUBE);
 
     var server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("url");
-    assertThat(server.enableProxy()).isTrue();
     assertThat(server.getLogin()).isEqualTo("login");
     assertThat(server.getPassword()).isEqualTo("pass");
     assertThat(server.getToken()).isNull();
@@ -96,7 +94,6 @@ class WizardModelTests {
     var model = new WizardModel(server);
 
     server = model.createConnection();
-    assertThat(server.enableProxy()).isTrue();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
   }
 }

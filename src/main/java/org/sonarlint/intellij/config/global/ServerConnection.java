@@ -63,8 +63,6 @@ public class ServerConnection {
   private String login;
   @Tag
   private String password;
-  @OptionTag
-  private boolean enableProxy;
   @Tag
   private String organizationKey;
   @Tag
@@ -80,7 +78,6 @@ public class ServerConnection {
     this.name = builder.name;
     this.login = builder.login;
     this.password = builder.password;
-    this.enableProxy = builder.enableProxy;
     this.organizationKey = builder.organizationKey;
     this.disableNotifications = builder.disableNotifications;
   }
@@ -97,13 +94,12 @@ public class ServerConnection {
       Objects.equals(getLogin(), other.getLogin()) &&
       Objects.equals(getName(), other.getName()) &&
       Objects.equals(getOrganizationKey(), other.getOrganizationKey()) &&
-      Objects.equals(enableProxy(), other.enableProxy()) &&
       Objects.equals(isDisableNotifications(), other.isDisableNotifications());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy, disableNotifications);
+    return Objects.hash(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), disableNotifications);
   }
 
   public boolean isDisableNotifications() {
@@ -149,10 +145,6 @@ public class ServerConnection {
 
   public Icon getProductIcon() {
     return isSonarCloud() ? SonarLintIcons.ICON_SONARCLOUD_16 : SonarLintIcons.ICON_SONARQUBE_16;
-  }
-
-  public boolean enableProxy() {
-    return enableProxy;
   }
 
   @CheckForNull
