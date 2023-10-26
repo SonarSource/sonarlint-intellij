@@ -106,7 +106,7 @@ validate_task:
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 6
-    memory: 8G
+    memory: 10G
   <<: *SETUP_GRADLE_CACHE
   build_script: |
     source cirrus-env QA
