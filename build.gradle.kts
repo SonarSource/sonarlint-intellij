@@ -219,7 +219,7 @@ dependencies {
     testImplementation("org.awaitility:awaitility:4.2.0")
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.27.1.33504")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.8.0.24207")
-    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.32.0.10180")
+    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.33.0.11274")
     "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.9.0.13528")
     "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.17.0.2902")
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.15.0.4655")
