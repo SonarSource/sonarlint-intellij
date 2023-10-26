@@ -250,7 +250,6 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
   public void populateSecurityHotspotsTab(SecurityHotspotsLocalDetectionSupport status) {
     var content = getSecurityHotspotContent();
     if (content != null) {
-      content.setDisplayName(buildTabName(0, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
       hotspotsPanel.populate(status);
     }
