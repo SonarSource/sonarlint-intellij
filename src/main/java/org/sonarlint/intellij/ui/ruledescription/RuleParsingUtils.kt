@@ -28,16 +28,16 @@ import com.intellij.psi.XmlElementFactory
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+import javax.swing.JScrollPane
+import javax.swing.ScrollPaneConstants
 import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
 import org.sonarlint.intellij.ui.ruledescription.section.HtmlFragment
 import org.sonarlint.intellij.ui.ruledescription.section.Section
-import java.util.regex.Matcher
-import java.util.regex.Pattern
-import javax.swing.JScrollPane
-import javax.swing.ScrollPaneConstants
 
 class RuleParsingUtils {
 
@@ -97,9 +97,7 @@ class RuleParsingUtils {
                 when (it) {
                     is HtmlFragment -> RuleHtmlViewer(false).apply { updateHtml(it.html) }
                     is CodeExampleFragment -> RuleCodeSnippet(project, fileType, it).apply {
-                        if (!Disposer.isDisposed(parent)) {
-                            Disposer.register(parent, this)
-                        }
+                        Disposer.tryRegister(parent, this)
                     }
                 }
             }.forEach { mainPanel.add(it) }

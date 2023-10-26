@@ -38,7 +38,7 @@ import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SideBorder;
 import com.intellij.ui.TitledSeparator;
-import com.intellij.ui.TreeSpeedSearch;
+import com.intellij.ui.TreeUIHelper;
 import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
@@ -416,7 +416,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     table.setTreeCellRenderer(new RulesTreeTableRenderer(filterModel::getText));
     table.setRootVisible(false);
     TreeUtil.installActions(table.getTree());
-    new TreeSpeedSearch(table.getTree(), treePath -> treePath.getLastPathComponent().toString());
+    TreeUIHelper.getInstance().installTreeSpeedSearch(table.getTree(), treePath -> treePath.getLastPathComponent().toString(), false);
 
     table.getTree().addTreeSelectionListener(e -> {
       var path = e.getNewLeadSelectionPath();

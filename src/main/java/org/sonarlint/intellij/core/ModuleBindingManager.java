@@ -27,10 +27,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
 
@@ -141,22 +139,6 @@ public class ModuleBindingManager {
       });
       return paths;
     });
-  }
-
-  @CheckForNull
-  public SonarLintEngine getEngineIfStarted() {
-    var engineManager = getService(EngineManager.class);
-    var moduleSettings = getSettingsFor(module);
-    var projectSettings = getSettingsFor(module.getProject());
-    if (moduleSettings.isProjectBindingOverridden() || projectSettings.isBound()) {
-      var connectionId = projectSettings.getConnectionName();
-      if (connectionId == null) {
-        SonarLintConsole.get(module.getProject()).error("Inconsistency in settings, the module or project is bound but there is no connection");
-      } else {
-        return engineManager.getConnectedEngineIfStarted(connectionId);
-      }
-    }
-    return engineManager.getStandaloneEngineIfStarted();
   }
 
   public void unbind() {

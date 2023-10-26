@@ -19,15 +19,15 @@
  */
 package org.sonarlint.intellij.ui.traffic.light
 
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.Presentation
-import com.intellij.openapi.actionSystem.UpdateInBackground
 import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import javax.swing.JComponent
+import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -36,7 +36,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.persistence.FindingsCache
 
-class SonarLintTrafficLightAction(private val editor: Editor) : AnAction(), UpdateInBackground, CustomComponentAction {
+class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {
 
     companion object {
         private val DASHBOARD_MODEL = Key<SonarLintDashboardModel>("DASHBOARD_MODEL")
@@ -50,8 +50,7 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AnAction(), Upda
         presentation.getClientProperty(DASHBOARD_MODEL)?.let { (component as SonarLintTrafficLightWidget).refresh(it) }
     }
 
-    override fun update(e: AnActionEvent) {
-        val project = e.project ?: return
+    override fun updatePresentation(e: AnActionEvent, project: Project) {
         e.getData(CommonDataKeys.VIRTUAL_FILE)?.let { file ->
             val presentation = e.presentation
             val isFocusOnNewCode = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)

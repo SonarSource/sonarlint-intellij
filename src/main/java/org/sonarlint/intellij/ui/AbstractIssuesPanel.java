@@ -25,10 +25,10 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.event.KeyAdapter;
@@ -128,7 +128,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   private static ActionGroup createActionGroup(Collection<AnAction> actions) {
-    var actionGroup = new SimpleActionGroup();
+    var actionGroup = new DefaultActionGroup();
     actions.forEach(actionGroup::add);
     return actionGroup;
   }

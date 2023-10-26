@@ -205,11 +205,6 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     }
 
     @Override
-    public void refresh() {
-      // nothing to do
-    }
-
-    @Override
     public void saveState() {
       PropertiesComponent.getInstance(project).setValue(ACTIVATED_OPTION_NAME, Boolean.toString(checkBox.isSelected()));
     }

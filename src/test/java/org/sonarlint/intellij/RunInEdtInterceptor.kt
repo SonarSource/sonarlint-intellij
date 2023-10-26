@@ -19,18 +19,18 @@
  */
 package org.sonarlint.intellij
 
-import com.intellij.testFramework.TestRunnerUtil
+import com.intellij.testFramework.UITestUtil
 import com.intellij.testFramework.runInEdtAndWait
+import java.lang.reflect.Method
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.InvocationInterceptor
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext
-import java.lang.reflect.Method
 
 // Warning: InvocationInterceptor is in Experimental status
 class RunInEdtInterceptor : InvocationInterceptor {
     companion object {
         init {
-            TestRunnerUtil.replaceIdeEventQueueSafely();
+            UITestUtil.replaceIdeEventQueueSafely();
         }
     }
 

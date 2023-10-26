@@ -33,12 +33,9 @@ import com.intellij.openapi.editor.colors.ColorKey
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.JBColor
 import com.intellij.ui.scale.JBUIScale
-import com.intellij.util.ObjectUtils
 import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 import java.awt.Component
 import java.awt.Graphics
 import java.awt.Rectangle
@@ -49,6 +46,8 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.border.Border
 import javax.swing.plaf.FontUIResource
+import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 
 class SonarLintTrafficLightWidget(
     private val action: AnAction,
@@ -69,12 +68,11 @@ class SonarLintTrafficLightWidget(
         if (!SystemInfo.isWindows) {
             iconAndFindingsCountLabel.font = FontUIResource(font.deriveFont(font.style, (font.size - JBUIScale.scale(2)).toFloat()))
         }
-        iconAndFindingsCountLabel.foreground = JBColor {
-            ObjectUtils.notNull(
-                editor.colorsScheme.getColor(ColorKey.createColorKey("ActionButton.iconTextForeground", UIUtil.getContextHelpForeground())),
-                ColorKey.createColorKey("ActionButton.iconTextForeground", UIUtil.getContextHelpForeground()).defaultColor
-            )
-        }
+        iconAndFindingsCountLabel.foreground = JBColor(
+            editor.colorsScheme.getColor(ColorKey.createColorKey("ActionButton.iconTextForeground", UIUtil.getContextHelpForeground()))!!,
+            ColorKey.createColorKey("ActionButton.iconTextForeground", UIUtil.getContextHelpForeground()).defaultColor
+        )
+
         add(iconAndFindingsCountLabel)
 
         mouseListener = object : MouseAdapter() {

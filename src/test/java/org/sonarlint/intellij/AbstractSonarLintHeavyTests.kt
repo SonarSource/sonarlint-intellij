@@ -23,6 +23,9 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.ComponentManagerImpl
 import com.intellij.testFramework.HeavyPlatformTestCase
+import java.lang.reflect.Method
+import java.nio.file.Path
+import java.nio.file.Paths
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
@@ -36,9 +39,6 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.TestEngineManager
-import java.lang.reflect.Method
-import java.nio.file.Path
-import java.nio.file.Paths
 
 @ExtendWith(RunInEdtInterceptor::class)
 abstract class AbstractSonarLintHeavyTests : HeavyPlatformTestCase() {

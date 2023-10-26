@@ -23,10 +23,10 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBList
+import javax.swing.JList
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
-import javax.swing.JList
 
 open class BindingSuggestionSelectionDialog(bindingSuggestions: List<BindingSuggestion>) :
     DialogWrapper(true) {
