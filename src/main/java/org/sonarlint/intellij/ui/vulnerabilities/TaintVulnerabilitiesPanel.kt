@@ -27,6 +27,7 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataProvider
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -34,7 +35,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.tools.SimpleActionGroup
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
@@ -197,7 +197,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     private fun setupToolbar(actions: List<AnAction>) {
-        val group = SimpleActionGroup()
+        val group = DefaultActionGroup()
         actions.forEach { group.add(it) }
         val toolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_GROUP_ID, group, false)
         toolbar.targetComponent = this

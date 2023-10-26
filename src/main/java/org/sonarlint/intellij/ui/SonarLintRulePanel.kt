@@ -34,10 +34,18 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
+import com.intellij.util.ui.HTMLEditorKitBuilder
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
+import java.awt.BorderLayout
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import java.util.concurrent.TimeUnit
+import javax.swing.JEditorPane
+import javax.swing.event.HyperlinkEvent
+import javax.swing.text.DefaultCaret
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -56,13 +64,6 @@ import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.serverapi.UrlUtils.urlEncode
-import java.awt.BorderLayout
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import java.util.concurrent.TimeUnit
-import javax.swing.JEditorPane
-import javax.swing.event.HyperlinkEvent
-import javax.swing.text.DefaultCaret
 
 
 private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
@@ -93,7 +94,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                     caret = DefaultCaret()
                 }
                 (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
-                editorKit = UIUtil.getHTMLEditorKit()
+                editorKit = HTMLEditorKitBuilder.simple()
                 border = JBUI.Borders.empty()
                 isEditable = false
                 isOpaque = false
@@ -318,7 +319,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                     caret = DefaultCaret()
                 }
                 (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
-                editorKit = UIUtil.getHTMLEditorKit()
+                editorKit = HTMLEditorKitBuilder.simple()
                 addHyperlinkListener(RuleConfigHyperLinkListener(project))
                 isEditable = false
                 isOpaque = false

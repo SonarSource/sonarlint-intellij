@@ -27,22 +27,24 @@ import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.EngineManager
-import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBinding
+import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.messages.ProjectBindingListener
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
-private fun getEngineIfStarted(module: Module) = getService(module, ModuleBindingManager::class.java).engineIfStarted
+private fun getEngineIfStarted(project: Project) = getService(project, ProjectBindingManager::class.java).engineIfStarted
 
 class ModuleChangeListener(val project: Project) : ModuleListener {
-    override fun moduleAdded(project: Project, module: Module) {
-        Modules.declareModule(project, getEngineIfStarted(module), module)
-        getService(BackendService::class.java).moduleAdded(module)
+
+    override fun modulesAdded(project: Project, modules: List<Module>) {
+        val engine = getEngineIfStarted(project)
+        modules.forEach { Modules.declareModule(project, engine, it) }
+        getService(BackendService::class.java).modulesAdded(project, modules)
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
-        Modules.removeModule(getEngineIfStarted(module), module)
+        Modules.removeModule(getEngineIfStarted(module.project), module)
         getService(BackendService::class.java).moduleRemoved(module)
     }
 }
@@ -70,7 +72,10 @@ private object Modules {
 
 class ProjectClosedListener : ProjectManagerListener {
     override fun projectClosing(project: Project) {
-        ModuleManager.getInstance(project).modules.forEach { Modules.removeModule(getEngineIfStarted(it), it) }
+        val engine = getEngineIfStarted(project)
+        ModuleManager.getInstance(project).modules.forEach {
+            Modules.removeModule(engine, it)
+        }
     }
 }
 

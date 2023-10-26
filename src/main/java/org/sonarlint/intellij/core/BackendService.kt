@@ -277,20 +277,19 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     }
 
-    fun moduleAdded(module: Module) {
-        val moduleProjectKey = getService(module, ModuleBindingManager::class.java).configuredProjectKey
-        val projectBinding = getService(module.project, ProjectBindingManager::class.java).binding
+    fun modulesAdded(project: Project, modules: List<Module>) {
+        val projectBinding = getService(project, ProjectBindingManager::class.java).binding
         initializedBackend.configurationService.didAddConfigurationScopes(
             DidAddConfigurationScopesParams(
-                listOf(
-                    ConfigurationScopeDto(
-                        moduleId(module), projectId(module.project), true, module.name, BindingConfigurationDto(
-                            projectBinding?.connectionName, projectBinding?.let { moduleProjectKey }, true
-                        )
-                    )
-                )
+                modules.map { toConfigurationScope(it, projectBinding) }
             )
         )
+    }
+
+    private fun toConfigurationScope(module: Module, projectBinding: ProjectBinding?): ConfigurationScopeDto {
+        val moduleProjectKey = getService(module, ModuleBindingManager::class.java).configuredProjectKey
+        return ConfigurationScopeDto(moduleId(module), projectId(module.project), true, module.name,
+                BindingConfigurationDto(projectBinding?.connectionName, projectBinding?.let { moduleProjectKey }, true))
     }
 
     fun moduleRemoved(module: Module) {

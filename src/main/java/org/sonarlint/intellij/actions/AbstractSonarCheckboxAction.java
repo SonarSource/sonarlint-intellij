@@ -19,16 +19,21 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.actionSystem.UpdateInBackground;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.ex.CheckboxAction;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.util.NlsActions;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-// UpdateInBackground is scheduled for removal and comes with a replacement in 2022.2. We have to use it for older versions
-public abstract class AbstractSonarCheckboxAction extends CheckboxAction implements DumbAware, UpdateInBackground {
+public abstract class AbstractSonarCheckboxAction extends CheckboxAction implements DumbAware {
 
   protected AbstractSonarCheckboxAction(@Nullable @NlsActions.ActionText final String text) {
     super(text);
+  }
+
+  @Override
+  public @NotNull ActionUpdateThread getActionUpdateThread() {
+    return ActionUpdateThread.BGT;
   }
 }

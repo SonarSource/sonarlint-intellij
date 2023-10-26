@@ -52,7 +52,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
         mockServer.start()
         getService(project, FindingsCache::class.java).clearAllFindingsForAllFiles()
         getService(BackendService::class.java).projectOpened(project)
-        getService(BackendService::class.java).moduleAdded(module)
+        getService(BackendService::class.java).modulesAdded(project, listOf(module))
         connectProjectTo(mockServer.url(""), "connection", "projectKey")
     }
 

@@ -22,17 +22,13 @@ package org.sonarlint.intellij.notifications;
 import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
-import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.plugin.commons.SkipReason;
@@ -66,11 +62,11 @@ public class AnalysisRequirementNotifications {
           final var title = "<b>SonarLint failed to analyze " + l.getLabel() + " code</b>";
           if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE) {
             var content = String.format(
-              "SonarLint requires Java runtime version %s or later to analyze %s code. Current version is %s.<br>" +
-                "See <a href=\"https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under\">" +
-                "how to select the JDK version the IDE will run under</a>.",
+              "SonarLint requires Java runtime version %s or later to analyze %s code. Current version is %s.",
               runtimeRequirement.getMinVersion(), l.getLabel(), runtimeRequirement.getCurrentVersion());
-            createNotificationOnce(project, title, content, new NotificationListener.UrlOpeningListener(true));
+            createNotificationOnce(project, title, content,
+              new OpenLinkAction("https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under",
+                "How to change the IDE-running JDK?"));
           } else if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS) {
             var content = new StringBuilder(
               String.format("SonarLint requires Node.js runtime version %s or later to analyze %s code.", runtimeRequirement.getMinVersion(), l.getLabel()));
@@ -78,22 +74,19 @@ public class AnalysisRequirementNotifications {
               content.append(String.format(" Current version is %s.", runtimeRequirement.getCurrentVersion()));
             }
             content.append("<br>Please configure the Node.js path in the SonarLint settings.");
-            createNotificationOnce(project, title, content.toString(), null, new OpenGlobalSettingsAction(project));
+            createNotificationOnce(project, title, content.toString(), new OpenGlobalSettingsAction(project));
           }
         }
       });
     });
   }
 
-  private static void createNotificationOnce(Project project, String title, String content, @Nullable NotificationListener listener, NotificationAction... actions) {
+  private static void createNotificationOnce(Project project, String title, String content, NotificationAction... actions) {
     if (!alreadyNotified.contains(content)) {
       var notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
         title,
         content,
         NotificationType.WARNING);
-      if (listener != null) {
-        notification.setListener(listener);
-      }
       notification.setImportant(true);
       Stream.of(actions).forEach(notification::addAction);
       notification.notify(project);

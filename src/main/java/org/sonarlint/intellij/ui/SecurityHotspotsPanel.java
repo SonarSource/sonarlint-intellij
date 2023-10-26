@@ -24,12 +24,12 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBPanelWithEmptyText;
@@ -131,9 +131,9 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     mainPanel.add(cardPanel.getContainer(), BorderLayout.CENTER);
   }
 
-  private static SimpleActionGroup createActionGroup() {
+  private static DefaultActionGroup createActionGroup() {
     var sonarLintActions = SonarLintActions.getInstance();
-    var actionGroup = new SimpleActionGroup();
+    var actionGroup = new DefaultActionGroup();
     actionGroup.add(ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"));
     actionGroup.add(sonarLintActions.filterSecurityHotspots());
     actionGroup.add(sonarLintActions.includeResolvedHotspotAction());

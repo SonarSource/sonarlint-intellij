@@ -45,16 +45,16 @@ class ModuleChangeListenerTests : AbstractSonarLintLightTests() {
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
-        whenever(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine)
+        whenever(projectBindingManager.engineIfStarted).thenReturn(projectFakeEngine)
         moduleChangeListener = ModuleChangeListener(project)
     }
 
     @Test
     fun should_declare_module_on_engine_when_module_added_to_project() {
-        moduleChangeListener.moduleAdded(project, module)
+        moduleChangeListener.modulesAdded(project, listOf(module))
 
         argumentCaptor<ClientModuleInfo>().apply {
-            verify(moduleFakeEngine).declareModule(capture())
+            verify(projectFakeEngine).declareModule(capture())
             assertThat(firstValue.key()).isEqualTo(module)
         }
     }
@@ -63,19 +63,19 @@ class ModuleChangeListenerTests : AbstractSonarLintLightTests() {
     fun should_stop_module_on_engine_when_module_removed_from_project() {
         moduleChangeListener.moduleRemoved(project, module)
 
-        verify(moduleFakeEngine).stopModule(eq(module))
+        verify(projectFakeEngine).stopModule(eq(module))
     }
 
     @Test
     fun should_stop_modules_on_engine_when_project_is_closed() {
         ApplicationManager.getApplication().messageBus.syncPublisher(ProjectManager.TOPIC).projectClosing(project)
 
-        verify(moduleFakeEngine).stopModule(eq(module))
+        verify(projectFakeEngine).stopModule(eq(module))
     }
 
     @Test
     fun should_stop_and_recreate_modules_when_binding_changes() {
-        moduleChangeListener.moduleAdded(project, module)
+        moduleChangeListener.modulesAdded(project, listOf(module))
         val standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
         val connectedEngine = mock(ConnectedSonarLintEngine::class.java)
         getEngineManager().registerEngine(standaloneEngine)
@@ -93,6 +93,6 @@ class ModuleChangeListenerTests : AbstractSonarLintLightTests() {
 
     private lateinit var moduleChangeListener: ModuleChangeListener
     private var projectBindingManager: ProjectBindingManager = mock()
-    private var moduleFakeEngine: ConnectedSonarLintEngine = mock()
+    private var projectFakeEngine: ConnectedSonarLintEngine = mock()
     private var moduleBindingManager: ModuleBindingManager = mock()
 }

@@ -22,7 +22,6 @@ package org.sonarlint.intellij.notifications;
 import com.google.common.collect.Lists;
 import com.intellij.notification.Notification;
 import com.intellij.notification.Notifications;
-import com.intellij.notification.NotificationsAdapter;
 import com.intellij.notification.NotificationsManager;
 import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collections;
@@ -61,7 +60,7 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
     notifications = Lists.newCopyOnWriteArrayList();
     var project = getProject();
     busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(Notifications.TOPIC, new NotificationsAdapter() {
+    busConnection.subscribe(Notifications.TOPIC, new Notifications() {
       @Override
       public void notify(@NotNull Notification notification) {
         notifications.add(notification);
@@ -104,7 +103,7 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
     List<PluginDetails> plugins = List.of(new PluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
-    assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Java runtime version 11 or later to analyze Java code. Current version is 1.8.<br>See <a href=\"https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under\">how to select the JDK version the IDE will run under</a>.");
+    assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Java runtime version 11 or later to analyze Java code. Current version is 1.8.");
   }
 
   @Test

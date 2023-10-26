@@ -24,8 +24,8 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.ColoredListCellRenderer;
-import com.intellij.ui.ListSpeedSearch;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.ui.TreeUIHelper;
 import com.intellij.ui.components.JBList;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -169,7 +169,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
     list.setEnabled(true);
     list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     list.setCellRenderer(new ListRenderer());
-    new ListSpeedSearch<>(list, o -> o.getName() + " " + o.getKey());
+    TreeUIHelper.getInstance().installListSpeedSearch(list, o -> o.getName() + " " + o.getKey());
     orgList = list;
   }
 

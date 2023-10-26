@@ -22,6 +22,9 @@ package org.sonarlint.intellij.telemetry
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.ui.jcef.JBCefApp
+import java.util.Optional
+import java.util.function.Predicate
+import java.util.stream.Collectors
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -30,10 +33,6 @@ import org.sonarlint.intellij.core.NodeJsManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails
 import org.sonarsource.sonarlint.core.telemetry.TelemetryClientAttributesProvider
-import java.util.Arrays
-import java.util.Optional
-import java.util.function.Predicate
-import java.util.stream.Collectors
 
 class TelemetryClientAttributeProviderImpl : TelemetryClientAttributesProvider {
 
@@ -96,9 +95,7 @@ class TelemetryClientAttributeProviderImpl : TelemetryClientAttributesProvider {
             .anyMatch { obj: ServerConnection -> obj.isDisableNotifications }
 
         private fun isAnyOpenProjectMatch(predicate: Predicate<Project>): Boolean {
-            val projectManager = ProjectManager.getInstance()
-            val openProjects = projectManager.openProjects
-            return Arrays.stream(openProjects).anyMatch(predicate)
+            return ProjectManager.getInstance().openProjects.any { predicate.test(it) }
         }
 
     }

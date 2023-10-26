@@ -43,29 +43,6 @@ class ModuleBindingManagerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun should_return_standalone_engine_if_not_bound_on_project_and_module_level() {
-        assertThat(moduleBindingManager.engineIfStarted).isEqualTo(standaloneEngine)
-    }
-
-    @Test
-    fun should_return_connected_engine_if_not_bound_on_module_level_but_has_default_binding() {
-        projectSettings.isBindingEnabled = true
-        projectSettings.connectionName = "server1"
-        projectSettings.projectKey = "key"
-
-        assertThat(moduleBindingManager.engineIfStarted).isEqualTo(connectedEngine)
-    }
-
-    @Test
-    fun should_return_connected_engine_if_no_default_binding_but_bound_on_module_level() {
-        projectSettings.isBindingEnabled = true
-        projectSettings.connectionName = "server1"
-        moduleSettings.projectKey = "key"
-
-        assertThat(moduleBindingManager.engineIfStarted).isEqualTo(connectedEngine)
-    }
-
-    @Test
     fun should_resolve_project_key_if_module_is_not_bound() {
         projectSettings.bindTo(ServerConnection.newBuilder().setName("name").build(), "projectKey")
 
@@ -89,16 +66,6 @@ class ModuleBindingManagerTests : AbstractSonarLintLightTests() {
 
         assertThat(moduleSettings.isProjectBindingOverridden).isFalse
         assertThat(moduleSettings.projectKey).isEmpty()
-    }
-
-    @Test
-    fun should_fallback_to_standalone_engine_when_module_bound_but_not_project() {
-        // as settings are stored on file system, inconsistencies can happen
-        moduleSettings.projectKey = "moduleKey"
-
-        val engineIfStarted = moduleBindingManager.engineIfStarted
-
-        assertThat(engineIfStarted).isEqualTo(standaloneEngine)
     }
 
     private lateinit var standaloneEngine : StandaloneSonarLintEngine
