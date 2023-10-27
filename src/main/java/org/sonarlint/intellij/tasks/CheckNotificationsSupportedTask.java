@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.wizard.PartialConnection;
 import org.sonarlint.intellij.core.BackendService;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
@@ -34,11 +35,11 @@ import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
  * Only useful for SonarQube, since we know notifications are available in SonarCloud
  */
 public class CheckNotificationsSupportedTask extends Task.Modal {
-  private final ServerConnection connection;
+  private final PartialConnection connection;
   private Exception exception;
   private boolean notificationsSupported = false;
 
-  public CheckNotificationsSupportedTask(ServerConnection connection) {
+  public CheckNotificationsSupportedTask(PartialConnection connection) {
     super(null, "Check if smart notifications are supported", true);
     this.connection = connection;
   }

@@ -21,20 +21,20 @@ package org.sonarlint.intellij.tasks
 
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
+import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
-import java.util.concurrent.CompletableFuture
+import org.sonarlint.intellij.fixtures.newPartialConnection
 
 class ConnectionTestTaskTests : AbstractSonarLintLightTests() {
     @Test
     fun should_mark_progress_indicator_as_indeterminate() {
-        val task = ConnectionTestTask(ServerConnection.newBuilder().setHostUrl("invalid_url").build())
+        val task = ConnectionTestTask(newPartialConnection())
         val progress = mock(ProgressIndicator::class.java)
 
         task.run(progress)
@@ -44,8 +44,8 @@ class ConnectionTestTaskTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_not_validate_connection_when_host_does_not_exist() {
-        val server = ServerConnection.newBuilder().setHostUrl("invalid_url").build()
-        val task = ConnectionTestTask(server)
+        val connection = newPartialConnection("invalid_url")
+        val task = ConnectionTestTask(connection)
 
         task.run(mock(ProgressIndicator::class.java))
 
@@ -56,12 +56,12 @@ class ConnectionTestTaskTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_return_no_result_if_task_has_been_canceled() {
+        val connection = newPartialConnection()
         val progress = mock(ProgressIndicator::class.java)
-        val server = mock(ServerConnection::class.java)
         val backendService = mock(BackendService::class.java)
         replaceProjectService(BackendService::class.java, backendService)
-        `when`(backendService.validateConnection(server)).thenReturn(CompletableFuture())
-        val task = ConnectionTestTask(server)
+        `when`(backendService.validateConnection(connection)).thenReturn(CompletableFuture())
+        val task = ConnectionTestTask(connection)
         `when`(progress.checkCanceled()).thenThrow(ProcessCanceledException())
 
         task.run(progress)

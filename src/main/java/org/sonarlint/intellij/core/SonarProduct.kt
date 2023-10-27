@@ -17,21 +17,17 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.global.wizard
+package org.sonarlint.intellij.core
 
-import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.ServerConnectionService
+import javax.swing.Icon
+import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.common.util.SonarLintUtils
 
-open class ServerConnectionCreator {
-
-    open fun createThroughWizard(serverUrl: String): ServerConnection? {
-        val serverConnectionService = ServerConnectionService.getInstance()
-        val wizard = ServerConnectionWizard.forNewConnection(serverUrl, serverConnectionService.getServerNames())
-        if (wizard.showAndGet()) {
-            val created = wizard.connection
-            serverConnectionService.addServerConnection(created)
-            return created
-        }
-        return null
+enum class SonarProduct(val productName: String, val icon: Icon, val documentation: ServerProductDocumentation) {
+    SONARQUBE("SonarQube", SonarLintIcons.ICON_SONARQUBE_16, SonarQubeDocumentation),
+    SONARCLOUD("SonarCloud", SonarLintIcons.ICON_SONARCLOUD_16, SonarCloudDocumentation);
+    companion object {
+        @JvmStatic
+        fun fromUrl(serverUrl: String) = if (SonarLintUtils.isSonarCloudAlias(serverUrl)) SONARCLOUD else SONARQUBE
     }
 }

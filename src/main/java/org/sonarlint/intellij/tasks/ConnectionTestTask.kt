@@ -23,21 +23,21 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.wizard.PartialConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionResponse
 
-class ConnectionTestTask(private val server: ServerConnection) :
+class ConnectionTestTask(private val connection: PartialConnection) :
     Task.WithResult<ValidateConnectionResponse?, Exception>(
-        null, "Test Connection to " + if (server.isSonarCloud) "SonarCloud" else "SonarQube", true
+        null, "Test Connection to " + connection.sonarProduct.productName, true
     ) {
 
     override fun compute(indicator: ProgressIndicator): ValidateConnectionResponse? {
-        indicator.text = "Connecting to " + server.hostUrl + "..."
+        indicator.text = "Connecting to " + connection.hostUrl + "..."
         indicator.isIndeterminate = true
         return try {
-            waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(server))
+            waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(connection))
         } catch (e: ProcessCanceledException) {
             null
         }

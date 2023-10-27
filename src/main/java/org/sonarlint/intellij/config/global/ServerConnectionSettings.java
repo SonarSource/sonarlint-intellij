@@ -26,17 +26,7 @@ import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import javax.swing.Icon;
-import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.core.server.ServerLinks;
-import org.sonarlint.intellij.core.server.SonarCloudLinks;
-import org.sonarlint.intellij.core.server.SonarQubeLinks;
-import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
-import org.sonarsource.sonarlint.core.serverapi.ServerApi;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
@@ -46,45 +36,46 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
  * Note that we use both {@link OptionTag} and {@link Tag} (which will result in 2 different ways of serializing the fields) to remain
  * backward-compatible with existing serialized configurations.
  *
- * @see com.intellij.util.xmlb.annotations.Tag
- * @see com.intellij.util.xmlb.annotations.OptionTag
+ * @see Tag
+ * @see OptionTag
  */
 @Immutable
 // Don't change annotation, used for backward compatibility
 @Tag("SonarQubeServer")
-public class ServerConnection {
+public class ServerConnectionSettings {
   @OptionTag
   private String hostUrl;
+  // credentials are migrated to secure storage
   @Tag
+  @Deprecated(since = "10.0")
   private String token;
   @OptionTag
   private String name;
   @OptionTag
+  @Deprecated(since = "10.0")
   private String login;
   @Tag
+  @Deprecated(since = "10.0")
   private String password;
   @Tag
   private String organizationKey;
   @Tag
   private boolean disableNotifications;
 
-  private ServerConnection() {
+  private ServerConnectionSettings() {
     // necessary for XML deserialization
   }
 
-  private ServerConnection(Builder builder) {
+  private ServerConnectionSettings(Builder builder) {
     this.hostUrl = builder.hostUrl;
-    this.token = builder.token;
     this.name = builder.name;
-    this.login = builder.login;
-    this.password = builder.password;
     this.organizationKey = builder.organizationKey;
     this.disableNotifications = builder.disableNotifications;
   }
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof ServerConnection other)) {
+    if (!(o instanceof ServerConnectionSettings other)) {
       return false;
     }
 
@@ -131,20 +122,15 @@ public class ServerConnection {
       return null;
     }
   }
+
+  public void clearCredentials() {
+    this.login = null;
+    this.password = null;
+    this.token = null;
+  }
+
   public boolean isSonarCloud() {
     return SonarLintUtils.isSonarCloudAlias(hostUrl);
-  }
-
-  public boolean isSonarQube() {
-    return !isSonarCloud();
-  }
-
-  public String getProductName() {
-    return isSonarCloud() ? "SonarCloud" : "SonarQube";
-  }
-
-  public Icon getProductIcon() {
-    return isSonarCloud() ? SonarLintIcons.ICON_SONARCLOUD_16 : SonarLintIcons.ICON_SONARQUBE_16;
   }
 
   @CheckForNull
@@ -159,23 +145,8 @@ public class ServerConnection {
     }
   }
 
-  public boolean hasSameCredentials(ServerConnection otherConnection) {
-    if (token != null) {
-      return Objects.equals(token, otherConnection.token);
-    }
-    return Objects.equals(password, otherConnection.password) && Objects.equals(login, otherConnection.login);
-  }
-
   public String getName() {
     return name;
-  }
-
-  public EndpointParams getEndpointParams() {
-    return new EndpointParams(getHostUrl(), isSonarCloud(), getOrganizationKey());
-  }
-
-  public ServerApi api() {
-    return new ServerApi(getEndpointParams(), getService(BackendService.class).getHttpClient(name));
   }
 
   @Override
@@ -187,31 +158,18 @@ public class ServerConnection {
     return new Builder();
   }
 
-  public ServerLinks links() {
-    return isSonarCloud() ? SonarCloudLinks.INSTANCE : new SonarQubeLinks(hostUrl);
-  }
-
   public static class Builder {
     private String hostUrl;
-    private String token;
     private String organizationKey;
     private String name;
-    private String login;
-    private String password;
-    private boolean enableProxy;
     private boolean disableNotifications;
 
     private Builder() {
       // no args
     }
 
-    public ServerConnection build() {
-      return new ServerConnection(this);
-    }
-
-    public Builder setLogin(@Nullable String login) {
-      this.login = login;
-      return this;
+    public ServerConnectionSettings build() {
+      return new ServerConnectionSettings(this);
     }
 
     public Builder setDisableNotifications(boolean disableNotifications) {
@@ -226,29 +184,6 @@ public class ServerConnection {
 
     public Builder setHostUrl(String hostUrl) {
       this.hostUrl = hostUrl;
-      return this;
-    }
-
-    public Builder setEnableProxy(boolean enableProxy) {
-      this.enableProxy = enableProxy;
-      return this;
-    }
-
-    public Builder setToken(@Nullable String token) {
-      if (token == null) {
-        this.token = null;
-      } else {
-        this.token = PasswordUtil.encodePassword(token);
-      }
-      return this;
-    }
-
-    public Builder setPassword(@Nullable String password) {
-      if (password == null) {
-        this.password = null;
-      } else {
-        this.password = PasswordUtil.encodePassword(password);
-      }
       return this;
     }
 

@@ -43,8 +43,8 @@ public class ServerConnectionWizard {
     return wizard;
   }
 
-  public static ServerConnectionWizard forNewConnection(ServerConnection prefilledConnection, Set<String> existingNames) {
-    var wizard = new ServerConnectionWizard(new WizardModel(prefilledConnection));
+  public static ServerConnectionWizard forNewConnection(String serverUrl, Set<String> existingNames) {
+    var wizard = new ServerConnectionWizard(new WizardModel(serverUrl));
     var steps = createSteps(wizard.model, false, existingNames);
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "New Connection");
     return wizard;

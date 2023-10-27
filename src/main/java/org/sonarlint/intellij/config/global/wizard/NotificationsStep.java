@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.global.wizard;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.util.ui.SwingHelper;
+import java.util.Objects;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -49,16 +50,15 @@ public class NotificationsStep extends AbstractWizardStepEx {
 
   @Override
   public void _init() {
-    final boolean isSc = model.getServerType() == WizardModel.ServerType.SONARCLOUD;
-    final String sqOrSc = isSc ? "SonarCloud" : "SonarQube";
-    notificationsCheckBox.setText("Receive notifications from " + sqOrSc);
+    var serverProduct = Objects.requireNonNull(model.getServerProduct());
+    final String productName = serverProduct.getProductName();
+    notificationsCheckBox.setText("Receive notifications from " + productName);
     notificationsCheckBox.setSelected(!model.isNotificationsDisabled());
-    final String docUrl = isSc ? "https://docs.sonarcloud.io/advanced-setup/sonarlint-smart-notifications/" :
-      "https://docs.sonarqube.org/latest/user-guide/sonarlint-connected-mode/";
-    notificationsDetails.setText("You will receive <a href=\"" + docUrl + "\">notifications</a> from " + sqOrSc + " in situations like:\n" +
+    notificationsDetails.setText("You will receive <a href=\"" + serverProduct.getDocumentation().smartNotificationsHelp() +
+      "\">notifications</a> from " + productName + " in situations like:\n" +
       "<ul>" +
       "<li>the Quality Gate status of a bound project changes</li>" +
-      "<li>the latest analysis of a bound project on " + sqOrSc + " raises new issues assigned to you</li>" +
+      "<li>the latest analysis of a bound project on " + productName + " raises new issues assigned to you</li>" +
       "</ul>");
     notificationsDetails.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
   }
@@ -84,7 +84,7 @@ public class NotificationsStep extends AbstractWizardStepEx {
     if (onlyEditNotifications) {
       return null;
     }
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
+    if (model.isSonarCloud()) {
       return OrganizationStep.class;
     } else {
       return AuthStep.class;

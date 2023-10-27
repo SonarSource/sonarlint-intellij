@@ -24,8 +24,7 @@ import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBList
 import javax.swing.JList
-import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.config.Settings.getGlobalSettings
+import org.sonarlint.intellij.config.global.ServerConnectionService
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 
 open class BindingSuggestionSelectionDialog(bindingSuggestions: List<BindingSuggestion>) :
@@ -59,9 +58,9 @@ class BindingSuggestionRenderer :
         hasFocus: Boolean
     ) {
         val attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES
-        getGlobalSettings().getServerConnectionByName(suggestion.connectionId)
+        ServerConnectionService.getInstance().getServerConnectionByName(suggestion.connectionId)
             .ifPresentOrElse({
-                icon = if (it.isSonarCloud) SonarLintIcons.ICON_SONARCLOUD_16 else SonarLintIcons.ICON_SONARQUBE_16
+                icon = it.product.icon
                 append(suggestion.projectName, attrs, true)
                 append(" (" + suggestion.projectKey + ")", SimpleTextAttributes.GRAY_ATTRIBUTES, false)
                 append(" on connection [" + suggestion.connectionId + "]", SimpleTextAttributes.GRAY_ATTRIBUTES, false)

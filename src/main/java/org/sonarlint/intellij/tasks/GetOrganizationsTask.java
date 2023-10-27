@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.wizard.PartialConnection;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.OrganizationDto;
 
@@ -35,11 +36,11 @@ import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
  * Only useful for SonarCloud
  */
 public class GetOrganizationsTask extends Task.Modal {
-  private final ServerConnection connection;
+  private final PartialConnection connection;
   private Exception exception;
   private List<OrganizationDto> organizations;
 
-  public GetOrganizationsTask(ServerConnection connection) {
+  public GetOrganizationsTask(PartialConnection connection) {
     super(null, "Fetch organizations from SonarCloud", true);
     this.connection = connection;
   }

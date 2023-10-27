@@ -82,7 +82,7 @@ public class IssueNode extends FindingNode {
         var connection = serverConnection.get();
         renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " " +
           "analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProduct().getIcon(), impactIcon));
       } else {
         renderer.setIconToolTip(impactText + " impact on " + qualityText);
         var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
@@ -103,7 +103,7 @@ public class IssueNode extends FindingNode {
       if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();
         renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, severityIcon));
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProduct().getIcon(), typeIcon, severityIcon));
       } else {
         renderer.setIconToolTip(severityText + " " + typeStr);
         var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;

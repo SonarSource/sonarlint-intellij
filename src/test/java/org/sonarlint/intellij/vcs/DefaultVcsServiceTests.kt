@@ -28,6 +28,7 @@ import com.intellij.openapi.vcs.VcsDirectoryMapping
 import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.testFramework.PsiTestUtil
 import git4idea.GitVcs
+import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -35,15 +36,14 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.common.vcs.VcsService
-import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBinding
+import org.sonarlint.intellij.fixtures.newSonarQubeConnection
 import org.sonarlint.intellij.messages.PROJECT_BINDING_TOPIC
 import org.sonarlint.intellij.messages.SERVER_BRANCHES_TOPIC
 import org.sonarlint.intellij.util.ImmediateExecutorService
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 import org.sonarsource.sonarlint.core.serverconnection.storage.StorageException
-import java.nio.file.Paths
 
 internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
 
@@ -64,7 +64,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_should_not_resolve_server_branch_when_project_is_not_a_git_repo() {
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         connectModuleTo(module, "moduleKey")
         whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
@@ -91,7 +91,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module, "contentRoot1")
         addContentRootWithGitRepo(module, "contentRoot2")
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         connectModuleTo(module, "moduleKey")
         whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
@@ -110,7 +110,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
     fun test_should_resolve_exact_server_branch_when_module_is_bound_and_current_branch_is_known_on_server() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         connectModuleTo(module, "moduleKey")
         whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
@@ -129,7 +129,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
     fun test_should_return_cached_value_when_already_resolved() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         connectModuleTo(module, "moduleKey")
         whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
@@ -149,7 +149,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
     fun test_should_resolve_closest_server_branch() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         connectModuleTo(module, "moduleKey")
         whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
@@ -169,7 +169,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
     fun test_should_clear_cache_when_project_is_unbound() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         whenever(connectedEngine.getServerBranches("projectKey")).thenReturn(
             ProjectBranches(
                 setOf("master", "branch1"),
@@ -197,7 +197,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
         getEngineManager().registerEngine(connectedEngine, "connection")
         assertThat(vcsService.getServerBranchName(module)).isNull()
 
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         project.messageBus.syncPublisher(PROJECT_BINDING_TOPIC)
             .bindingChanged(null, ProjectBinding("connection", "projectKey", emptyMap()))
 
@@ -215,7 +215,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
 
         whenever(connectedEngine.getServerBranches("projectKey")).thenReturn(
@@ -243,7 +243,7 @@ internal class DefaultVcsServiceTests : AbstractSonarLintHeavyTests() {
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
-        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        connectProjectTo(newSonarQubeConnection("connection"), "projectKey")
         assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
         ModuleManager.getInstance(project).disposeModule(module)
 

@@ -27,7 +27,8 @@ import java.util.function.Predicate
 import java.util.stream.Collectors
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
-import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.ServerConnectionService
+import org.sonarlint.intellij.config.global.SonarCloudConnection
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.NodeJsManager
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -87,12 +88,12 @@ class TelemetryClientAttributeProviderImpl : TelemetryClientAttributesProvider {
         private fun isAnyProjectConnectedToSonarCloud(): Boolean = isAnyOpenProjectMatch { p: Project ->
             val bindingManager = SonarLintUtils.getService(p, ProjectBindingManager::class.java)
             bindingManager.tryGetServerConnection()
-                .filter { obj: ServerConnection -> obj.isSonarCloud }
+                .filter { it is SonarCloudConnection }
                 .isPresent
         }
 
-        private fun isDevNotificationsDisabled(): Boolean = Settings.getGlobalSettings().serverConnections.stream()
-            .anyMatch { obj: ServerConnection -> obj.isDisableNotifications }
+        private fun isDevNotificationsDisabled(): Boolean = ServerConnectionService.getInstance().getConnections()
+            .any { it.notificationsDisabled }
 
         private fun isAnyOpenProjectMatch(predicate: Predicate<Project>): Boolean {
             return ProjectManager.getInstance().openProjects.any { predicate.test(it) }

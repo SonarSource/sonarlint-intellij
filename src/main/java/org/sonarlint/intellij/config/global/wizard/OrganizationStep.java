@@ -73,7 +73,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
           break;
         }
 
-        var task = new GetOrganizationTask(model.createConnectionWithoutOrganization(), organizationKey);
+        var task = new GetOrganizationTask(model.createPartialConnection(), organizationKey);
         ProgressManager.getInstance().run(task);
 
         if (task.organization() != null) {

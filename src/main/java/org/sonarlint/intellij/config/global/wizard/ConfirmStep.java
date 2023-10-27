@@ -75,7 +75,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
     if (model.isNotificationsSupported()) {
       return NotificationsStep.class;
     }
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
+    if (model.isSonarCloud()) {
       return OrganizationStep.class;
     }
     return AuthStep.class;

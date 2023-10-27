@@ -56,8 +56,8 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
+import org.sonarlint.intellij.config.global.ServerConnectionService
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -334,7 +334,7 @@ object SonarLintIntelliJClient : SonarLintClient {
         return CompletableFuture.supplyAsync {
             val connectionId = params.connectionId
             val projectKey = params.projectKey
-            val connection = getGlobalSettings().getServerConnectionByName(connectionId)
+            val connection = ServerConnectionService.getInstance().getServerConnectionByName(connectionId)
                 .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
             val message = "Cannot automatically find a project bound to:\n" +
                 "  • Project: $projectKey\n" +
@@ -390,11 +390,12 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun getCredentials(params: GetCredentialsParams): CompletableFuture<GetCredentialsResponse> {
-        return getGlobalSettings().getServerConnectionByName(params.connectionId)
-            .map { connection -> connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
-                ?: connection.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.password))) }
-                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))
-            }.orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.connectionId)))
+        val connectionId = params.connectionId
+        return ServerConnectionService.getInstance().getServerConnectionByName(connectionId)
+                .map { connection -> connection.credentials.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
+                        ?: connection.credentials.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.credentials.password))) }
+                        ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: $connectionId"))}
+                .orElseGet { CompletableFuture.failedFuture(IllegalArgumentException("Connection '$connectionId' not found")) }
     }
 
     override fun getProxyPasswordAuthentication(params: GetProxyPasswordAuthenticationParams): CompletableFuture<GetProxyPasswordAuthenticationResponse> {

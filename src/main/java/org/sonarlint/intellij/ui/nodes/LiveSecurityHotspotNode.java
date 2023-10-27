@@ -59,7 +59,7 @@ public class LiveSecurityHotspotNode extends FindingNode {
     var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
     var serverConnection = getService(securityHotspot.project(), ProjectBindingManager.class).tryGetServerConnection();
     if (securityHotspot.getServerFindingKey() != null && serverConnection.isPresent()) {
-      var productIcon = serverConnection.get().getProductIcon();
+      var productIcon = serverConnection.get().getProduct().getIcon();
       var tooltip = vulnerabilityText + " " + typeStr + " existing on " + serverConnection.get().getProductName();
       renderer.setIconToolTip(tooltip);
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, productIcon, typeIcon));

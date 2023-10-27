@@ -17,21 +17,27 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.global.wizard
+package org.sonarlint.intellij.messages;
 
-import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.ServerConnectionService
+import com.intellij.util.messages.Topic;
+import java.util.List;
+import org.sonarlint.intellij.config.global.ServerConnection;
 
-open class ServerConnectionCreator {
+public interface ServerConnectionsListener {
+  Topic<ServerConnectionsListener> TOPIC = Topic.create("Server connections events", ServerConnectionsListener.class);
 
-    open fun createThroughWizard(serverUrl: String): ServerConnection? {
-        val serverConnectionService = ServerConnectionService.getInstance()
-        val wizard = ServerConnectionWizard.forNewConnection(serverUrl, serverConnectionService.getServerNames())
-        if (wizard.showAndGet()) {
-            val created = wizard.connection
-            serverConnectionService.addServerConnection(created)
-            return created
-        }
-        return null
+  void afterChange(List<ServerConnection> allConnections);
+  void credentialsChanged(List<ServerConnection> changedConnections);
+
+  abstract class Adapter implements ServerConnectionsListener {
+    @Override
+    public void afterChange(List<ServerConnection> allConnections) {
+      // empty implementation
     }
+
+    @Override
+    public void credentialsChanged(List<ServerConnection> changedConnections) {
+      // empty implementation
+    }
+  }
 }

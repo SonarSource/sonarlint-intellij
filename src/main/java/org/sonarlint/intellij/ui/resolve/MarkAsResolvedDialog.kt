@@ -22,11 +22,11 @@ package org.sonarlint.intellij.ui.resolve
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import java.awt.event.ActionEvent
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
-import java.awt.event.ActionEvent
 
 class MarkAsResolvedDialog(
     project: Project,

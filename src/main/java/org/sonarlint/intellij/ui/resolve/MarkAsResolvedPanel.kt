@@ -22,17 +22,17 @@ package org.sonarlint.intellij.ui.resolve
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
-import org.apache.commons.lang.StringEscapeUtils
-import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.ui.options.OptionPanel
-import org.sonarlint.intellij.ui.options.addComponents
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import javax.swing.ButtonGroup
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 import kotlin.properties.Delegates
+import org.apache.commons.lang.StringEscapeUtils
+import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.ui.options.OptionPanel
+import org.sonarlint.intellij.ui.options.addComponents
+import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
 
 
 class MarkAsResolvedPanel(
@@ -73,7 +73,7 @@ class MarkAsResolvedPanel(
                         rows = 3
                     })
             )
-            val link = StringEscapeUtils.escapeHtml(connection.links().formattingSyntaxDoc())
+            val link = StringEscapeUtils.escapeHtml(connection.links.formattingSyntaxDoc())
             add(JBLabel("<a href=\"$link\">Formatting Help</a>:  *Bold*  ``Code``  * Bulleted point").apply { setCopyable(true) })
         }
     }

@@ -24,8 +24,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.config.global.ServerConnectionService
 
 class BindProjectAction(private val bindingSuggestion: BindingSuggestion) : AbstractSonarAction("Bind project") {
     override fun actionPerformed(e: AnActionEvent) {
@@ -34,7 +34,7 @@ class BindProjectAction(private val bindingSuggestion: BindingSuggestion) : Abst
         val project = e.project!!
         val bindingManager = SonarLintUtils.getService(project, ProjectBindingManager::class.java)
         val connectionId = bindingSuggestion.connectionId
-        getGlobalSettings().getServerConnectionByName(connectionId)
+        ServerConnectionService.getInstance().getServerConnectionByName(connectionId)
             .ifPresentOrElse(
                 { connection ->
                     bindingManager.bindTo(

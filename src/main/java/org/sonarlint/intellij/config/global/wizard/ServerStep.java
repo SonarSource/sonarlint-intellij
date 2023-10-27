@@ -45,8 +45,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
+import org.sonarlint.intellij.core.SonarProduct;
 
 public class ServerStep extends AbstractWizardStepEx {
   private static final int NAME_MAX_LENGTH = 50;
@@ -83,11 +82,11 @@ public class ServerStep extends AbstractWizardStepEx {
 
     nameField.setToolTipText("Name of this configuration (mandatory field)");
 
-    String cloudText = "Connect to <a href=\"https://sonarcloud.io\">the online service</a>";
+    var cloudText = "Connect to <a href=\"https://sonarcloud.io\">the online service</a>";
     sonarcloudText.setText(cloudText);
     sonarcloudText.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
 
-    String sqText = "Connect to a server";
+    var sqText = "Connect to a server";
     sonarqubeText.setText(sqText);
 
     if (!editing) {
@@ -105,9 +104,7 @@ public class ServerStep extends AbstractWizardStepEx {
       });
     }
 
-    proxyButton.addActionListener(evt -> {
-      HttpConfigurable.editConfigurable(panel);
-    });
+    proxyButton.addActionListener(evt -> HttpConfigurable.editConfigurable(panel));
 
     load(editing);
     paintErrors();
@@ -122,7 +119,7 @@ public class ServerStep extends AbstractWizardStepEx {
     Icon sqIcon = SonarLintIcons.ICON_SONARQUBE;
     Icon clIcon = SonarLintIcons.ICON_SONARCLOUD;
 
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
+    if (model.getServerProduct() == SonarProduct.SONARCLOUD || model.getServerProduct() == null) {
       radioSonarCloud.setSelected(true);
       if (editing) {
         sqIcon = SonarLintIcons.toDisabled(sqIcon);
@@ -198,7 +195,7 @@ public class ServerStep extends AbstractWizardStepEx {
   private void validateUrl() throws CommitStepException {
     if (radioSonarQube.isSelected()) {
       try {
-        URL url = new URL(urlText.getText());
+        var url = new URL(urlText.getText());
         if (SonarLintUtils.isBlank(url.getHost())) {
           throw new CommitStepException("Please provide a valid URL");
         }
@@ -210,11 +207,9 @@ public class ServerStep extends AbstractWizardStepEx {
 
   private void save() {
     if (radioSonarCloud.isSelected()) {
-      model.setServerType(WizardModel.ServerType.SONARCLOUD);
-      model.setServerUrl(SONARCLOUD_URL);
+      model.setIsSonarCloud();
     } else {
-      model.setServerType(WizardModel.ServerType.SONARQUBE);
-      model.setServerUrl(urlText.getText().trim());
+      model.setIsSonarQube(urlText.getText().trim());
     }
     model.setName(nameField.getText().trim());
   }
@@ -235,7 +230,7 @@ public class ServerStep extends AbstractWizardStepEx {
     sonarcloudText = SwingHelper.createHtmlViewer(false, null, null, null);
     sonarqubeText = SwingHelper.createHtmlViewer(false, null, null, null);
 
-    JBTextField text = new JBTextField();
+    var text = new JBTextField();
     text.getEmptyText().setText("Example: http://localhost:9000");
     urlText = text;
 

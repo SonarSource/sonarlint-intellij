@@ -24,15 +24,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
@@ -59,15 +54,5 @@ class ConnectedSonarLintFacadeTests extends AbstractSonarLintLightTests {
     assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ClientProgressMonitor.class))).isEqualTo(results);
     var config = configCaptor.getValue();
     assertThat(config.getProjectKey()).isEqualTo("projectKey");
-  }
-
-  private void bindProject(String projectKey) {
-    var connection = ServerConnection.newBuilder().setName("connectionName").setHostUrl("http://localhost:9000").build();
-    getGlobalSettings().addServerConnection(connection);
-    getProjectSettings().bindTo(connection, projectKey);
-  }
-
-  private static ConnectedRuleDetails ruleDetails(String ruleKey) {
-    return new ConnectedRuleDetails(ruleKey, "ruleName", "ruleHtmlDescription", IssueSeverity.BLOCKER, RuleType.CODE_SMELL, Language.JAVA, "ruleExtendedDescription");
   }
 }

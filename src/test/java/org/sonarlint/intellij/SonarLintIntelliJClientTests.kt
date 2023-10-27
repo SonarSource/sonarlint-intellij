@@ -23,7 +23,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.fixtures.newSonarQubeConnection
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.clientapi.client.binding.SuggestBindingParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
@@ -92,7 +92,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_suggest_exact_binding_if_there_is_one_suggestion() {
-        globalSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("connectionId").build())
+        setServerConnections(listOf(newSonarQubeConnection("connectionId")))
 
         client.suggestBinding(
             SuggestBindingParams(
@@ -113,7 +113,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_suggest_binding_config_if_there_is_no_suggestion() {
-        globalSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("connectionId").build())
+        setServerConnections(listOf(newSonarQubeConnection("connectionId")))
 
         client.suggestBinding(SuggestBindingParams(mapOf(Pair(projectBackendId, emptyList()))))
 
@@ -127,7 +127,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_suggest_binding_config_if_there_is_are_several_suggestions() {
-        globalSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("connectionId").build())
+        setServerConnections(listOf(newSonarQubeConnection("connectionId")))
 
         client.suggestBinding(
             SuggestBindingParams(
@@ -153,7 +153,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_not_suggest_binding_if_the_project_is_unknown() {
-        globalSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("connectionId").build())
+        setServerConnections(listOf(newSonarQubeConnection("connectionId")))
 
         client.suggestBinding(
             SuggestBindingParams(
@@ -174,8 +174,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_not_suggest_binding_if_the_suggestions_are_disabled_by_user() {
-        globalSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("connectionId").build())
-        projectSettings.setBindingSuggestionsEnabled(false)
+        setServerConnections(listOf(newSonarQubeConnection("connectionId")))
+        projectSettings.isBindingSuggestionsEnabled = false
 
         client.suggestBinding(
             SuggestBindingParams(

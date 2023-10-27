@@ -41,7 +41,7 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
     assertThat(settings.isAutoTrigger()).isTrue();
     assertThat(settings.getNodejsPath()).isBlank();
 
-    var server = ServerConnection.newBuilder().setName("name").build();
+    var server = ServerConnectionSettings.newBuilder().setName("name").build();
 
     settings.setServerConnections(List.of(server));
     assertThat(settings.getServerConnections()).containsOnly(server);
@@ -133,23 +133,13 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void testAddConnection() {
+  void testSetConnections() {
     var settings = new SonarLintGlobalSettings();
 
-    settings.addServerConnection(ServerConnection.newBuilder().setHostUrl("host").setName("name").build());
+    settings.setServerConnections(List.of(ServerConnectionSettings.newBuilder().setHostUrl("host").setName("name").build()));
 
     assertThat(settings.getServerConnections())
-      .extracting(ServerConnection::getHostUrl)
+      .extracting(ServerConnectionSettings::getHostUrl)
       .containsOnly("host");
-  }
-
-  @Test
-  void getConnectionTo_should_ignore_trailing_slashes() {
-    var settings = new SonarLintGlobalSettings();
-    settings.addServerConnection(ServerConnection.newBuilder().setHostUrl("http://host/").setName("name").build());
-
-    assertThat(settings.getConnectionsTo("http://host"))
-      .extracting(ServerConnection::getName)
-      .containsOnly("name");
   }
 }

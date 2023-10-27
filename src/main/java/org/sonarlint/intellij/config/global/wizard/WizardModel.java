@@ -24,8 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.ServerConnectionCredentials;
+import org.sonarlint.intellij.config.global.SonarCloudConnection;
+import org.sonarlint.intellij.config.global.SonarQubeConnection;
+import org.sonarlint.intellij.core.SonarProduct;
 import org.sonarlint.intellij.tasks.CheckNotificationsSupportedTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
@@ -34,7 +37,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.Organizat
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 
 public class WizardModel {
-  private ServerType serverType;
+  private SonarProduct sonarProduct;
   private String serverUrl;
   private String token;
   private String login;
@@ -46,58 +49,51 @@ public class WizardModel {
 
   private List<OrganizationDto> organizationList = new ArrayList<>();
 
-  public enum ServerType {
-    SONARCLOUD,
-    SONARQUBE
-  }
-
   public WizardModel() {
 
   }
 
-  public WizardModel(ServerConnection connectionToEdit) {
-    if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
-      serverType = ServerType.SONARCLOUD;
-    } else {
-      serverType = ServerType.SONARQUBE;
-      serverUrl = connectionToEdit.getHostUrl();
+  public WizardModel(String serverUrl) {
+    this.serverUrl = serverUrl;
+    this.sonarProduct = SonarProduct.fromUrl(serverUrl);
+  }
+
+  public WizardModel(ServerConnection connection) {
+    this.sonarProduct = connection.getProduct();
+    this.notificationsDisabled = connection.getNotificationsDisabled();
+    this.serverUrl = connection.getHostUrl();
+    if (sonarProduct == SonarProduct.SONARCLOUD) {
+      this.organizationKey = ((SonarCloudConnection) connection).getOrganizationKey();
     }
-    this.token = connectionToEdit.getToken();
-    this.login = connectionToEdit.getLogin();
-    var pass = connectionToEdit.getPassword();
+    this.name = connection.getName();
+    var credentials = connection.getCredentials();
+    this.token = credentials.getToken();
+    this.login = credentials.getLogin();
+    var pass = credentials.getPassword();
     if (pass != null) {
       this.password = pass.toCharArray();
     }
-    this.organizationKey = connectionToEdit.getOrganizationKey();
-    this.notificationsDisabled = connectionToEdit.isDisableNotifications();
-    this.name = connectionToEdit.getName();
   }
 
   @CheckForNull
-  public ServerType getServerType() {
-    return serverType;
-  }
-
-  public WizardModel setServerType(ServerType serverType) {
-    this.serverType = serverType;
-    return this;
+  public SonarProduct getServerProduct() {
+    return sonarProduct;
   }
 
   public boolean isSonarCloud() {
-    return ServerType.SONARCLOUD.equals(serverType);
+    return sonarProduct == SonarProduct.SONARCLOUD;
   }
 
   public boolean isNotificationsSupported() {
     return notificationsSupported;
   }
 
-  public WizardModel setNotificationsSupported(boolean notificationsSupported) {
+  public void setNotificationsSupported(boolean notificationsSupported) {
     this.notificationsSupported = notificationsSupported;
-    return this;
   }
 
   public void queryIfNotificationsSupported() throws Exception {
-    final var partialConnection = createConnectionWithoutOrganization();
+    final var partialConnection = createPartialConnection();
     var task = new CheckNotificationsSupportedTask(partialConnection);
     ProgressManager.getInstance().run(task);
     if (task.getException() != null) {
@@ -108,7 +104,7 @@ public class WizardModel {
 
   public void queryOrganizations() throws Exception {
     if (isSonarCloud()) {
-      final ServerConnection partialConnection = createConnectionWithoutOrganization();
+      final var partialConnection = createPartialConnection();
       final var task = buildAndRunGetOrganizationsTask(partialConnection);
       setOrganizationList(task.organizations());
       final var presetOrganizationKey = getOrganizationKey();
@@ -122,7 +118,7 @@ public class WizardModel {
     }
   }
 
-  private static GetOrganizationsTask buildAndRunGetOrganizationsTask(ServerConnection partialConnection) throws Exception {
+  private static GetOrganizationsTask buildAndRunGetOrganizationsTask(PartialConnection partialConnection) throws Exception {
     var task = new GetOrganizationsTask(partialConnection);
     ProgressManager.getInstance().run(task);
     if (task.getException() != null) {
@@ -131,7 +127,7 @@ public class WizardModel {
     return task;
   }
 
-  private void addPresetOrganization(ServerConnection partialConnection, GetOrganizationsTask task, String presetOrganizationKey) {
+  private void addPresetOrganization(PartialConnection partialConnection, GetOrganizationsTask task, String presetOrganizationKey) {
     // the previously configured organization might not be in the list. If that's the case, fetch it and add it to the list.
     var orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(presetOrganizationKey));
     if (!orgExists) {
@@ -151,18 +147,16 @@ public class WizardModel {
     return notificationsDisabled;
   }
 
-  public WizardModel setNotificationsDisabled(boolean notificationsDisabled) {
+  public void setNotificationsDisabled(boolean notificationsDisabled) {
     this.notificationsDisabled = notificationsDisabled;
-    return this;
   }
 
   public List<OrganizationDto> getOrganizationList() {
     return organizationList;
   }
 
-  public WizardModel setOrganizationList(List<OrganizationDto> organizationList) {
+  public void setOrganizationList(List<OrganizationDto> organizationList) {
     this.organizationList = organizationList;
-    return this;
   }
 
   @CheckForNull
@@ -170,39 +164,37 @@ public class WizardModel {
     return serverUrl;
   }
 
-  public WizardModel setServerUrl(@Nullable String serverUrl) {
+  public void setIsSonarCloud() {
+    this.sonarProduct = SonarProduct.SONARCLOUD;
+    this.serverUrl = SONARCLOUD_URL;
+  }
+
+  public void setIsSonarQube(String serverUrl) {
+    this.sonarProduct = SonarProduct.SONARQUBE;
     this.serverUrl = serverUrl;
-    return this;
   }
 
-  @CheckForNull
-  public String getToken() {
-    return token;
-  }
-
-  public WizardModel setToken(@Nullable String token) {
+  public void setToken(@Nullable String token) {
     this.token = token;
-    return this;
+    this.login = null;
+    this.password = null;
   }
 
-  @CheckForNull
-  public String getLogin() {
-    return login;
-  }
-
-  public WizardModel setLogin(@Nullable String login) {
+  public void setLoginPassword(String login, char[] password) {
     this.login = login;
-    return this;
+    this.password = password;
+    this.token = null;
   }
 
   @CheckForNull
-  public char[] getPassword() {
-    return password;
-  }
-
-  public WizardModel setPassword(@Nullable char[] password) {
-    this.password = password;
-    return this;
+  public ServerConnectionCredentials getCredentials() {
+    if (token != null) {
+      return new ServerConnectionCredentials(null, null, token);
+    }
+    if (login != null && password != null) {
+      return new ServerConnectionCredentials(login, String.valueOf(password), null);
+    }
+    return null;
   }
 
   @CheckForNull
@@ -225,41 +217,22 @@ public class WizardModel {
     return this;
   }
 
-  public ServerConnection createConnectionWithoutOrganization() {
-    return createConnection(null);
+  public PartialConnection createPartialConnection() {
+    String pass = null;
+    if (password != null) {
+      pass = String.valueOf(password);
+    }
+    return new PartialConnection(serverUrl, sonarProduct, organizationKey, new ServerConnectionCredentials(login, pass, token));
   }
 
   public ServerConnection createConnection() {
-    return createConnection(organizationKey);
-  }
-
-  private ServerConnection.Builder createUnauthenticatedConnection(@Nullable String organizationKey) {
-    var builder = ServerConnection.newBuilder()
-      .setOrganizationKey(organizationKey)
-      .setName(name);
-
-    if (serverType == ServerType.SONARCLOUD) {
-      builder.setHostUrl(SONARCLOUD_URL);
-
-    } else {
-      builder.setHostUrl(serverUrl);
+    if (sonarProduct == SonarProduct.SONARCLOUD) {
+      return new SonarCloudConnection(name, token, organizationKey, notificationsDisabled);
     }
-    builder.setDisableNotifications(notificationsDisabled);
-    return builder;
-  }
-
-  private ServerConnection createConnection(@Nullable String organizationKey) {
-    var builder = createUnauthenticatedConnection(organizationKey);
-
-    if (token != null) {
-      builder.setToken(token)
-        .setLogin(null)
-        .setPassword(null);
-    } else {
-      builder.setToken(null)
-        .setLogin(login)
-        .setPassword(new String(password));
+    String pass = null;
+    if (password != null) {
+      pass = String.valueOf(password);
     }
-    return builder.build();
+    return new SonarQubeConnection(name, serverUrl, new ServerConnectionCredentials(login, pass, token), notificationsDisabled);
   }
 }

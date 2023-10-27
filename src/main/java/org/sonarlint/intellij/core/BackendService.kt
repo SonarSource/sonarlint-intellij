@@ -46,11 +46,14 @@ import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.config.global.ServerConnectionService
+import org.sonarlint.intellij.config.global.SonarCloudConnection
+import org.sonarlint.intellij.config.global.SonarQubeConnection
+import org.sonarlint.intellij.config.global.wizard.PartialConnection
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.messages.ServerConnectionsListener
 import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
@@ -116,11 +119,11 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     private val initializedBackend: SonarLintBackend by lazy {
         migrateStoragePath()
-        val serverConnections = getGlobalSettings().serverConnections
+        val serverConnections = ServerConnectionService.getInstance().getConnections()
         val sonarCloudConnections =
-            serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
+            serverConnections.filterIsInstance<SonarCloudConnection>().map { toSonarCloudBackendConnection(it) }
         val sonarQubeConnections =
-            serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
+            serverConnections.filterIsInstance<SonarQubeConnection>().map { toSonarQubeBackendConnection(it) }
         backend.initialize(
             InitializeParams(
                 ClientInfoDto(
@@ -143,18 +146,13 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             )
         ).thenRun {
             ApplicationManager.getApplication().messageBus.connect()
-                .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
-                    override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                        connectionsUpdated(newSettings.serverConnections)
-                        val changedConnections = newSettings.serverConnections.filter { connection ->
-                            val previousConnection = previousSettings.getServerConnectionByName(connection.name)
-                            previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
-                        }
-                        credentialsChanged(changedConnections)
+                .subscribe(ServerConnectionsListener.TOPIC, object : ServerConnectionsListener.Adapter() {
+                    override fun afterChange(allConnections: List<ServerConnection>) {
+                        connectionsUpdated(allConnections)
                     }
 
-                    override fun changed(serverList: MutableList<ServerConnection>) {
-                        connectionsUpdated(serverList)
+                    override fun credentialsChanged(changedConnections: List<ServerConnection>) {
+                        notifyCredentialsChanged(changedConnections)
                     }
                 })
             ApplicationManager.getApplication().messageBus.connect()
@@ -196,28 +194,28 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     private fun getLocalStoragePath(): Path = Paths.get(PathManager.getSystemPath()).resolve("sonarlint/storage")
 
     fun connectionsUpdated(serverConnections: List<ServerConnection>) {
-        val scConnections = serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
-        val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
+        val scConnections = serverConnections.filterIsInstance<SonarCloudConnection>().map { toSonarCloudBackendConnection(it) }
+        val sqConnections = serverConnections.filterIsInstance<SonarQubeConnection>().map { toSonarQubeBackendConnection(it) }
         initializedBackend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
     }
 
-    private fun credentialsChanged(connections: List<ServerConnection>) {
+    private fun notifyCredentialsChanged(connections: List<ServerConnection>) {
         connections.forEach { initializedBackend.connectionService.didChangeCredentials(DidChangeCredentialsParams(it.name)) }
     }
 
-    private fun toSonarQubeBackendConnection(createdConnection: ServerConnection): SonarQubeConnectionConfigurationDto {
+    private fun toSonarQubeBackendConnection(connection: SonarQubeConnection): SonarQubeConnectionConfigurationDto {
         return SonarQubeConnectionConfigurationDto(
-            createdConnection.name,
-            createdConnection.hostUrl,
-            createdConnection.isDisableNotifications
+            connection.name,
+            connection.hostUrl,
+            connection.notificationsDisabled
         )
     }
 
-    private fun toSonarCloudBackendConnection(createdConnection: ServerConnection): SonarCloudConnectionConfigurationDto {
+    private fun toSonarCloudBackendConnection(connection: SonarCloudConnection): SonarCloudConnectionConfigurationDto {
         return SonarCloudConnectionConfigurationDto(
-            createdConnection.name,
-            createdConnection.organizationKey!!,
-            createdConnection.isDisableNotifications
+            connection.name,
+            connection.organizationKey,
+            connection.notificationsDisabled
         )
     }
 
@@ -417,40 +415,37 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         )
     }
 
-    fun checkSmartNotificationsSupported(server: ServerConnection): CompletableFuture<CheckSmartNotificationsSupportedResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
-        val params: CheckSmartNotificationsSupportedParams = if (server.isSonarCloud) {
-            CheckSmartNotificationsSupportedParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
+    fun checkSmartNotificationsSupported(connection: PartialConnection): CompletableFuture<CheckSmartNotificationsSupportedResponse> {
+        val params: CheckSmartNotificationsSupportedParams = if (connection.sonarProduct == SonarProduct.SONARCLOUD) {
+            CheckSmartNotificationsSupportedParams(TransientSonarCloudConnectionDto(connection.organizationKey, getCredentials(connection)))
         } else {
-            CheckSmartNotificationsSupportedParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
+            CheckSmartNotificationsSupportedParams(TransientSonarQubeConnectionDto(connection.hostUrl, getCredentials(connection)))
         }
         return initializedBackend.connectionService.checkSmartNotificationsSupported(params)
     }
 
-    fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
-        val params: ValidateConnectionParams = if (server.isSonarCloud) {
-            ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
+    fun validateConnection(connection: PartialConnection): CompletableFuture<ValidateConnectionResponse> {
+        val params: ValidateConnectionParams = if (connection.sonarProduct == SonarProduct.SONARCLOUD) {
+            ValidateConnectionParams(TransientSonarCloudConnectionDto(connection.organizationKey, getCredentials(connection)))
         } else {
-            ValidateConnectionParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
+            ValidateConnectionParams(TransientSonarQubeConnectionDto(connection.hostUrl, getCredentials(connection)))
         }
         return initializedBackend.connectionService.validateConnection(params)
     }
 
-    fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
-        val params = ListUserOrganizationsParams(credentials)
+    fun listUserOrganizations(connection: PartialConnection): CompletableFuture<ListUserOrganizationsResponse> {
+        val params = ListUserOrganizationsParams(getCredentials(connection))
         return initializedBackend.connectionService.listUserOrganizations(params)
     }
 
-    fun getOrganization(server: ServerConnection, organizationKey: String): CompletableFuture<GetOrganizationResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
-        val params = GetOrganizationParams(credentials, organizationKey)
+    fun getOrganization(connection: PartialConnection, organizationKey: String): CompletableFuture<GetOrganizationResponse> {
+        val params = GetOrganizationParams(getCredentials(connection), organizationKey)
         return initializedBackend.connectionService.getOrganization(params)
+    }
+
+    private fun getCredentials(connection: PartialConnection): Either<TokenDto, UsernamePasswordDto> {
+        return connection.credentials.token?.let { token -> Either.forLeft(TokenDto(token)) }
+                ?: Either.forRight(UsernamePasswordDto(connection.credentials.login, connection.credentials.password))
     }
 
     fun trackWithServerIssues(

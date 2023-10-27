@@ -48,7 +48,7 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
     val serverConnection = serverConnection(project) ?: return
     e.presentation.text = "Open in " + serverConnection.productName
     e.presentation.description = "Open Security Hotspot in browser interface of " + serverConnection.productName
-    e.presentation.icon = serverConnection.productIcon
+    e.presentation.icon = serverConnection.product.icon
   }
 
   override fun actionPerformed(e: AnActionEvent) {

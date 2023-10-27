@@ -28,10 +28,9 @@ import com.intellij.serviceContainer.NonInjectable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.ServerConnectionService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
@@ -40,7 +39,6 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static com.intellij.openapi.progress.PerformInBackgroundOption.ALWAYS_BACKGROUND;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class DefaultEngineManager implements EngineManager, Disposable {
   protected final Map<String, ConnectedSonarLintEngine> connectedEngines = new HashMap<>();
@@ -114,7 +112,7 @@ public class DefaultEngineManager implements EngineManager, Disposable {
 
   @NotNull
   private ConnectedSonarLintEngine createConnectedEngine(String connectionId) {
-    return getGlobalSettings().getServerConnectionByName(connectionId)
+    return ServerConnectionService.getInstance().getServerConnectionByName(connectionId)
       .map(connection -> factory.createEngine(connectionId, connection.isSonarCloud()))
       .orElseThrow(() -> new IllegalStateException("Unable to find a configured connection with id '" + connectionId + "'"));
   }
@@ -143,9 +141,7 @@ public class DefaultEngineManager implements EngineManager, Disposable {
   }
 
   private static Set<String> getServerNames() {
-    return getGlobalSettings().getServerConnections().stream()
-      .map(ServerConnection::getName)
-      .collect(Collectors.toSet());
+    return ServerConnectionService.getInstance().getServerNames();
   }
 
   @Override

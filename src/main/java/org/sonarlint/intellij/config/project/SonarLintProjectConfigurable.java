@@ -33,6 +33,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.concurrency.Promise;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.ServerConnectionService;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -41,7 +42,6 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 /**
@@ -109,9 +109,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     }
 
     getServersFromApplicationConfigurable()
-      .onProcessed(sonarQubeServers -> {
+      .onProcessed(connections -> {
         var projectSettings = getSettingsFor(project);
-        panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getServerConnections(),
+        panel.load(connections != null ? connections : ServerConnectionService.getInstance().getConnections(),
           projectSettings,
           getService(project, ProjectBindingManager.class).getModuleOverrides());
       });

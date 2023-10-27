@@ -24,7 +24,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.fixtures.newSonarQubeConnection
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine
 
@@ -44,7 +44,7 @@ class ModuleBindingManagerTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_resolve_project_key_if_module_is_not_bound() {
-        projectSettings.bindTo(ServerConnection.newBuilder().setName("name").build(), "projectKey")
+        projectSettings.bindTo(newSonarQubeConnection("name"), "projectKey")
 
         val resolvedProjectKey = moduleBindingManager.resolveProjectKey()
 

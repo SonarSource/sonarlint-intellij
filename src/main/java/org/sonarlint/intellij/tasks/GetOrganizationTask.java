@@ -25,21 +25,22 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.wizard.PartialConnection;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.OrganizationDto;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 
 public class GetOrganizationTask extends Task.Modal {
-  private final ServerConnection server;
+  private final PartialConnection connection;
   private final String organizationKey;
 
   private Exception exception;
   private OrganizationDto organization;
 
-  public GetOrganizationTask(ServerConnection server, String organizationKey) {
+  public GetOrganizationTask(PartialConnection connection, String organizationKey) {
     super(null, "Fetch Organization From SonarCloud", true);
-    this.server = server;
+    this.connection = connection;
     this.organizationKey = organizationKey;
   }
 
@@ -50,7 +51,7 @@ public class GetOrganizationTask extends Task.Modal {
 
     try {
       indicator.setText("Searching organization");
-      organization = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(server, organizationKey)).getOrganization();
+      organization = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(connection, organizationKey)).getOrganization();
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
       exception = e;

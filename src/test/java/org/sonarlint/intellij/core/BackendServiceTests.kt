@@ -23,6 +23,8 @@ import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.testFramework.replaceService
+import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.BeforeEach
@@ -38,8 +40,10 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.refEq
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.config.global.ServerConnectionCredentials
+import org.sonarlint.intellij.config.global.ServerConnectionService
+import org.sonarlint.intellij.fixtures.newSonarCloudConnection
+import org.sonarlint.intellij.fixtures.newSonarQubeConnection
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
 import org.sonarsource.sonarlint.core.clientapi.backend.config.ConfigurationService
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
@@ -49,8 +53,6 @@ import org.sonarsource.sonarlint.core.clientapi.backend.connection.ConnectionSer
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidChangeCredentialsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializeParams
-import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
@@ -62,11 +64,9 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     override fun initApplication() {
         super.initApplication()
 
-        globalSettings.serverConnections = listOf(
-            ServerConnection.newBuilder().setName("id").setHostUrl("url").build(),
-            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
-                .build()
-        )
+        clearServerConnections()
+        addServerConnection(newSonarQubeConnection("idSQ", "url"))
+        addServerConnection(newSonarCloudConnection("idSC", "org"))
 
         backend = mock(SonarLintBackend::class.java)
         `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
@@ -89,14 +89,15 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val paramsCaptor = argumentCaptor<InitializeParams>()
         verify(backend).initialize(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
-            .containsExactly(tuple("id", "url"))
+            .containsExactly(tuple("idSQ", "url"))
         assertThat(paramsCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
-            .containsExactly(tuple("id", "org"))
+            .containsExactly(tuple("idSC", "org"))
     }
 
     @Test
     fun test_notify_backend_when_adding_a_sonarqube_connection() {
-        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").build()))
+        reset(backendConnectionService)
+        service.connectionsUpdated(listOf(newSonarQubeConnection("id", "url")))
 
         val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
         verify(backendConnectionService).didUpdateConnections(paramsCaptor.capture())
@@ -106,8 +107,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_adding_a_sonarcloud_connection() {
-        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
-            .build()))
+        reset(backendConnectionService)
+        service.connectionsUpdated(listOf(newSonarCloudConnection("id", "org")))
 
         val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
         verify(backendConnectionService).didUpdateConnections(paramsCaptor.capture())
@@ -134,8 +135,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_opening_a_bound_project() {
-        val connection = ServerConnection.newBuilder().setName("id").setHostUrl("url").build()
-        globalSettings.serverConnections = listOf(connection)
+        val connection = newSonarQubeConnection("id", "url")
+        addServerConnection(connection)
         projectSettings.bindTo(connection, "key")
 
         service.projectOpened(project)
@@ -276,60 +277,44 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_connection_token_changed() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setToken("oldToken").build())
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setToken("newToken").build())
+        reset(backendConnectionService)
+        addServerConnection(newSonarQubeConnection("idSQ", credentials = ServerConnectionCredentials(null, null, "oldToken")))
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
-
-        verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+        verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("idSQ")))
     }
 
     @Test
     fun test_notify_backend_when_connection_password_changed() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("oldPass").build())
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("newPass").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("login", "oldPass", null)))
+        reset(backendConnectionService)
+        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("login", "newPass", null)))
 
         verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
 
     @Test
     fun test_notify_backend_when_connection_login_changed() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("oldLogin").setPassword("pass").build())
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("newLogin").setPassword("pass").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("oldLogin", "pass", null)))
+        reset(backendConnectionService)
+        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("newLogin", "pass", null)))
 
         verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
 
     @Test
     fun test_do_not_notify_backend_of_credentials_change_when_connection_is_new() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = emptyList()
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("newPass").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+        ServerConnectionService.getInstance().setServerConnections(globalSettings, emptyList())
+        reset(backendConnectionService)
+        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("login", "newPass", null)))
 
         verify(backendConnectionService, never()).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
 
     @Test
     fun test_do_not_notify_backend_of_credentials_change_when_something_else_changed() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("oldUrl").setToken("token").build())
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("newUrl").setToken("token").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+        addServerConnection(newSonarQubeConnection("id", "oldUrl"))
+        reset(backendConnectionService)
+        addServerConnection(newSonarQubeConnection("id", "newUrl"))
 
         verify(backendConnectionService, never()).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
@@ -339,5 +324,13 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         service.dispose()
 
         verify(backend).shutdown()
+    }
+
+    private fun addServerConnection(connection: ServerConnection) {
+        ServerConnectionService.getInstance().addServerConnection(connection)
+    }
+
+    private fun clearServerConnections() {
+        ServerConnectionService.getInstance().setServerConnections(globalSettings, emptyList())
     }
 }

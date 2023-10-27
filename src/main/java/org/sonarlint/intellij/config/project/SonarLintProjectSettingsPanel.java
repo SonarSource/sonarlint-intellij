@@ -31,9 +31,9 @@ import java.util.stream.Collectors;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.config.global.ServerConnectionService;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;
@@ -67,9 +67,9 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     return root;
   }
 
-  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings, Map<Module, String> moduleOverrides) {
+  public void load(List<ServerConnection> connections, SonarLintProjectSettings projectSettings, Map<Module, String> moduleOverrides) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(servers, projectSettings, moduleOverrides);
+    bindPanel.load(connections, projectSettings, moduleOverrides);
     exclusionsPanel.load(projectSettings);
   }
 
@@ -82,7 +82,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       if (selectedConnection == null) {
         throw new ConfigurationException("Connection should not be empty");
       }
-      if (!getGlobalSettings().connectionExists(selectedConnection.getName())) {
+      if (!ServerConnectionService.getInstance().connectionExists(selectedConnection.getName())) {
         throw new ConfigurationException("Connection should be saved first");
       }
       if (selectedProjectKey == null || selectedProjectKey.isBlank()) {

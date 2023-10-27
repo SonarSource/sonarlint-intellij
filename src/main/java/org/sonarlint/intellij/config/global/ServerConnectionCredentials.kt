@@ -17,21 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.global.wizard
+package org.sonarlint.intellij.config.global
 
-import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.ServerConnectionService
-
-open class ServerConnectionCreator {
-
-    open fun createThroughWizard(serverUrl: String): ServerConnection? {
-        val serverConnectionService = ServerConnectionService.getInstance()
-        val wizard = ServerConnectionWizard.forNewConnection(serverUrl, serverConnectionService.getServerNames())
-        if (wizard.showAndGet()) {
-            val created = wizard.connection
-            serverConnectionService.addServerConnection(created)
-            return created
-        }
-        return null
-    }
-}
+data class ServerConnectionCredentials(val login: String?, val password: String?, val token: String?)

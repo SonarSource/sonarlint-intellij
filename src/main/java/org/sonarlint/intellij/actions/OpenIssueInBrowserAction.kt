@@ -45,7 +45,7 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
   override fun updatePresentation(e: AnActionEvent, project: Project) {
     val serverConnection = serverConnection(project) ?: return
     e.presentation.text = "Open in " + serverConnection.productName
-    e.presentation.icon = serverConnection.productIcon
+    e.presentation.icon = serverConnection.product.icon
   }
 
   override fun actionPerformed(e: AnActionEvent) {

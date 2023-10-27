@@ -64,7 +64,10 @@ import javax.swing.event.HyperlinkEvent;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.ServerConnectionCredentials;
+import org.sonarlint.intellij.config.global.ServerConnectionService;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
+import org.sonarlint.intellij.config.global.SonarQubeConnection;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarsource.sonarlint.core.serverapi.component.ServerProject;
@@ -73,11 +76,11 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintProjectBindPanel {
   private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
-
+  private static final ServerConnection PLACEHOLDER_CONNECTION = new SonarQubeConnection(CONNECTION_EMPTY_TEXT, "placeholderHost",
+    new ServerConnectionCredentials(null, null, null), false);
   private JPanel rootPanel;
   private JBCheckBox bindEnable;
 
@@ -152,7 +155,7 @@ public class SonarLintProjectBindPanel {
     projectKeyTextField.setEnabled(isAnyConnectionSelected);
     projectKeyTextField.setEditable(isAnyConnectionSelected);
     searchProjectButton.setEnabled(isAnyConnectionSelected);
-    updateStorageButton.setEnabled(isAnyConnectionSelected && getGlobalSettings().connectionExists(selectedConnection.getName()));
+    updateStorageButton.setEnabled(isAnyConnectionSelected && ServerConnectionService.getInstance().connectionExists(selectedConnection.getName()));
   }
 
   /**
@@ -191,17 +194,14 @@ public class SonarLintProjectBindPanel {
 
     if (connections.isEmpty()) {
       connectionComboBox.setEnabled(false);
-      var connection = ServerConnection.newBuilder()
-        .setName(CONNECTION_EMPTY_TEXT)
-        .build();
-      connectionComboBox.setPrototypeDisplayValue(connection);
+      connectionComboBox.setPrototypeDisplayValue(PLACEHOLDER_CONNECTION);
       // ensure this is called, even when nothing is selected
     } else {
       connectionComboBox.setEnabled(bindEnable.isSelected());
       var i = 0;
       var selectedIndex = -1;
       for (var connection : connections) {
-        if (previousSelectedStorageId != null && connection.getName() != null && previousSelectedStorageId.equals(connection.getName())) {
+        if (previousSelectedStorageId != null && previousSelectedStorageId.equals(connection.getName())) {
           selectedIndex = i;
         }
         connectionComboBox.setPrototypeDisplayValue(null);

@@ -39,6 +39,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.ServerConnectionService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
@@ -49,7 +50,6 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 @Service(Service.Level.PROJECT)
@@ -145,7 +145,7 @@ public final class ProjectBindingManager {
       return Optional.empty();
     }
     var connectionName = getSettingsFor(myProject).getConnectionName();
-    var connections = getGlobalSettings().getServerConnections();
+    var connections = ServerConnectionService.getInstance().getConnections();
 
     return connections.stream().filter(s -> s.getName().equals(connectionName)).findAny();
   }

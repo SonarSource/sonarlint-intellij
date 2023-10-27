@@ -46,7 +46,6 @@ import javax.swing.event.DocumentListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -108,37 +107,33 @@ public class AuthStep extends AbstractWizardStepEx {
 
   @Override
   public void _init() {
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
+    var credentials = model.getCredentials();
+    if (model.isSonarCloud()) {
       authComboBox.setSelectedItem(TOKEN_ITEM);
       authComboBox.setEnabled(false);
     } else {
       authComboBox.setEnabled(true);
-      if (model.getLogin() != null) {
+      if (credentials != null && credentials.getLogin() != null) {
         authComboBox.setSelectedItem(LOGIN_ITEM);
       } else {
         authComboBox.setSelectedItem(TOKEN_ITEM);
       }
     }
 
-    tokenField.setText(model.getToken());
-    loginField.setText(model.getLogin());
-    if (model.getPassword() != null) {
-      passwordField.setText(new String(model.getPassword()));
-    } else {
-      passwordField.setText(null);
+    if (credentials != null) {
+      tokenField.setText(credentials.getToken());
+      loginField.setText(credentials.getLogin());
+      passwordField.setText(credentials.getPassword());
     }
+
     openTokenCreationPageButton.setText("Create token");
   }
 
   private void save() {
     if (LOGIN_ITEM.equals(authComboBox.getSelectedItem())) {
-      model.setToken(null);
-      model.setLogin(loginField.getText());
-      model.setPassword(passwordField.getPassword());
+      model.setLoginPassword(loginField.getText(), passwordField.getPassword());
     } else {
       model.setToken(String.valueOf(tokenField.getPassword()));
-      model.setLogin(null);
-      model.setPassword(null);
     }
   }
 
@@ -156,7 +151,7 @@ public class AuthStep extends AbstractWizardStepEx {
   @Nullable
   @Override
   public Object getNextStepId() {
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
+    if (model.isSonarCloud()) {
       return OrganizationStep.class;
     }
     if (model.isNotificationsSupported()) {
@@ -224,8 +219,8 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   private void checkConnection() throws CommitStepException {
-    ServerConnection tmpServer = model.createConnectionWithoutOrganization();
-    ConnectionTestTask test = new ConnectionTestTask(tmpServer);
+    var partialConnection = model.createPartialConnection();
+    var test = new ConnectionTestTask(partialConnection);
     var msg = "Failed to connect to the server. Please check the configuration.";
     ValidateConnectionResponse result;
     try {
@@ -264,7 +259,7 @@ public class AuthStep extends AbstractWizardStepEx {
     Disposer.register(this, progressWindow);
     try {
       ProgressResult<HelpGenerateUserTokenResponse> progressResult = new ProgressRunner<>(pi -> {
-        var future = SonarLintUtils.getService(BackendService.class).helpGenerateUserToken(serverUrl, model.getServerType() == WizardModel.ServerType.SONARCLOUD);
+        var future = SonarLintUtils.getService(BackendService.class).helpGenerateUserToken(serverUrl, model.isSonarCloud());
         return ProgressUtils.waitForFuture(pi, future);
       })
         .sync()

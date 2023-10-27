@@ -25,7 +25,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.config.global.ServerConnectionService
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
@@ -34,19 +34,18 @@ class ConfigureNotificationsAction(private val connectionName: String, private v
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         WindowManager.getInstance().getFrame(e.project) ?: return
         runOnUiThread(project) {
-            val connectionToEdit = Settings.getGlobalSettings().serverConnections.find { it.name == connectionName }
-            if (connectionToEdit != null) {
-                val wizard = ServerConnectionWizard.forNotificationsEdition(connectionToEdit)
-                if (wizard.showAndGet()) {
-                    val editedConnection = wizard.connection
-                    val serverConnections = Settings.getGlobalSettings().serverConnections.toMutableList()
-                    serverConnections[serverConnections.indexOf(connectionToEdit)] = editedConnection
-                    Settings.getGlobalSettings().serverConnections = serverConnections
-                }
-            } else if (e.project != null) {
-                SonarLintConsole.get(e.project!!).error("Unable to find connection with name: $connectionName")
-                notification.expire()
-            }
+            ServerConnectionService.getInstance().getServerConnectionByName(connectionName)
+                    .ifPresentOrElse({
+                        val wizard = ServerConnectionWizard.forNotificationsEdition(it)
+                        if (wizard.showAndGet()) {
+                            ServerConnectionService.getInstance().replaceConnection(it.name, wizard.connection)
+                        }
+                    }, {
+                        if (e.project != null) {
+                            SonarLintConsole.get(e.project!!).error("Unable to find connection with name: $connectionName")
+                            notification.expire()
+                        }
+                    })
         }
     }
 

@@ -29,8 +29,8 @@ import com.intellij.openapi.project.Project;
 import java.util.Arrays;
 import java.util.List;
 import org.sonarlint.intellij.SonarLintIcons;
-import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.ServerConnectionService;
 import org.sonarlint.intellij.notifications.binding.BindProjectAction;
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion;
 import org.sonarlint.intellij.notifications.binding.ChooseBindingSuggestionAction;
@@ -144,7 +144,7 @@ public final class SonarLintProjectNotifications {
   }
 
   public void handle(ShowSmartNotificationParams smartNotificationParams) {
-    var connection = Settings.getGlobalSettings().getServerConnectionByName(smartNotificationParams.getConnectionId());
+    var connection = ServerConnectionService.getInstance().getServerConnectionByName(smartNotificationParams.getConnectionId());
     if (connection.isEmpty()) {
       GlobalLogOutput.get().log("Connection ID of smart notification should not be null", ClientLogOutput.Level.WARN);
       return;

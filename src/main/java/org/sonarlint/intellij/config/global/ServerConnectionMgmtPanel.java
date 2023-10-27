@@ -32,7 +32,6 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -105,15 +104,11 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
     connectionList.setCellRenderer(new ColoredListCellRenderer<>() {
       @Override
-      protected void customizeCellRenderer(JList list, ServerConnection server, int index, boolean selected, boolean hasFocus) {
-        if (server.isSonarCloud()) {
-          setIcon(SonarLintIcons.ICON_SONARCLOUD_16);
-        } else {
-          setIcon(SonarLintIcons.ICON_SONARQUBE_16);
-        }
-        append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-        if (!server.isSonarCloud()) {
-          append("    (" + server.getHostUrl() + ")", SimpleTextAttributes.GRAYED_ATTRIBUTES, false);
+      protected void customizeCellRenderer(JList list, ServerConnection connection, int index, boolean selected, boolean hasFocus) {
+        setIcon(connection.getProduct().getIcon());
+        append(connection.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+        if (connection.isSonarQube()) {
+          append("    (" + connection.getHostUrl() + ")", SimpleTextAttributes.GRAYED_ATTRIBUTES, false);
         }
       }
     });
@@ -144,14 +139,12 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   @Override
   public boolean isModified(SonarLintGlobalSettings settings) {
-    return !connections.equals(settings.getServerConnections());
+    return !connections.equals(ServerConnectionService.getInstance().getConnections());
   }
 
   @Override
   public void save(SonarLintGlobalSettings newSettings) {
-    var newConnections = new ArrayList<>(connections);
-    newSettings.setServerConnections(newConnections);
-
+    ServerConnectionService.getInstance().setServerConnections(newSettings, connections);
     // remove them even if a server with the same name was later added
     unbindRemovedServers();
   }
@@ -162,8 +155,9 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     deletedServerIds.clear();
 
     var listModel = new CollectionListModel<ServerConnection>(new ArrayList<>());
-    listModel.add(settings.getServerConnections());
-    connections.addAll(settings.getServerConnections());
+    var serverConnections = ServerConnectionService.getInstance().getConnections();
+    listModel.add(serverConnections);
+    connections.addAll(serverConnections);
     connectionList.setModel(listModel);
 
     if (!connections.isEmpty()) {
@@ -213,15 +207,15 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   private class RemoveServerAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      var server = getSelectedConnection();
+      var connection = getSelectedConnection();
       var selectedIndex = connectionList.getSelectedIndex();
 
-      if (server == null) {
+      if (connection == null) {
         return;
       }
 
       var openProjects = ProjectManager.getInstance().getOpenProjects();
-      var projectsUsingNames = getOpenProjectNames(openProjects, server);
+      var projectsUsingNames = getOpenProjectNames(openProjects, connection);
 
       if (!projectsUsingNames.isEmpty()) {
         var projects = String.join("<br>", projectsUsingNames);
@@ -236,8 +230,8 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
       var model = (CollectionListModel<ServerConnection>) connectionList.getModel();
       // it's not removed from serverIds and editorList
-      model.remove(server);
-      connections.remove(server);
+      model.remove(connection);
+      connections.remove(connection);
       connectionChangeListener.changed(connections);
 
       if (model.getSize() > 0) {

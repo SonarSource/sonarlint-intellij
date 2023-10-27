@@ -53,6 +53,8 @@ import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.ServerConnectionCredentials;
+import org.sonarlint.intellij.config.global.ServerConnectionService;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -68,6 +70,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.fixtures.ServerConnectionFixturesKt.newSonarQubeConnection;
 
 @ExtendWith(RunInEdtInterceptor.class)
 public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
@@ -94,7 +97,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     super.setUp();
     disposable = Disposer.newDisposable();
     getGlobalSettings().setRules(Collections.emptyList());
-    getGlobalSettings().setServerConnections(Collections.emptyList());
+    ServerConnectionService.getInstance().setServerConnections(getGlobalSettings(), Collections.emptyList());
     getGlobalSettings().setFocusOnNewCode(false);
     setGlobalLevelExclusions(Collections.emptyList());
     getProjectSettings().setConnectionName(null);
@@ -105,8 +108,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
     getModuleSettings().clearBindingOverride();
-    getService(BackendService.class).connectionsUpdated(Collections.emptyList());
-    // the line before might remove connections, let time for the storage to be cleaned up by the backend
+    // connections might have been removed, let time for the storage to be cleaned up by the backend
     await().atMost(Duration.ofSeconds(3))
       .untilAsserted(() -> assertThat(storageRoot).satisfiesAnyOf(
         root -> assertThat(root).doesNotExist(),
@@ -210,10 +212,9 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
   }
 
   protected void connectProjectTo(String hostUrl, String connectionName, String projectKey) {
-    var connection = ServerConnection.newBuilder().setHostUrl(hostUrl).setName(connectionName).build();
-    getGlobalSettings().addServerConnection(connection);
+    var connection = newSonarQubeConnection(connectionName, hostUrl, new ServerConnectionCredentials(null, null, "token"));
+    ServerConnectionService.getInstance().addServerConnection(connection);
     getProjectSettings().bindTo(connection, projectKey);
-    getService(BackendService.class).connectionsUpdated(getGlobalSettings().getServerConnections());
     getService(BackendService.class).projectBound(getProject(), new ProjectBinding(connectionName, projectKey, Collections.emptyMap()));
   }
 
@@ -221,8 +222,12 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getModuleSettings().setProjectKey(projectKey);
   }
 
+  protected void setServerConnections(List<ServerConnection> connections) {
+    ServerConnectionService.getInstance().setServerConnections(getGlobalSettings(), connections);
+  }
+
   protected void connectProjectTo(ServerConnection connection, String projectKey) {
-    getGlobalSettings().addServerConnection(connection);
+    ServerConnectionService.getInstance().addServerConnection(connection);
     getProjectSettings().bindTo(connection, projectKey);
   }
 

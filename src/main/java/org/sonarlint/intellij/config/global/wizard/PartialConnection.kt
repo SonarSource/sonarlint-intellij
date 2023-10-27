@@ -19,19 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.wizard
 
-import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.ServerConnectionService
+import org.sonarlint.intellij.config.global.ServerConnectionCredentials
+import org.sonarlint.intellij.core.SonarProduct
 
-open class ServerConnectionCreator {
-
-    open fun createThroughWizard(serverUrl: String): ServerConnection? {
-        val serverConnectionService = ServerConnectionService.getInstance()
-        val wizard = ServerConnectionWizard.forNewConnection(serverUrl, serverConnectionService.getServerNames())
-        if (wizard.showAndGet()) {
-            val created = wizard.connection
-            serverConnectionService.addServerConnection(created)
-            return created
-        }
-        return null
-    }
-}
+data class PartialConnection(val hostUrl: String, val sonarProduct: SonarProduct, val organizationKey: String?, val credentials: ServerConnectionCredentials)

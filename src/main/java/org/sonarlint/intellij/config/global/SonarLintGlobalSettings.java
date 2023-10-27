@@ -24,9 +24,7 @@ import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Transient;
 import com.intellij.util.xmlb.annotations.XCollection;
 import com.intellij.util.xmlb.annotations.XMap;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -36,16 +34,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTrailingSlash;
 
 public final class SonarLintGlobalSettings {
 
   private boolean isFocusOnNewCode = false;
   private boolean autoTrigger = true;
   private String nodejsPath = "";
-  private List<ServerConnection> servers = new LinkedList<>();
+  private List<ServerConnectionSettings> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
   private Set<String> includedRules;
@@ -174,37 +169,15 @@ public final class SonarLintGlobalSettings {
   }
 
   // Don't change annotation, used for backward compatibility
+  // always use ServerConnectionService to access server connections
   @OptionTag("sonarQubeServers")
-  public List<ServerConnection> getServerConnections() {
+  public List<ServerConnectionSettings> getServerConnections() {
     return this.servers;
   }
 
-  public void setServerConnections(List<ServerConnection> servers) {
-    this.servers = servers.stream()
-      .filter(s -> !SonarLintUtils.isBlank(s.getName()))
-      .toList();
-  }
-
-  public Optional<ServerConnection> getServerConnectionByName(String name) {
-    return servers.stream()
-      .filter(s -> name.equals(s.getName()))
-      .findFirst();
-  }
-
-  public boolean connectionExists(String connectionName) {
-    return getServerConnectionByName(connectionName).isPresent();
-  }
-
-  public void addServerConnection(ServerConnection connection) {
-    ArrayList<ServerConnection> sonarQubeServers = new ArrayList<>(servers);
-    sonarQubeServers.add(connection);
-    this.servers = Collections.unmodifiableList(sonarQubeServers);
-  }
-
-  public Set<String> getServerNames() {
-    return servers.stream()
-      .map(ServerConnection::getName)
-      .collect(Collectors.toSet());
+  // always use ServerConnectionService to set server connections
+  void setServerConnections(List<ServerConnectionSettings> servers) {
+    this.servers = servers;
   }
 
   public List<String> getFileExclusions() {
@@ -245,12 +218,6 @@ public final class SonarLintGlobalSettings {
   @Deprecated
   public void setExcludedRules(Set<String> excludedRules) {
     this.excludedRules = excludedRules;
-  }
-
-  public List<ServerConnection> getConnectionsTo(String serverUrl) {
-    return servers.stream()
-      .filter(it -> equalsIgnoringTrailingSlash(it.getHostUrl(), serverUrl))
-      .toList();
   }
 
   public static class Rule {

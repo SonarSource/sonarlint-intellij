@@ -24,8 +24,8 @@ import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.config.global.ServerConnectionService
 import org.sonarlint.intellij.ui.BindingSuggestionSelectionDialog
 
 class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingSuggestion>) :
@@ -36,7 +36,7 @@ class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingS
 
         notification.expire()
         val project = e.project!!
-        getGlobalSettings().getServerConnectionByName(acceptedSuggestion.connectionId)
+        ServerConnectionService.getInstance().getServerConnectionByName(acceptedSuggestion.connectionId)
             .ifPresentOrElse(
                 { connection ->
                     getService(project, ProjectBindingManager::class.java).bindTo(
