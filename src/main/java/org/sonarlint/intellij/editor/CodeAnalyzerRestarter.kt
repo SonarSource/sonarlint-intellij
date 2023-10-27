@@ -28,6 +28,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.serviceContainer.NonInjectable
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.PROJECT)
@@ -48,7 +49,11 @@ class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myPr
                         .mapNotNull { getPsi(it) }
                         .toList()
             }
-            psiFiles?.forEach { codeAnalyzer.restart(it) }
+            psiFiles?.let { files ->
+                runReadActionSafely(myProject) {
+                    files.forEach { codeAnalyzer.restart(it) }
+                }
+            }
         }
     }
 
