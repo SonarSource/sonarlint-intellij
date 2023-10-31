@@ -2,8 +2,6 @@
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask
-import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
@@ -11,6 +9,8 @@ import java.io.FileOutputStream
 import java.util.EnumSet
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 
 plugins {
     kotlin("jvm") version "1.8.10"
@@ -157,6 +157,8 @@ tasks.runPluginVerifier {
                 RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
                 // TODO Workaround for CLion
                 RunPluginVerifierTask.FailureLevel.MISSING_DEPENDENCIES,
+                // needed because of CPPToolset.isRemote()
+                RunPluginVerifierTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES
             )
         )
     )
