@@ -111,7 +111,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     if (project.isDisposed()) {
       return;
     }
-    var currentFocus = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
+    var currentFocus = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
     lastAnalysisResult = analysisResult;
 
     lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
@@ -296,6 +296,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     var sonarLintActions = SonarLintActions.getInstance();
     var actionGroup = new DefaultActionGroup();
     actionGroup.add(ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"));
+    actionGroup.add(ActionManager.getInstance().getAction("SonarLint.toolwindow.ChangeNewCodeDefinition"));
     actionGroup.add(sonarLintActions.analyzeChangedFiles());
     actionGroup.add(sonarLintActions.analyzeAllFiles());
     actionGroup.add(sonarLintActions.cancelAnalysis());

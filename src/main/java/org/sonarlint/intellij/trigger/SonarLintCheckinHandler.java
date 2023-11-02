@@ -104,7 +104,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
   private ReturnResult processResult(AnalysisResult result) {
     var issuesPerFile = result.getFindings().getIssuesPerFile();
-    var shouldFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
+    var shouldFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
 
     var numIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())

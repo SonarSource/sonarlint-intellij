@@ -20,10 +20,10 @@
 package org.sonarlint.intellij.ui.tree
 
 import com.intellij.openapi.project.Project
-import java.util.Locale
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import java.util.Locale
 
 class TreeSummary(private val project: Project, private val treeContentKind: TreeContentKind, private val holdsOldFindings: Boolean) {
     private var emptyText = DEFAULT_EMPTY_TEXT
@@ -70,7 +70,7 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
         return "No ${treeContentKind.displayName}s to display"
     }
 
-    private fun isFocusOnNewCode() = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+    private fun isFocusOnNewCode() = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
 
     companion object {
         private const val DEFAULT_EMPTY_TEXT = "No analysis done"

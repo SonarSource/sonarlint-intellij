@@ -20,10 +20,13 @@
 package org.sonarlint.intellij.finding.tracking
 
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.persistence.CachedFindings
+import java.time.Duration
+import java.time.Instant
 
 class LocalHistoryFindingTracker(private val previousFindings: CachedFindings) {
     private val remainingPreviousIssuesPerFile =
@@ -56,6 +59,7 @@ class LocalHistoryFindingTracker(private val previousFindings: CachedFindings) {
         } else {
             // we know the user just introduced this finding
             newFinding.introductionDate = System.currentTimeMillis()
+            newFinding.setOnNewCode(true)
         }
     }
 
@@ -79,6 +83,10 @@ class LocalHistoryFindingTracker(private val previousFindings: CachedFindings) {
             // FIXME should we not reset those fields when unbinding a project?
             rawMatched.serverFindingKey = previousMatched.serverFindingKey
             rawMatched.isResolved = previousMatched.isResolved
+
+            rawMatched.introductionDate?.let {
+                rawMatched.setOnNewCode(it > Instant.now().minus(Duration.ofDays(Settings.getGlobalSettings().newCodeDefinitionDays)).toEpochMilli())
+            }
         }
     }
 }

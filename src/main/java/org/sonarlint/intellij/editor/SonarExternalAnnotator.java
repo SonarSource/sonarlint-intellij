@@ -95,7 +95,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       getService(project, TaintVulnerabilitiesPresenter.class).getCurrentVulnerabilitiesByFile()
         .getOrDefault(file.getVirtualFile(), emptyList())
         .stream().filter(vulnerability -> !vulnerability.isResolved())
-        .forEach(vulnerability -> addAnnotation(project, vulnerability, holder));
+        .forEach(vulnerability -> addAnnotation(vulnerability, holder));
     }
   }
 
@@ -160,7 +160,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (finding.getRange() == null) {
       annotationBuilder = annotationBuilder.fileLevel();
     } else {
-      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(project, finding.getHighestImpact(), finding.getUserSeverity(), finding.isOnNewCode()));
+      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(finding.getHighestImpact(), finding.getUserSeverity(), finding.isOnNewCode()));
     }
 
     annotationBuilder.highlightType(getType(finding.getHighestImpact(), finding.getUserSeverity()))
@@ -171,7 +171,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return !SILENCED_QUICK_FIXABLE_RULE_KEYS.contains(issue.getRuleKey());
   }
 
-  private static void addAnnotation(Project project, LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
+  private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
     var textRange = vulnerability.getValidTextRange();
     if (textRange == null) {
       return;
@@ -180,13 +180,13 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .range(textRange)
       .withFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability))
       .withFix(new MarkAsResolvedAction(vulnerability))
-      .textAttributes(getTextAttrsKey(project, vulnerability.getHighestImpact(), vulnerability.severity(), vulnerability.isOnNewCode()))
+      .textAttributes(getTextAttrsKey(vulnerability.getHighestImpact(), vulnerability.severity(), vulnerability.isOnNewCode()))
       .highlightType(getType(vulnerability.getHighestImpact(), vulnerability.severity()))
       .create();
   }
 
-  static TextAttributesKey getTextAttrsKey(Project project, @Nullable ImpactSeverity impact, @Nullable IssueSeverity severity, boolean isOnNewCode) {
-    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) && !isOnNewCode) {
+  static TextAttributesKey getTextAttrsKey(@Nullable ImpactSeverity impact, @Nullable IssueSeverity severity, boolean isOnNewCode) {
+    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode() && !isOnNewCode) {
       return SonarLintTextAttributes.OLD_CODE;
     }
 

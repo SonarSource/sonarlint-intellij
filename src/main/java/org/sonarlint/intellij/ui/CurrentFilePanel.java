@@ -117,6 +117,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private static Collection<AnAction> actions() {
     return List.of(
       ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
+      ActionManager.getInstance().getAction("SonarLint.toolwindow.ChangeNewCodeDefinition"),
       SonarLintActions.getInstance().analyzeCurrentFileAction(),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
       SonarLintActions.getInstance().includeResolvedIssuesAction(),
@@ -150,7 +151,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
     this.currentFile = file;
     this.currentIssues = List.copyOf(issues);
-    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)) {
+    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode()) {
       var oldIssues = this.currentIssues.stream().filter(not(LiveFinding::isOnNewCode)).toList();
       var newIssues = this.currentIssues.stream().filter(LiveFinding::isOnNewCode).toList();
       populateSubTree(tree, treeBuilder, Map.of(file, newIssues));

@@ -40,18 +40,6 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
-import java.awt.BorderLayout
-import java.awt.Dimension
-import java.awt.event.ActionEvent
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import javax.swing.Box
-import javax.swing.JPanel
-import javax.swing.event.TreeSelectionListener
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.TreeNode
-import javax.swing.tree.TreePath
-import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
@@ -87,6 +75,18 @@ import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_K
 import org.sonarlint.intellij.util.SonarLintActions
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.runOnPooledThread
+import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.event.ActionEvent
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import javax.swing.Box
+import javax.swing.JPanel
+import javax.swing.event.TreeSelectionListener
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreeNode
+import javax.swing.tree.TreePath
+import javax.swing.tree.TreeSelectionModel
 
 private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_SPLIT_PROPORTION"
 private const val DEFAULT_SPLIT_PROPORTION = 0.5f
@@ -143,6 +143,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         val sonarLintActions = SonarLintActions.getInstance()
         setupToolbar(listOf(
             ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
+            ActionManager.getInstance().getAction("SonarLint.toolwindow.ChangeNewCodeDefinition"),
             RefreshTaintVulnerabilitiesAction(),
             sonarLintActions.includeResolvedTaintVulnerabilitiesAction(),
             sonarLintActions.configure(),
@@ -257,7 +258,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private fun populateTrees(status: FoundTaintVulnerabilities) {
         currentStatus = status
-        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)) {
+        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
             populateSubTree(tree, treeBuilder, status.newVulnerabilities())
             populateSubTree(oldTree, oldTreeBuilder, status.oldVulnerabilities())
             oldTree.isVisible = true
@@ -304,7 +305,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     fun setSelectedVulnerability(vulnerability: LocalTaintVulnerability) {
-        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project) && !vulnerability.isOnNewCode()) {
+        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode() && !vulnerability.isOnNewCode()) {
             oldTree.setSelectedVulnerability(vulnerability)
         } else {
             tree.setSelectedVulnerability(vulnerability)

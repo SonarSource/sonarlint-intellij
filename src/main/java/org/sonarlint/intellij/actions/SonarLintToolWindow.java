@@ -240,7 +240,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
   public void populateTaintVulnerabilitiesTab(TaintVulnerabilitiesStatus status) {
     var content = getTaintVulnerabilitiesContent();
     if (content != null) {
-      content.setDisplayName(buildTabName(status.count(getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)),
+      content.setDisplayName(buildTabName(status.count(getService(CleanAsYouCodeService.class).shouldFocusOnNewCode()),
         SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
       var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
       taintVulnerabilitiesPanel.populate(status);

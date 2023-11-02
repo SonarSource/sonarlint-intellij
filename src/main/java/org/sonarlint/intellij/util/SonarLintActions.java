@@ -60,6 +60,7 @@ public final class SonarLintActions {
   private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
   private final IncludeResolvedFindingsAction<LocalTaintVulnerability> includeResolvedTaintVulnerabilitiesAction;
   private final AnAction analyzeCurrentFileAction;
+  private final AnAction changeNewCodeDefinition;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -110,6 +111,7 @@ public final class SonarLintActions {
     analyzeCurrentFileAction = new SonarAnalyzeFilesAction("Analyze Current File",
       "Run SonarLint analysis on the current file",
       SonarLintIcons.PLAY);
+    changeNewCodeDefinition = actionManager.getAction("SonarLint.toolwindow.ChangeNewCodeDefinition");
   }
 
   public static SonarLintActions getInstance() {
@@ -162,6 +164,10 @@ public final class SonarLintActions {
 
   public AnAction analyzeCurrentFileAction() {
     return analyzeCurrentFileAction;
+  }
+
+  public AnAction changeNewCodeDefinition() {
+    return changeNewCodeDefinition;
   }
 
 }

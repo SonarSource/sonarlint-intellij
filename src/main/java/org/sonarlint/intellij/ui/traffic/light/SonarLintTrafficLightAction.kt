@@ -26,7 +26,6 @@ import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import javax.swing.JComponent
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
@@ -35,6 +34,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.persistence.FindingsCache
+import javax.swing.JComponent
 
 class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {
 
@@ -53,7 +53,7 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAct
     override fun updatePresentation(e: AnActionEvent, project: Project) {
         e.getData(CommonDataKeys.VIRTUAL_FILE)?.let { file ->
             val presentation = e.presentation
-            val isFocusOnNewCode = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+            val isFocusOnNewCode = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
             val relevantFindings = getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved && (!isFocusOnNewCode || it.isOnNewCode()) }
             val issues = relevantFindings.filterIsInstance<LiveIssue>()
             val hotspots = relevantFindings.filterIsInstance<LiveSecurityHotspot>()

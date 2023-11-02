@@ -20,20 +20,26 @@
 package org.sonarlint.intellij.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.cayc.CleanAsYouCodeService
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.analysis.AnalysisStatus
+import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.config.SonarLintNewCodeDefinitionConfigurable
 
-class SonarFocusOnNewCode : AbstractSonarToggleAction() {
+class SonarChangeNewCodeDefinition : AbstractSonarAction() {
 
-    override fun isSelected(e: AnActionEvent): Boolean = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
-
-    override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
-        getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(isSelected)
+    override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
+        return !status.isRunning
     }
 
-    override fun updatePresentation(project: Project, presentation: Presentation) {
-        presentation.text = "Set Focus on New Code"
+    override fun isVisible(e: AnActionEvent): Boolean {
+        return e.project?.let { !Settings.getSettingsFor(it).isBindingEnabled } ?: false
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
+        e.project?.let {
+            val configurable = SonarLintNewCodeDefinitionConfigurable()
+            ShowSettingsUtil.getInstance().editConfigurable(it, configurable)
+        }
     }
 }

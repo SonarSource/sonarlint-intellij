@@ -33,9 +33,6 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.GridBag
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import javax.swing.JPanel
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.cayc.FocusModeHelpLabel
@@ -44,6 +41,9 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.FindingType.ISSUE
 import org.sonarlint.intellij.finding.FindingType.SECURITY_HOTSPOT
 import org.sonarlint.intellij.finding.FindingType.TAINT_VULNERABILITY
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import javax.swing.JPanel
 
 class SonarLintDashboardPanel(private val editor: Editor) {
 
@@ -112,7 +112,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
             focusOnNewCodeCheckbox.isEnabled = it
             focusOnNewCodeCheckbox.text = if (it) CHECKBOX_TITLE else "$CHECKBOX_TITLE (connected mode only)"
         }
-        val isFocusOnNewCode = Settings.getGlobalSettings().isFocusOnNewCode
+        val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
         focusOnNewCodeCheckbox.isSelected = isFocusOnNewCode
     }
 
@@ -120,6 +120,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         init {
             isPopup = true
             add(ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"))
+            add(ActionManager.getInstance().getAction("SonarLint.toolwindow.ChangeNewCodeDefinition"))
             add(ShowLogAction())
         }
     }

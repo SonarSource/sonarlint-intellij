@@ -36,6 +36,8 @@ import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 import java.awt.Component
 import java.awt.Graphics
 import java.awt.Rectangle
@@ -46,14 +48,12 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.border.Border
 import javax.swing.plaf.FontUIResource
-import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 
 class SonarLintTrafficLightWidget(
     private val action: AnAction,
     private val presentation: Presentation,
     private val place: String,
-    private val editor: Editor,
+    editor: Editor,
 ) : JPanel() {
 
     private val dashboardPopup = SonarLintDashboardPopup(editor)

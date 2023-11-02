@@ -21,19 +21,19 @@ package org.sonarlint.intellij.cayc
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
-import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.trigger.TriggerType
 
 @Service(Service.Level.APP)
 class CleanAsYouCodeService {
-    fun shouldFocusOnNewCode(project: Project): Boolean {
-        return getGlobalSettings().isFocusOnNewCode && getSettingsFor(project).isBound
-    }
+    fun shouldFocusOnNewCode() = getGlobalSettings().isFocusOnNewCode
+
+    fun getNewCodeDefinitionDays() = getGlobalSettings().newCodeDefinitionDays
 
     fun setFocusOnNewCode(isFocusOnNewCode: Boolean) {
         refresh(getGlobalSettings(), isFocusOnNewCode)
@@ -41,6 +41,20 @@ class CleanAsYouCodeService {
 
     fun setFocusOnNewCode(isFocusOnNewCode: Boolean, settings: SonarLintGlobalSettings) {
         refresh(settings, isFocusOnNewCode)
+    }
+
+    fun setNewCodeDefinition(newCodeDefinitionDays: Long) {
+        refresh(getGlobalSettings(), newCodeDefinitionDays)
+    }
+
+    private fun refresh(settings: SonarLintGlobalSettings, newCodeDefinitionDays: Long) {
+        settings.newCodeDefinitionDays = newCodeDefinitionDays
+        ProjectManager.getInstance().openProjects.forEach { project ->
+            if (!project.isDisposed) {
+                SonarLintUtils.getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE)
+                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).refreshViews()
+            }
+        }
     }
 
     private fun refresh(settings: SonarLintGlobalSettings, isFocusOnNewCode: Boolean) {

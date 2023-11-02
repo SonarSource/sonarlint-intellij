@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
@@ -32,12 +33,14 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.Objects;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.cayc.FocusModeHelpLabel;
 import org.sonarlint.intellij.config.ConfigurationPanel;
+import org.sonarlint.intellij.config.SonarLintNewCodeDefinitionConfigurable;
 import org.sonarlint.intellij.core.NodeJsManager;
 
 import static java.awt.GridBagConstraints.WEST;
@@ -48,6 +51,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     "this field blank to let SonarLint look for it using your PATH environment variable.";
   private JPanel rootPane;
   private JBCheckBox focusOnNewCode;
+  private JButton changeNewCodeDefinition;
   private JBCheckBox autoTrigger;
   private JBTextField nodeJsPath;
   private JBLabel nodeJsVersion;
@@ -66,12 +70,19 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     var optionsPanel = new JPanel(new GridBagLayout());
     optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 
-    focusOnNewCode = new JBCheckBox("Focus on new code (connected mode only)");
+    focusOnNewCode = new JBCheckBox("Focus on new code");
     focusOnNewCode.setFocusable(false);
     var helpLabel = FocusModeHelpLabel.create();
     var horizontalLayout = new JPanel(new HorizontalLayout(5));
+    changeNewCodeDefinition = new JButton("Change Definition");
+    changeNewCodeDefinition.setToolTipText("Change the New Code definition when not using connected mode");
+    changeNewCodeDefinition.addActionListener(l -> {
+      var configurable = new SonarLintNewCodeDefinitionConfigurable();
+      ShowSettingsUtil.getInstance().editConfigurable(optionsPanel, configurable);
+    });
     horizontalLayout.add(focusOnNewCode);
     horizontalLayout.add(helpLabel);
+    horizontalLayout.add(changeNewCodeDefinition);
     optionsPanel.add(horizontalLayout, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
     autoTrigger = new JBCheckBox("Automatically trigger analysis");

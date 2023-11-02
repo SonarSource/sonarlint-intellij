@@ -43,6 +43,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTr
 public final class SonarLintGlobalSettings {
 
   private boolean isFocusOnNewCode = false;
+  private long newCodeDefinitionDays = 30;
   private boolean autoTrigger = true;
   private String nodejsPath = "";
   private List<ServerConnection> servers = new LinkedList<>();
@@ -155,6 +156,14 @@ public final class SonarLintGlobalSettings {
 
   public void setFocusOnNewCode(boolean focusOnNewCode) {
     isFocusOnNewCode = focusOnNewCode;
+  }
+
+  public long getNewCodeDefinitionDays() {
+    return newCodeDefinitionDays;
+  }
+
+  public void setNewCodeDefinitionDays(long newCodeDefinitionDays) {
+    this.newCodeDefinitionDays = newCodeDefinitionDays;
   }
 
   public boolean isAutoTrigger() {

@@ -21,12 +21,12 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.JBColor
-import java.awt.Color
-import javax.swing.Icon
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
+import java.awt.Color
+import javax.swing.Icon
 
 object SonarLintIcons {
 
@@ -78,6 +78,8 @@ object SonarLintIcons {
     val RESOLVED = getIcon("/images/resolved.svg")
     @JvmField
     val FOCUS = getIcon("/images/focus.svg")
+    @JvmField
+    val SETTINGS = getIcon("/images/inlaySettings.svg")
 
     private val SEVERITY_ICONS = mapOf(
         IssueSeverity.BLOCKER to getIcon("/images/severity/blocker.svg"),
