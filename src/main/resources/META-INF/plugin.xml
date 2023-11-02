@@ -331,12 +331,5 @@
                 description="Configure SonarLint"
                 icon="org.sonarlint.intellij.SonarLintIcons.TOOLS">
         </action>
-
-        <action id="SonarLint.toolwindow.ChangeNewCodeDefinition"
-                class="org.sonarlint.intellij.actions.SonarChangeNewCodeDefinition"
-                text="Change New Code Definition"
-                description="Change New Code Definition"
-                icon="org.sonarlint.intellij.SonarLintIcons.SETTINGS">
-        </action>
     </actions>
 </idea-plugin>

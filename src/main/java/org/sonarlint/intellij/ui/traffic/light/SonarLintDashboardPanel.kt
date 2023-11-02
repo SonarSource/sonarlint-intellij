@@ -120,7 +120,6 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         init {
             isPopup = true
             add(ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"))
-            add(ActionManager.getInstance().getAction("SonarLint.toolwindow.ChangeNewCodeDefinition"))
             add(ShowLogAction())
         }
     }
