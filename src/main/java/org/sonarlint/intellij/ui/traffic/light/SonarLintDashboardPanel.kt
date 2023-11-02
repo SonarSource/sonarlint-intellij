@@ -35,7 +35,7 @@ import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.GridBag
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
-import org.sonarlint.intellij.cayc.FocusModeHelpLabel
+import org.sonarlint.intellij.cayc.NewCodeModeHelpLabel
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.FindingType.ISSUE
@@ -49,7 +49,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
 
     companion object {
         private const val NO_FINDINGS_TEXT = "No problems found, keep up the good work!"
-        private const val CHECKBOX_TITLE = "Focus on New Code"
+        private const val CHECKBOX_TITLE = "Focus on new code"
     }
 
     val panel = JPanel(GridBagLayout())
@@ -80,7 +80,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         panel.add(menuButton, gc.next().anchor(GridBagConstraints.LINE_END).weightx(0.0).insets(10, 6, 10, 6))
         val focusPanel = JPanel(HorizontalLayout(5))
         focusPanel.add(focusOnNewCodeCheckbox)
-        focusPanel.add(FocusModeHelpLabel.create())
+        focusPanel.add(NewCodeModeHelpLabel.createFocus())
         panel.add(focusPanel,
             gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 0))
     }

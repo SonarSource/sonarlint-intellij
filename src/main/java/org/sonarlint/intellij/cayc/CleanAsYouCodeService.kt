@@ -43,11 +43,11 @@ class CleanAsYouCodeService {
         refresh(settings, isFocusOnNewCode)
     }
 
-    fun setNewCodeDefinition(newCodeDefinitionDays: Long) {
-        refresh(getGlobalSettings(), newCodeDefinitionDays)
+    fun setNewCodeDefinition(newCodeDefinitionDays: Int, settings: SonarLintGlobalSettings) {
+        refresh(settings, newCodeDefinitionDays)
     }
 
-    private fun refresh(settings: SonarLintGlobalSettings, newCodeDefinitionDays: Long) {
+    private fun refresh(settings: SonarLintGlobalSettings, newCodeDefinitionDays: Int) {
         settings.newCodeDefinitionDays = newCodeDefinitionDays
         ProjectManager.getInstance().openProjects.forEach { project ->
             if (!project.isDisposed) {

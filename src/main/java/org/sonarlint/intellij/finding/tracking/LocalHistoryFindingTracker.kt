@@ -85,7 +85,7 @@ class LocalHistoryFindingTracker(private val previousFindings: CachedFindings) {
             rawMatched.isResolved = previousMatched.isResolved
 
             rawMatched.introductionDate?.let {
-                rawMatched.setOnNewCode(it > Instant.now().minus(Duration.ofDays(Settings.getGlobalSettings().newCodeDefinitionDays)).toEpochMilli())
+                rawMatched.setOnNewCode(it > Instant.now().minus(Duration.ofDays(Settings.getGlobalSettings().newCodeDefinitionDays.toLong())).toEpochMilli())
             }
         }
     }

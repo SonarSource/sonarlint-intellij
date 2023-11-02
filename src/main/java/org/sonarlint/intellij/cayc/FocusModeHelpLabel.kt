@@ -23,13 +23,19 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.ui.ContextHelpLabel
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
-class FocusModeHelpLabel {
+class NewCodeModeHelpLabel {
     companion object {
         @JvmStatic
-        fun create() =
+        fun createFocus() =
                 ContextHelpLabel.createWithLink(null,
                         "Deliver clean code by focusing on code that was recently modified",
-                        "Learn more about Clean as You Code", true) { BrowserUtil.browse(SonarLintDocumentation.FOCUS_ON_NEW_CODE_LINK) };
+                        "Learn more about Clean as You Code", true) { BrowserUtil.browse(SonarLintDocumentation.FOCUS_ON_NEW_CODE_LINK) }
+
+        @JvmStatic
+        fun createDefinition() =
+            ContextHelpLabel.createWithLink(null,
+                "This new code definition is only used outside of connected mode",
+                "Learn more about new code", true) { BrowserUtil.browse(SonarLintDocumentation.FOCUS_ON_NEW_CODE_LINK) }
 
     }
 }
