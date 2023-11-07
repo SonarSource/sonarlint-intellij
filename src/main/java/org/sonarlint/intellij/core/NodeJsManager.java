@@ -20,18 +20,17 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.application.ApplicationManager;
-
+import com.intellij.openapi.components.Service;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
-
-import com.intellij.openapi.components.Service;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.NodeJsHelper;
 import org.sonarsource.sonarlint.core.commons.Version;
 
@@ -62,7 +61,7 @@ public final class NodeJsManager {
 
   private synchronized void initNodeIfNeeded() {
     if (!nodeInit) {
-      var helper = new NodeJsHelper();
+      var helper = new NodeJsHelper(GlobalLogOutput.get());
       helper.detect(getNodeJsPathFromConfig());
       this.nodeInit = true;
       this.nodeJsPath = helper.getNodeJsPath();

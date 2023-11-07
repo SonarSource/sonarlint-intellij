@@ -26,7 +26,7 @@ import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.options.OptionPanel
 import org.sonarlint.intellij.ui.options.addComponents
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import javax.swing.ButtonGroup

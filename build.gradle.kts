@@ -203,7 +203,7 @@ configurations {
 }
 
 dependencies {
-    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+    implementation("org.sonarsource.sonarlint.core:sonarlint-embedded:$sonarlintCoreVersion")
     implementation("commons-lang:commons-lang:2.6")
     implementation(project(":common"))
     compileOnly("com.google.code.findbugs:jsr305:3.0.2")

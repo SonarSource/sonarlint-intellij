@@ -35,6 +35,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
+import org.sonarlint.intellij.util.RPCUtils;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
@@ -76,7 +77,7 @@ public class IssueNode extends FindingNode {
     if (issue.getCleanCodeAttribute() != null && highestQuality != null && highestImpact != null) {
       var impactText = StringUtil.capitalize(highestImpact.toString().toLowerCase(Locale.ENGLISH));
       var qualityText = StringUtil.capitalize(highestQuality.toString().toLowerCase(Locale.ENGLISH));
-      var impactIcon = SonarLintIcons.impact(highestImpact);
+      var impactIcon = SonarLintIcons.impact(RPCUtils.mapImpactSeverity(highestImpact));
 
       if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();

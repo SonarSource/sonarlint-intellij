@@ -24,9 +24,9 @@ import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.finding.ShowFinding.Companion.handleFlows
-import org.sonarsource.sonarlint.core.clientapi.common.FlowDto
-import org.sonarsource.sonarlint.core.clientapi.common.LocationDto
-import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.LocationDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 
 class ShowFindingTests : AbstractSonarLintLightTests() {
 

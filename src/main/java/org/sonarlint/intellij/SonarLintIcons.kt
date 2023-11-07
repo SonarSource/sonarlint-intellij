@@ -21,12 +21,12 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.JBColor
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import java.awt.Color
 import javax.swing.Icon
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity
-import org.sonarsource.sonarlint.core.commons.IssueSeverity
-import org.sonarsource.sonarlint.core.commons.RuleType
-import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 
 object SonarLintIcons {
 

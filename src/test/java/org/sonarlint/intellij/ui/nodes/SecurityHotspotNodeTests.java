@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
@@ -49,6 +50,7 @@ class SecurityHotspotNodeTests {
     when(issue.getMessage()).thenReturn("rule");
     when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(VulnerabilityProbability.HIGH));
     when(issue.getType()).thenReturn(RuleType.BUG);
+    when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
     return new LiveSecurityHotspot(null, issue, file, Collections.emptyList());
   }
 }

@@ -19,19 +19,23 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
-import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
+import org.sonarlint.intellij.util.RPCUtils;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.CleanCodeAttributeDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
@@ -110,9 +114,10 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       this.details = details;
       this.activated = activated;
       this.nonDefaultParams = new HashMap<>(nonDefaultParams);
-      var highestQualityImpact = details.getDefaultImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
-      this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
-      this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
+      //TODO check here
+      var highestQualityImpact = details.getDefaultImpacts().stream().max(Comparator.comparing(i -> i.getImpactSeverity().ordinal()));
+      this.highestQuality = highestQualityImpact.map(ImpactDto::getSoftwareQuality).orElse(null);
+      this.highestImpact = highestQualityImpact.map(ImpactDto::getImpactSeverity).orElse(null);
     }
 
     public String getKey() {
@@ -127,11 +132,11 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       return details.isActiveByDefault();
     }
 
-    public CleanCodeAttribute attribute() {
-      return details.getCleanCodeAttribute().orElse(null);
+    public CleanCodeAttributeDto attribute() {
+      return details.getCleanCodeAttributeDetails();
     }
 
-    public Map<SoftwareQuality, ImpactSeverity> impacts() {
+    public List<ImpactDto> impacts() {
       return details.getDefaultImpacts();
     }
 
@@ -144,7 +149,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public org.sonarsource.sonarlint.core.commons.Language language() {
-      return details.getLanguage();
+      return RPCUtils.getSingleMappedLanguageWhenRPCInput(details.getLanguage());
     }
 
     @Override

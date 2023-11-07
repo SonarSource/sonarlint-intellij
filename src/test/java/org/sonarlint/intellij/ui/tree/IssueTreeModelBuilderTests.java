@@ -167,6 +167,7 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     when(issue.getType()).thenReturn(RuleType.BUG);
     when(issue.getCleanCodeAttribute()).thenReturn(Optional.of(CleanCodeAttribute.defaultCleanCodeAttribute()));
     when(issue.getImpacts()).thenReturn(impacts);
+    when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
 
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);

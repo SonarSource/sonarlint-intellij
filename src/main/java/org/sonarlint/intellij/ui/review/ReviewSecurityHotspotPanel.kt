@@ -22,7 +22,7 @@ package org.sonarlint.intellij.ui.review
 import com.intellij.openapi.ui.VerticalFlowLayout
 import org.sonarlint.intellij.ui.options.OptionPanel
 import org.sonarlint.intellij.ui.options.addComponents
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import javax.swing.ButtonGroup

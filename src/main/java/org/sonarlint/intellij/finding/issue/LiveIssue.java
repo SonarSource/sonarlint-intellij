@@ -29,7 +29,9 @@ import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+
+import static org.sonarlint.intellij.util.RPCUtils.mapRuleType;
 
 public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.finding.Issue {
 
@@ -41,7 +43,7 @@ public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.fin
 
   public LiveIssue(Module module, Issue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
     super(module, issue, virtualFile, range, context, quickFixes);
-    this.type = issue.getType();
+    this.type = mapRuleType(issue.getType());
   }
 
   @NotNull

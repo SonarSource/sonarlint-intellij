@@ -31,10 +31,10 @@ import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleContextualSectionDto
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDescriptionTabDto
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleMonolithicDescriptionDto
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleSplitDescriptionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleContextualSectionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDescriptionTabDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleMonolithicDescriptionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleSplitDescriptionDto
 import java.awt.BorderLayout
 import java.awt.Font
 import javax.swing.DefaultComboBoxModel

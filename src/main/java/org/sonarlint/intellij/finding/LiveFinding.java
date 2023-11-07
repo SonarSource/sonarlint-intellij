@@ -35,11 +35,12 @@ import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.tracking.Trackable;
+import org.sonarlint.intellij.util.RPCUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5;
@@ -82,7 +83,7 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.range = range;
     this.message = issue.getMessage();
     this.ruleKey = issue.getRuleKey();
-    this.severity = issue.getSeverity();
+    this.severity = RPCUtils.mapSeverity(issue.getSeverity());
     this.virtualFile = virtualFile;
     this.uid = UID_GEN.getAndIncrement();
     this.context = context;

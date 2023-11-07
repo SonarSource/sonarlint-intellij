@@ -22,10 +22,11 @@ package org.sonarlint.intellij.config.global.rules;
 import java.util.HashMap;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarlint.intellij.util.RPCUtils;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -50,7 +51,7 @@ class RulesTreeNodeTests {
     assertThat(node.isNonDefault()).isTrue();
     assertThat(node.severity()).isEqualTo(IssueSeverity.MAJOR);
     assertThat(node.type()).isEqualTo(RuleType.BUG);
-    assertThat(node.language()).isEqualTo(Language.JAVA);
+    assertThat(node.language()).isEqualTo(RPCUtils.getSingleMappedLanguageWhenRPCInput(Language.JAVA));
   }
 
   @Test

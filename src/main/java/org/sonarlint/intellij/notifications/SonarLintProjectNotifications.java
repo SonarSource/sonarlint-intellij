@@ -37,8 +37,8 @@ import org.sonarlint.intellij.notifications.binding.ChooseBindingSuggestionActio
 import org.sonarlint.intellij.notifications.binding.DisableBindingSuggestionsAction;
 import org.sonarlint.intellij.notifications.binding.LearnMoreAboutConnectedModeAction;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 

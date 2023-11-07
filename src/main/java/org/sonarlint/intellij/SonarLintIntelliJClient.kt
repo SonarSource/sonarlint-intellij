@@ -41,19 +41,10 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import java.io.ByteArrayInputStream
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.URI
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -77,55 +68,62 @@ import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
+import org.sonarlint.intellij.util.RPCUtils
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.computeInEDT
-import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
-import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
-import org.sonarsource.sonarlint.core.clientapi.client.OpenUrlInBrowserParams
-import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingParams
-import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingResponse
-import org.sonarsource.sonarlint.core.clientapi.client.binding.SuggestBindingParams
-import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionResponse
-import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentialsParams
-import org.sonarsource.sonarlint.core.clientapi.client.connection.GetCredentialsResponse
-import org.sonarsource.sonarlint.core.clientapi.client.event.DidReceiveServerEventParams
-import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
-import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeResponse
-import org.sonarsource.sonarlint.core.clientapi.client.fs.FoundFileDto
-import org.sonarsource.sonarlint.core.clientapi.client.hotspot.ShowHotspotParams
-import org.sonarsource.sonarlint.core.clientapi.client.http.CheckServerTrustedParams
-import org.sonarsource.sonarlint.core.clientapi.client.http.CheckServerTrustedResponse
-import org.sonarsource.sonarlint.core.clientapi.client.http.GetProxyPasswordAuthenticationParams
-import org.sonarsource.sonarlint.core.clientapi.client.http.GetProxyPasswordAuthenticationResponse
-import org.sonarsource.sonarlint.core.clientapi.client.http.ProxyDto
-import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesParams
-import org.sonarsource.sonarlint.core.clientapi.client.http.SelectProxiesResponse
-import org.sonarsource.sonarlint.core.clientapi.client.info.GetClientInfoResponse
-import org.sonarsource.sonarlint.core.clientapi.client.issue.ShowIssueParams
-import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
-import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
-import org.sonarsource.sonarlint.core.clientapi.client.message.ShowSoonUnsupportedMessageParams
-import org.sonarsource.sonarlint.core.clientapi.client.progress.ReportProgressParams
-import org.sonarsource.sonarlint.core.clientapi.client.progress.StartProgressParams
-import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
-import org.sonarsource.sonarlint.core.clientapi.client.sync.DidSynchronizeConfigurationScopeParams
-import org.sonarsource.sonarlint.core.clientapi.common.FlowDto
-import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto
-import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
-import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
-import org.sonarsource.sonarlint.core.commons.push.ServerEvent
-import org.sonarsource.sonarlint.core.serverapi.push.IssueChangedEvent
-import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotChangedEvent
-import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotClosedEvent
-import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotRaisedEvent
-import org.sonarsource.sonarlint.core.serverapi.push.ServerHotspotEvent
-import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
-import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
+import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcClient
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.OpenUrlInBrowserParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.SuggestBindingParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.GetCredentialsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.GetCredentialsResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.event.DidReceiveServerHotspotEvent
+import org.sonarsource.sonarlint.core.rpc.protocol.client.event.DidReceiveServerTaintVulnerabilityChangedOrClosedEvent
+import org.sonarsource.sonarlint.core.rpc.protocol.client.event.DidReceiveServerTaintVulnerabilityRaisedEvent
+import org.sonarsource.sonarlint.core.rpc.protocol.client.fs.FindFileByNamesInScopeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.fs.FindFileByNamesInScopeResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.fs.FoundFileDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.ShowHotspotParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.http.CheckServerTrustedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.http.CheckServerTrustedResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.http.GetProxyPasswordAuthenticationParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.http.GetProxyPasswordAuthenticationResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.http.ProxyDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.http.SelectProxiesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.http.SelectProxiesResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.info.GetClientInfoResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.ShowIssueParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogLevel
+import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
+import org.sonarsource.sonarlint.core.rpc.protocol.client.message.ShowMessageParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.message.ShowSoonUnsupportedMessageParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.ReportProgressParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.StartProgressParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.sync.DidSynchronizeConfigurationScopeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.URI
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
 
-object SonarLintIntelliJClient : SonarLintClient {
+object SonarLintIntelliJClient : SonarLintRpcClient {
 
     private const val OPENING_FINDING_TITLE = "Opening finding..."
     private val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint")
@@ -220,6 +218,33 @@ object SonarLintIntelliJClient : SonarLintClient {
 
     override fun showMessage(params: ShowMessageParams) {
         showBalloon(null, params.text, convert(params.type))
+    }
+
+    override fun log(params: LogParams) {
+        val configScopeId = params.configScopeId
+
+        configScopeId?.let {
+            val project = BackendService.findModule(configScopeId)?.project ?: BackendService.findProject(params.configScopeId!!)
+            project?.let {
+                val console: SonarLintConsole = getService<SonarLintConsole>(project, SonarLintConsole::class.java)
+                logProjectLevel(params, console)
+                return
+            }
+        }
+
+        val globalLogOutput = getService(GlobalLogOutput::class.java)
+        globalLogOutput.log(params.message, RPCUtils.mapLevel(params.level))
+    }
+
+    private fun logProjectLevel(
+        params: LogParams,
+        console: SonarLintConsole,
+    ) {
+        when (params.level) {
+            LogLevel.TRACE, LogLevel.DEBUG -> console.debug(params.message)
+            LogLevel.ERROR -> console.error(params.message)
+            else -> console.info(params.message)
+        }
     }
 
     override fun showSoonUnsupportedMessage(params: ShowSoonUnsupportedMessageParams) {
@@ -445,17 +470,10 @@ object SonarLintIntelliJClient : SonarLintClient {
         }
     }
 
-    override fun didReceiveServerEvent(params: DidReceiveServerEventParams) {
-        val event = params.serverEvent
-        identifyProjectsImpactedByTaintEvent(event).forEach { project ->
-            getService(
-                project, TaintVulnerabilitiesPresenter::class.java
-            ).presentTaintVulnerabilitiesForOpenFiles()
-        }
-
-        identifyProjectsImpactedBySecurityHotspotEvent(event).forEach { project ->
+    override fun didReceiveServerHotspotEvent(params: DidReceiveServerHotspotEvent) {
+        findProjects(params.sonarProjectKey).forEach { project ->
             val openFiles = FileEditorManager.getInstance(project).openFiles
-            val filePath = (event as ServerHotspotEvent).filePath
+            val filePath = params.serverFilePath
             val impactedFiles = ArrayList<VirtualFile>()
 
             ProjectRootManager.getInstance(project).contentRoots.forEach {
@@ -474,32 +492,21 @@ object SonarLintIntelliJClient : SonarLintClient {
         }
     }
 
-    private fun identifyProjectsImpactedByTaintEvent(event: ServerEvent): Set<Project> {
-        val projectKey = when (event) {
-            is TaintVulnerabilityRaisedEvent -> event.projectKey
-            is TaintVulnerabilityClosedEvent -> event.projectKey
-            is IssueChangedEvent -> event.projectKey
-            else -> null
+    override fun didReceiveServerTaintVulnerabilityRaisedEvent(params: DidReceiveServerTaintVulnerabilityRaisedEvent) {
+        findProjects(params.sonarProjectKey).forEach { project ->
+            getService(project, TaintVulnerabilitiesPresenter::class.java).presentTaintVulnerabilitiesForOpenFiles()
         }
-        return ProjectManager.getInstance().openProjects.filter { project ->
-            getService(
-                project, ProjectBindingManager::class.java
-            ).uniqueProjectKeys.contains(projectKey)
-        }.toSet()
     }
 
-    private fun identifyProjectsImpactedBySecurityHotspotEvent(event: ServerEvent): Set<Project> {
-        val projectKey = when (event) {
-            is SecurityHotspotChangedEvent -> event.projectKey
-            is SecurityHotspotClosedEvent -> event.projectKey
-            is SecurityHotspotRaisedEvent -> event.projectKey
-            else -> null
+    override fun didReceiveServerTaintVulnerabilityChangedOrClosedEvent(params: DidReceiveServerTaintVulnerabilityChangedOrClosedEvent) {
+        findProjects(params.sonarProjectKey).forEach { project ->
+            getService(project, TaintVulnerabilitiesPresenter::class.java).presentTaintVulnerabilitiesForOpenFiles()
         }
-
-        return ProjectManager.getInstance().openProjects.filter { project ->
-            getService(
-                project, ProjectBindingManager::class.java
-            ).uniqueProjectKeys.contains(projectKey)
-        }.toSet()
     }
+
+    private fun findProjects(projectKey: String?) = ProjectManager.getInstance().openProjects.filter { project ->
+        getService(
+            project, ProjectBindingManager::class.java
+        ).uniqueProjectKeys.contains(projectKey)
+    }.toSet()
 }

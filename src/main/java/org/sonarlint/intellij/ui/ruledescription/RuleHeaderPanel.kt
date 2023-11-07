@@ -32,15 +32,6 @@ import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.WrapLayout
-import java.awt.BorderLayout
-import java.awt.FlowLayout
-import java.awt.event.ActionEvent
-import java.util.LinkedList
-import javax.swing.AbstractAction
-import javax.swing.BorderFactory
-import javax.swing.JButton
-import javax.swing.JPanel
-import javax.swing.SwingConstants
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.canBeMarkedAsResolved
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialogAsync
@@ -50,14 +41,26 @@ import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.util.RPCUtils
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity
-import org.sonarsource.sonarlint.core.commons.IssueSeverity
-import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.SoftwareQuality
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.CleanCodeAttributeDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
+import java.awt.BorderLayout
+import java.awt.FlowLayout
+import java.awt.event.ActionEvent
+import java.util.LinkedList
+import javax.swing.AbstractAction
+import javax.swing.BorderFactory
+import javax.swing.JButton
+import javax.swing.JPanel
+import javax.swing.SwingConstants
 
 
 class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayout()) {
@@ -102,10 +105,10 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
 
     fun updateForRuleConfiguration(
         ruleKey: String, type: RuleType, severity: IssueSeverity,
-        attribute: CleanCodeAttribute?, qualities: Map<SoftwareQuality, ImpactSeverity>,
+        attribute: CleanCodeAttributeDto?, qualities: MutableList<ImpactDto>,
     ) {
         clear()
-        updateCommonFields(type, attribute, qualities, ruleKey)
+        updateServerCommonFields(type, attribute, qualities, ruleKey)
         updateRuleSeverity(severity)
     }
 
@@ -133,7 +136,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
 
     fun updateForServerIssue(ruleDescription: EffectiveRuleDetailsDto, ruleKey: String) {
         clear()
-        updateCommonFields(ruleDescription.type, ruleDescription.cleanCodeAttribute.orElse(null), ruleDescription.defaultImpacts, ruleKey)
+        updateServerCommonFields(ruleDescription.type, ruleDescription.cleanCodeAttributeDetails, ruleDescription.defaultImpacts, ruleKey)
         updateRuleSeverity(ruleDescription.severity)
     }
 
@@ -164,24 +167,55 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         }
     }
 
+    private fun updateServerCommonFields(type: RuleType, attribute: CleanCodeAttributeDto?, qualities: MutableList<ImpactDto>, ruleKey: String) {
+        val newCctEnabled = attribute != null && qualities.isNotEmpty()
+        if (newCctEnabled) {
+            val attributeLabel = JBLabel("<html><b>" + cleanCapitalized(attribute!!.cleanCodeAttributeCategoryLabel) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
+            attributePanel.apply {
+                add(attributeLabel)
+                toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
+            }
+            qualities.forEach {
+                val cleanImpact = cleanCapitalized(it.impactSeverityLabel)
+                val cleanQuality = cleanCapitalized(it.softwareQualityLabel)
+                val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[it.impactSeverity]).apply {
+                    toolTipText = "Issues found for this rule will have a $cleanImpact impact on the $cleanQuality of your software."
+                }
+                qualityPanel.add(JBLabel(cleanCapitalized(it.softwareQuality.toString())).apply {
+                    foreground = SonarLintIcons.fontColorsByImpact[it.impactSeverity]
+                })
+                qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(it.impactSeverity) })
+                qualityLabels.add(qualityPanel)
+            }
+        } else {
+            ruleTypeIcon.icon = SonarLintIcons.type(type)
+            ruleTypeLabel.text = cleanCapitalized(type.toString())
+            ruleTypeLabel.setCopyable(true)
+        }
+        ruleKeyLabel.text = ruleKey
+        ruleKeyLabel.setCopyable(true)
+
+        organizeHeader(newCctEnabled)
+    }
+
     private fun updateCommonFields(type: RuleType, attribute: CleanCodeAttribute?, qualities: Map<SoftwareQuality, ImpactSeverity>, ruleKey: String) {
         val newCctEnabled = attribute != null && qualities.isNotEmpty()
         if (newCctEnabled) {
-            val attributeLabel = JBLabel("<html><b>" + cleanCapitalized(attribute!!.attributeCategory.issueLabel) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
+            val attributeLabel = JBLabel("<html><b>" + cleanCapitalized(attribute!!.attributeCategory.label) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
             attributePanel.apply {
                 add(attributeLabel)
                 toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
             }
             qualities.entries.forEach {
-                val cleanImpact = cleanCapitalized(it.value.displayLabel)
-                val cleanQuality = cleanCapitalized(it.key.displayLabel)
-                val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[it.value]).apply {
+                val cleanImpact = cleanCapitalized(it.value.label)
+                val cleanQuality = cleanCapitalized(it.key.label)
+                val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[RPCUtils.mapImpactSeverity(it.value)]).apply {
                     toolTipText = "Issues found for this rule will have a $cleanImpact impact on the $cleanQuality of your software."
                 }
                 qualityPanel.add(JBLabel(cleanCapitalized(it.key.toString())).apply {
-                    foreground = SonarLintIcons.fontColorsByImpact[it.value]
+                    foreground = SonarLintIcons.fontColorsByImpact[RPCUtils.mapImpactSeverity(it.value)]
                 })
-                qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(it.value) })
+                qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(RPCUtils.mapImpactSeverity(it.value)) })
                 qualityLabels.add(qualityPanel)
             }
         } else {

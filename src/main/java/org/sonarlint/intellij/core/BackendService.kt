@@ -32,6 +32,8 @@ import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import java.io.IOException
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -54,67 +56,71 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
-import org.sonarsource.sonarlint.core.SonarLintBackendImpl
-import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
-import org.sonarsource.sonarlint.core.clientapi.backend.branch.DidChangeActiveSonarProjectBranchParams
-import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingConfigurationDto
-import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
-import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.ConfigurationScopeDto
-import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidAddConfigurationScopesParams
-import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveConfigurationScopeParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.auth.HelpGenerateUserTokenParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.auth.HelpGenerateUserTokenResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.check.CheckSmartNotificationsSupportedParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.check.CheckSmartNotificationsSupportedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.TransientSonarCloudConnectionDto
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.common.TransientSonarQubeConnectionDto
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidChangeCredentialsParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.GetOrganizationParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.GetOrganizationResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.ListUserOrganizationsParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.org.ListUserOrganizationsResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.ChangeHotspotStatusParams
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedParams
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedParams
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
-import org.sonarsource.sonarlint.core.clientapi.backend.initialize.ClientInfoDto
-import org.sonarsource.sonarlint.core.clientapi.backend.initialize.FeatureFlagsDto
-import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializeParams
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.AddIssueCommentParams
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.ChangeIssueStatusParams
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.ReopenIssueParams
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.ReopenIssueResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
-import org.sonarsource.sonarlint.core.clientapi.backend.newcode.GetNewCodeDefinitionParams
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsParams
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetEffectiveRuleDetailsResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.ListAllStandaloneRulesDefinitionsResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.tracking.ClientTrackedFindingDto
-import org.sonarsource.sonarlint.core.clientapi.backend.tracking.LineWithHashDto
-import org.sonarsource.sonarlint.core.clientapi.backend.tracking.MatchWithServerSecurityHotspotsParams
-import org.sonarsource.sonarlint.core.clientapi.backend.tracking.TextRangeWithHashDto
-import org.sonarsource.sonarlint.core.clientapi.backend.tracking.TrackWithServerIssuesParams
-import org.sonarsource.sonarlint.core.clientapi.common.TokenDto
-import org.sonarsource.sonarlint.core.clientapi.common.UsernamePasswordDto
+import org.sonarlint.intellij.util.RPCUtils.mapLanguages
 import org.sonarsource.sonarlint.core.http.HttpClient
+import org.sonarsource.sonarlint.core.rpc.client.ClientJsonRpcLauncher
+import org.sonarsource.sonarlint.core.rpc.impl.BackendJsonRpcLauncher
+import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidChangeActiveSonarProjectBranchParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingConfigurationDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpdateBindingParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.ConfigurationScopeDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidAddConfigurationScopesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidRemoveConfigurationScopeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.check.CheckSmartNotificationsSupportedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.check.CheckSmartNotificationsSupportedResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.common.TransientSonarCloudConnectionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.common.TransientSonarQubeConnectionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidChangeCredentialsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.SonarCloudConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.SonarQubeConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.ListUserOrganizationsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.ListUserOrganizationsResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.OpenHotspotInBrowserParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.ClientInfoDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.FeatureFlagsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.InitializeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.AddIssueCommentParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ChangeIssueStatusParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ListAllStandaloneRulesDefinitionsResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ClientTrackedFindingDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.LineWithHashDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.MatchWithServerSecurityHotspotsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWithHashDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TrackWithServerIssuesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.serverconnection.IssueStorePaths
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse as CheckIssueStatusChangePermittedResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
 
 @Service(Service.Level.APP)
-class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
-    constructor() : this(SonarLintBackendImpl(SonarLintIntelliJClient))
+class BackendService @NonInjectable constructor(private var backend: SonarLintRpcServer) : Disposable {
 
-    private val initializedBackend: SonarLintBackend by lazy {
+    constructor() : this(initBackend())
+
+    private val initializedBackend: SonarLintRpcServer by lazy {
         migrateStoragePath()
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
@@ -133,8 +139,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 SonarLintEngineFactory.getWorkDir(),
                 EmbeddedPlugins.findEmbeddedPlugins(),
                 EmbeddedPlugins.getEmbeddedPluginsForConnectedMode(),
-                EmbeddedPlugins.enabledLanguagesInStandaloneMode,
-                EmbeddedPlugins.enabledLanguagesInConnectedMode,
+                mapLanguages(EmbeddedPlugins.enabledLanguagesInStandaloneMode),
+                mapLanguages(EmbeddedPlugins.enabledLanguagesInConnectedMode),
                 sonarQubeConnections,
                 sonarCloudConnections,
                 null,
@@ -169,11 +175,11 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun getHttpClient(connectionId: String): HttpClient {
-        return initializedBackend.getHttpClient(connectionId)
+        return backendLauncher.javaImpl.getHttpClient(connectionId)
     }
 
     fun getHttpClientNoAuth(): HttpClient {
-        return initializedBackend.getHttpClientNoAuth()
+        return backendLauncher.javaImpl.httpClientNoAuth
     }
 
     /**
@@ -402,9 +408,9 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     fun checkIssueStatusChangePermitted(
         connectionId: String,
         issueKey: String,
-    ): CompletableFuture<CheckIssueStatusChangePermittedResponse> {
+    ): CompletableFuture<issueCheckStatusChangePermittedResponse> {
         return initializedBackend.issueService.checkStatusChangePermitted(
-            org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedParams(connectionId, issueKey)
+            issueCheckStatusChangePermittedParams(connectionId, issueKey)
         )
     }
 
@@ -596,6 +602,22 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     companion object {
+        private lateinit var backendLauncher: BackendJsonRpcLauncher
+        private lateinit var clientLauncher: ClientJsonRpcLauncher
+        fun initBackend() : SonarLintRpcServer {
+            val clientToServerOutputStream = PipedOutputStream()
+            val clientToServerInputStream = PipedInputStream(clientToServerOutputStream)
+
+            val serverToClientOutputStream = PipedOutputStream()
+            val serverToClientInputStream = PipedInputStream(serverToClientOutputStream)
+
+            backendLauncher = BackendJsonRpcLauncher(clientToServerInputStream, serverToClientOutputStream)
+
+            clientLauncher = ClientJsonRpcLauncher(serverToClientInputStream, clientToServerOutputStream, SonarLintIntelliJClient)
+
+            return clientLauncher.serverProxy
+        }
+
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
 
         fun moduleId(module: Module): String {
@@ -616,5 +638,16 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     override fun dispose() {
         initializedBackend.shutdown()
+
+        try {
+            backendLauncher.close()
+        } catch (e: java.lang.Exception) {
+            getService(GlobalLogOutput::class.java).logError("Unable to stop the SonartLint backend launcher", e)
+        }
+        try {
+            clientLauncher.close()
+        } catch (e: java.lang.Exception) {
+            getService(GlobalLogOutput::class.java).logError("Unable to stop the SonartLint client launcher", e)
+        }
     }
 }

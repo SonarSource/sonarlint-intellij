@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui
 
+import com.google.common.base.Enums
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -62,7 +63,8 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 import org.sonarsource.sonarlint.core.serverapi.UrlUtils.urlEncode
 
 
@@ -201,10 +203,11 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             disableEmptyDisplay(true)
             finding?.let { updateHeader(finding, finding.getRuleKey(), ruleDetails) } ?: ruleKey?.let { updateHeader(null, ruleKey, ruleDetails) }
             descriptionPanel.removeAll()
-            val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language.languageKey)
+            val fileType = Enums.getIfPresent(Language::class.java, ruleDetails.language.name).orNull()
+                ?.let { RuleLanguages.findFileTypeByRuleLanguage(it.name) }
             ruleDetails.description.map(
-                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
-                { withSections -> descriptionPanel.addSections(withSections, fileType) }
+                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType!!) },
+                { withSections -> descriptionPanel.addSections(withSections, fileType!!) }
             )
             updateParams(ruleDetails)
         } else {
