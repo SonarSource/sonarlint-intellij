@@ -37,7 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.serverapi.UrlUtils;
+import org.sonarlint.intellij.common.util.UrlUtils;
 
 // Inspired from https://github.com/openclover/clover/blob/master/clover-idea/src/com/atlassian/clover/idea/util/BlameClover.java
 public class BlameSonarSource extends ErrorReportSubmitter {

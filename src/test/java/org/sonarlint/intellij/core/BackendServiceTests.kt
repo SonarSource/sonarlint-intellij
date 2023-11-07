@@ -23,6 +23,8 @@ import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.testFramework.replaceService
+import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.BeforeEach
@@ -40,23 +42,23 @@ import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
-import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
-import org.sonarsource.sonarlint.core.clientapi.backend.config.ConfigurationService
-import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
-import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidAddConfigurationScopesParams
-import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveConfigurationScopeParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.ConnectionService
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidChangeCredentialsParams
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
-import org.sonarsource.sonarlint.core.clientapi.backend.initialize.InitializeParams
-import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
+import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.ConfigurationRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpdateBindingParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidAddConfigurationScopesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidRemoveConfigurationScopeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.ConnectionRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidChangeCredentialsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.InitializeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityTrackingRpcService
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
-    private lateinit var backend: SonarLintBackend
-    private lateinit var backendConnectionService: ConnectionService
-    private lateinit var backendConfigurationService: ConfigurationService
+    private lateinit var backend: SonarLintRpcServer
+    private lateinit var backendConnectionService: ConnectionRpcService
+    private lateinit var backendConfigurationService: ConfigurationRpcService
     private lateinit var service: BackendService
 
     override fun initApplication() {
@@ -68,12 +70,16 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
                 .build()
         )
 
-        backend = mock(SonarLintBackend::class.java)
+        backend = mock(SonarLintRpcServer::class.java)
         `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
-        backendConnectionService = mock(ConnectionService::class.java)
-        backendConfigurationService = mock(ConfigurationService::class.java)
+        backendConnectionService = mock(ConnectionRpcService::class.java)
+        backendConfigurationService = mock(ConfigurationRpcService::class.java)
+        val taintService = mock(TaintVulnerabilityTrackingRpcService::class.java)
+        `when`(taintService.listAll(any())).thenReturn(CompletableFuture.completedFuture(ListAllResponse(emptyList())))
         `when`(backend.connectionService).thenReturn(backendConnectionService)
         `when`(backend.configurationService).thenReturn(backendConfigurationService)
+        `when`(backend.taintVulnerabilityTrackingService).thenReturn(taintService)
+
         service = BackendService(backend)
         ApplicationManager.getApplication().replaceService(BackendService::class.java, service, testRootDisposable)
     }

@@ -194,16 +194,22 @@ configurations {
         isTransitive = true
     }
     create("omnisharp")
+    create("sloop")
 }
 
 dependencies {
-    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+    implementation("org.sonarsource.sonarlint.core:sonarlint-java-client-legacy:$sonarlintCoreVersion")
+    implementation("org.sonarsource.sonarlint.core:sonarlint-java-client-utils:$sonarlintCoreVersion")
+    implementation("org.sonarsource.sonarlint.core:sonarlint-rpc-java-client:$sonarlintCoreVersion")
     implementation("commons-lang:commons-lang:2.6")
+    implementation("com.google.protobuf:protobuf-java:$protobufVersion")
     implementation(project(":common"))
     compileOnly("com.google.code.findbugs:jsr305:3.0.2")
     runtimeOnly(project(":clion"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
+    // TODO only for protobuf generated classes, should be done differently
+    testImplementation("org.sonarsource.sonarlint.core:sonarlint-rpc-impl:$sonarlintCoreVersion")
     testImplementation(platform("org.junit:junit-bom:5.9.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
@@ -237,6 +243,7 @@ dependencies {
     "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
     "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
     "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
+    "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:$sonarlintCoreVersion:no-arch@zip")
 }
 
 tasks {
@@ -257,10 +264,20 @@ tasks {
         }
     }
 
+    fun copySloop(destinationDir: File, pluginName: Property<String>) {
+        configurations["sloop"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
+            copy {
+                from(zipTree(artifact.file))
+                into(file("$destinationDir/${pluginName.get()}/sloop/"))
+            }
+        }
+    }
+
     prepareSandbox {
         doLast {
             copyPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
+            copySloop(destinationDir, pluginName)
         }
     }
 
@@ -268,6 +285,7 @@ tasks {
         doLast {
             copyPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
+            copySloop(destinationDir, pluginName)
         }
     }
 

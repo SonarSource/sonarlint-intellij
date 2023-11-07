@@ -113,20 +113,4 @@ class ServerConnectionTests {
     assertThat(connection.getPassword()).isEqualTo("pass");
     assertThat(connection.getToken()).isEqualTo("token");
   }
-
-  @Test
-  void testEndpointParams() {
-    var server = ServerConnection.newBuilder()
-      .setHostUrl("http://myhost")
-      .setEnableProxy(false)
-      .setToken("token")
-      .setOrganizationKey("org")
-      .build();
-
-    var endpointParams = server.getEndpointParams();
-
-    assertThat(endpointParams.getBaseUrl()).isEqualTo("http://myhost");
-    assertThat(endpointParams.getOrganization()).isEmpty();
-    assertThat(endpointParams.isSonarCloud()).isFalse();
-  }
 }

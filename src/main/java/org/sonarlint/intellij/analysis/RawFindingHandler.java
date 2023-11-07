@@ -37,12 +37,11 @@ import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.tracking.LocalHistoryFindingTracker;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
-class RawFindingHandler implements IssueListener {
+class RawFindingHandler implements RawIssueListener {
   private Module module;
   private final ConcurrentHashMap<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile = new ConcurrentHashMap<>();
@@ -60,7 +59,7 @@ class RawFindingHandler implements IssueListener {
   }
 
   @Override
-  public void handle(Issue rawIssue) {
+  public void handle(RawIssue rawIssue) {
     rawIssueCounter.incrementAndGet();
 
     // Do issue tracking for the single issue
@@ -81,7 +80,7 @@ class RawFindingHandler implements IssueListener {
     }
   }
 
-  private void processSecurityHotspot(ClientInputFile inputFile, Issue rawIssue) {
+  private void processSecurityHotspot(ClientInputFile inputFile, RawIssue rawIssue) {
     LiveSecurityHotspot liveSecurityHotspot;
     VirtualFile file = inputFile.getClientObject();
     try {
@@ -105,7 +104,7 @@ class RawFindingHandler implements IssueListener {
     findingStreamer.streamSecurityHotspot(file, liveSecurityHotspot);
   }
 
-  private void processIssue(ClientInputFile inputFile, Issue rawIssue) {
+  private void processIssue(ClientInputFile inputFile, RawIssue rawIssue) {
     LiveIssue liveIssue;
     VirtualFile file = inputFile.getClientObject();
     try {
@@ -129,7 +128,7 @@ class RawFindingHandler implements IssueListener {
     findingStreamer.streamIssue(file, liveIssue);
 
     var sonarLintGlobalSettings = Settings.getGlobalSettings();
-    if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains(Language.SECRETS.getPluginKey())) {
+    if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains("secrets")) {
       SonarLintProjectNotifications.Companion.get(module.getProject()).sendNotification();
       sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
     }

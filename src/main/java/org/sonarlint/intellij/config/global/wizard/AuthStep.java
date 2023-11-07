@@ -51,8 +51,8 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.ProgressUtils;
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.auth.HelpGenerateUserTokenResponse;
-import org.sonarsource.sonarlint.core.clientapi.backend.connection.validate.ValidateConnectionResponse;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse;
 
 public class AuthStep extends AbstractWizardStepEx {
   private static final String LOGIN_ITEM = "Login / Password";

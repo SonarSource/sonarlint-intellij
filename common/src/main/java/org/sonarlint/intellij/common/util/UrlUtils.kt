@@ -17,15 +17,16 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.messages
+package org.sonarlint.intellij.common.util
 
-import com.intellij.util.messages.Topic
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
-var SERVER_BRANCHES_TOPIC = Topic.create(
-    "Server branches events",
-    ServerBranchesListener::class.java
-)
-
-interface ServerBranchesListener {
-    fun serverBranchesUpdated()
+class UrlUtils {
+    companion object {
+        @JvmStatic
+        fun urlEncode(toEncode: String): String {
+            return URLEncoder.encode(toEncode, StandardCharsets.UTF_8)
+        }
+    }
 }

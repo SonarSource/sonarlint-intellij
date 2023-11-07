@@ -25,11 +25,11 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Optional;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
-import org.sonarsource.sonarlint.core.commons.objectstore.ObjectStore;
-import org.sonarsource.sonarlint.core.commons.objectstore.PathMapper;
-import org.sonarsource.sonarlint.core.commons.objectstore.Reader;
-import org.sonarsource.sonarlint.core.commons.objectstore.Writer;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.ObjectStore;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.PathMapper;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.Reader;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.Writer;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 /**
  * An ObjectStore without internal cache that derives the filesystem path to storage using a provided PathMapper.
@@ -45,7 +45,7 @@ public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   private final StoreKeyValidator<K> validator;
 
   public IndexedObjectStore(StoreIndex<K> index, PathMapper<K> pathMapper, Reader<V> reader, Writer<V> writer,
-    StoreKeyValidator<K> validator) {
+                            StoreKeyValidator<K> validator) {
     this.index = index;
     this.pathMapper = pathMapper;
     this.reader = reader;

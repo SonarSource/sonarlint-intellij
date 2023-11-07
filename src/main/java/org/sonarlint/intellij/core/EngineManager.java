@@ -19,26 +19,23 @@
  */
 package org.sonarlint.intellij.core;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 public interface EngineManager {
   void stopAllDeletedConnectedEnginesAsync();
 
   void stopAllEngines(boolean async);
 
-  @NotNull ConnectedSonarLintEngine getConnectedEngine(String connectionId);
+  SonarLintAnalysisEngine getStandaloneEngine();
 
-  StandaloneSonarLintEngine getStandaloneEngine();
+  SonarLintAnalysisEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId) throws InvalidBindingException;
 
-  ConnectedSonarLintEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId, String projectKey) throws InvalidBindingException;
+  @Nullable SonarLintAnalysisEngine getConnectedEngineIfStarted(String connectionId);
 
-  @Nullable ConnectedSonarLintEngine getConnectedEngineIfStarted(String connectionId);
+  @Nullable SonarLintAnalysisEngine getStandaloneEngineIfStarted();
 
-  @Nullable SonarLintEngine getStandaloneEngineIfStarted();
+  void restartAllConnectedEngines();
 }

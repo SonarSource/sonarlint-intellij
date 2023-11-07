@@ -184,8 +184,6 @@
     <projectListeners>
         <listener class="org.sonarlint.intellij.module.ModuleChangeListener" topic="com.intellij.openapi.project.ModuleListener"/>
         <listener class="org.sonarlint.intellij.module.MoveModulesOnBindingChange" topic="org.sonarlint.intellij.messages.ProjectBindingListener"/>
-        <listener class="org.sonarlint.intellij.vcs.RefreshCacheOnBindingChange" topic="org.sonarlint.intellij.messages.ProjectBindingListener"/>
-        <listener class="org.sonarlint.intellij.vcs.RefreshCacheOnProjectSync" topic="org.sonarlint.intellij.messages.ServerBranchesListener"/>
         <listener class="org.sonarlint.intellij.trigger.EditorOpenTrigger" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener" activeInTestMode="false"/>
         <!-- should belong to plugin-git.xml but moved here because of this bug https://youtrack.jetbrains.com/issue/IDEA-231568 (can be moved back when min version 2020.2) -->
         <listener class="org.sonarlint.intellij.git.RefreshVcsCacheOnRepositoryChange" topic="git4idea.repo.GitRepositoryChangeListener"/>

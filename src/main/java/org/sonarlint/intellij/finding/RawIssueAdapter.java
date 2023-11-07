@@ -33,7 +33,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.finding.LocationKt.resolvedLocation;
@@ -42,7 +42,7 @@ import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
 
 public class RawIssueAdapter {
 
-  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, Issue rawHotspot, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
+  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RawIssue rawHotspot, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
@@ -51,7 +51,7 @@ public class RawIssueAdapter {
       var quickFixes = transformQuickFixes(project, rawHotspot.quickFixes());
       if (textRange != null) {
         var rangeMarker = matcher.match(psiFile, textRange);
-        var context = transformFlows(project, matcher, psiFile, rawHotspot.flows(), rawHotspot.getRuleKey());
+        var context = transformFlows(project, matcher, psiFile, rawHotspot.getFlows(), rawHotspot.getRuleKey());
         return new LiveSecurityHotspot(module, rawHotspot, inputFile.getClientObject(), rangeMarker, context.orElse(null), quickFixes);
       } else {
         return new LiveSecurityHotspot(module, rawHotspot, inputFile.getClientObject(), quickFixes);
@@ -59,7 +59,7 @@ public class RawIssueAdapter {
     });
   }
 
-  public static LiveIssue toLiveIssue(Module module, Issue rawIssue, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
+  public static LiveIssue toLiveIssue(Module module, RawIssue rawIssue, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
@@ -68,7 +68,7 @@ public class RawIssueAdapter {
       var quickFixes = transformQuickFixes(project, rawIssue.quickFixes());
       if (textRange != null) {
         var rangeMarker = matcher.match(psiFile, textRange);
-        var context = transformFlows(project, matcher, psiFile, rawIssue.flows(), rawIssue.getRuleKey());
+        var context = transformFlows(project, matcher, psiFile, rawIssue.getFlows(), rawIssue.getRuleKey());
         return new LiveIssue(module, rawIssue, inputFile.getClientObject(), rangeMarker, context.orElse(null), quickFixes);
       } else {
         return new LiveIssue(module, rawIssue, inputFile.getClientObject(), quickFixes);
@@ -80,7 +80,7 @@ public class RawIssueAdapter {
     List<org.sonarsource.sonarlint.core.analysis.api.Flow> flows, String rule) {
     List<Flow> matchedFlows = new LinkedList<>();
 
-    for (int i = 0; i < flows.size(); i++) {
+    for (var i = 0; i < flows.size(); i++) {
       var flow = flows.get(i);
       List<Location> matchedLocations = new LinkedList<>();
       for (var loc : flow.locations()) {
@@ -136,11 +136,11 @@ public class RawIssueAdapter {
 
   private static List<Flow> reverse(List<Flow> flows) {
     List<Flow> list = new ArrayList<>();
-    for (int i = 0; i < flows.size(); i++) {
-      Flow flow = flows.get(i);
+    for (var i = 0; i < flows.size(); i++) {
+      var flow = flows.get(i);
       var reorderedLocations = new ArrayList<>(flow.getLocations());
       Collections.reverse(reorderedLocations);
-      Flow apply = new Flow(i + 1, reorderedLocations);
+      var apply = new Flow(i + 1, reorderedLocations);
       list.add(apply);
     }
     return list;

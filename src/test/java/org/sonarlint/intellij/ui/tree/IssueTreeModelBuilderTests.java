@@ -36,21 +36,21 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
-import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.HIGH;
-import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.LOW;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MAJOR;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR;
-import static org.sonarsource.sonarlint.core.commons.SoftwareQuality.MAINTAINABILITY;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity.HIGH;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity.LOW;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.MAJOR;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.MINOR;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality.MAINTAINABILITY;
 
 class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
   private IssueTreeModelBuilder treeBuilder;
@@ -145,7 +145,7 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
 
-    var issue = mock(Issue.class);
+    var issue = mock(RawIssue.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getSeverity()).thenReturn(severity);
     when(issue.getType()).thenReturn(RuleType.BUG);
@@ -162,11 +162,12 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
 
-    var issue = mock(Issue.class);
+    var issue = mock(RawIssue.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getType()).thenReturn(RuleType.BUG);
-    when(issue.getCleanCodeAttribute()).thenReturn(Optional.of(CleanCodeAttribute.defaultCleanCodeAttribute()));
+    when(issue.getCleanCodeAttribute()).thenReturn(Optional.of(CleanCodeAttribute.CONVENTIONAL));
     when(issue.getImpacts()).thenReturn(impacts);
+    when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
 
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);

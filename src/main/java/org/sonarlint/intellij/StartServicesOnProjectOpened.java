@@ -23,11 +23,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
 import org.sonarlint.intellij.fs.EditorFileChangeListener;
 import org.sonarlint.intellij.promotion.PromotionProvider;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
@@ -41,15 +38,10 @@ public class StartServicesOnProjectOpened implements StartupActivity {
     if (ApplicationManager.getApplication().isUnitTestMode()) {
       return;
     }
-    getService(EditorFileChangeListener.class);
+    getService(EditorFileChangeListener.class).startListening();
     getService(project, EditorChangeTrigger.class).onProjectOpened();
     getService(BackendService.class).projectOpened(project);
-    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-      getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
-    }
     getService(project, SecurityHotspotsRefreshTrigger.class).subscribeToTriggeringEvents();
     getService(project, PromotionProvider.class).subscribeToTriggeringEvents();
-    // perform on bindings load
-    getService(project, ConnectedModeStorageSynchronizer.class).init();
   }
 }

@@ -23,9 +23,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -45,7 +45,7 @@ class IssueNodeTests {
   private static LiveIssue createIssue(long date, String message) {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
-    var issue = mock(Issue.class);
+    var issue = mock(RawIssue.class);
     when(issue.getMessage()).thenReturn(message);
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getType()).thenReturn(RuleType.BUG);

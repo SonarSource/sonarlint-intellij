@@ -29,7 +29,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 /**

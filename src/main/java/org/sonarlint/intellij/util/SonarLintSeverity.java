@@ -28,8 +28,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
 public enum SonarLintSeverity {
   HIGH(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WARNING),

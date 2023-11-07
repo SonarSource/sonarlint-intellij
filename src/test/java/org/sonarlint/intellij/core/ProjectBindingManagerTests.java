@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.progress.ProgressManager;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +29,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -40,8 +38,8 @@ import static org.mockito.Mockito.mock;
 class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager;
 
-  private StandaloneSonarLintEngine standaloneEngine = mock(StandaloneSonarLintEngine.class);
-  private ConnectedSonarLintEngine connectedEngine = mock(ConnectedSonarLintEngine.class);
+  private SonarLintAnalysisEngine standaloneEngine = mock(SonarLintAnalysisEngine.class);
+  private SonarLintAnalysisEngine connectedEngine = mock(SonarLintAnalysisEngine.class);
 
   @BeforeEach
   void before() {
@@ -51,39 +49,7 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
     replaceProjectService(SonarLintProjectNotifications.class, notifications);
     getEngineManager().stopAllEngines(false);
 
-    projectBindingManager = new ProjectBindingManager(getProject(), mock(ProgressManager.class));
-  }
-
-  @Test
-  void should_create_facade_standalone() throws InvalidBindingException {
-    assertThat(projectBindingManager.getFacade(getModule())).isInstanceOf(StandaloneSonarLintFacade.class);
-  }
-
-  @Test
-  void should_get_connected_engine() throws InvalidBindingException {
-    connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1");
-    getEngineManager().registerEngine(connectedEngine, "server1");
-
-    var engine = projectBindingManager.getConnectedEngine();
-
-    assertThat(engine).isEqualTo(connectedEngine);
-  }
-
-  @Test
-  void fail_get_connected_engine_if_not_connected() {
-    var throwable = catchThrowable(() -> projectBindingManager.getConnectedEngine());
-
-    assertThat(throwable).isInstanceOf(IllegalStateException.class);
-  }
-
-  @Test
-  void should_create_facade_connected() throws InvalidBindingException {
-    connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1");
-    getEngineManager().registerEngine(connectedEngine, "server1");
-
-    var facade = projectBindingManager.getFacade(getModule());
-
-    assertThat(facade).isInstanceOf(ConnectedSonarLintFacade.class);
+    projectBindingManager = new ProjectBindingManager(getProject());
   }
 
   @Test

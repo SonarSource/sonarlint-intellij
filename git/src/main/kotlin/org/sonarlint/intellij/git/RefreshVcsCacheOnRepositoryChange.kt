@@ -27,6 +27,6 @@ import org.sonarlint.intellij.common.vcs.VcsService
 
 class RefreshVcsCacheOnRepositoryChange(private val project: Project) : GitRepositoryChangeListener {
     override fun repositoryChanged(repository: GitRepository) {
-        SonarLintUtils.getService(project, VcsService::class.java).refreshCacheAsync()
+        SonarLintUtils.getService(project, VcsService::class.java).onVcsRepoChange()
     }
 }

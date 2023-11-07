@@ -12,5 +12,4 @@ intellij {
 
 dependencies {
     implementation(project(":common"))
-    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
 }

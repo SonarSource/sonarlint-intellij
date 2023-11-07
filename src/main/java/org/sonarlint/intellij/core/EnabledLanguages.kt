@@ -21,15 +21,15 @@ package org.sonarlint.intellij.core
 
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
-import org.sonarlint.intellij.SonarLintPlugin
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.commons.Language
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.EnumSet
+import org.sonarlint.intellij.SonarLintPlugin
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 private const val DATABASE_PLUGIN_ID = "com.intellij.database"
 private const val JAVA_MODULE_ID = "com.intellij.modules.java"
@@ -65,7 +65,7 @@ object EnabledLanguages {
         EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"),
         EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-text-plugin-*.jar"),
         EmbeddedPlugin(Language.GO, "Go", "sonar-go-plugin-*.jar"),
-        EmbeddedPlugin(Language.CLOUDFORMATION.pluginKey, "IaC", "sonar-iac-plugin-*.jar"),
+        EmbeddedPlugin(org.sonarsource.sonarlint.core.commons.api.SonarLanguage.valueOf(Language.CLOUDFORMATION.name).pluginKey, "IaC", "sonar-iac-plugin-*.jar"),
     )
 
     @JvmStatic
@@ -129,14 +129,6 @@ object EnabledLanguages {
         }
 
     @JvmStatic
-    val enabledLanguagesInConnectedMode: Set<Language>
-        get() {
-            val languages = EnumSet.copyOf(enabledLanguagesInStandaloneMode)
-            languages.addAll(extraEnabledLanguagesInConnectedMode)
-            return languages
-        }
-
-    @JvmStatic
     @Throws(IOException::class)
     fun findEmbeddedPlugins(): Set<Path> {
         return getPluginsUrls(getPluginsDir())
@@ -178,7 +170,7 @@ object EnabledLanguages {
     }
 
     private class EmbeddedPlugin(val pluginKey: String, val name: String, val jarFilePattern: String) {
-        constructor(language: Language, name: String, jarFilePattern: String) : this(language.pluginKey, name, jarFilePattern)
+        constructor(language: Language, name: String, jarFilePattern: String) : this(org.sonarsource.sonarlint.core.commons.api.SonarLanguage.valueOf(language.name).pluginKey, name, jarFilePattern)
     }
 
     private fun isIdeModuleEnabled(pluginId: String) = PluginManagerCore.getPlugin(PluginId.getId(pluginId))?.isEnabled == true

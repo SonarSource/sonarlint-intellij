@@ -26,7 +26,7 @@ import com.intellij.openapi.project.Project;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
-import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
+import org.sonarsource.sonarlint.core.commons.api.progress.ClientProgressMonitor;
 
 public class TaskProgressMonitor implements ClientProgressMonitor {
   private final ProgressIndicator indicator;

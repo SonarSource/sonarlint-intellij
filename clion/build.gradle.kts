@@ -8,12 +8,11 @@ intellij {
 
 dependencies {
     implementation(project(":common"))
-    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
-    testImplementation(libs.junit.api)
-    testRuntimeOnly(libs.junit.engine)
     // Needed for https://github.com/gradle/gradle/issues/22333
     testRuntimeOnly(libs.junit.launcher)
+    testRuntimeOnly(libs.junit.engine)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.junit.api)
 }
 
 tasks.test {

@@ -43,11 +43,12 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
-import org.sonarsource.sonarlint.core.commons.RuleType;
-import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -248,7 +249,8 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     when(virtualFile.getPath()).thenReturn(path);
     when(virtualFile.isValid()).thenReturn(true);
 
-    var issue = mock(Issue.class);
+    var issue = mock(RawIssue.class);
+    when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(vulnerability));
     when(issue.getType()).thenReturn(RuleType.SECURITY_HOTSPOT);

@@ -23,10 +23,10 @@ import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.JBColor
 import java.awt.Color
 import javax.swing.Icon
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity
-import org.sonarsource.sonarlint.core.commons.IssueSeverity
-import org.sonarsource.sonarlint.core.commons.RuleType
-import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 
 object SonarLintIcons {
 

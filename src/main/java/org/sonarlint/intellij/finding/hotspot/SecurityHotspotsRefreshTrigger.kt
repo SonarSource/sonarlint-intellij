@@ -26,7 +26,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.common.vcs.VcsListener
+import org.sonarlint.intellij.connected.SonarProjectBranchListener
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
@@ -54,8 +54,8 @@ class SecurityHotspotsRefreshTrigger(private val project: Project) {
           triggerRefresh()
         }
       })
-      subscribe(VcsListener.TOPIC, VcsListener { module, _ ->
-          triggerRefresh(module)
+      subscribe(SonarProjectBranchListener.TOPIC, SonarProjectBranchListener { module, _ ->
+        triggerRefresh(module)
       })
     }
 

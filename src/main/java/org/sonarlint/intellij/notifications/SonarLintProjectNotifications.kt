@@ -27,6 +27,8 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import java.util.Arrays
+import java.util.stream.Stream
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
@@ -43,10 +45,8 @@ import org.sonarlint.intellij.notifications.binding.DisableBindingSuggestionsAct
 import org.sonarlint.intellij.promotion.DontAskAgainAction
 import org.sonarlint.intellij.telemetry.LinkTelemetry
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
-import java.util.Arrays
-import java.util.stream.Stream
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
+import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
 
 
 @Service(Service.Level.PROJECT)

@@ -19,11 +19,6 @@
  */
 package org.sonarlint.intellij.common.vcs
 
-import com.intellij.openapi.module.Module
-
 interface VcsService {
-    fun getServerBranchName(module: Module): String?
-    fun clearCache()
-    fun refreshCache()
-    fun refreshCacheAsync()
+    fun onVcsRepoChange()
 }

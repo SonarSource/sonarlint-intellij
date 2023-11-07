@@ -23,8 +23,8 @@ import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.colors.CodeInsightColors;
 import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

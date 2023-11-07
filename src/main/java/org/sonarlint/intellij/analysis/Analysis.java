@@ -47,7 +47,7 @@ import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.commons.progress.CanceledException;
+import org.sonarsource.sonarlint.core.commons.api.progress.CanceledException;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -108,6 +108,10 @@ public class Analysis implements Cancelable {
     var console = getService(project, SonarLintConsole.class);
     console.debug("Trigger: " + trigger);
     console.debug(String.format("[%s] %d file(s) submitted", trigger, files.size()));
+    if (!getService(project, AnalysisReadinessCache.class).isReady()) {
+      SonarLintConsole.get(project).info("Analysis skipped as the engine is not ready yet");
+      return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
+    }
 
     AnalysisScope scope;
     try {

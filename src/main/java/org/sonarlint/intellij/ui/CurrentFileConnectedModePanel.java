@@ -39,15 +39,15 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.common.vcs.VcsListener;
-import org.sonarlint.intellij.common.vcs.VcsService;
+import org.sonarlint.intellij.common.util.UrlUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.connected.SonarProjectBranchCache;
+import org.sonarlint.intellij.connected.SonarProjectBranchListener;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarsource.sonarlint.core.serverapi.UrlUtils;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -71,8 +71,7 @@ public class CurrentFileConnectedModePanel {
     createPanel();
     switchCards();
     CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
-    project.getMessageBus().connect().subscribe(VcsListener.TOPIC,
-      (module, branchName) -> runOnUiThread(project, this::switchCards));
+    project.getMessageBus().connect().subscribe(SonarProjectBranchListener.TOPIC, (module, branchName) -> updateBranchTooltip());
   }
 
   private void createPanel() {
@@ -143,7 +142,7 @@ public class CurrentFileConnectedModePanel {
 
     private void updateTooltip(Module module, ServerConnection serverConnection) {
       var projectKey = illegalStateIfNull(getService(module, ModuleBindingManager.class).resolveProjectKey(), "Could not find project key for module " + module);
-      var branchName = getService(project, VcsService.class).getServerBranchName(module);
+      var branchName = getService(project, SonarProjectBranchCache.class).getMatchedBranch(module);
       var connectedTooltip = new TooltipWithClickableLinks.ForBrowser(connectedCard, buildTooltipHtml(serverConnection, projectKey, branchName));
       IdeTooltipManager.getInstance().setCustomTooltip(connectedCard, connectedTooltip);
     }
@@ -184,6 +183,23 @@ public class CurrentFileConnectedModePanel {
     } else {
       switchCard(EMPTY);
     }
+  }
+
+  private void updateBranchTooltip() {
+    runOnUiThread(project, () -> {
+      var projectBindingManager = getService(project, ProjectBindingManager.class);
+      projectBindingManager.tryGetServerConnection().ifPresent(serverConnection -> {
+        var selectedFile = SonarLintUtils.getSelectedFile(project);
+        if (selectedFile != null) {
+          runOnPooledThread(project, () -> {
+            var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+            if (module != null) {
+              runOnUiThread(project, () -> connectedCard.updateTooltip(module, serverConnection));
+            }
+          });
+        }
+      });
+    });
   }
 
   private static String buildTooltipHtml(ServerConnection serverConnection, String projectKey, @Nullable String branchName) {

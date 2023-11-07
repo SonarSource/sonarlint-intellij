@@ -25,6 +25,8 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -77,14 +79,14 @@ public class ProjectUtils {
     throw new TextRangeMatcher.NoMatchException("Couldn't find PSI file in module: " + file.getPath());
   }
 
-  public static Map<VirtualFile, String> getRelativePaths(Project project, Collection<VirtualFile> files) {
+  public static Map<VirtualFile, Path> getRelativePaths(Project project, Collection<VirtualFile> files) {
     return computeReadActionSafely(project, () -> {
-      Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
+      Map<VirtualFile, Path> relativePathPerFile = new HashMap<>();
 
       for (var file : files) {
         var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file);
         if (relativePath != null) {
-          relativePathPerFile.put(file, relativePath);
+          relativePathPerFile.put(file, Paths.get(relativePath));
         }
       }
       return relativePathPerFile;

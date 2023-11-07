@@ -17,31 +17,8 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.telemetry;
+package org.sonarlint.intellij.config.global
 
-import java.nio.file.Path;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import java.nio.file.Path
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-class TelemetryManagerProviderTests extends AbstractSonarLintLightTests {
-
-  @Test
-  void testCreation(@TempDir Path tempDirPath) {
-    var path = tempDirPath.resolve("usage");
-
-    var engineProvider = new TelemetryManagerProvider() {
-      @Override
-      Path getStorageFilePath() {
-        return path;
-      }
-    };
-
-    var telemetry = engineProvider.get();
-    assertThat(path).doesNotExist();
-    telemetry.analysisDoneOnMultipleFiles();
-    assertThat(path).exists();
-  }
-}
+data class NodeJsSettings(val path: Path?, val version: String?)

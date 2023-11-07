@@ -43,17 +43,17 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
-import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.HIGH;
-import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.LOW;
-import static org.sonarsource.sonarlint.core.commons.ImpactSeverity.MEDIUM;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.BLOCKER;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.CRITICAL;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.INFO;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MAJOR;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR;
+import static org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.HIGH;
+import static org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.LOW;
+import static org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.MEDIUM;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.BLOCKER;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.CRITICAL;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.INFO;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.MAJOR;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.MINOR;
 
 /**
  * Responsible for maintaining the tree model and send change events when needed.

@@ -105,13 +105,14 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
     getModuleSettings().clearBindingOverride();
+    getService(BackendService.class).moduleUnbound(getModule());
+    getService(BackendService.class).projectUnbound(getProject());
     getService(BackendService.class).connectionsUpdated(Collections.emptyList());
     // the line before might remove connections, let time for the storage to be cleaned up by the backend
     await().atMost(Duration.ofSeconds(3))
       .untilAsserted(() -> assertThat(storageRoot).satisfiesAnyOf(
         root -> assertThat(root).doesNotExist(),
         root -> assertThat(root).isEmptyDirectory()));
-    getService(BackendService.class).projectUnbound(getProject());
   }
 
   @RegisterExtension

@@ -230,7 +230,6 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
 
   @Override
   public void load(SonarLintTelemetry telemetry) {
-    enableTelemetryCheckBox.setEnabled(telemetry.canBeEnabled());
     enableTelemetryCheckBox.setSelected(telemetry.enabled());
   }
 

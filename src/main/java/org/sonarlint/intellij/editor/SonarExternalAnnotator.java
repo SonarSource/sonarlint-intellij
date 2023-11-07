@@ -44,13 +44,12 @@ import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.util.SonarLintSeverity;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
-import static java.util.Collections.emptyList;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpFile;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpLanguageRegistered;
@@ -62,14 +61,15 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   private static final Set<String> SILENCED_QUICK_FIXABLE_RULE_KEYS = Set.of("java:S1068", "java:S1144", "java:S1172");
 
   @Override
-  public void apply(@NotNull PsiFile file, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
-    if (shouldSkip(file)) {
+  public void apply(@NotNull PsiFile psiFile, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
+    if (shouldSkip(psiFile)) {
       return;
     }
 
-    var project = file.getProject();
+    var project = psiFile.getProject();
+    var file = psiFile.getVirtualFile();
     var issueManager = getService(project, FindingsCache.class);
-    var issues = issueManager.getIssuesForFile(file.getVirtualFile());
+    var issues = issueManager.getIssuesForFile(file);
     issues.stream()
       .filter(issue -> !issue.isResolved())
       .forEach(issue -> {
@@ -82,7 +82,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     // only annotate the hotspots currently displayed in the tree
     var toolWindowService = getService(project, SonarLintToolWindow.class);
-    toolWindowService.getDisplayedSecurityHotspotsForFile(file.getVirtualFile())
+    toolWindowService.getDisplayedSecurityHotspotsForFile(file)
       .forEach(securityHotspot -> {
         // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
         var validTextRange = securityHotspot.getValidTextRange();
@@ -92,8 +92,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       });
 
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-      getService(project, TaintVulnerabilitiesPresenter.class).getCurrentVulnerabilitiesByFile()
-        .getOrDefault(file.getVirtualFile(), emptyList())
+      getService(project, TaintVulnerabilitiesCache.class).getTaintVulnerabilitiesForFile(file)
         .stream().filter(vulnerability -> !vulnerability.isResolved())
         .forEach(vulnerability -> addAnnotation(project, vulnerability, holder));
     }

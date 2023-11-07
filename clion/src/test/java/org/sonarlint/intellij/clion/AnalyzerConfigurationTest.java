@@ -30,7 +30,7 @@ import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,9 +43,9 @@ class AnalyzerConfigurationTest {
 
   @Test
   void get_sonar_language() {
-    assertEquals(Language.C, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.C));
-    assertEquals(Language.CPP, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.CPP));
-    assertEquals(Language.OBJC, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_C));
+    assertEquals(ForcedLanguage.C, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.C));
+    assertEquals(ForcedLanguage.CPP, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.CPP));
+    assertEquals(ForcedLanguage.OBJC, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_C));
     assertNull(AnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_CPP));
     assertNull(AnalyzerConfiguration.getSonarLanguage(CUDALanguageKind.CUDA));
   }
@@ -68,7 +68,7 @@ class AnalyzerConfigurationTest {
       "compilerWorkingDir",
       List.of("s1", "s2"),
       "compilerKind",
-      Language.CPP,
+      ForcedLanguage.CPP,
       Map.of("isHeaderFile", "true"));
 
     assertEquals(file, configuration.virtualFile());
@@ -76,7 +76,7 @@ class AnalyzerConfigurationTest {
     assertEquals("compilerWorkingDir", configuration.compilerWorkingDir());
     assertEquals(List.of("s1", "s2"), configuration.compilerSwitches());
     assertEquals("compilerKind", configuration.compilerKind());
-    assertEquals(Language.CPP, configuration.sonarLanguage());
+    assertEquals(ForcedLanguage.CPP, configuration.sonarLanguage());
     assertEquals("true", configuration.properties().get("isHeaderFile"));
   }
 

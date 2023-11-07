@@ -36,7 +36,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarlint.intellij.common.analysis.ForcedLanguage;
+import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -64,7 +65,7 @@ class DefaultClientInputFileTests extends AbstractSonarLintLightTests {
   void testNoBuffer() throws IOException {
     when(vFile.getInputStream()).thenAnswer(i -> new ByteArrayInputStream("test string".getBytes(StandardCharsets.UTF_8)));
 
-    inputFile = new DefaultClientInputFile(vFile, "unused", true, StandardCharsets.UTF_8, Language.JAVA);
+    inputFile = new DefaultClientInputFile(vFile, "unused", true, StandardCharsets.UTF_8, ForcedLanguage.CPP);
 
     assertThat(inputFile.uri()).isEqualTo(file.toURI());
     assertThat(inputFile.uri().toString()).endsWith("/My%20Projects/sonar-clirr/src/main/java/org/sonar/plugins/clirr/ClirrSensor.java");
@@ -74,7 +75,7 @@ class DefaultClientInputFileTests extends AbstractSonarLintLightTests {
     assertThat(Paths.get(inputFile.getPath())).isEqualTo(file.toPath());
     assertThat(inputFile.getClientObject()).isEqualTo(vFile);
     assertThat(inputFile.contents()).isEqualTo("test string");
-    assertThat(inputFile.language()).isEqualTo(Language.JAVA);
+    assertThat(inputFile.language()).isEqualTo(SonarLanguage.CPP);
     try (var reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
       assertThat(reader.lines().collect(Collectors.joining())).isEqualTo("test string");
     }

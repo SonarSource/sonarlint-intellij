@@ -24,50 +24,35 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedRuleDetails;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.commons.RuleType;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
-import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.AnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
+import org.sonarsource.sonarlint.core.commons.api.progress.ClientProgressMonitor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.MockitoKotlinHelperKt.eq;
 
 class ConnectedSonarLintFacadeTests extends AbstractSonarLintLightTests {
 
-  private final ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
-  private ConnectedSonarLintFacade facade;
+  private SonarLintAnalysisEngine engine;
+  private EngineFacade facade;
 
   @BeforeEach
   void before() {
-    facade = new ConnectedSonarLintFacade(engine, getProject(), "projectKey");
+    engine = mock(SonarLintAnalysisEngine.class);
+    facade = new EngineFacade(getProject(), engine);
   }
 
   @Test
   void should_start_analysis() {
     var results = mock(AnalysisResults.class);
-    var configCaptor = ArgumentCaptor.forClass(ConnectedAnalysisConfiguration.class);
-    when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(ClientLogOutput.class), any(ClientProgressMonitor.class))).thenReturn(results);
-    assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ClientProgressMonitor.class))).isEqualTo(results);
-    var config = configCaptor.getValue();
-    assertThat(config.getProjectKey()).isEqualTo("projectKey");
-  }
-
-  private void bindProject(String projectKey) {
-    var connection = ServerConnection.newBuilder().setName("connectionName").setHostUrl("http://localhost:9000").build();
-    getGlobalSettings().addServerConnection(connection);
-    getProjectSettings().bindTo(connection, projectKey);
-  }
-
-  private static ConnectedRuleDetails ruleDetails(String ruleKey) {
-    return new ConnectedRuleDetails(ruleKey, "ruleName", "ruleHtmlDescription", IssueSeverity.BLOCKER, RuleType.CODE_SMELL, Language.JAVA, "ruleExtendedDescription");
+    var configCaptor = ArgumentCaptor.forClass(AnalysisConfiguration.class);
+    when(engine.analyze(configCaptor.capture(), any(RawIssueListener.class), any(ClientLogOutput.class), any(ClientProgressMonitor.class), eq(BackendService.Companion.moduleId(getModule())))).thenReturn(results);
+    assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), Collections.emptyMap(), mock(RawIssueListener.class), mock(ClientProgressMonitor.class))).isEqualTo(results);
   }
 }

@@ -47,7 +47,7 @@ import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -129,7 +129,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var numSecretsIssues = issues.stream()
       .filter(issue -> !shouldFocusOnNewCode || issue.isOnNewCode())
       .filter(issue -> issue.getRuleKey()
-        .startsWith(Language.SECRETS.getLanguageKey()))
+        .startsWith(SonarLanguage.SECRETS.getSonarLanguageKey()))
       .count();
     var msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
 

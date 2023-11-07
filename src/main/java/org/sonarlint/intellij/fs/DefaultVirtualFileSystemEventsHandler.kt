@@ -37,7 +37,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(private val executorService: ExecutorService) : VirtualFileSystemEventsHandler, Disposable {
@@ -61,7 +61,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         }
     }
 
-    private fun getEngineIfStarted(project: Project): SonarLintEngine? =
+    private fun getEngineIfStarted(project: Project): SonarLintAnalysisEngine? =
         getService(project, ProjectBindingManager::class.java).engineIfStarted
 
     private fun fileEventsByModules(

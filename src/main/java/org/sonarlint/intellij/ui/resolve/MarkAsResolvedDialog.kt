@@ -22,11 +22,11 @@ package org.sonarlint.intellij.ui.resolve
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import java.awt.event.ActionEvent
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.UiUtils
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
-import java.awt.event.ActionEvent
+import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse
 
 class MarkAsResolvedDialog(
     project: Project,
@@ -79,5 +79,5 @@ class MarkAsResolvedDialog(
         ) { close(OK_EXIT_CODE) }
     }
 
-    data class Resolution(val newStatus: ResolutionStatus, val comment: String?)
+    data class Resolution(val newStatus: IssueResolutionStatus, val comment: String?)
 }

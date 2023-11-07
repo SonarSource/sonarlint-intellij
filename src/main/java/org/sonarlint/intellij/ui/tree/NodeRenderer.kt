@@ -19,6 +19,6 @@
  */
 package org.sonarlint.intellij.ui.tree
 
-interface NodeRenderer<T> {
+fun interface NodeRenderer<T> {
     fun render(renderer: TreeCellRenderer, node: T)
 }

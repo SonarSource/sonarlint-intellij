@@ -60,7 +60,7 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAct
             val relevantFindings = getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved && (!isFocusOnNewCode || it.isOnNewCode()) }
             val issues = relevantFindings.filterIsInstance<LiveIssue>()
             val hotspots = relevantFindings.filterIsInstance<LiveSecurityHotspot>()
-            val taintVulnerabilitiesCount = getService(project, TaintVulnerabilitiesCache::class.java).status?.count(isFocusOnNewCode) ?: 0
+            val taintVulnerabilitiesCount = getService(project, TaintVulnerabilitiesCache::class.java).getFocusAwareCount()
             val model = SonarLintDashboardModel(issues.size, hotspots.size, taintVulnerabilitiesCount, isFocusOnNewCode)
             presentation.putClientProperty(DASHBOARD_MODEL, model)
         }

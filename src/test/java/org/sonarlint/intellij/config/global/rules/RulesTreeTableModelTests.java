@@ -23,18 +23,19 @@ import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.List;
 import javax.swing.Icon;
 import javax.swing.table.AbstractTableModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
-import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttributeCategory;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -47,7 +48,7 @@ import static org.mockito.Mockito.when;
 
 class RulesTreeTableModelTests {
   private final RulesTreeNode.Root root = new RulesTreeNode.Root();
-  private final RulesTreeNode.Language lang = new RulesTreeNode.Language("lang");
+  private final RulesTreeNode.LanguageNode lang = new RulesTreeNode.LanguageNode("lang");
   private final RuleDefinitionDto ruleDetails = mock(RuleDefinitionDto.class);
   private final AbstractTableModel tableModel = mock(AbstractTableModel.class);
   private final RulesTreeTableModel model = spy(new RulesTreeTableModel(root));
@@ -57,8 +58,9 @@ class RulesTreeTableModelTests {
   void setUp() {
     when(ruleDetails.getType()).thenReturn(RuleType.BUG);
     when(ruleDetails.getSeverity()).thenReturn(IssueSeverity.MAJOR);
-    when(ruleDetails.getCleanCodeAttribute()).thenReturn(Optional.of(CleanCodeAttribute.defaultCleanCodeAttribute()));
-    when(ruleDetails.getDefaultImpacts()).thenReturn(Map.of(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.MEDIUM));
+    when(ruleDetails.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.CONVENTIONAL);
+    when(ruleDetails.getCleanCodeAttributeCategory()).thenReturn(CleanCodeAttributeCategory.CONSISTENT);
+    when(ruleDetails.getDefaultImpacts()).thenReturn(List.of(new ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.MEDIUM)));
     when(ruleDetails.getKey()).thenReturn("key");
     when(ruleDetails.isActiveByDefault()).thenReturn(false);
     root.add(lang);
