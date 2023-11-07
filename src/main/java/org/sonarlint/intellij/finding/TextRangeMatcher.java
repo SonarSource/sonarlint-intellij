@@ -140,7 +140,7 @@ public class TextRangeMatcher {
       return rangeEnd;
     }
 
-    if (ijStartOffset != 0) {
+    if (startOffset != null) {
       // this is a precise issue location, accept it as it is
       return rangeStart;
     }
