@@ -47,6 +47,7 @@ import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.ShowFinding;
@@ -57,6 +58,7 @@ import org.sonarlint.intellij.util.SonarGotItTooltipsUtils;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static java.util.function.Predicate.not;
+import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
@@ -68,6 +70,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private final JBPanelWithEmptyText issuesPanel;
   private final JScrollPane treeScrollPane;
   private final AnAction analyzeCurrentFileAction = SonarLintActions.getInstance().analyzeCurrentFileAction();
+  private final AnAction restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction();
   private VirtualFile currentFile;
   private Collection<LiveIssue> currentIssues;
 
@@ -128,6 +131,16 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     currentFile = null;
     currentIssues = null;
     var statusText = issuesPanel.getEmptyText();
+    var backendIsAlive = getService(BackendService.class).isAlive();
+    if (!backendIsAlive) {
+      statusText.setText(SONARLINT_ERROR_MSG);
+      statusText.appendLine("Restart SonarLint", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+        ignore -> ActionUtil.invokeAction(restartSonarLintAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+      disableEmptyDisplay(false);
+      populateSubTree(tree, treeBuilder, Map.of());
+      populateSubTree(oldTree, oldTreeBuilder, Map.of());
+      return;
+    }
     if (file == null) {
       statusText.setText("No file opened in the editor");
       disableEmptyDisplay(false);

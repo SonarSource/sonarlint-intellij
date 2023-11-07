@@ -201,10 +201,14 @@ configurations {
         isTransitive = true
     }
     create("omnisharp")
+    create("sloop")
 }
 
 dependencies {
-    implementation(libs.sonarlint.core)
+    implementation(libs.sonarlint.java.client.legacy)
+    implementation(libs.sonarlint.java.client.utils)
+    implementation(libs.sonarlint.rpc.java.client)
+    implementation(libs.protobuf)
     implementation(libs.commons.langs3)
     implementation(project(":common"))
     compileOnly(libs.findbugs.jsr305)
@@ -212,6 +216,8 @@ dependencies {
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(platform(libs.junit.bom))
+    // TODO only for protobuf generated classes, should be done differently
+    testImplementation(libs.sonarlint.rpc.impl)
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
@@ -228,6 +234,7 @@ dependencies {
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
 tasks {
@@ -248,10 +255,20 @@ tasks {
         }
     }
 
+    fun copySloop(destinationDir: File, pluginName: Property<String>) {
+        configurations["sloop"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
+            copy {
+                from(zipTree(artifact.file))
+                into(file("$destinationDir/${pluginName.get()}/sloop/"))
+            }
+        }
+    }
+
     prepareSandbox {
         doLast {
             copyPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
+            copySloop(destinationDir, pluginName)
         }
     }
 
@@ -259,6 +276,7 @@ tasks {
         doLast {
             copyPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
+            copySloop(destinationDir, pluginName)
         }
     }
 

@@ -17,14 +17,8 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.common.vcs;
+package org.sonarlint.intellij.config.global
 
-import com.intellij.openapi.module.Module;
-import com.intellij.util.messages.Topic;
-import org.jetbrains.annotations.Nullable;
+import java.nio.file.Path
 
-public interface VcsListener {
-  Topic<VcsListener> TOPIC = Topic.create("Vcs events", VcsListener.class);
-
-  void resolvedServerBranchChanged(Module module, @Nullable String branchName);
-}
+data class NodeJsSettings(val path: Path, val version: String)

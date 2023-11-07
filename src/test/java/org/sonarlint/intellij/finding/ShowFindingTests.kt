@@ -19,14 +19,15 @@
  */
 package org.sonarlint.intellij.finding
 
+import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.finding.ShowFinding.Companion.handleFlows
-import org.sonarsource.sonarlint.core.clientapi.common.FlowDto
-import org.sonarsource.sonarlint.core.clientapi.common.LocationDto
-import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.LocationDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 
 class ShowFindingTests : AbstractSonarLintLightTests() {
 
@@ -36,9 +37,9 @@ class ShowFindingTests : AbstractSonarLintLightTests() {
         val listFlowDto = listOf(
             FlowDto(
                 listOf(
-                    LocationDto(TextRangeDto(1, 0, 1, 4), "msg", "file.ext", "Text"),
-                    LocationDto(TextRangeDto(1, 0, 1, 4), "msg", "file.ext", null),
-                    LocationDto(TextRangeDto(1, 0, 1, 4), "msg", "unknown", null)
+                    LocationDto(TextRangeDto(1, 0, 1, 4), "msg", Paths.get("file.ext"), "Text"),
+                    LocationDto(TextRangeDto(1, 0, 1, 4), "msg", Paths.get("file.ext"), null),
+                    LocationDto(TextRangeDto(1, 0, 1, 4), "msg", Paths.get("unknown"), null)
                 )
             )
         )

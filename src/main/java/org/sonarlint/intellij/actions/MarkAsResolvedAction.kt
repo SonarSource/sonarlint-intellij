@@ -48,8 +48,9 @@ import org.sonarlint.intellij.ui.resolve.MarkAsResolvedDialog
 import org.sonarlint.intellij.util.DataKeys.Companion.ISSUE_DATA_KEY
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarlint.intellij.util.runOnPooledThread
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.CheckStatusChangePermittedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.issue.ResolutionStatus
+import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse
+
 
 private const val SKIP_CONFIRM_DIALOG_PROPERTY = "SonarLint.markIssueAsResolved.hideConfirmation"
 
@@ -114,21 +115,23 @@ class MarkAsResolvedAction(
             resolution: MarkAsResolvedDialog.Resolution,
             issueKey: String,
         ) {
-            getService(BackendService::class.java)
-                .markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
-                .thenAccept {
-                    updateUI(project, issue)
-                    val comment = resolution.comment
-                        ?: return@thenAccept SonarLintProjectNotifications.get(project)
-                            .displaySuccessfulNotification(CONTENT, ISSUE_RESOLVED_GROUP)
-                    addComment(project, module, issueKey, comment)
-                }
-                .exceptionally { error ->
-                    SonarLintConsole.get(project).error("Error while marking the issue as resolved", error)
-                    SonarLintProjectNotifications.get(project)
-                        .displayErrorNotification("Could not mark the issue as resolved", ISSUE_RESOLVED_GROUP)
-                    null
-                }
+            runOnPooledThread(project) {
+                getService(BackendService::class.java)
+                    .markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
+                    .thenAccept {
+                        updateUI(project, issue)
+                        val comment = resolution.comment
+                            ?: return@thenAccept SonarLintProjectNotifications.get(project)
+                                .displaySuccessfulNotification(CONTENT, ISSUE_RESOLVED_GROUP)
+                        addComment(project, module, issueKey, comment)
+                    }
+                    .exceptionally { error ->
+                        SonarLintConsole.get(project).error("Error while marking the issue as resolved", error)
+                        SonarLintProjectNotifications.get(project)
+                            .displayErrorNotification("Could not mark the issue as resolved", ISSUE_RESOLVED_GROUP)
+                        null
+                    }
+            }
         }
 
         private fun updateUI(project: Project, issue: Issue) {
@@ -165,7 +168,7 @@ class MarkAsResolvedAction(
             }
         }
 
-        private fun confirm(project: Project, productName: String, issueStatus: ResolutionStatus): Boolean {
+        private fun confirm(project: Project, productName: String, issueStatus: IssueResolutionStatus): Boolean {
             return shouldSkipConfirmationDialog() || MessageDialogBuilder.okCancel(
                 "Confirm marking issue as resolved",
                 "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be updated on $productName and synchronized with any contributor using SonarLint in connected mode"

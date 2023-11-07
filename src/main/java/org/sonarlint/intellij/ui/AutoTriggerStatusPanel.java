@@ -43,11 +43,13 @@ import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class AutoTriggerStatusPanel {
+
   private static final String AUTO_TRIGGER_ENABLED = "AUTO_TRIGGER_ENABLED";
   private static final String FILE_DISABLED = "FILE_DISABLED";
   private static final String POWER_SAVE_MODE_ENABLED = "POWER_SAVE_MODE_ENABLED";
@@ -88,7 +90,7 @@ public class AutoTriggerStatusPanel {
     if (selectedFile != null) {
       // Computing server exclusions may take time, so lets move from EDT to pooled thread
       runOnPooledThread(project, () -> {
-        var localFileExclusions = SonarLintUtils.getService(project, LocalFileExclusions.class);
+        var localFileExclusions = getService(project, LocalFileExclusions.class);
         try {
           var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> switchCard(FILE_DISABLED));
 
@@ -113,7 +115,7 @@ public class AutoTriggerStatusPanel {
     panel = new JPanel(layout);
 
     var gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-      JBUI.insets(2, 2, 2, 2), 0, 0);
+      JBUI.insets(2), 0, 0);
 
     var enabledCard = new JPanel(new GridBagLayout());
     var disabledCard = new JPanel(new GridBagLayout());

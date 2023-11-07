@@ -17,15 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.messages
+package org.sonarlint.intellij.actions
 
-import com.intellij.util.messages.Topic
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 
-var SERVER_BRANCHES_TOPIC = Topic.create(
-    "Server branches events",
-    ServerBranchesListener::class.java
-)
+class RestartBackendNotificationAction : NotificationAction("Restart SonarLint") {
 
-interface ServerBranchesListener {
-    fun serverBranchesUpdated()
+    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+        notification.expire()
+        runOnPooledThread {
+            SonarLintUtils.getService(BackendService::class.java).restartBackendService()
+        }
+    }
+
 }

@@ -41,12 +41,11 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 const val DEBOUNCE_DELAY_MS = 1000L
 
 @Service(Service.Level.APP)
-class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
+class EditorFileChangeListener(private val fileEventsNotifier: ModuleFileEventsNotifier = ModuleFileEventsNotifier()) : BulkAwareDocumentListener.Simple, Disposable {
     private val triggerAlarm = Alarm("sonarlint-editor-changes-notifier", Duration.ofMillis(DEBOUNCE_DELAY_MS)) { notifyPendingChanges() }
     private val changedFiles = LinkedHashSet<VirtualFile>()
-    private val fileEventsNotifier = ModuleFileEventsNotifier()
 
-    init {
+    fun startListening() {
         EditorFactory.getInstance().eventMulticaster.addDocumentListener(this, this)
     }
 

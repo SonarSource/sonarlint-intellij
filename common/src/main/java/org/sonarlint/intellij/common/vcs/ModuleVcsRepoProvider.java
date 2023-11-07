@@ -21,11 +21,10 @@ package org.sonarlint.intellij.common.vcs;
 
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
-import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger;
 
 public interface ModuleVcsRepoProvider {
   // Name is constructed from plugin-id.extension-point-name
   ExtensionPointName<ModuleVcsRepoProvider> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.vcsProvider");
 
-  VcsRepo getRepoFor(Module module, SonarLintLogger logger);
+  VcsRepo getRepoFor(Module module);
 }

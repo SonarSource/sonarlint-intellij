@@ -25,6 +25,10 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.time.Duration
+import java.time.Instant
+import java.time.Period
+import java.util.EnumSet
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -33,11 +37,8 @@ import org.sonarlint.intellij.messages.AnalysisListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.UiUtils
-import org.sonarsource.sonarlint.core.commons.Language
-import java.time.Duration
-import java.time.Instant
-import java.time.Period
-import java.util.EnumSet
+import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 private const val LAST_PROMOTION_NOTIFICATION_DATE = "SonarLint.lastPromotionNotificationDate"
 private const val FIRST_AUTO_ANALYSIS_DATE = "SonarLint.firstAutoAnalysisDate"
@@ -179,12 +180,12 @@ class PromotionProvider(private val project: Project) {
         }
     }
 
-    private fun findLanguage(extension: String, languages: Set<Language>): Language? {
+    private fun findLanguage(extension: String, languages: Set<Language>): org.sonarsource.sonarlint.core.client.utils.Language? {
         return languages.find {
-            it.defaultFileSuffixes.any { suffix ->
+            SonarLanguage.valueOf(it.name).defaultFileSuffixes.any { suffix ->
                 suffix.equals(extension) || suffix.equals(".$extension")
             }
-        }
+        }?.let { org.sonarsource.sonarlint.core.client.utils.Language.fromDto(it) }
     }
 
     private fun showPromotion(notifications: SonarLintProjectNotifications, content: String) {

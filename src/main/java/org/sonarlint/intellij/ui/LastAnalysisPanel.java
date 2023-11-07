@@ -28,7 +28,7 @@ import java.time.Instant;
 import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.Timer;
-import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
+import org.sonarlint.intellij.util.DateUtils;
 
 public class LastAnalysisPanel extends JBPanel<LastAnalysisPanel> {
 

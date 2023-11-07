@@ -36,34 +36,38 @@ import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
+import com.intellij.util.ui.tree.TreeUtil
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.ActionEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
+import java.util.UUID
 import javax.swing.Box
 import javax.swing.JPanel
 import javax.swing.event.TreeSelectionListener
+import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
+import org.sonarlint.intellij.actions.RestartBackendAction
+import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
+import org.sonarlint.intellij.config.Settings.getSettingsFor
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TAINT_VULNERABILITIES_LINK
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.TextRangeMatcher
-import org.sonarlint.intellij.finding.issue.vulnerabilities.FoundTaintVulnerabilities
-import org.sonarlint.intellij.finding.issue.vulnerabilities.InvalidBinding
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.finding.issue.vulnerabilities.NoBinding
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesStatus
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.CardPanel
 import org.sonarlint.intellij.ui.CurrentFilePanel
@@ -84,6 +88,7 @@ import org.sonarlint.intellij.util.runOnPooledThread
 private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_SPLIT_PROPORTION"
 private const val DEFAULT_SPLIT_PROPORTION = 0.5f
 
+private const val ERROR_CARD_ID = "ERROR_CARD"
 private const val NO_BINDING_CARD_ID = "NO_BINDING_CARD"
 private const val NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID = "NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID"
 private const val INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD"
@@ -104,13 +109,16 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private val rulePanel = SonarLintRulePanel(project, this)
     private val cards = CardPanel()
     private val noVulnerabilitiesPanel: JBPanelWithEmptyText
-    private var currentStatus: FoundTaintVulnerabilities? = null
 
     private val taintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(treeSummary)
     private val oldTaintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(oldTreeSummary)
 
     init {
         val globalSettings = getGlobalSettings()
+        cards.add(
+            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", RestartBackendAction()),
+            ERROR_CARD_ID
+        )
         cards.add(centeredLabel("The project is not bound to SonarCloud/SonarQube", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
         cards.add(centeredLabel("No taint vulnerabilities shown due to the current filtering", "Show Resolved Taint Vulnerabilities",
@@ -212,84 +220,80 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         switchCard()
     }
 
-    fun populate(status: TaintVulnerabilitiesStatus) {
-        val highlighting = getService(project, EditorDecorator::class.java)
-        when (status) {
-            is NoBinding -> {
+    fun populate(taintVulnerabilities: List<LocalTaintVulnerability>) {
+        val cache = getService(project, TaintVulnerabilitiesCache::class.java)
+        cache.taintVulnerabilities = taintVulnerabilities
+        updateTrees(taintVulnerabilities)
+    }
+
+    fun update(closedTaintVulnerabilityIds: Set<UUID>, addedTaintVulnerabilities: List<LocalTaintVulnerability>, updatedTaintVulnerabilities: List<LocalTaintVulnerability>) {
+        val cache = getService(project, TaintVulnerabilitiesCache::class.java)
+        cache.update(closedTaintVulnerabilityIds, addedTaintVulnerabilities, updatedTaintVulnerabilities)
+        updateTrees(cache.taintVulnerabilities)
+    }
+
+    private fun updateTrees(newTaintVulnerabilities: List<LocalTaintVulnerability>) {
+        runOnUiThread(project) {
+            populateSubTree(tree, taintVulnerabilityTreeUpdater, newTaintVulnerabilities)
+            populateSubTree(oldTree, oldTaintVulnerabilityTreeUpdater, newTaintVulnerabilities)
+            switchCard()
+        }
+    }
+
+    fun switchCard() {
+        when {
+            !getService(BackendService::class.java).isAlive() -> {
+                showCard(ERROR_CARD_ID)
+            }
+            !getSettingsFor(project).isBound -> {
                 showCard(NO_BINDING_CARD_ID)
-                highlighting.removeHighlights()
             }
-
-            is InvalidBinding -> {
+            !getService(project, ProjectBindingManager::class.java).isBindingValid -> {
                 showCard(INVALID_BINDING_CARD_ID)
+            }
+            taintVulnerabilityTreeUpdater.taintVulnerabilities.isEmpty() && oldTaintVulnerabilityTreeUpdater.taintVulnerabilities.isEmpty() -> {
+                val highlighting = getService(project, EditorDecorator::class.java)
+                showNoVulnerabilitiesLabel()
                 highlighting.removeHighlights()
             }
-
-            is FoundTaintVulnerabilities -> {
-                if (status.isEmpty()) {
-                    showNoVulnerabilitiesLabel()
-                    highlighting.removeHighlights()
+            else -> {
+                if (taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.isEmpty() && oldTaintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.isEmpty()) {
+                    showCard(NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
                 } else {
-                    populateTrees(status.vulnerabilities())
+                    showCard(TREE_CARD_ID)
                 }
             }
         }
     }
 
-    private fun populateTrees(taintVulnerabilities: List<LocalTaintVulnerability>) {
-        taintVulnerabilityTreeUpdater.taintVulnerabilities = taintVulnerabilities
-        oldTaintVulnerabilityTreeUpdater.taintVulnerabilities = taintVulnerabilities
-        switchCard()
-    }
-
-    fun switchCard() {
-        if (taintVulnerabilityTreeUpdater.taintVulnerabilities.isEmpty() && oldTaintVulnerabilityTreeUpdater.taintVulnerabilities.isEmpty()) {
-            val highlighting = getService(project, EditorDecorator::class.java)
-            showNoVulnerabilitiesLabel()
-            highlighting.removeHighlights()
-        } else {
-            if (taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.isEmpty() && oldTaintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.isEmpty()) {
-                showCard(NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
+    private fun populateSubTree(tree: TaintVulnerabilityTree, updater: TaintVulnerabilityTreeUpdater, taintVulnerabilities: List<LocalTaintVulnerability>) {
+        val expandedPaths = TreeUtil.collectExpandedPaths(tree)
+        val selectionPath: TreePath? = tree.selectionPath
+        // Temporarily remove the listener to avoid transient selection events while changing the model
+        treeListeners[tree]?.forEach { listener -> tree.removeTreeSelectionListener(listener) }
+        try {
+            updater.taintVulnerabilities = taintVulnerabilities
+            tree.showsRootHandles = updater.filteredTaintVulnerabilities.isNotEmpty()
+            TreeUtil.restoreExpandedPaths(tree, expandedPaths)
+            if (selectionPath != null) {
+                TreeUtil.selectPath(tree, selectionPath)
             } else {
-                showCard(TREE_CARD_ID)
-
+                expandDefault()
             }
+        } finally {
+            treeListeners[tree]?.forEach { listener -> tree.addTreeSelectionListener(listener) }
+            updateRulePanelContent(tree)
         }
     }
 
-    fun primaryCount(): Int {
-        val firstTreeFilteredCount = taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.size
-        return if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)) firstTreeFilteredCount else firstTreeFilteredCount + oldTaintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.size
+    private fun expandDefault() {
+        if (taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.size < 30) {
+            TreeUtil.expand(tree, 2)
+        } else {
+            tree.expandRow(0)
+        }
+        oldTree.collapseRow(0)
     }
-
-//    private fun populateSubTree(tree: TaintVulnerabilityTree, model: TaintVulnerabilityTreeModelBuilder, taintIssues: Map<VirtualFile, List<LocalTaintVulnerability>>) {
-//        val expandedPaths = TreeUtil.collectExpandedPaths(tree)
-//        val selectionPath: TreePath? = tree.selectionPath
-//        // Temporarily remove the listener to avoid transient selection events while changing the model
-//        treeListeners[tree]?.forEach { listener -> tree.removeTreeSelectionListener(listener) }
-//        try {
-//            model.updateModel(taintIssues)
-//            tree.showsRootHandles = taintIssues.isNotEmpty()
-//            TreeUtil.restoreExpandedPaths(tree, expandedPaths)
-//            if (selectionPath != null) {
-//                TreeUtil.selectPath(tree, selectionPath)
-//            } else {
-//                expandDefault()
-//            }
-//        } finally {
-//            treeListeners[tree]?.forEach { listener -> tree.addTreeSelectionListener(listener) }
-//            updateRulePanelContent(tree)
-//        }
-//    }
-//
-//    private fun expandDefault() {
-//        if (treeBuilder.numberIssues() < 30) {
-//            TreeUtil.expand(tree, 2)
-//        } else {
-//            tree.expandRow(0)
-//        }
-//        oldTree.collapseRow(0)
-//    }
 
     private fun showNoVulnerabilitiesLabel() {
         val serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
@@ -306,9 +310,11 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     fun remove(taintVulnerability: LocalTaintVulnerability) {
-        taintVulnerabilityTreeUpdater.remove(taintVulnerability)
-        oldTaintVulnerabilityTreeUpdater.remove(taintVulnerability)
-        switchCard()
+        val cache = getService(project, TaintVulnerabilitiesCache::class.java)
+        val removed = cache.remove(taintVulnerability)
+        if (removed) {
+            updateTrees(cache.taintVulnerabilities)
+        }
     }
 
     private fun updateRulePanelContent(tree: TaintVulnerabilityTree) {
@@ -325,7 +331,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 highlighting.removeHighlights()
             } else {
                 issue.module?.let { module -> rulePanel.setSelectedFinding(module, issue, issue.getRuleKey(), issue.getRuleDescriptionContextKey()) }
-                        ?: rulePanel.clear()
+                    ?: rulePanel.clear()
                 highlighting.highlight(issue)
             }
         }
@@ -336,6 +342,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         taintVulnerabilityTreeUpdater.focusFilter = if (shouldFocusOnNewCode) FocusFilter.NEW_CODE else FocusFilter.ALL_CODE
         oldTaintVulnerabilityTreeUpdater.focusFilter = if (shouldFocusOnNewCode) FocusFilter.OLD_CODE else FocusFilter.ALL_CODE
         oldTree.isVisible = shouldFocusOnNewCode
+        updateTrees(getService(project, TaintVulnerabilitiesCache::class.java).taintVulnerabilities)
     }
 
     private fun findFilteredTaintVulnerabilityByKey(key: String): LocalTaintVulnerability? {
@@ -351,8 +358,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         runOnPooledThread(project) {
             if (showFinding.codeSnippet == null) {
                 SonarLintProjectNotifications.get(project)
-                        .notifyUnableToOpenFinding("taint vulnerability",
-                                "The taint vulnerability could not be detected by SonarLint in the current code.")
+                    .notifyUnableToOpenFinding("taint vulnerability",
+                        "The taint vulnerability could not be detected by SonarLint in the current code.")
                 return@runOnPooledThread
             }
             val matcher = TextRangeMatcher(project)
@@ -361,7 +368,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             }
             if (rangeMarker == null) {
                 SonarLintProjectNotifications.get(project)
-                        .notifyUnableToOpenFinding("taint vulnerability", "The taint vulnerability could not be detected by SonarLint in the current code.")
+                    .notifyUnableToOpenFinding("taint vulnerability", "The taint vulnerability could not be detected by SonarLint in the current code.")
                 return@runOnPooledThread
             }
 

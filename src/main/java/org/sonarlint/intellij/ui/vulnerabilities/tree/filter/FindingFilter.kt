@@ -21,6 +21,6 @@ package org.sonarlint.intellij.ui.vulnerabilities.tree.filter
 
 import org.sonarlint.intellij.finding.Finding
 
-interface FindingFilter {
+fun interface FindingFilter {
     fun filter(finding: Finding): Boolean
 }

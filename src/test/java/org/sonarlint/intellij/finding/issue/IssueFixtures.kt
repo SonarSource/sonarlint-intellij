@@ -26,54 +26,52 @@ import com.intellij.psi.PsiFile
 import java.util.Optional
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.util.getDocument
+import org.sonarsource.sonarlint.core.analysis.api.ActiveRule
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFileEdit
 import org.sonarsource.sonarlint.core.analysis.api.Flow
+import org.sonarsource.sonarlint.core.analysis.api.Issue
 import org.sonarsource.sonarlint.core.analysis.api.QuickFix
 import org.sonarsource.sonarlint.core.analysis.api.TextEdit
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
-import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute
+import org.sonarsource.sonarlint.core.analysis.container.analysis.filesystem.DefaultTextPointer
+import org.sonarsource.sonarlint.core.analysis.container.analysis.filesystem.DefaultTextRange
+import org.sonarsource.sonarlint.core.analysis.sonarapi.ActiveRuleAdapter
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue
 import org.sonarsource.sonarlint.core.commons.ImpactSeverity
-import org.sonarsource.sonarlint.core.commons.IssueSeverity
-import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.SoftwareQuality
-import org.sonarsource.sonarlint.core.commons.TextRange
-import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.commons.api.TextRange
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.GetRuleDetailsResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute
 
 fun aLiveIssue(
     module: Module,
     file: PsiFile,
     rangeMarker: RangeMarker? = file.virtualFile.getDocument()!!.createRangeMarker(0, 1),
-    coreIssue: Issue = aCoreIssue(file, toTextRange(rangeMarker))
+    coreIssue: RawIssue = aRawIssue(file, toTextRange(rangeMarker)),
 ): LiveIssue {
     val liveIssue = LiveIssue(module, coreIssue, file.virtualFile, rangeMarker, null, emptyList())
     liveIssue.serverFindingKey = "serverIssueKey"
     return liveIssue
 }
 
-fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = object : Issue {
-    override fun getTextRange() = textRange
-    override fun getMessage() = "message"
-    override fun getInputFile() = aClientInputFile(file)
+fun aRawIssue(file: PsiFile, textRange: TextRange?) =
+    RawIssue(aCoreIssue(file, textRange),
+        GetRuleDetailsResponse(org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.INFO, org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType.BUG, CleanCodeAttribute.COMPLETE, emptyList(), null))
 
-    override fun getSeverity() = IssueSeverity.MAJOR
-    override fun getType() = RuleType.BUG
-    override fun getRuleKey() = "ruleKey"
-    override fun flows() = mutableListOf<Flow>()
-    override fun getCleanCodeAttribute() = Optional.of(CleanCodeAttribute.defaultCleanCodeAttribute())
-
-    override fun getImpacts(): MutableMap<SoftwareQuality, ImpactSeverity> {
-        return mutableMapOf(
-            SoftwareQuality.MAINTAINABILITY to ImpactSeverity.HIGH,
-            SoftwareQuality.RELIABILITY to ImpactSeverity.MEDIUM,
-            SoftwareQuality.SECURITY to ImpactSeverity.LOW
-        )
-    }
-
-    override fun quickFixes() = mutableListOf<QuickFix>()
-    override fun getRuleDescriptionContextKey() = Optional.empty<String>()
-    override fun getVulnerabilityProbability() = Optional.empty<VulnerabilityProbability>()
-}
+fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = Issue(
+    ActiveRuleAdapter(ActiveRule("rule:key", "java")),
+    "message",
+    mutableMapOf(
+        SoftwareQuality.MAINTAINABILITY to ImpactSeverity.HIGH,
+        SoftwareQuality.RELIABILITY to ImpactSeverity.MEDIUM,
+        SoftwareQuality.SECURITY to ImpactSeverity.LOW
+    ),
+    textRange?.let { aPluginApiTextRange(it) },
+    aClientInputFile(file),
+    mutableListOf<Flow>(),
+    mutableListOf<QuickFix>(),
+    Optional.empty()
+)
 
 private fun toTextRange(rangeMarker: RangeMarker?): TextRange? {
     return rangeMarker?.let {
@@ -97,6 +95,10 @@ fun aTextRange(
     startLine: Int,
     startLineOffset: Int,
     endLine: Int,
-    endLineOffset: Int
+    endLineOffset: Int,
 ) = TextRange(startLine, startLineOffset, endLine, endLineOffset)
+
+fun aPluginApiTextRange(
+    textRange: TextRange,
+) = DefaultTextRange(DefaultTextPointer(textRange.startLine, textRange.startLineOffset), DefaultTextPointer(textRange.endLine, textRange.endLineOffset))
 

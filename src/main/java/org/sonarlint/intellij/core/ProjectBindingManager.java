@@ -22,9 +22,7 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.serviceContainer.NonInjectable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -36,35 +34,25 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @Service(Service.Level.PROJECT)
 public final class ProjectBindingManager {
   private final Project myProject;
-  private final ProgressManager progressManager;
 
   public ProjectBindingManager(Project project) {
-    this(project, ProgressManager.getInstance());
-  }
-
-  @NonInjectable
-  ProjectBindingManager(Project project, ProgressManager progressManager) {
-    this.myProject = project;
-    this.progressManager = progressManager;
+    myProject = project;
   }
 
   /**
@@ -73,51 +61,24 @@ public final class ProjectBindingManager {
    *
    * @throws InvalidBindingException If current project binding is invalid
    */
-  public SonarLintFacade getFacade(Module module) throws InvalidBindingException {
-    return getFacade(module, false);
-  }
-
-  public SonarLintFacade getFacade(Module module, boolean logDetails) throws InvalidBindingException {
+  public EngineFacade getFacade(Module module) throws InvalidBindingException {
     var engineManager = getService(EngineManager.class);
     var projectSettings = getSettingsFor(myProject);
     var notifications = getService(myProject, SonarLintProjectNotifications.class);
-    var console = getService(myProject, SonarLintConsole.class);
     if (projectSettings.isBindingEnabled()) {
       var moduleBindingManager = getService(module, ModuleBindingManager.class);
       var connectionId = projectSettings.getConnectionName();
       var projectKey = moduleBindingManager.resolveProjectKey();
       checkBindingStatus(notifications, connectionId, projectKey);
-      if (logDetails) {
-        console.info(String.format("Using connection '%s' for project '%s'", connectionId, projectKey));
-      }
-      var engine = engineManager.getConnectedEngine(notifications, connectionId, projectKey);
-      return new ConnectedSonarLintFacade(engine, myProject, projectKey);
+      var engine = engineManager.getConnectedEngine(notifications, requireNonNull(connectionId));
+      return new EngineFacade(myProject, engine);
     }
 
-    return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());
-  }
-
-  private ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
-    var engineManager = getService(EngineManager.class);
-    return engineManager.getConnectedEngine(requireNonNull(getSettingsFor(myProject).getConnectionName()));
-  }
-
-  public ConnectedSonarLintEngine getConnectedEngine() throws InvalidBindingException {
-    var projectSettings = getSettingsFor(myProject);
-    if (!projectSettings.isBindingEnabled()) {
-      throw new IllegalStateException("Project is not bound to a SonarQube project");
-    }
-    var notifications = getService(myProject, SonarLintProjectNotifications.class);
-    var connectionName = projectSettings.getConnectionName();
-    var projectKey = projectSettings.getProjectKey();
-    checkBindingStatus(notifications, connectionName, projectKey);
-
-    var engineManager = getService(EngineManager.class);
-    return engineManager.getConnectedEngine(notifications, connectionName, projectKey);
+    return new EngineFacade(myProject, engineManager.getStandaloneEngine());
   }
 
   @CheckForNull
-  public SonarLintEngine getEngineIfStarted() {
+  public SonarLintAnalysisEngine getEngineIfStarted() {
     var engineManager = getService(EngineManager.class);
     var projectSettings = getSettingsFor(myProject);
     if (projectSettings.isBound()) {
@@ -129,10 +90,6 @@ public final class ProjectBindingManager {
 
   public boolean isBindingValid() {
     return getSettingsFor(myProject).isBound() && tryGetServerConnection().isPresent();
-  }
-
-  public @CheckForNull ConnectedSonarLintEngine getValidConnectedEngine() {
-    return isBindingValid() ? getConnectedEngineSkipChecks() : null;
   }
 
   public ServerConnection getServerConnection() throws InvalidBindingException {
@@ -191,9 +148,7 @@ public final class ProjectBindingManager {
     var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
-      getService(BackendService.class).projectBound(myProject, newBinding);
-      var task = new BindingStorageUpdateTask(connection, myProject);
-      progressManager.run(task.asModal());
+      runOnPooledThread(() -> getService(BackendService.class).projectBound(myProject, newBinding));
     }
   }
 
@@ -207,12 +162,12 @@ public final class ProjectBindingManager {
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     if (previousBinding != null) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, null);
-      getService(BackendService.class).projectUnbound(myProject);
+      runOnPooledThread(() -> getService(BackendService.class).projectUnbound(myProject));
     }
   }
 
   private static void unbind(List<Module> modules) {
-    modules.forEach(m -> getService(m, ModuleBindingManager.class).unbind());
+    runOnPooledThread(() -> modules.forEach(m -> getService(m, ModuleBindingManager.class).unbind()));
   }
 
   private List<Module> allModules() {
@@ -231,28 +186,6 @@ public final class ProjectBindingManager {
       return getUniqueProjectKeysForModules(allModules());
     }
     return Collections.emptySet();
-  }
-
-  public Set<ProjectKeyAndBranch> getUniqueProjectKeysAndBranchesPairs() {
-    var projectSettings = getSettingsFor(myProject);
-    if (projectSettings.isBound()) {
-      VcsService vcsService = getService(myProject, VcsService.class);
-      return allModules().stream().map(module -> {
-        ModuleBindingManager moduleBindingManager = getService(module, ModuleBindingManager.class);
-        var projectKey = moduleBindingManager.resolveProjectKey();
-        if (projectKey != null) {
-          var branchName = vcsService.getServerBranchName(module);
-          return new ProjectKeyAndBranch(projectKey, branchName);
-        }
-        return null;
-      })
-        .filter(Objects::nonNull)
-        .collect(Collectors.toSet());
-    }
-    return Set.of();
-  }
-
-  public record ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {
   }
 
   private static Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {

@@ -27,8 +27,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.sonarsource.sonarlint.core.commons.Language;
-
 public interface AnalysisConfigurator {
   // Name is constructed from plugin-id.extension-point-name
   ExtensionPointName<AnalysisConfigurator> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.analysisConfiguration");
@@ -45,8 +43,6 @@ public interface AnalysisConfigurator {
     /**
      * Force the language of a file, instead of relying on default language detection mechanism (based on file suffixes)
      */
-    public final Map<VirtualFile, Language> forcedLanguages = new HashMap<>();
-
-
+    public final Map<VirtualFile, ForcedLanguage> forcedLanguages = new HashMap<>();
   }
 }

@@ -31,9 +31,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.clientapi.client.progress.ProgressUpdateNotification
-import org.sonarsource.sonarlint.core.clientapi.client.progress.StartProgressParams
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
+import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.ProgressUpdateNotification
+import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.StartProgressParams
 
 class BackendTaskProgressReporter {
     private val taskPool = ConcurrentHashMap<String, AwaitingBackgroundTask>()

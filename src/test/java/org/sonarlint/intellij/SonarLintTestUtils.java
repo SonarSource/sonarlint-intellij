@@ -23,9 +23,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import java.awt.GraphicsEnvironment;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,8 +45,8 @@ public class SonarLintTestUtils {
     return event;
   }
 
-  public static Issue createIssue(int id) {
-    var issue = mock(Issue.class);
+  public static RawIssue createIssue(int id) {
+    var issue = mock(RawIssue.class);
     when(issue.getRuleKey()).thenReturn(Integer.toString(id));
     when(issue.getMessage()).thenReturn("issue " + id);
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);

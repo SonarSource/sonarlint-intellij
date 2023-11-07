@@ -31,6 +31,7 @@ import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -79,7 +80,7 @@ class FindingsCacheTests extends AbstractSonarLintLightTests {
 
   private LiveIssue createRangeStoredIssue(int id, String rangeContent, int line) {
     var issue = SonarLintTestUtils.createIssue(id);
-    when(issue.getStartLine()).thenReturn(line);
+    when(issue.getTextRange()).thenReturn(new TextRangeDto(line, 1, line, 2));
     var range = mock(RangeMarker.class);
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);

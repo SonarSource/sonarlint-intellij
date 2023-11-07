@@ -24,11 +24,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
-import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.AnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
+import org.sonarsource.sonarlint.core.commons.api.progress.ClientProgressMonitor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,20 +37,20 @@ import static org.mockito.Mockito.when;
 
 class StandaloneSonarLintFacadeTests extends AbstractSonarLintLightTests {
 
-  private StandaloneSonarLintEngine engine;
-  private StandaloneSonarLintFacade facade;
+  private SonarLintAnalysisEngine engine;
+  private EngineFacade facade;
 
   @BeforeEach
   void before() {
-    engine = mock(StandaloneSonarLintEngine.class);
-    facade = new StandaloneSonarLintFacade(getProject(), engine);
+    engine = mock(SonarLintAnalysisEngine.class);
+    facade = new EngineFacade(getProject(), engine);
   }
 
   @Test
   void should_start_analysis() {
     var results = mock(AnalysisResults.class);
-    when(engine.analyze(any(StandaloneAnalysisConfiguration.class), any(IssueListener.class), any(ClientLogOutput.class), any(ClientProgressMonitor.class))).thenReturn(results);
-    assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ClientProgressMonitor.class))).isEqualTo(results);
+    when(engine.analyze(any(AnalysisConfiguration.class), any(RawIssueListener.class), any(ClientLogOutput.class), any(ClientProgressMonitor.class), any(String.class))).thenReturn(results);
+    assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), Collections.emptyMap(), mock(RawIssueListener.class), mock(ClientProgressMonitor.class))).isEqualTo(results);
   }
 
 }

@@ -20,10 +20,10 @@
 package org.sonarlint.intellij.finding
 
 import com.intellij.openapi.vfs.VirtualFile
-import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity
-import org.sonarsource.sonarlint.core.commons.RuleType
-import org.sonarsource.sonarlint.core.commons.SoftwareQuality
+import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
+import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 
 interface Finding {
     fun getCleanCodeAttribute(): CleanCodeAttribute?

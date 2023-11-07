@@ -31,14 +31,16 @@ import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.util.ui.UIUtil;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
-import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.core.ProjectBinding;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.Finding;
@@ -49,7 +51,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesStatus;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
@@ -59,8 +61,8 @@ import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
@@ -237,14 +239,22 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     return SonarLintToolWindowFactory.getSonarLintToolWindow(project);
   }
 
-  public void populateTaintVulnerabilitiesTab(TaintVulnerabilitiesStatus status) {
+  public void populateTaintVulnerabilitiesTab(List<LocalTaintVulnerability> taintVulnerabilities) {
     var content = getTaintVulnerabilitiesContent();
     if (content != null) {
-      content.setDisplayName(buildTabName(status.count(getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)),
-        SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
       var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
-      taintVulnerabilitiesPanel.populate(status);
-      content.setDisplayName(buildTabName(taintVulnerabilitiesPanel.primaryCount(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+      taintVulnerabilitiesPanel.populate(taintVulnerabilities);
+      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+    }
+  }
+
+  public void updateTaintVulnerabilities(Set<UUID> closedTaintVulnerabilityIds, List<LocalTaintVulnerability> addedTaintVulnerabilities,
+    List<LocalTaintVulnerability> updatedTaintVulnerabilities) {
+    var content = getTaintVulnerabilitiesContent();
+    if (content != null) {
+      var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
+      taintVulnerabilitiesPanel.update(closedTaintVulnerabilityIds, addedTaintVulnerabilities, updatedTaintVulnerabilities);
+      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
   }
 

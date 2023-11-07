@@ -11,5 +11,4 @@ intellij {
 
 dependencies {
     implementation(project(":common"))
-    implementation(libs.sonarlint.core)
 }

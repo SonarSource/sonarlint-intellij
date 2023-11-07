@@ -7,7 +7,3 @@ plugins {
 intellij {
     version.set(intellijBuildVersion)
 }
-
-dependencies {
-    implementation(libs.sonarlint.core)
-}

@@ -24,6 +24,7 @@ import java.util.Locale
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.computeOnPooledThread
 
 class TreeSummary(private val project: Project, private val treeContentKind: TreeContentKind, private val holdsOldFindings: Boolean) {
     private var emptyText = DEFAULT_EMPTY_TEXT
@@ -56,7 +57,15 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
     }
 
     private fun getCodePeriod(): String {
-        return " " + getService(BackendService::class.java).getNewCodePeriodText(project).replaceFirstChar { char -> char.lowercase(Locale.getDefault()) }
+        val newCodePeriod = computeOnPooledThread(
+            project,
+            "Code Period Task"
+        ) { getService(BackendService::class.java).getNewCodePeriodText(project) }?.replaceFirstChar { char ->
+            char.lowercase(
+                Locale.getDefault()
+            )
+        } ?: "(unknown code period)"
+        return " $newCodePeriod"
     }
 
     private fun computeEmptyText(): String {

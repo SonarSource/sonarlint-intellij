@@ -30,7 +30,7 @@ import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 class ModuleFileEventsNotifierTests : AbstractSonarLintLightTests() {
@@ -56,5 +56,5 @@ class ModuleFileEventsNotifierTests : AbstractSonarLintLightTests() {
     }
 
 
-    private val engine = mock(SonarLintEngine::class.java)
+    private val engine = mock(SonarLintAnalysisEngine::class.java)
 }

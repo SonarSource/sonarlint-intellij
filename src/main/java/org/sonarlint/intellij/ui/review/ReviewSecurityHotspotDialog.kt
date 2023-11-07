@@ -24,6 +24,8 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import java.awt.event.ActionEvent
+import javax.swing.JButton
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -33,10 +35,8 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.HOTSPOT_REVIEW_GROUP
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
-import java.awt.event.ActionEvent
-import javax.swing.JButton
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 
 
 class ReviewSecurityHotspotDialog(

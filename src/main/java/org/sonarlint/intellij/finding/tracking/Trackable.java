@@ -21,8 +21,8 @@ package org.sonarlint.intellij.finding.tracking;
 
 import java.util.UUID;
 import javax.annotation.CheckForNull;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 public interface Trackable {
   @CheckForNull

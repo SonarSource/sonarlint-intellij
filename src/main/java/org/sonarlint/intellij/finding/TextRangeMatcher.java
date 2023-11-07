@@ -30,8 +30,8 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiWhiteSpace;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto;
-import org.sonarsource.sonarlint.core.commons.TextRangeWithHash;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWithHashDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
 import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
 
@@ -46,15 +46,15 @@ public class TextRangeMatcher {
    * Tries to match an SQ issue to an IntelliJ file.
    * <b>Can only be called with getLive access</b>.
    */
-  public RangeMarker match(VirtualFile file, TextRangeWithHash textRange) throws NoMatchException {
-    return match(toPsiFile(project, file), textRange);
-  }
-
-  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.commons.TextRange textRange) throws NoMatchException {
-    return match(toPsiFile(project, file), textRange);
+  public RangeMarker match(VirtualFile file, TextRangeWithHashDto textRange) throws NoMatchException {
+    return match(toPsiFile(project, file), textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
   public RangeMarker match(VirtualFile file, TextRangeDto textRange) throws NoMatchException {
+    return match(toPsiFile(project, file), textRange);
+  }
+
+  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.commons.api.TextRange textRange) throws NoMatchException {
     return match(toPsiFile(project, file), textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
@@ -73,7 +73,11 @@ public class TextRangeMatcher {
     return doc.createRangeMarker(range.getStartOffset(), range.getEndOffset());
   }
 
-  public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.commons.TextRange textRange) throws NoMatchException {
+  public RangeMarker match(PsiFile file, TextRangeDto textRange) throws NoMatchException {
+    return match(file, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
+  }
+
+  public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.commons.api.TextRange textRange) throws NoMatchException {
     return match(file, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 

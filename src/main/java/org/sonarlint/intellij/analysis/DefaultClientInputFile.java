@@ -21,18 +21,17 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
 import javax.annotation.Nullable;
-
+import org.sonarlint.intellij.common.analysis.ForcedLanguage;
+import org.sonarlint.intellij.util.VirtualFileUtils;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
 
 public class DefaultClientInputFile implements ClientInputFile {
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
@@ -45,12 +44,12 @@ public class DefaultClientInputFile implements ClientInputFile {
   @Nullable
   private final String documentBuffer;
   @Nullable
-  private final Language language;
+  private final SonarLanguage language;
   private final URI uri;
   private final long documentModificationStamp;
 
   public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable String documentBuffer, long documentModificationStamp,
-    @Nullable Language language) {
+    @Nullable ForcedLanguage sonarLanguage) {
     this.path = vFile.getPath();
     this.relativePath = relativePath;
     this.test = isTest;
@@ -58,12 +57,12 @@ public class DefaultClientInputFile implements ClientInputFile {
     this.vFile = vFile;
     this.documentBuffer = documentBuffer;
     this.documentModificationStamp = documentModificationStamp;
-    this.language = language;
-    this.uri = createURI();
+    this.language = sonarLanguage == null ? null : SonarLanguage.valueOf(sonarLanguage.name());
+    this.uri = createURI(vFile);
   }
 
-  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Language language) {
-    this(vFile, relativePath, isTest, charset, null, 0, language);
+  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable ForcedLanguage sonarLanguage) {
+    this(vFile, relativePath, isTest, charset, null, 0, sonarLanguage);
   }
 
   public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset) {
@@ -99,13 +98,12 @@ public class DefaultClientInputFile implements ClientInputFile {
     return new ByteArrayInputStream(documentBuffer.getBytes(charset));
   }
 
-  private URI createURI() {
-    // Don't use VfsUtilCore.convertToURL as it doesn't work on Windows (it produces invalid URL)
-    // Instead, since we are currently limiting ourself to analyze files in LocalFileSystem
-    if (!vFile.isInLocalFileSystem()) {
+  private static URI createURI(VirtualFile file) {
+    var uri = VirtualFileUtils.INSTANCE.toURI(file);
+    if (uri == null) {
       throw new IllegalStateException("Not a local file");
     }
-    return Paths.get(vFile.getPath()).toUri();
+    return uri;
   }
 
   @Override public String contents() throws IOException {
@@ -133,7 +131,7 @@ public class DefaultClientInputFile implements ClientInputFile {
   }
 
   @Override
-  public Language language() {
+  public SonarLanguage language() {
     return language;
   }
 }

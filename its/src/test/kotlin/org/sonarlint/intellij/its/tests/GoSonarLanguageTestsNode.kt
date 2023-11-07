@@ -29,7 +29,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 
 /** Tests for Go language support (not limited to GoLand) */
 @EnabledIf("isGoPlugin")
-class GoLanguageTests : BaseUiTest() {
+class GoSonarLanguageTestsNode : BaseUiTest() {
 
     @Test
     fun should_analyze_go() = uiTest {

@@ -21,23 +21,16 @@ package org.sonarlint.intellij.telemetry;
 
 import java.util.Set;
 import javax.annotation.Nullable;
-
-import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
 
 public interface SonarLintTelemetry {
   void optOut(boolean optOut);
 
   boolean enabled();
 
-  boolean canBeEnabled();
-
   void analysisDoneOnMultipleFiles();
 
   void analysisDoneOnSingleLanguage(@Nullable Language language, int time);
-
-  void init();
-
-  void devNotificationsReceived(String eventType);
 
   void devNotificationsClicked(String eventType);
 

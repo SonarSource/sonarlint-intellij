@@ -21,8 +21,40 @@ package org.sonarlint.intellij.finding.issue.vulnerabilities
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import java.util.UUID
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
 @Service(Service.Level.PROJECT)
 class TaintVulnerabilitiesCache(val project: Project) {
-    var status : TaintVulnerabilitiesStatus? = null
+    var taintVulnerabilities: List<LocalTaintVulnerability> = emptyList()
+
+    fun update(taintVulnerabilityIdsToRemove: Set<UUID>, taintVulnerabilitiesToAdd: List<LocalTaintVulnerability>, taintVulnerabilitiesToUpdate: List<LocalTaintVulnerability>) {
+        val currentTaintVulnerabilities = taintVulnerabilities.toMutableList()
+        currentTaintVulnerabilities.removeAll { taintVulnerabilityIdsToRemove.contains(it.getId()) }
+        currentTaintVulnerabilities.addAll(taintVulnerabilitiesToAdd)
+        val updatedTaintVulnerabilityKeys = taintVulnerabilitiesToUpdate.map { updatedTaint -> updatedTaint.getServerKey() }
+        currentTaintVulnerabilities.removeAll { updatedTaintVulnerabilityKeys.contains(it.getServerKey()) }
+        currentTaintVulnerabilities.addAll(taintVulnerabilitiesToUpdate)
+        taintVulnerabilities = currentTaintVulnerabilities
+    }
+
+    fun remove(taintVulnerabilityToRemove: LocalTaintVulnerability): Boolean {
+        val currentTaintVulnerabilities = taintVulnerabilities.toMutableList()
+        val removed = currentTaintVulnerabilities.removeIf { currentVulnerability -> currentVulnerability.getServerKey() == taintVulnerabilityToRemove.getServerKey() }
+        if (removed) {
+            taintVulnerabilities = currentTaintVulnerabilities
+        }
+        return removed
+    }
+
+    fun getTaintVulnerabilitiesForFile(file: VirtualFile) : List<LocalTaintVulnerability> {
+        return taintVulnerabilities.filter { it.file() == file }
+    }
+
+    fun getFocusAwareCount(): Int {
+        val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+        return taintVulnerabilities.count { !it.isResolved() && (!isFocusOnNewCode || it.isOnNewCode()) }
+    }
 }

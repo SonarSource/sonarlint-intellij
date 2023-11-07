@@ -30,24 +30,24 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
-import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
-import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
-import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 public class LiveSecurityHotspot extends LiveFinding {
   private final VulnerabilityProbability vulnerabilityProbability;
   private HotspotReviewStatus status;
 
-  public LiveSecurityHotspot(Module module, Issue issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
+  public LiveSecurityHotspot(Module module, RawIssue issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
     this(module, issue, virtualFile, null, null, quickFixes);
   }
 
-  public LiveSecurityHotspot(Module module, Issue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
+  public LiveSecurityHotspot(Module module, RawIssue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
     super(module, issue, virtualFile, range, context, quickFixes);
     this.vulnerabilityProbability = issue.getVulnerabilityProbability().get();
     this.status = HotspotReviewStatus.TO_REVIEW;
@@ -68,6 +68,7 @@ public class LiveSecurityHotspot extends LiveFinding {
     return Collections.emptyMap();
   }
 
+  @NotNull
   @Override
   public RuleType getType() {
     return RuleType.SECURITY_HOTSPOT;

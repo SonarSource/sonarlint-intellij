@@ -43,9 +43,9 @@ import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
 import org.sonarlint.intellij.util.runOnPooledThread
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckStatusChangePermittedResponse
-import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 
 class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, private var status: HotspotReviewStatus? = null) :
     AbstractSonarAction(
