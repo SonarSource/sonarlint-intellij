@@ -28,13 +28,11 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,18 +42,18 @@ class DefaultEngineManagerTests extends AbstractSonarLintLightTests {
   private DefaultEngineManager manager;
   private SonarLintEngineFactory engineFactory;
   private SonarLintProjectNotifications notifications;
-  private ConnectedSonarLintEngine connectedEngine;
-  private StandaloneSonarLintEngine standaloneEngine;
+  private SonarLintAnalysisEngine connectedEngine;
+  private SonarLintAnalysisEngine standaloneEngine;
 
   @BeforeEach
   void before() {
     engineFactory = mock(SonarLintEngineFactory.class);
     notifications = mock(SonarLintProjectNotifications.class);
-    connectedEngine = mock(ConnectedSonarLintEngine.class);
-    standaloneEngine = mock(StandaloneSonarLintEngine.class);
+    connectedEngine = mock(SonarLintAnalysisEngine.class);
+    standaloneEngine = mock(SonarLintAnalysisEngine.class);
 
-    when(engineFactory.createEngine(anyString(), eq(false))).thenReturn(connectedEngine);
-    when(engineFactory.createEngine()).thenReturn(standaloneEngine);
+    when(engineFactory.createEngineForConnection(anyString())).thenReturn(connectedEngine);
+    when(engineFactory.createStandaloneEngine()).thenReturn(standaloneEngine);
 
     manager = new DefaultEngineManager(engineFactory);
     getGlobalSettings().setServerConnections(Collections.emptyList());
@@ -65,21 +63,21 @@ class DefaultEngineManagerTests extends AbstractSonarLintLightTests {
   void should_get_standalone() {
     assertThat(manager.getStandaloneEngine()).isEqualTo(standaloneEngine);
     assertThat(manager.getStandaloneEngine()).isEqualTo(standaloneEngine);
-    verify(engineFactory, Mockito.times(1)).createEngine();
+    verify(engineFactory, Mockito.times(1)).createStandaloneEngine();
   }
 
   @Test
-  void should_get_connected() {
+  void should_get_connected() throws InvalidBindingException {
     getGlobalSettings().setServerConnections(List.of(createConnection("server1")));
 
-    assertThat(manager.getConnectedEngine("server1")).isEqualTo(connectedEngine);
-    assertThat(manager.getConnectedEngine("server1")).isEqualTo(connectedEngine);
-    verify(engineFactory, Mockito.times(1)).createEngine("server1", false);
+    assertThat(manager.getConnectedEngine(notifications, "server1")).isEqualTo(connectedEngine);
+    assertThat(manager.getConnectedEngine(notifications, "server1")).isEqualTo(connectedEngine);
+    verify(engineFactory, Mockito.times(1)).createEngineForConnection("server1");
   }
 
   @Test
   void should_fail_invalid_server() {
-    var throwable = catchThrowable(() -> manager.getConnectedEngine(notifications, "server1", "project1"));
+    var throwable = catchThrowable(() -> manager.getConnectedEngine(notifications, "server1"));
 
     assertThat(throwable)
       .isInstanceOf(InvalidBindingException.class)

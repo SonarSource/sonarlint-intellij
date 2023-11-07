@@ -31,6 +31,7 @@ import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
@@ -55,13 +56,15 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAct
             return
         }
         e.getData(CommonDataKeys.VIRTUAL_FILE)?.let { file ->
+            val isAlive = getService(BackendService::class.java).isAlive()
             val presentation = e.presentation
             val isFocusOnNewCode = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
-            val relevantFindings = getService(project, FindingsCache::class.java).getFindingsForFile(file).filter { !it.isResolved && (!isFocusOnNewCode || it.isOnNewCode()) }
+            val relevantFindings = getService(project, FindingsCache::class.java).getFindingsForFile(file)
+                .filter { !it.isResolved && (!isFocusOnNewCode || it.isOnNewCode()) }
             val issues = relevantFindings.filterIsInstance<LiveIssue>()
             val hotspots = relevantFindings.filterIsInstance<LiveSecurityHotspot>()
-            val taintVulnerabilitiesCount = getService(project, TaintVulnerabilitiesCache::class.java).status?.count(isFocusOnNewCode) ?: 0
-            val model = SonarLintDashboardModel(issues.size, hotspots.size, taintVulnerabilitiesCount, isFocusOnNewCode)
+            val taintVulnerabilitiesCount = getService(project, TaintVulnerabilitiesCache::class.java).getFocusAwareCount()
+            val model = SonarLintDashboardModel(isAlive, issues.size, hotspots.size, taintVulnerabilitiesCount, isFocusOnNewCode)
             presentation.putClientProperty(DASHBOARD_MODEL, model)
         }
     }

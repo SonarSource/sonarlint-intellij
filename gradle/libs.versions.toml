@@ -1,5 +1,5 @@
 [versions]
-sonarlint-core = "9.8.0.76914"
+sonarlint-core = "10.0.0.77129"
 
 sonar-java = "7.31.0.34839"
 sonar-javascript = "10.12.0.25537"
@@ -20,9 +20,10 @@ kotlin-plugin = "1.9.22"
 intellij-plugin = "1.17.2"
 license-plugin = "0.16.1"
 artifactory-plugin = "4.33.1"
-protobuf-plugin = "0.9.4"
+protobuf-plugin-version = "0.9.4"
 cyclonedx-plugin = "1.8.2"
 
+protobuf-lib-version = "3.25.1"
 commons-lang3 = "3.14.0"
 findbugs-jsr305 = "3.0.2"
 junit-bom = "5.9.2"
@@ -36,7 +37,10 @@ its-sonar-scala = "1.8.3.2219"
 its-sonar-ws = "8.5.1.38104"
 
 [libraries]
-sonarlint-core = { module = "org.sonarsource.sonarlint.core:sonarlint-core", version.ref = "sonarlint-core" }
+sonarlint-java-client-legacy = { module = "org.sonarsource.sonarlint.core:sonarlint-java-client-legacy", version.ref = "sonarlint-core" }
+sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarlint-java-client-utils", version.ref = "sonarlint-core" }
+sonarlint-rpc-java-client = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-java-client", version.ref = "sonarlint-core" }
+sonarlint-rpc-impl = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-impl", version.ref = "sonarlint-core" }
 
 sonar-java = { module = "org.sonarsource.java:sonar-java-plugin", version.ref = "sonar-java" }
 sonar-javascript = { module = "org.sonarsource.javascript:sonar-javascript-plugin", version.ref = "sonar-javascript" }
@@ -52,6 +56,7 @@ sonar-go = { module = "org.sonarsource.slang:sonar-go-plugin", version.ref = "so
 sonar-iac = { module = "org.sonarsource.iac:sonar-iac-plugin", version.ref = "sonar-iac" }
 sonar-cfamily = { module = "com.sonarsource.cpp:sonar-cfamily-plugin", version.ref = "sonar-cpp" }
 
+protobuf = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf-lib-version" }
 commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
@@ -74,7 +79,7 @@ kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-plugin" }
 intellij = { id = "org.jetbrains.intellij", version.ref = "intellij-plugin" }
 license = { id = "com.github.hierynomus.license", version.ref = "license-plugin" }
 artifactory = { id = "com.jfrog.artifactory", version.ref = "artifactory-plugin" }
-protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin-version" }
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-plugin" }
 
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }

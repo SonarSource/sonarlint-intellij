@@ -25,12 +25,12 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.util.UrlUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
-import org.sonarsource.sonarlint.core.serverapi.UrlUtils
 
 class OpenIssueInBrowserAction : AbstractSonarAction(
   "Open In Browser",

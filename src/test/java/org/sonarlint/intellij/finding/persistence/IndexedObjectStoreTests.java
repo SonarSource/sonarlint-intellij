@@ -29,9 +29,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarsource.sonarlint.core.commons.objectstore.PathMapper;
-import org.sonarsource.sonarlint.core.commons.objectstore.Reader;
-import org.sonarsource.sonarlint.core.commons.objectstore.Writer;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.PathMapper;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.Reader;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.Writer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;

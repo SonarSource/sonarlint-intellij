@@ -79,7 +79,7 @@ class FindingPersistenceTests : AbstractSonarLintLightTests() {
 
         assertThat(issues).hasSize(1)
         val issue = issues!!.iterator().next()
-        assertThat(issue.ruleKey).isEqualTo("ruleKey")
+        assertThat(issue.ruleKey).isEqualTo("rule:key")
         assertThat(issue.message).isEqualTo("message")
         assertThat(issue.line).isEqualTo(1)
         assertThat(issue.textRangeHash).isNull()

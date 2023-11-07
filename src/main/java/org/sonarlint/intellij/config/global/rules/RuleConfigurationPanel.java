@@ -103,10 +103,11 @@ import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel;
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel;
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetStandaloneRuleDescriptionParams;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleParamDefinitionDto;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionParams;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleParamDefinitionDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -123,7 +124,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   @NonNls
   private static final String EMPTY_HTML = "Select a rule to see the description";
   private final Map<String, RulesTreeNode.Rule> allRulesStateByKey = new ConcurrentHashMap<>();
-  private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();
+  private final Map<String, RulesTreeNode.LanguageNode> languageNodesByName = new HashMap<>();
   private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
   private final AtomicBoolean isDirty = new AtomicBoolean(false);
   private final Project project = ProjectManager.getInstance().getDefaultProject();
@@ -207,7 +208,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     final var nodes = new ArrayList<RulesTreeNode.Rule>();
     while (!queue.isEmpty()) {
       final var node = queue.pollFirst();
-      if (node instanceof RulesTreeNode.Language) {
+      if (node instanceof RulesTreeNode.LanguageNode) {
         for (var i = 0; i < node.getChildCount(); i++) {
           final var childNode = (RulesTreeNode) node.getChildAt(i);
           queue.addLast(childNode);
@@ -260,14 +261,16 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   @Override
   public void save(SonarLintGlobalSettings settings) {
-    settings.setRulesByKey(allRulesStateByKey.entrySet()
+    var nonDefaultRulesConfigurationByKey = allRulesStateByKey.entrySet()
       .stream().filter(e -> e.getValue().isNonDefault())
       .collect(Collectors.toMap(Map.Entry::getKey, e -> {
         var ruleNode = e.getValue();
         var rule = new SonarLintGlobalSettings.Rule(ruleNode.getKey(), ruleNode.isActivated());
         rule.setParams(ruleNode.getCustomParams());
         return rule;
-      })));
+      }));
+    settings.setRulesByKey(nonDefaultRulesConfigurationByKey);
+    runOnPooledThread(project, () -> getService(BackendService.class).updateStandaloneRulesConfiguration(nonDefaultRulesConfigurationByKey));
   }
 
   @Override
@@ -317,7 +320,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     rootNode.removeAllChildren();
 
     for (var entry : rulesByLanguage.entrySet()) {
-      var languageNode = getOrCreateLanguageNode(entry.getKey().getLabel());
+      var languageNode = getOrCreateLanguageNode(entry.getKey());
       languageNode.removeAllChildren();
       for (var ruleNode : entry.getValue()) {
         languageNode.add(ruleNode);
@@ -334,9 +337,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     table.getTree().setSelectionPaths(selectionPaths);
   }
 
-  @NotNull
-  private RulesTreeNode.Language getOrCreateLanguageNode(String languageName) {
-    return languageNodesByName.computeIfAbsent(languageName, RulesTreeNode.Language::new);
+  private RulesTreeNode.@NotNull LanguageNode getOrCreateLanguageNode(Language language) {
+    var languageLabel = org.sonarsource.sonarlint.core.client.utils.Language.fromDto(language).getLabel();
+    return languageNodesByName.computeIfAbsent(languageLabel, RulesTreeNode.LanguageNode::new);
   }
 
   private ActionToolbar createTreeToolbarPanel() {
@@ -504,7 +507,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
     ruleHeaderPanel.updateForRuleConfiguration(singleNode.getKey(), singleNode.type(), singleNode.severity(), singleNode.attribute(), singleNode.impacts());
-    var fileType = RuleLanguages.Companion.findFileTypeByRuleLanguage(singleNode.language().getLanguageKey());
+    var fileType = RuleLanguages.Companion.findFileTypeByRuleLanguage(singleNode.language());
 
     runOnPooledThread(project,
       () -> getService(BackendService.class).getStandaloneRuleDetails(new GetStandaloneRuleDescriptionParams(singleNode.getKey()))

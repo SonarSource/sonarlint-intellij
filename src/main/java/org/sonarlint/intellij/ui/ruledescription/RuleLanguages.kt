@@ -22,7 +22,7 @@ package org.sonarlint.intellij.ui.ruledescription
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.fileTypes.UnknownFileType
-import org.sonarsource.sonarlint.core.commons.Language
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 // ObjectiveC file type is available in CLion, and C++ is available in IDEA
 private val cFamilyLanguagesFileTypesByPriority = arrayOf("ObjectiveC", "C++")
@@ -60,8 +60,8 @@ enum class RuleLanguages(private val language: Language, private vararg val file
     PLSQL(Language.PLSQL, "SQL");
 
     companion object {
-        fun findFileTypeByRuleLanguage(languageKey: String): FileType {
-            return values().find { it.language.languageKey == languageKey }?.fileTypesByPriorityOrder?.firstNotNullOfOrNull { fileType ->
+        fun findFileTypeByRuleLanguage(language: Language): FileType {
+            return values().find { it.language == language }?.fileTypesByPriorityOrder?.firstNotNullOfOrNull { fileType ->
                 FileTypeRegistry.getInstance().findFileTypeByName(fileType)
             }
                 ?: UnknownFileType.INSTANCE

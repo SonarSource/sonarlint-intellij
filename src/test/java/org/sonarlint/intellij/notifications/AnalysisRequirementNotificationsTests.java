@@ -36,9 +36,9 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.plugin.commons.SkipReason;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.PluginDetails;
+import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
+import org.sonarsource.sonarlint.core.plugin.commons.api.SkipReason;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
 class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests {
 
   final AnalysisResults analysisResults = mock(AnalysisResults.class);
-  final Map<ClientInputFile, Language> detectedLang = new HashMap<>();
+  final Map<ClientInputFile, SonarLanguage> detectedLang = new HashMap<>();
 
   private List<Notification> notifications;
   private @NotNull MessageBusConnection busConnection;
@@ -99,7 +99,7 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
 
   @Test
   void notifyIfSkippedLanguage_JRE() {
-    detectedLang.put(mock(ClientInputFile.class), Language.JAVA);
+    detectedLang.put(mock(ClientInputFile.class), SonarLanguage.JAVA);
     List<PluginDetails> plugins = List.of(new PluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
@@ -108,7 +108,7 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
 
   @Test
   void notifyIfSkippedLanguage_Node() {
-    detectedLang.put(mock(ClientInputFile.class), Language.JS);
+    detectedLang.put(mock(ClientInputFile.class), SonarLanguage.JS);
     List<PluginDetails> plugins = List.of(new PluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);

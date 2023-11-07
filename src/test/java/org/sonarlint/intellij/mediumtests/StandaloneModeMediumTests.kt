@@ -36,18 +36,33 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.jetbrains.annotations.NotNull
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.util.ProjectUtils
-import org.sonarsource.sonarlint.core.commons.IssueSeverity
-import org.sonarsource.sonarlint.core.commons.RuleType
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private val diamondQuickFix = "SonarLint: Replace with <>"
+
+    @BeforeEach
+    fun notifyProjectOpened() {
+        getService(BackendService::class.java).projectOpened(project)
+        getService(BackendService::class.java).modulesAdded(project, listOf(module))
+    }
+
+    @AfterEach
+    fun notifyProjectClosed() {
+        getService(BackendService::class.java).projectClosed(project)
+        getService(BackendService::class.java).moduleRemoved(module)
+    }
 
     @Test
     fun should_analyze_xml_file() {

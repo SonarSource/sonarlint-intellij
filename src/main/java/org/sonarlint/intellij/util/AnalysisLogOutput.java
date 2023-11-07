@@ -22,7 +22,7 @@ package org.sonarlint.intellij.util;
 import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 

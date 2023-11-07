@@ -56,8 +56,8 @@ For the complete list of tasks, see:
 For external contributors, the project should be guaranteed to build from any specific tag. During the development phase, some
 unreleased dependencies not accessible to the public could be used, preventing you from building the project.
 
-How to run ITs
-------------
+How to run UI tests
+-------------------
 
     ./gradlew :its:runIdeForUiTests &
 
@@ -79,6 +79,27 @@ Please note that the IDE must be in the foreground while tests are executed.
 
 Because some ITs are leveraging SonarCloud, make sure the `SONARCLOUD_IT_PASSWORD` env var is defined (you can find the value in our
 password management tool).
+
+How to debug UI tests
+---------------------
+
+If you want to debug what happens on the test side, you can simply launch the test in debug mode from the IDE.
+
+If you want to debug what happens in the SonarLint plugin, you can open the project in IntelliJ, and run the `its:runIdeForUiTests` task in debug mode (for example from the Gradle panel on the right).
+
+
+How to debug SLOOP
+------------------
+
+If you want to debug SLOOP:
+* open the Run configuration you are using to launch the IDE (`runIde` or `its:runIdeForUiTests`)
+* Add an environment variable: `SONARLINT_JVM_OPTS` with the value `-agentlib:jdwp=transport=dt_socket,address=8080,server=y,suspend=n`
+* Run the task
+* Open the SLCORE project and click `Run` > `Attach to process`
+* Choose the SLOOP running process
+
+If you want to plug the debugger as soon as SLOOP is started, you can modify the command above by having `suspend=y`.
+This will wait for the debugger to attach the process before starting SLOOP.
 
 How to develop in IntelliJ
 --------------------------

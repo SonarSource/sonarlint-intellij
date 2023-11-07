@@ -98,7 +98,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
       var value = (boolean) aValue;
       if (node instanceof RulesTreeNode.Rule rule) {
         activateRule(rule, value);
-      } else if (node instanceof RulesTreeNode.Language lang) {
+      } else if (node instanceof RulesTreeNode.LanguageNode lang) {
         activateLanguage(lang, value);
       }
       nodeChanged((RulesTreeNode) node);
@@ -107,11 +107,11 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   private void activateRule(RulesTreeNode.Rule rule, boolean activate) {
     rule.setIsActivated(activate);
-    var lang = (RulesTreeNode.Language) rule.getParent();
+    var lang = (RulesTreeNode.LanguageNode) rule.getParent();
     refreshLanguageActivation(lang);
   }
 
-  void refreshLanguageActivation(RulesTreeNode.Language lang) {
+  void refreshLanguageActivation(RulesTreeNode.LanguageNode lang) {
     var seenActive = false;
     var seenInactive = false;
     var isChanged = false;
@@ -139,7 +139,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     lang.setIsNonDefault(isChanged);
   }
 
-  private void activateLanguage(RulesTreeNode.Language lang, boolean activate) {
+  private void activateLanguage(RulesTreeNode.LanguageNode lang, boolean activate) {
     lang.setIsActivated(activate);
     for (var rule : lang.childrenIterable()) {
       rule.setIsActivated(activate);
@@ -150,7 +150,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
   public void swapAndRefresh(Object node) {
     if (node instanceof RulesTreeNode.Rule rule) {
       activateRule(rule, !rule.isActivated());
-    } else if (node instanceof RulesTreeNode.Language lang) {
+    } else if (node instanceof RulesTreeNode.LanguageNode lang) {
       activateLanguage(lang, lang.isActivated() == null || !lang.isActivated());
     }
     nodeChanged((RulesTreeNode) node);

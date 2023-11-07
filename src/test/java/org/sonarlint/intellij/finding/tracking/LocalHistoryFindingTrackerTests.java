@@ -35,8 +35,9 @@ import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.persistence.LiveFindingCache;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -125,7 +126,7 @@ class LocalHistoryFindingTrackerTests extends AbstractSonarLintLightTests {
 
   private LiveIssue createRangeStoredIssue(int id, String rangeContent, int line) {
     var issue = SonarLintTestUtils.createIssue(id);
-    when(issue.getStartLine()).thenReturn(line);
+    when(issue.getTextRange()).thenReturn(new TextRangeDto(line, 1, line, 2));
     var range = mock(RangeMarker.class);
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);

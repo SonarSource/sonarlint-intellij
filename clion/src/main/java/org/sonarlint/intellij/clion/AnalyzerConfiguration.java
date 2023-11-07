@@ -44,12 +44,13 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.commons.Language;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public class AnalyzerConfiguration {
+  private static final Map<ForcedLanguage, String> LANGUAGE_KEYS = Map.of(ForcedLanguage.C, "c", ForcedLanguage.CPP, "cpp", ForcedLanguage.OBJC, "objc");
   private final Project project;
   private static Method preprocessorDefinesMethod;
 
@@ -110,46 +111,28 @@ public class AnalyzerConfiguration {
 
     var sonarLanguage = getSonarLanguage(languageKind);
     if (sonarLanguage != null) {
-      properties.put("sonarLanguage", sonarLanguage.getLanguageKey());
+      properties.put("sonarLanguage", LANGUAGE_KEYS.get(sonarLanguage));
     }
-    return ConfigurationResult.of(new Configuration(
-      file,
-      compilerSettings.getCompilerExecutable().getAbsolutePath(),
-      compilerSettings.getCompilerWorkingDir().getAbsolutePath(),
-      compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW),
-      cFamilyCompiler,
-      sonarLanguage,
-      properties));
+    return ConfigurationResult.of(new Configuration(file, compilerSettings.getCompilerExecutable().getAbsolutePath(), compilerSettings.getCompilerWorkingDir().getAbsolutePath(),
+      compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW), cFamilyCompiler, sonarLanguage, properties));
   }
 
   private static void collectPropertiesForRemoteToolchain(OCCompilerSettings compilerSettings, Map<String, String> properties) {
     properties.put("preprocessorDefines", getPreprocessorDefines(compilerSettings));
 
-    var includeDirs = compilerSettings.getHeadersSearchPaths().stream()
-      .filter(h -> !h.isFrameworksSearchPath())
-      .map(HeadersSearchPath::getPath)
-      .collect(Collectors.joining("\n"));
+    var includeDirs = compilerSettings.getHeadersSearchPaths().stream().filter(h -> !h.isFrameworksSearchPath()).map(HeadersSearchPath::getPath).collect(Collectors.joining("\n"));
     properties.put("includeDirs", includeDirs);
 
-    var frameworkDirs = compilerSettings.getHeadersSearchPaths().stream()
-      .filter(HeadersSearchPath::isFrameworksSearchPath)
-      .map(HeadersSearchPath::getPath)
+    var frameworkDirs = compilerSettings.getHeadersSearchPaths().stream().filter(HeadersSearchPath::isFrameworksSearchPath).map(HeadersSearchPath::getPath)
       .collect(Collectors.joining("\n"));
     properties.put("frameworkDirs", frameworkDirs);
   }
 
   private static void collectMSVCProperties(OCCompilerSettings compilerSettings, Map<String, String> properties) {
-    properties.put(
-      "preprocessorDefines",
-      getPreprocessorDefines(compilerSettings));
-    properties.put(
-      "builtinHeaders",
-      compilerSettings.getHeadersSearchPaths().stream()
-        .filter(HeadersSearchPath::isBuiltInHeaders)
-        .map(HeadersSearchPath::getPath)
-        .collect(Collectors.joining("\n")));
+    properties.put("preprocessorDefines", getPreprocessorDefines(compilerSettings));
+    properties.put("builtinHeaders",
+      compilerSettings.getHeadersSearchPaths().stream().filter(HeadersSearchPath::isBuiltInHeaders).map(HeadersSearchPath::getPath).collect(Collectors.joining("\n")));
   }
-
 
   @NotNull
   private static String getPreprocessorDefines(OCCompilerSettings compilerSettings) {
@@ -179,13 +162,13 @@ public class AnalyzerConfiguration {
   }
 
   @Nullable
-  static Language getSonarLanguage(OCLanguageKind languageKind) {
+  static ForcedLanguage getSonarLanguage(OCLanguageKind languageKind) {
     if (languageKind.equals(CLanguageKind.C)) {
-      return Language.C;
+      return ForcedLanguage.C;
     } else if (languageKind.equals(CLanguageKind.CPP)) {
-      return Language.CPP;
+      return ForcedLanguage.CPP;
     } else if (languageKind.equals(CLanguageKind.OBJ_C)) {
-      return Language.OBJC;
+      return ForcedLanguage.OBJC;
     } else {
       return null;
     }
@@ -209,7 +192,8 @@ public class AnalyzerConfiguration {
 
   @Nullable
   private CPPEnvironment tryReflection(CidrWorkspace initializedWorkspace) {
-    // Use reflection to check if workspace is instanceof com.jetbrains.cidr.project.workspace.WorkspaceWithEnvironment interface has getEnvironment() method
+    // Use reflection to check if workspace is instanceof com.jetbrains.cidr.project.workspace.WorkspaceWithEnvironment interface has
+    // getEnvironment() method
     final Method classMethod;
     try {
       classMethod = initializedWorkspace.getClass().getMethod("getEnvironment");
@@ -312,7 +296,9 @@ public class AnalyzerConfiguration {
     }
   }
 
-  public record Configuration(VirtualFile virtualFile, String compilerExecutable, String compilerWorkingDir, List<String> compilerSwitches,
-                              String compilerKind, @Nullable Language sonarLanguage, Map<String, String> properties) {}
+  public record Configuration(VirtualFile virtualFile, String compilerExecutable, String compilerWorkingDir,
+    List<String> compilerSwitches, String compilerKind,
+    @Nullable ForcedLanguage sonarLanguage, Map<String, String> properties) {
+  }
 
 }

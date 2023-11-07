@@ -21,7 +21,7 @@ package org.sonarlint.intellij.util;
 
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 public interface GlobalLogOutput extends ClientLogOutput {
   static GlobalLogOutput get() {

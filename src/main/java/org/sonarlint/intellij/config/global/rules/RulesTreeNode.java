@@ -19,19 +19,23 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.RuleType;
-import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
+import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
@@ -65,11 +69,11 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     return activated;
   }
 
-  public static class Language extends RulesTreeNode<RulesTreeNode.Rule> {
+  public static class LanguageNode extends RulesTreeNode<RulesTreeNode.Rule> {
     private final String label;
     private boolean nonDefault;
 
-    public Language(String label) {
+    public LanguageNode(String label) {
       this.label = label;
     }
 
@@ -88,7 +92,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
   }
 
-  public static class Root extends RulesTreeNode<RulesTreeNode.Language> {
+  public static class Root extends RulesTreeNode<LanguageNode> {
     @Override
     public String toString() {
       return "root";
@@ -110,9 +114,9 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       this.details = details;
       this.activated = activated;
       this.nonDefaultParams = new HashMap<>(nonDefaultParams);
-      var highestQualityImpact = details.getDefaultImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
-      this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
-      this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
+      var highestQualityImpact = details.getDefaultImpacts().stream().max(Comparator.comparing(ImpactDto::getImpactSeverity));
+      this.highestQuality = highestQualityImpact.map(ImpactDto::getSoftwareQuality).orElse(null);
+      this.highestImpact = highestQualityImpact.map(ImpactDto::getImpactSeverity).map(ImpactSeverity::fromDto).orElse(null);
     }
 
     public String getKey() {
@@ -128,10 +132,11 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public CleanCodeAttribute attribute() {
-      return details.getCleanCodeAttribute().orElse(null);
+      var cleanCodeAttribute = details.getCleanCodeAttribute();
+      return cleanCodeAttribute == null ? null : CleanCodeAttribute.fromDto(cleanCodeAttribute);
     }
 
-    public Map<SoftwareQuality, ImpactSeverity> impacts() {
+    public List<ImpactDto> impacts() {
       return details.getDefaultImpacts();
     }
 
@@ -143,7 +148,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       return details.getType();
     }
 
-    public org.sonarsource.sonarlint.core.commons.Language language() {
+    public Language language() {
       return details.getLanguage();
     }
 

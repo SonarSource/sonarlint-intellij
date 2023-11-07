@@ -37,6 +37,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
+import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -44,9 +45,9 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener;
+import org.sonarsource.sonarlint.core.commons.api.progress.ClientProgressMonitor;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
@@ -58,7 +59,7 @@ public final class SonarLintAnalyzer {
     myProject = project;
   }
 
-  public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ClientProgressMonitor progressMonitor) {
+  public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, RawIssueListener listener, ClientProgressMonitor progressMonitor) {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     var start = System.currentTimeMillis();
     var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
@@ -77,18 +78,17 @@ public final class SonarLintAnalyzer {
 
     try {
       var projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
-      var facade = projectBindingManager.getFacade(module, true);
+      var facade = projectBindingManager.getFacade(module);
 
-      var what = filesToAnalyze.size() == 1 ?
-        String.format("'%s'", filesToAnalyze.iterator().next().getName()) :
-        String.format("%d files", filesToAnalyze.size());
+      var what = filesToAnalyze.size() == 1 ? String.format("'%s'", filesToAnalyze.iterator().next().getName()) : String.format("%d files", filesToAnalyze.size());
 
       console.info("Analysing " + what + "...");
-      var result = facade.startAnalysis(module, inputFiles, listener, contributedProperties, progressMonitor);
+      var result = facade.startAnalysis(module, inputFiles, contributedProperties, listener, progressMonitor);
       console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
       var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
       if (result.languagePerFile().size() == 1 && result.failedAnalysisFiles().isEmpty()) {
-        telemetry.analysisDoneOnSingleLanguage(result.languagePerFile().values().iterator().next(), (int) (System.currentTimeMillis() - start));
+        var fileLanguage = result.languagePerFile().values().iterator().next();
+        telemetry.analysisDoneOnSingleLanguage(fileLanguage == null ? null : Language.valueOf(fileLanguage.name()), (int) (System.currentTimeMillis() - start));
       } else {
         telemetry.analysisDoneOnMultipleFiles();
       }
@@ -116,8 +116,9 @@ public final class SonarLintAnalyzer {
   }
 
   @NotNull
-  private static Map<VirtualFile, Language> collectContributedLanguages(SonarLintConsole console, List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations) {
-    var contributedLanguages = new HashMap<VirtualFile, Language>();
+  private static Map<VirtualFile, ForcedLanguage> collectContributedLanguages(SonarLintConsole console,
+    List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations) {
+    var contributedLanguages = new HashMap<VirtualFile, ForcedLanguage>();
     for (var config : contributedConfigurations) {
       for (var entry : config.forcedLanguages.entrySet()) {
         if (contributedLanguages.containsKey(entry.getKey()) && !Objects.equals(contributedLanguages.get(entry.getKey()), entry.getValue())) {
@@ -141,7 +142,7 @@ public final class SonarLintAnalyzer {
       .toList();
   }
 
-  private List<ClientInputFile> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze, Map<VirtualFile, Language> contributedLanguages) {
+  private List<ClientInputFile> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze, Map<VirtualFile, ForcedLanguage> contributedLanguages) {
     return computeReadActionSafely(module.getProject(), () -> filesToAnalyze.stream()
       .map(f -> createClientInputFile(module, f, contributedLanguages.get(f)))
       .filter(Objects::nonNull)
@@ -149,7 +150,7 @@ public final class SonarLintAnalyzer {
   }
 
   @CheckForNull
-  public ClientInputFile createClientInputFile(Module module, VirtualFile virtualFile, @Nullable Language language) {
+  public ClientInputFile createClientInputFile(Module module, VirtualFile virtualFile, @Nullable ForcedLanguage language) {
     var test = TestSourcesFilter.isTestSources(virtualFile, module.getProject());
     var charset = getEncoding(virtualFile);
     var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
@@ -168,7 +169,8 @@ public final class SonarLintAnalyzer {
     return null;
   }
 
-  private static DefaultClientInputFile createInputFileFromDocument(Project project, VirtualFile virtualFile, @org.jetbrains.annotations.Nullable Language language, boolean test,
+  private static DefaultClientInputFile createInputFileFromDocument(Project project, VirtualFile virtualFile, @org.jetbrains.annotations.Nullable ForcedLanguage language,
+    boolean test,
     Charset charset, String relativePath) {
     return computeReadActionSafely(virtualFile, project, () -> {
       var document = FileDocumentManager.getInstance().getDocument(virtualFile);

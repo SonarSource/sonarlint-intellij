@@ -29,14 +29,9 @@ import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.server.ServerLinks;
 import org.sonarlint.intellij.core.server.SonarCloudLinks;
 import org.sonarlint.intellij.core.server.SonarQubeLinks;
-import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
-import org.sonarsource.sonarlint.core.serverapi.ServerApi;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
@@ -176,14 +171,6 @@ public class ServerConnection {
 
   public String getName() {
     return name;
-  }
-
-  public EndpointParams getEndpointParams() {
-    return new EndpointParams(getHostUrl(), isSonarCloud(), getOrganizationKey());
-  }
-
-  public ServerApi api() {
-    return new ServerApi(getEndpointParams(), getService(BackendService.class).getHttpClient(name));
   }
 
   @Override

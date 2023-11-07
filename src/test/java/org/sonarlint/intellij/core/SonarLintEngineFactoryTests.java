@@ -40,7 +40,7 @@ class SonarLintEngineFactoryTests extends AbstractSonarLintLightTests {
 
   @Test
   void standalone() {
-    var engine = factory.createEngine();
+    var engine = factory.createStandaloneEngine();
     assertThat(engine).isNotNull();
 
     engine.stop();
@@ -50,8 +50,8 @@ class SonarLintEngineFactoryTests extends AbstractSonarLintLightTests {
 
   @Test
   void connected() {
-    var engine = factory.createEngine("id", false);
+    var engine = factory.createEngineForConnection("id");
     assertThat(engine).isNotNull();
-    engine.stop(true);
+    engine.stop();
   }
 }

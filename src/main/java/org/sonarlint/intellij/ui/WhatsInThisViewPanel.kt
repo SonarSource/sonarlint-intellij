@@ -22,17 +22,18 @@ package org.sonarlint.intellij.ui
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.ui.JBUI
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpText
-import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpTextNotConnected
-import org.sonarlint.intellij.util.runOnPooledThread
 import java.awt.CardLayout
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.JLabel
 import javax.swing.JPanel
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.ui.CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpText
+import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpTextNotConnected
+import org.sonarlint.intellij.util.runOnPooledThread
 
 class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
     var panel: JPanel
@@ -42,7 +43,7 @@ class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
         panel = JPanel(layout)
         createPanel()
         switchCards()
-        CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project) { this.switchCards() }
+        runOnUiThread(project) { subscribeToEventsThatAffectCurrentFile(project) { this.switchCards() } }
     }
 
     private fun createPanel() {

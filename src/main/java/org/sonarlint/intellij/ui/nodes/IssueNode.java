@@ -35,7 +35,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
-import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
+import org.sonarlint.intellij.util.DateUtils;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;

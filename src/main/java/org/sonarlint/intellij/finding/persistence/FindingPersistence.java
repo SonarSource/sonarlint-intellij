@@ -30,10 +30,10 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.tracking.LocalFindingTrackable;
 import org.sonarlint.intellij.proto.Sonarlint;
-import org.sonarsource.sonarlint.core.commons.objectstore.HashingPathMapper;
-import org.sonarsource.sonarlint.core.commons.objectstore.Reader;
-import org.sonarsource.sonarlint.core.commons.objectstore.Writer;
-import org.sonarsource.sonarlint.core.serverconnection.FileUtils;
+import org.sonarlint.intellij.util.FileUtils;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.HashingPathMapper;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.Reader;
+import org.sonarsource.sonarlint.core.client.legacy.objectstore.Writer;
 
 public class FindingPersistence<T extends LiveFinding> {
   private final Path storeBasePath;

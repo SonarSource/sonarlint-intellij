@@ -81,7 +81,9 @@ public final class AnalysisSubmitter {
 
   public void autoAnalyzeOpenFiles(TriggerType triggerType) {
     var openFiles = FileEditorManager.getInstance(project).getOpenFiles();
-    autoAnalyzeFiles(List.of(openFiles), triggerType);
+    if (openFiles.length > 0) {
+      autoAnalyzeFiles(List.of(openFiles), triggerType);
+    }
   }
 
   public void autoAnalyzeFile(VirtualFile file, TriggerType triggerType) {

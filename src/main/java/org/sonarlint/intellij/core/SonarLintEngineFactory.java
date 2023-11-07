@@ -21,67 +21,41 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.PathManager;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.module.ModulesRegistry;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
-import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
-import org.sonarsource.sonarlint.core.client.api.common.AbstractGlobalConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
-import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.analysis.api.ClientModulesProvider;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintEngineFactory {
-
-  ConnectedSonarLintEngine createEngine(String connectionId, boolean isSonarCloud) {
-    var modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
-
-    var configBuilder = isSonarCloud ? ConnectedGlobalConfiguration.sonarCloudBuilder() : ConnectedGlobalConfiguration.sonarQubeBuilder();
-    configBuilder
-      .addEnabledLanguages(EnabledLanguages.getEnabledLanguagesInConnectedMode().toArray(new Language[0]))
-      .enableHotspots()
-      .setConnectionId(connectionId)
-      .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));
-    configureCommonEngine(configBuilder);
-
-    EnabledLanguages.getEmbeddedPluginsForConnectedMode().forEach(configBuilder::useEmbeddedPlugin);
-
-    return new ConnectedSonarLintEngineImpl(configBuilder.build());
+  SonarLintAnalysisEngine createEngineForConnection(String connectionId) {
+    var modulesRegistry = getService(ModulesRegistry.class);
+    return configureEngine(() -> modulesRegistry.getModulesForEngine(connectionId), connectionId);
   }
 
-  StandaloneSonarLintEngine createEngine() {
+  SonarLintAnalysisEngine createStandaloneEngine() {
     /*
      * Some components in the container use the context classloader to find resources. For example, the ServiceLoader uses it by default
      * to find services declared by some libs.
      */
     var cl = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
-
+    var modulesRegistry = getService(ModulesRegistry.class);
     try {
-      var plugins = EnabledLanguages.findEmbeddedPlugins();
-
-      var modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
-
-      var configBuilder = StandaloneGlobalConfiguration.builder()
-        .addPlugins(plugins.toArray(new Path[0]))
-        .addEnabledLanguages(EnabledLanguages.getEnabledLanguagesInStandaloneMode().toArray(new Language[0]))
-        .setModulesProvider(modulesRegistry::getStandaloneModules);
-      configureCommonEngine(configBuilder);
-
-      return new StandaloneSonarLintEngineImpl(configBuilder.build());
+      return configureEngine(modulesRegistry::getStandaloneModules, null);
     } catch (Exception e) {
       throw new IllegalStateException(e);
     } finally {
@@ -89,16 +63,16 @@ public class SonarLintEngineFactory {
     }
   }
 
-  private static void configureCommonEngine(AbstractGlobalConfiguration.AbstractBuilder<?> builder) {
-    var globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
-    final var nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
-    builder
-      .setLogOutput(globalLogOutput)
+  private static SonarLintAnalysisEngine configureEngine(ClientModulesProvider modulesProvider, @Nullable String connectionId) {
+    var engineConfiguration = EngineConfiguration.builder()
+      .setLogOutput(getService(GlobalLogOutput.class))
       .setSonarLintUserHome(getSonarLintHome())
       .setWorkDir(getWorkDir())
       .setExtraProperties(prepareExtraProps())
-      .setNodeJs(nodeJsManager.getNodeJsPath(), nodeJsManager.getNodeJsVersion())
-      .setClientPid(OSProcessUtil.getCurrentProcessId());
+      .setClientPid(OSProcessUtil.getCurrentProcessId())
+      .setModulesProvider(modulesProvider)
+      .build();
+    return getService(BackendService.class).createEngine(engineConfiguration, connectionId);
   }
 
   private static Path getSonarLintHome() {
@@ -116,7 +90,7 @@ public class SonarLintEngineFactory {
       try {
         FileUtils.moveDirectory(oldPath.toFile(), newPath.toFile());
       } catch (IOException e) {
-        SonarLintUtils.getService(GlobalLogOutput.class).logError("Unable to migrate storage", e);
+        getService(GlobalLogOutput.class).logError("Unable to migrate storage", e);
       } finally {
         FileUtils.deleteQuietly(oldPath.toFile());
       }
@@ -133,7 +107,7 @@ public class SonarLintEngineFactory {
   }
 
   private static Map<String, String> prepareExtraProps() {
-    var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    var plugin = getService(SonarLintPlugin.class);
     var extraProps = new HashMap<String, String>();
     if (SonarLintUtils.isRider()) {
       addOmnisharpServerPaths(plugin, extraProps);

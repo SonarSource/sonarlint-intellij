@@ -17,31 +17,23 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.telemetry;
+package org.sonarlint.intellij.actions
 
-import java.nio.file.Path;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 
-import static org.assertj.core.api.Assertions.assertThat;
+class RestartBackendAction : AbstractSonarAction("Restart SonarLint") {
 
-class TelemetryManagerProviderTests extends AbstractSonarLintLightTests {
+    companion object {
+        const val SONARLINT_ERROR_MSG = "SonarLint encountered an issue and has stopped working"
+    }
 
-  @Test
-  void testCreation(@TempDir Path tempDirPath) {
-    var path = tempDirPath.resolve("usage");
+    override fun actionPerformed(e: AnActionEvent) {
+        runOnPooledThread {
+            SonarLintUtils.getService(BackendService::class.java).restartBackendService()
+        }
+    }
 
-    var engineProvider = new TelemetryManagerProvider() {
-      @Override
-      Path getStorageFilePath() {
-        return path;
-      }
-    };
-
-    var telemetry = engineProvider.get();
-    assertThat(path).doesNotExist();
-    telemetry.analysisDoneOnMultipleFiles();
-    assertThat(path).exists();
-  }
 }

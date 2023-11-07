@@ -25,8 +25,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 
 class ModuleBindingManagerTests : AbstractSonarLintLightTests() {
 
@@ -34,8 +33,8 @@ class ModuleBindingManagerTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
     fun prepare() {
-        standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
-        connectedEngine = mock(ConnectedSonarLintEngine::class.java)
+        standaloneEngine = mock(SonarLintAnalysisEngine::class.java)
+        connectedEngine = mock(SonarLintAnalysisEngine::class.java)
         getEngineManager().registerEngine(standaloneEngine)
         getEngineManager().registerEngine(connectedEngine, "server1")
         moduleBindingManager = ModuleBindingManager(module)
@@ -68,7 +67,7 @@ class ModuleBindingManagerTests : AbstractSonarLintLightTests() {
         assertThat(moduleSettings.projectKey).isEmpty()
     }
 
-    private lateinit var standaloneEngine : StandaloneSonarLintEngine
-    private lateinit var connectedEngine : ConnectedSonarLintEngine
+    private lateinit var standaloneEngine : SonarLintAnalysisEngine
+    private lateinit var connectedEngine : SonarLintAnalysisEngine
 
 }

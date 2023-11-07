@@ -22,4 +22,17 @@ package org.sonarlint.intellij.ui.vulnerabilities.tree
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.finding.FindingType
 
-data class FileSummary(val file: VirtualFile, val findingsCount: Int, val findingType: FindingType)
+class FileSummary(val file: VirtualFile, val findingsCount: Int, val findingType: FindingType) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FileSummary
+
+        return file == other.file
+    }
+
+    override fun hashCode(): Int {
+        return file.hashCode()
+    }
+}

@@ -37,8 +37,7 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.messages.PROJECT_BINDING_TOPIC
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 
 class ModuleChangeListenerTests : AbstractSonarLintLightTests() {
     @BeforeEach
@@ -76,8 +75,8 @@ class ModuleChangeListenerTests : AbstractSonarLintLightTests() {
     @Test
     fun should_stop_and_recreate_modules_when_binding_changes() {
         moduleChangeListener.modulesAdded(project, listOf(module))
-        val standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
-        val connectedEngine = mock(ConnectedSonarLintEngine::class.java)
+        val standaloneEngine = mock(SonarLintAnalysisEngine::class.java)
+        val connectedEngine = mock(SonarLintAnalysisEngine::class.java)
         getEngineManager().registerEngine(standaloneEngine)
         getEngineManager().registerEngine(connectedEngine, "connection1")
         project.messageBus.syncPublisher(PROJECT_BINDING_TOPIC)
@@ -93,6 +92,6 @@ class ModuleChangeListenerTests : AbstractSonarLintLightTests() {
 
     private lateinit var moduleChangeListener: ModuleChangeListener
     private var projectBindingManager: ProjectBindingManager = mock()
-    private var projectFakeEngine: ConnectedSonarLintEngine = mock()
+    private var projectFakeEngine: SonarLintAnalysisEngine = mock()
     private var moduleBindingManager: ModuleBindingManager = mock()
 }

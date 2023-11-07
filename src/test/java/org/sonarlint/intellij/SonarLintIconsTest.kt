@@ -25,9 +25,9 @@ import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.SonarLintIcons.severity
 import org.sonarlint.intellij.SonarLintIcons.toDisabled
 import org.sonarlint.intellij.SonarLintIcons.type
-import org.sonarsource.sonarlint.core.commons.IssueSeverity
-import org.sonarsource.sonarlint.core.commons.RuleType
-import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 
 class SonarLintIconsTest {
     @Test

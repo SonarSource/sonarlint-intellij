@@ -26,8 +26,9 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
-import org.sonarsource.sonarlint.core.plugin.commons.SkipReason;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.PluginDetails;
+import org.sonarsource.sonarlint.core.client.utils.Language;
+import org.sonarsource.sonarlint.core.plugin.commons.api.SkipReason;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -52,17 +53,18 @@ public class AnalysisRequirementNotifications {
       final var correspondingPlugin = allPlugins.stream().filter(p -> p.key().equals(l.getPluginKey())).findFirst();
       correspondingPlugin.flatMap(PluginDetails::skipReason).ifPresent(skipReason -> {
         if (skipReason instanceof SkipReason.UnsatisfiedRuntimeRequirement runtimeRequirement) {
-          final var title = "<b>SonarLint failed to analyze " + l.getLabel() + " code</b>";
+          var languageLabel = Language.valueOf(l.name()).getLabel();
+          final var title = "<b>SonarLint failed to analyze " + languageLabel + " code</b>";
           if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE) {
             var content = String.format(
               "SonarLint requires Java runtime version %s or later to analyze %s code. Current version is %s.",
-              runtimeRequirement.getMinVersion(), l.getLabel(), runtimeRequirement.getCurrentVersion());
+              runtimeRequirement.getMinVersion(), languageLabel, runtimeRequirement.getCurrentVersion());
             createNotificationOnce(project, title, content,
               new OpenLinkAction("https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under",
                 "How to change the IDE-running JDK?"));
           } else if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS) {
             var content = new StringBuilder(
-              String.format("SonarLint requires Node.js runtime version %s or later to analyze %s code.", runtimeRequirement.getMinVersion(), l.getLabel()));
+              String.format("SonarLint requires Node.js runtime version %s or later to analyze %s code.", runtimeRequirement.getMinVersion(), languageLabel));
             if (runtimeRequirement.getCurrentVersion() != null) {
               content.append(String.format(" Current version is %s.", runtimeRequirement.getCurrentVersion()));
             }

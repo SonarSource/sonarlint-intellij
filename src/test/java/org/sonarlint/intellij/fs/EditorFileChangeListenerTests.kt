@@ -19,9 +19,10 @@
  */
 package org.sonarlint.intellij.fs
 
-import com.intellij.openapi.editor.event.MockDocumentEvent
 import com.intellij.openapi.vfs.VirtualFile
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.mock
@@ -32,27 +33,29 @@ import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 class EditorFileChangeListenerTests : AbstractSonarLintLightTests() {
     @Test
     fun should_notify_of_file_system_event_when_a_change_occurs_in_editor() {
-        val fakeEngine = mock(StandaloneSonarLintEngine::class.java)
-        val eventsCaptor = ArgumentCaptor.forClass(ClientModuleFileEvent::class.java)
-        val fileName = "file.py"
-        val listener = EditorFileChangeListener()
-        val file = myFixture.copyFileToProject(fileName, fileName)
-        val documentEvent = MockDocumentEvent(file.getDocument()!!, 0)
-        getEngineManager().registerEngine(fakeEngine)
+        val fakeEngine = mock(SonarLintAnalysisEngine::class.java)
+        val fakeNotifier = mock(ModuleFileEventsNotifier::class.java)
 
-        listener.documentChanged(documentEvent)
+        val eventsCaptor = ArgumentCaptor.forClass(List::class.java) as ArgumentCaptor<List<ClientModuleFileEvent>>
+        getEngineManager().registerEngine(fakeEngine)
+        val fileName = "file.py"
+        val listener = EditorFileChangeListener(fakeNotifier)
+        val file = myFixture.copyFileToProject(fileName, fileName)
+
+        listener.afterDocumentChange(file.getDocument()!!)
 
         // wait for the notification to be delivered (because of the debounce delay)
-        Thread.sleep(2000)
-        verify(fakeEngine, times(1)).fireModuleFileEvent(eq(module), capture(eventsCaptor))
+        Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted {
+            verify(fakeNotifier, times(1)).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
+        }
 
-        val event = eventsCaptor.value
+        val event = eventsCaptor.value[0]
         assertThat(event.type()).isEqualTo(ModuleFileEvent.Type.MODIFIED)
         val inputFile = event.target()
         assertThat(inputFile.contents()).contains("content")

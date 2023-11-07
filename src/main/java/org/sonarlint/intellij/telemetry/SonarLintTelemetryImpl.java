@@ -19,171 +19,92 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.intellij.concurrency.JobScheduler;
-import com.intellij.ide.AppLifecycleListener;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.serviceContainer.NonInjectable;
-
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
-
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.telemetry.InternalDebug;
-import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddReportedRulesParams;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisDoneOnSingleLanguageParams;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.HelpAndFeedbackClickedParams;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
 
-public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleListener {
-  private static final Logger LOGGER = Logger.getInstance(SonarLintTelemetryImpl.class);
-  static final String DISABLE_PROPERTY_KEY = "sonarlint.telemetry.disabled";
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
-  private final TelemetryManager telemetry;
-
-  @VisibleForTesting
-  ScheduledFuture<?> scheduledFuture;
-
-  public SonarLintTelemetryImpl() {
-    this(new TelemetryManagerProvider());
-  }
-
-  @NonInjectable
-  SonarLintTelemetryImpl(TelemetryManagerProvider telemetryManagerProvider) {
-    if ("true".equals(System.getProperty(DISABLE_PROPERTY_KEY))) {
-      // can't log with GlobalLogOutput to the tool window since at this point no project is open yet
-      LOGGER.info("Telemetry disabled by system property");
-      telemetry = null;
-    } else {
-      telemetry = telemetryManagerProvider.get();
-      ApplicationManager.getApplication().getMessageBus().connect().subscribe(AppLifecycleListener.TOPIC, this);
-      init();
-    }
-  }
+public class SonarLintTelemetryImpl implements SonarLintTelemetry {
 
   @Override
   public void optOut(boolean optOut) {
-    if (telemetry != null) {
-      if (optOut) {
-        if (telemetry.isEnabled()) {
-          telemetry.disable();
-        }
-      } else {
-        if (!telemetry.isEnabled()) {
-          telemetry.enable();
-        }
-      }
+    if (optOut) {
+      getTelemetryService().disableTelemetry();
+    } else {
+      getTelemetryService().enableTelemetry();
     }
   }
 
   @Override
   public boolean enabled() {
-    return telemetry != null && telemetry.isEnabled();
-  }
-
-  @Override public boolean canBeEnabled() {
-    return telemetry != null;
-  }
-
-
-  public void init() {
     try {
-      this.scheduledFuture = JobScheduler.getScheduler().scheduleWithFixedDelay(this::upload,
-        1, TimeUnit.HOURS.toMinutes(6), TimeUnit.MINUTES);
-    } catch (Exception e) {
-      if (InternalDebug.isEnabled()) {
-        var msg = "Failed to schedule telemetry job";
-        LOGGER.error(msg, e);
-        GlobalLogOutput.get().logError(msg, e);
-      }
+      return getTelemetryService().getStatus().get().isEnabled();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      GlobalLogOutput.get().logError("Cannot retrieve telemetry status", e);
     }
-  }
-
-  @VisibleForTesting
-  void upload() {
-    if (enabled()) {
-      telemetry.uploadLazily();
-    }
+    return false;
   }
 
   @Override
   public void analysisDoneOnMultipleFiles() {
-    if (enabled()) {
-      telemetry.analysisDoneOnMultipleFiles();
-    }
+    getTelemetryService().analysisDoneOnMultipleFiles();
   }
 
   @Override
   public void analysisDoneOnSingleLanguage(@Nullable Language language, int time) {
-    if (enabled()) {
-      telemetry.analysisDoneOnSingleLanguage(language, time);
-    }
-  }
-
-  @Override
-  public void devNotificationsReceived(String eventType) {
-    if (enabled()) {
-      telemetry.devNotificationsReceived(eventType);
-    }
+    getTelemetryService().analysisDoneOnSingleLanguage(new AnalysisDoneOnSingleLanguageParams(language, time));
   }
 
   @Override
   public void devNotificationsClicked(String eventType) {
-    if (enabled()) {
-      telemetry.devNotificationsClicked(eventType);
-    }
+    getTelemetryService().devNotificationsClicked(new DevNotificationsClickedParams(eventType));
   }
 
   @Override
   public void taintVulnerabilitiesInvestigatedRemotely() {
-    if (enabled()) {
-      telemetry.taintVulnerabilitiesInvestigatedRemotely();
-    }
+    getTelemetryService().taintVulnerabilitiesInvestigatedRemotely();
   }
 
   @Override
   public void taintVulnerabilitiesInvestigatedLocally() {
-    if (enabled()) {
-      telemetry.taintVulnerabilitiesInvestigatedLocally();
-    }
+    getTelemetryService().taintVulnerabilitiesInvestigatedLocally();
   }
 
   @Override
   public void addReportedRules(Set<String> ruleKeys) {
-    if (enabled()) {
-      telemetry.addReportedRules(ruleKeys);
-    }
+    getTelemetryService().addReportedRules(new AddReportedRulesParams(ruleKeys));
   }
 
   @Override
   public void addQuickFixAppliedForRule(String ruleKey) {
-    if (enabled()) {
-      telemetry.addQuickFixAppliedForRule(ruleKey);
-    }
+    getTelemetryService().addQuickFixAppliedForRule(new AddQuickFixAppliedForRuleParams(ruleKey));
   }
 
   @Override
   public void helpAndFeedbackLinkClicked(String itemId) {
-    if (enabled()) {
-      telemetry.helpAndFeedbackLinkClicked(itemId);
-    }
+    getTelemetryService().helpAndFeedbackLinkClicked(new HelpAndFeedbackClickedParams(itemId));
   }
 
-  @VisibleForTesting
-  void stop() {
-    if (enabled()) {
-      telemetry.stop();
+  private static TelemetryRpcService getTelemetryService() {
+    var service = computeOnPooledThread("Telemetry Service Task", () -> getService(BackendService.class).getTelemetryService());
+    if (service == null) {
+      GlobalLogOutput.get().log("Cannot retrieve telemetry service", ClientLogOutput.Level.ERROR);
+      throw new IllegalStateException("Cannot retrieve telemetry service");
     }
-
-    if (scheduledFuture != null) {
-      scheduledFuture.cancel(false);
-      scheduledFuture = null;
-    }
-  }
-
-  @Override
-  public void appWillBeClosed(boolean isRestart) {
-    stop();
+    return service;
   }
 }

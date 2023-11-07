@@ -19,15 +19,14 @@
  */
 package org.sonarlint.intellij.core;
 
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 public class TestEngineManager extends DefaultEngineManager {
-  public void registerEngine(ConnectedSonarLintEngine engine, String connectionName) {
+  public void registerEngine(SonarLintAnalysisEngine engine, String connectionName) {
     connectedEngines.put(connectionName, engine);
   }
 
-  public void registerEngine(StandaloneSonarLintEngine engine) {
+  public void registerEngine(SonarLintAnalysisEngine engine) {
     standalone = engine;
   }
 

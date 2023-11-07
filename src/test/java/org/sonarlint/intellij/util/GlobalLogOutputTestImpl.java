@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 public class GlobalLogOutputTestImpl implements GlobalLogOutput {
 

@@ -25,35 +25,32 @@ import git4idea.commands.GitCommand
 import git4idea.commands.GitLineHandler
 import git4idea.history.GitHistoryUtils
 import git4idea.repo.GitRepository
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.vcs.VcsRepo
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
-import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
 
-class GitRepo(private val repo: GitRepository, private val project: Project, private val logger: SonarLintLogger) : VcsRepo {
-    override fun electBestMatchingServerBranchForCurrentHead(projectBranches: ProjectBranches): String? {
-        val serverCandidateNames = projectBranches.branchNames
-        val serverMainBranch = projectBranches.mainBranchName
+class GitRepo(private val repo: GitRepository, private val project: Project) : VcsRepo {
+    override fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>): String? {
         return try {
             val currentBranch = repo.currentBranchName
-            if (currentBranch != null && serverCandidateNames.contains(currentBranch)) {
+            if (currentBranch != null && allBranchNames.contains(currentBranch)) {
                 return currentBranch
             }
             val head = repo.currentRevision ?: return null // Could be the case if no commit has been made in the repo
 
             val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
-            for (serverBranchName in serverCandidateNames) {
+            for (serverBranchName in allBranchNames) {
                 val localBranch = repo.branches.findLocalBranch(serverBranchName) ?: continue
                 val localBranchHash = repo.branches.getHash(localBranch) ?: continue
                 val distance = distance(project, repo, head, localBranchHash.asString()) ?: continue
                 branchesPerDistance.computeIfAbsent(distance) { HashSet() }.add(serverBranchName)
             }
             val bestCandidates = branchesPerDistance.minByOrNull { it.key }?.value ?: return null
-            if (bestCandidates.contains(serverMainBranch)) {
+            if (bestCandidates.contains(mainBranchName)) {
                 // Favor the main branch when there are multiple candidates with the same distance
-                serverMainBranch
+                mainBranchName
             } else bestCandidates.first()
         } catch (e: Exception) {
-            logger.error("Couldn't find best matching branch", e)
+            SonarLintConsole.get(project).error("Couldn't find best matching branch", e)
             null
         }
     }

@@ -49,6 +49,7 @@ import javax.swing.text.DefaultCaret
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.UrlUtils.Companion.urlEncode
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
@@ -62,8 +63,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.EffectiveRuleDetailsDto
-import org.sonarsource.sonarlint.core.serverapi.UrlUtils.urlEncode
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleDetailsDto
 
 
 private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
@@ -171,14 +171,6 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         updateUiComponents()
     }
 
-    fun clearDeletedFile() {
-        clearValues()
-        descriptionPanel.removeAll()
-        disableEmptyDisplay(false)
-        ruleNameLabel.text = ""
-        mainPanel.withEmptyText("Finding location has been deleted")
-    }
-
     private fun clearValues() {
         finding = null
         ruleKey = null
@@ -201,7 +193,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             disableEmptyDisplay(true)
             finding?.let { updateHeader(finding, finding.getRuleKey(), ruleDetails) } ?: ruleKey?.let { updateHeader(null, ruleKey, ruleDetails) }
             descriptionPanel.removeAll()
-            val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language.languageKey)
+            val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language)
             ruleDetails.description.map(
                 { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
                 { withSections -> descriptionPanel.addSections(withSections, fileType) }

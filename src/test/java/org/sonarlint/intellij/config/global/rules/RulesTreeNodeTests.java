@@ -22,10 +22,10 @@ package org.sonarlint.intellij.config.global.rules;
 import java.util.HashMap;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -62,7 +62,7 @@ class RulesTreeNodeTests {
 
   @Test
   void getters_language() {
-    var node = new RulesTreeNode.Language("lang");
+    var node = new RulesTreeNode.LanguageNode("lang");
     node.setIsNonDefault(true);
     node.setIsActivated(true);
 
@@ -73,7 +73,7 @@ class RulesTreeNodeTests {
 
   @Test
   void create_iterable_children() {
-    var parent = new RulesTreeNode.Language("lang");
+    var parent = new RulesTreeNode.LanguageNode("lang");
     RulesTreeNode.Rule n1 = new RulesTreeNode.Rule(mockRuleDetails("r1"), true, new HashMap<>());
     RulesTreeNode.Rule n2 = new RulesTreeNode.Rule(mockRuleDetails("r2"), true, new HashMap<>());
     RulesTreeNode.Rule n3 = new RulesTreeNode.Rule(mockRuleDetails("r3"), true, new HashMap<>());

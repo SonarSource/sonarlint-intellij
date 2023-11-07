@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.common.vcs
 
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
-
 interface VcsRepo {
-    fun electBestMatchingServerBranchForCurrentHead(projectBranches: ProjectBranches) : String?
+    fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>) : String?
 }

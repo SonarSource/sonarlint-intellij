@@ -30,6 +30,7 @@ import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
 import org.sonarlint.intellij.actions.ClearReportAction;
 import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup;
+import org.sonarlint.intellij.actions.RestartBackendAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction;
@@ -60,6 +61,7 @@ public final class SonarLintActions {
   private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
   private final IncludeResolvedFindingsAction<LocalTaintVulnerability> includeResolvedTaintVulnerabilitiesAction;
   private final AnAction analyzeCurrentFileAction;
+  private final AnAction restartSonarLintAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -110,6 +112,7 @@ public final class SonarLintActions {
     analyzeCurrentFileAction = new SonarAnalyzeFilesAction("Analyze Current File",
       "Run SonarLint analysis on the current file",
       SonarLintIcons.PLAY);
+    restartSonarLintAction = new RestartBackendAction();
   }
 
   public static SonarLintActions getInstance() {
@@ -162,6 +165,10 @@ public final class SonarLintActions {
 
   public AnAction analyzeCurrentFileAction() {
     return analyzeCurrentFileAction;
+  }
+
+  public AnAction restartSonarLintAction() {
+    return restartSonarLintAction;
   }
 
 }

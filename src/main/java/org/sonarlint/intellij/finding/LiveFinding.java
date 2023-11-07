@@ -30,16 +30,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.tracking.Trackable;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.commons.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.commons.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
+import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5;
@@ -76,8 +77,8 @@ public abstract class LiveFinding implements Trackable, Finding {
   private SoftwareQuality highestQuality = null;
   private ImpactSeverity highestImpact = null;
 
-  protected LiveFinding(Module module, Issue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
-                        List<QuickFix> quickFixes) {
+  protected LiveFinding(Module module, RawIssue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
+    List<QuickFix> quickFixes) {
     this.module = module;
     this.range = range;
     this.message = issue.getMessage();
@@ -89,8 +90,9 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.quickFixes = quickFixes;
     this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey().orElse(null);
 
-    this.cleanCodeAttribute = issue.getCleanCodeAttribute().orElse(null);
-    this.impacts = issue.getImpacts();
+    this.cleanCodeAttribute = issue.getCleanCodeAttribute().map(CleanCodeAttribute::fromDto).orElse(null);
+    this.impacts = issue.getImpacts().entrySet().stream().map(e -> Map.entry(SoftwareQuality.fromDto(e.getKey()), ImpactSeverity.fromDto(e.getValue())))
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     var highestQualityImpact = getImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
     this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
     this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);

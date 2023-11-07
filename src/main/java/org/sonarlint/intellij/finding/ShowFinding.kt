@@ -26,8 +26,9 @@ import java.util.stream.Collectors
 import org.apache.commons.codec.digest.DigestUtils
 import org.sonarlint.intellij.common.ui.ReadActionUtils
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
-import org.sonarsource.sonarlint.core.clientapi.common.FlowDto
-import org.sonarsource.sonarlint.core.clientapi.common.TextRangeDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
+
 
 data class ShowFinding<T : Finding>(
     val module: Module,
@@ -47,7 +48,7 @@ data class ShowFinding<T : Finding>(
             val matcher = TextRangeMatcher(project)
             return flows.map { flow ->
                 flow.locations.stream().map {
-                    tryFindFile(project, it.filePath)?.let { file ->
+                    tryFindFile(project, it.ideFilePath)?.let { file ->
                         it.codeSnippet?.let { _ ->
                             val rangeMarker = ReadActionUtils.Companion.computeReadActionSafely(project) {
                                 matcher.matchWithCode(file, it.textRange, it.codeSnippet)

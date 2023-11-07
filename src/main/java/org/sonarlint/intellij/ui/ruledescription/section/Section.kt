@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.ui.ruledescription.section
 
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 class Section {
     val fragments: MutableList<SectionFragment> = mutableListOf()

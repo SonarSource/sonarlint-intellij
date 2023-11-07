@@ -39,7 +39,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 private const val FILE_NAME = "main.py"
@@ -177,7 +177,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
     }
 
     private var projectBindingManager: ProjectBindingManager = mock()
-    private var fakeEngine: SonarLintEngine = mock()
+    private var fakeEngine: SonarLintAnalysisEngine = mock()
     private var fileEventsNotifier: ModuleFileEventsNotifier = mock()
     private lateinit var file: VirtualFile
     private lateinit var virtualFileSystemListener: VirtualFileSystemListener
