@@ -204,7 +204,7 @@ public class AnalyzerConfiguration {
         }
       }
     }
-    return cppEnvironment != null && (cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL());
+    return cppEnvironment != null && (cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker());
   }
 
   @Nullable
