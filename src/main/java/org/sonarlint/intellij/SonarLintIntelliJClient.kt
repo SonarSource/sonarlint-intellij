@@ -42,6 +42,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
 import org.apache.commons.lang.StringEscapeUtils
+import org.eclipse.lsp4j.jsonrpc.CompletableFutures
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -415,11 +418,19 @@ object SonarLintIntelliJClient : SonarLintRpcClient {
     }
 
     override fun getCredentials(params: GetCredentialsParams): CompletableFuture<GetCredentialsResponse> {
-        return getGlobalSettings().getServerConnectionByName(params.connectionId)
-            .map { connection -> connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
-                ?: connection.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.password))) }
-                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))
-            }.orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.connectionId)))
+        return CompletableFutures.computeAsync { _ ->
+            val connectionOpt = getGlobalSettings().getServerConnectionByName(params.connectionId)
+            if (connectionOpt.isEmpty) {
+                // TODO create a constant for client side error codes like BackendErrorCode
+                throw ResponseErrorException(ResponseError(-1, "Unknown connection: " + params.connectionId, params.connectionId))
+            }
+            val connection = connectionOpt.get()
+            if (connection.token != null) {
+                GetCredentialsResponse(TokenDto(connection.token))
+            } else {
+                GetCredentialsResponse(UsernamePasswordDto(connection.login, connection.password))
+            }
+        }
     }
 
     override fun getProxyPasswordAuthentication(params: GetProxyPasswordAuthenticationParams): CompletableFuture<GetProxyPasswordAuthenticationResponse> {
