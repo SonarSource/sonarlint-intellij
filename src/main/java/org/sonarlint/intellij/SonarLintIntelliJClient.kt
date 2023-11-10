@@ -41,10 +41,20 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.URI
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.concurrent.CompletableFuture
 import org.apache.commons.lang.StringEscapeUtils
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -115,16 +125,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
-import java.io.ByteArrayInputStream
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.URI
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
 
 object SonarLintIntelliJClient : SonarLintRpcClient {
 
@@ -345,37 +345,37 @@ object SonarLintIntelliJClient : SonarLintRpcClient {
     }
 
     override fun assistCreatingConnection(params: AssistCreatingConnectionParams): CompletableFuture<AssistCreatingConnectionResponse> {
-        return CompletableFuture.supplyAsync {
+        return CompletableFutures.computeAsync { _ ->
             val serverUrl = params.serverUrl
             val message = "No connections configured to '$serverUrl'."
             if (!showConfirmModal(OPENING_FINDING_TITLE, message, "Create connection", null)) {
-                throw CancellationException("Connection creation rejected by the user")
+                throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Connection creation rejected by the user", serverUrl))
             }
             val newConnection = ApplicationManager.getApplication().computeInEDT {
                 ServerConnectionCreator().createThroughWizard(serverUrl)
-            } ?: throw CancellationException("Connection creation cancelled by the user")
+            } ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Connection creation cancelled by the user", serverUrl))
             AssistCreatingConnectionResponse(newConnection.name)
         }
     }
 
     override fun assistBinding(params: AssistBindingParams): CompletableFuture<AssistBindingResponse> {
-        return CompletableFuture.supplyAsync {
+        return CompletableFutures.computeAsync { _ ->
             val connectionId = params.connectionId
             val projectKey = params.projectKey
             val connection = getGlobalSettings().getServerConnectionByName(connectionId)
-                .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
+                .orElseThrow { throw ResponseErrorException(ResponseError(ResponseErrorCode.InvalidParams, "Unable to find connection '$connectionId'", connectionId)) }
             val message = "Cannot automatically find a project bound to:\n" +
                 "  • Project: $projectKey\n" +
                 "  • Connection: $connectionId\n" +
                 "Please manually select a project."
             if (!showConfirmModal(OPENING_FINDING_TITLE, message, "Select project", null)) {
-                throw CancellationException("Project selection rejected by the user")
+                throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Project selection rejected by the user", connectionId))
             }
             val selectedProject = ApplicationManager.getApplication().computeInEDT {
                 ProjectSelectionDialog().selectProject()?.let {
                     ProjectUtil.openOrImport(it, null, false)
                 }
-            } ?: throw CancellationException("Project selection cancelled by the user")
+            } ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Project selection cancelled by the user", connectionId))
             val confirmed = showConfirmModal(
                 OPENING_FINDING_TITLE,
                 "You are going to bind current project to '${connection.hostUrl}'. Do you agree?",
@@ -383,7 +383,7 @@ object SonarLintIntelliJClient : SonarLintRpcClient {
                 selectedProject
             )
             if (!confirmed) {
-                throw CancellationException("Project binding rejected by the user")
+                throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Project binding rejected by the user", connectionId))
             }
             getService(selectedProject, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
             AssistBindingResponse(BackendService.projectId(selectedProject))
@@ -422,7 +422,7 @@ object SonarLintIntelliJClient : SonarLintRpcClient {
             val connectionOpt = getGlobalSettings().getServerConnectionByName(params.connectionId)
             if (connectionOpt.isEmpty) {
                 // TODO create a constant for client side error codes like BackendErrorCode
-                throw ResponseErrorException(ResponseError(-1, "Unknown connection: " + params.connectionId, params.connectionId))
+                throw ResponseErrorException(ResponseError(ResponseErrorCode.InvalidParams, "Unknown connection: " + params.connectionId, params.connectionId))
             }
             val connection = connectionOpt.get()
             if (connection.token != null) {
