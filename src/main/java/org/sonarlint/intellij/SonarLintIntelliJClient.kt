@@ -421,7 +421,6 @@ object SonarLintIntelliJClient : SonarLintRpcClient {
         return CompletableFutures.computeAsync { _ ->
             val connectionOpt = getGlobalSettings().getServerConnectionByName(params.connectionId)
             if (connectionOpt.isEmpty) {
-                // TODO create a constant for client side error codes like BackendErrorCode
                 throw ResponseErrorException(ResponseError(ResponseErrorCode.InvalidParams, "Unknown connection: " + params.connectionId, params.connectionId))
             }
             val connection = connectionOpt.get()

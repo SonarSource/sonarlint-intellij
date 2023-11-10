@@ -642,12 +642,12 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         try {
             backendLauncher.close()
         } catch (e: java.lang.Exception) {
-            getService(GlobalLogOutput::class.java).logError("Unable to stop the SonartLint backend launcher", e)
+            getService(GlobalLogOutput::class.java).logError("Unable to stop the SonarLint backend launcher", e)
         }
         try {
             clientLauncher.close()
         } catch (e: java.lang.Exception) {
-            getService(GlobalLogOutput::class.java).logError("Unable to stop the SonartLint client launcher", e)
+            getService(GlobalLogOutput::class.java).logError("Unable to stop the SonarLint client launcher", e)
         }
     }
 }

@@ -114,8 +114,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       this.details = details;
       this.activated = activated;
       this.nonDefaultParams = new HashMap<>(nonDefaultParams);
-      //TODO check here
-      var highestQualityImpact = details.getDefaultImpacts().stream().max(Comparator.comparing(i -> i.getImpactSeverity().ordinal()));
+      var highestQualityImpact = details.getDefaultImpacts().stream().max(Comparator.comparing(ImpactDto::getImpactSeverity));
       this.highestQuality = highestQualityImpact.map(ImpactDto::getSoftwareQuality).orElse(null);
       this.highestImpact = highestQualityImpact.map(ImpactDto::getImpactSeverity).orElse(null);
     }
