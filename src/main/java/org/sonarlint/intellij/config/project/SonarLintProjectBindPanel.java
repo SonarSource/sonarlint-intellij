@@ -67,7 +67,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
-import org.sonarsource.sonarlint.core.serverapi.component.ServerProject;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProject;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
@@ -159,7 +159,7 @@ public class SonarLintProjectBindPanel {
    * Assumes that it's bound and a server is selected
    */
   @CheckForNull
-  private Map<String, ServerProject> downloadProjectList(ServerConnection selectedConnection) {
+  private Map<String, SonarProject> downloadProjectList(ServerConnection selectedConnection) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     var downloadTask = new ServerDownloadProjectTask(project, selectedConnection);

@@ -81,6 +81,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrg
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.ListUserOrganizationsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.ListUserOrganizationsResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
@@ -172,6 +174,18 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
                 })
         }.get()
         backend
+    }
+
+    fun getAllProjects(server: ServerConnection): CompletableFuture<GetAllProjectsResponse> {
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val params: GetAllProjectsParams = if (server.isSonarCloud) {
+            GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
+        } else {
+            GetAllProjectsParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
+        }
+
+        return initializedBackend.connectionService.getAllProjects(params)
     }
 
     fun getHttpClient(connectionId: String): HttpClient {
