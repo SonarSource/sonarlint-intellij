@@ -42,6 +42,7 @@ import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.ServerConnectionCredentials
 import org.sonarlint.intellij.config.global.ServerConnectionService
+import org.sonarlint.intellij.config.global.ServerConnectionWithAuth
 import org.sonarlint.intellij.fixtures.newSonarCloudConnection
 import org.sonarlint.intellij.fixtures.newSonarQubeConnection
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
@@ -65,8 +66,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         super.initApplication()
 
         clearServerConnections()
-        addServerConnection(newSonarQubeConnection("idSQ", "url"))
-        addServerConnection(newSonarCloudConnection("idSC", "org"))
+        setServerConnections(newSonarQubeConnection("idSQ", "url"), newSonarCloudConnection("idSC", "org"))
 
         backend = mock(SonarLintBackend::class.java)
         `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
@@ -136,7 +136,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     @Test
     fun test_notify_backend_when_opening_a_bound_project() {
         val connection = newSonarQubeConnection("id", "url")
-        addServerConnection(connection)
+        setServerConnections(connection)
         projectSettings.bindTo(connection, "key")
 
         service.projectOpened(project)
@@ -278,43 +278,43 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     @Test
     fun test_notify_backend_when_connection_token_changed() {
         reset(backendConnectionService)
-        addServerConnection(newSonarQubeConnection("idSQ", credentials = ServerConnectionCredentials(null, null, "oldToken")))
+        updateServerCredentials("idSQ", credentials = ServerConnectionCredentials(null, null, "oldToken"))
 
         verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("idSQ")))
     }
 
     @Test
     fun test_notify_backend_when_connection_password_changed() {
-        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("login", "oldPass", null)))
+        addServerConnectionsWithAuth(newSonarQubeConnection("id"), credentials = ServerConnectionCredentials("login", "oldPass", null))
         reset(backendConnectionService)
-        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("login", "newPass", null)))
+        updateServerCredentials("id", credentials = ServerConnectionCredentials("login", "newPass", null))
 
         verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
 
     @Test
     fun test_notify_backend_when_connection_login_changed() {
-        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("oldLogin", "pass", null)))
+        addServerConnectionsWithAuth(newSonarQubeConnection("id"), credentials = ServerConnectionCredentials("oldLogin", "pass", null))
         reset(backendConnectionService)
-        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("newLogin", "pass", null)))
+        updateServerCredentials("id", credentials = ServerConnectionCredentials("newLogin", "pass", null))
 
         verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
 
     @Test
     fun test_do_not_notify_backend_of_credentials_change_when_connection_is_new() {
-        ServerConnectionService.getInstance().setServerConnections(globalSettings, emptyList())
+        clearServerConnections()
         reset(backendConnectionService)
-        addServerConnection(newSonarQubeConnection("id", credentials = ServerConnectionCredentials("login", "newPass", null)))
+        addServerConnectionsWithAuth(newSonarQubeConnection("id"), credentials = ServerConnectionCredentials("login", "newPass", null))
 
         verify(backendConnectionService, never()).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
 
     @Test
     fun test_do_not_notify_backend_of_credentials_change_when_something_else_changed() {
-        addServerConnection(newSonarQubeConnection("id", "oldUrl"))
+        setServerConnections(newSonarQubeConnection("id", "oldUrl"))
         reset(backendConnectionService)
-        addServerConnection(newSonarQubeConnection("id", "newUrl"))
+        setServerConnections(newSonarQubeConnection("id", "newUrl"))
 
         verify(backendConnectionService, never()).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
@@ -326,11 +326,24 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         verify(backend).shutdown()
     }
 
-    private fun addServerConnection(connection: ServerConnection) {
-        ServerConnectionService.getInstance().addServerConnection(connection)
+    private fun addServerConnectionsWithAuth(connection: ServerConnection, credentials: ServerConnectionCredentials) {
+        addServerConnectionsWithAuth(listOf(ServerConnectionWithAuth(connection, credentials)))
+    }
+
+    private fun updateServerCredentials(connectionName: String, credentials: ServerConnectionCredentials) {
+        val connection = ServerConnectionService.getInstance().getConnections().find { it.name == connectionName }!!
+        ServerConnectionService.getInstance().updateServerConnections(globalSettings, emptySet(), listOf(ServerConnectionWithAuth(connection, credentials)), emptyList())
+    }
+
+    private fun setServerConnections(vararg connections: ServerConnection) {
+        addServerConnectionsWithAuth(connections.map { ServerConnectionWithAuth(it, ServerConnectionCredentials(null, null, "token")) })
+    }
+
+    private fun addServerConnectionsWithAuth(connections: List<ServerConnectionWithAuth>) {
+        ServerConnectionService.getInstance().updateServerConnections(globalSettings, emptySet(), emptyList(), connections)
     }
 
     private fun clearServerConnections() {
-        ServerConnectionService.getInstance().setServerConnections(globalSettings, emptyList())
+        ServerConnectionService.getInstance().updateServerConnections(globalSettings, ServerConnectionService.getInstance().getConnections().map { it.name }.toSet(), emptyList(), emptyList())
     }
 }

@@ -28,25 +28,25 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.config.global.ServerConnectionService
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.runOnPooledThread
 
 class ConfigureNotificationsAction(private val connectionName: String, private val project: Project) : NotificationAction("Configure") {
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
-        WindowManager.getInstance().getFrame(e.project) ?: return
-        runOnUiThread(project) {
-            ServerConnectionService.getInstance().getServerConnectionByName(connectionName)
+        WindowManager.getInstance().getFrame(project) ?: return
+        runOnPooledThread(project) {
+            ServerConnectionService.getInstance().getServerConnectionWithAuthByName(connectionName)
                     .ifPresentOrElse({
-                        val wizard = ServerConnectionWizard.forNotificationsEdition(it)
-                        if (wizard.showAndGet()) {
-                            ServerConnectionService.getInstance().replaceConnection(it.name, wizard.connection)
+                        runOnUiThread(project) {
+                            val wizard = ServerConnectionWizard.forNotificationsEdition(it)
+                            if (wizard.showAndGet()) {
+                                runOnPooledThread(project) { ServerConnectionService.getInstance().replaceConnection(wizard.connectionWithAuth) }
+                            }
                         }
                     }, {
-                        if (e.project != null) {
-                            SonarLintConsole.get(e.project!!).error("Unable to find connection with name: $connectionName")
-                            notification.expire()
-                        }
+                        SonarLintConsole.get(project).error("Unable to find connection with name: $connectionName")
+                        notification.expire()
                     })
         }
     }
-
 }

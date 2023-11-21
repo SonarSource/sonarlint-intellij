@@ -26,6 +26,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.ServerConnectionCredentials;
+import org.sonarlint.intellij.config.global.ServerConnectionWithAuth;
 import org.sonarlint.intellij.config.global.SonarCloudConnection;
 import org.sonarlint.intellij.config.global.SonarQubeConnection;
 import org.sonarlint.intellij.core.SonarProduct;
@@ -58,7 +59,8 @@ public class WizardModel {
     this.sonarProduct = SonarProduct.fromUrl(serverUrl);
   }
 
-  public WizardModel(ServerConnection connection) {
+  public WizardModel(ServerConnectionWithAuth connectionWithAuth) {
+    var connection = connectionWithAuth.getConnection();
     this.sonarProduct = connection.getProduct();
     this.notificationsDisabled = connection.getNotificationsDisabled();
     this.serverUrl = connection.getHostUrl();
@@ -66,7 +68,7 @@ public class WizardModel {
       this.organizationKey = ((SonarCloudConnection) connection).getOrganizationKey();
     }
     this.name = connection.getName();
-    var credentials = connection.getCredentials();
+    var credentials = connectionWithAuth.getCredentials();
     this.token = credentials.getToken();
     this.login = credentials.getLogin();
     var pass = credentials.getPassword();
@@ -225,14 +227,17 @@ public class WizardModel {
     return new PartialConnection(serverUrl, sonarProduct, organizationKey, new ServerConnectionCredentials(login, pass, token));
   }
 
-  public ServerConnection createConnection() {
-    if (sonarProduct == SonarProduct.SONARCLOUD) {
-      return new SonarCloudConnection(name, token, organizationKey, notificationsDisabled);
-    }
+  public ServerConnectionWithAuth createConnectionWithAuth() {
+    ServerConnection connection;
     String pass = null;
-    if (password != null) {
-      pass = String.valueOf(password);
+    if (sonarProduct == SonarProduct.SONARCLOUD) {
+      connection = new SonarCloudConnection(name, organizationKey, notificationsDisabled);
+    } else {
+      if (password != null) {
+        pass = String.valueOf(password);
+      }
+      connection = new SonarQubeConnection(name, serverUrl, notificationsDisabled);
     }
-    return new SonarQubeConnection(name, serverUrl, new ServerConnectionCredentials(login, pass, token), notificationsDisabled);
+    return new ServerConnectionWithAuth(connection, new ServerConnectionCredentials(login, pass, token));
   }
 }

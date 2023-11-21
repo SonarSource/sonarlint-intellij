@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
@@ -36,8 +37,10 @@ import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,6 +56,8 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String LABEL_NO_SERVERS = "Add a connection to SonarQube or SonarCloud";
@@ -64,8 +69,10 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   // Model
   private GlobalConfigurationListener connectionChangeListener;
-  private final List<ServerConnection> connections = new ArrayList<>();
+  private final Map<String, ServerConnectionWithAuth> updatedConnectionsByName = new HashMap<>();
+  private final Map<String, ServerConnectionWithAuth> addedConnectionsByName = new HashMap<>();
   private final Set<String> deletedServerIds = new HashSet<>();
+  private CollectionListModel<ServerConnection> listModel;
 
   private void create() {
     var app = ApplicationManager.getApplication();
@@ -139,29 +146,35 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   @Override
   public boolean isModified(SonarLintGlobalSettings settings) {
-    return !connections.equals(ServerConnectionService.getInstance().getConnections());
+    return !updatedConnectionsByName.isEmpty() || !addedConnectionsByName.isEmpty() || !deletedServerIds.isEmpty();
   }
 
   @Override
   public void save(SonarLintGlobalSettings newSettings) {
-    ServerConnectionService.getInstance().setServerConnections(newSettings, connections);
-    // remove them even if a server with the same name was later added
-    unbindRemovedServers();
+    // use background thread because of credentials save
+    runOnPooledThread(() -> {
+      ServerConnectionService.getInstance().updateServerConnections(newSettings, new HashSet<>(deletedServerIds), new ArrayList<>(updatedConnectionsByName.values()),
+        new ArrayList<>(addedConnectionsByName.values()));
+      // remove them even if a server with the same name was later added
+      unbindRemovedServers();
+    });
+
   }
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
-    connections.clear();
+    updatedConnectionsByName.clear();
+    addedConnectionsByName.clear();
     deletedServerIds.clear();
 
-    var listModel = new CollectionListModel<ServerConnection>(new ArrayList<>());
+    listModel = new CollectionListModel<>(new ArrayList<>());
     var serverConnections = ServerConnectionService.getInstance().getConnections();
+
     listModel.add(serverConnections);
-    connections.addAll(serverConnections);
     connectionList.setModel(listModel);
 
-    if (!connections.isEmpty()) {
-      connectionList.setSelectedValue(connections.get(0), true);
+    if (!serverConnections.isEmpty()) {
+      connectionList.setSelectedValue(serverConnections.get(0), true);
     }
   }
 
@@ -171,7 +184,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   }
 
   List<ServerConnection> getConnections() {
-    return connections;
+    return listModel.getItems();
   }
 
   private void editSelectedConnection() {
@@ -179,27 +192,56 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     int selectedIndex = connectionList.getSelectedIndex();
 
     if (selectedConnection != null) {
-      var serverEditor = ServerConnectionWizard.forConnectionEdition(selectedConnection);
-      if (serverEditor.showAndGet()) {
-        var editedConnection = serverEditor.getConnection();
-        ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(editedConnection, selectedIndex);
-        connections.set(connections.indexOf(selectedConnection), editedConnection);
-        connectionChangeListener.changed(connections);
-      }
+      var connectionName = selectedConnection.getName();
+      runOnPooledThread(() -> {
+        var previousCredentials = getCredentialsForEdition(connectionName);
+        runOnUiThread(ModalityState.any(), () -> {
+          var serverEditor = ServerConnectionWizard.forConnectionEdition(new ServerConnectionWithAuth(selectedConnection, previousCredentials));
+          if (serverEditor.showAndGet()) {
+            var editedConnectionWithAuth = serverEditor.getConnectionWithAuth();
+            listModel.setElementAt(editedConnectionWithAuth.getConnection(), selectedIndex);
+            if (addedConnectionsByName.containsKey(connectionName)) {
+              addedConnectionsByName.put(connectionName, editedConnectionWithAuth);
+            } else {
+              updatedConnectionsByName.put(connectionName, editedConnectionWithAuth);
+            }
+            connectionChangeListener.changed(getConnections());
+          }
+        });
+      });
     }
+  }
+
+  private ServerConnectionCredentials getCredentialsForEdition(String connectionName) {
+    var connection = addedConnectionsByName.get(connectionName);
+    if (connection != null) {
+      return connection.getCredentials();
+    }
+    connection = updatedConnectionsByName.get(connectionName);
+    if (connection != null) {
+      return connection.getCredentials();
+    }
+    return ServerConnectionService.getInstance().getServerCredentialsByName(connectionName)
+      .orElseThrow(() -> new IllegalStateException("Credentials for connection '" + connectionName + "' not found"));
   }
 
   private class AddConnectionAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      var existingNames = connections.stream().map(ServerConnection::getName).collect(Collectors.toSet());
+      var existingNames = getConnections().stream().map(ServerConnection::getName).collect(Collectors.toSet());
       var wizard = ServerConnectionWizard.forNewConnection(existingNames);
       if (wizard.showAndGet()) {
-        var created = wizard.getConnection();
-        connections.add(created);
-        ((CollectionListModel<ServerConnection>) connectionList.getModel()).add(created);
-        connectionList.setSelectedIndex(connectionList.getModel().getSize() - 1);
-        connectionChangeListener.changed(connections);
+        var created = wizard.getConnectionWithAuth();
+        var connectionName = created.getConnection().getName();
+        if (deletedServerIds.contains(connectionName)) {
+          updatedConnectionsByName.put(connectionName, created);
+          deletedServerIds.remove(connectionName);
+        } else {
+          addedConnectionsByName.put(connectionName, created);
+        }
+        listModel.add(created.getConnection());
+        connectionList.setSelectedIndex(listModel.getSize() - 1);
+        connectionChangeListener.changed(getConnections());
       }
     }
   }
@@ -228,15 +270,18 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
         }
       }
 
-      var model = (CollectionListModel<ServerConnection>) connectionList.getModel();
-      // it's not removed from serverIds and editorList
-      model.remove(connection);
-      connections.remove(connection);
-      connectionChangeListener.changed(connections);
+      listModel.remove(connection);
+      var connectionName = connection.getName();
+      if (!addedConnectionsByName.containsKey(connectionName)) {
+        deletedServerIds.add(connectionName);
+      }
+      addedConnectionsByName.remove(connectionName);
+      updatedConnectionsByName.remove(connectionName);
+      connectionChangeListener.changed(getConnections());
 
-      if (model.getSize() > 0) {
-        var newIndex = Math.min(model.getSize() - 1, Math.max(selectedIndex - 1, 0));
-        connectionList.setSelectedValue(model.getElementAt(newIndex), true);
+      if (listModel.getSize() > 0) {
+        var newIndex = Math.min(listModel.getSize() - 1, Math.max(selectedIndex - 1, 0));
+        connectionList.setSelectedValue(listModel.getElementAt(newIndex), true);
       }
     }
 

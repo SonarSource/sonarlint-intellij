@@ -21,12 +21,14 @@ package org.sonarlint.intellij.config.global.wizard
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.sonarlint.intellij.config.global.ServerConnectionCredentials
+import org.sonarlint.intellij.config.global.ServerConnectionWithAuth
 import org.sonarlint.intellij.config.global.SonarCloudConnection
 
 internal class WizardModelTests {
     @Test
     fun testCreateFromConfig() {
-        val connection = SonarCloudConnection("name", "token", "org", false)
+        val connection = ServerConnectionWithAuth(SonarCloudConnection("name", "org", false), ServerConnectionCredentials(null, null, "token"))
         val model = WizardModel(connection)
         assertThat(model.organizationKey).isEqualTo("org")
         assertThat(model.organizationList).isEmpty()
@@ -41,8 +43,8 @@ internal class WizardModelTests {
         model.setIsSonarQube("url")
         model.setLoginPassword("login", charArrayOf('p', 'a', 's', 's'))
 
-        val connection = model.createConnection()
-        assertThat(connection.hostUrl).isEqualTo("url")
+        val connection = model.createConnectionWithAuth()
+        assertThat(connection.connection.hostUrl).isEqualTo("url")
         assertThat(connection.credentials.login).isEqualTo("login")
         assertThat(connection.credentials.password).isEqualTo("pass")
         assertThat(connection.credentials.token).isNull()
@@ -56,9 +58,9 @@ internal class WizardModelTests {
         model.setOrganizationKey("org")
         model.setToken("token")
 
-        val connection = model.createConnection()
-        assertThat(connection.hostUrl).isEqualTo("https://sonarcloud.io")
-        assertThat((connection as SonarCloudConnection).organizationKey).isEqualTo("org")
+        val connection = model.createConnectionWithAuth()
+        assertThat(connection.connection.hostUrl).isEqualTo("https://sonarcloud.io")
+        assertThat((connection.connection as SonarCloudConnection).organizationKey).isEqualTo("org")
         assertThat(connection.credentials.token).isEqualTo("token")
         assertThat(connection.credentials.login).isNull()
         assertThat(connection.credentials.password).isNull()

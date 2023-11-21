@@ -33,7 +33,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.ServerConnectionCredentials
 import org.sonarlint.intellij.config.global.ServerConnectionService
+import org.sonarlint.intellij.config.global.ServerConnectionWithAuth
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.core.BackendService
@@ -82,7 +84,7 @@ abstract class AbstractSonarLintHeavyTests : HeavyPlatformTestCase() {
     }
 
     protected fun connectProjectTo(connection: ServerConnection, projectKey: String) {
-        ServerConnectionService.getInstance().addServerConnection(connection)
+        ServerConnectionService.getInstance().addServerConnection(ServerConnectionWithAuth(connection, ServerConnectionCredentials(null, null, "token")))
         Settings.getSettingsFor(project).bindTo(connection, projectKey)
     }
 

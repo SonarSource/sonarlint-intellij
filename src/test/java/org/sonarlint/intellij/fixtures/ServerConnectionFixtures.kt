@@ -26,12 +26,12 @@ import org.sonarlint.intellij.config.global.SonarQubeConnection
 import org.sonarlint.intellij.config.global.wizard.PartialConnection
 import org.sonarlint.intellij.core.SonarProduct
 
-fun newSonarQubeConnection(name: String = "id", hostUrl: String = "https://host", credentials: ServerConnectionCredentials = ServerConnectionCredentials(null, null, "token")): ServerConnection {
-    return SonarQubeConnection(name, hostUrl, credentials, true)
+fun newSonarQubeConnection(name: String = "id", hostUrl: String = "https://host"): ServerConnection {
+    return SonarQubeConnection(name, hostUrl, true)
 }
 
-fun newSonarCloudConnection(name: String, organizationkey: String): ServerConnection {
-    return SonarCloudConnection(name, "token", organizationkey, true)
+fun newSonarCloudConnection(name: String, organizationKey: String): ServerConnection {
+    return SonarCloudConnection(name, organizationKey, true)
 }
 
 fun newPartialConnection(serverUrl: String = "https://serverUrl") = PartialConnection(serverUrl, SonarProduct.SONARQUBE, "orgKey", ServerConnectionCredentials(null, null, "token"))

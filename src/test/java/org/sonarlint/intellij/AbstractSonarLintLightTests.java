@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -55,6 +56,7 @@ import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.ServerConnectionCredentials;
 import org.sonarlint.intellij.config.global.ServerConnectionService;
+import org.sonarlint.intellij.config.global.ServerConnectionWithAuth;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -97,7 +99,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     super.setUp();
     disposable = Disposer.newDisposable();
     getGlobalSettings().setRules(Collections.emptyList());
-    ServerConnectionService.getInstance().setServerConnections(getGlobalSettings(), Collections.emptyList());
+    setServerConnections(Collections.emptyList());
     getGlobalSettings().setFocusOnNewCode(false);
     setGlobalLevelExclusions(Collections.emptyList());
     getProjectSettings().setConnectionName(null);
@@ -212,22 +214,19 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
   }
 
   protected void connectProjectTo(String hostUrl, String connectionName, String projectKey) {
-    var connection = newSonarQubeConnection(connectionName, hostUrl, new ServerConnectionCredentials(null, null, "token"));
-    ServerConnectionService.getInstance().addServerConnection(connection);
+    var connection = newSonarQubeConnection(connectionName, hostUrl);
+    ServerConnectionService.getInstance().addServerConnection(new ServerConnectionWithAuth(connection, new ServerConnectionCredentials(null, null, "token")));
     getProjectSettings().bindTo(connection, projectKey);
     getService(BackendService.class).projectBound(getProject(), new ProjectBinding(connectionName, projectKey, Collections.emptyMap()));
   }
 
-  protected void connectModuleTo(String projectKey) {
-    getModuleSettings().setProjectKey(projectKey);
-  }
-
   protected void setServerConnections(List<ServerConnection> connections) {
-    ServerConnectionService.getInstance().setServerConnections(getGlobalSettings(), connections);
+    ServerConnectionService.getInstance().updateServerConnections(getGlobalSettings(), ServerConnectionService.getInstance().getConnections().stream().map(ServerConnection::getName).collect(Collectors.toSet()),
+      Collections.emptyList(), connections.stream().map(connection -> new ServerConnectionWithAuth(connection, new ServerConnectionCredentials(null, null, "token"))).collect(Collectors.toList()));
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {
-    ServerConnectionService.getInstance().addServerConnection(connection);
+    ServerConnectionService.getInstance().addServerConnection(new ServerConnectionWithAuth(connection, new ServerConnectionCredentials(null, null, "token")));
     getProjectSettings().bindTo(connection, projectKey);
   }
 

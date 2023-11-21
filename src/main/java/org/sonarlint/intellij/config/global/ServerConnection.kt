@@ -34,7 +34,6 @@ sealed class ServerConnection {
     abstract val name: String
     abstract val notificationsDisabled: Boolean
     abstract val hostUrl: String
-    abstract val credentials: ServerConnectionCredentials
     abstract val product: SonarProduct
     abstract val links: ServerLinks
     abstract val endpointParams: EndpointParams
@@ -45,14 +44,13 @@ sealed class ServerConnection {
     val productName get() = product.productName
 }
 
-data class SonarQubeConnection(override val name: String, override val hostUrl: String, override val credentials: ServerConnectionCredentials, override val notificationsDisabled: Boolean) : ServerConnection() {
+data class SonarQubeConnection(override val name: String, override val hostUrl: String, override val notificationsDisabled: Boolean) : ServerConnection() {
     override val product = SonarProduct.SONARQUBE
     override val links = SonarQubeLinks(hostUrl)
     override val endpointParams = EndpointParams(hostUrl, false, null)
 }
 
-data class SonarCloudConnection(override val name: String, val token: String, val organizationKey: String, override val notificationsDisabled: Boolean) : ServerConnection() {
-    override val credentials = ServerConnectionCredentials(null, null, token)
+data class SonarCloudConnection(override val name: String, val organizationKey: String, override val notificationsDisabled: Boolean) : ServerConnection() {
     override val product = SonarProduct.SONARCLOUD
     override val links = SonarCloudLinks
     override val hostUrl: String = SONARCLOUD_URL

@@ -64,7 +64,6 @@ import javax.swing.event.HyperlinkEvent;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.config.global.ServerConnectionCredentials;
 import org.sonarlint.intellij.config.global.ServerConnectionService;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarQubeConnection;
@@ -79,8 +78,7 @@ import static java.util.Optional.ofNullable;
 
 public class SonarLintProjectBindPanel {
   private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
-  private static final ServerConnection PLACEHOLDER_CONNECTION = new SonarQubeConnection(CONNECTION_EMPTY_TEXT, "placeholderHost",
-    new ServerConnectionCredentials(null, null, null), false);
+  private static final ServerConnection PLACEHOLDER_CONNECTION = new SonarQubeConnection(CONNECTION_EMPTY_TEXT, "placeholderHost", false);
   private JPanel rootPanel;
   private JBCheckBox bindEnable;
 

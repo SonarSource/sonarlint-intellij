@@ -391,9 +391,9 @@ object SonarLintIntelliJClient : SonarLintClient {
 
     override fun getCredentials(params: GetCredentialsParams): CompletableFuture<GetCredentialsResponse> {
         val connectionId = params.connectionId
-        return ServerConnectionService.getInstance().getServerConnectionByName(connectionId)
-                .map { connection -> connection.credentials.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
-                        ?: connection.credentials.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.credentials.password))) }
+        return ServerConnectionService.getInstance().getServerCredentialsByName(connectionId)
+                .map { credentials -> credentials.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
+                        ?: credentials.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, credentials.password))) }
                         ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: $connectionId"))}
                 .orElseGet { CompletableFuture.failedFuture(IllegalArgumentException("Connection '$connectionId' not found")) }
     }

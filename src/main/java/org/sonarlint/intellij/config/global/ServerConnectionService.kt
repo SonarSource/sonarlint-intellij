@@ -25,22 +25,23 @@ import com.intellij.credentialStore.generateServiceName
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.intellij.util.ui.EDT
 import java.util.Optional
-import kotlinx.collections.immutable.toImmutableList
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.messages.ServerConnectionsListener
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.APP)
 class ServerConnectionService {
 
     init {
-        loadAndMigrateServerConnections()
+        loadAndMigrateServerConnectionsAsync()
     }
 
-    private fun loadAndMigrateServerConnections() {
-        getGlobalSettings().serverConnections.forEach { migrate(it) }
+    private fun loadAndMigrateServerConnectionsAsync() {
+        runOnPooledThread { getGlobalSettings().serverConnections.forEach { migrate(it) } }
     }
 
     private fun migrate(connection: ServerConnectionSettings) {
@@ -49,15 +50,12 @@ class ServerConnectionService {
     }
 
     fun getConnections(): List<ServerConnection> = getGlobalSettings().serverConnections.filter { isValid(it) }.mapNotNull { connection ->
-        val credentials = loadCredentials(connection.name) ?: return@mapNotNull null
         if (connection.isSonarCloud) {
-            val token = credentials.token ?: run {
-                GlobalLogOutput.get().logError("Token not found in secure storage for connection $connection", null)
-                return@mapNotNull null
-            }
-            SonarCloudConnection(connection.name, token, connection.organizationKey!!, connection.isDisableNotifications)
-        } else SonarQubeConnection(connection.name, connection.hostUrl, credentials, connection.isDisableNotifications)
+            SonarCloudConnection(connection.name, connection.organizationKey!!, connection.isDisableNotifications)
+        } else SonarQubeConnection(connection.name, connection.hostUrl, connection.isDisableNotifications)
     }
+
+    private fun getConnectionsWithAuth(): List<ServerConnectionWithAuth> = getConnections().map { ServerConnectionWithAuth(it, loadCredentials(it.name)) }
 
     private fun isValid(connectionSettings: ServerConnectionSettings): Boolean {
         val valid = connectionSettings.name != null && if (connectionSettings.isSonarCloud) connectionSettings.organizationKey != null
@@ -72,6 +70,14 @@ class ServerConnectionService {
         return Optional.ofNullable(getConnections().firstOrNull { name == it.name })
     }
 
+    fun getServerConnectionWithAuthByName(name: String): Optional<ServerConnectionWithAuth> {
+        return Optional.ofNullable(getConnectionsWithAuth().firstOrNull { name == it.connection.name })
+    }
+
+    fun getServerCredentialsByName(name: String): Optional<ServerConnectionCredentials> {
+        return Optional.ofNullable(loadCredentials(name))
+    }
+
     fun connectionExists(connectionName: String): Boolean {
         return getConnections().any { it.name == connectionName }
     }
@@ -80,64 +86,69 @@ class ServerConnectionService {
         return getConnections().map { it.name }.toSet()
     }
 
-    fun addServerConnection(connection: ServerConnection) {
-        setServerConnections(getConnections() + connection)
+    fun addServerConnection(connection: ServerConnectionWithAuth) {
+        updateServerConnections(getGlobalSettings(), emptySet(), emptyList(), listOf(connection))
     }
 
-    fun replaceConnection(name: String, replacementConnection: ServerConnection) {
-        val serverConnections = getConnections().toMutableList()
-        serverConnections[serverConnections.indexOfFirst { it.name == name }] = replacementConnection
-        setServerConnections(serverConnections.toImmutableList())
+    fun replaceConnection(replacementConnection: ServerConnectionWithAuth) {
+        updateServerConnections(getGlobalSettings(), emptySet(), listOf(replacementConnection), emptyList())
     }
 
-    private fun setServerConnections(connections: List<ServerConnection>) {
-        setServerConnections(getGlobalSettings(), connections)
+    fun updateServerConnections(settings: SonarLintGlobalSettings, deletedConnectionNames: Set<String>, updatedConnectionsWithAuth: Collection<ServerConnectionWithAuth>, addedConnectionsWithAuth: Collection<ServerConnectionWithAuth>) {
+        // save credentials
+        deletedConnectionNames.forEach { forgetCredentials(it) }
+        updatedConnectionsWithAuth.forEach { saveCredentials(it.connection.name, it.credentials) }
+        addedConnectionsWithAuth.forEach { saveCredentials(it.connection.name, it.credentials) }
+
+        // save connections
+        val currentlySavedConnections = settings.serverConnections.toMutableList()
+        currentlySavedConnections.removeAll { deletedConnectionNames.contains(it.name) }
+        updatedConnectionsWithAuth.map { it.connection }.forEach { updatedConnection ->
+            currentlySavedConnections[currentlySavedConnections.indexOfFirst { it.name == updatedConnection.name }] = toSettings(updatedConnection)
+        }
+        currentlySavedConnections.addAll(addedConnectionsWithAuth.map { it.connection }.map { toSettings(it) })
+        settings.serverConnections = currentlySavedConnections.toList()
+
+        // notify
+        notifyConnectionsChange(getConnections())
+        notifyCredentialsChange(updatedConnectionsWithAuth.map { it.connection })
     }
 
-    fun setServerConnections(settings: SonarLintGlobalSettings, connections: List<ServerConnection>) {
-        val previousConnections = getConnections()
-        settings.serverConnections = connections.map {
-            var builder = ServerConnectionSettings.newBuilder().setName(it.name).setHostUrl(it.hostUrl).setDisableNotifications(it.notificationsDisabled)
-            if (it is SonarCloudConnection) {
-                builder = builder.setOrganizationKey(it.organizationKey)
+    private fun toSettings(serverConnection: ServerConnection): ServerConnectionSettings {
+        return with(serverConnection) {
+            var builder = ServerConnectionSettings.newBuilder().setName(this.name).setHostUrl(this.hostUrl).setDisableNotifications(this.notificationsDisabled)
+            if (this is SonarCloudConnection) {
+                builder = builder.setOrganizationKey(this.organizationKey)
             }
             builder.build()
-        }.toList()
-        connections.forEach { saveCredentials(it.name, it.credentials) }
-        notifyConnectionsChange(connections)
-        notifyCredentialsChange(previousConnections, connections)
-        val removedConnectionNames = previousConnections.map { it.name }.filter { name -> !connections.map { it.name }.contains(name) }
-        removedConnectionNames.forEach { forgetCredentials(it) }
+        }
     }
 
     private fun notifyConnectionsChange(connections: List<ServerConnection>) {
         ApplicationManager.getApplication().messageBus.syncPublisher(ServerConnectionsListener.TOPIC).afterChange(connections)
     }
 
-    private fun notifyCredentialsChange(previousConnections: List<ServerConnection>, newConnections: List<ServerConnection>) {
-        val changedConnections = newConnections.filter { connection ->
-            val previousConnection = previousConnections.find { it.name == connection.name }
-            previousConnection?.let { connection.credentials != it.credentials } == true
-        }
-        if (changedConnections.isNotEmpty()) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(ServerConnectionsListener.TOPIC).credentialsChanged(changedConnections)
-        }
+    private fun notifyCredentialsChange(serverConnections: List<ServerConnection>) {
+        ApplicationManager.getApplication().messageBus.syncPublisher(ServerConnectionsListener.TOPIC).credentialsChanged(serverConnections)
     }
 
-    private fun loadCredentials(connectionId: String): ServerConnectionCredentials? {
-        val token = PasswordSafe.instance.getPassword(tokenCredentials(connectionId))
+    private fun loadCredentials(connectionName: String): ServerConnectionCredentials {
+        // loading credentials is a slow operation
+        check(!EDT.isCurrentThreadEdt()) { "Cannot load credentials from EDT" }
+        val token = PasswordSafe.instance.getPassword(tokenCredentials(connectionName))
         if (token != null) {
             return ServerConnectionCredentials(null, null, token)
         }
-        val loginPassword = PasswordSafe.instance[loginPasswordCredentials(connectionId)]
+        val loginPassword = PasswordSafe.instance[loginPasswordCredentials(connectionName)]
         if (loginPassword != null) {
             return ServerConnectionCredentials(loginPassword.userName, loginPassword.password.toString(), null)
         }
-        GlobalLogOutput.get().logError("Unable to retrieve credentials from secure storage for connection '$connectionId'", null)
-        return null
+        throw ServerConnectionCredentialsNotFound(connectionName)
     }
 
     private fun saveCredentials(connectionId: String, credentials: ServerConnectionCredentials) {
+        // saving credentials is a slow operation
+        check(!EDT.isCurrentThreadEdt()) { "Cannot save credentials from EDT" }
         if (credentials.token != null) {
             PasswordSafe.instance.setPassword(tokenCredentials(connectionId), credentials.token)
         } else if (credentials.login != null && credentials.password != null) {
@@ -147,6 +158,8 @@ class ServerConnectionService {
     }
 
     private fun forgetCredentials(connectionId: String) {
+        // saving credentials is a slow operation
+        check(!EDT.isCurrentThreadEdt()) { "Cannot save credentials from EDT" }
         PasswordSafe.instance[tokenCredentials(connectionId)] = null
     }
 
