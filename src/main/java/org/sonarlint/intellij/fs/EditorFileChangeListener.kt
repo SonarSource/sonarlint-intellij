@@ -62,10 +62,10 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, StartupActivi
     override fun afterDocumentChange(document: Document) {
         synchronized(changedDocuments) {
             changedDocuments.add(document)
+            triggerTimer.cancel()
+            triggerTimer = initTimer()
+            triggerTimer.schedule(SendEventsTask(this), DEBOUNCE_DELAY_MS)
         }
-        triggerTimer.cancel()
-        triggerTimer = initTimer()
-        triggerTimer.schedule(SendEventsTask(this), DEBOUNCE_DELAY_MS)
     }
 
     private fun initTimer() = Timer("File Events Trigger Timer", true)
