@@ -54,7 +54,7 @@ public class LiveFindingCache<T extends LiveFinding> {
     this.cache = new LimitedSizeLinkedHashMap();
   }
 
-  public void replaceFindings(Map<VirtualFile, Collection<T>> newFindingsPerFile) {
+  public synchronized void replaceFindings(Map<VirtualFile, Collection<T>> newFindingsPerFile) {
     cache.putAll(newFindingsPerFile);
     flushAll();
   }
