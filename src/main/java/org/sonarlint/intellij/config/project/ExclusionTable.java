@@ -153,7 +153,7 @@ public class ExclusionTable {
     }
 
     public void set(List<ExclusionItem> rows) {
-      this.rows = rows;
+      this.rows = new ArrayList<>(rows);
       fireTableDataChanged();
     }
 
