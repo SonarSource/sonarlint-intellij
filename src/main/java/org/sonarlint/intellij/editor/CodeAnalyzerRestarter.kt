@@ -27,7 +27,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.serviceContainer.NonInjectable
-import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 import org.sonarlint.intellij.util.runOnPooledThread
 
@@ -43,16 +42,11 @@ class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myPr
         runOnPooledThread(myProject) {
             val fileEditorManager = FileEditorManager.getInstance(myProject)
             val openFiles = fileEditorManager.openFiles
-            val psiFiles = computeReadActionSafely(myProject) {
+            runReadActionSafely(myProject) {
                 openFiles
                         .filter { changedFiles.contains(it) }
                         .mapNotNull { getPsi(it) }
-                        .toList()
-            }
-            psiFiles?.let { files ->
-                runReadActionSafely(myProject) {
-                    files.forEach { codeAnalyzer.restart(it) }
-                }
+                        .forEach { codeAnalyzer.restart(it) }
             }
         }
     }
