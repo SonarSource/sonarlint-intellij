@@ -219,7 +219,7 @@ dependencies {
     }
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("org.awaitility:awaitility:4.2.0")
-    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.27.1.33504")
+    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.28.0.33738")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.8.0.24207")
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.33.0.11274")
     "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.12.0.13917")
