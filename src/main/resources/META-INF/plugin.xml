@@ -63,7 +63,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.1 - Support for Python 3.12 syntax, add 5 related rules, add 3 new Security Hotspots. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.1 - 9 new Java rules related to Spring Boot. Support for Python 3.12 syntax, add 5 related rules, add 3 new Security Hotspots. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.0.1 - Fix an error when opening an issue from SonarQube. Fix potential UI-freeze.</li>
         <li>10.0 - Raise minimal supported version to 2022.3.1 and Java 17. Allow to reopen taint vulnerabilities. Handle "Open in IDE" requests from SonarQube. Synchronize issues and Security Hotspots in real-time from SonarCloud. 5 new rules for Python. 6 new rules for Java. 29 new rules for JavaScript. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>9.1 - Lets users focus on new code in connected mode. Support of quick fixes preview. 1 new quick fix for JS/TS. 2 new C++ MISRA 2023 rules. Detection of 42 new secrets. 8 new rules and 3 new quick fixes for Python. 16 new rules for Docker. Support for Ruby 3.2.0. Bug fixes, fewer FPs and improvements for many languages.</li>
