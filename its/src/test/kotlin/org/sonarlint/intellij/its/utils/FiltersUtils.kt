@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.its.utils
 
+import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
@@ -27,13 +28,25 @@ class FiltersUtils {
 
     companion object {
         fun setFocusOnNewCode() {
+            setFocusOnNewCode(true)
+        }
+
+        fun resetFocusOnNewCode() {
+            setFocusOnNewCode(false)
+        }
+
+        fun setFocusOnNewCode(focusOnNewCode: Boolean) {
             with(BaseUiTest.remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
-                            toolBarButton("Set Focus on New Code").click()
+                            val toolBarButton = toolBarButton("Set Focus on New Code")
+                            val isFocusActivated = toolBarButton.popState() == ActionButtonFixture.PopState.SELECTED || toolBarButton.popState() == ActionButtonFixture.PopState.PUSHED
+                            if (focusOnNewCode != isFocusActivated) {
+                                toolBarButton.click()
+                            }
                         }
                     }
                 }
