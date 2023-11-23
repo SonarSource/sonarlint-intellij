@@ -319,24 +319,23 @@ class IdeaTests : BaseUiTest() {
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode()
             analyzeAndVerifyReportTabContainsMessages(
-                "Found 2 new issues in 1 file from last 1 days",
-                "No older issues",
-                "Found 1 new Security Hotspot in 1 file from last 1 days",
-                "No older Security Hotspots"
+                "No new issues from last 1 days",
+                "No new Security Hotspots from last 1 days",
+                "Found 2 older issues in 1 file",
+                "Found 1 older Security Hotspot in 1 file"
             )
             verifyTaintTabContainsMessages(
-                "Found 1 new issue in 1 file from last 1 days",
-                "FileWithSink.java",
-                "Change this code to not construct SQL queries directly from user-controlled data.",
-                "No older issues"
+                "No new issues from last 1 days",
+                "Found 1 older issue in 1 file"
             )
             verifySecurityHotspotTabContainsMessages(
-                "Found 1 new Security Hotspot in 1 file from last 1 days",
-                "No older Security Hotspots"
+                "No new Security Hotspots from last 1 days",
+                "Found 1 older Security Hotspot in 1 file"
             )
             verifyCurrentFileTabContainsMessages(
-                "Found 2 new issues in 1 file from last 1 days",
-                "No older issues"
+                "No new issues from last 1 days",
+                "Found 2 older issues in 1 file",
+
             )
             resetFocusOnNewCode()
 
