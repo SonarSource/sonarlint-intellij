@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.utils.waitFor
+import java.time.Duration
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -36,12 +37,12 @@ import org.sonarlint.intellij.its.fixtures.isSQLPlugin
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
+import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.goBackToWelcomeScreen
 import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
 import org.sonarlint.intellij.its.utils.VisualTreeDumpOnFailure
 import org.sonarlint.intellij.its.utils.optionalStep
-import java.time.Duration
 
 const val robotUrl = "http://localhost:8082"
 
@@ -197,6 +198,7 @@ open class BaseUiTest {
 
     @AfterEach
     fun disableConnectedMode() {
+        resetFocusOnNewCode()
         enableConnectedModeFromCurrentFilePanel(null, false)
     }
 

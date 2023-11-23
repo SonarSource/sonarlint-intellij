@@ -54,6 +54,7 @@ import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
+import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.showResolvedIssues
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
@@ -337,7 +338,7 @@ class IdeaTests : BaseUiTest() {
                 "Found 2 new issues in 1 file from last 1 days",
                 "No older issues"
             )
-            setFocusOnNewCode()
+            resetFocusOnNewCode()
 
             // Taint Vulnerability Test
             verifyTaintTabContainsMessages(
