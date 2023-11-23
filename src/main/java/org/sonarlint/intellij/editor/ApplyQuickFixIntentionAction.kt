@@ -67,8 +67,10 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
         }
 
         val currentFileEdits = fix.virtualFileEdits.flatMap { it.edits }
-        currentFileEdits.forEach { (rangeMarker, newText) ->
-            editor.document.replaceString(rangeMarker.startOffset, rangeMarker.endOffset, normalizeLineEndingsToLineFeeds(newText))
+        currentFileEdits.forEach {
+            if (it.isWithinBounds(editor.document)) {
+                editor.document.replaceString(it.rangeMarker.startOffset, it.rangeMarker.endOffset, normalizeLineEndingsToLineFeeds(it.newText))
+            }
         }
 
         if (!invokedInPreview()) {

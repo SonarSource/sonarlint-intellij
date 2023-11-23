@@ -92,16 +92,7 @@ data class QuickFix(val message: String, val virtualFileEdits: List<VirtualFileE
             && isWithinBounds(document)
 
     private fun isWithinBounds(document: Document): Boolean {
-        return virtualFileEdits.flatMap { it.edits }.all { (rangeMarker, _) ->
-            val startOffsetInBound = rangeMarker.startOffset >= 0 && rangeMarker.startOffset <= document.textLength
-            val endOffsetInBound = rangeMarker.endOffset >= 0 && rangeMarker.endOffset <= document.textLength
-
-            return if (startOffsetInBound && endOffsetInBound) {
-                rangeMarker.endOffset >= rangeMarker.startOffset
-            } else {
-                false
-            }
-        }
+        return virtualFileEdits.flatMap { it.edits }.all { it.isWithinBounds(document) }
     }
 
     fun isSingleFile(): Boolean {
@@ -111,4 +102,17 @@ data class QuickFix(val message: String, val virtualFileEdits: List<VirtualFileE
 
 data class VirtualFileEdit(val target: VirtualFile, val edits: List<RangeMarkerEdit>)
 
-data class RangeMarkerEdit(val rangeMarker: RangeMarker, val newText: String)
+data class RangeMarkerEdit(val rangeMarker: RangeMarker, val newText: String) {
+
+    fun isWithinBounds(document: Document): Boolean {
+        val startOffsetInBound = rangeMarker.startOffset >= 0 && rangeMarker.startOffset <= document.textLength
+        val endOffsetInBound = rangeMarker.endOffset >= 0 && rangeMarker.endOffset <= document.textLength
+
+        return if (startOffsetInBound && endOffsetInBound) {
+            rangeMarker.endOffset >= rangeMarker.startOffset
+        } else {
+            false
+        }
+    }
+
+}

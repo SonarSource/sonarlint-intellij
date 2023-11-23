@@ -27,17 +27,9 @@ import static org.sonarlint.intellij.config.project.ExclusionItem.Type.DIRECTORY
 import static org.sonarlint.intellij.config.project.ExclusionItem.Type.FILE;
 import static org.sonarlint.intellij.config.project.ExclusionItem.Type.GLOB;
 
-public class ExclusionItem {
-  private final Type type;
-  private final String item;
-
+public record ExclusionItem(Type type, String item) {
   public enum Type {
     FILE, DIRECTORY, GLOB
-  }
-
-  public ExclusionItem(Type type, String item) {
-    this.type = type;
-    this.item = item;
   }
 
   @CheckForNull
@@ -56,14 +48,6 @@ public class ExclusionItem {
       case "GLOB" -> new ExclusionItem(GLOB, item);
       default -> null;
     };
-  }
-
-  public String item() {
-    return item;
-  }
-
-  public Type type() {
-    return type;
   }
 
   public String toStringWithType() {

@@ -42,7 +42,7 @@ public class ProjectExclusionsPanel implements ConfigurationPanel<SonarLintProje
 
   private void createUIComponents() {
     Supplier<ExclusionItem> onAdd = () -> {
-      AddEditExclusionDialog dialog = new AddEditExclusionDialog(project);
+      var dialog = new AddEditExclusionDialog(project);
       if (dialog.showAndGet() && dialog.getExclusion() != null) {
         return dialog.getExclusion();
       }
