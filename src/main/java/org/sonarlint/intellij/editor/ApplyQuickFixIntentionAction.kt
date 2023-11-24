@@ -32,6 +32,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.finding.QuickFix
+import org.sonarlint.intellij.finding.RangeMarkerEdit
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 
 class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKey: String, private val invokedInPreview: Boolean) : IntentionAction, PriorityAction, Iconable {
@@ -66,7 +67,11 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
             return
         }
 
-        val currentFileEdits = fix.virtualFileEdits.flatMap { it.edits }
+        var currentFileEdits = fix.virtualFileEdits.flatMap { it.edits }
+        if (invokedInPreview()) {
+            // edit range markers are tracking the real document, we need to convert them to track the preview document so that consecutive edits are correctly applied
+            currentFileEdits = currentFileEdits.map { RangeMarkerEdit(editor.document.createRangeMarker(it.rangeMarker.startOffset, it.rangeMarker.endOffset), it.newText) }
+        }
         currentFileEdits.forEach { (rangeMarker, newText) ->
             editor.document.replaceString(rangeMarker.startOffset, rangeMarker.endOffset, normalizeLineEndingsToLineFeeds(newText))
         }
