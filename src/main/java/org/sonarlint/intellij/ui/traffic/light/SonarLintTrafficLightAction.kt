@@ -26,19 +26,15 @@ import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.common.vcs.VcsService
-import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.util.SonarLintAppUtils
-import org.sonarsource.sonarlint.core.serverapi.UrlUtils
 import javax.swing.JComponent
 
 class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {

@@ -156,7 +156,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     });
   }
 
-  private JPanel initConnectionTitle() {
+  private static JPanel initConnectionTitle() {
     var titlePanel = new JPanel(new HorizontalLayout(5));
     var connectionLabel = new JBLabel("Connections to");
     connectionLabel.setFont(connectionLabel.getFont().deriveFont(Font.BOLD, 16f));
@@ -174,7 +174,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     return titlePanel;
   }
 
-  private JEditorPane initConnectedModeDescription() {
+  private static JEditorPane initConnectedModeDescription() {
     var connectedModeLabel = new JEditorPane();
     connectedModeLabel.addHyperlinkListener(new HyperlinkAdapter() {
       @Override

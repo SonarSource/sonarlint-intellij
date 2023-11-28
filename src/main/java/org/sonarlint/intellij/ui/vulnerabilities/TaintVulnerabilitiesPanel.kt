@@ -98,6 +98,7 @@ private const val INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD"
 private const val NO_ISSUES_CARD_ID = "NO_ISSUES_CARD"
 private const val TREE_CARD_ID = "TREE_CARD"
 
+private const val LEARN_MORE = "Learn More"
 private const val TOOLBAR_GROUP_ID = "TaintVulnerabilities"
 
 class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindowPanel(false, true),
@@ -147,7 +148,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             RefreshTaintVulnerabilitiesAction(),
             sonarLintActions.includeResolvedTaintVulnerabilitiesAction(),
             sonarLintActions.configure(),
-            OpenInBrowserAction("Learn More", "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK)
+            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK)
         ))
     }
 
@@ -187,7 +188,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private fun createDisclaimer(): StripePanel {
         val stripePanel = StripePanel("This tab displays taint vulnerabilities detected by SonarCloud or SonarQube. SonarLint does not detect those issues locally.", Information)
-        stripePanel.addAction("Learn More", OpenInBrowserAction("Learn More", "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK))
+        stripePanel.addAction(LEARN_MORE, OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK))
         stripePanel.addAction("Dismiss", object : AbstractSonarAction() {
             override fun actionPerformed(e: AnActionEvent) {
                 stripePanel.isVisible = false

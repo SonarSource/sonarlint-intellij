@@ -82,7 +82,6 @@ public class SonarLintProjectBindPanel {
   private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
 
   private JPanel rootPanel;
-  private JBLabel bindContext;
   private JBCheckBox bindEnable;
 
   // server mgmt
@@ -225,7 +224,7 @@ public class SonarLintProjectBindPanel {
   private void createBindPanel() {
     bindPanel = new JPanel(new GridBagLayout());
 
-    bindContext = new JBLabel("<html>Complete your Connected Mode setup by binding your local project to your SonarQube or SonarCloud project " +
+    var bindContext = new JBLabel("<html>Complete your Connected Mode setup by binding your local project to your SonarQube or SonarCloud project " +
       "to benefit from the same rules and settings that are used to inspect the project on the server.</html>");
     bindContext.setFontColor(UIUtil.FontColor.BRIGHTER);
 
