@@ -135,6 +135,12 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
               "issue": {
                 "status_changed_count": 3
               },
+              "help_and_feedback": {
+                "count_by_link": {
+                  "docs": 5,
+                  "faq": 4
+                }
+              },
               "cayc": {
                 "new_code_focus": {
                   "enabled": true,

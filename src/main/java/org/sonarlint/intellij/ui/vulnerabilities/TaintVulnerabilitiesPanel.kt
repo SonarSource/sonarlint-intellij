@@ -40,20 +40,8 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
-import java.awt.BorderLayout
-import java.awt.Dimension
-import java.awt.event.ActionEvent
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import javax.swing.Box
-import javax.swing.JPanel
-import javax.swing.event.TreeSelectionListener
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.TreeNode
-import javax.swing.tree.TreePath
-import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.actions.AbstractSonarAction
-import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
+import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
@@ -61,6 +49,7 @@ import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadAct
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.TAINT_VULNERABILITIES_LINK
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
@@ -87,6 +76,18 @@ import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_K
 import org.sonarlint.intellij.util.SonarLintActions
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.runOnPooledThread
+import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.event.ActionEvent
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import javax.swing.Box
+import javax.swing.JPanel
+import javax.swing.event.TreeSelectionListener
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreeNode
+import javax.swing.tree.TreePath
+import javax.swing.tree.TreeSelectionModel
 
 private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_SPLIT_PROPORTION"
 private const val DEFAULT_SPLIT_PROPORTION = 0.5f
@@ -117,7 +118,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     init {
         val globalSettings = getGlobalSettings()
-        cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
+        cards.add(centeredLabel("The project is not bound to SonarCloud/SonarQube", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
         cards.add(centeredLabel("No taint vulnerabilities shown due to the current filtering", "Show Resolved Taint Vulnerabilities",
             SonarLintActions.getInstance().includeResolvedTaintVulnerabilitiesAction()), NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
@@ -146,7 +147,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             RefreshTaintVulnerabilitiesAction(),
             sonarLintActions.includeResolvedTaintVulnerabilitiesAction(),
             sonarLintActions.configure(),
-            OpenTaintVulnerabilityDocumentationAction()
+            OpenInBrowserAction("Learn More", "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK)
         ))
     }
 
@@ -185,8 +186,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     private fun createDisclaimer(): StripePanel {
-        val stripePanel = StripePanel("This tab displays taint vulnerabilities detected by SonarQube or SonarCloud. SonarLint does not detect those issues locally.", Information)
-        stripePanel.addAction("Learn More", OpenTaintVulnerabilityDocumentationAction())
+        val stripePanel = StripePanel("This tab displays taint vulnerabilities detected by SonarCloud or SonarQube. SonarLint does not detect those issues locally.", Information)
+        stripePanel.addAction("Learn More", OpenInBrowserAction("Learn More", "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK))
         stripePanel.addAction("Dismiss", object : AbstractSonarAction() {
             override fun actionPerformed(e: AnActionEvent) {
                 stripePanel.isVisible = false

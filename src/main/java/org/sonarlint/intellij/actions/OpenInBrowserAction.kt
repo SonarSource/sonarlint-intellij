@@ -17,15 +17,18 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.notifications.binding
+package org.sonarlint.intellij.actions
 
+import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.actions.AbstractSonarAction
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
-class LearnMoreAboutConnectedModeAction : AbstractSonarAction("Learn more") {
+class OpenInBrowserAction(text: String, description: String?, private val link: String) : AbstractSonarAction(
+    text, description, AllIcons.Actions.Help
+) {
+
     override fun actionPerformed(e: AnActionEvent) {
-        BrowserUtil.browse(SonarLintDocumentation.CONNECTED_MODE_LINK)
+        BrowserUtil.browse(link)
     }
+
 }

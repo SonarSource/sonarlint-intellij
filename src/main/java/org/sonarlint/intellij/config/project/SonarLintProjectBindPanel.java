@@ -36,12 +36,15 @@ import com.intellij.projectImport.ProjectAttachProcessor;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
+import com.intellij.ui.SeparatorComponent;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBCheckBox;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -79,6 +82,7 @@ public class SonarLintProjectBindPanel {
   private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
 
   private JPanel rootPanel;
+  private JBLabel bindContext;
   private JBCheckBox bindEnable;
 
   // server mgmt
@@ -219,11 +223,14 @@ public class SonarLintProjectBindPanel {
   }
 
   private void createBindPanel() {
-
     bindPanel = new JPanel(new GridBagLayout());
 
+    bindContext = new JBLabel("<html>Complete your Connected Mode setup by binding your local project to your SonarQube or SonarCloud project " +
+      "to benefit from the same rules and settings that are used to inspect the project on the server.</html>");
+    bindContext.setFontColor(UIUtil.FontColor.BRIGHTER);
+
     boolean pluralizeProject = ProjectAttachProcessor.canAttachToProject() && ModuleManager.getInstance(project).getModules().length > 1;
-    bindEnable = new JBCheckBox("Bind project" + (pluralizeProject ? "s" : "") + " to SonarQube / SonarCloud", true);
+    bindEnable = new JBCheckBox("Bind project" + (pluralizeProject ? "s" : "") + " to SonarCloud / SonarQube", true);
     bindEnable.addItemListener(new BindItemListener());
 
     configureConnectionButton = new JButton();
@@ -243,7 +250,7 @@ public class SonarLintProjectBindPanel {
 
     projectKeyLabel = new JLabel("Project key:");
     projectKeyTextField = new JBTextField();
-    projectKeyTextField.getEmptyText().setText("Input SonarQube/SonarCloud project key or search one");
+    projectKeyTextField.getEmptyText().setText("Input SonarCloud/SonarQube project key or search one");
 
     searchProjectButton = new JButton();
     searchProjectButton.setAction(new AbstractAction() {
@@ -298,24 +305,29 @@ public class SonarLintProjectBindPanel {
 
     var insets = JBUI.insetsTop(2);
 
-    bindPanel.add(bindEnable, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
+    bindPanel.add(bindContext, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
+      WEST, HORIZONTAL, insets, 0, 0));
+    bindPanel.add(new SeparatorComponent(5, 5, JBUI.CurrentTheme.CustomFrameDecorations.separatorForeground(), null),
+      new GridBagConstraints(0, 1, 3, 1, 0.0, 0.0, WEST, NONE, insets, 0, 0));
+
+    bindPanel.add(bindEnable, new GridBagConstraints(0, 2, 3, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
 
-    bindPanel.add(connectionListLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+    bindPanel.add(connectionListLabel, new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
-    bindPanel.add(connectionComboBox, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+    bindPanel.add(connectionComboBox, new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
-    bindPanel.add(configureConnectionButton, new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
+    bindPanel.add(configureConnectionButton, new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
 
-    bindPanel.add(projectKeyLabel, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+    bindPanel.add(projectKeyLabel, new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
-    bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+    bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
-    bindPanel.add(searchProjectButton, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+    bindPanel.add(searchProjectButton, new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
 
-    bindPanel.add(updateStoragePanel, new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0, WEST, HORIZONTAL, insets, 0, 0));
+    bindPanel.add(updateStoragePanel, new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0, WEST, HORIZONTAL, insets, 0, 0));
   }
 
   private void actionUpdateConnectionStorageTask() {

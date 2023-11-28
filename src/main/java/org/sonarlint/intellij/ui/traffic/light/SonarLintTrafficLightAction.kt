@@ -26,15 +26,20 @@ import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import javax.swing.JComponent
+import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.vcs.VcsService
+import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.persistence.FindingsCache
+import org.sonarlint.intellij.util.SonarLintAppUtils
+import org.sonarsource.sonarlint.core.serverapi.UrlUtils
+import javax.swing.JComponent
 
 class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {
 
@@ -58,7 +63,8 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAct
             val issues = relevantFindings.filterIsInstance<LiveIssue>()
             val hotspots = relevantFindings.filterIsInstance<LiveSecurityHotspot>()
             val taintVulnerabilitiesCount = TaintVulnerabilitiesCache.getStatus(project)?.count(isFocusOnNewCode) ?: 0
-            val model = SonarLintDashboardModel(issues.size, hotspots.size, taintVulnerabilitiesCount, isFocusOnNewCode)
+            val module = SonarLintAppUtils.findModuleForFile(file, project)
+            val model = SonarLintDashboardModel(issues.size, hotspots.size, taintVulnerabilitiesCount, isFocusOnNewCode, module)
             presentation.putClientProperty(DASHBOARD_MODEL, model)
         }
     }

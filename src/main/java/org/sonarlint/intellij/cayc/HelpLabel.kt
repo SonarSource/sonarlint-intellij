@@ -21,15 +21,27 @@ package org.sonarlint.intellij.cayc
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.ui.ContextHelpLabel
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.telemetry.LinkTelemetry
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 
-class FocusModeHelpLabel {
+class HelpLabel {
     companion object {
         @JvmStatic
-        fun create() =
+        fun createCleanAsYouCode() =
                 ContextHelpLabel.createWithLink(null,
                         "Deliver clean code by focusing on code that was recently modified",
-                        "Learn more about Clean as You Code", true) { BrowserUtil.browse(SonarLintDocumentation.FOCUS_ON_NEW_CODE_LINK) };
+                        "Learn more about Clean as You Code", true) { BrowserUtil.browse(SonarLintDocumentation.FOCUS_ON_NEW_CODE_LINK) }
+
+        @JvmStatic
+        fun createConnectedMode() =
+            ContextHelpLabel.createWithLink(null,
+                "Unleash the full potential of SonarLint in Connected Mode with SonarQube or SonarCloud to analyze more languages, detect more issues, and receive notifications about the quality gate status.",
+                "Learn more about Connected Mode", true) {
+                SonarLintUtils.getService(SonarLintTelemetry::class.java).addQuickFixAppliedForRule(LinkTelemetry.CONNECTED_MODE_DOCS.linkId)
+                BrowserUtil.browse(LinkTelemetry.CONNECTED_MODE_DOCS.url)
+            }
 
     }
 }

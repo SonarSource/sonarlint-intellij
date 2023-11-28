@@ -29,18 +29,19 @@ import com.intellij.openapi.project.Project;
 import java.util.Arrays;
 import java.util.List;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.actions.OpenInBrowserAction;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.notifications.binding.BindProjectAction;
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion;
 import org.sonarlint.intellij.notifications.binding.ChooseBindingSuggestionAction;
 import org.sonarlint.intellij.notifications.binding.DisableBindingSuggestionsAction;
-import org.sonarlint.intellij.notifications.binding.LearnMoreAboutConnectedModeAction;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.CONNECTED_MODE_LINK;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintProjectNotifications {
@@ -116,7 +117,7 @@ public final class SonarLintProjectNotifications {
       message,
       NotificationType.INFORMATION);
     Arrays.stream(mainActions).forEach(notification::addAction);
-    notification.addAction(new LearnMoreAboutConnectedModeAction());
+    notification.addAction(new OpenInBrowserAction("Learn more", null, CONNECTED_MODE_LINK));
     notification.addAction(new DisableBindingSuggestionsAction());
     notification.setCollapseDirection(Notification.CollapseActionsDirection.KEEP_LEFTMOST);
     notification.setImportant(true);

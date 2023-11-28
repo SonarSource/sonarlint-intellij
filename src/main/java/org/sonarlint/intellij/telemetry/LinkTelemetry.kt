@@ -17,16 +17,18 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions
+package org.sonarlint.intellij.telemetry
 
-import com.intellij.icons.AllIcons
-import com.intellij.ide.BrowserUtil
-import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
-class OpenTaintVulnerabilityDocumentationAction : AbstractSonarAction("Learn More", "Learn more about taint vulnerabilities in SonarLint", AllIcons.Actions.Help) {
-  override fun actionPerformed(e: AnActionEvent) {
-    BrowserUtil.browse(SonarLintDocumentation.TAINT_VULNERABILITIES_LINK)
-  }
+enum class LinkTelemetry(
+    val linkId: String,
+    val url: String
+) {
+
+    CONNECTED_MODE_DOCS("connectedModeDocs", SonarLintDocumentation.CONNECTED_MODE_LINK),
+    COMPARE_SERVER_PRODUCTS("compareServerProducts", "https://www.sonarsource.com/open-source-editions"),
+    SONARQUBE_EDITIONS_DOWNLOADS("sonarQubeEditionsDownloads", "https://www.sonarsource.com/products/sonarqube/downloads"),
+    SONARCLOUD_PRODUCT_PAGE("sonarCloudProductPage", "https://www.sonarsource.com/products/sonarcloud");
 
 }

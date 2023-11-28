@@ -19,10 +19,11 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
-import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.ui.SwingHelper;
@@ -40,11 +41,14 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.MouseInputAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.telemetry.LinkTelemetry;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 
@@ -64,6 +68,11 @@ public class ServerStep extends AbstractWizardStepEx {
   private JEditorPane sonarcloudText;
   private JEditorPane sonarqubeText;
   private JButton proxyButton;
+  private JEditorPane sonarQubeDescription;
+  private JEditorPane sonarCloudDescription;
+  private JEditorPane sonarCloudFree;
+  private JEditorPane sonarQubeFree;
+  private JEditorPane compareProducts;
   private ErrorPainter errorPainter;
 
   public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
@@ -74,7 +83,8 @@ public class ServerStep extends AbstractWizardStepEx {
     radioSonarQube.addChangeListener(e -> selectionChanged());
 
     DocumentListener listener = new DocumentAdapter() {
-      @Override protected void textChanged(DocumentEvent e) {
+      @Override
+      protected void textChanged(DocumentEvent e) {
         fireStateChanged();
       }
     };
@@ -83,31 +93,62 @@ public class ServerStep extends AbstractWizardStepEx {
 
     nameField.setToolTipText("Name of this configuration (mandatory field)");
 
-    String cloudText = "Connect to <a href=\"https://sonarcloud.io\">the online service</a>";
-    sonarcloudText.setText(cloudText);
-    sonarcloudText.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
+    var sqMainText = "An <b>open-source, self-managed</b> tool that easily integrates into the developers' " +
+      "CI/CD pipeline and DevOps platform to systematically help developers and organizations deliver Clean Code.";
+    sonarQubeDescription.setText(sqMainText);
 
-    String sqText = "Connect to a server";
-    sonarqubeText.setText(sqText);
+    var cloudMainText = "A <b>Software-as-a-Service (SaaS)</b> tool that easily integrates into the cloud DevOps platforms " +
+      "and extends the CI/CD workflow to systematically help developers and organizations deliver Clean Code.";
+    sonarCloudDescription.setText(cloudMainText);
+
+    var cloudFreeText = "<a href=\"" + LinkTelemetry.SONARCLOUD_PRODUCT_PAGE.getUrl() + "\">SonarCloud</a> is entirely free for open source projects";
+    sonarCloudFree.setText(cloudFreeText);
+    sonarCloudFree.addHyperlinkListener(new HyperlinkAdapter() {
+      @Override
+      protected void hyperlinkActivated(HyperlinkEvent e) {
+        SonarLintUtils.getService(SonarLintTelemetry.class).addQuickFixAppliedForRule(LinkTelemetry.SONARCLOUD_PRODUCT_PAGE.getLinkId());
+        BrowserUtil.browse(e.getURL());
+      }
+    });
+
+    var sqFreeText = "SonarQube offers a free <a href=\"" + LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS.getUrl() + "\">Community Edition</a>";
+    sonarQubeFree.setText(sqFreeText);
+    sonarQubeFree.addHyperlinkListener(new HyperlinkAdapter() {
+      @Override
+      protected void hyperlinkActivated(HyperlinkEvent e) {
+        SonarLintUtils.getService(SonarLintTelemetry.class).addQuickFixAppliedForRule(LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS.getLinkId());
+        BrowserUtil.browse(e.getURL());
+      }
+    });
+
+    var chooseBetweenText = "Discover which option is the best for your team <a href=\"" + LinkTelemetry.COMPARE_SERVER_PRODUCTS.getUrl() + "\">here</a>";
+    compareProducts.setText(chooseBetweenText);
+    compareProducts.addHyperlinkListener(new HyperlinkAdapter() {
+      @Override
+      protected void hyperlinkActivated(HyperlinkEvent e) {
+        SonarLintUtils.getService(SonarLintTelemetry.class).addQuickFixAppliedForRule(LinkTelemetry.COMPARE_SERVER_PRODUCTS.getLinkId());
+        BrowserUtil.browse(e.getURL());
+      }
+    });
 
     if (!editing) {
       sonarqubeIcon.addMouseListener(new MouseInputAdapter() {
-        @Override public void mouseClicked(MouseEvent e) {
+        @Override
+        public void mouseClicked(MouseEvent e) {
           super.mouseClicked(e);
           radioSonarQube.setSelected(true);
         }
       });
       sonarcloudIcon.addMouseListener(new MouseInputAdapter() {
-        @Override public void mouseClicked(MouseEvent e) {
+        @Override
+        public void mouseClicked(MouseEvent e) {
           super.mouseClicked(e);
           radioSonarCloud.setSelected(true);
         }
       });
     }
 
-    proxyButton.addActionListener(evt -> {
-      HttpConfigurable.editConfigurable(panel);
-    });
+    proxyButton.addActionListener(evt -> HttpConfigurable.editConfigurable(panel));
 
     load(editing);
     paintErrors();
@@ -162,19 +203,26 @@ public class ServerStep extends AbstractWizardStepEx {
     return panel;
   }
 
-  @NotNull @Override public Object getStepId() {
+  @NotNull
+  @Override
+  public Object getStepId() {
     return ServerStep.class;
   }
 
-  @Nullable @Override public Object getNextStepId() {
+  @Nullable
+  @Override
+  public Object getNextStepId() {
     return AuthStep.class;
   }
 
-  @Nullable @Override public Object getPreviousStepId() {
+  @Nullable
+  @Override
+  public Object getPreviousStepId() {
     return null;
   }
 
-  @Override public boolean isComplete() {
+  @Override
+  public boolean isComplete() {
     boolean nameValid = !nameField.getText().trim().isEmpty();
     errorPainter.setValid(nameField, nameValid);
     boolean urlValid = radioSonarCloud.isSelected() || !urlText.getText().trim().isEmpty();
@@ -183,7 +231,8 @@ public class ServerStep extends AbstractWizardStepEx {
     return nameValid && urlValid;
   }
 
-  @Override public void commit(CommitType commitType) throws CommitStepException {
+  @Override
+  public void commit(CommitType commitType) throws CommitStepException {
     validateName();
     validateUrl();
     save();
@@ -234,8 +283,13 @@ public class ServerStep extends AbstractWizardStepEx {
     sonarqubeIcon = new JLabel(SonarLintIcons.ICON_SONARQUBE);
     sonarcloudText = SwingHelper.createHtmlViewer(false, null, null, null);
     sonarqubeText = SwingHelper.createHtmlViewer(false, null, null, null);
+    sonarQubeDescription = SwingHelper.createHtmlViewer(false, null, null, null);
+    sonarCloudDescription = SwingHelper.createHtmlViewer(false, null, null, null);
+    sonarCloudFree = SwingHelper.createHtmlViewer(false, null, null, null);
+    sonarQubeFree = SwingHelper.createHtmlViewer(false, null, null, null);
+    compareProducts = SwingHelper.createHtmlViewer(false, null, null, null);
 
-    JBTextField text = new JBTextField();
+    var text = new JBTextField();
     text.getEmptyText().setText("Example: http://localhost:9000");
     urlText = text;
 

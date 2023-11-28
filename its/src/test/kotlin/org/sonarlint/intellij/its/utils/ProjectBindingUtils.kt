@@ -42,7 +42,7 @@ class ProjectBindingUtils {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
-                        checkBox("Bind project to SonarQube / SonarCloud").unselect()
+                        checkBox("Bind project to SonarCloud / SonarQube").unselect()
                         button("OK").click()
                     }
                 }
@@ -53,7 +53,7 @@ class ProjectBindingUtils {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
-                        checkBox("Bind project to SonarQube / SonarCloud").select()
+                        checkBox("Bind project to SonarCloud / SonarQube").select()
                         comboBox("Connection:").click()
                         remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
                             waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
@@ -73,7 +73,7 @@ class ProjectBindingUtils {
                 tree {
                     clickPath("Tools", "SonarLint", "Project Settings")
                 }
-                checkBox("Bind project to SonarQube / SonarCloud").select()
+                checkBox("Bind project to SonarCloud / SonarQube").select()
                 pressOk()
                 errorMessage("Connection should not be empty")
 
