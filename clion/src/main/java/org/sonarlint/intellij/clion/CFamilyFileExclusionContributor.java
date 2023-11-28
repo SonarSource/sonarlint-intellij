@@ -20,9 +20,9 @@
 package org.sonarlint.intellij.clion;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
-import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
 
@@ -30,8 +30,7 @@ public class CFamilyFileExclusionContributor implements FileExclusionContributor
 
   @Override
   public ExcludeResult shouldExclude(Module module, VirtualFile fileToAnalyze) {
-    var psiFile = PsiManager.getInstance(module.getProject()).findFile(fileToAnalyze);
-    if (!(psiFile instanceof OCPsiFile)) {
+    if (!isSupported(module.getProject(), fileToAnalyze)) {
       return ExcludeResult.notExcluded();
     }
     var configurationResult = new AnalyzerConfiguration(module.getProject()).getConfiguration(fileToAnalyze);
@@ -39,5 +38,18 @@ public class CFamilyFileExclusionContributor implements FileExclusionContributor
       return ExcludeResult.notExcluded();
     }
     return ExcludeResult.excluded(configurationResult.getSkipReason());
+  }
+
+  private static boolean isSupported(Project project, VirtualFile file) {
+    var psiFile = PsiManager.getInstance(project).findFile(file);
+    return psiFile != null && (isInstanceOf(psiFile, "com.jetbrains.cidr.lang.psi.OCPsiFile") || isInstanceOf(psiFile, "com.jetbrains.rider.cpp.fileType.psi.CppFile"));
+  }
+
+  private static boolean isInstanceOf(Object object, String className) {
+    try {
+      return Class.forName(className).isInstance(object);
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
   }
 }
