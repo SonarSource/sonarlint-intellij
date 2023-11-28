@@ -146,7 +146,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       model.nodesWereInserted(parent, newIdx);
       model.nodeChanged(parent);
     } else {
-      model.nodeChanged(fNode);
+      model.nodeStructureChanged(fNode);
     }
     return filtered.size();
   }

@@ -62,6 +62,7 @@ import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SUPPORT_POLICY_LINK
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -224,7 +225,7 @@ object SonarLintIntelliJClient : SonarLintClient {
 
     override fun showSoonUnsupportedMessage(params: ShowSoonUnsupportedMessageParams) {
         val project = BackendService.findModule(params.configurationScopeId)?.project ?: BackendService.findProject(params.configurationScopeId) ?: return
-        showOneTimeBalloon(project, params.text, params.doNotShowAgainId, OpenLinkAction(SonarLintDocumentation.SUPPORT_POLICY_LINK, "Learn more"))
+        showOneTimeBalloon(project, params.text, params.doNotShowAgainId, OpenLinkAction(SUPPORT_POLICY_LINK, "Learn more"))
     }
 
     override fun showSmartNotification(params: ShowSmartNotificationParams) {

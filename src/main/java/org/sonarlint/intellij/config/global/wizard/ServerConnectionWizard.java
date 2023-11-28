@@ -28,6 +28,8 @@ import java.util.Set;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK;
+
 public class ServerConnectionWizard {
   private final WizardModel model;
   private AbstractWizardEx wizardEx;
@@ -93,7 +95,7 @@ public class ServerConnectionWizard {
 
     @Override
     protected void doHelpAction() {
-      BrowserUtil.browse(SonarLintDocumentation.CONNECTED_MODE_LINK);
+      BrowserUtil.browse(CONNECTED_MODE_LINK);
     }
 
     @Override

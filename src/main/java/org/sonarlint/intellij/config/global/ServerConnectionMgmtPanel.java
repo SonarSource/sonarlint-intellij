@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -63,13 +62,11 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.DefaultCaret;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
-import org.sonarlint.intellij.cayc.HelpLabel;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.util.HelpLabelUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -92,7 +89,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     var app = ApplicationManager.getApplication();
     connectionChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     connectionList = new JBList<>();
-    connectionList.getEmptyText().appendLine("Add a connection to SonarQube or SonarCloud");
+    connectionList.getEmptyText().appendLine("Add a connection to SonarCloud or SonarQube");
     connectionList.addMouseListener(new MouseAdapter() {
       @Override
       public void mouseClicked(MouseEvent evt) {
@@ -126,7 +123,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
     focusOnNewCode = new JBCheckBox("Focus on new code (connected mode only)");
     focusOnNewCode.setFocusable(false);
-    var helpLabel = HelpLabel.createCleanAsYouCode();
+    var helpLabel = HelpLabelUtils.createCleanAsYouCode();
     var horizontalLayout = new JPanel(new HorizontalLayout(5));
     horizontalLayout.add(focusOnNewCode);
     horizontalLayout.add(helpLabel);
@@ -179,8 +176,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     connectedModeLabel.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
-        SonarLintUtils.getService(SonarLintTelemetry.class).addQuickFixAppliedForRule(CONNECTED_MODE_DOCS.getLinkId());
-        BrowserUtil.browse(e.getURL());
+        CONNECTED_MODE_DOCS.browseWithTelemetry();
       }
     });
     connectedModeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
@@ -226,13 +222,11 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   @Override
   public boolean isModified(SonarLintGlobalSettings settings) {
-    getComponent();
     return !connections.equals(settings.getServerConnections()) || settings.isFocusOnNewCode() != focusOnNewCode.isSelected();
   }
 
   @Override
   public void save(SonarLintGlobalSettings newSettings) {
-    getComponent();
     getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), newSettings);
     var newConnections = new ArrayList<>(connections);
     newSettings.setServerConnections(newConnections);
@@ -243,7 +237,6 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
-    getComponent();
     focusOnNewCode.setSelected(settings.isFocusOnNewCode());
     connections.clear();
     deletedServerIds.clear();

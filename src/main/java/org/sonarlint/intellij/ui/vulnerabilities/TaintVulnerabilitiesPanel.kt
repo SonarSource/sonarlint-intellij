@@ -49,7 +49,7 @@ import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadAct
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.documentation.SonarLintDocumentation.TAINT_VULNERABILITIES_LINK
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TAINT_VULNERABILITIES_LINK
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding

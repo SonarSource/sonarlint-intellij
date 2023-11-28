@@ -34,7 +34,6 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.persistence.FindingsCache
-import org.sonarlint.intellij.util.SonarLintAppUtils
 import javax.swing.JComponent
 
 class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {
@@ -59,8 +58,7 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAct
             val issues = relevantFindings.filterIsInstance<LiveIssue>()
             val hotspots = relevantFindings.filterIsInstance<LiveSecurityHotspot>()
             val taintVulnerabilitiesCount = TaintVulnerabilitiesCache.getStatus(project)?.count(isFocusOnNewCode) ?: 0
-            val module = SonarLintAppUtils.findModuleForFile(file, project)
-            val model = SonarLintDashboardModel(issues.size, hotspots.size, taintVulnerabilitiesCount, isFocusOnNewCode, module)
+            val model = SonarLintDashboardModel(issues.size, hotspots.size, taintVulnerabilitiesCount, isFocusOnNewCode)
             presentation.putClientProperty(DASHBOARD_MODEL, model)
         }
     }

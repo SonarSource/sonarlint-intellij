@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
-import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.ui.DocumentAdapter;
@@ -48,9 +47,11 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
+import static org.sonarlint.intellij.telemetry.LinkTelemetry.COMPARE_SERVER_PRODUCTS;
+import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_PRODUCT_PAGE;
+import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS;
 
 public class ServerStep extends AbstractWizardStepEx {
   private static final int NAME_MAX_LENGTH = 50;
@@ -101,35 +102,14 @@ public class ServerStep extends AbstractWizardStepEx {
       "and extends the CI/CD workflow to systematically help developers and organizations deliver Clean Code.";
     sonarCloudDescription.setText(cloudMainText);
 
-    var cloudFreeText = "<a href=\"" + LinkTelemetry.SONARCLOUD_PRODUCT_PAGE.getUrl() + "\">SonarCloud</a> is entirely free for open source projects";
-    sonarCloudFree.setText(cloudFreeText);
-    sonarCloudFree.addHyperlinkListener(new HyperlinkAdapter() {
-      @Override
-      protected void hyperlinkActivated(HyperlinkEvent e) {
-        SonarLintUtils.getService(SonarLintTelemetry.class).addQuickFixAppliedForRule(LinkTelemetry.SONARCLOUD_PRODUCT_PAGE.getLinkId());
-        BrowserUtil.browse(e.getURL());
-      }
-    });
+    initEditorPane(sonarCloudFree, "<a href=\"" + SONARCLOUD_PRODUCT_PAGE.getUrl() + "\">SonarCloud</a> is entirely free for open source projects",
+      SONARCLOUD_PRODUCT_PAGE);
 
-    var sqFreeText = "SonarQube offers a free <a href=\"" + LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS.getUrl() + "\">Community Edition</a>";
-    sonarQubeFree.setText(sqFreeText);
-    sonarQubeFree.addHyperlinkListener(new HyperlinkAdapter() {
-      @Override
-      protected void hyperlinkActivated(HyperlinkEvent e) {
-        SonarLintUtils.getService(SonarLintTelemetry.class).addQuickFixAppliedForRule(LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS.getLinkId());
-        BrowserUtil.browse(e.getURL());
-      }
-    });
+    initEditorPane(sonarQubeFree, "SonarQube offers a free <a href=\"" + SONARQUBE_EDITIONS_DOWNLOADS.getUrl() + "\">Community Edition</a>",
+      SONARQUBE_EDITIONS_DOWNLOADS);
 
-    var chooseBetweenText = "Discover which option is the best for your team <a href=\"" + LinkTelemetry.COMPARE_SERVER_PRODUCTS.getUrl() + "\">here</a>";
-    compareProducts.setText(chooseBetweenText);
-    compareProducts.addHyperlinkListener(new HyperlinkAdapter() {
-      @Override
-      protected void hyperlinkActivated(HyperlinkEvent e) {
-        SonarLintUtils.getService(SonarLintTelemetry.class).addQuickFixAppliedForRule(LinkTelemetry.COMPARE_SERVER_PRODUCTS.getLinkId());
-        BrowserUtil.browse(e.getURL());
-      }
-    });
+    initEditorPane(compareProducts, "Discover which option is the best for your team <a href=\"" + COMPARE_SERVER_PRODUCTS.getUrl() + "\">here</a>",
+      COMPARE_SERVER_PRODUCTS);
 
     if (!editing) {
       sonarqubeIcon.addMouseListener(new MouseInputAdapter() {
@@ -152,6 +132,16 @@ public class ServerStep extends AbstractWizardStepEx {
 
     load(editing);
     paintErrors();
+  }
+
+  private static void initEditorPane(JEditorPane editorPane, String text, LinkTelemetry linkTelemetry) {
+    editorPane.setText(text);
+    editorPane.addHyperlinkListener(new HyperlinkAdapter() {
+      @Override
+      protected void hyperlinkActivated(HyperlinkEvent e) {
+        linkTelemetry.browseWithTelemetry();
+      }
+    });
   }
 
   private void paintErrors() {

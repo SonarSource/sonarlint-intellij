@@ -55,6 +55,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -268,10 +269,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         }"
     }
 
-    private fun securityHotspotsDocLink() = externalLink(
-        "Security Hotspot",
-        SonarLintDocumentation.SECURITY_HOTSPOTS_LINK
-    )
+    private fun securityHotspotsDocLink() = externalLink("Security Hotspot", SECURITY_HOTSPOTS_LINK)
 
     private fun externalLink(text: String, href: String): String {
         return """<a href="$href">$text<icon src="AllIcons.Ide.External_link_arrow" href="$href"></a>"""

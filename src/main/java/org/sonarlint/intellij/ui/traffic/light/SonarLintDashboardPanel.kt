@@ -37,7 +37,7 @@ import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
-import org.sonarlint.intellij.cayc.HelpLabel
+import org.sonarlint.intellij.util.HelpLabelUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -63,7 +63,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
     private val connectionIcon = JBLabel()
     private val connectionLabel = JBLabel(NO_CONNECTED_MODE_TITLE)
     private val connectionNameLabel = JBLabel()
-    private val connectionHelp = HelpLabel.createConnectedMode()
+    private val connectionHelp = HelpLabelUtils.createConnectedMode()
     private val bindingLabel = JBLabel(NO_BINDING_TITLE)
     private val focusOnNewCodeCheckbox = JBCheckBox(CHECKBOX_TITLE)
 
@@ -105,7 +105,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         )
         val focusPanel = JPanel(HorizontalLayout(5))
         focusPanel.add(focusOnNewCodeCheckbox)
-        focusPanel.add(HelpLabel.createCleanAsYouCode())
+        focusPanel.add(HelpLabelUtils.createCleanAsYouCode())
         panel.add(
             focusPanel,
             gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 10)
@@ -147,7 +147,6 @@ class SonarLintDashboardPanel(private val editor: Editor) {
             } else {
                 connectionIcon.icon = SonarLintIcons.ICON_SONARQUBE_16
             }
-            connectionIcon.icon = SonarLintIcons.ICON_SONARCLOUD_16
             settings.projectKey?.let { projectKey ->
                 bindingLabel.isVisible = true
                 bindingLabel.text = "Bound to project: ${StringUtils.abbreviate(projectKey, 100)}"

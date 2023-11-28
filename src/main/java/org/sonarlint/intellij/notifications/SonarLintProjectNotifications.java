@@ -41,7 +41,7 @@ import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSma
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.documentation.SonarLintDocumentation.CONNECTED_MODE_LINK;
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintProjectNotifications {
@@ -106,7 +106,7 @@ public final class SonarLintProjectNotifications {
       notifyBindingSuggestions("Bind this project to '" + suggestedBinding.getProjectName() + "' on '" + suggestedBinding.getConnectionId() + "'?",
         new BindProjectAction(suggestedBinding), new OpenProjectSettingsAction(myProject, "Select another one"));
     } else {
-      notifyBindingSuggestions("Bind this project to SonarQube or SonarCloud?",
+      notifyBindingSuggestions("Bind this project to SonarCloud or SonarQube?",
         suggestedBindings.isEmpty() ? new OpenProjectSettingsAction(myProject, "Configure binding") : new ChooseBindingSuggestionAction(suggestedBindings));
     }
   }

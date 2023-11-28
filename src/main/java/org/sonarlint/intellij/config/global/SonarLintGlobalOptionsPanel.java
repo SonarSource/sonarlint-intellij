@@ -41,7 +41,8 @@ import static java.awt.GridBagConstraints.WEST;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
-  private static final String NODE_JS_TOOLTIP = "ABC.";
+  private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
+    "this field blank to let SonarLint look for it using your PATH environment variable.";
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
   private JBTextField nodeJsPath;

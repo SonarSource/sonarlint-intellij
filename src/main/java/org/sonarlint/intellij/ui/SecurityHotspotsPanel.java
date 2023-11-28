@@ -69,7 +69,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 
 import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.documentation.SonarLintDocumentation.SECURITY_HOTSPOTS_LINK;
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
