@@ -47,7 +47,6 @@ import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsR
 import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.canBeReopened
 import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.reopenIssueDialog
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CLEAN_CODE_LINK
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot

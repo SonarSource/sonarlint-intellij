@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK;
 

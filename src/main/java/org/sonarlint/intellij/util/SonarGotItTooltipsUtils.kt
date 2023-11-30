@@ -27,7 +27,6 @@ import java.awt.Point
 import java.net.URL
 import javax.swing.JComponent
 import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CLEAN_CODE_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.FOCUS_ON_NEW_CODE_LINK
 
