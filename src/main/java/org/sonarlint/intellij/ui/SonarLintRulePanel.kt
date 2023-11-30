@@ -54,7 +54,6 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.Issue
