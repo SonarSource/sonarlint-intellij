@@ -36,7 +36,7 @@ class HelpLabelUtils {
         @JvmStatic
         fun createConnectedMode() =
             ContextHelpLabel.createWithLink(null,
-                "Unleash the full potential of SonarLint in Connected Mode with SonarCloud or SonarQube to analyze more languages, detect more issues, and receive notifications about the quality gate status.",
+                "Connected Mode links SonarLint with SonarCloud or SonarQube to analyze more languages, detect more issues, and receive notifications about the quality gate status.",
                 "Learn more about Connected Mode", true) {
                 LinkTelemetry.CONNECTED_MODE_DOCS.browseWithTelemetry()
             }
