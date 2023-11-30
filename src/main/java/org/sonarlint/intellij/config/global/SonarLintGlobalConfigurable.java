@@ -168,7 +168,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       tabs = new JBTabbedPane();
       tabs.insertTab("Settings", null, settingsPanel, "Configure SonarLint for all projects", SETTINGS_TAB_INDEX);
       tabs.insertTab("File Exclusions", null, exclusions.getComponent(), "Configure which files should be excluded from analysis", FILE_EXCLUSIONS_TAB_INDEX);
-      tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not bound to SonarQube or SonarCloud", RULES_TAB_INDEX);
+      tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not bound to SonarCloud or SonarQube", RULES_TAB_INDEX);
       tabs.insertTab("About", null, about.getComponent(), "About SonarLint", ABOUT_TAB_INDEX);
       rootPanel.add(tabs, BorderLayout.CENTER);
     }

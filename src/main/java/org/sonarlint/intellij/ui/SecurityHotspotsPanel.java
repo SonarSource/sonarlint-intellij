@@ -50,7 +50,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreeSelectionModel;
-import org.sonarlint.intellij.actions.OpenSecurityHotspotDocumentationAction;
+import org.sonarlint.intellij.actions.OpenInBrowserAction;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
@@ -69,6 +69,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.HotspotStatus;
 
 import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
@@ -138,7 +139,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     actionGroup.add(sonarLintActions.filterSecurityHotspots());
     actionGroup.add(sonarLintActions.includeResolvedHotspotAction());
     actionGroup.add(sonarLintActions.configure());
-    actionGroup.add(new OpenSecurityHotspotDocumentationAction());
+    actionGroup.add(new OpenInBrowserAction("Learn More", "Learn more about Security Hotspots in SonarLint", SECURITY_HOTSPOTS_LINK));
     return actionGroup;
   }
 

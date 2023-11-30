@@ -28,6 +28,8 @@ import java.net.URL
 import javax.swing.JComponent
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CLEAN_CODE_LINK
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.FOCUS_ON_NEW_CODE_LINK
 
 object SonarGotItTooltipsUtils {
 
@@ -46,7 +48,7 @@ object SonarGotItTooltipsUtils {
         Disposer.tryRegister(parent, GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent).apply {
             withIcon(SonarLintIcons.SONARLINT)
             withPosition(Balloon.Position.atRight)
-            withBrowserLink("Learn more about Clean as You Code", URL(SonarLintDocumentation.FOCUS_ON_NEW_CODE_LINK))
+            withBrowserLink("Learn more about Clean as You Code", URL(FOCUS_ON_NEW_CODE_LINK))
             // Point at the first action level
             show(component) { _, _ -> Point(0, 15) }
         })
@@ -54,7 +56,7 @@ object SonarGotItTooltipsUtils {
 
     fun showCleanCodeToolTip(component: JComponent, parent: Disposable) {
         Disposer.tryRegister(parent, GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
-            withBrowserLink("Learn more about Clean Code", URL(SonarLintDocumentation.CLEAN_CODE_LINK))
+            withBrowserLink("Learn more about Clean Code", URL(CLEAN_CODE_LINK))
             withIcon(SonarLintIcons.SONARLINT)
             withPosition(Balloon.Position.atLeft)
             show(component, GotItTooltip.LEFT_MIDDLE)

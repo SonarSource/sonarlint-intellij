@@ -46,7 +46,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
-import static org.sonarlint.intellij.documentation.SonarLintDocumentation.BASE_DOCS_URL;
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.BASE_DOCS_URL;
 
 public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
   private final JPanel panel;
@@ -134,6 +134,12 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
               },
               "issue": {
                 "status_changed_count": 3
+              },
+              "help_and_feedback": {
+                "count_by_link": {
+                  "docs": 5,
+                  "faq": 4
+                }
               },
               "cayc": {
                 "new_code_focus": {

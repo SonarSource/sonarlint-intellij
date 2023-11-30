@@ -346,7 +346,7 @@ class IdeaTests : BaseUiTest() {
                 "Change this code to not construct SQL queries directly from user-controlled data."
             )
             enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false)
-            verifyTaintTabContainsMessages("The project is not bound to SonarQube/SonarCloud")
+            verifyTaintTabContainsMessages("The project is not bound to SonarCloud/SonarQube")
         }
 
     }

@@ -48,6 +48,7 @@ import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.canBeReopened
 import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.reopenIssueDialog
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CLEAN_CODE_LINK
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
@@ -80,7 +81,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     private val learnMore = HyperlinkLabel("Learn more")
 
     init {
-        learnMore.addHyperlinkListener { BrowserUtil.browse(SonarLintDocumentation.CLEAN_CODE_LINK) }
+        learnMore.addHyperlinkListener { BrowserUtil.browse(CLEAN_CODE_LINK) }
     }
 
     fun clear() {

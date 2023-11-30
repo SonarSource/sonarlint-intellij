@@ -33,27 +33,38 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.GridBag
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import javax.swing.JPanel
+import org.apache.commons.lang.StringUtils
+import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
-import org.sonarlint.intellij.cayc.FocusModeHelpLabel
+import org.sonarlint.intellij.util.HelpLabelUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.FindingType.ISSUE
 import org.sonarlint.intellij.finding.FindingType.SECURITY_HOTSPOT
 import org.sonarlint.intellij.finding.FindingType.TAINT_VULNERABILITY
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import javax.swing.JPanel
+
 
 class SonarLintDashboardPanel(private val editor: Editor) {
 
     companion object {
         private const val NO_FINDINGS_TEXT = "No problems found, keep up the good work!"
+        private const val NO_CONNECTED_MODE_TITLE = "Connected mode is not active"
+        private const val NO_BINDING_TITLE = "No binding found"
         private const val CHECKBOX_TITLE = "Focus on New Code"
     }
 
     val panel = JPanel(GridBagLayout())
     private val findingsSummaryLabel = JBLabel(NO_FINDINGS_TEXT)
+    private val connectionIcon = JBLabel()
+    private val connectionLabel = JBLabel(NO_CONNECTED_MODE_TITLE)
+    private val connectionNameLabel = JBLabel()
+    private val connectionHelp = HelpLabelUtils.createConnectedMode()
+    private val bindingLabel = JBLabel(NO_BINDING_TITLE)
     private val focusOnNewCodeCheckbox = JBCheckBox(CHECKBOX_TITLE)
 
     init {
@@ -68,21 +79,37 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         presentation.putClientProperty(ActionButton.HIDE_DROPDOWN_ICON, true)
 
         val menuButton = ActionButton(
-                MenuAction(),
-                presentation,
-                ActionPlaces.EDITOR_POPUP,
-                ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE
+            MenuAction(),
+            presentation,
+            ActionPlaces.EDITOR_POPUP,
+            ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE
         )
 
-        val gc = GridBag().nextLine().next().anchor(GridBagConstraints.LINE_START).weightx(1.0).fillCellHorizontally().insets(10, 10, 10, 0)
+        val gc =
+            GridBag().nextLine().next().anchor(GridBagConstraints.LINE_START).weightx(1.0).fillCellHorizontally().insets(10, 10, 10, 10)
 
         panel.add(findingsSummaryLabel, gc)
         panel.add(menuButton, gc.next().anchor(GridBagConstraints.LINE_END).weightx(0.0).insets(10, 6, 10, 6))
+        val connectedModePanel = JPanel(HorizontalLayout(5))
+        connectedModePanel.add(connectionLabel)
+        connectedModePanel.add(connectionIcon)
+        connectedModePanel.add(connectionNameLabel)
+        connectedModePanel.add(connectionHelp)
+        panel.add(
+            connectedModePanel,
+            gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 10)
+        )
+        panel.add(
+            bindingLabel,
+            gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 10)
+        )
         val focusPanel = JPanel(HorizontalLayout(5))
         focusPanel.add(focusOnNewCodeCheckbox)
-        focusPanel.add(FocusModeHelpLabel.create())
-        panel.add(focusPanel,
-            gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 0))
+        focusPanel.add(HelpLabelUtils.createCleanAsYouCode())
+        panel.add(
+            focusPanel,
+            gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 10)
+        )
     }
 
     fun refresh(summary: SonarLintDashboardModel) {
@@ -104,6 +131,36 @@ class SonarLintDashboardPanel(private val editor: Editor) {
                 }
                 findingsSummaryLabel.text = fragments.joinToString()
             }
+        }
+
+        val settings = Settings.getSettingsFor(project)
+        settings.connectionName?.let { connectionName ->
+            val serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
+
+            connectionLabel.text = "Connected to:"
+            connectionNameLabel.text = connectionName
+            connectionNameLabel.isVisible = true
+            connectionHelp.isVisible = false
+            connectionIcon.isVisible = true
+            if (serverConnection.isSonarCloud) {
+                connectionIcon.icon = SonarLintIcons.ICON_SONARCLOUD_16
+            } else {
+                connectionIcon.icon = SonarLintIcons.ICON_SONARQUBE_16
+            }
+            settings.projectKey?.let { projectKey ->
+                bindingLabel.isVisible = true
+                bindingLabel.text = "Bound to project: ${StringUtils.abbreviate(projectKey, 100)}"
+            } ?: run {
+                bindingLabel.isVisible = false
+                bindingLabel.text = NO_BINDING_TITLE
+            }
+        } ?: run {
+            connectionLabel.text = NO_CONNECTED_MODE_TITLE
+            connectionIcon.isVisible = false
+            connectionNameLabel.isVisible = false
+            connectionHelp.isVisible = true
+            bindingLabel.isVisible = false
+            bindingLabel.text = NO_BINDING_TITLE
         }
     }
 

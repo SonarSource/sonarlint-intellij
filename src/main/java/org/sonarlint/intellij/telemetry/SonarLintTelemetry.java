@@ -48,4 +48,6 @@ public interface SonarLintTelemetry {
   void addReportedRules(Set<String> reportedRules);
 
   void addQuickFixAppliedForRule(String ruleKey);
+
+  void helpAndFeedbackLinkClicked(String itemId);
 }

@@ -22,11 +22,13 @@ package org.sonarlint.intellij.actions
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
-class OpenTaintVulnerabilityDocumentationAction : AbstractSonarAction("Learn More", "Learn more about taint vulnerabilities in SonarLint", AllIcons.Actions.Help) {
-  override fun actionPerformed(e: AnActionEvent) {
-    BrowserUtil.browse(SonarLintDocumentation.TAINT_VULNERABILITIES_LINK)
-  }
+class OpenInBrowserAction(text: String, description: String?, private val link: String) : AbstractSonarAction(
+    text, description, AllIcons.Actions.Help
+) {
+
+    override fun actionPerformed(e: AnActionEvent) {
+        BrowserUtil.browse(link)
+    }
 
 }

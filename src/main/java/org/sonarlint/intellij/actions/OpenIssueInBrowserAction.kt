@@ -34,7 +34,7 @@ import org.sonarsource.sonarlint.core.serverapi.UrlUtils
 
 class OpenIssueInBrowserAction : AbstractSonarAction(
   "Open In Browser",
-  "Open issue in browser interface of SonarQube or SonarCloud",
+  "Open issue in browser interface of SonarCloud or SonarQube",
   null
 ) {
 

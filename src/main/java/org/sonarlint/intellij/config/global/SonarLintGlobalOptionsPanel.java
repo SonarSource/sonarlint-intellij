@@ -25,7 +25,6 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBTextField;
-import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.util.ui.JBUI;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -35,8 +34,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
-import org.sonarlint.intellij.cayc.FocusModeHelpLabel;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.NodeJsManager;
 
@@ -47,7 +44,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
     "this field blank to let SonarLint look for it using your PATH environment variable.";
   private JPanel rootPane;
-  private JBCheckBox focusOnNewCode;
   private JBCheckBox autoTrigger;
   private JBTextField nodeJsPath;
   private JBLabel nodeJsVersion;
@@ -65,15 +61,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   private JPanel createTopPanel() {
     var optionsPanel = new JPanel(new GridBagLayout());
     optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
-
-    focusOnNewCode = new JBCheckBox("Focus on new code (connected mode only)");
-    focusOnNewCode.setFocusable(false);
-    var helpLabel = FocusModeHelpLabel.create();
-    var horizontalLayout = new JPanel(new HorizontalLayout(5));
-    horizontalLayout.add(focusOnNewCode);
-    horizontalLayout.add(helpLabel);
-    optionsPanel.add(horizontalLayout, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
-      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
     autoTrigger = new JBCheckBox("Automatically trigger analysis");
     autoTrigger.setFocusable(false);
     optionsPanel.add(autoTrigger, new GridBagConstraints(0, 1, 3, 1, 0.0, 0.0,
@@ -102,15 +89,13 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();
-    return model.isFocusOnNewCode() != focusOnNewCode.isSelected()
-      || model.isAutoTrigger() != autoTrigger.isSelected()
+    return model.isAutoTrigger() != autoTrigger.isSelected()
       || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText());
   }
 
   @Override
   public void load(SonarLintGlobalSettings model) {
     getComponent();
-    focusOnNewCode.setSelected(model.isFocusOnNewCode());
     autoTrigger.setSelected(model.isAutoTrigger());
     nodeJsPath.setText(model.getNodejsPath());
     final var nodeJsManager = getService(NodeJsManager.class);
@@ -123,7 +108,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public void save(SonarLintGlobalSettings settings) {
     getComponent();
-    getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
     settings.setNodejsPath(nodeJsPath.getText());
   }

@@ -17,15 +17,25 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.notifications.binding
+package org.sonarlint.intellij.telemetry
 
 import com.intellij.ide.BrowserUtil
-import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.actions.AbstractSonarAction
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
-class LearnMoreAboutConnectedModeAction : AbstractSonarAction("Learn more") {
-    override fun actionPerformed(e: AnActionEvent) {
-        BrowserUtil.browse(SonarLintDocumentation.CONNECTED_MODE_LINK)
+enum class LinkTelemetry(
+    val linkId: String,
+    val url: String
+) {
+
+    CONNECTED_MODE_DOCS("connectedModeDocs", SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK),
+    COMPARE_SERVER_PRODUCTS("compareServerProducts", SonarLintDocumentation.Marketing.COMPARE_SERVER_PRODUCTS_LINK),
+    SONARQUBE_EDITIONS_DOWNLOADS("sonarQubeEditionsDownloads", SonarLintDocumentation.Marketing.SONARQUBE_EDITIONS_DOWNLOADS_LINK),
+    SONARCLOUD_PRODUCT_PAGE("sonarCloudProductPage", SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_LINK);
+
+    fun browseWithTelemetry() {
+        SonarLintUtils.getService(SonarLintTelemetry::class.java).helpAndFeedbackLinkClicked(linkId)
+        BrowserUtil.browse(url)
     }
+
 }

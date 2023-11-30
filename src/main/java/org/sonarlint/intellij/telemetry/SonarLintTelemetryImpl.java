@@ -163,6 +163,13 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
     }
   }
 
+  @Override
+  public void helpAndFeedbackLinkClicked(String itemId) {
+    if (enabled()) {
+      telemetry.helpAndFeedbackLinkClicked(itemId);
+    }
+  }
+
   @VisibleForTesting
   void stop() {
     if (enabled()) {
