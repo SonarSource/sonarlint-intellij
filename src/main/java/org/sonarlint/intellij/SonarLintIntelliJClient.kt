@@ -44,8 +44,10 @@ import com.intellij.util.proxy.CommonProxy
 import java.io.ByteArrayInputStream
 import java.net.Authenticator
 import java.net.InetSocketAddress
+import java.net.MalformedURLException
 import java.net.Proxy
 import java.net.URI
+import java.net.URL
 import java.security.cert.CertificateException
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
@@ -398,6 +400,12 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun getProxyPasswordAuthentication(params: GetProxyPasswordAuthenticationParams): CompletableFuture<GetProxyPasswordAuthenticationResponse> {
+        val targetHostUrl: URL
+        try {
+            targetHostUrl = URL(params.targetHostURL)
+        } catch (e: MalformedURLException) {
+            return CompletableFuture.failedFuture(e)
+        }
         val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(
             params.host,
             null,
@@ -405,10 +413,10 @@ object SonarLintIntelliJClient : SonarLintClient {
             params.protocol,
             params.prompt,
             params.scheme,
-            null,
+            targetHostUrl,
             Authenticator.RequestorType.PROXY
         )
-        return CompletableFuture.completedFuture(GetProxyPasswordAuthenticationResponse(auth.userName, String(auth.password)))
+        return CompletableFuture.completedFuture(GetProxyPasswordAuthenticationResponse(auth?.userName, auth?.let { String(it.password) }))
     }
 
     override fun checkServerTrusted(params: CheckServerTrustedParams): CompletableFuture<CheckServerTrustedResponse> {
