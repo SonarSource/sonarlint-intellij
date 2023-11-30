@@ -135,7 +135,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     panel.add(optionsPanel);
     panel.add(serversPanel);
 
-    serversPanel.setMinimumSize(new Dimension(0, 200));
+    serversPanel.setMinimumSize(new Dimension(0, 225));
 
     connectionList.setCellRenderer(new ColoredListCellRenderer<>() {
       @Override
