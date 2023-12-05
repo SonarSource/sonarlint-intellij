@@ -28,6 +28,7 @@ enum class LinkTelemetry(
     val url: String
 ) {
 
+    SONARCLOUD_SIGNUP_PAGE("sonarCloudSignUpPage", SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_SIGNUP_LINK),
     CONNECTED_MODE_DOCS("connectedModeDocs", SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK),
     COMPARE_SERVER_PRODUCTS("compareServerProducts", SonarLintDocumentation.Marketing.COMPARE_SERVER_PRODUCTS_LINK),
     SONARQUBE_EDITIONS_DOWNLOADS("sonarQubeEditionsDownloads", SonarLintDocumentation.Marketing.SONARQUBE_EDITIONS_DOWNLOADS_LINK),
