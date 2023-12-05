@@ -41,7 +41,10 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
   }
 
   private void createPanel() {
-    add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.CENTER);
+    add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.WEST);
+
+    add(new WhatsInThisViewPanel(project).getPanel(), BorderLayout.CENTER);
+
     add(new CurrentFileConnectedModePanel(project).getPanel(), BorderLayout.EAST);
   }
 

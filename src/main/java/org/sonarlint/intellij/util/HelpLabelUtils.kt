@@ -26,12 +26,26 @@ import org.sonarlint.intellij.telemetry.LinkTelemetry
 
 class HelpLabelUtils {
     companion object {
+        private var currentFileText: String = "SonarLint analyzes in real-time the active file only and reports any issues found in this view. ";
+
+        @JvmStatic
+        fun createCurrentFileHelpNotConnected() =
+                ContextHelpLabel.createWithLink(null,
+                        currentFileText +
+                            "SonarCloud complements SonarLint by detecting more across the whole project.",
+                        "Try SonarCloud for free", true) {
+                    LinkTelemetry.SONARCLOUD_SIGNUP_PAGE.browseWithTelemetry()
+                }
+
+        @JvmStatic
+        fun createCurrentFileHelp() =
+            ContextHelpLabel.create(currentFileText)
 
         @JvmStatic
         fun createCleanAsYouCode() =
-                ContextHelpLabel.createWithLink(null,
-                        "Deliver clean code by focusing on code that was recently modified",
-                        "Learn more about Clean as You Code", true) { BrowserUtil.browse(FOCUS_ON_NEW_CODE_LINK) }
+            ContextHelpLabel.createWithLink(null,
+                "Deliver clean code by focusing on code that was recently modified",
+                "Learn more about Clean as You Code", true) { BrowserUtil.browse(FOCUS_ON_NEW_CODE_LINK) }
 
         @JvmStatic
         fun createConnectedMode() =
