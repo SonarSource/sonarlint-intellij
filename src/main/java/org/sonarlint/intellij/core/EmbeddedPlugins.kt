@@ -27,6 +27,7 @@ import java.util.function.Consumer
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.LanguageActivator
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.plsql.PLSQLLanguageActivator
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.Language
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
@@ -91,7 +92,7 @@ object EmbeddedPlugins {
     val extraEnabledLanguagesInConnectedMode: Set<Language>
         get() {
             val extraEnabledLanguages = EnumSet.copyOf(ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE)
-            amendEnabledLanguages(extraEnabledLanguages, true)
+            PLSQLLanguageActivator().amendLanguages(extraEnabledLanguages, true)
             return extraEnabledLanguages
         }
 

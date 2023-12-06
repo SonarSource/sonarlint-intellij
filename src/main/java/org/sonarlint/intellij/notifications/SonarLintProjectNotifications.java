@@ -108,17 +108,21 @@ public final class SonarLintProjectNotifications {
     shown = true;
   }
 
-  public void notifyWiderLanguageSupport(String language) {
+  public void notifyLanguagePromotion(String content) {
     var notification = IN_CONTEXT_PROMOTION_GROUP.createNotification(
       TITLE_SONARLINT_SUGGESTIONS,
-      "Enable " + language +" analysis by connecting your project",
-      NotificationType.WARNING);
+      content,
+      NotificationType.INFORMATION);
+    addActions(notification);
+    notification.notify(myProject);
+  }
+
+  private static void addActions(Notification notification) {
     notification.addAction(new OpenTrackedLinkAction("Try SonarCloud for free", LinkTelemetry.SONARCLOUD_PRODUCT_PAGE));
     notification.addAction(new OpenTrackedLinkAction("Download SonarQube", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS));
     notification.addAction(new OpenInBrowserAction("Learn more", null, CONNECTED_MODE_BENEFITS_LINK));
     notification.addAction(new DontAskAgainAction());
     notification.setIcon(SonarLintIcons.SONARLINT);
-    notification.notify(myProject);
   }
 
   public void suggestBindingOptions(List<BindingSuggestion> suggestedBindings) {

@@ -26,53 +26,73 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.time.Instant
 import java.time.Period
+import java.util.EnumSet
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.EmbeddedPlugins.extraEnabledLanguagesInConnectedMode
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
+import org.sonarsource.sonarlint.core.commons.Language
 
 @Service(Service.Level.PROJECT)
 class PromotionProvider(private val project: Project) {
+
+    private val languagesHavingAdvancedRules: Set<Language> = EnumSet.of(
+        Language.JAVA, Language.PYTHON, Language.PHP, Language.JS, Language.TS, Language.CS
+    )
 
     fun subscribeToTriggeringEvents() {
         val busConnection = project.messageBus.connect()
         with(busConnection) {
             subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
                 override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
+                    val extension = file.extension ?: return
+                    val notifications = getSonarLintProjectNotifications(source)
+
                     if (!Settings.getSettingsFor(project).isBound && !Settings.getGlobalSettings().isPromotionDisabled) {
-                        processPromotion(source, file)
+                        processExtraLanguagePromotion(notifications, extension)
+                        processAdvancedLanguagePromotion(notifications, extension)
                     }
                 }
             })
         }
     }
 
-    private fun processPromotion(source: FileEditorManager, file: VirtualFile) {
-        val notifications: SonarLintProjectNotifications = SonarLintUtils.getService(
+    private fun getSonarLintProjectNotifications(source: FileEditorManager): SonarLintProjectNotifications {
+        return SonarLintUtils.getService(
             source.project,
             SonarLintProjectNotifications::class.java
         )
+    }
 
-        val extension = file.extension ?: return
-
-        val language = findLanguage(extension)
+    private fun processAdvancedLanguagePromotion(notifications: SonarLintProjectNotifications, extension: String) {
+        val language = findLanguage(extension, languagesHavingAdvancedRules)
 
         if (language != null) {
-            showPromotion(notifications, language.label)
+            showPromotion(notifications, "Enable advanced " + language.label + " rules by connecting your project")
         }
     }
 
-    private fun findLanguage(extension: String) = extraEnabledLanguagesInConnectedMode.find {
-        it.defaultFileSuffixes.any { suffix ->
-            suffix.equals(extension) || suffix.equals(".$extension")
+    private fun processExtraLanguagePromotion(notifications: SonarLintProjectNotifications, extension: String) {
+        val language = findLanguage(extension, extraEnabledLanguagesInConnectedMode)
+
+        if (language != null) {
+            showPromotion(notifications, "Enable " + language.label + " analysis by connecting your project")
         }
     }
 
-    private fun showPromotion(notifications: SonarLintProjectNotifications, language: String) {
+    private fun findLanguage(extension: String, languages: Set<Language>): Language? {
+        return languages.find {
+            it.defaultFileSuffixes.any { suffix ->
+                suffix.equals(extension) || suffix.equals(".$extension")
+            }
+        }
+    }
+
+    private fun showPromotion(notifications: SonarLintProjectNotifications, content: String) {
         val lastModifiedDate: Instant? = getLastModifiedDate()
 
         if (shouldNotify(lastModifiedDate)) {
-            notifications.notifyWiderLanguageSupport(language)
+            notifications.notifyLanguagePromotion(content)
             Settings.getGlobalSettings().lastPromotionNotificationDate = Instant.now().toEpochMilli()
         }
     }
@@ -99,7 +119,7 @@ class PromotionProvider(private val project: Project) {
             return true
         }
 
-        return lastPromotionDate.isBefore(Instant.now().minus(Period.ofDays(PROMOTION_PERIOD)));
+        return lastPromotionDate.isBefore(Instant.now().minus(Period.ofDays(PROMOTION_PERIOD)))
     }
 
     companion object {
