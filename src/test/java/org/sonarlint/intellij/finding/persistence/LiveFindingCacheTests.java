@@ -42,7 +42,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -59,54 +58,38 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void should_save_and_read_cache_only() {
+  void should_save_and_read_cache_only() throws IOException {
     var file = myFixture.copyFileToProject("foo.php", "foo.php");
     var issue = createTestIssue("r1");
-    cache.insertFinding(file, issue);
+    cache.replaceFindings(Map.of(file, List.of(issue)));
 
     assertThat(cache.contains(file)).isTrue();
     assertThat(cache.getLive(file)).containsOnly(issue);
 
     assertThat(cache.contains(myFixture.copyFileToProject("foo.php", "foo2.php"))).isFalse();
 
-    verifyNoInteractions(store);
-  }
-
-  @Test
-  void should_not_fallback_persistence() {
-    var file = myFixture.copyFileToProject("foo.php", "foo.php");
-    var issue1 = createTestIssue("r1");
-
-    cache.insertFinding(file, issue1);
-
-    var cacheMiss = myFixture.copyFileToProject("foo.php", "foo2.php");
-    assertThat(cache.getLive(cacheMiss)).isNull();
-
-    verifyNoInteractions(store);
+    verify(store).save("foo.php", List.of(issue));
   }
 
   @Test
   void should_flush_if_full() throws IOException {
     var issue1 = createTestIssue("r1");
     var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
-    cache.insertFinding(file0, issue1);
+    cache.replaceFindings(Map.of(file0, List.of(issue1)));
     var file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
-    cache.insertFinding(file1, issue1);
+    cache.replaceFindings(Map.of(file1, List.of(issue1)));
 
     for (var i = 2; i < MAX_ENTRIES_FOR_TEST; i++) {
       var file = myFixture.copyFileToProject("foo.php", "foo" + i + ".php");
-      cache.insertFinding(file, issue1);
+      cache.replaceFindings(Map.of(file, List.of(issue1)));
     }
 
     // oldest access should be foo1.php after this
     assertThat(cache.getLive(file0)).containsOnly(issue1);
 
-    verifyNoInteractions(store);
-
     var file = myFixture.copyFileToProject("foo.php", "anotherfile.php");
-    cache.insertFinding(file, issue1);
+    cache.replaceFindings(Map.of(file, List.of(issue1)));
 
-    verify(store).save(eq("foo1.php"), anyCollection());
     assertThat(cache.getLive(file0)).containsOnly(issue1);
     // File1 has been flushed
     assertThat(cache.getLive(file1)).isNull();
@@ -116,7 +99,7 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
   void should_clear_store() {
     var issue1 = createTestIssue("r1");
     var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
-    cache.insertFinding(file0, issue1);
+    cache.replaceFindings(Map.of(file0, List.of(issue1)));
 
     cache.clear();
     verify(store).clear();
@@ -141,7 +124,6 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
 
     var issue1 = createTestIssue("r1");
     var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
-    cache.insertFinding(file0, issue1);
     cache.replaceFindings(Map.of(file0, List.of(issue1)));
 
     assertThat(((SonarLintConsoleTestImpl)getConsole()).getLastMessage()).contains("Cannot flush issues");
@@ -154,11 +136,11 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
     var issue1 = createTestIssue("r1");
     for (var i = 0; i < MAX_ENTRIES_FOR_TEST; i++) {
       var file = myFixture.copyFileToProject("foo.php", "foo" + i + ".php");
-      cache.insertFinding(file, issue1);
+      cache.replaceFindings(Map.of(file, List.of(issue1)));
     }
 
     var extraFile = myFixture.copyFileToProject("foo.php", "another.php");
-    assertThrows(IllegalStateException.class, () -> cache.insertFinding(extraFile, issue1));
+    assertThrows(IllegalStateException.class, () -> cache.replaceFindings(Map.of(extraFile, List.of(issue1))));
   }
 
   @Test
@@ -168,13 +150,13 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
 
     Runnable r = () -> {
       LiveIssue issue1 = createTestIssue("r1");
-      cache.insertFinding(file1, issue1);
+      cache.replaceFindings(Map.of(file1, List.of(issue1)));
       LiveIssue issue2 = createTestIssue("r2");
-      cache.insertFinding(file1, issue2);
+      cache.replaceFindings(Map.of(file1, List.of(issue2)));
       LiveIssue issue3 = createTestIssue("r3");
-      cache.insertFinding(file2, issue3);
+      cache.replaceFindings(Map.of(file2, List.of(issue3)));
       LiveIssue issue4 = createTestIssue("r4");
-      cache.insertFinding(file2, issue4);
+      cache.replaceFindings(Map.of(file2, List.of(issue4)));
       Collection<LiveIssue> live = cache.getLive(file1);
       if (live != null) {
         assertThat(live).extracting(LiveIssue::getRuleKey).isSubsetOf("r1", "r2");

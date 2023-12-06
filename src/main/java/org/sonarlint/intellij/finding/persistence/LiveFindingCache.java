@@ -24,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,12 +52,12 @@ public class LiveFindingCache<T extends LiveFinding> {
     this.project = project;
     this.persistence = persistence;
     this.maxEntries = maxEntries;
-    this.cache = new LimitedSizeLinkedHashMap();
+    this.cache = Collections.synchronizedMap(new LimitedSizeLinkedHashMap());
   }
 
-  public synchronized void replaceFindings(Map<VirtualFile, Collection<T>> newFindingsPerFile) {
+  public void replaceFindings(Map<VirtualFile, Collection<T>> newFindingsPerFile) {
     cache.putAll(newFindingsPerFile);
-    flushAll();
+    flushAll(newFindingsPerFile);
   }
 
   /**
@@ -119,26 +120,22 @@ public class LiveFindingCache<T extends LiveFinding> {
    * Read findings from a file that are cached. On cache miss, it won't fallback to the persistent store.
    */
   @CheckForNull
-  public synchronized Collection<T> getLive(VirtualFile virtualFile) {
+  public Collection<T> getLive(VirtualFile virtualFile) {
     var liveFindings = cache.get(virtualFile);
     if (liveFindings != null) {
-      // Create a copy to avoid concurrent modification issues
+      // Create a copy to avoid concurrent modification issues later
       return new ArrayList<>(liveFindings);
     }
     return null;
   }
 
-  public synchronized void insertFinding(VirtualFile virtualFile, T finding) {
-    cache.computeIfAbsent(virtualFile, f -> new ArrayList<>()).add(finding);
-  }
-
   /**
-   * Flushes all cached entries to disk.
+   * Flushes all provided entries to disk.
    * It does not clear the cache.
    */
-  private void flushAll() {
+  private void flushAll(Map<VirtualFile, Collection<T>> newFindingsPerFile) {
     SonarLintConsole.get(project).debug("Persisting all findings");
-    cache.forEach((virtualFile, liveFindings) -> {
+    newFindingsPerFile.forEach((virtualFile, liveFindings) -> {
       if (virtualFile.isValid()) {
         var key = createKey(virtualFile);
         if (key != null) {
@@ -155,12 +152,12 @@ public class LiveFindingCache<T extends LiveFinding> {
   /**
    * Clear cache and underlying persistent store
    */
-  public synchronized void clear() {
+  public void clear() {
     persistence.clear();
     cache.clear();
   }
 
-  public synchronized boolean contains(VirtualFile virtualFile) {
+  public boolean contains(VirtualFile virtualFile) {
     return getLive(virtualFile) != null;
   }
 
