@@ -43,8 +43,20 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTr
 public final class SonarLintGlobalSettings {
 
   private boolean isFocusOnNewCode = false;
+  private boolean isPromotionDisabled = false;
+
+  public boolean isPromotionDisabled() {
+    return isPromotionDisabled;
+  }
+
+  public void setPromotionDisabled(boolean promotionDisabled) {
+    isPromotionDisabled = promotionDisabled;
+  }
+
+  private long lastPromotionNotificationDate = 0;
   private boolean autoTrigger = true;
   private String nodejsPath = "";
+
   private List<ServerConnection> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
@@ -56,6 +68,15 @@ public final class SonarLintGlobalSettings {
   @Transient
   Map<String, Rule> rulesByKey = new HashMap<>();
   private boolean taintVulnerabilitiesTabDisclaimerDismissed;
+
+  public long getLastPromotionNotificationDate() {
+    return lastPromotionNotificationDate;
+  }
+
+  public void setLastPromotionNotificationDate(long lastPromotionNotificationDate) {
+    this.lastPromotionNotificationDate = lastPromotionNotificationDate;
+  }
+
   private boolean secretsNeverBeenAnalysed = true;
 
   public void rememberNotificationOnSecretsBeenSent() {

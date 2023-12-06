@@ -19,17 +19,17 @@
  */
 package org.sonarlint.intellij.core
 
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.EnumSet
+import java.util.function.Consumer
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.LanguageActivator
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.Language
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.EnumSet
-import java.util.function.Consumer
 
 object EmbeddedPlugins {
     private val ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA: Set<Language> = EnumSet.of(
@@ -85,6 +85,14 @@ object EmbeddedPlugins {
             enabledLanguages.addAll(ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE)
             amendEnabledLanguages(enabledLanguages, true)
             return enabledLanguages
+        }
+
+    @JvmStatic
+    val extraEnabledLanguagesInConnectedMode: Set<Language>
+        get() {
+            val extraEnabledLanguages = EnumSet.copyOf(ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE)
+            amendEnabledLanguages(extraEnabledLanguages, true)
+            return extraEnabledLanguages
         }
 
     @JvmStatic

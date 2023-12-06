@@ -30,21 +30,27 @@ import java.util.Arrays;
 import java.util.List;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.OpenInBrowserAction;
+import org.sonarlint.intellij.actions.OpenTrackedLinkAction;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.notifications.binding.BindProjectAction;
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion;
 import org.sonarlint.intellij.notifications.binding.ChooseBindingSuggestionAction;
 import org.sonarlint.intellij.notifications.binding.DisableBindingSuggestionsAction;
+import org.sonarlint.intellij.promotion.DontAskAgainAction;
+import org.sonarlint.intellij.telemetry.LinkTelemetry;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSmartNotificationParams;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK;
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Marketing.CONNECTED_MODE_BENEFITS_LINK;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintProjectNotifications {
+  private static final NotificationGroup IN_CONTEXT_PROMOTION_GROUP = NotificationGroupManager.getInstance()
+    .getNotificationGroup("SonarLint: In Context Promotions");
   private static final NotificationGroup BINDING_PROBLEM_GROUP = NotificationGroupManager.getInstance()
     .getNotificationGroup("SonarLint: Server Binding Errors");
   public static final NotificationGroup SERVER_NOTIFICATIONS_GROUP = NotificationGroupManager.getInstance()
@@ -55,6 +61,8 @@ public final class SonarLintProjectNotifications {
     .getNotificationGroup("SonarLint: Open in IDE");
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the SonarLint project configuration";
   private static final String TITLE_SONARLINT_INVALID_BINDING = "<b>SonarLint - Invalid binding</b>";
+
+  private static final String TITLE_SONARLINT_SUGGESTIONS = "<b>SonarLint suggestions</b>";
   private volatile boolean shown = false;
   private final Project myProject;
 
@@ -100,6 +108,19 @@ public final class SonarLintProjectNotifications {
     shown = true;
   }
 
+  public void notifyWiderLanguageSupport(String language) {
+    var notification = IN_CONTEXT_PROMOTION_GROUP.createNotification(
+      TITLE_SONARLINT_SUGGESTIONS,
+      "Enable " + language +" analysis by connecting your project",
+      NotificationType.WARNING);
+    notification.addAction(new OpenTrackedLinkAction("Try SonarCloud for free", LinkTelemetry.SONARCLOUD_PRODUCT_PAGE));
+    notification.addAction(new OpenTrackedLinkAction("Download SonarQube", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS));
+    notification.addAction(new OpenInBrowserAction("Learn more", null, CONNECTED_MODE_BENEFITS_LINK));
+    notification.addAction(new DontAskAgainAction());
+    notification.setIcon(SonarLintIcons.SONARLINT);
+    notification.notify(myProject);
+  }
+
   public void suggestBindingOptions(List<BindingSuggestion> suggestedBindings) {
     if (suggestedBindings.size() == 1) {
       var suggestedBinding = suggestedBindings.get(0);
@@ -113,7 +134,7 @@ public final class SonarLintProjectNotifications {
 
   private void notifyBindingSuggestions(String message, AnAction... mainActions) {
     var notification = BINDING_SUGGESTION_GROUP.createNotification(
-      "<b>SonarLint suggestions</b>",
+      TITLE_SONARLINT_SUGGESTIONS,
       message,
       NotificationType.INFORMATION);
     Arrays.stream(mainActions).forEach(notification::addAction);
