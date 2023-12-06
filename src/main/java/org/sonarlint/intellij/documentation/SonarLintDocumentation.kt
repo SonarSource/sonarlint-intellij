@@ -34,6 +34,7 @@ object SonarLintDocumentation {
     object Marketing {
         private const val BASE_MARKETING_URL = "https://www.sonarsource.com"
         const val COMPARE_SERVER_PRODUCTS_LINK = "${BASE_MARKETING_URL}/open-source-editions"
+        const val CONNECTED_MODE_BENEFITS_LINK = "${Intellij.BASE_DOCS_URL}/team-features/connected-mode/#benefits"
         const val SONARQUBE_EDITIONS_DOWNLOADS_LINK = "${BASE_MARKETING_URL}/products/sonarqube/downloads"
         const val SONARCLOUD_PRODUCT_LINK = "${BASE_MARKETING_URL}/products/sonarcloud"
         const val SONARCLOUD_PRODUCT_SIGNUP_LINK = "${BASE_MARKETING_URL}/products/sonarcloud/signup/"

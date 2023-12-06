@@ -237,6 +237,8 @@
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <postStartupActivity implementation="org.sonarlint.intellij.fs.EditorFileChangeListener"/>
 
+        <notificationGroup id="SonarLint: In Context Promotions"
+                           displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Server Binding Errors"
                            displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Analyzer Requirement"
