@@ -28,6 +28,7 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
+import org.sonarlint.intellij.promotion.PromotionProvider;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -45,6 +46,7 @@ public class StartServicesOnProjectOpened implements StartupActivity {
       getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
     }
     getService(project, SecurityHotspotsRefreshTrigger.class).subscribeToTriggeringEvents();
+    getService(project, PromotionProvider.class).subscribeToTriggeringEvents();
     // perform on bindings load
     getService(project, ConnectedModeStorageSynchronizer.class).init();
   }
