@@ -21,7 +21,9 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -49,10 +51,12 @@ class RawFindingHandler implements IssueListener {
   private final AtomicInteger rawIssueCounter = new AtomicInteger();
   private final FindingStreamer findingStreamer;
   private final LocalHistoryFindingTracker localHistoryFindingTracker;
+  private final Map<VirtualFile, FileAnnotation> annotationsPerFile;
 
-  public RawFindingHandler(FindingStreamer findingStreamer, CachedFindings previousFindings) {
+  public RawFindingHandler(FindingStreamer findingStreamer, CachedFindings previousFindings, Map<VirtualFile, FileAnnotation> annotationsPerFile) {
     this.localHistoryFindingTracker = new LocalHistoryFindingTracker(previousFindings);
     this.findingStreamer = findingStreamer;
+    this.annotationsPerFile = annotationsPerFile;
   }
 
   public void setCurrentModule(Module module) {
@@ -125,6 +129,16 @@ class RawFindingHandler implements IssueListener {
     }
 
     localHistoryFindingTracker.matchWithPreviousIssue(file, liveIssue);
+    if (liveIssue.getLine() != null) {
+      var annotatedDate = annotationsPerFile.get(file).getLineDate(liveIssue.getLine());
+      if (annotatedDate != null) {
+        liveIssue.setRealIntroductionDate(annotatedDate.getTime());
+      } else {
+        liveIssue.setRealIntroductionDate(Instant.now().getEpochSecond());
+      }
+    } else {
+      liveIssue.setRealIntroductionDate(Instant.now().getEpochSecond());
+    }
     issuesPerFile.computeIfAbsent(file, f -> new ArrayList<>()).add(liveIssue);
     findingStreamer.streamIssue(file, liveIssue);
 

@@ -24,11 +24,16 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vfs.VirtualFile;
+import git4idea.annotate.GitAnnotationProvider;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,6 +59,7 @@ import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThreadAndWait;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class Analysis implements Cancelable {
   private final Project project;
@@ -207,9 +213,25 @@ public class Analysis implements Cancelable {
     var analyzer = getService(project, SonarLintAnalyzer.class);
     var progressMonitor = new TaskProgressMonitor(indicator, project, () -> cancelled);
     var results = new LinkedHashMap<Module, ModuleAnalysisResult>();
+
+    var annotationsPerFile = new HashMap<VirtualFile, FileAnnotation>();
+
+    var startTime = Instant.now();
+    scope.getAllFilesToAnalyze().forEach(f -> runOnPooledThread(project, () -> {
+      try {
+        annotationsPerFile.put(f, project.getService(GitAnnotationProvider.class).annotate(f));
+      } catch (VcsException e) {
+        // File not part of the VCS
+        System.out.println(e.getMessage());
+      }
+    }));
+    var stopTime = Instant.now();
+    System.out.println("Number of files: " + scope.getAllFilesToAnalyze().size());
+    System.out.println(Duration.between(startTime, stopTime));
+
     RawFindingHandler rawFindingHandler;
     try (var findingStreamer = new FindingStreamer(callback)) {
-      rawFindingHandler = new RawFindingHandler(findingStreamer, cachedFindings);
+      rawFindingHandler = new RawFindingHandler(findingStreamer, cachedFindings, annotationsPerFile);
 
       for (var entry : scope.getFilesByModule().entrySet()) {
         var module = entry.getKey();

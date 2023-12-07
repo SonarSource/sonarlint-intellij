@@ -34,6 +34,7 @@ import org.sonarsource.sonarlint.core.commons.RuleType;
 public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.finding.Issue {
 
   private RuleType type;
+  private Long realIntroductionDate;
 
   public LiveIssue(Module module, Issue issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
     this(module, issue, virtualFile, null, null, quickFixes);
@@ -52,6 +53,15 @@ public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.fin
 
   public void setType(@Nullable RuleType type) {
     this.type = type;
+  }
+
+  @Nullable
+  public Long getRealIntroductionDate() {
+    return realIntroductionDate;
+  }
+
+  public void setRealIntroductionDate(@Nullable Long realIntroductionDate) {
+    this.realIntroductionDate = realIntroductionDate;
   }
 
   @Override

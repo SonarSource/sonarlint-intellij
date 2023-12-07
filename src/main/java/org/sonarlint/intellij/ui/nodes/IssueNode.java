@@ -136,7 +136,7 @@ public class IssueNode extends FindingNode {
   }
 
   private void renderIntroductionDate(TreeCellRenderer renderer) {
-    var introductionDate = issue.getIntroductionDate();
+    var introductionDate = issue.getRealIntroductionDate();
     if (introductionDate != null) {
       renderer.append(" ");
       var age = DateUtils.toAge(introductionDate);
