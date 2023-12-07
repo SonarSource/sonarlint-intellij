@@ -158,7 +158,7 @@ public class LiveFindingCache<T extends LiveFinding> {
   }
 
   public boolean contains(VirtualFile virtualFile) {
-    return getLive(virtualFile) != null;
+    return cache.containsKey(virtualFile);
   }
 
   private String createKey(VirtualFile virtualFile) {

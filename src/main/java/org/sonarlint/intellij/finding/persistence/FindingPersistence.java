@@ -72,9 +72,12 @@ public class FindingPersistence<T extends LiveFinding> {
     return store.contains(key);
   }
 
-  public synchronized void save(String key, Collection<T> findings) throws IOException {
-    FileUtils.mkdirs(storeBasePath);
-    store.write(key, transform(findings));
+  public void save(String key, Collection<T> findings) throws IOException {
+    var findingsToWrite = transform(findings);
+    synchronized (this) {
+      FileUtils.mkdirs(storeBasePath);
+      store.write(key, findingsToWrite);
+    }
   }
 
   public synchronized void clear(String key) throws IOException {

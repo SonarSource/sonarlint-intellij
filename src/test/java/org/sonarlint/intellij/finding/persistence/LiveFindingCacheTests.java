@@ -72,7 +72,7 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void should_flush_if_full() throws IOException {
+  void should_flush_if_full() {
     var issue1 = createTestIssue("r1");
     var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
     cache.replaceFindings(Map.of(file0, List.of(issue1)));
@@ -168,7 +168,6 @@ class LiveFindingCacheTests extends AbstractSonarLintLightTests {
     for (Future<?> task : tasks) {
       task.get(1, TimeUnit.MINUTES);
     }
-
   }
 
   private LiveIssue createTestIssue(String ruleKey) {
