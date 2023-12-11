@@ -19,15 +19,25 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.AbstractVcs;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.VcsRoot;
 import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
+import git4idea.GitVcs;
 import git4idea.annotate.GitAnnotationProvider;
+import git4idea.repo.GitRepository;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -36,10 +46,25 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.diff.RawTextComparator;
+import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.RepositoryBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.sonar.api.batch.scm.BlameLine;
+import org.sonar.scm.git.blame.BlameResult;
+import org.sonar.scm.git.blame.RepositoryBlameCommand;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -206,7 +231,105 @@ public class Analysis implements Cancelable {
     return cancelled || indicator.isCanceled() || project.isDisposed() || Thread.currentThread().isInterrupted() || AnalysisStatus.get(project).isCanceled();
   }
 
-  private Summary analyzePerModule(AnalysisScope scope, ProgressIndicator indicator, CachedFindings cachedFindings) {
+  private static List<BlameLine> saveBlameInformationForFileInTheOutput(BlameResult.FileBlame fileBlame) {
+    List<BlameLine> linesList = new ArrayList<>();
+    for (int i = 0; i < fileBlame.lines(); i++) {
+      if (fileBlame.getAuthorEmails()[i] == null || fileBlame.getCommitHashes()[i] == null || fileBlame.getCommitDates()[i] == null) {
+        linesList.clear();
+        break;
+      }
+      linesList.add(new BlameLine()
+        .date(fileBlame.getCommitDates()[i])
+        .revision(fileBlame.getCommitHashes()[i])
+        .author(fileBlame.getAuthorEmails()[i]));
+    }
+    return linesList;
+  }
+
+  public static Repository buildRepository(Path basedir) {
+    try {
+      Repository repo = getVerifiedRepositoryBuilder(basedir).build();
+      try (ObjectReader objReader = repo.getObjectDatabase().newReader()) {
+        // SONARSCGIT-2 Force initialization of shallow commits to avoid later concurrent modification issue
+        objReader.getShallowCommits();
+        return repo;
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException("Unable to open Git repository", e);
+    }
+  }
+
+  static RepositoryBuilder getVerifiedRepositoryBuilder(Path basedir) {
+    RepositoryBuilder builder = new RepositoryBuilder()
+      .findGitDir(basedir.toFile())
+      .setMustExist(true);
+
+    if (builder.getGitDir() == null) {
+      System.out.println("bug");
+    }
+    return builder;
+  }
+
+  public static VirtualFile getRootForFile(@NotNull Project project, @NotNull FilePath filePath) throws VcsException {
+    VcsRoot root = ProjectLevelVcsManager.getInstance(project).getVcsRootObjectFor(filePath);
+    if (isGitVcsRoot(root)) return root.getPath();
+
+    com.intellij.dvcs.repo.Repository repository = VcsRepositoryManager.getInstance(project).getExternalRepositoryForFile(filePath);
+    if (repository instanceof GitRepository) return repository.getRoot();
+    throw new RuntimeException("bug");
+  }
+
+  private static boolean isGitVcsRoot(@Nullable VcsRoot root) {
+    if (root == null) return false;
+    AbstractVcs vcs = root.getVcs();
+    if (vcs == null) return false;
+    return GitVcs.getKey().equals(vcs.getKeyInstanceMethod());
+  }
+
+  private static Map<String, List<BlameLine>> blameWithFilesGitCommand(Repository repo, Set<String> gitRelativePath) {
+    RepositoryBlameCommand blameCommand = new RepositoryBlameCommand(repo)
+      .setTextComparator(RawTextComparator.WS_IGNORE_ALL)
+      .setMultithreading(true)
+      .setFilePaths(gitRelativePath);
+    try {
+      BlameResult blameResult = blameCommand.call();
+      var result = new HashMap<String, List<BlameLine>>();
+
+      for (var e : gitRelativePath) {
+        BlameResult.FileBlame fileBlameResult = blameResult.getFileBlameByPath().get(e);
+
+        if (fileBlameResult == null) {
+          continue;
+        }
+
+        result.put(e, saveBlameInformationForFileInTheOutput(fileBlameResult));
+      }
+      return result;
+    } catch (GitAPIException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Map<String, List<BlameLine>> blameWithNativeGitCommand(JGitBlameCommand jgitCmd, Repository repo, Set<String> gitRelativePath) {
+    try (Git git = Git.wrap(repo)) {
+      ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new GitThreadFactory());
+
+      var result = new HashMap<String, List<BlameLine>>();
+      for (var e : gitRelativePath) {
+        executorService.submit(() -> result.put(e, jgitCmd.blame(git, e)));
+      }
+
+      executorService.shutdown();
+      try {
+        executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      return result;
+    }
+  }
+
+  private Summary analyzePerModule(AnalysisScope scope, ProgressIndicator indicator, CachedFindings cachedFindings) throws VcsException {
     indicator.setIndeterminate(true);
     indicator.setText("Running SonarLint Analysis for " + scope.getDescription());
 
@@ -214,9 +337,45 @@ public class Analysis implements Cancelable {
     var progressMonitor = new TaskProgressMonitor(indicator, project, () -> cancelled);
     var results = new LinkedHashMap<Module, ModuleAnalysisResult>();
 
-    var annotationsPerFile = new HashMap<VirtualFile, FileAnnotation>();
+    // JGIT -----
 
     var startTime = Instant.now();
+    var file = scope.getAllFilesToAnalyze().stream().findFirst().get();
+    Map<String, List<BlameLine>> output;
+    var jgitCmd = new JGitBlameCommand();
+
+    FilePath filePath = VcsUtil.getLastCommitPath(project, VcsUtil.getFilePath(file));
+    VirtualFile root = getRootForFile(project, filePath);
+    try (Repository repo = buildRepository(root.toNioPath())) {
+      var gitRelativePath = scope.getAllFilesToAnalyze().stream().map(f -> root.toNioPath().relativize(f.toNioPath()).toString()).collect(Collectors.toSet());
+      output = blameWithNativeGitCommand(jgitCmd, repo, gitRelativePath);
+    }
+    var stopTime = Instant.now();
+    System.out.println("jgit");
+    System.out.println("Number of files: " + scope.getAllFilesToAnalyze().size());
+    System.out.println(Duration.between(startTime, stopTime));
+
+    // -----
+
+    // SONAR JGIT -----
+
+    startTime = Instant.now();
+    Map<String, List<BlameLine>> outputSonar;
+    try (Repository repo = buildRepository(root.toNioPath())) {
+      var gitRelativePath = scope.getAllFilesToAnalyze().stream().map(f -> root.toNioPath().relativize(f.toNioPath()).toString()).collect(Collectors.toSet());
+      outputSonar = blameWithFilesGitCommand(repo, gitRelativePath);
+    }
+    stopTime = Instant.now();
+    System.out.println("Sonar git");
+    System.out.println("Number of files: " + scope.getAllFilesToAnalyze().size());
+    System.out.println(Duration.between(startTime, stopTime));
+
+    // -----
+
+    // IntelliJ API -----
+
+    var annotationsPerFile = new HashMap<VirtualFile, FileAnnotation>();
+    startTime = Instant.now();
     scope.getAllFilesToAnalyze().forEach(f -> runOnPooledThread(project, () -> {
       try {
         annotationsPerFile.put(f, project.getService(GitAnnotationProvider.class).annotate(f));
@@ -225,9 +384,12 @@ public class Analysis implements Cancelable {
         System.out.println(e.getMessage());
       }
     }));
-    var stopTime = Instant.now();
+    stopTime = Instant.now();
+    System.out.println("IntelliJ git");
     System.out.println("Number of files: " + scope.getAllFilesToAnalyze().size());
     System.out.println(Duration.between(startTime, stopTime));
+
+    // -----
 
     RawFindingHandler rawFindingHandler;
     try (var findingStreamer = new FindingStreamer(callback)) {
