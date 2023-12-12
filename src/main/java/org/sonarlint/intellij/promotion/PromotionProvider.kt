@@ -19,25 +19,43 @@
  */
 package org.sonarlint.intellij.promotion
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.time.Duration
 import java.time.Instant
 import java.time.Period
 import java.util.EnumSet
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.EmbeddedPlugins.extraEnabledLanguagesInConnectedMode
+import org.sonarlint.intellij.messages.AnalysisListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
+import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarsource.sonarlint.core.commons.Language
+
+private const val LAST_PROMOTION_NOTIFICATION_DATE = "SonarLint.lastPromotionNotificationDate"
+private const val FIRST_AUTO_ANALYSIS_DATE = "SonarLint.firstAutoAnalysisDate"
+private const val WAS_REPORT_EVER_USED = "SonarLint.wasReportEverUsed"
 
 @Service(Service.Level.PROJECT)
 class PromotionProvider(private val project: Project) {
 
     private val languagesHavingAdvancedRules: Set<Language> = EnumSet.of(
         Language.JAVA, Language.PYTHON, Language.PHP, Language.JS, Language.TS, Language.CS
+    )
+
+    private val reportAnalysisTriggers: Set<TriggerType> = EnumSet.of(
+        TriggerType.RIGHT_CLICK, TriggerType.ALL
+    )
+
+    private val autoAnalysisTriggers: Set<TriggerType> = EnumSet.of(
+        TriggerType.EDITOR_OPEN, TriggerType.BINDING_UPDATE,
+        TriggerType.SERVER_SENT_EVENT, TriggerType.CONFIG_CHANGE,
+        TriggerType.EDITOR_CHANGE, TriggerType.COMPILATION
     )
 
     fun subscribeToTriggeringEvents() {
@@ -54,6 +72,24 @@ class PromotionProvider(private val project: Project) {
                     }
                 }
             })
+            subscribe<AnalysisListener>(AnalysisListener.TOPIC, object : AnalysisListener.Adapter() {
+                override fun started(files: Collection<VirtualFile>, triggerType: TriggerType) {
+                    val notifications = getSonarLintProjectNotifications()
+                    val wasAutoAnalyzed = PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L) != 0L
+
+                    if (!Settings.getSettingsFor(project).isBound && !Settings.getGlobalSettings().isPromotionDisabled && wasAutoAnalyzed) {
+                        processFullProjectPromotion(notifications)
+                    }
+
+                    if (autoAnalysisTriggers.contains(triggerType) && !wasAutoAnalyzed) {
+                        PropertiesComponent.getInstance().setValue(FIRST_AUTO_ANALYSIS_DATE, Instant.now().toEpochMilli().toString())
+                    }
+
+                    if (reportAnalysisTriggers.contains(triggerType)) {
+                        PropertiesComponent.getInstance().setValue(WAS_REPORT_EVER_USED, true)
+                    }
+                }
+            })
         }
     }
 
@@ -62,6 +98,22 @@ class PromotionProvider(private val project: Project) {
             source.project,
             SonarLintProjectNotifications::class.java
         )
+    }
+
+    private fun getSonarLintProjectNotifications(): SonarLintProjectNotifications {
+        return SonarLintUtils.getService(
+            project,
+            SonarLintProjectNotifications::class.java
+        )
+    }
+
+    private fun processFullProjectPromotion(notifications: SonarLintProjectNotifications) {
+        val firstAutoAnalysis = Instant.ofEpochMilli(PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L))
+        val wasReportEverUsed = PropertiesComponent.getInstance().getBoolean(WAS_REPORT_EVER_USED, false)
+
+        if (!wasReportEverUsed && firstAutoAnalysis.isBefore(Instant.now().minus(FULL_PROJECT_PROMOTION_DURATION))) {
+            showPromotion(notifications, "Detect issues in your whole project")
+        }
     }
 
     private fun processAdvancedLanguagePromotion(notifications: SonarLintProjectNotifications, extension: String) {
@@ -93,12 +145,12 @@ class PromotionProvider(private val project: Project) {
 
         if (shouldNotify(lastModifiedDate)) {
             notifications.notifyLanguagePromotion(content)
-            Settings.getGlobalSettings().lastPromotionNotificationDate = Instant.now().toEpochMilli()
+            PropertiesComponent.getInstance().setValue(LAST_PROMOTION_NOTIFICATION_DATE, Instant.now().toEpochMilli().toString())
         }
     }
 
     private fun getLastModifiedDate(): Instant? {
-        val instantValue = Settings.getGlobalSettings().lastPromotionNotificationDate
+        val instantValue = PropertiesComponent.getInstance().getLong(LAST_PROMOTION_NOTIFICATION_DATE, 0L)
 
         val lastModifiedDate: Instant? = if (instantValue != 0L) {
             Instant.ofEpochMilli(instantValue)
@@ -119,10 +171,11 @@ class PromotionProvider(private val project: Project) {
             return true
         }
 
-        return lastPromotionDate.isBefore(Instant.now().minus(Period.ofDays(PROMOTION_PERIOD)))
+        return lastPromotionDate.isBefore(Instant.now().minus(PROMOTION_PERIOD))
     }
 
     companion object {
-        const val PROMOTION_PERIOD = 7
+        val PROMOTION_PERIOD: Period = Period.ofDays(7)
+        val FULL_PROJECT_PROMOTION_DURATION: Duration = Duration.ofMinutes(20L)
     }
 }

@@ -35,7 +35,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 class AnalysisScope {
 
   public static AnalysisScope defineFrom(Project project, Collection<VirtualFile> files, TriggerType trigger) throws InvalidBindingException {
-    var isForcedAnalysis = trigger == TriggerType.ACTION;
+    var isForcedAnalysis = trigger == TriggerType.CURRENT_FILE_ACTION || trigger == TriggerType.RIGHT_CLICK;
     var localFileExclusions = getService(project, LocalFileExclusions.class);
     var console = getService(project, SonarLintConsole.class);
     var filesByModule = localFileExclusions.retainNonExcludedFilesByModules(files, isForcedAnalysis,

@@ -41,7 +41,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTrailingSlash;
 
 public final class SonarLintGlobalSettings {
-
   private boolean isFocusOnNewCode = false;
   private boolean isPromotionDisabled = false;
 
@@ -53,7 +52,6 @@ public final class SonarLintGlobalSettings {
     isPromotionDisabled = promotionDisabled;
   }
 
-  private long lastPromotionNotificationDate = 0;
   private boolean autoTrigger = true;
   private String nodejsPath = "";
 
@@ -68,14 +66,6 @@ public final class SonarLintGlobalSettings {
   @Transient
   Map<String, Rule> rulesByKey = new HashMap<>();
   private boolean taintVulnerabilitiesTabDisclaimerDismissed;
-
-  public long getLastPromotionNotificationDate() {
-    return lastPromotionNotificationDate;
-  }
-
-  public void setLastPromotionNotificationDate(long lastPromotionNotificationDate) {
-    this.lastPromotionNotificationDate = lastPromotionNotificationDate;
-  }
 
   private boolean secretsNeverBeenAnalysed = true;
 

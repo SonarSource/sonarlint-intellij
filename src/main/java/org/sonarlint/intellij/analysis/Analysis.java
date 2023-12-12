@@ -101,7 +101,7 @@ public class Analysis implements Cancelable {
   }
 
   private void notifyStart() {
-    project.getMessageBus().syncPublisher(AnalysisListener.TOPIC).started(files);
+    project.getMessageBus().syncPublisher(AnalysisListener.TOPIC).started(files, trigger);
   }
 
   private AnalysisResult doRun(ProgressIndicator indicator) {
