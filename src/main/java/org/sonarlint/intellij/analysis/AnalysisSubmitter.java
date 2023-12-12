@@ -114,18 +114,21 @@ public final class AnalysisSubmitter {
 
   public void analyzeFilesOnUserAction(Collection<VirtualFile> files, AnActionEvent actionEvent) {
     AnalysisCallback callback;
+    TriggerType triggerType;
 
     if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(actionEvent.getPlace())) {
       callback = new ShowUpdatedCurrentFileCallable(project, onTheFlyFindingsHolder);
+      triggerType = TriggerType.CURRENT_FILE_ACTION;
     } else {
       callback = new ShowReportCallable(project);
+      triggerType = TriggerType.RIGHT_CLICK;
     }
 
     // do we really need to distinguish both cases ? Couldn't we always run in background ?
     if (shouldExecuteInBackground(actionEvent)) {
-      analyzeInBackground(files, TriggerType.ACTION, callback);
+      analyzeInBackground(files, triggerType, callback);
     } else {
-      currentManualAnalysis = analyzeInBackgroundableModal(files, TriggerType.ACTION, callback);
+      currentManualAnalysis = analyzeInBackgroundableModal(files, triggerType, callback);
     }
   }
 

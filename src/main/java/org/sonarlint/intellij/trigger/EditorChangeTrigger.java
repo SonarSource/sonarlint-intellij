@@ -62,7 +62,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
       .connect(myProject)
       .subscribe(AnalysisListener.TOPIC, new AnalysisListener.Adapter() {
         @Override
-        public void started(Collection<VirtualFile> files) {
+        public void started(Collection<VirtualFile> files, TriggerType trigger) {
           removeFiles(files);
         }
       });
