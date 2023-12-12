@@ -22,6 +22,7 @@ package org.sonarlint.intellij.messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
 import java.util.Collection;
+import org.sonarlint.intellij.trigger.TriggerType;
 
 /**
  * Notifies about analysis tasks starting. It will be called for any analysis task, regardless of the trigger, if it is background or not, etc.
@@ -29,11 +30,11 @@ import java.util.Collection;
 public interface AnalysisListener {
   Topic<AnalysisListener> TOPIC = Topic.create("SonarLint analysis start", AnalysisListener.class);
 
-  void started(Collection<VirtualFile> files);
+  void started(Collection<VirtualFile> files, TriggerType trigger);
 
   abstract class Adapter implements AnalysisListener {
     @Override
-    public void started(Collection<VirtualFile> files) {
+    public void started(Collection<VirtualFile> files, TriggerType trigger) {
       // can be optionally implemented
     }
   }
