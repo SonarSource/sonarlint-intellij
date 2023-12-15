@@ -44,8 +44,8 @@ import org.sonarsource.sonarlint.core.clientapi.client.smartnotification.ShowSma
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK;
-import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Marketing.CONNECTED_MODE_BENEFITS_LINK;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintProjectNotifications {
@@ -118,7 +118,7 @@ public final class SonarLintProjectNotifications {
   }
 
   private static void addActions(Notification notification) {
-    notification.addAction(new OpenTrackedLinkAction("Try SonarCloud for free", LinkTelemetry.SONARCLOUD_PRODUCT_PAGE));
+    notification.addAction(new OpenTrackedLinkAction("Try SonarCloud for free", LinkTelemetry.SONARCLOUD_SIGNUP_PAGE));
     notification.addAction(new OpenTrackedLinkAction("Download SonarQube", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS));
     notification.addAction(new OpenInBrowserAction("Learn more", null, CONNECTED_MODE_BENEFITS_LINK));
     notification.addAction(new DontAskAgainAction());
