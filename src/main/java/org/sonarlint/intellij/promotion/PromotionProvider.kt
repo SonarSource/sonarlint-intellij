@@ -35,6 +35,7 @@ import org.sonarlint.intellij.core.EmbeddedPlugins.extraEnabledLanguagesInConnec
 import org.sonarlint.intellij.messages.AnalysisListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.trigger.TriggerType
+import org.sonarlint.intellij.ui.UiUtils
 import org.sonarsource.sonarlint.core.commons.Language
 
 private const val LAST_PROMOTION_NOTIFICATION_DATE = "SonarLint.lastPromotionNotificationDate"
@@ -52,10 +53,10 @@ class PromotionProvider(private val project: Project) {
         TriggerType.RIGHT_CLICK, TriggerType.ALL
     )
 
-    private val autoAnalysisTriggers: Set<TriggerType> = EnumSet.of(
+    private val nonReportAnalysisTriggers: Set<TriggerType> = EnumSet.of(
         TriggerType.EDITOR_OPEN, TriggerType.BINDING_UPDATE,
         TriggerType.SERVER_SENT_EVENT, TriggerType.CONFIG_CHANGE,
-        TriggerType.EDITOR_CHANGE, TriggerType.COMPILATION
+        TriggerType.EDITOR_CHANGE, TriggerType.COMPILATION, TriggerType.CURRENT_FILE_ACTION
     )
 
     fun subscribeToTriggeringEvents() {
@@ -81,7 +82,7 @@ class PromotionProvider(private val project: Project) {
                         processFullProjectPromotion(notifications)
                     }
 
-                    if (autoAnalysisTriggers.contains(triggerType) && !wasAutoAnalyzed) {
+                    if (nonReportAnalysisTriggers.contains(triggerType) && !wasAutoAnalyzed) {
                         PropertiesComponent.getInstance().setValue(FIRST_AUTO_ANALYSIS_DATE, Instant.now().toEpochMilli().toString())
                     }
 
@@ -112,7 +113,10 @@ class PromotionProvider(private val project: Project) {
         val wasReportEverUsed = PropertiesComponent.getInstance().getBoolean(WAS_REPORT_EVER_USED, false)
 
         if (!wasReportEverUsed && firstAutoAnalysis.isBefore(Instant.now().minus(FULL_PROJECT_PROMOTION_DURATION))) {
-            showPromotion(notifications, "Detect issues in your whole project")
+            UiUtils.Companion.runOnUiThread(project, Runnable {
+                SonarLintUtils.getService(project, PromotionProvider::class.java)
+                    .showPromotion(notifications, "Detect issues in your whole project")
+            })
         }
     }
 
@@ -120,7 +124,7 @@ class PromotionProvider(private val project: Project) {
         val language = findLanguage(extension, languagesHavingAdvancedRules)
 
         if (language != null) {
-            showPromotion(notifications, "Enable advanced " + language.label + " rules by connecting your project")
+            showPromotion(notifications, "Detect more security issues in your " + language.label + " files")
         }
     }
 
