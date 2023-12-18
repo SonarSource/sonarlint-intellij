@@ -39,7 +39,7 @@ class OpenInIdeTests {
             with(remoteRobot) {
                 idea {
                     dialog("Do you trust this SonarQube server?") {
-                        button("Create connection").click()
+                        button("Connect to this SonarQube server").click()
                     }
                     dialog("New Connection: Server Details") {
                         keyboard { enterText("Orchestrator") }
