@@ -113,10 +113,9 @@ class PromotionProvider(private val project: Project) {
         val wasReportEverUsed = PropertiesComponent.getInstance().getBoolean(WAS_REPORT_EVER_USED, false)
 
         if (!wasReportEverUsed && firstAutoAnalysis.isBefore(Instant.now().minus(FULL_PROJECT_PROMOTION_DURATION))) {
-            UiUtils.Companion.runOnUiThread(project, Runnable {
-                SonarLintUtils.getService(project, PromotionProvider::class.java)
-                    .showPromotion(notifications, "Detect issues in your whole project")
-            })
+            UiUtils.runOnUiThread(project) {
+                showPromotion(notifications, "Detect issues in your whole project")
+            }
         }
     }
 

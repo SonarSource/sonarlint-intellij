@@ -35,14 +35,10 @@ import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createCurrentFileHel
 import org.sonarlint.intellij.util.runOnPooledThread
 
 class WhatsInThisViewPanel(val project: Project) {
-    private val NOT_CONNECTED = "Not Connected"
-    private val CONNECTED = "Connected"
-
     var panel: JPanel
-    var layout: CardLayout
+    var layout = CardLayout()
 
     init {
-        layout = CardLayout()
         panel = JPanel(layout)
         createPanel()
         switchCards()
@@ -92,5 +88,10 @@ class WhatsInThisViewPanel(val project: Project) {
 
     private fun switchCard(cardName: String) {
         runOnUiThread(project) { layout.show(panel, cardName) }
+    }
+
+    companion object {
+        private const val NOT_CONNECTED = "Not Connected"
+        private const val CONNECTED = "Connected"
     }
 }
