@@ -37,23 +37,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import java.io.ByteArrayInputStream
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.MalformedURLException
-import java.net.Proxy
-import java.net.URI
-import java.net.URL
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
 import org.apache.commons.lang.StringEscapeUtils
+import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -63,6 +53,7 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_SETUP_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SUPPORT_POLICY_LINK
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
@@ -126,6 +117,18 @@ import org.sonarsource.sonarlint.core.serverapi.push.SecurityHotspotRaisedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.ServerHotspotEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.MalformedURLException
+import java.net.Proxy
+import java.net.URI
+import java.net.URL
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
 
 object SonarLintIntelliJClient : SonarLintClient {
 
@@ -321,8 +324,25 @@ object SonarLintIntelliJClient : SonarLintClient {
     override fun assistCreatingConnection(params: AssistCreatingConnectionParams): CompletableFuture<AssistCreatingConnectionResponse> {
         return CompletableFuture.supplyAsync {
             val serverUrl = params.serverUrl
-            val message = "No connections configured to '$serverUrl'."
-            if (!showConfirmModal(OPENING_FINDING_TITLE, message, "Create connection", null)) {
+            val warningTitle = "Do you trust this SonarQube server?"
+            val message = """
+                        The server <b>${escapeHtml(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
+                        
+                        If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
+                    """.trimIndent()
+            val connectButtonText = "Connect to this SonarQube server"
+            val dontTrustButtonText = "I don't trust this server"
+
+            val choice = ApplicationManager.getApplication().computeInEDT {
+                MessageDialogBuilder.Message(warningTitle, message)
+                    .buttons(connectButtonText, dontTrustButtonText)
+                    .defaultButton(connectButtonText)
+                    .focusedButton(dontTrustButtonText)
+                    .asWarning()
+                    .show()
+            }
+
+            if (connectButtonText != choice) {
                 throw CancellationException("Connection creation rejected by the user")
             }
             val newConnection = ApplicationManager.getApplication().computeInEDT {

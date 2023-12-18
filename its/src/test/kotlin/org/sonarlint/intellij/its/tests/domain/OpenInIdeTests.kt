@@ -38,7 +38,7 @@ class OpenInIdeTests {
         fun createConnection(token: String) {
             with(remoteRobot) {
                 idea {
-                    dialog("Opening finding...") {
+                    dialog("Do you trust this SonarQube server?") {
                         button("Create connection").click()
                     }
                     dialog("New Connection: Server Details") {
