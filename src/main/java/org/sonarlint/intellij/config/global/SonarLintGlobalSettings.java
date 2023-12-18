@@ -44,14 +44,6 @@ public final class SonarLintGlobalSettings {
   private boolean isFocusOnNewCode = false;
   private boolean isPromotionDisabled = false;
 
-  public boolean isPromotionDisabled() {
-    return isPromotionDisabled;
-  }
-
-  public void setPromotionDisabled(boolean promotionDisabled) {
-    isPromotionDisabled = promotionDisabled;
-  }
-
   private boolean autoTrigger = true;
   private String nodejsPath = "";
 
@@ -68,6 +60,14 @@ public final class SonarLintGlobalSettings {
   private boolean taintVulnerabilitiesTabDisclaimerDismissed;
 
   private boolean secretsNeverBeenAnalysed = true;
+
+  public boolean isPromotionDisabled() {
+    return isPromotionDisabled;
+  }
+
+  public void setPromotionDisabled(boolean promotionDisabled) {
+    isPromotionDisabled = promotionDisabled;
+  }
 
   public void rememberNotificationOnSecretsBeenSent() {
     setSecretsNeverBeenAnalysed(false);

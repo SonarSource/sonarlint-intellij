@@ -26,12 +26,12 @@ import org.sonarlint.intellij.telemetry.LinkTelemetry
 
 class HelpLabelUtils {
     companion object {
-        private var currentFileText: String = "SonarLint analyzes in real-time the active file only and reports any issues found in this view. ";
+        private const val CURRENT_FILE_TEXT: String = "SonarLint analyzes in real-time the active file only, and reports any issues found in this view. "
 
         @JvmStatic
         fun createCurrentFileHelpNotConnected() =
                 ContextHelpLabel.createWithLink(null,
-                        currentFileText +
+                        CURRENT_FILE_TEXT +
                             "SonarCloud complements SonarLint by detecting more across the whole project.",
                         "Try SonarCloud for free", true) {
                     LinkTelemetry.SONARCLOUD_SIGNUP_PAGE.browseWithTelemetry()
@@ -39,7 +39,7 @@ class HelpLabelUtils {
 
         @JvmStatic
         fun createCurrentFileHelp() =
-            ContextHelpLabel.create(currentFileText)
+            ContextHelpLabel.create(CURRENT_FILE_TEXT)
 
         @JvmStatic
         fun createCleanAsYouCode() =
