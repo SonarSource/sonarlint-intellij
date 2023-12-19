@@ -24,6 +24,7 @@ object SonarLintDocumentation {
     object Intellij {
         const val BASE_DOCS_URL = "https://docs.sonarsource.com/sonarlint/intellij"
         const val CONNECTED_MODE_LINK = "${BASE_DOCS_URL}/team-features/connected-mode"
+        const val CONNECTED_MODE_SETUP_LINK = "${CONNECTED_MODE_LINK}/#connection-setup"
         const val SECURITY_HOTSPOTS_LINK = "${BASE_DOCS_URL}/using-sonarlint/security-hotspots"
         const val TAINT_VULNERABILITIES_LINK = "${BASE_DOCS_URL}/using-sonarlint/taint-vulnerabilities"
         const val CLEAN_CODE_LINK = "${BASE_DOCS_URL}/concepts/clean-code/"
