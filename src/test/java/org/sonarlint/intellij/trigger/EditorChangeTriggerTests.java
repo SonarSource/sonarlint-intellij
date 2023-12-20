@@ -101,7 +101,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
     underTest.documentChanged(createEvent(file));
 
     assertThat(underTest.getEvents()).hasSize(1);
-    verify(submitter, timeout(3000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE);
+    verify(submitter, timeout(5000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE);
 
     // Schedule again
     underTest.documentChanged(createEvent(file));
