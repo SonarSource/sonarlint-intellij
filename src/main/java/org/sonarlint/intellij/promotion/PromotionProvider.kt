@@ -67,7 +67,7 @@ class PromotionProvider(private val project: Project) {
                     val extension = file.extension ?: return
                     val notifications = getSonarLintProjectNotifications(source)
 
-                    if (!Settings.getSettingsFor(project).isBound && !Settings.getGlobalSettings().isPromotionDisabled) {
+                    if (isPromotionEnabled()) {
                         processExtraLanguagePromotion(notifications, extension)
                         processAdvancedLanguagePromotion(notifications, extension)
                     }
@@ -78,21 +78,40 @@ class PromotionProvider(private val project: Project) {
                     val notifications = getSonarLintProjectNotifications()
                     val wasAutoAnalyzed = PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L) != 0L
 
-                    if (!Settings.getSettingsFor(project).isBound && !Settings.getGlobalSettings().isPromotionDisabled && wasAutoAnalyzed) {
-                        processFullProjectPromotion(notifications)
-                    }
-
-                    if (nonReportAnalysisTriggers.contains(triggerType) && !wasAutoAnalyzed) {
-                        PropertiesComponent.getInstance().setValue(FIRST_AUTO_ANALYSIS_DATE, Instant.now().toEpochMilli().toString())
+                    if (nonReportAnalysisTriggers.contains(triggerType)) {
+                        processAutoAnalysisTriggers(wasAutoAnalyzed, notifications)
                     }
 
                     if (reportAnalysisTriggers.contains(triggerType)) {
-                        PropertiesComponent.getInstance().setValue(WAS_REPORT_EVER_USED, true)
+                        processReportAnalysisTriggers(files, notifications)
                     }
                 }
             })
         }
     }
+
+    private fun processReportAnalysisTriggers(
+        files: Collection<VirtualFile>,
+        notifications: SonarLintProjectNotifications,
+    ) {
+        PropertiesComponent.getInstance().setValue(WAS_REPORT_EVER_USED, true)
+
+        if (isPromotionEnabled() && files.size > 1) {
+            processFasterProjectAnalysisPromotion(notifications)
+        }
+    }
+
+    private fun processAutoAnalysisTriggers(wasAutoAnalyzed: Boolean, notifications: SonarLintProjectNotifications) {
+        if (isPromotionEnabled() && wasAutoAnalyzed) {
+            processFullProjectPromotion(notifications)
+        }
+
+        if (!wasAutoAnalyzed) {
+            PropertiesComponent.getInstance().setValue(FIRST_AUTO_ANALYSIS_DATE, Instant.now().toEpochMilli().toString())
+        }
+    }
+
+    private fun isPromotionEnabled() = !Settings.getSettingsFor(project).isBound && !Settings.getGlobalSettings().isPromotionDisabled
 
     private fun getSonarLintProjectNotifications(source: FileEditorManager): SonarLintProjectNotifications {
         return SonarLintUtils.getService(
@@ -116,6 +135,12 @@ class PromotionProvider(private val project: Project) {
             UiUtils.runOnUiThread(project) {
                 showPromotion(notifications, "Detect issues in your whole project")
             }
+        }
+    }
+
+    private fun processFasterProjectAnalysisPromotion(notifications: SonarLintProjectNotifications) {
+        UiUtils.runOnUiThread(project) {
+            showPromotion(notifications, "Speed up the project-wide analysis")
         }
     }
 
