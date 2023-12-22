@@ -25,10 +25,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.time.Duration
-import java.time.Instant
-import java.time.Period
-import java.util.EnumSet
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.EnabledLanguages.extraEnabledLanguagesInConnectedMode
@@ -37,6 +33,10 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarsource.sonarlint.core.commons.Language
+import java.time.Duration
+import java.time.Instant
+import java.time.Period
+import java.util.EnumSet
 
 private const val LAST_PROMOTION_NOTIFICATION_DATE = "SonarLint.lastPromotionNotificationDate"
 private const val FIRST_AUTO_ANALYSIS_DATE = "SonarLint.firstAutoAnalysisDate"
@@ -73,20 +73,36 @@ class PromotionProvider(private val project: Project) {
                     }
                 }
             })
+
             subscribe<AnalysisListener>(AnalysisListener.TOPIC, object : AnalysisListener.Adapter() {
                 override fun started(files: Collection<VirtualFile>, triggerType: TriggerType) {
                     val notifications = getSonarLintProjectNotifications()
                     val wasAutoAnalyzed = PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L) != 0L
 
-                    if (nonReportAnalysisTriggers.contains(triggerType)) {
-                        processAutoAnalysisTriggers(wasAutoAnalyzed, notifications)
-                    }
-
-                    if (reportAnalysisTriggers.contains(triggerType)) {
-                        processReportAnalysisTriggers(files, notifications)
+                    if (isPromotionEnabled()) {
+                        processNotificationsByType(triggerType, wasAutoAnalyzed, notifications, files)
                     }
                 }
             })
+        }
+    }
+
+    private fun processNotificationsByType(
+        triggerType: TriggerType,
+        wasAutoAnalyzed: Boolean,
+        notifications: SonarLintProjectNotifications,
+        files: Collection<VirtualFile>,
+    ) {
+        if (nonReportAnalysisTriggers.contains(triggerType)) {
+            processAutoAnalysisTriggers(wasAutoAnalyzed, notifications)
+        }
+
+        if (reportAnalysisTriggers.contains(triggerType)) {
+            processReportAnalysisTriggers(files, notifications)
+        }
+
+        if (triggerType == TriggerType.CHECK_IN) {
+            processCICDProjectAnalysisPromotion(notifications)
         }
     }
 
@@ -96,17 +112,15 @@ class PromotionProvider(private val project: Project) {
     ) {
         PropertiesComponent.getInstance().setValue(WAS_REPORT_EVER_USED, true)
 
-        if (isPromotionEnabled() && files.size > 1) {
+        if (files.size > 1) {
             processFasterProjectAnalysisPromotion(notifications)
         }
     }
 
     private fun processAutoAnalysisTriggers(wasAutoAnalyzed: Boolean, notifications: SonarLintProjectNotifications) {
-        if (isPromotionEnabled() && wasAutoAnalyzed) {
+        if (wasAutoAnalyzed) {
             processFullProjectPromotion(notifications)
-        }
-
-        if (!wasAutoAnalyzed) {
+        } else {
             PropertiesComponent.getInstance().setValue(FIRST_AUTO_ANALYSIS_DATE, Instant.now().toEpochMilli().toString())
         }
     }
@@ -142,6 +156,10 @@ class PromotionProvider(private val project: Project) {
         UiUtils.runOnUiThread(project) {
             showPromotion(notifications, "Speed up the project-wide analysis")
         }
+    }
+
+    private fun processCICDProjectAnalysisPromotion(notifications: SonarLintProjectNotifications) {
+        showPromotion(notifications, "Analyze your project in your CI/CD pipeline")
     }
 
     private fun processAdvancedLanguagePromotion(notifications: SonarLintProjectNotifications, extension: String) {
