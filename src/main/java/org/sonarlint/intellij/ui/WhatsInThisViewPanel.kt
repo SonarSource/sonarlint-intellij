@@ -22,19 +22,19 @@ package org.sonarlint.intellij.ui
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.ui.JBUI
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpText
+import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpTextNotConnected
+import org.sonarlint.intellij.util.runOnPooledThread
 import java.awt.CardLayout
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.JLabel
 import javax.swing.JPanel
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createCurrentFileHelp
-import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createCurrentFileHelpNotConnected
-import org.sonarlint.intellij.util.runOnPooledThread
 
-class WhatsInThisViewPanel(val project: Project) {
+class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
     var panel: JPanel
     var layout = CardLayout()
 
@@ -48,8 +48,8 @@ class WhatsInThisViewPanel(val project: Project) {
     private fun createPanel() {
         val notConnectedCardWrapper = JPanel(GridBagLayout())
         val connectedCardWrapper = JPanel(GridBagLayout())
-        val helpLabelConnected = createCurrentFileHelp()
-        val helpLabelNotConnected = createCurrentFileHelpNotConnected()
+        val helpLabelConnected = createHelpText(helpText)
+        val helpLabelNotConnected = createHelpTextNotConnected(helpText)
 
         val gcs = GridBagConstraints(
             GridBagConstraints.CENTER, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
