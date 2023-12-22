@@ -185,6 +185,9 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     findingsTreePane = ScrollPaneFactory.createScrollPane(treePanel);
     findingsPanel.add(findingsTreePane, BorderLayout.CENTER);
     findingsPanel.add(lastAnalysisPanel, BorderLayout.SOUTH);
+    var newPanel = new ReportTabStatusPanel(project);
+    newPanel.add(lastAnalysisPanel, BorderLayout.WEST);
+    findingsPanel.add(newPanel, BorderLayout.SOUTH);
     setToolbar(createActionGroup());
     disableEmptyDisplay(false);
 
