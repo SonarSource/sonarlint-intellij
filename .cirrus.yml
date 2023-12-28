@@ -178,10 +178,25 @@ plugin_verifier_task:
     reports_artifacts:
       path: "**/reports/**/*"
 
+launch_ide_for_its_task:
+  eks_container:
+    <<: *BUILDER_CONTAINER_DEFINITION
+    dockerfile: its/test-runner/Dockerfile
+    docker_arguments:
+      flavor: 'ic'
+      version: '2021'
+    cpu: 4
+    memory: 16G
+  depends_on:
+    - build
+  on_failure:
+    reports_artifacts:
+      path: "**/reports/**/*"
+
 qa_task:
   #  name: "Run ITs"
   depends_on:
-    - build
+    - launch_ide_for_its
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
@@ -224,17 +239,11 @@ qa_task:
     /etc/init.d/xvfb start
   prepare_background_script: |
     set -euo pipefail
-    echo "Prepare env and start IDE ${IDEA_VERSION}"
+    echo "Prepare env and start IDE ${IDEA_VERSION} in a container"
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
     source set_gradle_build_version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
-    mkdir -p its/build/idea-sandbox/config-uiTest/
-    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/config-uiTest/clion.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/config-uiTest/goland.key
-    metacity --sm-disable --replace &
-    sleep 10 # give metacity some time to start
-    gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
     .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500
