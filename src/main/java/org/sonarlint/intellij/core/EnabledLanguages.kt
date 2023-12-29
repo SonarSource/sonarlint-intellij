@@ -19,20 +19,25 @@
  */
 package org.sonarlint.intellij.core
 
+import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.extensions.PluginId
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.EnumSet
-import java.util.function.Consumer
 import org.sonarlint.intellij.SonarLintPlugin
-import org.sonarlint.intellij.common.LanguageActivator
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.plsql.PLSQLLanguageActivator
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.Language
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 
-object EmbeddedPlugins {
+private const val DATABASE_PLUGIN_ID = "com.intellij.database"
+private const val JAVA_MODULE_ID = "com.intellij.modules.java"
+private const val GO_PLUGIN_ID = "org.jetbrains.plugins.go"
+private const val CLION_MODULE_ID = "com.intellij.modules.clion"
+private const val RIDER_MODULE_ID = "com.intellij.modules.rider"
+
+object EnabledLanguages {
     private val ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA: Set<Language> = EnumSet.of(
         Language.HTML,
         Language.XML,
@@ -49,10 +54,6 @@ object EmbeddedPlugins {
         Language.DOCKER,
         Language.KUBERNETES,
         Language.TERRAFORM,
-    )
-    private val ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE: Set<Language> = EnumSet.of(
-        Language.SCALA,
-        Language.SWIFT
     )
     private val EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE = listOf(
         EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
@@ -80,34 +81,60 @@ object EmbeddedPlugins {
     }
 
     @JvmStatic
-    val enabledLanguagesInConnectedMode: Set<Language>
+    val enabledLanguagesInStandaloneMode: Set<Language>
         get() {
-            val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
-            enabledLanguages.addAll(ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE)
-            amendEnabledLanguages(enabledLanguages, true)
-            return enabledLanguages
+            return when {
+                isIdeModuleEnabled(CLION_MODULE_ID) -> {
+                    EnumSet.of(Language.C, Language.CPP, Language.SECRETS)
+                }
+
+                isIdeModuleEnabled(RIDER_MODULE_ID) -> {
+                    EnumSet.of(Language.CS, Language.SECRETS, Language.HTML, Language.CSS, Language.JS, Language.TS)
+                }
+
+                else -> {
+                    // all other IDEs
+                    val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
+                    if (isIdeModuleEnabled(JAVA_MODULE_ID)) {
+                        enabledLanguages.add(Language.JAVA)
+                    }
+                    if (isIdeModuleEnabled(GO_PLUGIN_ID)) {
+                        enabledLanguages.add(Language.GO)
+                    }
+                    enabledLanguages
+                }
+            }
         }
 
     @JvmStatic
     val extraEnabledLanguagesInConnectedMode: Set<Language>
         get() {
-            val extraEnabledLanguages = EnumSet.copyOf(ADDITIONAL_ENABLED_LANGUAGES_IN_CONNECTED_MODE)
-            PLSQLLanguageActivator().amendLanguages(extraEnabledLanguages, true)
-            return extraEnabledLanguages
+            return when {
+                isIdeModuleEnabled(RIDER_MODULE_ID) -> {
+                    EnumSet.noneOf(Language::class.java)
+                }
+
+                else -> {
+                    val extraEnabledLanguages = EnumSet.noneOf(Language::class.java)
+                    if (isIdeModuleEnabled(DATABASE_PLUGIN_ID)) {
+                        extraEnabledLanguages.add(Language.PLSQL)
+                    }
+                    if (!isIdeModuleEnabled(CLION_MODULE_ID)) {
+                        // all other IDEs
+                        extraEnabledLanguages.addAll(EnumSet.of(Language.SCALA, Language.SWIFT))
+                    }
+                    extraEnabledLanguages
+                }
+            }
         }
 
     @JvmStatic
-    val enabledLanguagesInStandaloneMode: Set<Language>
+    val enabledLanguagesInConnectedMode: Set<Language>
         get() {
-            val enabledLanguages = EnumSet.copyOf(ENABLED_LANGUAGES_IN_STANDALONE_MODE_IN_IDEA)
-            amendEnabledLanguages(enabledLanguages, false)
-            return enabledLanguages
+            val languages = EnumSet.copyOf(enabledLanguagesInStandaloneMode)
+            languages.addAll(extraEnabledLanguagesInConnectedMode)
+            return languages
         }
-
-    private fun amendEnabledLanguages(enabledLanguages: Set<Language>, isConnected: Boolean) {
-        val languageActivator = LanguageActivator.EP_NAME.extensionList
-        languageActivator.forEach(Consumer { l: LanguageActivator -> l.amendLanguages(enabledLanguages, isConnected) })
-    }
 
     @JvmStatic
     @Throws(IOException::class)
@@ -153,4 +180,6 @@ object EmbeddedPlugins {
     private class EmbeddedPlugin(val pluginKey: String, val name: String, val jarFilePattern: String) {
         constructor(language: Language, name: String, jarFilePattern: String) : this(language.pluginKey, name, jarFilePattern)
     }
+
+    private fun isIdeModuleEnabled(pluginId: String) = PluginManagerCore.getPlugin(PluginId.getId(pluginId))?.isEnabled == true
 }

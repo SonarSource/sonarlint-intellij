@@ -22,6 +22,5 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
     <extensions defaultExtensionNs="org.sonarlint.idea">
         <analysisConfiguration implementation="org.sonarlint.intellij.rider.RiderAnalysisConfigurator"/>
-        <languageActivator implementation="org.sonarlint.intellij.rider.CsharpLanguageActivator"/>
     </extensions>
 </idea-plugin>
