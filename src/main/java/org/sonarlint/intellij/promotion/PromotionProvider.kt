@@ -31,7 +31,7 @@ import java.time.Period
 import java.util.EnumSet
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
-import org.sonarlint.intellij.core.EmbeddedPlugins.extraEnabledLanguagesInConnectedMode
+import org.sonarlint.intellij.core.EnabledLanguages.extraEnabledLanguagesInConnectedMode
 import org.sonarlint.intellij.messages.AnalysisListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.trigger.TriggerType

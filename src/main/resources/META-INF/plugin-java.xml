@@ -22,7 +22,6 @@
 <idea-plugin>
     <extensions defaultExtensionNs="org.sonarlint.idea">
         <analysisConfiguration implementation="org.sonarlint.intellij.java.JavaAnalysisConfigurator"/>
-        <languageActivator implementation="org.sonarlint.intellij.java.JavaLanguageActivator"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

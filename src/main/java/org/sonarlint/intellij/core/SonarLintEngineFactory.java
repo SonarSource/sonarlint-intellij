@@ -51,13 +51,13 @@ public class SonarLintEngineFactory {
 
     var configBuilder = isSonarCloud ? ConnectedGlobalConfiguration.sonarCloudBuilder() : ConnectedGlobalConfiguration.sonarQubeBuilder();
     configBuilder
-      .addEnabledLanguages(EmbeddedPlugins.getEnabledLanguagesInConnectedMode().toArray(new Language[0]))
+      .addEnabledLanguages(EnabledLanguages.getEnabledLanguagesInConnectedMode().toArray(new Language[0]))
       .enableHotspots()
       .setConnectionId(connectionId)
       .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));
     configureCommonEngine(configBuilder);
 
-    EmbeddedPlugins.getEmbeddedPluginsForConnectedMode().forEach(configBuilder::useEmbeddedPlugin);
+    EnabledLanguages.getEmbeddedPluginsForConnectedMode().forEach(configBuilder::useEmbeddedPlugin);
 
     return new ConnectedSonarLintEngineImpl(configBuilder.build());
   }
@@ -71,13 +71,13 @@ public class SonarLintEngineFactory {
     Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
 
     try {
-      var plugins = EmbeddedPlugins.findEmbeddedPlugins();
+      var plugins = EnabledLanguages.findEmbeddedPlugins();
 
       var modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
 
       var configBuilder = StandaloneGlobalConfiguration.builder()
         .addPlugins(plugins.toArray(new Path[0]))
-        .addEnabledLanguages(EmbeddedPlugins.getEnabledLanguagesInStandaloneMode().toArray(new Language[0]))
+        .addEnabledLanguages(EnabledLanguages.getEnabledLanguagesInStandaloneMode().toArray(new Language[0]))
         .setModulesProvider(modulesRegistry::getStandaloneModules);
       configureCommonEngine(configBuilder);
 
