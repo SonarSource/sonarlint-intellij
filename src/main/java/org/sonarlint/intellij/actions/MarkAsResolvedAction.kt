@@ -213,7 +213,7 @@ class MarkAsResolvedAction(
         override fun getDoNotShowMessage() = "Don't show again"
     }
 
-    override fun getPriority() = PriorityAction.Priority.NORMAL
+    override fun getPriority() = PriorityAction.Priority.LOW
 
     override fun getIcon(flags: Int) = null
 
