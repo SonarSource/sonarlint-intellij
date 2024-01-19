@@ -67,13 +67,6 @@ allprojects {
                 }
             }
         }
-        mavenCentral {
-            content {
-                // avoid dependency confusion
-                excludeGroupByRegex("org\\.sonarsource.*")
-                excludeGroupByRegex("com\\.sonarsource.*")
-            }
-        }
     }
 
     java {
