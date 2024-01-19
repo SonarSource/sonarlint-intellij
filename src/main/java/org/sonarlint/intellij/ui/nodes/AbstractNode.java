@@ -128,7 +128,7 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
   }
 
   @NotNull
-  protected static String spaceAndThinSpace() {
+  public static String spaceAndThinSpace() {
     var thinSpace = UIUtil.getLabelFont().canDisplay('\u2009') ? String.valueOf('\u2009') : " ";
     return " " + thinSpace;
   }

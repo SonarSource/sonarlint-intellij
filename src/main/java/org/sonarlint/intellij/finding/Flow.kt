@@ -19,6 +19,31 @@
  */
 package org.sonarlint.intellij.finding
 
-class Flow(val locations: List<Location>) {
-  fun hasMoreThanOneLocation() = locations.size > 1
+import com.intellij.openapi.vfs.VirtualFile
+
+class Flow(val position: Int, val locations: List<Location>) {
+    val crossFileFlowFragments = run {
+        var fragmentIndex = 0
+        locations.foldIndexed(mutableListOf<SameFileFlowFragment>()) { index, acc, location ->
+            var last = acc.lastOrNull()
+            if (last == null || last.file != location.file) {
+                last = SameFileFlowFragment(location.file, fragmentIndex++, location.originalFileName)
+                acc.add(last)
+            }
+            last.locations.add(FragmentLocation(location, index + 1, this))
+            acc
+        }.toList()
+    }
+
+    val isCrossFileFlow = crossFileFlowFragments.size > 1
+    fun hasMoreThanOneLocation() = locations.size > 1
+}
+
+data class SameFileFlowFragment(val file: VirtualFile?, val fragmentIndex: Int, val originalFileName: String?) {
+    val locations: MutableList<FragmentLocation> = mutableListOf()
+}
+
+data class FragmentLocation(val location: Location, val positionInFlow: Int, val associatedFlow: Flow) {
+    val range = location.range
+    val message = location.message
 }

@@ -72,6 +72,7 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
   private void print(String msg) {
     lastMessage = msg;
+    System.out.println(msg);
     printWriter.println(msg);
   }
 

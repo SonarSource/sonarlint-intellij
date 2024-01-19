@@ -17,27 +17,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.ui.vulnerabilities.tree.render
 
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import com.intellij.ui.SimpleTextAttributes
+import com.intellij.util.ui.JBUI
+import org.sonarlint.intellij.finding.Flow
+import org.sonarlint.intellij.ui.tree.NodeRenderer
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer
 
-public class GlobalLogOutputTestImpl implements GlobalLogOutput {
+object FlowRenderer : NodeRenderer<Flow> {
 
-  private String lastMsg = "";
-
-
-  @Override
-  public void log(String msg, ClientLogOutput.Level level) {
-    System.out.println(msg);
-  }
-
-  @Override
-  public void logError(String msg, Throwable t) {
-    System.out.println(msg);
-    t.printStackTrace();
-  }
-
-  public String getLastMsg() {
-    return lastMsg;
+  override fun render(renderer: TreeCellRenderer, node: Flow) {
+    renderer.ipad = JBUI.insets(3)
+    renderer.append("Flow ${node.position}", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true)
+    renderer.toolTipText = null
   }
 }

@@ -45,7 +45,7 @@ data class ShowFinding<T : Finding>(
 
         fun handleFlows(project: Project, flows: List<FlowDto>): List<Flow> {
             val matcher = TextRangeMatcher(project)
-            return flows.stream().map { flow ->
+            return flows.map { flow ->
                 flow.locations.stream().map {
                     tryFindFile(project, it.filePath)?.let { file ->
                         it.codeSnippet?.let { _ ->
@@ -57,7 +57,7 @@ data class ShowFinding<T : Finding>(
                         } ?: fileOnlyLocation(file, it.message)
                     }
                 }.filter { it != null }.collect(Collectors.toList()).apply { reverse() }
-            }.map { Flow(it) }.toList()
+            }.mapIndexed { index, locations -> Flow(index + 1, locations) }.toList()
         }
 
     }

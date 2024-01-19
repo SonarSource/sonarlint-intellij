@@ -47,5 +47,6 @@ interface Finding {
     fun isValid(): Boolean
 
     fun isOnNewCode(): Boolean
+    fun isResolved(): Boolean
 
 }

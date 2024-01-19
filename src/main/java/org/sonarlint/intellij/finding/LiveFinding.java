@@ -122,7 +122,6 @@ public abstract class LiveFinding implements Trackable, Finding {
     }
   }
 
-  @CheckForNull
   @Override
   public UUID getId() {
     return getBackendId();

@@ -17,41 +17,39 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes.taint.vulnerabilities
+package org.sonarlint.intellij.ui.vulnerabilities.tree.render
 
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
-import org.sonarlint.intellij.finding.Flow
+import org.sonarlint.intellij.finding.FragmentLocation
 import org.sonarlint.intellij.finding.Location
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.ui.nodes.AbstractNode
+import org.sonarlint.intellij.ui.tree.NodeRenderer
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
-import java.util.Objects
 
-class LocationNode(private val number: Int?, val location: Location, val associatedFlow: Flow, val issue: LocalTaintVulnerability) : AbstractNode() {
-  override fun render(renderer: TreeCellRenderer) {
+object LocationRenderer : NodeRenderer<FragmentLocation> {
+  override fun render(renderer: TreeCellRenderer, node: FragmentLocation) {
     renderer.ipad = JBUI.insets(3)
     renderer.border = null
-    if (number != null) {
-      renderer.append("$number: ", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
+    if (node.positionInFlow != null) {
+      renderer.append("${node.positionInFlow}: ", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
     }
-    renderer.append(issueCoordinates(), SimpleTextAttributes.GRAY_ATTRIBUTES)
+    renderer.append(issueCoordinates(node.location), SimpleTextAttributes.GRAY_ATTRIBUTES)
     renderer.append(" ")
-    val message = location.message
+    val message = node.message
     if (!message.isNullOrEmpty() && "..." != message) {
       renderer.append(message, SimpleTextAttributes.REGULAR_ATTRIBUTES)
     }
-    if (!location.exists()) {
+    if (!node.location.exists()) {
       renderer.append(" (unreachable in local code)", SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES)
     }
-    else if (!location.codeMatches()) {
+    else if (!node.location.codeMatches()) {
       renderer.append(" (local code not matching)", SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES)
     }
     renderer.toolTipText = "Double click to open location"
   }
 
-  private fun issueCoordinates(): String {
+  private fun issueCoordinates(location: Location): String {
     if (!location.exists()) {
       return "(-, -) "
     }
@@ -66,17 +64,4 @@ class LocationNode(private val number: Int?, val location: Location, val associa
       }
     } ?: "(-, -) "
   }
-
-  override fun equals(other: Any?): Boolean {
-    return other is LocationNode
-      && other.location.range?.startOffset == location.range?.startOffset
-      && other.location.range?.endOffset == location.range?.endOffset
-      && other.location.message == location.message
-  }
-
-  override fun hashCode(): Int {
-    return Objects.hash(number, location.range?.startOffset, location.range?.endOffset, location.message)
-  }
-
-  override fun toString() = location.message ?: ""
 }

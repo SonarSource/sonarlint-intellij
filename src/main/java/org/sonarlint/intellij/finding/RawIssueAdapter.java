@@ -80,7 +80,8 @@ public class RawIssueAdapter {
     List<org.sonarsource.sonarlint.core.analysis.api.Flow> flows, String rule) {
     List<Flow> matchedFlows = new LinkedList<>();
 
-    for (var flow : flows) {
+    for (int i = 0; i < flows.size(); i++) {
+      var flow = flows.get(i);
       List<Location> matchedLocations = new LinkedList<>();
       for (var loc : flow.locations()) {
         try {
@@ -101,13 +102,12 @@ public class RawIssueAdapter {
             String.valueOf(loc.getStartLine()),
             String.valueOf(loc.getStartLineOffset()),
             String.valueOf(loc.getEndLine()),
-            String.valueOf(loc.getEndLineOffset())
-          );
+            String.valueOf(loc.getEndLineOffset()));
           SonarLintConsole.get(project).error("Error finding secondary location for finding: " + detailString, e);
           return Optional.empty();
         }
       }
-      var matchedFlow = new Flow(matchedLocations);
+      var matchedFlow = new Flow(i + 1, matchedLocations);
       matchedFlows.add(matchedFlow);
 
     }
@@ -128,18 +128,22 @@ public class RawIssueAdapter {
   }
 
   private static Flow groupToSingleFlow(List<Flow> flows) {
-    return new Flow(flows.stream()
+    return new Flow(1, flows.stream()
       .flatMap(f -> f.getLocations().stream())
       .sorted(Comparator.comparing(i -> i.getRange().getStartOffset()))
       .toList());
   }
 
   private static List<Flow> reverse(List<Flow> flows) {
-    return flows.stream().map(f -> {
-      var reorderedLocations = new ArrayList<>(f.getLocations());
+    List<Flow> list = new ArrayList<>();
+    for (int i = 0; i < flows.size(); i++) {
+      Flow flow = flows.get(i);
+      var reorderedLocations = new ArrayList<>(flow.getLocations());
       Collections.reverse(reorderedLocations);
-      return new Flow(reorderedLocations);
-    }).toList();
+      Flow apply = new Flow(i + 1, reorderedLocations);
+      list.add(apply);
+    }
+    return list;
   }
 
   private static List<QuickFix> transformQuickFixes(Project project,

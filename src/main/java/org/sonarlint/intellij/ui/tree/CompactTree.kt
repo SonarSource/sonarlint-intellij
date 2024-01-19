@@ -17,27 +17,16 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.ui.tree
 
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+class CompactTree(private val nodesByParent: Map<Any, List<Any>>) {
+    fun getChild(parent: Any, index: Int) = nodesByParent[parent]!![index]
+    fun getChildCount(parent: Any) = nodesByParent[parent]!!.size
 
-public class GlobalLogOutputTestImpl implements GlobalLogOutput {
-
-  private String lastMsg = "";
-
-
-  @Override
-  public void log(String msg, ClientLogOutput.Level level) {
-    System.out.println(msg);
-  }
-
-  @Override
-  public void logError(String msg, Throwable t) {
-    System.out.println(msg);
-    t.printStackTrace();
-  }
-
-  public String getLastMsg() {
-    return lastMsg;
-  }
+    fun getIndexOfChild(parent: Any?, child: Any?): Int {
+        if (parent == null || child == null) {
+            return -1
+        }
+        return nodesByParent[parent]!!.indexOf(child)
+    }
 }

@@ -20,12 +20,16 @@
 package org.sonarlint.intellij.util
 
 import com.intellij.openapi.application.Application
+import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDocumentManager
 import java.util.concurrent.atomic.AtomicReference
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 
 fun Project.getOpenFiles() = FileEditorManager.getInstance(this).openFiles.toList()
@@ -34,6 +38,19 @@ fun Project.getRelativePathOf(file: VirtualFile) = SonarLintAppUtils.getRelative
 
 fun Project.findModuleOf(file: VirtualFile): Module? {
     return findModuleForFile(file, this)
+}
+
+fun Project.openFileFrom(rangeMarker: RangeMarker?) {
+    if (rangeMarker == null || !rangeMarker.isValid) {
+        return
+    }
+
+    runReadActionSafely(this) {
+        val psiFile = PsiDocumentManager.getInstance(this).getPsiFile(rangeMarker.document)
+        if (psiFile != null && psiFile.isValid) {
+            OpenFileDescriptor(this, psiFile.virtualFile, rangeMarker.startOffset).navigate(false)
+        }
+    }
 }
 
 fun VirtualFile.getDocument() = FileDocumentManager.getInstance().getDocument(this)
