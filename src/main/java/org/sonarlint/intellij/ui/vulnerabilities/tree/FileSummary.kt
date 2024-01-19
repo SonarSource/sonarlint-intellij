@@ -17,7 +17,9 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-@ParametersAreNonnullByDefault
-package org.sonarlint.intellij.ui.nodes.taint.vulnerabilities;
+package org.sonarlint.intellij.ui.vulnerabilities.tree
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.finding.FindingType
+
+data class FileSummary(val file: VirtualFile, val findingsCount: Int, val findingType: FindingType)

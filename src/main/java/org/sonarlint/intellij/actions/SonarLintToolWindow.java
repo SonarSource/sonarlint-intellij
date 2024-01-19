@@ -213,7 +213,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     var taintContent = getTaintVulnerabilitiesContent();
     if (taintContent != null) {
       var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-      taintPanel.refreshView();
+      taintPanel.applyFocusOnNewCodeSettings();
     }
   }
 
@@ -244,6 +244,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
         SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
       var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
       taintVulnerabilitiesPanel.populate(status);
+      content.setDisplayName(buildTabName(taintVulnerabilitiesPanel.primaryCount(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
   }
 
@@ -360,8 +361,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
       var taintContent = getTaintVulnerabilitiesContent();
       if (taintContent != null) {
         var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-        var taint = taintPanel.findTaintVulnerabilityByKey(showFinding.getFindingKey());
-        taintPanel.trySelectFilteredTaintVulnerability(taint, showFinding);
+        taintPanel.trySelectFilteredTaintVulnerability(showFinding);
       }
     }
   }
@@ -414,7 +414,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
       var content = getTaintVulnerabilitiesContent();
       if (content != null) {
         ((TaintVulnerabilitiesPanel) content.getComponent()).remove((LocalTaintVulnerability) issue);
-        ((TaintVulnerabilitiesPanel) content.getComponent()).refreshModel();
+        ((TaintVulnerabilitiesPanel) content.getComponent()).switchCard();
       }
     }
   }
@@ -428,7 +428,6 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
       if (taintContent != null) {
         var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
         taintPanel.remove(taintVulnerability);
-        taintPanel.refreshModel();
       }
     }
   }

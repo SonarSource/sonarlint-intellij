@@ -29,4 +29,12 @@ enum class FindingType(private val displayName: String, private val displayNameP
             else -> "$findingCount $displayNamePlural"
         }
     }
+
+    fun displayLabel(findingCount: Int) : String {
+        return when (findingCount) {
+            0 -> displayNamePlural
+            1 -> displayName
+            else -> displayNamePlural
+        }
+    }
 }
