@@ -33,14 +33,14 @@ import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
+import java.awt.Font
+import java.util.function.Consumer
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import java.awt.Font
-import java.util.function.Consumer
 
 private const val HIGHLIGHT_GROUP_ID = 1001
 

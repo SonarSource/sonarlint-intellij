@@ -17,39 +17,24 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes.taint.vulnerabilities
+package org.sonarlint.intellij.ui.vulnerabilities.tree.render
 
 import com.intellij.icons.AllIcons
 import com.intellij.ui.SimpleTextAttributes
-import org.sonarlint.intellij.finding.Location
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.ui.nodes.AbstractNode
+import org.sonarlint.intellij.finding.SameFileFlowFragment
+import org.sonarlint.intellij.ui.tree.NodeRenderer
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
-import java.util.Objects
 
-class LocationFileGroupNode(private val position: Int, private val location: Location, val issue: LocalTaintVulnerability) : AbstractNode() {
-  fun file() = location.file
+object SameFileFlowFragmentRenderer : NodeRenderer<SameFileFlowFragment> {
 
-  fun icon() = if (location.file == null || !location.file.isValid) AllIcons.FileTypes.Unknown else location.file.fileType.icon
-
-  override fun render(renderer: TreeCellRenderer) {
-    renderer.icon = icon()
-    val file = file()
-    renderer.append(file?.name ?: location.originalFileName ?: "Unknown file")
+  override fun render(renderer: TreeCellRenderer, node: SameFileFlowFragment) {
+    val file = node.file
+    renderer.icon = if (file == null || !file.isValid) AllIcons.FileTypes.Unknown else file.fileType.icon
+    renderer.append(file?.name ?: node.originalFileName ?: "Unknown file")
     if (file == null || !file.isValid) {
       renderer.append(" (unreachable in local code)", SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES)
     }
     renderer.toolTipText = null
   }
-
-  override fun equals(other: Any?): Boolean {
-    return other is LocationFileGroupNode && other.location.file == location.file
-  }
-
-  override fun hashCode(): Int {
-    return Objects.hash(position, location.file)
-  }
-
-  override fun toString() = location.file?.name ?: location.originalFileName ?: "Unknown file"
 
 }

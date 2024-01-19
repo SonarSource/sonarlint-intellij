@@ -17,27 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.ui.vulnerabilities.tree.filter
 
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarlint.intellij.finding.Finding
 
-public class GlobalLogOutputTestImpl implements GlobalLogOutput {
+enum class FocusFilter : FindingFilter {
+    NEW_CODE, OLD_CODE, ALL_CODE;
 
-  private String lastMsg = "";
-
-
-  @Override
-  public void log(String msg, ClientLogOutput.Level level) {
-    System.out.println(msg);
-  }
-
-  @Override
-  public void logError(String msg, Throwable t) {
-    System.out.println(msg);
-    t.printStackTrace();
-  }
-
-  public String getLastMsg() {
-    return lastMsg;
-  }
+    override fun filter(finding: Finding) = this == ALL_CODE || this == OLD_CODE && !finding.isOnNewCode() || this == NEW_CODE && finding.isOnNewCode()
 }

@@ -47,7 +47,7 @@ class PrimaryLocationNodeTests extends AbstractSonarLintLightTests {
 
   @Test
   void testRenderer() {
-    node = new PrimaryLocationNode(myFixture.getFile().getVirtualFile(), 3, range, "msg", new Flow(Collections.emptyList()));
+    node = new PrimaryLocationNode(myFixture.getFile().getVirtualFile(), 3, range, "msg", new Flow(1, Collections.emptyList()));
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
@@ -59,7 +59,7 @@ class PrimaryLocationNodeTests extends AbstractSonarLintLightTests {
 
   @Test
   void testNoMessage() {
-    node = new PrimaryLocationNode(myFixture.getFile().getVirtualFile(), 3, range, "...", new Flow(Collections.emptyList()));
+    node = new PrimaryLocationNode(myFixture.getFile().getVirtualFile(), 3, range, "...", new Flow(1, Collections.emptyList()));
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
@@ -69,7 +69,7 @@ class PrimaryLocationNodeTests extends AbstractSonarLintLightTests {
 
   @Test
   void testNoFile() {
-    node = new PrimaryLocationNode(null, 3, range, "...", new Flow(Collections.emptyList()));
+    node = new PrimaryLocationNode(null, 3, range, "...", new Flow(1, Collections.emptyList()));
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 

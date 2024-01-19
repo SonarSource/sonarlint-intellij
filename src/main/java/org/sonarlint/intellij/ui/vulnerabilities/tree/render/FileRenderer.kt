@@ -17,31 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes.taint.vulnerabilities
+package org.sonarlint.intellij.ui.vulnerabilities.tree.render
 
 import com.intellij.ui.SimpleTextAttributes
-import com.intellij.util.ui.JBUI
-import org.sonarlint.intellij.finding.Flow
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.ui.nodes.AbstractNode
+import org.sonarlint.intellij.ui.nodes.AbstractNode.spaceAndThinSpace
+import org.sonarlint.intellij.ui.tree.NodeRenderer
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
-import java.util.Objects
+import org.sonarlint.intellij.ui.vulnerabilities.tree.FileSummary
 
-class FlowNode(val flow: Flow, private val label: String, val issue: LocalTaintVulnerability) : AbstractNode() {
+object FileRenderer : NodeRenderer<FileSummary> {
 
-  override fun render(renderer: TreeCellRenderer) {
-    renderer.ipad = JBUI.insets(3)
-    renderer.append(label, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true)
-    renderer.toolTipText = null
-  }
-
-  override fun equals(other: Any?): Boolean {
-    return other is FlowNode && other.label == label
-  }
-
-  override fun hashCode(): Int {
-    return Objects.hash(label)
-  }
-
-  override fun toString() = label
+    override fun render(renderer: TreeCellRenderer, node: FileSummary) {
+        renderer.icon = node.file.fileType.icon
+        renderer.setIconToolTip(node.file.fileType.displayName + " file")
+        renderer.append(node.file.name)
+        renderer.append(spaceAndThinSpace() + "(" + node.findingType.display(node.findingsCount) + ")",
+            SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES)
+        renderer.toolTipText = "Double click to list file " + node.findingType.displayLabel(node.findingsCount)
+    }
 }
