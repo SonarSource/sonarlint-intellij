@@ -1,6 +1,5 @@
 
 import com.jetbrains.plugin.blockmap.core.BlockMap
-import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -23,7 +22,6 @@ plugins {
     id("com.google.protobuf") version "0.9.4"
     idea
     signing
-    id("de.undercouch.download") version "5.5.0"
     id("org.cyclonedx.bom") version "1.7.4"
 }
 
@@ -71,6 +69,8 @@ allprojects {
         }
         mavenCentral {
             content {
+                // avoid dependency confusion
+                excludeGroupByRegex("org\\.sonarsource.*")
                 excludeGroupByRegex("com\\.sonarsource.*")
             }
         }
@@ -200,6 +200,7 @@ configurations {
         extendsFrom(sqplugins)
         isTransitive = true
     }
+    create("omnisharp")
 }
 
 dependencies {
@@ -240,27 +241,12 @@ dependencies {
             because("this transitive dependency of okhttp3 has a high severity vulnerability not yet patched")
         }
     }
+    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
+    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
+    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
 }
 
 tasks {
-
-    val downloadOmnisharpMonoZipFile by registering(Download::class) {
-        src("https://repox.jfrog.io/artifactory/sonarsource/org/sonarsource/sonarlint/omnisharp/omnisharp-roslyn/$omnisharpVersion/omnisharp-roslyn-$omnisharpVersion-mono.zip")
-        dest(File(buildDir, "omnisharp-$omnisharpVersion-mono.zip"))
-        overwrite(false)
-    }
-
-    val downloadOmnisharpWinZipFile by registering(Download::class) {
-        src("https://repox.jfrog.io/artifactory/sonarsource/org/sonarsource/sonarlint/omnisharp/omnisharp-roslyn/$omnisharpVersion/omnisharp-roslyn-$omnisharpVersion-net472.zip")
-        dest(File(buildDir, "omnisharp-$omnisharpVersion-net472.zip"))
-        overwrite(false)
-    }
-
-    val downloadOmnisharpNet6ZipFile by registering(Download::class) {
-        src("https://repox.jfrog.io/artifactory/sonarsource/org/sonarsource/sonarlint/omnisharp/omnisharp-roslyn/$omnisharpVersion/omnisharp-roslyn-$omnisharpVersion-net6.zip")
-        dest(File(buildDir, "omnisharp-$omnisharpVersion-net6.zip"))
-        overwrite(false)
-    }
 
     fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
         copy {
@@ -270,22 +256,15 @@ tasks {
     }
 
     fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
-        copy {
-            from(zipTree(downloadOmnisharpMonoZipFile.get().dest))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/mono"))
-        }
-        copy {
-            from(zipTree(downloadOmnisharpWinZipFile.get().dest))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/win"))
-        }
-        copy {
-            from(zipTree(downloadOmnisharpNet6ZipFile.get().dest))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/net6"))
+        configurations["omnisharp"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
+            copy {
+                from(zipTree(artifact.file))
+                into(file("$destinationDir/${pluginName.get()}/omnisharp/${artifact.classifier}"))
+            }
         }
     }
 
     prepareSandbox {
-        dependsOn(downloadOmnisharpMonoZipFile, downloadOmnisharpWinZipFile, downloadOmnisharpNet6ZipFile)
         doLast {
             copyPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
@@ -293,7 +272,6 @@ tasks {
     }
 
     prepareTestingSandbox {
-        dependsOn(downloadOmnisharpMonoZipFile, downloadOmnisharpWinZipFile, downloadOmnisharpNet6ZipFile)
         doLast {
             copyPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
@@ -382,12 +360,12 @@ artifactory {
         defaults(delegateClosureOf<GroovyObject> {
             setProperty(
                 "properties", mapOf(
-                    "vcs.revision" to System.getenv("CIRRUS_CHANGE_IN_REPO"),
-                    "vcs.branch" to (System.getenv("CIRRUS_BASE_BRANCH")
-                        ?: System.getenv("CIRRUS_BRANCH")),
-                    "build.name" to "sonarlint-intellij",
-                    "build.number" to System.getenv("BUILD_ID")
-                )
+                "vcs.revision" to System.getenv("CIRRUS_CHANGE_IN_REPO"),
+                "vcs.branch" to (System.getenv("CIRRUS_BASE_BRANCH")
+                    ?: System.getenv("CIRRUS_BRANCH")),
+                "build.name" to "sonarlint-intellij",
+                "build.number" to System.getenv("BUILD_ID")
+            )
             )
             invokeMethod("publishConfigs", "archives")
             setProperty("publishPom", true) // Publish generated POM files to Artifactory (true by default)

@@ -143,7 +143,7 @@ public class SonarLintEngineFactory {
 
   private static void addOmnisharpServerPaths(SonarLintPlugin plugin, Map<String, String> extraProps) {
     extraProps.put("sonar.cs.internal.omnisharpMonoLocation", plugin.getPath().resolve("omnisharp/mono").toString());
-    extraProps.put("sonar.cs.internal.omnisharpWinLocation", plugin.getPath().resolve("omnisharp/win").toString());
+    extraProps.put("sonar.cs.internal.omnisharpWinLocation", plugin.getPath().resolve("omnisharp/net472").toString());
     extraProps.put("sonar.cs.internal.omnisharpNet6Location", plugin.getPath().resolve("omnisharp/net6").toString());
   }
 
