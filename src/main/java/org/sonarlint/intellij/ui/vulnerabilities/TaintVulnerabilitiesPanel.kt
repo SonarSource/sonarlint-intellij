@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.vulnerabilities
 
+import com.intellij.icons.AllIcons
 import com.intellij.icons.AllIcons.General.Information
 import com.intellij.ide.OccurenceNavigator
 import com.intellij.ide.OccurenceNavigator.OccurenceInfo
@@ -148,7 +149,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             RefreshTaintVulnerabilitiesAction(),
             sonarLintActions.includeResolvedTaintVulnerabilitiesAction(),
             sonarLintActions.configure(),
-            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK)
+            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK, AllIcons.Actions.Help)
         ))
     }
 
