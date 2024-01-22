@@ -19,12 +19,12 @@
  */
 package org.sonarlint.intellij.actions
 
-import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
+import javax.swing.Icon
 
-class OpenInBrowserAction(text: String, description: String?, private val link: String) : AbstractSonarAction(
-    text, description, AllIcons.Actions.Help
+class OpenInBrowserAction @JvmOverloads constructor(text: String, description: String?, private val link: String, val icon: Icon? = null) : AbstractSonarAction(
+    text, description, icon
 ) {
 
     override fun actionPerformed(e: AnActionEvent) {

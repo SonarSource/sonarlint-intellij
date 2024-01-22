@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
@@ -139,7 +140,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     actionGroup.add(sonarLintActions.filterSecurityHotspots());
     actionGroup.add(sonarLintActions.includeResolvedHotspotAction());
     actionGroup.add(sonarLintActions.configure());
-    actionGroup.add(new OpenInBrowserAction("Learn More", "Learn more about Security Hotspots in SonarLint", SECURITY_HOTSPOTS_LINK));
+    actionGroup.add(new OpenInBrowserAction("Learn More", "Learn more about Security Hotspots in SonarLint", SECURITY_HOTSPOTS_LINK, AllIcons.Actions.Help));
     return actionGroup;
   }
 
