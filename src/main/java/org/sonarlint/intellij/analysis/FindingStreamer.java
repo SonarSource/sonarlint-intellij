@@ -25,13 +25,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.util.Alarm;
 
 public class FindingStreamer implements AutoCloseable {
   public static final Duration STREAMING_INTERVAL = Duration.ofMillis(300);
@@ -40,7 +37,7 @@ public class FindingStreamer implements AutoCloseable {
   private final Map<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile = new ConcurrentHashMap<>();
 
   public FindingStreamer(AnalysisCallback analysisCallback) {
-    this.streamingTriggeringAlarm = new Alarm(STREAMING_INTERVAL, () -> this.triggerStreaming(analysisCallback));
+    this.streamingTriggeringAlarm = new Alarm("sonarlint-finding-streamer", STREAMING_INTERVAL, () -> this.triggerStreaming(analysisCallback));
   }
 
   public void streamIssue(VirtualFile file, LiveIssue issue) {
@@ -63,43 +60,7 @@ public class FindingStreamer implements AutoCloseable {
   }
 
   private void stopStreaming() {
-    streamingTriggeringAlarm.stop();
+    streamingTriggeringAlarm.shutdown();
   }
 
-  private static class Alarm {
-    private final Duration duration;
-    private final Runnable endRunnable;
-    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-    private ScheduledFuture<?> scheduledFuture;
-
-    private Alarm(Duration duration, Runnable endRunnable) {
-      this.duration = duration;
-      this.endRunnable = endRunnable;
-    }
-
-    public void schedule() {
-      // if already scheduled, don't re-schedule
-      if (scheduledFuture == null) {
-        scheduledFuture = executorService.schedule(this::notifyEnd, duration.toMillis(), TimeUnit.MILLISECONDS);
-      }
-    }
-
-    private void notifyEnd() {
-      if (!executorService.isShutdown()) {
-        scheduledFuture = null;
-        endRunnable.run();
-      }
-    }
-
-    public void stop() {
-      cancelRunning();
-      executorService.shutdownNow();
-    }
-
-    private void cancelRunning() {
-      if (scheduledFuture != null) {
-        scheduledFuture.cancel(false);
-      }
-    }
-  }
 }

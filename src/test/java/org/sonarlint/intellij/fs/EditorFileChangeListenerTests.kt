@@ -39,26 +39,20 @@ class EditorFileChangeListenerTests : AbstractSonarLintLightTests() {
     @Test
     fun should_notify_of_file_system_event_when_a_change_occurs_in_editor() {
         val fakeEngine = mock(StandaloneSonarLintEngine::class.java)
-        getEngineManager().registerEngine(fakeEngine)
-        val fileEventsNotifier = mock(ModuleFileEventsNotifier::class.java)
-        val eventsCaptor = ArgumentCaptor.forClass(List::class.java) as ArgumentCaptor<List<ClientModuleFileEvent>>
+        val eventsCaptor = ArgumentCaptor.forClass(ClientModuleFileEvent::class.java)
         val fileName = "file.py"
         val listener = EditorFileChangeListener()
-        listener.setFileEventsNotifier(fileEventsNotifier)
-        listener.runActivity(project)
         val file = myFixture.copyFileToProject(fileName, fileName)
         val documentEvent = MockDocumentEvent(file.getDocument()!!, 0)
+        getEngineManager().registerEngine(fakeEngine)
 
         listener.documentChanged(documentEvent)
-        listener.documentChanged(documentEvent)
-        listener.documentChanged(documentEvent)
 
+        // wait for the notification to be delivered (because of the debounce delay)
         Thread.sleep(2000)
-        verify(fileEventsNotifier, times(1)).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
+        verify(fakeEngine, times(1)).fireModuleFileEvent(eq(module), capture(eventsCaptor))
 
-        val events = eventsCaptor.value
-        assertThat(events).hasSize(1)
-        val event = events[0]
+        val event = eventsCaptor.value
         assertThat(event.type()).isEqualTo(ModuleFileEvent.Type.MODIFIED)
         val inputFile = event.target()
         assertThat(inputFile.contents()).contains("content")
