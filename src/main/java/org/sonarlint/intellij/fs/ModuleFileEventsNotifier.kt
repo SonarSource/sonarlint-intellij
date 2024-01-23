@@ -19,14 +19,12 @@
  */
 package org.sonarlint.intellij.fs
 
-import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
-@Service(Service.Level.APP)
 class ModuleFileEventsNotifier {
     fun notifyAsync(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
         if (events.isEmpty()) return
