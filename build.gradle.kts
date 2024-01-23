@@ -226,7 +226,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.15.0.4655")
     "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.25.0.8192")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.51.0.65468")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.52.0.66181")
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     constraints {
