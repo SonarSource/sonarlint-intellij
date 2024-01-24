@@ -29,15 +29,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-class ProjectLogOutputTests extends AbstractSonarLintLightTests {
+class AnalysisLogOutputTests extends AbstractSonarLintLightTests {
   private final SonarLintConsole mockConsole = mock(SonarLintConsole.class);
-  private ProjectLogOutput logOutput;
+  private AnalysisLogOutput logOutput;
 
   @BeforeEach
   void prepare() {
     replaceProjectService(SonarLintConsole.class, mockConsole);
     getProjectSettings().setAnalysisLogsEnabled(true);
-    logOutput = new ProjectLogOutput(getProject());
+    logOutput = new AnalysisLogOutput(getProject());
   }
 
   @Test
