@@ -19,16 +19,10 @@
  */
 package org.sonarlint.intellij.finding.issue.vulnerabilities
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 
-object TaintVulnerabilitiesCache {
-    private val statusPerProject = HashMap<Project, TaintVulnerabilitiesStatus>()
-
-    fun getStatus(project: Project): TaintVulnerabilitiesStatus? {
-        return statusPerProject[project]
-    }
-
-    fun setStatus(project: Project, status: TaintVulnerabilitiesStatus) {
-        statusPerProject[project] = status
-    }
+@Service(Service.Level.PROJECT)
+class TaintVulnerabilitiesCache(val project: Project) {
+    var status : TaintVulnerabilitiesStatus? = null
 }
