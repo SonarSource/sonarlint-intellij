@@ -64,7 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.3 - Support Jakarta namespace. 9 new C++ MISRA 2023 rules.</li>
+        <li>10.3 - Support Jakarta namespace. 9 new C++ MISRA 2023 rules. Remove support for Node.js 14 and deprecate support for Node.js 16 and Node.js 17. Support TypeScript 5.3. 5 new rules for JavaScript.</li>
         <li>10.2.1 - Fix an error when using Rider or CLion in connected mode with SonarCloud.</li>
         <li>10.2 - Support for Gradle Kotlin DSL and C# 12. 5 new Spring Boot rules. 1 new rule for Python. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.1.1 - Fix a potential deadlock and UI freeze.</li>
