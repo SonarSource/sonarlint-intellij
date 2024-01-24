@@ -24,8 +24,9 @@
         <analysisConfiguration implementation="org.sonarlint.intellij.java.JavaAnalysisConfigurator"/>
     </extensions>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity implementation="org.sonarlint.intellij.trigger.MakeTrigger"/>
-    </extensions>
+    <applicationListeners>
+        <listener class="org.sonarlint.intellij.trigger.BuildFinishedAnalysisTrigger" topic="com.intellij.compiler.server.BuildManagerListener"/>
+    </applicationListeners>
+
 
 </idea-plugin>
