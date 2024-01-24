@@ -26,26 +26,33 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class ProjectLogOutput implements ClientLogOutput {
-  private final Project project;
+public class AnalysisLogOutput implements ClientLogOutput, AutoCloseable {
+  private Project project;
 
-  public ProjectLogOutput(Project project) {
+  public AnalysisLogOutput(Project project) {
     this.project = project;
   }
 
   @Override
   public void log(String msg, Level level) {
-    if (project.isDisposed()) {
+    var currentProject = project;
+    if (currentProject == null || currentProject.isDisposed()) {
       return;
     }
-    var console = SonarLintUtils.getService(project, SonarLintConsole.class);
-    if (!getSettingsFor(project).isAnalysisLogsEnabled()) {
+    if (!getSettingsFor(currentProject).isAnalysisLogsEnabled()) {
       return;
     }
+    var console = SonarLintUtils.getService(currentProject, SonarLintConsole.class);
     switch (level) {
       case TRACE, DEBUG -> console.debug(msg);
       case ERROR -> console.error(msg);
       default -> console.info(msg);
     }
+  }
+
+  @Override
+  public void close() {
+    // dereference the project after the analysis as the engine's lifecycle can be longer than the project's one
+    this.project = null;
   }
 }

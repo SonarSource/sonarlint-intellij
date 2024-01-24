@@ -31,7 +31,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
-import org.sonarlint.intellij.util.ProjectLogOutput;
+import org.sonarlint.intellij.util.AnalysisLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
@@ -69,9 +69,11 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     var console = getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config);
 
-    final var analysisResults = engine.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
-    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, engine.getPluginDetails(), project);
-    return analysisResults;
+    try (var analysisLogOutput = new AnalysisLogOutput(project)) {
+      final var analysisResults = engine.analyze(config, issueListener, analysisLogOutput, progressMonitor);
+      AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, engine.getPluginDetails(), project);
+      return analysisResults;
+    }
   }
 
   @Override

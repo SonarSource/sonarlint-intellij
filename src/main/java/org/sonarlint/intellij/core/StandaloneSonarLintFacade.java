@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
-import org.sonarlint.intellij.util.ProjectLogOutput;
+import org.sonarlint.intellij.util.AnalysisLogOutput;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
@@ -83,10 +83,12 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       .build();
 
     var console = SonarLintUtils.getService(project, SonarLintConsole.class);
-    console.debug("Starting analysis with configuration:\n" + config.toString());
-    final var analysisResults = sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
-    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, sonarlint.getPluginDetails(), project);
-    return analysisResults;
+    console.debug("Starting analysis with configuration:\n" + config);
+    try (var analysisLogOutput = new AnalysisLogOutput(project)) {
+      final var analysisResults = sonarlint.analyze(config, issueListener, analysisLogOutput, progressMonitor);
+      AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, sonarlint.getPluginDetails(), project);
+      return analysisResults;
+    }
   }
 
   @Override
