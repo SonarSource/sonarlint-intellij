@@ -17,30 +17,24 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij;
+package org.sonarlint.intellij.trigger;
 
-import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.PluginManagerCore;
-import com.intellij.openapi.components.Service;
-import com.intellij.openapi.extensions.PluginId;
-import java.nio.file.Path;
+import com.intellij.compiler.server.BuildManagerListener;
+import com.intellij.openapi.project.Project;
+import java.util.UUID;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
-@Service(Service.Level.APP)
-public final class SonarLintPlugin {
-  private IdeaPluginDescriptor plugin;
+public class BuildFinishedAnalysisTrigger implements BuildManagerListener {
 
-  public String getVersion() {
-    return getPlugin().getVersion();
-  }
-
-  public Path getPath() {
-    return getPlugin().getPluginPath();
-  }
-
-  private IdeaPluginDescriptor getPlugin() {
-    if (plugin == null) {
-      plugin = PluginManagerCore.getPlugin(PluginId.getId("org.sonarlint.idea"));
+  @Override public void buildFinished(Project project, UUID sessionId, boolean isAutomake) {
+    if (!isAutomake) {
+      // covered by CompilationFinishedAnalysisTrigger.compilationFinished
+      return;
     }
-    return plugin;
+
+    SonarLintUtils.getService(project, SonarLintConsole.class).debug("build finished");
+    SonarLintUtils.getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
   }
 }

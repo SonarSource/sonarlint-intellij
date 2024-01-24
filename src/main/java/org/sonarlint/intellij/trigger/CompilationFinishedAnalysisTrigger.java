@@ -19,18 +19,22 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.FileEditorManagerListener;
-import com.intellij.openapi.vfs.VirtualFile;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.compiler.CompilationStatusListener;
+import com.intellij.openapi.compiler.CompileContext;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+public class CompilationFinishedAnalysisTrigger implements CompilationStatusListener {
 
-public class EditorOpenTrigger implements FileEditorManagerListener {
-
+  /**
+   * Does not get called for Automake.
+   * {@link CompileContext} can have a null Project. See {@link com.intellij.openapi.compiler.DummyCompileContext}.
+   */
   @Override
-  public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    getService(source.getProject(), AnalysisSubmitter.class).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
+  public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
+    var compiledProject = compileContext.getProject();
+    SonarLintUtils.getService(compiledProject, SonarLintConsole.class).debug("compilation finished");
+    SonarLintUtils.getService(compiledProject, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
   }
 }

@@ -382,7 +382,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   }
 
   private void subscribeToEvents() {
-    var busConnection = project.getMessageBus().connect(project);
+    var busConnection = project.getMessageBus().connect();
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> runOnUiThread(project, this::refreshToolbar));
   }

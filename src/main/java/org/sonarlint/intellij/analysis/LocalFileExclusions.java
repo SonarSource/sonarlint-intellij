@@ -98,7 +98,7 @@ public final class LocalFileExclusions {
   }
 
   private void subscribeToSettingsChanges(Project project) {
-    var busConnection = project.getMessageBus().connect(project);
+    var busConnection = project.getMessageBus().connect();
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
       public void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings) {

@@ -30,6 +30,8 @@ import com.intellij.openapi.actionSystem.ex.ActionButtonLook
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.ColorKey
+import com.intellij.openapi.editor.ex.util.EditorUtil
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.JBColor
 import com.intellij.ui.scale.JBUIScale
@@ -53,7 +55,7 @@ class SonarLintTrafficLightWidget(
     private val action: AnAction,
     private val presentation: Presentation,
     private val place: String,
-    private val editor: Editor,
+    editor: Editor,
 ) : JPanel() {
 
     private val dashboardPopup = SonarLintDashboardPopup(editor)
@@ -109,8 +111,12 @@ class SonarLintTrafficLightWidget(
             override fun isBorderOpaque() = false
             override fun getBorderInsets(c: Component) = JBUI.insets(0, 2)
         }
-
-        editor.project?.let { SonarGotItTooltipsUtils.showTrafficLightToolTip(iconAndFindingsCountLabel, it) }
+        editor.project?.let {
+            // make sure the tooltip has the same lifecycle as the editor
+            val disposable = Disposer.newDisposable()
+            EditorUtil.disposeWithEditor(editor, disposable)
+            SonarGotItTooltipsUtils.showTrafficLightToolTip(iconAndFindingsCountLabel, disposable)
+        }
     }
 
     override fun addNotify() {

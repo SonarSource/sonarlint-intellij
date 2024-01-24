@@ -71,7 +71,7 @@ public class CurrentFileConnectedModePanel {
     createPanel();
     switchCards();
     CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
-    project.getMessageBus().connect(project).subscribe(VcsListener.TOPIC,
+    project.getMessageBus().connect().subscribe(VcsListener.TOPIC,
       (module, branchName) -> runOnUiThread(project, this::switchCards));
   }
 

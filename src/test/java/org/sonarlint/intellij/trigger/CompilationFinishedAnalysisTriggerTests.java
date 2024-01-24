@@ -20,33 +20,27 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.compiler.CompileContext;
-import com.intellij.openapi.project.Project;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-class MakeTriggerTests extends AbstractSonarLintLightTests {
+class CompilationFinishedAnalysisTriggerTests extends AbstractSonarLintLightTests {
   private AnalysisSubmitter submitter = mock(AnalysisSubmitter.class);
-  private SonarLintConsole console = mock(SonarLintConsole.class);
   private CompileContext context = mock(CompileContext.class);
 
-  private MakeTrigger trigger;
+  private CompilationFinishedAnalysisTrigger trigger;
 
   @BeforeEach
   void prepare() {
     replaceProjectService(AnalysisSubmitter.class, submitter);
-    replaceProjectService(SonarLintConsole.class, console);
     when(context.getProject()).thenReturn(getProject());
-    trigger = new MakeTrigger();
-    trigger.runActivity(getProject());
+    trigger = new CompilationFinishedAnalysisTrigger();
   }
 
   @Test
@@ -56,36 +50,8 @@ class MakeTriggerTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void should_trigger_automake() {
-    trigger.buildFinished(getProject(), UUID.randomUUID(), true);
-    verify(submitter).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
-  }
-
-  @Test
   void should_do_nothing_on_generate() {
     trigger.fileGenerated("output", "relative");
-    verifyNoInteractions(submitter);
-  }
-
-  @Test
-  void should_not_trigger_if_another_project() {
-    when(context.getProject()).thenReturn(mock(Project.class));
-    trigger.compilationFinished(false, 0, 0, context);
-    trigger.buildFinished(mock(Project.class), UUID.randomUUID(), true);
-
-    verifyNoInteractions(submitter);
-  }
-
-  @Test
-  void should_not_trigger_if_not_automake() {
-    when(context.getProject()).thenReturn(mock(Project.class));
-    trigger.buildFinished(getProject(), UUID.randomUUID(), false);
-    verifyNoInteractions(submitter);
-  }
-
-  @Test
-  void other_events_should_be_noop() {
-    trigger.buildStarted(getProject(), UUID.randomUUID(), true);
     verifyNoInteractions(submitter);
   }
 }

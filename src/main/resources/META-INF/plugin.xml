@@ -185,6 +185,7 @@
         <listener class="org.sonarlint.intellij.module.MoveModulesOnBindingChange" topic="org.sonarlint.intellij.messages.ProjectBindingListener"/>
         <listener class="org.sonarlint.intellij.vcs.RefreshCacheOnBindingChange" topic="org.sonarlint.intellij.messages.ProjectBindingListener"/>
         <listener class="org.sonarlint.intellij.vcs.RefreshCacheOnProjectSync" topic="org.sonarlint.intellij.messages.ServerBranchesListener"/>
+        <listener class="org.sonarlint.intellij.trigger.EditorOpenTrigger" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener" activeInTestMode="false"/>
         <!-- should belong to plugin-git.xml but moved here because of this bug https://youtrack.jetbrains.com/issue/IDEA-231568 (can be moved back when min version 2020.2) -->
         <listener class="org.sonarlint.intellij.git.RefreshVcsCacheOnRepositoryChange" topic="git4idea.repo.GitRepositoryChangeListener"/>
     </projectListeners>
@@ -236,7 +237,6 @@
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
 
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
-        <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
 
         <notificationGroup id="SonarLint: In Context Promotions"
                            displayType="BALLOON"/>
@@ -271,6 +271,7 @@
     <applicationListeners>
         <listener class="org.sonarlint.intellij.fs.VirtualFileSystemListener" topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
         <listener class="org.sonarlint.intellij.module.ProjectClosedListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
+        <listener class="org.sonarlint.intellij.trigger.CompilationFinishedAnalysisTrigger" topic="com.intellij.openapi.compiler.CompilationStatusListener"/>
     </applicationListeners>
 
     <actions>

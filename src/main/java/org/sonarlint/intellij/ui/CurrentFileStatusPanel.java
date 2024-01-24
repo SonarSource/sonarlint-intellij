@@ -51,7 +51,7 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
   }
 
   static void subscribeToEventsThatAffectCurrentFile(Project project, Runnable runnable) {
-    var busConnection = project.getMessageBus().connect(project);
+    var busConnection = project.getMessageBus().connect();
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
       public void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings) {

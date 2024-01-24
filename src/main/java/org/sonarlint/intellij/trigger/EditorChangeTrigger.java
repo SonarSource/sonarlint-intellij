@@ -59,7 +59,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
 
   public void onProjectOpened() {
     myProject.getMessageBus()
-      .connect(myProject)
+      .connect()
       .subscribe(AnalysisListener.TOPIC, new AnalysisListener.Adapter() {
         @Override
         public void started(Collection<VirtualFile> files, TriggerType trigger) {

@@ -21,7 +21,6 @@ package org.sonarlint.intellij.util
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.ui.popup.Balloon
-import com.intellij.openapi.util.Disposer
 import com.intellij.ui.GotItTooltip
 import java.awt.Point
 import java.net.URL
@@ -44,30 +43,31 @@ object SonarGotItTooltipsUtils {
         Click the icon to show/hide the SonarLint tool window, and hover to view more actions."""
 
     fun showFocusOnNewCodeToolTip(component: JComponent, parent: Disposable) {
-        Disposer.tryRegister(parent, GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent).apply {
+        with(GotItTooltip(FOCUS_NEW_CODE_TOOLTIP_ID, FOCUS_NEW_CODE_TOOLTIP_TEXT, parent)) {
             withIcon(SonarLintIcons.SONARLINT)
             withPosition(Balloon.Position.atRight)
             withBrowserLink("Learn more about Clean as You Code", URL(FOCUS_ON_NEW_CODE_LINK))
             // Point at the first action level
             show(component) { _, _ -> Point(0, 15) }
-        })
+        }
     }
 
     fun showCleanCodeToolTip(component: JComponent, parent: Disposable) {
-        Disposer.tryRegister(parent, GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent).apply {
+        with(GotItTooltip(CLEAN_CODE_TOOLTIP_ID, CLEAN_CODE_TOOLTIP_TEXT, parent)) {
             withBrowserLink("Learn more about Clean Code", URL(CLEAN_CODE_LINK))
             withIcon(SonarLintIcons.SONARLINT)
             withPosition(Balloon.Position.atLeft)
             show(component, GotItTooltip.LEFT_MIDDLE)
-        })
+        }
     }
 
     fun showTrafficLightToolTip(component: JComponent, parent: Disposable) {
-        Disposer.tryRegister(parent, GotItTooltip(TRAFFIC_LIGHT_TOOLTIP_ID, TRAFFIC_LIGHT_TOOLTIP_TEXT, parent).apply {
+        // we pick a random project service that is disposable
+        with(GotItTooltip(TRAFFIC_LIGHT_TOOLTIP_ID, TRAFFIC_LIGHT_TOOLTIP_TEXT, parent)) {
             withIcon(SonarLintIcons.SONARLINT)
             withPosition(Balloon.Position.above)
             show(component) { it, _ -> Point(-5, it.height / 2) }
-        })
+        }
     }
 
 }
