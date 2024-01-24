@@ -114,7 +114,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
             return
           }
           val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
-          TaintVulnerabilitiesCache.setStatus(project, status)
+          getService(project, TaintVulnerabilitiesCache::class.java).status = status
           currentVulnerabilitiesByFile = if (status is FoundTaintVulnerabilities) status.byFile else emptyMap()
           runOnUiThread(project) {
             getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(status)
