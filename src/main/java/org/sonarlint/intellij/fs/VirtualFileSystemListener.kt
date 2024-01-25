@@ -24,7 +24,9 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
@@ -46,7 +48,7 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
  * The BulkFileListener is not tied to a specific project but global to the IDE instance
  */
 class VirtualFileSystemListener(
-    private val fileEventsNotifier: ModuleFileEventsNotifier = ModuleFileEventsNotifier()
+    private val fileEventsNotifier: ModuleFileEventsNotifier = ModuleFileEventsNotifier(),
 ) : BulkFileListener {
     override fun before(events: List<VFileEvent>) {
         forwardEvents(events.filterIsInstance<VFileMoveEvent>()) { ModuleFileEvent.Type.DELETED }
@@ -86,13 +88,13 @@ class VirtualFileSystemListener(
     private fun fileEventsByModules(
         events: List<VFileEvent>,
         openProjects: List<Project>,
-        eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?
+        eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?,
     ): Map<Module, List<ClientModuleFileEvent>> {
         val map: MutableMap<Module, List<ClientModuleFileEvent>> = mutableMapOf()
         for (event in events) {
             // call event.file only once as it can be hurting performance
             val file = event.file ?: continue
-            if(ProjectCoreUtil.isProjectOrWorkspaceFile(file, file.fileType)) continue;
+            if (ProjectCoreUtil.isProjectOrWorkspaceFile(file, file.fileType)) continue
             val fileModule = findModule(file, openProjects) ?: continue
             val fileInvolved = if (event is VFileCopyEvent) event.findCreatedFile() else file
             fileInvolved ?: continue
@@ -104,13 +106,18 @@ class VirtualFileSystemListener(
     }
 
     private fun allEventsFor(file: VirtualFile, fileModule: Module, type: ModuleFileEvent.Type): List<ClientModuleFileEvent> {
-        return when {
-            file.isDirectory -> file.children.flatMap { allEventsFor(it, fileModule, type) }
-            // SLI-551 Only send events on .py files (avoid parse errors)
-            // For Rider, send all events for OmniSharp
-            isRider() || ModuleFileEventsNotifier.isPython(file) -> listOfNotNull(buildModuleFileEvent(fileModule, file, type))
-            else -> emptyList()
-        }
+        val allFilesInvolved = mutableListOf<VirtualFile>()
+        VfsUtilCore.visitChildrenRecursively(file, object : VirtualFileVisitor<Unit>() {
+            override fun visitFile(file: VirtualFile): Boolean {
+                // SLI-551 Only send events on .py files (avoid parse errors)
+                // For Rider, send all events for OmniSharp
+                if (!file.isDirectory && (isRider() || ModuleFileEventsNotifier.isPython(file))) {
+                    allFilesInvolved.add(file)
+                }
+                return !fileModule.project.isDisposed
+            }
+        })
+        return allFilesInvolved.mapNotNull { buildModuleFileEvent(fileModule, it, type) }
     }
 
     private fun findModule(file: VirtualFile?, openProjects: List<Project>): Module? {
