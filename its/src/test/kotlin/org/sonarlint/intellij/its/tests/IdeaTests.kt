@@ -44,7 +44,9 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.bindRecentProject
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenIssueRequest
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyHotspotOpened
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyIssueOpened
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.changeSecurityHotspotStatusAndPressChange
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.enableConnectedModeFromSecurityHotspotPanel
@@ -98,6 +100,7 @@ class IdeaTests : BaseUiTest() {
         const val ISSUE_PROJECT_KEY = "sample-java-issues"
 
         private var firstHotspotKey: String? = null
+        private var firstIssueKey: String? = null
         lateinit var token: String
 
         @Throws(InvalidProtocolBufferException::class)
@@ -107,6 +110,15 @@ class IdeaTests : BaseUiTest() {
             val searchResults = client.hotspots().search(searchRequest)
             val hotspot = searchResults.hotspotsList[0]
             return hotspot.key
+        }
+
+        @Throws(InvalidProtocolBufferException::class)
+        private fun getFirstIssueKey(client: WsClient): String? {
+            val searchRequest = SearchRequest()
+            searchRequest.projects = listOf(ISSUE_PROJECT_KEY)
+            val searchResults = client.issues().search(searchRequest)
+            val issue = searchResults.issuesList[0]
+            return issue.key
         }
 
         @JvmStatic
@@ -144,7 +156,7 @@ class IdeaTests : BaseUiTest() {
             // Open In Ide Security Hotspot Test
             triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
             createConnection(token)
-            bindRecentProject()
+            bindRecentProject("sample-java-hotspot")
             verifyHotspotOpened()
 
             // Should Propose To Bind
@@ -251,6 +263,8 @@ class IdeaTests : BaseUiTest() {
 
             // Build and analyze project to raise issue
             executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR)
+
+            firstIssueKey = getFirstIssueKey(adminWsClient)
         }
 
         @Test
@@ -279,6 +293,17 @@ class IdeaTests : BaseUiTest() {
                 "This file is not automatically analyzed because power save mode is enabled"
             )
             clickPowerSaveMode()
+        }
+
+        @Test
+        fun should_open_in_ide_issue_then_should_propose_to_bind() = uiTest {
+            clearConnections()
+            openExistingProject("sample-java-issues")
+
+            triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main")
+            createConnection(token)
+            bindRecentProject("sample-java-issues")
+            verifyIssueOpened()
         }
     }
 

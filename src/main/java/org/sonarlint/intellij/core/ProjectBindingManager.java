@@ -25,16 +25,6 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.vcs.VcsService;
@@ -45,6 +35,11 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -244,7 +239,8 @@ public final class ProjectBindingManager {
     return Set.of();
   }
 
-  public record ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {}
+  public record ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {
+  }
 
   private static Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
     return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())

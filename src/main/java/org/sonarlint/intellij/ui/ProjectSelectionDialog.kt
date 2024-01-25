@@ -26,7 +26,7 @@ open class ProjectSelectionDialog : DialogWrapper(true) {
 
     open fun selectProject(): String? {
         init()
-        title = "Select a project"
+        title = "Select a Project to Bind"
         show()
         return selectedProject
     }

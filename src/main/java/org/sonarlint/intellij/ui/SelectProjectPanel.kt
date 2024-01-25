@@ -28,6 +28,8 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.components.JBLabel
+import java.awt.Dimension
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -38,10 +40,18 @@ class SelectProjectPanel(private val parent: ProjectSelectionDialog) : JPanel() 
     init {
         val openProjectButton = JButton("Open or import")
 
+        val recentProject = SonarLintRecentProjectPanel(parent)
+
         layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, false, false)
+        add(
+            JBLabel("<html>Complete your Connected Mode setup by binding your local project to your SonarQube project " +
+            "to benefit from the same rules and settings that are used to inspect the project on the server.</html>").apply {
+                preferredSize = Dimension(recentProject.preferredSize.width, 75)
+            }
+        )
         add(openProjectButton)
         add(JLabel("or"))
-        add(SonarLintRecentProjectPanel(parent))
+        add(recentProject)
 
         openProjectButton.addActionListener {
             val descriptor: FileChooserDescriptor = OpenProjectFileChooserDescriptor(false)
@@ -55,7 +65,6 @@ class SelectProjectPanel(private val parent: ProjectSelectionDialog) : JPanel() 
                 parent.setSelectedProject(file.path)
             }
         }
-
     }
 
 }
