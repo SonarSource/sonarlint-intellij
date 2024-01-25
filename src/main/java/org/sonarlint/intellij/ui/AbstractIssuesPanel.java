@@ -334,7 +334,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       updateOnSelect(issue);
     } else {
       if (showFinding.getCodeSnippet() == null) {
-        SonarLintProjectNotifications.get(project)
+        SonarLintProjectNotifications.Companion.get(project)
           .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarLint in the current code.");
         return;
       }
@@ -342,7 +342,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
         var matcher = new TextRangeMatcher(project);
         var rangeMarker = computeReadActionSafely(project, () -> matcher.matchWithCode(showFinding.getFile(), showFinding.getTextRange(), showFinding.getCodeSnippet()));
         if (rangeMarker == null) {
-          SonarLintProjectNotifications.get(project)
+          SonarLintProjectNotifications.Companion.get(project)
             .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarLint in the current code.");
           return;
         }

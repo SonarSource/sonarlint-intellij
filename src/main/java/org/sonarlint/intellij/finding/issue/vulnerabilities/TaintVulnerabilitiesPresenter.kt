@@ -19,10 +19,6 @@
  */
 package org.sonarlint.intellij.finding.issue.vulnerabilities
 
-import com.intellij.notification.NotificationGroup
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -38,6 +34,7 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.findModuleOf
@@ -83,7 +80,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
       project.getOpenFiles().forEach { refreshTaintVulnerabilitiesFor(project, it) }
     }
     catch (e: Exception) {
-      showBalloon(project, TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE, RefreshTaintVulnerabilitiesAction("Retry"))
+      SonarLintProjectNotifications.get(project).showTaintNotification(TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE, RefreshTaintVulnerabilitiesAction("Retry"))
       SonarLintConsole.get(project).error(TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE, e)
     }
     presentTaintVulnerabilitiesForOpenFiles()
@@ -126,19 +123,5 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
         }
       })
   }
-
-  private fun showBalloon(project: Project, message: String, action: AnAction) {
-    val notification = GROUP.createNotification(
-      "Taint vulnerabilities",
-      message,
-      NotificationType.ERROR)
-    notification.isImportant = true
-    notification.addAction(action)
-    notification.notify(project)
-  }
-
-    companion object {
-        val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Taint vulnerabilities")
-    }
 
 }

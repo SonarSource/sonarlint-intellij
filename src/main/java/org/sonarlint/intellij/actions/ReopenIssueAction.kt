@@ -42,10 +42,9 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarlint.intellij.util.DataKeys
-import org.sonarlint.intellij.util.displayErrorNotification
-import org.sonarlint.intellij.util.displaySuccessfulNotification
 
 private const val SKIP_CONFIRM_REOPEN_DIALOG_PROPERTY = "SonarLint.reopenIssue.hideConfirmation"
 
@@ -62,16 +61,14 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
         }
 
         fun reopenIssueDialog(project: Project, issue: Issue) {
-            val connection = serverConnection(project) ?: return displayErrorNotification(
-                project,
-                ERROR_TITLE, "No connection could be found", GROUP
-            )
+            val connection = serverConnection(project)
+                ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(ERROR_TITLE, "No connection could be found", GROUP)
 
-            val file = issue.file() ?: return displayErrorNotification(project, ERROR_TITLE, "The file could not be found", GROUP)
+            val file = issue.file()
+                ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(ERROR_TITLE, "The file could not be found", GROUP)
 
-            val module = ModuleUtil.findModuleForFile(file, project) ?: return displayErrorNotification(
-                project, ERROR_TITLE, "No module could be found for this file", GROUP
-            )
+            val module = ModuleUtil.findModuleForFile(file, project)
+                ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(ERROR_TITLE, "No module could be found for this file", GROUP)
 
             var serverKey: String? = null
             if (issue is LiveIssue) {
@@ -79,12 +76,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
             } else if (issue is LocalTaintVulnerability) {
                 serverKey = issue.key()
             }
-            serverKey ?: return displayErrorNotification(
-                project,
-                ERROR_TITLE,
-                "The issue key could not be found",
-                GROUP
-            )
+            serverKey ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(ERROR_TITLE, "The issue key could not be found", GROUP)
 
             if (confirm(project, connection.productName)) {
                 reopenFinding(project, module, issue, serverKey)
@@ -96,11 +88,11 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
                 .reopenIssue(module, issueKey, issue is LocalTaintVulnerability)
                 .thenAccept {
                     updateUI(project, issue)
-                    displaySuccessfulNotification(project, CONTENT, GROUP)
+                    SonarLintProjectNotifications.get(project).displaySuccessfulNotification(CONTENT, GROUP)
                 }
                 .exceptionally { error ->
                     SonarLintConsole.get(project).error("Error while reopening the issue", error)
-                    displayErrorNotification(project, "Could not reopen the issue", GROUP)
+                    SonarLintProjectNotifications.get(project).displayErrorNotification("Could not reopen the issue", GROUP)
                     null
                 }
         }
@@ -141,7 +133,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null)
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val issue = e.getData(DataKeys.ISSUE_DATA_KEY) ?: e.getData(DataKeys.TAINT_VULNERABILITY_DATA_KEY)
-            ?: return displayErrorNotification(project, ERROR_TITLE, "The issue could not be found", GROUP)
+            ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(ERROR_TITLE, "The issue could not be found", GROUP)
 
         reopenIssueDialog(project, issue)
     }

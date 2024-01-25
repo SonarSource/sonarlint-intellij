@@ -20,15 +20,11 @@
 package org.sonarlint.intellij.notifications;
 
 import com.intellij.notification.NotificationAction;
-import com.intellij.notification.NotificationGroup;
-import com.intellij.notification.NotificationGroupManager;
-import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.plugin.commons.SkipReason;
@@ -36,9 +32,6 @@ import org.sonarsource.sonarlint.core.plugin.commons.SkipReason;
 import static java.util.stream.Collectors.toSet;
 
 public class AnalysisRequirementNotifications {
-
-  private static final NotificationGroup ANALYZER_REQUIREMENT_GROUP = NotificationGroupManager.getInstance()
-    .getNotificationGroup("SonarLint: Analyzer Requirement");
 
   private static final Set<String> alreadyNotified = new HashSet<>();
 
@@ -83,14 +76,9 @@ public class AnalysisRequirementNotifications {
 
   private static void createNotificationOnce(Project project, String title, String content, NotificationAction... actions) {
     if (!alreadyNotified.contains(content)) {
-      var notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
-        title,
-        content,
-        NotificationType.WARNING);
-      notification.setImportant(true);
-      Stream.of(actions).forEach(notification::addAction);
-      notification.notify(project);
+      SonarLintProjectNotifications.Companion.get(project).createNotificationOnce(title, content, actions);
       alreadyNotified.add(content);
     }
   }
+
 }
