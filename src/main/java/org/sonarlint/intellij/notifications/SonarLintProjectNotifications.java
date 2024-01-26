@@ -66,6 +66,7 @@ public final class SonarLintProjectNotifications {
   private volatile boolean shown = false;
   private final Project myProject;
 
+  private Notification lastBindingSuggestion;
   private Notification currentOpenFindingNotification;
 
   public SonarLintProjectNotifications(Project project) {
@@ -137,17 +138,19 @@ public final class SonarLintProjectNotifications {
   }
 
   private void notifyBindingSuggestions(String message, AnAction... mainActions) {
-    var notification = BINDING_SUGGESTION_GROUP.createNotification(
+    expireCurrentBindingSuggestionIfNeeded();
+
+    lastBindingSuggestion = BINDING_SUGGESTION_GROUP.createNotification(
       TITLE_SONARLINT_SUGGESTIONS,
       message,
       NotificationType.INFORMATION);
-    Arrays.stream(mainActions).forEach(notification::addAction);
-    notification.addAction(new OpenInBrowserAction("Learn more", null, CONNECTED_MODE_LINK));
-    notification.addAction(new DisableBindingSuggestionsAction());
-    notification.setCollapseDirection(Notification.CollapseActionsDirection.KEEP_LEFTMOST);
-    notification.setImportant(true);
-    notification.setIcon(SonarLintIcons.SONARLINT);
-    notification.notify(myProject);
+    Arrays.stream(mainActions).forEach(lastBindingSuggestion::addAction);
+    lastBindingSuggestion.addAction(new OpenInBrowserAction("Learn more", null, CONNECTED_MODE_LINK));
+    lastBindingSuggestion.addAction(new DisableBindingSuggestionsAction());
+    lastBindingSuggestion.setCollapseDirection(Notification.CollapseActionsDirection.KEEP_LEFTMOST);
+    lastBindingSuggestion.setImportant(true);
+    lastBindingSuggestion.setIcon(SonarLintIcons.SONARLINT);
+    lastBindingSuggestion.notify(myProject);
   }
 
   public void notifyUnableToOpenFinding(String type, String message, AnAction... mainActions) {
@@ -169,6 +172,13 @@ public final class SonarLintProjectNotifications {
     }
   }
 
+  public void expireCurrentBindingSuggestionIfNeeded() {
+    if (lastBindingSuggestion != null) {
+      lastBindingSuggestion.expire();
+      lastBindingSuggestion = null;
+    }
+  }
+
   public void handle(ShowSmartNotificationParams smartNotificationParams) {
     var connection = Settings.getGlobalSettings().getServerConnectionByName(smartNotificationParams.getConnectionId());
     if (connection.isEmpty()) {
@@ -181,8 +191,7 @@ public final class SonarLintProjectNotifications {
     var notification = SERVER_NOTIFICATIONS_GROUP.createNotification(
       String.format("<b>%s Notification</b>", label),
       smartNotificationParams.getText(),
-      NotificationType.INFORMATION
-    );
+      NotificationType.INFORMATION);
     if (isSonarCloud) {
       notification.setIcon(SonarLintIcons.ICON_SONARCLOUD_16);
     } else {
