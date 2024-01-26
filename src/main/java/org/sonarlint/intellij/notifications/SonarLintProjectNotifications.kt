@@ -96,17 +96,17 @@ class SonarLintProjectNotifications(private val myProject: Project) {
     }
 
     @Volatile
-    private var shown = false
+    private var storageErrorNotificationShown = false
 
     private var lastBindingSuggestion: Notification? = null
     private var currentOpenFindingNotification: Notification? = null
 
     fun reset() {
-        shown = false
+        storageErrorNotificationShown = false
     }
 
     fun notifyConnectionIdInvalid() {
-        if (shown) {
+        if (storageErrorNotificationShown) {
             return
         }
         BINDING_PROBLEM_GROUP.createNotification(
@@ -119,11 +119,11 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             isImportant = true
             notify(myProject)
         }
-        shown = true
+        storageErrorNotificationShown = true
     }
 
     fun notifyProjectStorageInvalid() {
-        if (shown) {
+        if (storageErrorNotificationShown) {
             return
         }
         BINDING_PROBLEM_GROUP.createNotification(
@@ -136,7 +136,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             isImportant = true
             notify(myProject)
         }
-        shown = true
+        storageErrorNotificationShown = true
     }
 
     fun notifyLanguagePromotion(content: String) {

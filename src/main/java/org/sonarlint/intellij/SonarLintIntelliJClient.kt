@@ -223,7 +223,9 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun showSoonUnsupportedMessage(params: ShowSoonUnsupportedMessageParams) {
-        val project = BackendService.findModule(params.configurationScopeId)?.project ?: BackendService.findProject(params.configurationScopeId) ?: return
+        val project =
+            BackendService.findModule(params.configurationScopeId)?.project ?: BackendService.findProject(params.configurationScopeId)
+            ?: return
         showOneTimeBalloon(project, params.text, params.doNotShowAgainId, OpenLinkAction(SUPPORT_POLICY_LINK, "Learn more"))
     }
 
@@ -259,36 +261,68 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun showHotspot(params: ShowHotspotParams) {
-        showFinding(params.configurationScopeId, params.hotspotDetails.filePath, params.hotspotDetails.key,
-            params.hotspotDetails.rule.key, params.hotspotDetails.textRange, params.hotspotDetails.codeSnippet, LiveSecurityHotspot::class.java, emptyList(), params.hotspotDetails.message
+        showFinding(
+            params.configurationScopeId,
+            params.hotspotDetails.filePath,
+            params.hotspotDetails.key,
+            params.hotspotDetails.rule.key,
+            params.hotspotDetails.textRange,
+            params.hotspotDetails.codeSnippet,
+            LiveSecurityHotspot::class.java,
+            emptyList(),
+            params.hotspotDetails.message
         )
     }
 
     override fun showIssue(params: ShowIssueParams) {
         val findingType = if (params.isTaint) LocalTaintVulnerability::class.java else LiveIssue::class.java
-        showFinding(params.configScopeId, params.serverRelativeFilePath,
-                params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, findingType, params.flows, params.message)
+        showFinding(
+            params.configScopeId, params.serverRelativeFilePath,
+            params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, findingType, params.flows, params.message
+        )
     }
 
-    private fun <T: Finding> showFinding(configScopeId: String, filePath: String, findingKey: String, ruleKey: String,
-        textRange: TextRangeDto, codeSnippet: String?, type: Class<T>, flows: List<FlowDto>, flowMessage: String) {
+    private fun <T : Finding> showFinding(
+        configScopeId: String, filePath: String, findingKey: String, ruleKey: String,
+        textRange: TextRangeDto, codeSnippet: String?, type: Class<T>, flows: List<FlowDto>, flowMessage: String,
+    ) {
         val project = findProject(configScopeId) ?: throw IllegalStateException("Unable to find project with id '$configScopeId'")
-        SonarLintProjectNotifications.get(project).expireCurrentFindingNotificationIfNeeded()
+        if (!project.isDisposed) {
+            SonarLintProjectNotifications.get(project).expireCurrentFindingNotificationIfNeeded()
+        }
         val file = tryFindFile(project, filePath)
         if (file == null) {
-            SonarLintProjectNotifications.get(project).simpleNotification("Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
+            if (!project.isDisposed) {
+                SonarLintProjectNotifications.get(project)
+                    .simpleNotification("Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
+            }
             return
         }
 
         val module = findModuleForFile(file, project)
         if (module == null) {
-            SonarLintProjectNotifications.get(project).simpleNotification("Unable to open finding. Can't find the module corresponding to file: $filePath", NotificationType.WARNING)
+            if (!project.isDisposed) {
+                SonarLintProjectNotifications.get(project).simpleNotification(
+                    "Unable to open finding. Can't find the module corresponding to file: $filePath",
+                    NotificationType.WARNING
+                )
+            }
             return
         }
         ApplicationManager.getApplication().invokeAndWait {
             openFile(project, file, textRange.startLine)
         }
-        val showFinding = ShowFinding(module, ruleKey, findingKey, file, textRange, codeSnippet, ShowFinding.handleFlows(module.project, flows), flowMessage, type)
+        val showFinding = ShowFinding(
+            module,
+            ruleKey,
+            findingKey,
+            file,
+            textRange,
+            codeSnippet,
+            ShowFinding.handleFlows(module.project, flows),
+            flowMessage,
+            type
+        )
         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(showFinding)
     }
 
@@ -301,7 +335,8 @@ object SonarLintIntelliJClient : SonarLintClient {
             val serverUrl = params.serverUrl
             val tokenName = params.tokenName
             val tokenValue = params.tokenValue
-            val currentConfigScopeIds = ProjectManager.getInstance().openProjects.map { project -> BackendService.projectId(project) }.toSet()
+            val currentConfigScopeIds =
+                ProjectManager.getInstance().openProjects.map { project -> BackendService.projectId(project) }.toSet()
 
             val response = if (tokenName != null && tokenValue != null) {
                 val newConnection = ApplicationManager.getApplication().computeInEDT {
@@ -322,11 +357,11 @@ object SonarLintIntelliJClient : SonarLintClient {
 
                 val choice = ApplicationManager.getApplication().computeInEDT {
                     MessageDialogBuilder.Message(warningTitle, message)
-                            .buttons(connectButtonText, dontTrustButtonText)
-                            .defaultButton(connectButtonText)
-                            .focusedButton(dontTrustButtonText)
-                            .asWarning()
-                            .show()
+                        .buttons(connectButtonText, dontTrustButtonText)
+                        .defaultButton(connectButtonText)
+                        .focusedButton(dontTrustButtonText)
+                        .asWarning()
+                        .show()
                 }
 
                 if (connectButtonText != choice) {
@@ -341,7 +376,8 @@ object SonarLintIntelliJClient : SonarLintClient {
             SonarLintProjectNotifications.projectLessNotification(
                 "",
                 "You have successfully established a connection to the SonarQube server",
-                NotificationType.INFORMATION)
+                NotificationType.INFORMATION
+            )
 
             response
         }
@@ -362,7 +398,7 @@ object SonarLintIntelliJClient : SonarLintClient {
                 AssistBindingResponse(null)
             } else {
                 val connection = getGlobalSettings().getServerConnectionByName(connectionId)
-                        .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
+                    .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
 
                 getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
                 SonarLintProjectNotifications.projectLessNotification(
@@ -370,7 +406,8 @@ object SonarLintIntelliJClient : SonarLintClient {
                     "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
                         "You can now enjoy all capabilities of SonarLint Connected Mode. You can update the binding of this project in your SonarLint Settings.",
                     NotificationType.INFORMATION,
-                    OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK))
+                    OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
+                )
                 AssistBindingResponse(BackendService.projectId(project))
             }
         }
@@ -391,7 +428,7 @@ object SonarLintIntelliJClient : SonarLintClient {
     override fun didSynchronizeConfigurationScopes(params: DidSynchronizeConfigurationScopeParams) {
         if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
             params.configurationScopeIds.mapNotNull { scopeId ->
-                    BackendService.findModule(scopeId)?.project ?: BackendService.findProject(scopeId)
+                BackendService.findModule(scopeId)?.project ?: BackendService.findProject(scopeId)
             }
                 .toSet()
                 .forEach { project ->
@@ -405,9 +442,19 @@ object SonarLintIntelliJClient : SonarLintClient {
 
     override fun getCredentials(params: GetCredentialsParams): CompletableFuture<GetCredentialsResponse> {
         return getGlobalSettings().getServerConnectionByName(params.connectionId)
-            .map { connection -> connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
-                ?: connection.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.password))) }
-                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))
+            .map { connection ->
+                connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
+                    ?: connection.login?.let {
+                        CompletableFuture.completedFuture(
+                            GetCredentialsResponse(
+                                UsernamePasswordDto(
+                                    it,
+                                    connection.password
+                                )
+                            )
+                        )
+                    }
+                    ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))
             }.orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.connectionId)))
     }
 
@@ -493,7 +540,8 @@ object SonarLintIntelliJClient : SonarLintClient {
             "No matching open project found",
             "IntelliJ can't match SonarQube project '${params.projectKey}' to any of the currently open projects. Please open your project in IntelliJ and try again.",
             NotificationType.WARNING,
-            OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK))
+            OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK)
+        )
     }
 
     private fun identifyProjectsImpactedByTaintEvent(event: ServerEvent): Set<Project> {

@@ -76,7 +76,8 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val securityHotspot = e.getData(SECURITY_HOTSPOT_KEY)
-            ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(errorTitle, "The Security Hotspot could not be found", HOTSPOT_REVIEW_GROUP)
+            ?: return SonarLintProjectNotifications.get(project)
+                .displayErrorNotification(errorTitle, "The Security Hotspot could not be found", HOTSPOT_REVIEW_GROUP)
         serverFindingKey = securityHotspot.serverFindingKey
         status = securityHotspot.status
 
@@ -90,14 +91,14 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     }
 
     private fun openReviewingDialog(project: Project, file: VirtualFile) {
-        val connection = serverConnection(project)
-            ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(errorTitle, "No connection could be found", HOTSPOT_REVIEW_GROUP)
-        val hotspotKey = serverFindingKey
-            ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(errorTitle, "Could not find the Security Hotspot on ${connection.productName}", HOTSPOT_REVIEW_GROUP)
-        val currentStatus = status
-            ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(errorTitle, "Could not find the current Security Hotspot status", HOTSPOT_REVIEW_GROUP)
-        val module = ModuleUtil.findModuleForFile(file, project)
-            ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(errorTitle, "No module could be found for this file", HOTSPOT_REVIEW_GROUP)
+        val connection = serverConnection(project) ?: return displayNotificationError(project, "No connection could be found")
+        val hotspotKey =
+            serverFindingKey ?: return displayNotificationError(project, "Could not find the Security Hotspot on ${connection.productName}")
+        val currentStatus = status ?: return displayNotificationError(project, "Could not find the current Security Hotspot status")
+        val module = ModuleUtil.findModuleForFile(file, project) ?: return displayNotificationError(
+            project,
+            "No module could be found for this file"
+        )
 
         val response = checkPermission(project, connection, hotspotKey) ?: return
         val newStatus = HotspotStatus.valueOf(currentStatus.name)
@@ -108,13 +109,18 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
         }
     }
 
+    private fun displayNotificationError(project: Project, content: String) {
+        return SonarLintProjectNotifications.get(project).displayErrorNotification(errorTitle, content, HOTSPOT_REVIEW_GROUP)
+    }
+
     private fun checkPermission(project: Project, connection: ServerConnection, hotspotKey: String): CheckStatusChangePermittedResponse? {
         val checkTask = CheckHotspotStatusChangePermission(project, connection, hotspotKey)
         return try {
             ProgressManager.getInstance().run(checkTask)
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Error while retrieving the list of allowed statuses for Security Hotspots", e)
-            SonarLintProjectNotifications.get(project).displayErrorNotification(errorTitle, "Could not check status change permission", HOTSPOT_REVIEW_GROUP)
+            SonarLintProjectNotifications.get(project)
+                .displayErrorNotification(errorTitle, "Could not check status change permission", HOTSPOT_REVIEW_GROUP)
             null
         }
     }
@@ -138,12 +144,14 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     override fun getIcon(flags: Int) = null
 
     private class CheckHotspotStatusChangePermission(
-            project: Project,
-            connection: ServerConnection,
-            hotspotKey: String,
+        project: Project,
+        connection: ServerConnection,
+        hotspotKey: String,
     ) :
-            FutureAwaitingTask<CheckStatusChangePermittedResponse>(project,
-                    "Checking Status Change Permission",
-                    SonarLintUtils.getService(BackendService::class.java).checkStatusChangePermitted(connection.name, hotspotKey))
+        FutureAwaitingTask<CheckStatusChangePermittedResponse>(
+            project,
+            "Checking Status Change Permission",
+            SonarLintUtils.getService(BackendService::class.java).checkStatusChangePermitted(connection.name, hotspotKey)
+        )
 
 }

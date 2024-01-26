@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.its.tests
 
-import com.google.protobuf.InvalidProtocolBufferException
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.http.HttpMethod
 import com.sonar.orchestrator.junit5.OrchestratorExtension
@@ -41,6 +40,7 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileShowsCard
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.acceptNewAutomatedConnection
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenIssueRequest
@@ -63,7 +63,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateTokenNameAndValue
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectAndModuleInFileSettings
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
@@ -100,9 +100,9 @@ class IdeaTests : BaseUiTest() {
 
         private var firstHotspotKey: String? = null
         private var firstIssueKey: String? = null
-        lateinit var token: String
+        lateinit var tokenName: String
+        lateinit var tokenValue: String
 
-        @Throws(InvalidProtocolBufferException::class)
         private fun getFirstHotspotKey(client: WsClient): String? {
             val searchRequest = org.sonarqube.ws.client.hotspots.SearchRequest()
             searchRequest.projectKey = SECURITY_HOTSPOT_PROJECT_KEY
@@ -111,7 +111,6 @@ class IdeaTests : BaseUiTest() {
             return hotspot.key
         }
 
-        @Throws(InvalidProtocolBufferException::class)
         private fun getFirstIssueKey(client: WsClient): String? {
             val searchRequest = SearchRequest()
             searchRequest.projects = listOf(ISSUE_PROJECT_KEY)
@@ -124,9 +123,11 @@ class IdeaTests : BaseUiTest() {
         @BeforeAll
         fun createSonarLintUser() {
             adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
-            token = generateToken(adminWsClient, "sonarlintUser")
+            val token = generateTokenNameAndValue(adminWsClient, "sonarlintUser")
+            tokenName = token.first
+            tokenValue = token.second
 
-            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, token)
+            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, tokenValue)
         }
     }
 
@@ -154,7 +155,7 @@ class IdeaTests : BaseUiTest() {
 
             // Open In Ide Security Hotspot Test
             triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
-            createConnection(token)
+            createConnection(tokenValue)
             verifyHotspotOpened()
 
             // Should Propose To Bind
@@ -294,12 +295,22 @@ class IdeaTests : BaseUiTest() {
         }
 
         @Test
-        fun should_open_in_ide_issue_then_should_propose_to_bind() = uiTest {
+        fun click_open_in_ide_issue_then_should_manually_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
             openExistingProject("sample-java-issues")
 
             triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main")
-            createConnection(token)
+            createConnection(tokenValue)
+            verifyIssueOpened()
+        }
+
+        @Test
+        fun click_open_in_ide_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
+            clearConnections()
+            openExistingProject("sample-java-issues")
+
+            triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main", tokenName, tokenValue)
+            acceptNewAutomatedConnection()
             verifyIssueOpened()
         }
     }
@@ -357,8 +368,7 @@ class IdeaTests : BaseUiTest() {
             verifyCurrentFileTabContainsMessages(
                 "No new issues from last 1 days",
                 "Found 2 older issues in 1 file",
-
-                )
+            )
             resetFocusOnNewCode()
 
             // Taint Vulnerability Test

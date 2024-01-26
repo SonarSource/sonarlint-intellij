@@ -58,6 +58,16 @@ class OpenInIdeTests {
             }
         }
 
+        fun acceptNewAutomatedConnection() {
+            with(remoteRobot) {
+                idea {
+                    dialog("Do You Trust This SonarQube Server?") {
+                        button("Connect To This SonarQube Server").click()
+                    }
+                }
+            }
+        }
+
         fun verifyHotspotOpened() {
             verifyEditorOpened("Foo.java")
             verifySecurityHotspotTabContainsMessages("Make sure using this hardcoded IP address is safe here.")
@@ -83,9 +93,28 @@ class OpenInIdeTests {
                 .readText()
         }
 
-        fun triggerOpenIssueRequest(projectKey: String, issueKey: String?, serverUrl: String, branch: String) {
+        fun triggerOpenIssueRequest(
+            projectKey: String,
+            issueKey: String?,
+            serverUrl: String,
+            branch: String,
+        ) {
             URL("http://localhost:64120/sonarlint/api/issues/show?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch")
                 .readText()
+        }
+
+        fun triggerOpenIssueRequest(
+            projectKey: String,
+            issueKey: String?,
+            serverUrl: String,
+            branch: String,
+            tokenName: String,
+            tokenValue: String,
+        ) {
+            URL(
+                "http://localhost:64120/sonarlint/api/issues/show" +
+                    "?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch&tokenName=$tokenName&tokenValue=$tokenValue"
+            ).readText()
         }
     }
 
