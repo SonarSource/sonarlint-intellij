@@ -41,7 +41,6 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileShowsCard
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.bindRecentProject
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenIssueRequest
@@ -156,7 +155,6 @@ class IdeaTests : BaseUiTest() {
             // Open In Ide Security Hotspot Test
             triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)
             createConnection(token)
-            bindRecentProject("sample-java-hotspot")
             verifyHotspotOpened()
 
             // Should Propose To Bind
@@ -302,7 +300,6 @@ class IdeaTests : BaseUiTest() {
 
             triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main")
             createConnection(token)
-            bindRecentProject("sample-java-issues")
             verifyIssueOpened()
         }
     }
@@ -361,7 +358,7 @@ class IdeaTests : BaseUiTest() {
                 "No new issues from last 1 days",
                 "Found 2 older issues in 1 file",
 
-            )
+                )
             resetFocusOnNewCode()
 
             // Taint Vulnerability Test

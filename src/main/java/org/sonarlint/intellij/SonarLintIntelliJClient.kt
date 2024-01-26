@@ -34,11 +34,9 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.MessageDialogBuilder
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
@@ -75,6 +73,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSu
 import org.sonarsource.sonarlint.core.clientapi.client.OpenUrlInBrowserParams
 import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingResponse
+import org.sonarsource.sonarlint.core.clientapi.client.binding.NoBindingSuggestionFoundParams
 import org.sonarsource.sonarlint.core.clientapi.client.binding.SuggestBindingParams
 import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionParams
 import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionResponse
@@ -302,6 +301,7 @@ object SonarLintIntelliJClient : SonarLintClient {
             val serverUrl = params.serverUrl
             val tokenName = params.tokenName
             val tokenValue = params.tokenValue
+            val currentConfigScopeIds = ProjectManager.getInstance().openProjects.map { project -> BackendService.projectId(project) }.toSet()
 
             val response = if (tokenName != null && tokenValue != null) {
                 val newConnection = ApplicationManager.getApplication().computeInEDT {
@@ -309,7 +309,6 @@ object SonarLintIntelliJClient : SonarLintClient {
                 } ?: run {
                     throw CancellationException("Connection creation cancelled by the user")
                 }
-                val currentConfigScopeIds = ProjectManager.getInstance().openProjects.map { project -> BackendService.projectId(project) }.toSet()
                 AssistCreatingConnectionResponse(newConnection.name, currentConfigScopeIds)
             } else {
                 val warningTitle = "Do you trust this SonarQube server?"
@@ -336,12 +335,12 @@ object SonarLintIntelliJClient : SonarLintClient {
                 val newConnection = ApplicationManager.getApplication().computeInEDT {
                     ManualServerConnectionCreator().createThroughWizard(serverUrl)
                 } ?: throw CancellationException("Connection creation cancelled by the user")
-                AssistCreatingConnectionResponse(newConnection.name, setOf())
+                AssistCreatingConnectionResponse(newConnection.name, currentConfigScopeIds)
             }
 
             SonarLintProjectNotifications.projectLessNotification(
-                "Connection is established",
-                "You have established a connection to the SonarQube server but must complete the binding process to use the features available with Connected Mode",
+                "",
+                "You have successfully established a connection to the SonarQube server",
                 NotificationType.INFORMATION)
 
             response
@@ -360,11 +359,6 @@ object SonarLintIntelliJClient : SonarLintClient {
             }
 
             if (project == null) {
-                SonarLintProjectNotifications.projectLessNotification(
-                    "No matching open project found",
-                    "IntelliJ can't match SonarQube project '$projectKey' to any of the currently open projects. Please open your project in IntelliJ and try again.",
-                    NotificationType.WARNING,
-                    OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK))
                 AssistBindingResponse(null)
             } else {
                 val connection = getGlobalSettings().getServerConnectionByName(connectionId)
@@ -374,7 +368,7 @@ object SonarLintIntelliJClient : SonarLintClient {
                 SonarLintProjectNotifications.projectLessNotification(
                     "Project successfully bound",
                     "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
-                        "You can now enjoy all capabilities of SonarLint Connected Mode. You can change the binding of this project in your SonarLint Settings.",
+                        "You can now enjoy all capabilities of SonarLint Connected Mode. You can update the binding of this project in your SonarLint Settings.",
                     NotificationType.INFORMATION,
                     OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK))
                 AssistBindingResponse(BackendService.projectId(project))
@@ -465,12 +459,6 @@ object SonarLintIntelliJClient : SonarLintClient {
         return CompletableFuture.completedFuture(proxiesResponse)
     }
 
-    private fun showConfirmModal(title: String, message: String, confirmText: String, project: Project?): Boolean {
-        return Messages.OK == ApplicationManager.getApplication().computeInEDT {
-            Messages.showYesNoDialog(project, StringEscapeUtils.escapeHtml(message), title, confirmText, "Cancel", Messages.getWarningIcon())
-        }
-    }
-
     override fun didReceiveServerEvent(params: DidReceiveServerEventParams) {
         val event = params.serverEvent
         identifyProjectsImpactedByTaintEvent(event).forEach { project ->
@@ -498,6 +486,14 @@ object SonarLintIntelliJClient : SonarLintClient {
             }
             getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(impactedFiles, TriggerType.SERVER_SENT_EVENT)
         }
+    }
+
+    override fun noBindingSuggestionFound(params: NoBindingSuggestionFoundParams) {
+        SonarLintProjectNotifications.projectLessNotification(
+            "No matching open project found",
+            "IntelliJ can't match SonarQube project '${params.projectKey}' to any of the currently open projects. Please open your project in IntelliJ and try again.",
+            NotificationType.WARNING,
+            OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK))
     }
 
     private fun identifyProjectsImpactedByTaintEvent(event: ServerEvent): Set<Project> {

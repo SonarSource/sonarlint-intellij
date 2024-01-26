@@ -46,7 +46,7 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
     private val createConnectionAction: DialogWrapperAction
     private val cancelConnectionAction: DialogWrapperAction
     private val warningIcon = JBLabel()
-    private val connectionNameField = JBTextField(serverUrl)
+    private val connectionNameField = JBTextField()
     private val connectedModeDescriptionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val serverUrlLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val serverUrlField = JBTextField(serverUrl).apply {
@@ -61,6 +61,8 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
 
     init {
         title = "Do You Trust This SonarQube Server?"
+        val connectionNames = Settings.getGlobalSettings().serverNames
+        connectionNameField.text = findFirstUniqueConnectionName(connectionNames, serverUrl)
 
         createConnectionAction = object : DialogWrapperAction("Connect To This SonarQube Server") {
             init {
@@ -149,5 +151,15 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
     override fun createActions() = arrayOf(cancelConnectionAction, createConnectionAction)
 
     override fun getPreferredFocusedComponent() = getButton(createConnectionAction)
+
+    private fun findFirstUniqueConnectionName(connectionNames: Set<String>, newConnectionName: String): String {
+        var suffix = 1
+        var uniqueName = newConnectionName
+        while (connectionNames.contains(uniqueName)) {
+            uniqueName = "$newConnectionName-$suffix"
+            suffix++
+        }
+        return uniqueName
+    }
 
 }

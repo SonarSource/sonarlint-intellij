@@ -21,12 +21,14 @@ package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.keyboard
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
-import org.sonarlint.intellij.its.fixtures.*
+import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.editor
+import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
-import org.sonarlint.intellij.its.utils.optionalStep
 import java.net.URL
 
 class OpenInIdeTests {
@@ -51,24 +53,6 @@ class OpenInIdeTests {
                     }
                     dialog("New Connection: Configuration completed") {
                         pressCreate()
-                    }
-                }
-            }
-        }
-
-        fun bindRecentProject(projectName: String) {
-            with(remoteRobot) {
-                idea {
-                    dialog("Select a Project to Bind") {
-                        button("Open or import").click()
-                    }
-                    fileBrowserDialog(arrayOf("Select Path")) {
-                        selectProjectFile(projectName, true)
-                    }
-                    optionalStep {
-                        dialog("Open Project") {
-                            button("This Window").click()
-                        }
                     }
                 }
             }
@@ -101,7 +85,7 @@ class OpenInIdeTests {
 
         fun triggerOpenIssueRequest(projectKey: String, issueKey: String?, serverUrl: String, branch: String) {
             URL("http://localhost:64120/sonarlint/api/issues/show?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch")
-                    .readText()
+                .readText()
         }
     }
 
