@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class ConfirmStep extends AbstractWizardStepEx {
   private static final String TEXT1 = "Connection successfully created.";
-  private static final String TEXT2 = "Click finish to save your changes.";
+  private static final String TEXT2 = "Click create to save your changes.";
   private final WizardModel model;
   private final boolean editing;
   private JPanel panel;
