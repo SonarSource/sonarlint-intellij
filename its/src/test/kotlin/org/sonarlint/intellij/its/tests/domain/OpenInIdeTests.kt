@@ -62,7 +62,7 @@ class OpenInIdeTests {
             with(remoteRobot) {
                 idea {
                     dialog("Do You Trust This SonarQube Server?") {
-                        button("Connect To This SonarQube Server").click()
+                        buttonContainsText("Connect To This SonarQube").click()
                     }
                     waitBackgroundTasksFinished()
                 }
