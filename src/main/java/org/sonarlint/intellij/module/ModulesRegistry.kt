@@ -21,22 +21,24 @@ package org.sonarlint.intellij.module
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
+import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
-import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.APP)
 class ModulesRegistry {
     private val modules: MutableMap<Module, ClientModuleInfo> = ConcurrentHashMap()
 
+    private fun validModules() = modules.filterKeys { !it.isDisposed && !it.project.isDisposed }
+
     fun getStandaloneModules(): List<ClientModuleInfo> {
-        return modules.filterKeys { connectionIdFor(it) == null }
+        return validModules().filterKeys { connectionIdFor(it) == null }
             .values.toList()
     }
 
     fun getModulesForEngine(connectionId: String): List<ClientModuleInfo> {
-        return modules.filterKeys { connectionIdFor(it) == connectionId }
+        return validModules().filterKeys { connectionIdFor(it) == connectionId }
             .values.toList()
     }
 
