@@ -25,6 +25,7 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
+import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotRuleDescriptionTabContains
@@ -62,6 +63,7 @@ class OpenInIdeTests {
             with(remoteRobot) {
                 idea {
                     dialog("Do You Trust This SonarQube Server?") {
+                        jbTextFields()[1].text = "Orchestrator"
                         buttonContainsText("Connect To This SonarQube").click()
                     }
                     waitBackgroundTasksFinished()
