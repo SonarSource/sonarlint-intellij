@@ -64,6 +64,7 @@ class OpenInIdeTests {
                     dialog("Do You Trust This SonarQube Server?") {
                         button("Connect To This SonarQube Server").click()
                     }
+                    waitBackgroundTasksFinished()
                 }
             }
         }
