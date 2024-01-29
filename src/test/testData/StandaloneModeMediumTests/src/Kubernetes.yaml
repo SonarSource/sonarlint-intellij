@@ -8,3 +8,8 @@ spec:
       # NonCompliant@+1
       #     TODO fix me
       image: nginx
+      resources:
+        limits:
+          memory: 100Mi
+          cpu: 0.5
+  automountServiceAccountToken: false
