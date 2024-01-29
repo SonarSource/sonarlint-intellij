@@ -179,7 +179,7 @@ public final class ProjectBindingManager {
       .filter(m -> !moduleBindingsOverrides.containsKey(m));
     unbind(modulesToClearOverride.toList());
 
-    SonarLintProjectNotifications.get(myProject).reset();
+    SonarLintProjectNotifications.Companion.get(myProject).reset();
     var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
@@ -196,7 +196,7 @@ public final class ProjectBindingManager {
     projectSettings.unbind();
     unbind(allModules());
 
-    SonarLintProjectNotifications.get(myProject).reset();
+    SonarLintProjectNotifications.Companion.get(myProject).reset();
     if (previousBinding != null) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, null);
       getService(BackendService.class).projectUnbound(myProject);
@@ -244,7 +244,8 @@ public final class ProjectBindingManager {
     return Set.of();
   }
 
-  public record ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {}
+  public record ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {
+  }
 
   private static Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
     return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())

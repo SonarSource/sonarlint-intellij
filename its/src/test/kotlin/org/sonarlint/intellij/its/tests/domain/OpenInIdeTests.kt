@@ -20,16 +20,16 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.keyboard
-import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
-import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.fixtures.jbTextFields
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileRuleDescriptionTabContains
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotRuleDescriptionTabContains
-import org.sonarlint.intellij.its.utils.optionalStep
+import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import java.net.URL
 
 class OpenInIdeTests {
@@ -59,54 +59,34 @@ class OpenInIdeTests {
             }
         }
 
-        fun bindRecentProject() {
+        fun acceptNewAutomatedConnection() {
             with(remoteRobot) {
                 idea {
-                    dialog("Opening finding...") {
-                        button("Select project").click()
+                    dialog("Do You Trust This SonarQube Server?") {
+                        jbTextFields()[1].text = "Orchestrator"
+                        buttonContainsText("Connect To This SonarQube").click()
                     }
-                    dialog("Select a project") {
-                        button("Open or import").click()
-                    }
-                    fileBrowserDialog(arrayOf("Select Path")) {
-                        selectProjectFile("sample-java-hotspot", true)
-                    }
-                    optionalStep {
-                        dialog("Open Project") {
-                            button("This Window").click()
-                        }
-                    }
-                    dialog("Opening finding...") {
-                        button("Yes").click()
-                    }
+                    waitBackgroundTasksFinished()
                 }
             }
         }
 
         fun verifyHotspotOpened() {
-            verifyEditorOpened()
-            verifyToolWindowFilled()
+            verifyEditorOpened("Foo.java")
+            verifySecurityHotspotTabContainsMessages("Make sure using this hardcoded IP address is safe here.")
             verifySecurityHotspotRuleDescriptionTabContains("What's the risk?")
         }
 
-        private fun verifyEditorOpened() {
-            with(remoteRobot) {
-                idea {
-                    editor("Foo.java")
-                }
-            }
+        fun verifyIssueOpened() {
+            verifyEditorOpened("Bar.java")
+            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+            verifyCurrentFileRuleDescriptionTabContains("Comments should not be located at the end of lines of code")
         }
 
-        private fun verifyToolWindowFilled() {
+        private fun verifyEditorOpened(fileName: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
-                        tabTitleContains("Security Hotspots") {
-                            content("SecurityHotspotsPanel") {
-                                assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
-                            }
-                        }
-                    }
+                    editor(fileName)
                 }
             }
         }
@@ -114,6 +94,30 @@ class OpenInIdeTests {
         fun triggerOpenHotspotRequest(projectKey: String, firstHotspotKey: String?, serverUrl: String) {
             URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$projectKey&hotspot=$firstHotspotKey&server=$serverUrl")
                 .readText()
+        }
+
+        fun triggerOpenIssueRequest(
+            projectKey: String,
+            issueKey: String?,
+            serverUrl: String,
+            branch: String,
+        ) {
+            URL("http://localhost:64120/sonarlint/api/issues/show?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch")
+                .readText()
+        }
+
+        fun triggerOpenIssueRequest(
+            projectKey: String,
+            issueKey: String?,
+            serverUrl: String,
+            branch: String,
+            tokenName: String,
+            tokenValue: String,
+        ) {
+            URL(
+                "http://localhost:64120/sonarlint/api/issues/show" +
+                    "?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch&tokenName=$tokenName&tokenValue=$tokenValue"
+            ).readText()
         }
     }
 

@@ -24,7 +24,7 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 
-open class ServerConnectionCreator {
+open class ManualServerConnectionCreator {
 
     open fun createThroughWizard(serverUrl: String): ServerConnection? {
         val globalSettings = Settings.getGlobalSettings()
@@ -40,4 +40,5 @@ open class ServerConnectionCreator {
         }
         return null
     }
+
 }

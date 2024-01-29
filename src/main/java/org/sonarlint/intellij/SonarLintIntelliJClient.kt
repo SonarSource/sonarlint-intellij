@@ -20,11 +20,7 @@
 package org.sonarlint.intellij
 
 import com.intellij.ide.BrowserUtil
-import com.intellij.ide.impl.ProjectUtil
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationGroup
-import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationInfo
@@ -38,36 +34,36 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.MessageDialogBuilder
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringEscapeUtils.escapeHtml
+import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
-import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
+import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
+import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_SETUP_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SUPPORT_POLICY_LINK
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
-import org.sonarlint.intellij.notifications.DontShowAgainAction
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.ui.ProjectSelectionDialog
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -77,6 +73,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSu
 import org.sonarsource.sonarlint.core.clientapi.client.OpenUrlInBrowserParams
 import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingResponse
+import org.sonarsource.sonarlint.core.clientapi.client.binding.NoBindingSuggestionFoundParams
 import org.sonarsource.sonarlint.core.clientapi.client.binding.SuggestBindingParams
 import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionParams
 import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionResponse
@@ -132,8 +129,6 @@ import java.util.concurrent.CompletableFuture
 
 object SonarLintIntelliJClient : SonarLintClient {
 
-    private const val OPENING_FINDING_TITLE = "Opening finding..."
-    private val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint")
     private val backendTaskProgressReporter = BackendTaskProgressReporter()
 
     override fun suggestBinding(params: SuggestBindingParams) {
@@ -146,7 +141,7 @@ object SonarLintIntelliJClient : SonarLintClient {
             return
         }
         if (getSettingsFor(project).isBindingSuggestionsEnabled) {
-            val notifications = getService(project, SonarLintProjectNotifications::class.java)
+            val notifications = SonarLintProjectNotifications.get(project)
             notifications.suggestBindingOptions(suggestions.map {
                 BindingSuggestion(
                     it.connectionId, it.sonarProjectKey, it.sonarProjectName
@@ -224,11 +219,13 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun showMessage(params: ShowMessageParams) {
-        showBalloon(null, params.text, convert(params.type))
+        SonarLintProjectNotifications.projectLessNotification(null, params.text, convert(params.type))
     }
 
     override fun showSoonUnsupportedMessage(params: ShowSoonUnsupportedMessageParams) {
-        val project = BackendService.findModule(params.configurationScopeId)?.project ?: BackendService.findProject(params.configurationScopeId) ?: return
+        val project =
+            BackendService.findModule(params.configurationScopeId)?.project ?: BackendService.findProject(params.configurationScopeId)
+            ?: return
         showOneTimeBalloon(project, params.text, params.doNotShowAgainId, OpenLinkAction(SUPPORT_POLICY_LINK, "Learn more"))
     }
 
@@ -243,29 +240,9 @@ object SonarLintIntelliJClient : SonarLintClient {
         return NotificationType.INFORMATION
     }
 
-    private fun getBalloon(message: String, type: NotificationType): Notification {
-        return GROUP.createNotification(
-            "SonarLint message",
-            message,
-            type
-        ).apply {
-            isImportant = type != NotificationType.INFORMATION
-        }
-    }
-
-    private fun showBalloon(project: Project?, message: String, type: NotificationType) {
-        getBalloon(message, type).apply {
-            notify(project)
-        }
-    }
-
-    private fun showOneTimeBalloon(project: Project?, message: String, doNotShowAgainId: String, action: AnAction?) {
+    private fun showOneTimeBalloon(project: Project, message: String, doNotShowAgainId: String, action: AnAction?) {
         if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
-            getBalloon(message, NotificationType.WARNING).apply {
-                action?.let { addAction(it) }
-                addAction(DontShowAgainAction(doNotShowAgainId))
-                notify(project)
-            }
+            SonarLintProjectNotifications.get(project).showOneTimeBalloon(message, doNotShowAgainId, action)
         }
     }
 
@@ -284,36 +261,68 @@ object SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun showHotspot(params: ShowHotspotParams) {
-        showFinding(params.configurationScopeId, params.hotspotDetails.filePath, params.hotspotDetails.key,
-            params.hotspotDetails.rule.key, params.hotspotDetails.textRange, params.hotspotDetails.codeSnippet, LiveSecurityHotspot::class.java, emptyList(), params.hotspotDetails.message
+        showFinding(
+            params.configurationScopeId,
+            params.hotspotDetails.filePath,
+            params.hotspotDetails.key,
+            params.hotspotDetails.rule.key,
+            params.hotspotDetails.textRange,
+            params.hotspotDetails.codeSnippet,
+            LiveSecurityHotspot::class.java,
+            emptyList(),
+            params.hotspotDetails.message
         )
     }
 
     override fun showIssue(params: ShowIssueParams) {
         val findingType = if (params.isTaint) LocalTaintVulnerability::class.java else LiveIssue::class.java
-        showFinding(params.configScopeId, params.serverRelativeFilePath,
-                params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, findingType, params.flows, params.message)
+        showFinding(
+            params.configScopeId, params.serverRelativeFilePath,
+            params.issueKey, params.ruleKey, params.textRange, params.codeSnippet, findingType, params.flows, params.message
+        )
     }
 
-    private fun <T: Finding> showFinding(configScopeId: String, filePath: String, findingKey: String, ruleKey: String,
-        textRange: TextRangeDto, codeSnippet: String?, type: Class<T>, flows: List<FlowDto>, flowMessage: String) {
+    private fun <T : Finding> showFinding(
+        configScopeId: String, filePath: String, findingKey: String, ruleKey: String,
+        textRange: TextRangeDto, codeSnippet: String?, type: Class<T>, flows: List<FlowDto>, flowMessage: String,
+    ) {
         val project = findProject(configScopeId) ?: throw IllegalStateException("Unable to find project with id '$configScopeId'")
-        SonarLintProjectNotifications.get(project).expireCurrentFindingNotificationIfNeeded()
+        if (!project.isDisposed) {
+            SonarLintProjectNotifications.get(project).expireCurrentFindingNotificationIfNeeded()
+        }
         val file = tryFindFile(project, filePath)
         if (file == null) {
-            showBalloon(project, "Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
+            if (!project.isDisposed) {
+                SonarLintProjectNotifications.get(project)
+                    .simpleNotification("Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
+            }
             return
         }
 
         val module = findModuleForFile(file, project)
         if (module == null) {
-            showBalloon(project, "Unable to open finding. Can't find the module corresponding to file: $filePath", NotificationType.WARNING)
+            if (!project.isDisposed) {
+                SonarLintProjectNotifications.get(project).simpleNotification(
+                    "Unable to open finding. Can't find the module corresponding to file: $filePath",
+                    NotificationType.WARNING
+                )
+            }
             return
         }
         ApplicationManager.getApplication().invokeAndWait {
             openFile(project, file, textRange.startLine)
         }
-        val showFinding = ShowFinding(module, ruleKey, findingKey, file, textRange, codeSnippet, ShowFinding.handleFlows(module.project, flows), flowMessage, type)
+        val showFinding = ShowFinding(
+            module,
+            ruleKey,
+            findingKey,
+            file,
+            textRange,
+            codeSnippet,
+            ShowFinding.handleFlows(module.project, flows),
+            flowMessage,
+            type
+        )
         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(showFinding)
     }
 
@@ -324,31 +333,53 @@ object SonarLintIntelliJClient : SonarLintClient {
     override fun assistCreatingConnection(params: AssistCreatingConnectionParams): CompletableFuture<AssistCreatingConnectionResponse> {
         return CompletableFuture.supplyAsync {
             val serverUrl = params.serverUrl
-            val warningTitle = "Do you trust this SonarQube server?"
-            val message = """
+            val tokenName = params.tokenName
+            val tokenValue = params.tokenValue
+            val currentConfigScopeIds =
+                ProjectManager.getInstance().openProjects.map { project -> BackendService.projectId(project) }.toSet()
+
+            val response = if (tokenName != null && tokenValue != null) {
+                val newConnection = ApplicationManager.getApplication().computeInEDT {
+                    AutomaticServerConnectionCreator(serverUrl, tokenValue).chooseResolution()
+                } ?: run {
+                    throw CancellationException("Connection creation cancelled by the user")
+                }
+                AssistCreatingConnectionResponse(newConnection.name, currentConfigScopeIds)
+            } else {
+                val warningTitle = "Do you trust this SonarQube server?"
+                val message = """
                         The server <b>${escapeHtml(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
                         
                         If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
                     """.trimIndent()
-            val connectButtonText = "Connect to this SonarQube server"
-            val dontTrustButtonText = "I don't trust this server"
+                val connectButtonText = "Connect to this SonarQube server"
+                val dontTrustButtonText = "I don't trust this server"
 
-            val choice = ApplicationManager.getApplication().computeInEDT {
-                MessageDialogBuilder.Message(warningTitle, message)
-                    .buttons(connectButtonText, dontTrustButtonText)
-                    .defaultButton(connectButtonText)
-                    .focusedButton(dontTrustButtonText)
-                    .asWarning()
-                    .show()
+                val choice = ApplicationManager.getApplication().computeInEDT {
+                    MessageDialogBuilder.Message(warningTitle, message)
+                        .buttons(connectButtonText, dontTrustButtonText)
+                        .defaultButton(connectButtonText)
+                        .focusedButton(dontTrustButtonText)
+                        .asWarning()
+                        .show()
+                }
+
+                if (connectButtonText != choice) {
+                    throw CancellationException("Connection creation rejected by the user")
+                }
+                val newConnection = ApplicationManager.getApplication().computeInEDT {
+                    ManualServerConnectionCreator().createThroughWizard(serverUrl)
+                } ?: throw CancellationException("Connection creation cancelled by the user")
+                AssistCreatingConnectionResponse(newConnection.name, currentConfigScopeIds)
             }
 
-            if (connectButtonText != choice) {
-                throw CancellationException("Connection creation rejected by the user")
-            }
-            val newConnection = ApplicationManager.getApplication().computeInEDT {
-                ServerConnectionCreator().createThroughWizard(serverUrl)
-            } ?: throw CancellationException("Connection creation cancelled by the user")
-            AssistCreatingConnectionResponse(newConnection.name)
+            SonarLintProjectNotifications.projectLessNotification(
+                "",
+                "You have successfully established a connection to the SonarQube server",
+                NotificationType.INFORMATION
+            )
+
+            response
         }
     }
 
@@ -356,31 +387,29 @@ object SonarLintIntelliJClient : SonarLintClient {
         return CompletableFuture.supplyAsync {
             val connectionId = params.connectionId
             val projectKey = params.projectKey
-            val connection = getGlobalSettings().getServerConnectionByName(connectionId)
-                .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
-            val message = "Cannot automatically find a project bound to:\n" +
-                "  • Project: $projectKey\n" +
-                "  • Connection: $connectionId\n" +
-                "Please manually select a project."
-            if (!showConfirmModal(OPENING_FINDING_TITLE, message, "Select project", null)) {
-                throw CancellationException("Project selection rejected by the user")
+            val configScopeId = params.configScopeId
+            val project: Project? = if (configScopeId != null) {
+                ProjectManager.getInstance().openProjects.find { BackendService.projectId(it) == configScopeId }
+            } else {
+                null
             }
-            val selectedProject = ApplicationManager.getApplication().computeInEDT {
-                ProjectSelectionDialog().selectProject()?.let {
-                    ProjectUtil.openOrImport(it, null, false)
-                }
-            } ?: throw CancellationException("Project selection cancelled by the user")
-            val confirmed = showConfirmModal(
-                OPENING_FINDING_TITLE,
-                "You are going to bind current project to '${connection.hostUrl}'. Do you agree?",
-                "Yes",
-                selectedProject
-            )
-            if (!confirmed) {
-                throw CancellationException("Project binding rejected by the user")
+
+            if (project == null) {
+                AssistBindingResponse(null)
+            } else {
+                val connection = getGlobalSettings().getServerConnectionByName(connectionId)
+                    .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
+
+                getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
+                SonarLintProjectNotifications.projectLessNotification(
+                    "Project successfully bound",
+                    "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
+                        "You can now enjoy all capabilities of SonarLint Connected Mode. You can update the binding of this project in your SonarLint Settings.",
+                    NotificationType.INFORMATION,
+                    OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
+                )
+                AssistBindingResponse(BackendService.projectId(project))
             }
-            getService(selectedProject, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
-            AssistBindingResponse(BackendService.projectId(selectedProject))
         }
     }
 
@@ -399,7 +428,7 @@ object SonarLintIntelliJClient : SonarLintClient {
     override fun didSynchronizeConfigurationScopes(params: DidSynchronizeConfigurationScopeParams) {
         if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
             params.configurationScopeIds.mapNotNull { scopeId ->
-                    BackendService.findModule(scopeId)?.project ?: BackendService.findProject(scopeId)
+                BackendService.findModule(scopeId)?.project ?: BackendService.findProject(scopeId)
             }
                 .toSet()
                 .forEach { project ->
@@ -413,9 +442,19 @@ object SonarLintIntelliJClient : SonarLintClient {
 
     override fun getCredentials(params: GetCredentialsParams): CompletableFuture<GetCredentialsResponse> {
         return getGlobalSettings().getServerConnectionByName(params.connectionId)
-            .map { connection -> connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
-                ?: connection.login?.let { CompletableFuture.completedFuture(GetCredentialsResponse(UsernamePasswordDto(it, connection.password))) }
-                ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))
+            .map { connection ->
+                connection.token?.let { CompletableFuture.completedFuture(GetCredentialsResponse(TokenDto(it))) }
+                    ?: connection.login?.let {
+                        CompletableFuture.completedFuture(
+                            GetCredentialsResponse(
+                                UsernamePasswordDto(
+                                    it,
+                                    connection.password
+                                )
+                            )
+                        )
+                    }
+                    ?: CompletableFuture.failedFuture(IllegalArgumentException("Invalid credentials for connection: " + params.connectionId))
             }.orElse(CompletableFuture.failedFuture(IllegalArgumentException("Unknown connection: " + params.connectionId)))
     }
 
@@ -467,12 +506,6 @@ object SonarLintIntelliJClient : SonarLintClient {
         return CompletableFuture.completedFuture(proxiesResponse)
     }
 
-    private fun showConfirmModal(title: String, message: String, confirmText: String, project: Project?): Boolean {
-        return Messages.OK == ApplicationManager.getApplication().computeInEDT {
-            Messages.showYesNoDialog(project, StringEscapeUtils.escapeHtml(message), title, confirmText, "Cancel", Messages.getWarningIcon())
-        }
-    }
-
     override fun didReceiveServerEvent(params: DidReceiveServerEventParams) {
         val event = params.serverEvent
         identifyProjectsImpactedByTaintEvent(event).forEach { project ->
@@ -500,6 +533,15 @@ object SonarLintIntelliJClient : SonarLintClient {
             }
             getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(impactedFiles, TriggerType.SERVER_SENT_EVENT)
         }
+    }
+
+    override fun noBindingSuggestionFound(params: NoBindingSuggestionFoundParams) {
+        SonarLintProjectNotifications.projectLessNotification(
+            "No matching open project found",
+            "IntelliJ can't match SonarQube project '${params.projectKey}' to any of the currently open projects. Please open your project in IntelliJ and try again.",
+            NotificationType.WARNING,
+            OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK)
+        )
     }
 
     private fun identifyProjectsImpactedByTaintEvent(event: ServerEvent): Set<Project> {

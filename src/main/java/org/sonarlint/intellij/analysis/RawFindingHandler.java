@@ -35,7 +35,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.tracking.LocalHistoryFindingTracker;
-import org.sonarlint.intellij.notifications.SecretsNotifications;
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -130,7 +130,7 @@ class RawFindingHandler implements IssueListener {
 
     var sonarLintGlobalSettings = Settings.getGlobalSettings();
     if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains(Language.SECRETS.getPluginKey())) {
-      SecretsNotifications.sendNotification(module.getProject());
+      SonarLintProjectNotifications.Companion.get(module.getProject()).sendNotification();
       sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
     }
   }

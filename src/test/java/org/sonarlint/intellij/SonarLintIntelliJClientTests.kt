@@ -205,7 +205,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         assertThat(projectNotifications).extracting("title", "content").containsExactly(
             tuple(
-                "SonarLint message",
+                "",
                 "Some message"
             )
         )

@@ -133,7 +133,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   @Override
   public void disposeUIResources() {
-    SonarLintProjectNotifications.get(project).reset();
+    SonarLintProjectNotifications.Companion.get(project).reset();
     busConnection.disconnect();
     if (panel != null) {
       panel.dispose();

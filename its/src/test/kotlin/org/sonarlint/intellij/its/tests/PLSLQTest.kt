@@ -36,7 +36,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProje
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateToken
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateTokenNameAndValue
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
 
@@ -56,7 +56,7 @@ class PLSQLTest : BaseUiTest() {
         idea {
             waitBackgroundTasksFinished()
         }
-        
+
         verifyIssueTreeContainsMessages()
     }
 
@@ -86,7 +86,8 @@ class PLSQLTest : BaseUiTest() {
             ORCHESTRATOR.start()
 
             val adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
-            val token = generateToken(adminWsClient, "sonarlintUser")
+            val response = generateTokenNameAndValue(adminWsClient, "sonarlintUser")
+            val token = response.second
 
             ORCHESTRATOR.server.provisionProject(PLSQL_PROJECT_KEY, "Sample PLSQL Issues")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
