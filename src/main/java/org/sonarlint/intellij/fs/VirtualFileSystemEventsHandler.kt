@@ -19,21 +19,9 @@
  */
 package org.sonarlint.intellij.fs
 
-import com.intellij.openapi.module.Module
-import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-class ModuleFileEventsNotifier {
-    fun notifyAsync(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
-        if (events.isEmpty() || module.isDisposed || module.project.isDisposed) return
-        SonarLintConsole.get(module.project).info("Processing ${events.size} file system events")
-        events.forEach {
-            try {
-                engine.fireModuleFileEvent(module, it)
-            } catch (e: Exception) {
-                SonarLintConsole.get(module.project).error("Error notifying analyzer of a file event", e)
-            }
-        }
-    }
+fun interface VirtualFileSystemEventsHandler {
+    fun forwardEventsAsync(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?, fileEventsNotifier: ModuleFileEventsNotifier)
 }
