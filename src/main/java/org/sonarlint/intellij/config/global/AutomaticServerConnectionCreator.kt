@@ -20,8 +20,10 @@
 package org.sonarlint.intellij.config.global
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
@@ -29,6 +31,7 @@ import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -38,6 +41,7 @@ import java.awt.event.ActionEvent
 import java.util.concurrent.CancellationException
 import javax.swing.JButton
 import javax.swing.SwingConstants
+import javax.swing.event.HyperlinkEvent
 
 class AutomaticServerConnectionCreator(private val serverUrl: String, private val tokenValue: String) :
     DialogWrapper(false) {
@@ -99,7 +103,12 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
             0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, JBUI.insets(0, 10), 0, 18))
 
         connectedModeDescriptionLabel.text = "Connecting SonarLint to SonarQube will enable issues " +
-            "to be opened directly in your IDE and enable other <u>features and benefits</u>."
+            "to be opened directly in your IDE and enable other <a href=\"$CONNECTED_MODE_BENEFITS_LINK\">features and benefits</a>."
+        connectedModeDescriptionLabel.addHyperlinkListener(object : HyperlinkAdapter() {
+            override fun hyperlinkActivated(e: HyperlinkEvent) {
+                BrowserUtil.browse(e.url)
+            }
+        })
         centerPanel.add(connectedModeDescriptionLabel, GridBagConstraints(1, 0, 1, 1, 1.0,
             0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0))
 
