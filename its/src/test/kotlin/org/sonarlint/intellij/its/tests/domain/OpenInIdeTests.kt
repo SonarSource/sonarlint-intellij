@@ -55,6 +55,7 @@ class OpenInIdeTests {
                     dialog("New Connection: Configuration completed") {
                         pressCreate()
                     }
+                    waitBackgroundTasksFinished()
                 }
             }
         }
