@@ -106,13 +106,12 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
       consoleView.print(log.text, log.outputType);
     }
     this.consoleView = consoleView;
+    Disposer.register(this, consoleView);
   }
 
   @Override
   public void dispose() {
-    if (consoleView != null) {
-      Disposer.dispose(consoleView);
-    }
+    // nothing to do, the console view is already registered for dispose
   }
 
   private static class Log {
