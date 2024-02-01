@@ -27,7 +27,7 @@ object SonarLintDocumentation {
         const val CONNECTED_MODE_SETUP_LINK = "${CONNECTED_MODE_LINK}/#connection-setup"
         const val SECURITY_HOTSPOTS_LINK = "${BASE_DOCS_URL}/using-sonarlint/security-hotspots"
         const val TAINT_VULNERABILITIES_LINK = "${BASE_DOCS_URL}/using-sonarlint/taint-vulnerabilities"
-        const val CLEAN_CODE_LINK = "${BASE_DOCS_URL}/concepts/clean-code/"
+        const val CLEAN_CODE_LINK = "${BASE_DOCS_URL}/concepts/clean-code/introduction/"
         const val SUPPORT_POLICY_LINK = "${BASE_DOCS_URL}/team-features/connected-mode/#sonarlint-sonarqube-version-support-policy"
         const val FOCUS_ON_NEW_CODE_LINK = "${BASE_DOCS_URL}/using-sonarlint/investigating-issues/#focusing-on-new-code"
         const val CONNECTED_MODE_BENEFITS_LINK = "${BASE_DOCS_URL}/team-features/connected-mode/#benefits"
