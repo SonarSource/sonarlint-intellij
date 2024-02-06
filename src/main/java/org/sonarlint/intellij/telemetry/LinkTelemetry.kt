@@ -22,6 +22,7 @@ package org.sonarlint.intellij.telemetry
 import com.intellij.ide.BrowserUtil
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK
 
 enum class LinkTelemetry(
     val linkId: String,
@@ -32,7 +33,8 @@ enum class LinkTelemetry(
     CONNECTED_MODE_DOCS("connectedModeDocs", SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK),
     COMPARE_SERVER_PRODUCTS("compareServerProducts", SonarLintDocumentation.Marketing.COMPARE_SERVER_PRODUCTS_LINK),
     SONARQUBE_EDITIONS_DOWNLOADS("sonarQubeEditionsDownloads", SonarLintDocumentation.Marketing.SONARQUBE_EDITIONS_DOWNLOADS_LINK),
-    SONARCLOUD_PRODUCT_PAGE("sonarCloudProductPage", SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_LINK);
+    SONARCLOUD_PRODUCT_PAGE("sonarCloudProductPage", SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_LINK),
+    RULE_SELECTION_PAGE("rulesSelectionDocs", RULE_SECTION_LINK);
 
     fun browseWithTelemetry() {
         SonarLintUtils.getService(SonarLintTelemetry::class.java).helpAndFeedbackLinkClicked(linkId)

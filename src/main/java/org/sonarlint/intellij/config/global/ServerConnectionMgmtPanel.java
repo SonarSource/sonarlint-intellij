@@ -36,10 +36,8 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.panels.HorizontalLayout;
-import com.intellij.util.ui.HTMLEditorKitBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
-import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -59,7 +57,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
-import javax.swing.text.DefaultCaret;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.ConfigurationPanel;
@@ -171,7 +168,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     return titlePanel;
   }
 
-  private static JEditorPane initConnectedModeDescription() {
+  private JEditorPane initConnectedModeDescription() {
     var connectedModeLabel = new JEditorPane();
     connectedModeLabel.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
@@ -180,15 +177,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       }
     });
     connectedModeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
-    connectedModeLabel.setContentType(UIUtil.HTML_MIME);
-    if (connectedModeLabel.getCaret() == null) {
-      connectedModeLabel.setCaret(new DefaultCaret());
-    }
-    ((DefaultCaret) connectedModeLabel.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
-    connectedModeLabel.setEditorKit(HTMLEditorKitBuilder.simple());
-    connectedModeLabel.setFocusable(false);
-    connectedModeLabel.setEditable(false);
-    connectedModeLabel.setOpaque(false);
+    initHtmlPane(connectedModeLabel);
     SwingHelper.setHtml(connectedModeLabel, "<a href=\"" + CONNECTED_MODE_DOCS.getUrl() + "\">Connected Mode</a> " +
         "links SonarLint to SonarCloud or SonarQube to apply the same Clean Code standards as your team. " +
         "Analyze more languages, detect more issues, receive notifications about the quality gate status, and more. " +
