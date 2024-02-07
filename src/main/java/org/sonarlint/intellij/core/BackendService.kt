@@ -595,6 +595,10 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         }
     }
 
+    fun triggerTelemetryForFocusOnNewCode() {
+        initializedBackend.newCodeService.didToggleFocus()
+    }
+
     companion object {
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
 
