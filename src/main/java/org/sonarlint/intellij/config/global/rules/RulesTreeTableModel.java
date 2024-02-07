@@ -25,7 +25,6 @@ import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import javax.swing.Icon;
 import javax.swing.JTree;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import org.jetbrains.annotations.Nullable;
@@ -102,8 +101,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
       } else if (node instanceof RulesTreeNode.Language lang) {
         activateLanguage(lang, value);
       }
-
-      ((AbstractTableModel) treeTable.getModel()).fireTableDataChanged();
+      nodeChanged((RulesTreeNode) node);
     }
   }
 
@@ -155,7 +153,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     } else if (node instanceof RulesTreeNode.Language lang) {
       activateLanguage(lang, lang.isActivated() == null || !lang.isActivated());
     }
-    ((AbstractTableModel) treeTable.getModel()).fireTableDataChanged();
+    nodeChanged((RulesTreeNode) node);
   }
 
   @Override

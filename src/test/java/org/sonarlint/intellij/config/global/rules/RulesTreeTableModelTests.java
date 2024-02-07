@@ -38,7 +38,10 @@ import org.sonarsource.sonarlint.core.commons.SoftwareQuality;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +50,7 @@ class RulesTreeTableModelTests {
   private final RulesTreeNode.Language lang = new RulesTreeNode.Language("lang");
   private final RuleDefinitionDto ruleDetails = mock(RuleDefinitionDto.class);
   private final AbstractTableModel tableModel = mock(AbstractTableModel.class);
-  private final RulesTreeTableModel model = new RulesTreeTableModel(root);
+  private final RulesTreeTableModel model = spy(new RulesTreeTableModel(root));
   private RulesTreeNode.Rule rule;
 
   @BeforeEach
@@ -67,6 +70,7 @@ class RulesTreeTableModelTests {
     var treeTable = mock(TreeTable.class);
     when(treeTableTree.getTreeTable()).thenReturn(treeTable);
     when(treeTable.getModel()).thenReturn(tableModel);
+    doNothing().when(model).nodeChanged(any());
     model.setTree(treeTableTree);
   }
 
@@ -161,6 +165,6 @@ class RulesTreeTableModelTests {
     assertThat(lang.isActivated()).isFalse();
     assertThat(lang.isNonDefault()).isFalse();
 
-    verify(tableModel).fireTableDataChanged();
+    verify(model).nodeChanged(any(RulesTreeNode.class));
   }
 }
