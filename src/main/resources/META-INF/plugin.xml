@@ -175,8 +175,8 @@
          on how to target different products -->
     <depends>com.intellij.modules.lang</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
-    <depends optional="true">org.jetbrains.plugins.go</depends>
-    <depends optional="true">com.intellij.database</depends>
+    <depends optional="true" config-file="plugin-go.xml">org.jetbrains.plugins.go</depends>
+    <depends optional="true" config-file="plugin-plsql.xml">com.intellij.database</depends>
     <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.modules.clion</depends>
     <depends optional="true" config-file="plugin-rider.xml">com.intellij.modules.rider</depends>
