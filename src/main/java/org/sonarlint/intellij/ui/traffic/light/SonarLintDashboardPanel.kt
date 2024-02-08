@@ -37,13 +37,15 @@ import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
-import org.sonarlint.intellij.util.HelpLabelUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.exception.InvalidBindingException
 import org.sonarlint.intellij.finding.FindingType.ISSUE
 import org.sonarlint.intellij.finding.FindingType.SECURITY_HOTSPOT
 import org.sonarlint.intellij.finding.FindingType.TAINT_VULNERABILITY
+import org.sonarlint.intellij.util.HelpLabelUtils
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.JPanel
@@ -54,6 +56,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
     companion object {
         private const val NO_FINDINGS_TEXT = "No problems found, keep up the good work!"
         private const val NO_CONNECTED_MODE_TITLE = "Connected mode is not active"
+        private const val CONNECTED_MODE_ISSUE_TITLE = "There is an issue with your binding configuration"
         private const val NO_BINDING_TITLE = "No binding found"
         private const val CHECKBOX_TITLE = "Focus on New Code"
     }
@@ -135,24 +138,36 @@ class SonarLintDashboardPanel(private val editor: Editor) {
 
         val settings = Settings.getSettingsFor(project)
         settings.connectionName?.let { connectionName ->
-            val serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
-
-            connectionLabel.text = "Connected to:"
-            connectionNameLabel.text = connectionName
-            connectionNameLabel.isVisible = true
-            connectionHelp.isVisible = false
-            connectionIcon.isVisible = true
-            if (serverConnection.isSonarCloud) {
-                connectionIcon.icon = SonarLintIcons.ICON_SONARCLOUD_16
-            } else {
-                connectionIcon.icon = SonarLintIcons.ICON_SONARQUBE_16
-            }
-            settings.projectKey?.let { projectKey ->
-                bindingLabel.isVisible = true
-                bindingLabel.text = "Bound to project: ${StringUtils.abbreviate(projectKey, 100)}"
-            } ?: run {
+            var serverConnection: ServerConnection? = null
+            try {
+                serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
+            } catch (e: InvalidBindingException) {
+                connectionLabel.text = CONNECTED_MODE_ISSUE_TITLE
+                connectionHelp.isVisible = true
+                connectionIcon.isVisible = false
+                connectionNameLabel.isVisible = false
                 bindingLabel.isVisible = false
-                bindingLabel.text = NO_BINDING_TITLE
+            }
+
+            if (serverConnection != null) {
+                if (serverConnection.isSonarCloud) {
+                    connectionIcon.icon = SonarLintIcons.ICON_SONARCLOUD_16
+                } else {
+                    connectionIcon.icon = SonarLintIcons.ICON_SONARQUBE_16
+                }
+                connectionLabel.text = "Connected to:"
+                connectionNameLabel.text = connectionName
+                connectionNameLabel.isVisible = true
+                connectionHelp.isVisible = false
+                connectionIcon.isVisible = true
+
+                settings.projectKey?.let { projectKey ->
+                    bindingLabel.isVisible = true
+                    bindingLabel.text = "Bound to project: ${StringUtils.abbreviate(projectKey, 100)}"
+                } ?: run {
+                    bindingLabel.isVisible = false
+                    bindingLabel.text = NO_BINDING_TITLE
+                }
             }
         } ?: run {
             connectionLabel.text = NO_CONNECTED_MODE_TITLE
