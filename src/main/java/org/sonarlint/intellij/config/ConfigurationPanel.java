@@ -19,7 +19,11 @@
  */
 package org.sonarlint.intellij.config;
 
+import com.intellij.util.ui.HTMLEditorKitBuilder;
+import com.intellij.util.ui.UIUtil;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.text.DefaultCaret;
 
 public interface ConfigurationPanel<T> {
   JComponent getComponent();
@@ -29,4 +33,16 @@ public interface ConfigurationPanel<T> {
   void save(T settings);
 
   void load(T settings);
+
+  default void initHtmlPane(JEditorPane editorPane) {
+    editorPane.setContentType(UIUtil.HTML_MIME);
+    if (editorPane.getCaret() == null) {
+      editorPane.setCaret(new DefaultCaret());
+    }
+    ((DefaultCaret) editorPane.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+    editorPane.setEditorKit(HTMLEditorKitBuilder.simple());
+    editorPane.setFocusable(false);
+    editorPane.setEditable(false);
+    editorPane.setOpaque(false);
+  }
 }

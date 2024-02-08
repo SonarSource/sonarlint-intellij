@@ -29,9 +29,11 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.FilterComponent;
+import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.OnePixelSplitter;
@@ -48,6 +50,7 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.fields.ExpandableTextField;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
@@ -77,6 +80,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -84,6 +88,7 @@ import javax.swing.JSeparator;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
@@ -93,6 +98,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel;
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel;
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages;
@@ -104,6 +110,7 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.telemetry.LinkTelemetry.RULE_SELECTION_PAGE;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
@@ -394,9 +401,30 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     panel = new JBLoadingPanel(new BorderLayout(), this);
     panel.add(inspectionTreePanel, BorderLayout.CENTER);
 
-    var label = new JBLabel("<html><b>Note: </b>When a project is bound to a SonarQube server or SonarCloud, the configuration in this tab is ignored. " +
-      "In this case, rules configuration from the server applies.</html>");
-    panel.add(label, BorderLayout.NORTH);
+    var introLabel = new JEditorPane();
+    initHtmlPane(introLabel);
+    SwingHelper.setHtml(introLabel, "Configure rules used for Sonarlint analysis for projects not in Connected Mode.",
+      UIUtil.getLabelForeground());
+    var configureRuleLabel = new JEditorPane();
+    initHtmlPane(configureRuleLabel);
+    SwingHelper.setHtml(configureRuleLabel, "Connecting your project to SonarQube or SonarCloud syncs SonarLint with the " +
+      "Quality Profile standards defined on the server, allowing you to share the same rules configuration with your team.",
+      JBUI.CurrentTheme.ContextHelp.FOREGROUND);
+    var ruleServerLabel = new JEditorPane();
+    initHtmlPane(ruleServerLabel);
+    ruleServerLabel.addHyperlinkListener(new HyperlinkAdapter() {
+      @Override
+      protected void hyperlinkActivated(HyperlinkEvent e) {
+        RULE_SELECTION_PAGE.browseWithTelemetry();
+      }
+    });
+    SwingHelper.setHtml(ruleServerLabel, "<icon src=\"AllIcons.General.BalloonWarning\"> &nbsp;When a project is connected to SonarQube or " +
+      "SonarCloud, <a href=\"" + SonarLintDocumentation.Intellij.RULE_SECTION_LINK + "\">configuration from the server applies</a>.", JBUI.CurrentTheme.ContextHelp.FOREGROUND);
+    var labelPanel = new JBPanel<>(new VerticalFlowLayout(0, 0));
+    labelPanel.add(introLabel);
+    labelPanel.add(configureRuleLabel);
+    labelPanel.add(ruleServerLabel);
+    panel.add(labelPanel, BorderLayout.NORTH);
     return panel;
   }
 
