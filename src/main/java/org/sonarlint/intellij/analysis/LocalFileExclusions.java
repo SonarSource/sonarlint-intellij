@@ -196,14 +196,14 @@ public final class LocalFileExclusions {
     return Stream.of(
       () -> checkVcsIgnored(file),
       () -> checkFileInSourceFolders(file, module),
-      () -> checkExclusionsFromSonarLintSettings(file, module));
+      () -> checkExclusionsFromSonarLintSettings(file, module),
+      LocalFileExclusions::excludeIfPowerSaveModeOn);
   }
 
   @NotNull
   private Stream<Supplier<ExcludeResult>> defaultExclusionCheckers(VirtualFile file, Module module) {
     return Stream.of(
       () -> excludeIfDisposed(module),
-      LocalFileExclusions::excludeIfPowerSaveModeOn,
       () -> checkProjectStructureExclusion(file),
       () -> excludeUnsupportedFileOrFileType(file),
       () -> checkExclusionFromEP(file, module));

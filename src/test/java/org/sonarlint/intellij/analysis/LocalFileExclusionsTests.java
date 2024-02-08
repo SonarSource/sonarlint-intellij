@@ -140,8 +140,22 @@ class LocalFileExclusionsTests extends AbstractSonarLintLightTests {
     try {
       PowerSaveMode.setEnabled(true);
 
-      var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), true, excludeReasons::put);
+      var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), false, excludeReasons::put);
       assertIsExcluded(file, nonExcludedFilesByModule, "power save mode is enabled");
+    } finally {
+      PowerSaveMode.setEnabled(false);
+    }
+  }
+
+  @Test
+  void should_not_exclude_if_power_save_mode_and_forced_analysis() throws Exception {
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
+
+    try {
+      PowerSaveMode.setEnabled(true);
+
+      var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), true, excludeReasons::put);
+      assertIsNotExcluded(file, nonExcludedFilesByModule);
     } finally {
       PowerSaveMode.setEnabled(false);
     }
