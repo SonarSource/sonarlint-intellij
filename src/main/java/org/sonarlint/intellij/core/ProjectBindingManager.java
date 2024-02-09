@@ -147,7 +147,15 @@ public final class ProjectBindingManager {
     var connectionName = getSettingsFor(myProject).getConnectionName();
     var connections = getGlobalSettings().getServerConnections();
 
-    return connections.stream().filter(s -> s.getName().equals(connectionName)).findAny();
+    var connectionFound = connections.stream().filter(s -> s.getName().equals(connectionName)).findAny();
+    if (connectionFound.isEmpty()) {
+      var notifications = getService(myProject, SonarLintProjectNotifications.class);
+      notifications.notifyProjectBindingInvalidAndUnbound();
+      getSettingsFor(myProject).unbind();
+      return Optional.empty();
+    } else {
+      return connectionFound;
+    }
   }
 
   private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String connectionName, @Nullable String projectKey) throws InvalidBindingException {
