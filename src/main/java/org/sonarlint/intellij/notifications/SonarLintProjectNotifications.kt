@@ -139,6 +139,23 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         storageErrorNotificationShown = true
     }
 
+    fun notifyProjectBindingInvalidAndUnbound() {
+        if (storageErrorNotificationShown) {
+            return
+        }
+        BINDING_PROBLEM_GROUP.createNotification(
+            TITLE_SONARLINT_INVALID_BINDING,
+            "Project binding is invalid and has been removed, the connection has probably been deleted previously.",
+            NotificationType.WARNING
+        ).apply {
+            icon = SonarLintIcons.SONARLINT
+            addAction(OpenProjectSettingsAction(myProject))
+            isImportant = true
+            notify(myProject)
+        }
+        storageErrorNotificationShown = true
+    }
+
     fun notifyLanguagePromotion(content: String) {
         IN_CONTEXT_PROMOTION_GROUP.createNotification(
             TITLE_SONARLINT_SUGGESTIONS,
