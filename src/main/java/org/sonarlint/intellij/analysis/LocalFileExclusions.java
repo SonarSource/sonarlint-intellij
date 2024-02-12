@@ -221,12 +221,17 @@ public final class LocalFileExclusions {
   @NotNull
   private static ExcludeResult excludeUnsupportedFileOrFileType(VirtualFile file) {
     var fileType = file.getFileType();
-    if (!file.isInLocalFileSystem() || fileType.isBinary() || !file.isValid() || ".idea".equals(file.getParent().getName())) {
+    if (!file.isInLocalFileSystem() || fileType.isBinary() || !file.isValid() ||
+      ".idea".equals(file.getParent().getName()) || isRazorFile(file)) {
       return ExcludeResult.excluded("file's type or location are not supported");
     }
     return ExcludeResult.notExcluded();
   }
 
+  public static boolean isRazorFile(VirtualFile file) {
+    return (file.getExtension() != null) && (file.getExtension().equals("razor"));
+  }
+  
   @NotNull
   private static ExcludeResult excludeIfPowerSaveModeOn() {
     if (PowerSaveMode.isEnabled()) {
