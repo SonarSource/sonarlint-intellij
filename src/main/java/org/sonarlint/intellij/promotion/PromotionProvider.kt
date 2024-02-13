@@ -26,7 +26,8 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.config.Settings.getGlobalSettings
+import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.EnabledLanguages.extraEnabledLanguagesInConnectedMode
 import org.sonarlint.intellij.messages.AnalysisListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
@@ -125,7 +126,7 @@ class PromotionProvider(private val project: Project) {
         }
     }
 
-    private fun isPromotionEnabled() = !Settings.getSettingsFor(project).isBound && !Settings.getGlobalSettings().isPromotionDisabled
+    private fun isPromotionEnabled() = getGlobalSettings().serverConnections.isEmpty() && !getSettingsFor(project).isBound && !getGlobalSettings().isPromotionDisabled
 
     private fun getSonarLintProjectNotifications(source: FileEditorManager): SonarLintProjectNotifications {
         return SonarLintUtils.getService(
@@ -207,7 +208,7 @@ class PromotionProvider(private val project: Project) {
     }
 
     private fun shouldNotify(lastPromotionDate: Instant?): Boolean {
-        val isDontAskAgain = Settings.getGlobalSettings().isPromotionDisabled
+        val isDontAskAgain = getGlobalSettings().isPromotionDisabled
 
         if (isDontAskAgain) {
             return false
