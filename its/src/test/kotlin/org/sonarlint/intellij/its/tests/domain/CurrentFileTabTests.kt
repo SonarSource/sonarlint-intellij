@@ -122,6 +122,22 @@ class CurrentFileTabTests {
             }
         }
 
+        fun verifyCurrentFileTabDoesNotContainMessages(vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarLint") {
+                        ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            expectedMessages.forEach {
+                                assertThat(hasText(it).not()).`as`("Failed to find current file text '$it'").isTrue()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         fun clickCurrentFileIssue(issueMessage: String) {
             with(remoteRobot) {
                 idea {

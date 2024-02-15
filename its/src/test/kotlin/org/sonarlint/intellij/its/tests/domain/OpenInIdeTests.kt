@@ -93,7 +93,7 @@ class OpenInIdeTests {
         }
 
         fun triggerOpenHotspotRequest(projectKey: String, firstHotspotKey: String?, serverUrl: String) {
-            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$projectKey&hotspot=$firstHotspotKey&server=$serverUrl")
+            URL("http://localhost:64121/sonarlint/api/hotspots/show?project=$projectKey&hotspot=$firstHotspotKey&server=$serverUrl")
                 .readText()
         }
 
@@ -103,7 +103,7 @@ class OpenInIdeTests {
             serverUrl: String,
             branch: String,
         ) {
-            URL("http://localhost:64120/sonarlint/api/issues/show?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch")
+            URL("http://localhost:64121/sonarlint/api/issues/show?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch")
                 .readText()
         }
 
@@ -116,7 +116,7 @@ class OpenInIdeTests {
             tokenValue: String,
         ) {
             URL(
-                "http://localhost:64120/sonarlint/api/issues/show" +
+                "http://localhost:64121/sonarlint/api/issues/show" +
                     "?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch&tokenName=$tokenName&tokenValue=$tokenValue"
             ).readText()
         }

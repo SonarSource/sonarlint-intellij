@@ -25,6 +25,7 @@ import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
+import org.sonarlint.intellij.its.utils.SettingsUtils
 
 
 /** Tests for Go language support (not limited to GoLand) */
@@ -37,6 +38,14 @@ class GoLanguageTests : BaseUiTest() {
 
         openFile("file.go")
 
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file.go",
+            "Remove or correct this useless self-assignment."
+        )
+        SettingsUtils.toggleRule()
+        verifyCurrentFileTabContainsMessages("No issues to display")
+        SettingsUtils.toggleRule()
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "file.go",

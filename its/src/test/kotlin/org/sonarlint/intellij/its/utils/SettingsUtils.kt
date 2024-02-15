@@ -81,6 +81,18 @@ class SettingsUtils {
             }
         }
 
+        fun toggleRule() {
+            sonarLintGlobalSettings {
+                findText("Rules").click()
+                searchRule("java:S139")
+                findText("Comments should not be located at the end of lines of code").doubleClick()
+                Pause.pause(10000)
+                button("Apply").click()
+                Pause.pause(2000)
+                button("OK").click()
+            }
+        }
+
         fun clearConnectionsAndAddSonarQubeConnection(serverUrl: String, token: String) {
             sonarLintGlobalSettings {
                 val removeButton = actionButton(ActionButtonFixture.byTooltipText("Remove"))
