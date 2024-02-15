@@ -70,6 +70,7 @@ val runIdeDirectory: String by project
 
 tasks.runIdeForUiTests {
     systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
+    systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.sc-staging.io/")
     systemProperty("robot-server.port", "8082")
     systemProperty("sonarlint.telemetry.disabled", "true")
     systemProperty("idea.trust.all.projects", "true")

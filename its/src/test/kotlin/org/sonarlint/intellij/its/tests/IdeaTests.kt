@@ -84,6 +84,7 @@ import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
+import kotlin.random.Random
 
 @DisabledIf("isCLionOrGoLand")
 class IdeaTests : BaseUiTest() {
@@ -110,16 +111,16 @@ class IdeaTests : BaseUiTest() {
         const val MODULE_PROJECT_KEY = "sample-scala-mod"
         const val ISSUE_PROJECT_KEY = "sample-java-issues"
         val SONARCLOUD_ISSUE_PROJECT_KEY = projectKey(ISSUE_PROJECT_KEY)
-        private val randomPositiveInt = (0..Int.MAX_VALUE).random()
 
         private var firstHotspotKey: String? = null
         private var firstIssueKey: String? = null
         lateinit var tokenName: String
         lateinit var tokenValue: String
         lateinit var sonarCloudToken: String
-        val sonarCloudTokenName = "SLCORE-IT-${System.currentTimeMillis()}"
+        private val sonarCloudTokenName = "SLCORE-IT-${System.currentTimeMillis()}"
 
         private fun projectKey(key: String): String {
+            val randomPositiveInt = Random.nextInt(Int.MAX_VALUE)
             return "sonarlint-its-$key-$randomPositiveInt"
         }
 
@@ -354,7 +355,6 @@ class IdeaTests : BaseUiTest() {
 
         @Test
         fun should_create_connection_with_sonarcloud_and_analyze_issue() = uiTest {
-            clearConnections()
             addSonarCloudConnection(sonarCloudToken, "SonarCloud-IT")
 
             openExistingProject("sample-java-issues")
@@ -368,7 +368,6 @@ class IdeaTests : BaseUiTest() {
             verifyIssueStatusWasSuccessfullyChanged()
 
             enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "SonarCloud-IT")
-            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, tokenValue)
         }
     }
 
