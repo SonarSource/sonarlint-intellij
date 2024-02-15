@@ -23,6 +23,7 @@ import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.http.HttpMethod
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -31,7 +32,8 @@ import org.junit.jupiter.api.condition.DisabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusAndPressChange
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusOnSonarCloudAndPressChange
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusOnSonarQubeAndPressChange
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.clickCurrentFileIssue
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
@@ -66,13 +68,23 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuild
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateTokenNameAndValue
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.bindProjectAndModuleInFileSettings
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.addSonarCloudConnection
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_STAGING_URL
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.analyzeSonarCloudWithMaven
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.associateSonarCloudProjectToQualityProfile
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.newAdminSonarCloudWsClientWithUser
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.provisionSonarCloudProfile
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.restoreSonarCloudProfile
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
+import org.sonarqube.ws.client.usertokens.GenerateRequest
+import org.sonarqube.ws.client.usertokens.RevokeRequest
+import kotlin.random.Random
 
 @DisabledIf("isCLionOrGoLand")
 class IdeaTests : BaseUiTest() {
@@ -91,17 +103,26 @@ class IdeaTests : BaseUiTest() {
             .build()
 
         private lateinit var adminWsClient: WsClient
+        private lateinit var adminSonarCloudWsClient: WsClient
 
         const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
         const val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
         const val PROJECT_KEY = "sample-scala"
         const val MODULE_PROJECT_KEY = "sample-scala-mod"
         const val ISSUE_PROJECT_KEY = "sample-java-issues"
+        val SONARCLOUD_ISSUE_PROJECT_KEY = projectKey(ISSUE_PROJECT_KEY)
 
         private var firstHotspotKey: String? = null
         private var firstIssueKey: String? = null
         lateinit var tokenName: String
         lateinit var tokenValue: String
+        lateinit var sonarCloudToken: String
+        private val sonarCloudTokenName = "SLCORE-IT-${System.currentTimeMillis()}"
+
+        private fun projectKey(key: String): String {
+            val randomPositiveInt = Random.nextInt(Int.MAX_VALUE)
+            return "sonarlint-its-$key-$randomPositiveInt"
+        }
 
         private fun getFirstHotspotKey(client: WsClient): String? {
             val searchRequest = org.sonarqube.ws.client.hotspots.SearchRequest()
@@ -127,7 +148,18 @@ class IdeaTests : BaseUiTest() {
             tokenName = token.first
             tokenValue = token.second
 
+            adminSonarCloudWsClient = newAdminSonarCloudWsClientWithUser(SONARCLOUD_STAGING_URL)
+            sonarCloudToken = adminSonarCloudWsClient.userTokens()
+                .generate(GenerateRequest().setName(sonarCloudTokenName))
+                .token
+
             clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, tokenValue)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun cleanup() {
+            adminSonarCloudWsClient.userTokens().revoke(RevokeRequest().setName(sonarCloudTokenName))
         }
     }
 
@@ -159,11 +191,11 @@ class IdeaTests : BaseUiTest() {
             verifyHotspotOpened()
 
             // Should Propose To Bind
-            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, false)
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, false, "Orchestrator")
             verifySecurityHotspotTabContainsMessages("The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
 
             // Review Security Hotspot Test
-            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, true)
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, true, "Orchestrator")
             verifySecurityHotspotTreeContainsMessages("Make sure using this hardcoded IP address is safe here.")
             openSecurityHotspotReviewDialogFromList("Make sure using this hardcoded IP address is safe here.")
             changeSecurityHotspotStatusAndPressChange("Fixed")
@@ -252,18 +284,25 @@ class IdeaTests : BaseUiTest() {
         @BeforeAll
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-issue.xml"))
-
             ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "Sample Java Issues")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
                 ISSUE_PROJECT_KEY,
                 "java",
                 "SonarLint IT Java Issue"
             )
-
             // Build and analyze project to raise issue
             executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR)
-
             firstIssueKey = getFirstIssueKey(adminWsClient)
+
+            restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
+            provisionSonarCloudProfile(adminSonarCloudWsClient, "Sample Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
+            associateSonarCloudProjectToQualityProfile(
+                adminSonarCloudWsClient,
+                "java",
+                SONARCLOUD_ISSUE_PROJECT_KEY,
+                "SonarLint IT Java Issue"
+            )
+            analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sample-java-issues", sonarCloudToken)
         }
 
         @Test
@@ -271,13 +310,13 @@ class IdeaTests : BaseUiTest() {
             openExistingProject("sample-java-issues")
 
             // Issue Analysis Test
-            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true)
+            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator")
             openFile("src/main/java/foo/Foo.java", "Foo.java")
             verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
 
             // Issue Reviewing Test
             openIssueReviewDialogFromList("Move this trailing comment on the previous empty line.")
-            changeStatusAndPressChange("False Positive")
+            changeStatusOnSonarQubeAndPressChange("False Positive")
             confirm()
             verifyIssueStatusWasSuccessfullyChanged()
             showResolvedIssues()
@@ -312,6 +351,23 @@ class IdeaTests : BaseUiTest() {
             triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main", tokenName, tokenValue)
             acceptNewAutomatedConnection()
             verifyIssueOpened()
+        }
+
+        @Test
+        fun should_create_connection_with_sonarcloud_and_analyze_issue() = uiTest {
+            addSonarCloudConnection(sonarCloudToken, "SonarCloud-IT")
+
+            openExistingProject("sample-java-issues")
+            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, true, "SonarCloud-IT")
+            openFile("src/main/java/foo/Foo.java", "Foo.java")
+            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+
+            openIssueReviewDialogFromList("Move this trailing comment on the previous empty line.")
+            changeStatusOnSonarCloudAndPressChange("Accept")
+            confirm()
+            verifyIssueStatusWasSuccessfullyChanged()
+
+            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "SonarCloud-IT")
         }
     }
 
@@ -348,7 +404,7 @@ class IdeaTests : BaseUiTest() {
             openExistingProject("sample-java-taint-vulnerability", true)
 
             // Focus On New Code Test
-            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, true)
+            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator")
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode()
             analyzeAndVerifyReportTabContainsMessages(
@@ -377,7 +433,7 @@ class IdeaTests : BaseUiTest() {
                 "FileWithSink.java",
                 "Change this code to not construct SQL queries directly from user-controlled data."
             )
-            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false)
+            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false, "Orchestrator")
             verifyTaintTabContainsMessages("The project is not bound to SonarCloud/SonarQube")
         }
 

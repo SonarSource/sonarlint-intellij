@@ -45,10 +45,18 @@ class CurrentFileTabTests {
             }
         }
 
-        fun changeStatusAndPressChange(status: String) {
+        fun changeStatusOnSonarQubeAndPressChange(status: String) {
+            changeStatusAndPressChange("Mark Issue as Resolved on SonarQube", status)
+        }
+
+        fun changeStatusOnSonarCloudAndPressChange(status: String) {
+            changeStatusAndPressChange("Mark Issue as Resolved on SonarCloud", status)
+        }
+
+        private fun changeStatusAndPressChange(windowTitle: String, status: String) {
             with(remoteRobot) {
                 idea {
-                    dialog("Mark Issue as Resolved on SonarQube") {
+                    dialog(windowTitle) {
                         content(status) {
                             click()
                         }
@@ -129,7 +137,7 @@ class CurrentFileTabTests {
             }
         }
 
-        fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean) {
+        fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -140,7 +148,7 @@ class CurrentFileTabTests {
                         }
                     }
                     if (enabled) {
-                        projectKey?.let { enableConnectedMode(it) }
+                        projectKey?.let { enableConnectedMode(it, connectionName) }
                     } else {
                         disableConnectedMode()
                     }

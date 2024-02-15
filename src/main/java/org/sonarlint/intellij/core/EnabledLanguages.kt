@@ -21,15 +21,15 @@ package org.sonarlint.intellij.core
 
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.EnumSet
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.Language
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.EnumSet
 
 private const val DATABASE_PLUGIN_ID = "com.intellij.database"
 private const val JAVA_MODULE_ID = "com.intellij.modules.java"
@@ -71,7 +71,7 @@ object EnabledLanguages {
     @JvmStatic
     fun getEmbeddedPluginsForConnectedMode(): Map<String, Path> {
         return EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.mapNotNull {
-            val path = findEmbeddedPlugin(getPluginsDir(), it);
+            val path = findEmbeddedPlugin(getPluginsDir(), it)
             if (path != null) {
                 it.pluginKey to path
             } else {

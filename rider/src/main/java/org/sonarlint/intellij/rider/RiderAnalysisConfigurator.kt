@@ -47,7 +47,7 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
         }
         val msBuildPathStr = module.project.solution.activeMsBuildPath.value
         if (msBuildPathStr != null) {
-            val msBuildPath = Paths.get(msBuildPathStr);
+            val msBuildPath = Paths.get(msBuildPathStr)
             result.extraProperties["sonar.cs.internal.msBuildPath"] = if (msBuildPath.isFile()) msBuildPath.parent.toString() else msBuildPath.toString()
         }
         return result

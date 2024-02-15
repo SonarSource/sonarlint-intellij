@@ -74,6 +74,9 @@ To test against a specific IDE, the `runIdeDirectory` property can be used as su
 
 Please note that the IDE must be in the foreground while tests are executed.
 
+Because some ITs are leveraging SonarCloud, make sure the `SONARCLOUD_IT_PASSWORD` env var is defined (you can find the value in our
+password management tool).
+
 How to develop in IntelliJ
 --------------------------
 

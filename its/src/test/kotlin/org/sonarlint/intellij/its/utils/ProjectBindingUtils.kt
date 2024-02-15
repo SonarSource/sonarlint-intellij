@@ -49,15 +49,15 @@ class ProjectBindingUtils {
             }
         }
 
-        fun enableConnectedMode(projectKey: String) {
+        fun enableConnectedMode(projectKey: String, connectionName: String) {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
                         checkBox("Bind project to SonarCloud / SonarQube").select()
                         comboBox("Connection:").click()
                         remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                            waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
-                            findText("Orchestrator").click()
+                            waitFor(Duration.ofSeconds(5)) { hasText(connectionName) }
+                            findText(connectionName).click()
                         }
                         jbTextField().text = projectKey
                         button("OK").click()

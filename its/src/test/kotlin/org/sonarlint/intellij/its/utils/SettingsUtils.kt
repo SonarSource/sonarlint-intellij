@@ -115,6 +115,30 @@ class SettingsUtils {
             }
         }
 
+        fun addSonarCloudConnection(token: String, connectionName: String) {
+            sonarLintGlobalSettings {
+                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
+                dialog("New Connection: Server Details") {
+                    keyboard { enterText(connectionName) }
+                    button("Next").click()
+                }
+                dialog("New Connection: Authentication") {
+                    jPasswordField().text = token
+                    button("Next").click()
+                }
+                dialog("New Connection: Organization") {
+                    button("Next").click()
+                }
+                dialog("New Connection: Configure Notifications") {
+                    button("Next").click()
+                }
+                dialog("New Connection: Configuration completed") {
+                    pressCreate()
+                }
+                pressOk()
+            }
+        }
+
         fun clickPowerSaveMode() {
             optionalIdeaFrame()?.apply {
                 actionMenu("File") {
