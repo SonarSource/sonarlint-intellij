@@ -55,7 +55,7 @@ class OrchestratorUtils {
             wsClient.users()
                 .create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
 
-            return wsClient;
+            return wsClient
         }
 
         fun executeBuildWithMaven(filePath: String, orchestrator: OrchestratorExtension) {

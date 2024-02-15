@@ -51,7 +51,7 @@ class PLSQLTest : BaseUiTest() {
         openFile("file.pkb")
         verifyCurrentFileTabContainsMessages("No issues to display")
 
-        enableConnectedModeFromCurrentFilePanel(PLSQL_PROJECT_KEY, true)
+        enableConnectedModeFromCurrentFilePanel(PLSQL_PROJECT_KEY, true, "Orchestrator")
 
         idea {
             waitBackgroundTasksFinished()

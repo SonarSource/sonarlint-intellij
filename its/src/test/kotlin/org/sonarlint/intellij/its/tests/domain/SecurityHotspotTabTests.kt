@@ -104,7 +104,7 @@ class SecurityHotspotTabTests {
             }
         }
 
-        fun enableConnectedModeFromSecurityHotspotPanel(projectKey: String, enabled: Boolean) {
+        fun enableConnectedModeFromSecurityHotspotPanel(projectKey: String, enabled: Boolean, connectionName: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow("SonarLint") {
@@ -115,7 +115,7 @@ class SecurityHotspotTabTests {
                         }
                     }
                     if (enabled) {
-                        enableConnectedMode(projectKey)
+                        enableConnectedMode(projectKey, connectionName)
                     } else {
                         disableConnectedMode()
                     }
