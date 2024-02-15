@@ -142,7 +142,6 @@ class IdeaTests : BaseUiTest() {
         @JvmStatic
         @BeforeAll
         fun createSonarLintUser() {
-            System.setProperty("sonarlint.internal.sonarcloud.url", SONARCLOUD_STAGING_URL)
             adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
             val token = generateTokenNameAndValue(adminWsClient, "sonarlintUser")
             tokenName = token.first

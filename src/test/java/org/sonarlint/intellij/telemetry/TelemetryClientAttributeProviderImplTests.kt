@@ -53,8 +53,8 @@ class TelemetryClientAttributeProviderImplTests : AbstractSonarLintLightTests() 
 
     @Test
     fun additionalAttribute() {
-        assertThat(underTest.additionalAttributes()).containsKey("intellij");
-        assertThat(underTest.additionalAttributes().get("intellij") as Map<String, String>).containsKey("jcefSupported");
+        assertThat(underTest.additionalAttributes()).containsKey("intellij")
+        assertThat(underTest.additionalAttributes().get("intellij") as Map<String, String>).containsKey("jcefSupported")
     }
 
 }

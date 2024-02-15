@@ -36,7 +36,7 @@ class FilterFindingActionTests : AbstractSonarLintLightTests() {
     fun shouldNotBeSelectedByDefault() {
         val includeResolvedFindingsAction =
             IncludeResolvedFindingsAction("", "", null, LiveSecurityHotspot::class.java)
-        assertThat(includeResolvedFindingsAction.isSelected(event)).isFalse();
+        assertThat(includeResolvedFindingsAction.isSelected(event)).isFalse()
     }
 
     @Test

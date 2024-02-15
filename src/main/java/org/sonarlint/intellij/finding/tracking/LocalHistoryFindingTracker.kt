@@ -64,7 +64,7 @@ class LocalHistoryFindingTracker(private val previousFindings: CachedFindings) {
             val tracking = Tracker<L, T>().track({ listOf(rawInput) }) { baseInput }
             tracking.matchedRaws[rawInput]?.let { return it }
         }
-        return null;
+        return null
     }
 
     private fun firstTimeAnalyzed(file: VirtualFile) = !previousFindings.alreadyAnalyzedFiles.contains(file)
