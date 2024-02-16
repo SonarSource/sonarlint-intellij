@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.utils
 import com.intellij.remoterobot.utils.waitFor
 import org.apache.commons.exec.CommandLine
 import org.apache.commons.exec.DefaultExecutor
+import org.apache.commons.lang3.SystemUtils
 import org.assertj.core.api.Assertions
 import org.sonarqube.ws.MediaTypes
 import org.sonarqube.ws.client.GetRequest
@@ -105,7 +106,15 @@ class SonarCloudUtils {
 
         @Throws(IOException::class)
         private fun runMaven(workDir: Path, vararg args: String) {
-            val cmdLine = CommandLine.parse("mvn")
+            val cmdLine: CommandLine
+            if (SystemUtils.IS_OS_WINDOWS) {
+                cmdLine = CommandLine.parse("cmd.exe")
+                cmdLine.addArguments("/c")
+                cmdLine.addArguments("mvn")
+            } else {
+                cmdLine = CommandLine.parse("mvn")
+            }
+
             cmdLine.addArguments(arrayOf("--batch-mode", "--show-version", "--errors"))
             cmdLine.addArguments(args)
             val executor = DefaultExecutor()
