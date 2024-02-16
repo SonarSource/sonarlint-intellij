@@ -72,6 +72,7 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.addSonarCloudCon
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_STAGING_URL
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.analyzeSonarCloudWithMaven
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.associateSonarCloudProjectToQualityProfile
@@ -86,6 +87,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 import kotlin.random.Random
 
+// In order to run these test change the url triggerOpenHotspotRequest to some other port than 64120 depending on number of intellij instances
 @DisabledIf("isCLionOrGoLand")
 class IdeaTests : BaseUiTest() {
 
@@ -331,6 +333,16 @@ class IdeaTests : BaseUiTest() {
                 "This file is not automatically analyzed because power save mode is enabled"
             )
             clickPowerSaveMode()
+        }
+
+        @Test
+        fun rule_exclusion() = uiTest {
+            openExistingProject("sample-java-issues")
+            openFile("src/main/java/foo/Foo.java", "Foo.java")
+            toggleRule("java:S139","Comments should not be located at the end of lines of code" )
+            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+            toggleRule("java:S139","Comments should not be located at the end of lines of code")
+            verifyCurrentFileTabContainsMessages("No issues to display")
         }
 
         @Test

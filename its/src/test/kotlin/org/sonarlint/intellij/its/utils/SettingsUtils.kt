@@ -64,6 +64,16 @@ class SettingsUtils {
             }
         }
 
+        fun toggleRule(ruleKey: String, ruleText: String) {
+            sonarLintGlobalSettings {
+                findText("Rules").click()
+                searchRule(ruleKey)
+                findText(ruleText).doubleClick()
+                button("Apply").clickWhenEnabled()
+                button("OK").clickWhenEnabled()
+            }
+        }
+
         fun clearConnections() {
             sonarLintGlobalSettings {
                 val removeButton = actionButton(ActionButtonFixture.byTooltipText("Remove"))

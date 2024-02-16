@@ -52,6 +52,10 @@ open class PreferencesDialog(
         textField(byXpath("//div[@class='SettingsSearch']//div[@class='TextFieldWithProcessing']")).text = query
     }
 
+    fun searchRule(query: String) = step("Search $query") {
+        textField(byXpath("//div[@class='SearchTextField']//div[@class='TextFieldWithProcessing']")).text = query
+    }
+
     fun tree(function: JTreeFixture.() -> Unit) {
         findElement<JTreeFixture>(byXpath("//div[@class='MyTree']")).apply(function)
     }
