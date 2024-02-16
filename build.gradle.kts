@@ -1,6 +1,8 @@
 
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import groovy.lang.GroovyObject
+import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
@@ -8,8 +10,6 @@ import java.io.FileOutputStream
 import java.util.EnumSet
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask
-import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 
 @Suppress("DSL_SCOPE_VIOLATION")
 plugins {
