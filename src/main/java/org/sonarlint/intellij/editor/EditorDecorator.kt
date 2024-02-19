@@ -33,6 +33,7 @@ import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
 import org.sonarlint.intellij.finding.LiveFinding
@@ -184,7 +185,7 @@ class EditorDecorator(private val project: Project) {
         if (!message.isNullOrEmpty() && "..." != message) {
             builder.descriptionAndTooltip("SonarLint: $message")
         }
-        return builder.create()?.let { Highlight(location.document, it) }
+        return builder.create()?.let { hl -> computeReadActionSafely { Highlight(location.document, hl) } }
     }
 
     class Highlight(val document: Document, val highlightInfo: HighlightInfo)
