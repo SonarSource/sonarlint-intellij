@@ -57,6 +57,8 @@ import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
+import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
+import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.showResolvedIssues
@@ -369,6 +371,15 @@ class ConnectedIdeaTests : BaseUiTest() {
             verifyIssueStatusWasSuccessfullyChanged()
 
             enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "SonarCloud-IT")
+        }
+
+        @Test
+        fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
+            openExistingProject("sample-java-issues")
+            excludeFile("Foo:java")
+            openFile("src/main/java/foo/Foo.java", "Foo.java")
+            verifyCurrentFileTabContainsMessages("No issues to display")
+            removeFileExclusion("Foo.java")
         }
     }
 

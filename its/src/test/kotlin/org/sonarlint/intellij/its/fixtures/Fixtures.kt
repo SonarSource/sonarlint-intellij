@@ -41,6 +41,9 @@ inline fun <reified T : Fixture> ContainerFixture.findElement(locator: Locator):
 
 fun ContainerFixture.jbTextFields() = findAll<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
 
+fun ContainerFixture.jbTextFieldsWithBrowseButton() =
+    findAll<JTextFieldFixture>(byXpath("//div[@class='TextFieldWithBrowseButton']"))
+
 fun ContainerFixture.jRadioButtons() = findAll<JRadioButtonFixture>(byXpath("//div[@class='JRadioButton']"))
 
 fun ContainerFixture.jbTextField() = findElement<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
