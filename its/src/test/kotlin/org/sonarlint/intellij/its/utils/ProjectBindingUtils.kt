@@ -30,8 +30,8 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
-import org.sonarlint.intellij.its.tests.IdeaTests.Companion.MODULE_PROJECT_KEY
-import org.sonarlint.intellij.its.tests.IdeaTests.Companion.PROJECT_KEY
+import org.sonarlint.intellij.its.tests.ConnectedIdeaTests.Companion.MODULE_PROJECT_KEY
+import org.sonarlint.intellij.its.tests.ConnectedIdeaTests.Companion.PROJECT_KEY
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.sonarLintGlobalSettings
 import java.time.Duration
 
