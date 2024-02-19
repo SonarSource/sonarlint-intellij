@@ -311,7 +311,7 @@ class IdeaTests : BaseUiTest() {
         fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
             openExistingProject("sample-java-issues")
 
-            // Issue Analysis Test
+            // Issue Analysis Test//
             enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator")
             openFile("src/main/java/foo/Foo.java", "Foo.java")
             verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
