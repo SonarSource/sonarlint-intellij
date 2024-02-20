@@ -70,7 +70,6 @@ class SettingsUtils {
                 searchRule(ruleKey)
                 Pause.pause(1000)
                 findText(ruleText).doubleClick()
-                Pause.pause(10000)
                 waitFor(Duration.ofSeconds(10)) {
                     button("Apply").isEnabled()
                 }
