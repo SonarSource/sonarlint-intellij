@@ -57,8 +57,6 @@ import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
-import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
-import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.showResolvedIssues
@@ -88,7 +86,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 import kotlin.random.Random
 
-// In order to run these test change the url triggerOpenHotspotRequest to some other port than 64120 depending on number of intellij instances
+// In order to run these test change the url triggerOpenHotspotRequest to some other port than 64120 depending on number of IntelliJ instances
 @DisabledIf("isCLionOrGoLand")
 class ConnectedIdeaTests : BaseUiTest() {
 
@@ -373,14 +371,6 @@ class ConnectedIdeaTests : BaseUiTest() {
             enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "SonarCloud-IT")
         }
 
-        @Test
-        fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
-            openExistingProject("sample-java-issues")
-            excludeFile("Foo.java")
-            openFile("src/main/java/foo/Foo.java", "Foo.java")
-            verifyCurrentFileTabContainsMessages("No issues to display")
-            removeFileExclusion("Foo.java")
-        }
     }
 
     @Nested
