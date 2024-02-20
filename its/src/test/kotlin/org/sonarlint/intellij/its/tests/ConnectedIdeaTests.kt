@@ -86,7 +86,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 import kotlin.random.Random
 
-// In order to run these test change the url triggerOpenHotspotRequest to some other port than 64120 depending on number of intellij instances
+// In order to run these test change the url triggerOpenHotspotRequest to some other port than 64120 depending on number of IntelliJ instances
 @DisabledIf("isCLionOrGoLand")
 class ConnectedIdeaTests : BaseUiTest() {
 
@@ -370,6 +370,7 @@ class ConnectedIdeaTests : BaseUiTest() {
 
             enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "SonarCloud-IT")
         }
+
     }
 
     @Nested

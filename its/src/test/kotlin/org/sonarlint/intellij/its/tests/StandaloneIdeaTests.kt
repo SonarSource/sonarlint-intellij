@@ -22,21 +22,33 @@ package org.sonarlint.intellij.its.tests
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests
-import org.sonarlint.intellij.its.utils.OpeningUtils
-import org.sonarlint.intellij.its.utils.SettingsUtils
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
+import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 
 @DisabledIf("isCLionOrGoLand")
 class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
-    fun rule_exclusion() = uiTest {
-        OpeningUtils.openExistingProject("sample-java-issues")
-        OpeningUtils.openFile("src/main/java/foo/Foo.java", "Foo.java")
-        SettingsUtils.toggleRule("java:S139", "Comments should not be located at the end of lines of code")
-        CurrentFileTabTests.verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
-        SettingsUtils.toggleRule("java:S139", "Comments should not be located at the end of lines of code")
-        CurrentFileTabTests.verifyCurrentFileTabContainsMessages("No issues to display")
+    fun should_exclude_rule_() = uiTest {
+        openExistingProject("sample-java-issues")
+        openFile("src/main/java/foo/Foo.java", "Foo.java")
+        toggleRule("java:S139", "Comments should not be located at the end of lines of code")
+        verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+        toggleRule("java:S139", "Comments should not be located at the end of lines of code")
+        verifyCurrentFileTabContainsMessages("No issues to display")
+    }
+
+    @Test
+    fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
+        openExistingProject("sample-java-issues")
+        excludeFile("Foo.java")
+        openFile("src/main/java/foo/Foo.java", "Foo.java")
+        verifyCurrentFileTabContainsMessages("No issues to display")
+        removeFileExclusion("Foo.java")
     }
 
 }

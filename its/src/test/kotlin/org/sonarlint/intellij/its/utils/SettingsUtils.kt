@@ -68,6 +68,7 @@ class SettingsUtils {
             sonarLintGlobalSettings {
                 findText("Rules").click()
                 searchRule(ruleKey)
+                Pause.pause(1000)
                 findText(ruleText).doubleClick()
                 button("Apply").clickWhenEnabled()
                 button("OK").clickWhenEnabled()
