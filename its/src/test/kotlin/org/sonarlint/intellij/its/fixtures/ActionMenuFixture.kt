@@ -36,9 +36,9 @@ class ActionMenuFixture(
 
   fun open() {
     // sometimes the menu list does not appear after the click//
-    attempt(tries = 5) {
+    attempt(tries = 3) {
       click()
-      find<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(2))
+      find<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
     }
   }
 
