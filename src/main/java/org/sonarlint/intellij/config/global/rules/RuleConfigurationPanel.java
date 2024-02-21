@@ -796,6 +796,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         if (node != null) {
           node.getCustomParams().clear();
           updateParamsAndDescriptionPanel(node);
+          model.nodeChanged(node);
         }
       });
       myDefaultsLink.setToolTipText("Restore current rule parameters to default values");

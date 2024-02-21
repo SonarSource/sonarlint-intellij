@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.ruledescription
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.Gray
 import com.intellij.ui.HyperlinkLabel
@@ -78,9 +79,11 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     private val ruleKeyLabel = JBLabel()
     private val changeStatusButton = JButton()
     private val learnMore = HyperlinkLabel("Learn more")
+    private val disposableFlag = Disposer.newCheckedDisposable()
 
     init {
         learnMore.addHyperlinkListener { BrowserUtil.browse(CLEAN_CODE_LINK) }
+        Disposer.register(parent, disposableFlag)
     }
 
     fun clear() {
@@ -200,7 +203,9 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             wrappedPanel.add(attributePanel.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 15) })
             qualityLabels.forEach { wrappedPanel.add(it) }
 
-            SonarGotItTooltipsUtils.showCleanCodeToolTip(wrappedPanel, parent)
+            if (!disposableFlag.isDisposed) {
+                SonarGotItTooltipsUtils.showCleanCodeToolTip(wrappedPanel, parent)
+            }
         } else {
             wrappedPanel.add(ruleTypeIcon)
             wrappedPanel.add(ruleTypeLabel.apply {
