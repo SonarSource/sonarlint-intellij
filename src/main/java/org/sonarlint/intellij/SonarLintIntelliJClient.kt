@@ -128,6 +128,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
 object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
+    private const val SONAR_SCANNER_CONFIG_FILENAME = "sonar-project.properties"
+    private const val AUTOSCAN_CONFIG_FILENAME = ".sonarcloud.properties"
     private var findingToShow: ShowFinding<*>? = null
     private val backendTaskProgressReporter = BackendTaskProgressReporter()
 
@@ -531,29 +533,34 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return BackendService.findModule(configScopeId)?.let { module -> listModuleFiles(module, configScopeId) }
             ?: findProject(configScopeId)?.let { project -> listProjectFiles(project, configScopeId) }
             ?: emptyList()
-
     }
 
     private fun listModuleFiles(module: Module, configScopeId: String): List<ClientFileDto> {
-        return computeReadActionSafely(module.project) {
-            listFilesInContentRoots(module).mapNotNull { file ->
-                getRelativePathForAnalysis(module, file)?.let { relativePath -> toClientFileDto(module.project, configScopeId, file, relativePath) }
+        return listFilesInContentRoots(module).mapNotNull { file ->
+            getRelativePathForAnalysis(module, file)?.let { relativePath ->
+                toClientFileDto(
+                    module.project,
+                    configScopeId,
+                    file,
+                    relativePath
+                )
             }
-        } ?: emptyList()
+        }
     }
 
     private fun listProjectFiles(project: Project, configScopeId: String): List<ClientFileDto> {
-        return computeReadActionSafely(project) {
-            listFilesInProjectBaseDir(project).mapNotNull { file ->
-                getRelativePathForAnalysis(project, file)?.let { relativePath -> toClientFileDto(project, configScopeId, file, relativePath) }
-            }
-        } ?: emptyList()
+        return listFilesInProjectBaseDir(project).mapNotNull { file ->
+            getRelativePathForAnalysis(project, file)?.let { relativePath -> toClientFileDto(project, configScopeId, file, relativePath) }
+        }
     }
 
     private fun toClientFileDto(project: Project, configScopeId: String, file: VirtualFile, relativePath: String): ClientFileDto? {
         if (!file.isValid || FileUtilRt.isTooLarge(file.length)) return null
         val uri = VirtualFileUtils.toURI(file) ?: return null
-        val fileContent = getFileContent(file)
+        var fileContent: String? = null
+        if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME) {
+            fileContent = computeReadActionSafely(project) { getFileContent(file) }
+        }
         return ClientFileDto(uri, Paths.get(relativePath), configScopeId, TestSourcesFilter.isTestSources(file, project), file.charset.name(), Paths.get(file.path), fileContent)
     }
 
@@ -562,7 +569,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     ): Set<VirtualFile> {
         val files = mutableListOf<VirtualFile>()
         ModuleRootManager.getInstance(module).fileIndex.iterateContent { file ->
-            if (!file.isDirectory) files.add(file)
+            if (!file.isDirectory && file.isValid) files.add(file)
             true
         }
         return files.toSet()
@@ -570,7 +577,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     // useful for Rider where the files to find are not located in content roots
     private fun listFilesInProjectBaseDir(project: Project): Set<VirtualFile> {
-        return project.guessProjectDir()?.children?.filter { !it.isDirectory }?.toSet() ?: return emptySet()
+        return project.guessProjectDir()?.children?.filter { !it.isDirectory && it.isValid }?.toSet() ?: return emptySet()
     }
 
     private fun getFileContent(virtualFile: VirtualFile): String {
