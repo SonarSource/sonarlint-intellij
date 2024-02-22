@@ -99,11 +99,11 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry {
     getTelemetryService().helpAndFeedbackLinkClicked(new HelpAndFeedbackClickedParams(itemId));
   }
 
-  @Nullable
   private static TelemetryRpcService getTelemetryService() {
     var service = computeOnPooledThread("Telemetry Service Task", () -> getService(BackendService.class).getTelemetryService());
     if (service == null) {
       GlobalLogOutput.get().log("Cannot retrieve telemetry service", ClientLogOutput.Level.ERROR);
+      throw new IllegalStateException("Cannot retrieve telemetry service");
     }
     return service;
   }
