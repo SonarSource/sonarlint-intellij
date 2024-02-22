@@ -183,7 +183,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
                 .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
 
                     override fun projectClosing(project: Project) {
-                        this@BackendService.projectClosed(project)
+                        runOnPooledThread(project) { this@BackendService.projectClosed(project) }
                     }
                 })
         }.get()
