@@ -74,7 +74,6 @@ import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
 import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_SETUP_LINK
@@ -524,11 +523,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
     }
 
-    override fun didUpdatePlugins(connectionId: String) {
-        GlobalLogOutput.get().log("Restarting the engine", ClientLogOutput.Level.DEBUG)
-        getService(EngineManager::class.java).getConnectedEngineIfStarted(connectionId)?.restartAsync()
-    }
-
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
         return BackendService.findModule(configScopeId)?.let { module -> listModuleFiles(module, configScopeId) }
             ?: findProject(configScopeId)?.let { project -> listProjectFiles(project, configScopeId) }
@@ -601,10 +595,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             addedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) } to updatedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
         } ?: return
         getService(project, SonarLintToolWindow::class.java).updateTaintVulnerabilities(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
-    }
-
-    override fun didChangeNodeJs(nodeJsPath: Path?, version: String?) {
-        getService(EngineManager::class.java).restartAllConnectedEngines()
     }
 
     private fun findProjects(projectKey: String?) = ProjectManager.getInstance().openProjects.filter { project ->

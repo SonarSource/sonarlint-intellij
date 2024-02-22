@@ -160,9 +160,4 @@ public class DefaultEngineManager implements EngineManager, Disposable {
   public SonarLintAnalysisEngine getStandaloneEngineIfStarted() {
     return standalone;
   }
-
-  @Override
-  public void restartAllConnectedEngines() {
-    connectedEngines.values().forEach(SonarLintAnalysisEngine::restartAsync);
-  }
 }
