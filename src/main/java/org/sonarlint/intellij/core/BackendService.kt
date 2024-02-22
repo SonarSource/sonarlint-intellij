@@ -679,7 +679,9 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         return SonarLintAnalysisEngine(engineConfiguration, initializedBackend, connectionId)
     }
 
-    fun getNodeJsSettings(): CompletableFuture<NodeJsSettings> {
-        return initializedBackend.analysisService.globalStandaloneConfiguration.thenApply { NodeJsSettings(it.nodeJsPath, it.nodeJsVersion) }
+    fun getAutoDetectedNodeJs(): CompletableFuture<NodeJsSettings?> {
+        return initializedBackend.analysisService.autoDetectedNodeJs.thenApply { response ->
+            response.details?.let { NodeJsSettings(it.path, it.version) }
+        }
     }
 }

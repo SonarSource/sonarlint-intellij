@@ -21,4 +21,4 @@ package org.sonarlint.intellij.config.global
 
 import java.nio.file.Path
 
-data class NodeJsSettings(val path: Path?, val version: String?)
+data class NodeJsSettings(val path: Path, val version: String)

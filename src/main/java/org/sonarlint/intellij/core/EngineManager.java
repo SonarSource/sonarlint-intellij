@@ -36,6 +36,4 @@ public interface EngineManager {
   @Nullable SonarLintAnalysisEngine getConnectedEngineIfStarted(String connectionId);
 
   @Nullable SonarLintAnalysisEngine getStandaloneEngineIfStarted();
-
-  void restartAllConnectedEngines();
 }

@@ -102,11 +102,14 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   }
 
   private void loadNodeJsSettings() {
-    getService(BackendService.class).getNodeJsSettings().thenAccept(settings -> {
-      var detectedNodeJsPath = settings.getPath();
-      var detectedNodeJsVersion = settings.getVersion();
-      this.nodeJsPath.getEmptyText().setText(detectedNodeJsPath != null ? detectedNodeJsPath.toString() : "Node.js not found");
-      this.nodeJsVersion.setText(detectedNodeJsVersion != null ? detectedNodeJsVersion : "N/A");
+    getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
+      if (settings == null) {
+        this.nodeJsPath.getEmptyText().setText("Node.js not found");
+        this.nodeJsVersion.setText("N/A");
+      } else {
+        this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
+        this.nodeJsVersion.setText(settings.getVersion());
+      }
     });
   }
 
