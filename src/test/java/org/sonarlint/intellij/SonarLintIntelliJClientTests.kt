@@ -61,7 +61,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         val result = client.listFiles(projectBackendId)
 
         assertThat(result).extracting(ClientFileDto::getIdeRelativePath, ClientFileDto::getContent)
-            .containsOnly(tuple(Paths.get("file.properties"), "content=hey\n"))
+            .containsOnly(tuple(Paths.get("file.properties"), null))
     }
 
     @Test
@@ -72,7 +72,28 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         val result = client.listFiles(projectBackendId)
 
         assertThat(result).extracting(ClientFileDto::getIdeRelativePath, ClientFileDto::getContent)
-            .containsOnly(tuple(Paths.get("file.properties"), "precontent=hey\n"))
+            .containsOnly(tuple(Paths.get("file.properties"), null))
+    }
+
+    @Test
+    fun it_should_find_files_with_content_if_specific_property_file() {
+        myFixture.configureByFile("sonar-project.properties")
+
+        val result = client.listFiles(projectBackendId)
+
+        assertThat(result).extracting(ClientFileDto::getIdeRelativePath, ClientFileDto::getContent)
+            .containsOnly(tuple(Paths.get("sonar-project.properties"), "content=hey\n"))
+    }
+
+    @Test
+    fun it_should_find_files_with_content_if_specific_property_file_and_has_one_modified_in_editor() {
+        myFixture.configureByFile("sonar-project.properties")
+        myFixture.type("pre")
+
+        val result = client.listFiles(projectBackendId)
+
+        assertThat(result).extracting(ClientFileDto::getIdeRelativePath, ClientFileDto::getContent)
+            .containsOnly(tuple(Paths.get("sonar-project.properties"), "precontent=hey\n"))
     }
 
     @Test
