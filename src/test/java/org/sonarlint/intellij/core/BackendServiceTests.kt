@@ -24,9 +24,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.testFramework.replaceService
 import java.nio.file.Path
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -289,7 +291,9 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
         ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
 
-        verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+        await().atMost(Duration.ofSeconds(3)).untilAsserted {
+            verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+        }
     }
 
     @Test
@@ -301,7 +305,9 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
         ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
 
-        verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+        await().atMost(Duration.ofSeconds(3)).untilAsserted {
+            verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+        }
     }
 
     @Test
@@ -313,7 +319,9 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
         ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
 
-        verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+        await().atMost(Duration.ofSeconds(3)).untilAsserted {
+            verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+        }
     }
 
     @Test
