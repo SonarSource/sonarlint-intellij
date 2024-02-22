@@ -128,6 +128,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
 object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
+    private const val SONAR_SCANNER_CONFIG_FILENAME = "sonar-project.properties"
+    private const val AUTOSCAN_CONFIG_FILENAME = ".sonarcloud.properties"
     private var findingToShow: ShowFinding<*>? = null
     private val backendTaskProgressReporter = BackendTaskProgressReporter()
 
@@ -555,7 +557,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private fun toClientFileDto(project: Project, configScopeId: String, file: VirtualFile, relativePath: String): ClientFileDto? {
         if (!file.isValid || FileUtilRt.isTooLarge(file.length)) return null
         val uri = VirtualFileUtils.toURI(file) ?: return null
-        val fileContent = getFileContent(file)
+        var fileContent: String? = null
+        if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME) {
+            fileContent = computeReadActionSafely(project) { getFileContent(file) }
+        }
         return ClientFileDto(uri, Paths.get(relativePath), configScopeId, TestSourcesFilter.isTestSources(file, project), file.charset.name(), Paths.get(file.path), fileContent)
     }
 
