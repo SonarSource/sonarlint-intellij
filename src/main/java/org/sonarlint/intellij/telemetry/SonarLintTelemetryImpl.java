@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddReportedRulesParams;
@@ -33,6 +34,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.HelpAndFeedb
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 public class SonarLintTelemetryImpl implements SonarLintTelemetry {
 
@@ -97,7 +99,12 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry {
     getTelemetryService().helpAndFeedbackLinkClicked(new HelpAndFeedbackClickedParams(itemId));
   }
 
+  @Nullable
   private static TelemetryRpcService getTelemetryService() {
-    return getService(BackendService.class).getTelemetryService();
+    var service = computeOnPooledThread("Telemetry Service Task", () -> getService(BackendService.class).getTelemetryService());
+    if (service == null) {
+      GlobalLogOutput.get().log("Cannot retrieve telemetry service", ClientLogOutput.Level.ERROR);
+    }
+    return service;
   }
 }

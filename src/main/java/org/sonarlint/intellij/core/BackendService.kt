@@ -43,7 +43,6 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.common.ui.ReadActionUtils
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -60,6 +59,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarlint.intellij.util.VirtualFileUtils
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
@@ -114,6 +114,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRu
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ListAllStandaloneRulesDefinitionsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.StandaloneRuleConfigDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.UpdateStandaloneRulesConfigurationParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ClientTrackedFindingDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.LineWithHashDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParams
@@ -164,16 +165,18 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
             ApplicationManager.getApplication().messageBus.connect()
                 .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
                     override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                        connectionsUpdated(newSettings.serverConnections)
-                        val changedConnections = newSettings.serverConnections.filter { connection ->
-                            val previousConnection = previousSettings.getServerConnectionByName(connection.name)
-                            previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                        runOnPooledThread {
+                            connectionsUpdated(newSettings.serverConnections)
+                            val changedConnections = newSettings.serverConnections.filter { connection ->
+                                val previousConnection = previousSettings.getServerConnectionByName(connection.name)
+                                previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                            }
+                            credentialsChanged(changedConnections)
                         }
-                        credentialsChanged(changedConnections)
                     }
 
                     override fun changed(serverList: MutableList<ServerConnection>) {
-                        connectionsUpdated(serverList)
+                        runOnPooledThread { connectionsUpdated(serverList) }
                     }
                 })
             ApplicationManager.getApplication().messageBus.connect()
@@ -201,9 +204,13 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         return ideVersion
     }
 
-    fun getTelemetryService() = initializedBackend.telemetryService
+    fun getTelemetryService(): TelemetryRpcService {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
+        return initializedBackend.telemetryService
+    }
 
     fun getAllProjects(server: ServerConnection): CompletableFuture<GetAllProjectsResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: GetAllProjectsParams = if (server.isSonarCloud) {
@@ -235,12 +242,14 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     private fun getLocalStoragePath(): Path = Paths.get(PathManager.getSystemPath()).resolve("sonarlint/storage")
 
     fun connectionsUpdated(serverConnections: List<ServerConnection>) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val scConnections = serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
         val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         initializedBackend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
     }
 
     private fun credentialsChanged(connections: List<ServerConnection>) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         connections.forEach { initializedBackend.connectionService.didChangeCredentials(DidChangeCredentialsParams(it.name)) }
     }
 
@@ -261,6 +270,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun projectOpened(project: Project) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val binding = getService(project, ProjectBindingManager::class.java).binding
         initializedBackend.configurationService.didAddConfigurationScopes(
             DidAddConfigurationScopesParams(
@@ -276,6 +286,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     internal fun projectClosed(project: Project) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
         initializedBackend.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId(project)))
     }
@@ -286,20 +297,21 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
 
 
     fun projectBound(project: Project, newBinding: ProjectBinding) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         initializedBackend.configurationService.didUpdateBinding(
             DidUpdateBindingParams(
                 projectId(project), BindingConfigurationDto(
-                newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project)
-            )
+                    newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project)
+                )
             )
         )
         newBinding.moduleBindingsOverrides.forEach { (module, projectKey) ->
             initializedBackend.configurationService.didUpdateBinding(
                 DidUpdateBindingParams(
                     moduleId(module), BindingConfigurationDto(
-                    // we don't want binding suggestions for modules
-                    newBinding.connectionName, projectKey, true
-                )
+                        // we don't want binding suggestions for modules
+                        newBinding.connectionName, projectKey, true
+                    )
                 )
             )
         }
@@ -307,6 +319,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun projectUnbound(project: Project) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         initializedBackend.configurationService.didUpdateBinding(
             DidUpdateBindingParams(
                 projectId(project), BindingConfigurationDto(null, null, areBindingSuggestionsDisabledFor(project))
@@ -316,6 +329,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun modulesAdded(project: Project, modules: List<Module>) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val projectBinding = getService(project, ProjectBindingManager::class.java).binding
         initializedBackend.configurationService.didAddConfigurationScopes(
             DidAddConfigurationScopesParams(
@@ -331,16 +345,18 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun moduleRemoved(module: Module) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         initializedBackend.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(moduleId(module)))
     }
 
     fun moduleUnbound(module: Module) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         initializedBackend.configurationService.didUpdateBinding(
             DidUpdateBindingParams(
                 moduleId(module), BindingConfigurationDto(
-                // we don't want binding suggestions for modules
-                null, null, true
-            )
+                    // we don't want binding suggestions for modules
+                    null, null, true
+                )
             )
         )
     }
@@ -349,6 +365,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         !getSettingsFor(project).isBindingSuggestionsEnabled
 
     fun bindingSuggestionsDisabled(project: Project) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val binding = getService(project, ProjectBindingManager::class.java).binding
         initializedBackend.configurationService.didUpdateBinding(
             DidUpdateBindingParams(
@@ -359,6 +376,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetEffectiveRuleDetailsResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.rulesService.getEffectiveRuleDetails(
             GetEffectiveRuleDetailsParams(
                 moduleId(module),
@@ -369,23 +387,28 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun getListAllStandaloneRulesDefinitions(): CompletableFuture<ListAllStandaloneRulesDefinitionsResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.rulesService.listAllStandaloneRulesDefinitions()
     }
 
     fun getStandaloneRuleDetails(params: GetStandaloneRuleDescriptionParams): CompletableFuture<GetStandaloneRuleDescriptionResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.rulesService.getStandaloneRuleDetails(params)
     }
 
     fun updateStandaloneRulesConfiguration(nonDefaultRulesConfigurationByKey: Map<String, SonarLintGlobalSettings.Rule>) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val nonDefaultRpcRulesConfigurationByKey = nonDefaultRulesConfigurationByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
         initializedBackend.rulesService.updateStandaloneRulesConfiguration(UpdateStandaloneRulesConfigurationParams(nonDefaultRpcRulesConfigurationByKey))
     }
 
     fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.connectionService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl, isSonarCloud))
     }
 
     fun openHotspotInBrowser(module: Module, hotspotKey: String) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val configScopeId = moduleId(module)
         initializedBackend.hotspotService.openHotspotInBrowser(
             OpenHotspotInBrowserParams(
@@ -396,6 +419,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun checkLocalSecurityHotspotDetectionSupported(project: Project): CompletableFuture<CheckLocalDetectionSupportedResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.hotspotService.checkLocalDetectionSupported(
             CheckLocalDetectionSupportedParams(
                 projectId(
@@ -406,6 +430,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun changeStatusForHotspot(module: Module, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.hotspotService.changeStatus(
             ChangeHotspotStatusParams(
                 moduleId(module),
@@ -416,6 +441,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun markAsResolved(module: Module, issueKey: String, newStatus: IssueResolutionStatus, isTaintVulnerability: Boolean): CompletableFuture<Void> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.issueService.changeStatus(
             ChangeIssueStatusParams(
                 moduleId(module),
@@ -427,14 +453,17 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun reopenIssue(module: Module, issueId: String, isTaintIssue: Boolean): CompletableFuture<ReopenIssueResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.issueService.reopenIssue(ReopenIssueParams(moduleId(module), issueId, isTaintIssue))
     }
 
     fun addCommentOnIssue(module: Module, issueKey: String, comment: String): CompletableFuture<Void> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.issueService.addComment(AddIssueCommentParams(moduleId(module), issueKey, comment))
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.hotspotService.checkStatusChangePermitted(CheckStatusChangePermittedParams(connectionId, hotspotKey))
     }
 
@@ -442,16 +471,19 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         connectionId: String,
         issueKey: String,
     ): CompletableFuture<issueCheckStatusChangePermittedResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.issueService.checkStatusChangePermitted(
             issueCheckStatusChangePermittedParams(connectionId, issueKey)
         )
     }
 
     fun didVcsRepoChange(project: Project) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         initializedBackend.sonarProjectBranchService.didVcsRepositoryChange(DidVcsRepositoryChangeParams(projectId(project)))
     }
 
     fun checkSmartNotificationsSupported(server: ServerConnection): CompletableFuture<CheckSmartNotificationsSupportedResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: CheckSmartNotificationsSupportedParams = if (server.isSonarCloud) {
@@ -463,6 +495,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
@@ -474,6 +507,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params = ListUserOrganizationsParams(credentials)
@@ -481,6 +515,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun getOrganization(server: ServerConnection, organizationKey: String): CompletableFuture<GetOrganizationResponse> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params = GetOrganizationParams(credentials, organizationKey)
@@ -492,6 +527,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         liveIssuesByFile: Map<VirtualFile, Collection<LiveIssue>>,
         shouldFetchIssuesFromServer: Boolean,
     ) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val relativePathByVirtualFile = getRelativePaths(module.project, liveIssuesByFile.keys)
         val virtualFileByRelativePath = relativePathByVirtualFile.map { Pair(it.value, it.key) }.toMap()
         val rawIssuesByRelativePath =
@@ -548,6 +584,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         liveHotspotsByFile: Map<VirtualFile, Collection<LiveSecurityHotspot>>,
         shouldFetchHotspotsFromServer: Boolean,
     ) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val relativePathByVirtualFile = getRelativePaths(module.project, liveHotspotsByFile.keys)
         val virtualFileByRelativePath = relativePathByVirtualFile.map { Pair(it.value, it.key) }.toMap()
         val rawHotspotsByRelativePath =
@@ -602,7 +639,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         if (!rangeMarker.isValid) {
             return null
         }
-        return ReadActionUtils.computeReadActionSafely(project) {
+        return computeReadActionSafely(project) {
             val startLine = rangeMarker.document.getLineNumber(rangeMarker.startOffset)
             val startLineOffset = rangeMarker.startOffset - rangeMarker.document.getLineStartOffset(startLine)
             val endLine = rangeMarker.document.getLineNumber(rangeMarker.endOffset)
@@ -612,6 +649,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun getNewCodePeriodText(project: Project): String {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         // simplification as we ignore module bindings
         return try {
             initializedBackend.newCodeService.getNewCodeDefinition(GetNewCodeDefinitionParams(projectId(project)))
@@ -622,6 +660,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun triggerTelemetryForFocusOnNewCode() {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         initializedBackend.newCodeService.didToggleFocus()
     }
 
@@ -656,6 +695,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun refreshTaintVulnerabilities(project: Project) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         initializedBackend.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId(project), true))
             .thenApply { response ->
                 val localTaintVulnerabilities = computeReadActionSafely(project) {
@@ -669,6 +709,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): List<VirtualFile> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         val filesByUri = files.associateBy { VirtualFileUtils.toURI(it) }
         return initializedBackend.fileService.getFilesStatus(GetFilesStatusParams(mapOf(moduleId(module) to filesByUri.keys.filterNotNull().toList())))
             .thenApply { response -> response.fileStatuses.filterValues { it.isExcluded }.keys.mapNotNull { filesByUri[it] } }
@@ -680,6 +721,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
     }
 
     fun getAutoDetectedNodeJs(): CompletableFuture<NodeJsSettings?> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return initializedBackend.analysisService.autoDetectedNodeJs.thenApply { response ->
             response.details?.let { NodeJsSettings(it.path, it.version) }
         }

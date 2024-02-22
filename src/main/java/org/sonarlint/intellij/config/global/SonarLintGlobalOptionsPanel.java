@@ -39,6 +39,7 @@ import org.sonarlint.intellij.core.BackendService;
 
 import static java.awt.GridBagConstraints.WEST;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
@@ -98,7 +99,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     autoTrigger.setSelected(model.isAutoTrigger());
     nodeJsPath.setText(model.getNodejsPath());
-    loadNodeJsSettings();
+    runOnPooledThread(this::loadNodeJsSettings);
   }
 
   private void loadNodeJsSettings() {

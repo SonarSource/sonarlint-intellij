@@ -270,7 +270,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         return rule;
       }));
     settings.setRulesByKey(nonDefaultRulesConfigurationByKey);
-    getService(BackendService.class).updateStandaloneRulesConfiguration(nonDefaultRulesConfigurationByKey);
+    runOnPooledThread(project, () -> getService(BackendService.class).updateStandaloneRulesConfiguration(nonDefaultRulesConfigurationByKey));
   }
 
   @Override

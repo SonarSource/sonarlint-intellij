@@ -45,6 +45,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @Service(Service.Level.PROJECT)
 public final class ProjectBindingManager {
@@ -147,7 +148,7 @@ public final class ProjectBindingManager {
     var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
-      getService(BackendService.class).projectBound(myProject, newBinding);
+      runOnPooledThread(() -> getService(BackendService.class).projectBound(myProject, newBinding));
     }
   }
 
@@ -161,12 +162,12 @@ public final class ProjectBindingManager {
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     if (previousBinding != null) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, null);
-      getService(BackendService.class).projectUnbound(myProject);
+      runOnPooledThread(() -> getService(BackendService.class).projectUnbound(myProject));
     }
   }
 
   private static void unbind(List<Module> modules) {
-    modules.forEach(m -> getService(m, ModuleBindingManager.class).unbind());
+    runOnPooledThread(() -> modules.forEach(m -> getService(m, ModuleBindingManager.class).unbind()));
   }
 
   private List<Module> allModules() {
