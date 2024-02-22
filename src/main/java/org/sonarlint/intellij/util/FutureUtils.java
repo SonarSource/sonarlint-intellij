@@ -31,7 +31,7 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
-public class FutureUtils<T> {
+public class FutureUtils {
 
   private static final long WAITING_FREQUENCY = 100;
 
