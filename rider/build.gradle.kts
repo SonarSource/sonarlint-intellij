@@ -1,4 +1,3 @@
-val sonarlintCoreVersion: String by project
 val riderBuildVersion: String by project
 
 plugins {
@@ -11,6 +10,6 @@ intellij {
 
 dependencies {
     implementation(project(":common"))
-    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+    implementation(libs.sonarlint.core)
 }
 

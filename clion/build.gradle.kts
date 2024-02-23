@@ -1,4 +1,3 @@
-val sonarlintCoreVersion: String by project
 val clionBuildVersion: String by project
 
 intellij {
@@ -8,7 +7,7 @@ intellij {
 
 dependencies {
     implementation(project(":common"))
-    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+    implementation(libs.sonarlint.core)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
     // Needed for https://github.com/gradle/gradle/issues/22333
