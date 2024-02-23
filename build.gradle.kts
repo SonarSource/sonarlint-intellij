@@ -12,17 +12,17 @@ import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 
 plugins {
-    kotlin("jvm") version "1.8.10"
-    id("org.jetbrains.intellij") version "1.15.0"
+    kotlin("jvm") version "1.9.22"
+    id("org.jetbrains.intellij") version "1.17.2"
     id("org.sonarqube") version "4.4.1.3373"
     java
     jacoco
     id("com.github.hierynomus.license") version "0.16.1"
-    id("com.jfrog.artifactory") version "4.30.1"
+    id("com.jfrog.artifactory") version "4.33.1"
     id("com.google.protobuf") version "0.9.4"
     idea
     signing
-    id("org.cyclonedx.bom") version "1.7.4"
+    id("org.cyclonedx.bom") version "1.8.2"
 }
 
 buildscript {
@@ -198,7 +198,7 @@ configurations {
 
 dependencies {
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
-    implementation("commons-lang:commons-lang:2.6")
+    implementation("org.apache.commons:commons-lang3:3.14.0")
     implementation(project(":common"))
     compileOnly("com.google.code.findbugs:jsr305:3.0.2")
     runtimeOnly(project(":clion"))
@@ -208,10 +208,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0") {
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0") {
         exclude(module = "junit")
     }
-    testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("org.awaitility:awaitility:4.2.0")
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.30.1.34514")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.11.0.25043")
@@ -229,11 +229,6 @@ dependencies {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.52.0.66181")
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    constraints {
-        testImplementation("com.squareup.okio:okio-jvm:3.4.0") {
-            because("this transitive dependency of okhttp3 has a high severity vulnerability not yet patched")
-        }
-    }
     "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
     "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
     "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
