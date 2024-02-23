@@ -1,0 +1,80 @@
+[versions]
+sonarlint-core = "9.8.0.76914"
+
+sonar-java = "7.30.1.34514"
+sonar-javascript = "10.11.0.25043"
+sonar-php = "3.33.0.11274"
+sonar-python = "4.14.0.14263"
+sonar-kotlin = "2.20.0.4382"
+sonar-slang = "1.15.0.4655"
+sonar-html = "3.13.0.4821"
+sonar-xml = "2.10.0.4108"
+sonar-omnisharp = "1.18.0.83276"
+sonar-text = "2.8.0.1635"
+sonar-iac = "1.26.0.8471"
+sonar-cpp = "6.52.0.66181"
+
+sonarqube = "4.4.1.3373"
+
+kotlin-plugin = "1.9.22"
+intellij-plugin = "1.17.2"
+license-plugin = "0.16.1"
+artifactory-plugin = "4.33.1"
+protobuf-plugin = "0.9.4"
+cyclonedx-plugin = "1.8.2"
+
+commons-lang3 = "3.14.0"
+findbugs-jsr305 = "3.0.2"
+junit-bom = "5.9.2"
+okhttp3-mockwebserver = "4.12.0"
+mockito-kotlin = "5.2.1"
+awaitility = "4.2.0"
+
+its-remote = "0.11.19"
+its-junit5 = "4.2.0.542"
+its-sonar-scala = "1.8.3.2219"
+its-sonar-ws = "8.5.1.38104"
+
+[libraries]
+sonarlint-core = { module = "org.sonarsource.sonarlint.core:sonarlint-core", version.ref = "sonarlint-core" }
+
+sonar-java = { module = "org.sonarsource.java:sonar-java-plugin", version.ref = "sonar-java" }
+sonar-javascript = { module = "org.sonarsource.javascript:sonar-javascript-plugin", version.ref = "sonar-javascript" }
+sonar-php = { module = "org.sonarsource.php:sonar-php-plugin", version.ref = "sonar-php" }
+sonar-python = { module = "org.sonarsource.python:sonar-python-plugin", version.ref = "sonar-python" }
+sonar-kotlin = { module = "org.sonarsource.kotlin:sonar-kotlin-plugin", version.ref = "sonar-kotlin" }
+sonar-ruby = { module = "org.sonarsource.slang:sonar-ruby-plugin", version.ref = "sonar-slang" }
+sonar-html = { module = "org.sonarsource.html:sonar-html-plugin", version.ref = "sonar-html" }
+sonar-xml = { module = "org.sonarsource.xml:sonar-xml-plugin", version.ref = "sonar-xml" }
+sonar-omnisharp = { module = "org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin", version.ref = "sonar-omnisharp" }
+sonar-text = { module = "org.sonarsource.text:sonar-text-plugin", version.ref = "sonar-text" }
+sonar-go = { module = "org.sonarsource.slang:sonar-go-plugin", version.ref = "sonar-slang" }
+sonar-iac = { module = "org.sonarsource.iac:sonar-iac-plugin", version.ref = "sonar-iac" }
+sonar-cfamily = { module = "com.sonarsource.cpp:sonar-cfamily-plugin", version.ref = "sonar-cpp" }
+
+commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
+okhttp3-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp3-mockwebserver" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+
+its-sonar-scala = { module = "org.sonarsource.slang:sonar-scala-plugin", version.ref = "its-sonar-scala" }
+its-sonar-ws = { module = "org.sonarsource.sonarqube:sonar-ws", version.ref = "its-sonar-ws" }
+its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.ref = "its-remote" }
+its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "its-remote" }
+
+[bundles]
+# Does not include cfamily
+sonar-analyzers = ["sonar-java", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac"]
+its-remote = ["its-remote-robot", "its-remote-fixtures"]
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-plugin" }
+intellij = { id = "org.jetbrains.intellij", version.ref = "intellij-plugin" }
+license = { id = "com.github.hierynomus.license", version.ref = "license-plugin" }
+artifactory = { id = "com.jfrog.artifactory", version.ref = "artifactory-plugin" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
+cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-plugin" }
+
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }

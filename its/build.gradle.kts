@@ -23,16 +23,13 @@ repositories {
     mavenCentral()
 }
 
-val remoteRobotVersion = "0.11.19"
-
 dependencies {
     testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:4.2.0.542") {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
     }
-    testImplementation("org.sonarsource.slang:sonar-scala-plugin:1.8.3.2219")
-    testImplementation("org.sonarsource.sonarqube:sonar-ws:8.5.1.38104")
-    testImplementation("com.intellij.remoterobot:remote-robot:$remoteRobotVersion")
-    testImplementation("com.intellij.remoterobot:remote-fixtures:$remoteRobotVersion")
+    testImplementation(libs.its.sonar.scala)
+    testImplementation(libs.its.sonar.ws)
+    testImplementation(libs.bundles.its.remote)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
     // Needed for https://github.com/gradle/gradle/issues/22333
@@ -51,7 +48,7 @@ license {
 }
 
 tasks.downloadRobotServerPlugin {
-    version.set(remoteRobotVersion)
+    version.set(libs.versions.its.remote)
 }
 
 val ijVersion: String by project

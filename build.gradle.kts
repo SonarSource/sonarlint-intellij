@@ -11,18 +11,19 @@ import java.util.zip.ZipOutputStream
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    kotlin("jvm") version "1.9.22"
-    id("org.jetbrains.intellij") version "1.17.2"
-    id("org.sonarqube") version "4.4.1.3373"
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.intellij)
+    alias(libs.plugins.sonarqube)
     java
     jacoco
-    id("com.github.hierynomus.license") version "0.16.1"
-    id("com.jfrog.artifactory") version "4.33.1"
-    id("com.google.protobuf") version "0.9.4"
+    alias(libs.plugins.license)
+    alias(libs.plugins.artifactory)
+    alias(libs.plugins.protobuf)
     idea
     signing
-    id("org.cyclonedx.bom") version "1.8.2"
+    alias(libs.plugins.cyclonedx)
 }
 
 buildscript {
@@ -197,36 +198,25 @@ configurations {
 }
 
 dependencies {
-    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
-    implementation("org.apache.commons:commons-lang3:3.14.0")
+    implementation(libs.sonarlint.core)
+    implementation(libs.commons.langs3)
     implementation(project(":common"))
-    compileOnly("com.google.code.findbugs:jsr305:3.0.2")
+    compileOnly(libs.findbugs.jsr305)
     runtimeOnly(project(":clion"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
-    testImplementation(platform("org.junit:junit-bom:5.9.2"))
+    testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0") {
+    testImplementation(libs.okhttp3.mockwebserver) {
         exclude(module = "junit")
     }
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
-    testImplementation("org.awaitility:awaitility:4.2.0")
-    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.30.1.34514")
-    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:10.11.0.25043")
-    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.33.0.11274")
-    "sqplugins"("org.sonarsource.python:sonar-python-plugin:4.14.0.14263")
-    "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.20.0.4382")
-    "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.15.0.4655")
-    "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.13.0.4821")
-    "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.10.0.4108")
-    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.18.0.83276")
-    "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.8.0.1635")
-    "sqplugins"("org.sonarsource.slang:sonar-go-plugin:1.15.0.4655")
-    "sqplugins"("org.sonarsource.iac:sonar-iac-plugin:1.26.0.8471")
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.awaitility)
+    "sqplugins"(libs.bundles.sonar.analyzers)
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.52.0.66181")
+        "sqplugins"(libs.sonar.cfamily)
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")

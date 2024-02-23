@@ -1,9 +1,8 @@
+val intellijBuildVersion: String by project
+
 plugins {
     kotlin("jvm")
 }
-
-val intellijBuildVersion: String by project
-val sonarlintCoreVersion: String by project
 
 intellij {
     version.set(intellijBuildVersion)
@@ -12,5 +11,5 @@ intellij {
 
 dependencies {
     implementation(project(":common"))
-    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+    implementation(libs.sonarlint.core)
 }
