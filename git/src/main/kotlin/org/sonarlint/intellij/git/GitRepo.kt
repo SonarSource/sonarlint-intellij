@@ -36,7 +36,7 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
                 return currentBranch
             }
             val head = repo.currentRevision ?: return null // Could be the case if no commit has been made in the repo
-
+            var a = 5;
             val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
             for (serverBranchName in allBranchNames) {
                 val localBranch = repo.branches.findLocalBranch(serverBranchName) ?: continue
