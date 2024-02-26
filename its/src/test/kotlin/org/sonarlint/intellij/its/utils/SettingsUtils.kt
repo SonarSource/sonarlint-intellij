@@ -69,7 +69,10 @@ class SettingsUtils {
                 findText("Rules").click()
                 searchRule(ruleKey)
                 findText(ruleText).doubleClick()
-                button("Apply").clickWhenEnabled()
+                waitFor(Duration.ofSeconds(10)) {
+                    button("Apply").isEnabled()
+                }
+                button("Apply").click()
                 button("OK").clickWhenEnabled()
             }
         }
