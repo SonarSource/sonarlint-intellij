@@ -28,6 +28,7 @@ import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.IdeaFrame
 import org.sonarlint.intellij.its.fixtures.PreferencesDialog
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
+import org.sonarlint.intellij.its.fixtures.closeAllGotItTooltips
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
@@ -68,6 +69,11 @@ class SettingsUtils {
             sonarLintGlobalSettings {
                 findText("Rules").click()
                 searchRule(ruleKey)
+                findText(ruleText).click()
+                Pause.pause(1000)
+                with(remoteRobot) {
+                    closeAllGotItTooltips()
+                }
                 findText(ruleText).doubleClick()
                 waitFor(Duration.ofSeconds(10)) {
                     button("Apply").isEnabled()
