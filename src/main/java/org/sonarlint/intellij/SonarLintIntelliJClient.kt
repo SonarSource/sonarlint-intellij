@@ -555,7 +555,15 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME) {
             fileContent = computeReadActionSafely(project) { getFileContent(file) }
         }
-        return ClientFileDto(uri, Paths.get(relativePath), configScopeId, TestSourcesFilter.isTestSources(file, project), file.charset.name(), Paths.get(file.path), fileContent)
+        return ClientFileDto(
+            uri,
+            Paths.get(relativePath),
+            configScopeId,
+            computeReadActionSafely(project) { TestSourcesFilter.isTestSources(file, project) },
+            file.charset.name(),
+            Paths.get(file.path),
+            fileContent
+        )
     }
 
     private fun listFilesInContentRoots(
