@@ -20,7 +20,9 @@
 package org.sonarlint.intellij.fs
 
 import com.intellij.openapi.vfs.VirtualFile
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.mock
@@ -49,8 +51,9 @@ class EditorFileChangeListenerTests : AbstractSonarLintLightTests() {
         listener.afterDocumentChange(file.getDocument()!!)
 
         // wait for the notification to be delivered (because of the debounce delay)
-        Thread.sleep(2000)
-        verify(fakeNotifier, times(1)).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
+        Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted {
+            verify(fakeNotifier, times(1)).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
+        }
 
         val event = eventsCaptor.value[0]
         assertThat(event.type()).isEqualTo(ModuleFileEvent.Type.MODIFIED)

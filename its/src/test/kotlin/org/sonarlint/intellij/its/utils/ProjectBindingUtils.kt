@@ -62,7 +62,7 @@ class ProjectBindingUtils {
                         jbTextField().text = projectKey
                         button("OK").click()
                         // wait for binding fully established
-                        waitFor(Duration.ofSeconds(20)) { !isShowing }
+                        waitFor(Duration.ofSeconds(25)) { !isShowing }
                     }
                 }
             }

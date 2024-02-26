@@ -19,9 +19,11 @@
  */
 package org.sonarlint.intellij.core;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -172,7 +174,9 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
 
     projectBindingManager.unbind();
 
-    assertThat(getProjectSettings().isBound()).isFalse();
-    assertThat(getModuleSettings().isProjectBindingOverridden()).isFalse();
+    Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
+      assertThat(getProjectSettings().isBound()).isFalse();
+      assertThat(getModuleSettings().isProjectBindingOverridden()).isFalse();
+    });
   }
 }

@@ -115,21 +115,23 @@ class MarkAsResolvedAction(
             resolution: MarkAsResolvedDialog.Resolution,
             issueKey: String,
         ) {
-            getService(BackendService::class.java)
-                .markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
-                .thenAccept {
-                    updateUI(project, issue)
-                    val comment = resolution.comment
-                        ?: return@thenAccept SonarLintProjectNotifications.get(project)
-                            .displaySuccessfulNotification(CONTENT, ISSUE_RESOLVED_GROUP)
-                    addComment(project, module, issueKey, comment)
-                }
-                .exceptionally { error ->
-                    SonarLintConsole.get(project).error("Error while marking the issue as resolved", error)
-                    SonarLintProjectNotifications.get(project)
-                        .displayErrorNotification("Could not mark the issue as resolved", ISSUE_RESOLVED_GROUP)
-                    null
-                }
+            runOnPooledThread(project) {
+                getService(BackendService::class.java)
+                    .markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
+                    .thenAccept {
+                        updateUI(project, issue)
+                        val comment = resolution.comment
+                            ?: return@thenAccept SonarLintProjectNotifications.get(project)
+                                .displaySuccessfulNotification(CONTENT, ISSUE_RESOLVED_GROUP)
+                        addComment(project, module, issueKey, comment)
+                    }
+                    .exceptionally { error ->
+                        SonarLintConsole.get(project).error("Error while marking the issue as resolved", error)
+                        SonarLintProjectNotifications.get(project)
+                            .displayErrorNotification("Could not mark the issue as resolved", ISSUE_RESOLVED_GROUP)
+                        null
+                    }
+            }
         }
 
         private fun updateUI(project: Project, issue: Issue) {

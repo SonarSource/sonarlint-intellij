@@ -24,10 +24,11 @@ import com.intellij.serviceContainer.NonInjectable
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 
 class DefaultVcsService @NonInjectable constructor(private val project: Project) : VcsService {
     override fun onVcsRepoChange() {
-        getService(BackendService::class.java).didVcsRepoChange(project)
+        runOnPooledThread(project) { getService(BackendService::class.java).didVcsRepoChange(project) }
     }
 }
 

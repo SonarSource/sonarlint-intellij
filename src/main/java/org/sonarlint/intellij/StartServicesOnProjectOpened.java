@@ -30,6 +30,7 @@ import org.sonarlint.intellij.promotion.PromotionProvider;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class StartServicesOnProjectOpened implements StartupActivity {
 
@@ -40,7 +41,7 @@ public class StartServicesOnProjectOpened implements StartupActivity {
     }
     getService(EditorFileChangeListener.class).startListening();
     getService(project, EditorChangeTrigger.class).onProjectOpened();
-    getService(BackendService.class).projectOpened(project);
+    runOnPooledThread(project, () -> getService(BackendService.class).projectOpened(project));
     getService(project, SecurityHotspotsRefreshTrigger.class).subscribeToTriggeringEvents();
     getService(project, PromotionProvider.class).subscribeToTriggeringEvents();
   }

@@ -28,11 +28,27 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class FutureUtils {
 
   private static final long WAITING_FREQUENCY = 100;
+
+  @Nullable
+  public static <T> T waitForTask(Future<T> task, String taskName, Duration timeoutDuration) {
+    try {
+      return waitForFutureWithTimeout(task, timeoutDuration);
+    } catch (TimeoutException ex) {
+      task.cancel(true);
+      GlobalLogOutput.get().logError(taskName + " task expired", ex);
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+    } catch (Exception ex) {
+      GlobalLogOutput.get().logError(taskName + " task failed", ex);
+    }
+    return null;
+  }
 
   public static void waitForTask(Project project, ProgressIndicator indicator, Future<?> task, String taskName, Duration timeoutDuration) {
     try {
@@ -51,6 +67,22 @@ public class FutureUtils {
     for (var f : updateTasks) {
       waitForTask(project, indicator, f, taskName, Duration.ofSeconds(20));
     }
+  }
+
+  private static <T> T waitForFutureWithTimeout(Future<T> future, Duration durationTimeout)
+    throws InterruptedException, ExecutionException, TimeoutException {
+    long counter = 0;
+    while (counter < durationTimeout.toMillis()) {
+      counter += WAITING_FREQUENCY;
+      try {
+        return future.get(WAITING_FREQUENCY, TimeUnit.MILLISECONDS);
+      } catch (TimeoutException ignored) {
+        continue;
+      } catch (InterruptedException | CancellationException e) {
+        throw new InterruptedException("Interrupted");
+      }
+    }
+    throw new TimeoutException();
   }
 
   private static void waitForFutureWithTimeout(ProgressIndicator indicator, Future<?> future, Duration durationTimeout)
