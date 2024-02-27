@@ -166,10 +166,12 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
 
     private fun initMultipleTime(): CompletableFuture<Void> {
         backend.onExit().thenAcceptAsync {
+            getService(EngineManager::class.java).stopStandaloneEngine()
             SonarLintIntelliJClient.showMessage(MessageType.ERROR, "SLOOP KILLED")
             restartTest()
         }
 
+        SonarLintIntelliJClient.showMessage(MessageType.ERROR, "SLOOP COUCOU ${backend.rpcServer}")
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
             serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }

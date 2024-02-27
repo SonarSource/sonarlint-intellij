@@ -29,6 +29,8 @@ public interface EngineManager {
 
   void stopAllEngines(boolean async);
 
+  void stopStandaloneEngine();
+
   SonarLintAnalysisEngine getStandaloneEngine();
 
   SonarLintAnalysisEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId) throws InvalidBindingException;
