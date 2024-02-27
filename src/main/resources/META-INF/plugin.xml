@@ -265,6 +265,7 @@
                            displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Mark Issue as Resolved"
                            displayType="BALLOON"/>
+        <pluginRepositoryAuthProvider implementation="org.sonarlint.intellij.dogfood.DogfoodPluginRepositoryAuthProvider"/>
     </extensions>
 
     <extensionPoints>
