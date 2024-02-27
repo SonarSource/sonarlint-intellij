@@ -68,6 +68,12 @@ allprojects {
                 }
             }
         }
+        mavenCentral {
+            content {
+                // avoid dependency confusion
+                excludeGroupByRegex("com\\.sonarsource.*")
+            }
+        }
     }
 
     java {
@@ -217,11 +223,11 @@ dependencies {
     "sqplugins"(libs.bundles.sonar.analyzers)
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"(libs.sonar.cfamily)
+        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
+        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
+        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
-    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
-    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
 }
 
 tasks {

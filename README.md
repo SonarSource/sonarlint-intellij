@@ -53,6 +53,9 @@ For the complete list of tasks, see:
 
     ./gradlew tasks
 
+For external contributors, the project should be guaranteed to build from any specific tag. During the development phase, some
+unreleased dependencies not accessible to the public could be used, preventing you from building the project.
+
 How to run ITs
 ------------
 
