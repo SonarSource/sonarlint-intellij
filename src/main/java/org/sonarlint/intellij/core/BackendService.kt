@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core
 
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
@@ -42,6 +43,7 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
+import org.sonarlint.intellij.actions.RestartSloopAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -55,6 +57,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
@@ -121,7 +124,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParam
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.MatchWithServerSecurityHotspotsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWithHashDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TrackWithServerIssuesParams
-import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
@@ -167,11 +169,13 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
     private fun initMultipleTime(): CompletableFuture<Void> {
         backend.onExit().thenAcceptAsync {
             getService(EngineManager::class.java).stopStandaloneEngine()
-            SonarLintIntelliJClient.showMessage(MessageType.ERROR, "SLOOP KILLED")
-            restartTest()
+            projectLessNotification(
+                "SonarLint encountered an issue",
+                "The process was stopped",
+                NotificationType.ERROR,
+                RestartSloopAction()
+            )
         }
-
-        SonarLintIntelliJClient.showMessage(MessageType.ERROR, "SLOOP COUCOU ${backend.rpcServer}")
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
             serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
