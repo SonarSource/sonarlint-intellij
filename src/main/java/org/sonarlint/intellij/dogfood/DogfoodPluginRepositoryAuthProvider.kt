@@ -35,6 +35,7 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
     private val dogfoodUsername: String?
     private val dogfoodPassword: String?
     private val dogfoodUrl = "https://repox.jfrog.io"
+    private var connectionFailed = false
 
     init {
         val inputStream = getSonarlintSystemPath().resolve("dogfood.properties").inputStreamIfExists()
@@ -50,38 +51,42 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
     }
 
     override fun getAuthHeaders(url: String): Map<String, String> {
-        return if (dogfoodUsername != null && dogfoodPassword != null) {
-            val encodedAuth = "Basic " + "$dogfoodUsername:$dogfoodPassword".encodeBase64()
+        if (!connectionFailed) {
+            return if (dogfoodUsername != null && dogfoodPassword != null) {
+                val encodedAuth = "Basic " + "$dogfoodUsername:$dogfoodPassword".encodeBase64()
 
-            val testUrlRepox = URL("https://repox.jfrog.io/repox/sonarsource")
-            runOnPooledThread {
-                with(testUrlRepox.openConnection() as HttpURLConnection) {
-                    requestMethod = "GET"
-                    setRequestProperty("Authorization", encodedAuth)
-                    connectTimeout = 10_000
-                    connect()
+                val testUrlRepox = URL("https://repox.jfrog.io/repox/sonarsource")
+                runOnPooledThread {
+                    with(testUrlRepox.openConnection() as HttpURLConnection) {
+                        requestMethod = "GET"
+                        setRequestProperty("Authorization", encodedAuth)
+                        connectTimeout = 10_000
+                        connect()
 
-                    if (responseCode == 401) {
-                        SonarLintProjectNotifications.projectLessNotification(
-                            "Dogfooding credentials are not valid",
-                            "Connection to Repox was unauthorized, make sure the credentials 'username' and 'password' are valid in ~/.sonarlint/dogfood.properties" +
-                                "and restart the IDE",
-                            NotificationType.WARNING
-                        )
+                        if (responseCode == 401) {
+                            SonarLintProjectNotifications.projectLessNotification(
+                                "Dogfooding credentials are not valid",
+                                "Connection to Repox was unauthorized, make sure the credentials 'username' and 'password' are valid in ~/.sonarlint/dogfood.properties" +
+                                    "and restart the IDE",
+                                NotificationType.WARNING
+                            )
+                            connectionFailed = true
+                        }
                     }
                 }
-            }
 
-            mapOf("Authorization" to encodedAuth)
-        } else {
-            SonarLintProjectNotifications.projectLessNotification(
-                "Dogfooding credentials are missing",
-                "Make sure the Repox credentials 'username' and 'password' are set in ~/.sonarlint/dogfood.properties" +
-                    "and restart the IDE",
-                NotificationType.WARNING
-            )
-            emptyMap()
+                mapOf("Authorization" to encodedAuth)
+            } else {
+                SonarLintProjectNotifications.projectLessNotification(
+                    "Dogfooding credentials are missing",
+                    "Make sure the Repox credentials 'username' and 'password' are set in ~/.sonarlint/dogfood.properties" +
+                        "and restart the IDE",
+                    NotificationType.WARNING
+                )
+                emptyMap()
+            }
         }
+        return emptyMap()
     }
 
     override fun canHandle(url: String): Boolean {
