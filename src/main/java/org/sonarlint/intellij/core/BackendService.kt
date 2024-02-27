@@ -59,10 +59,10 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarlint.intellij.util.VirtualFileUtils
-import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
+import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -121,18 +121,54 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParam
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.MatchWithServerSecurityHotspotsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWithHashDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TrackWithServerIssuesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
 
 @Service(Service.Level.APP)
-class BackendService @NonInjectable constructor(private var backend: SonarLintRpcServer) : Disposable {
+class BackendService @NonInjectable constructor(private var backend: Sloop) : Disposable {
 
     constructor() : this(initBackend())
 
-    private val initializedBackend: SonarLintRpcServer by lazy {
+    private var initializedBackend: SonarLintRpcServer = initOnce()
+
+    private fun initOnce(): SonarLintRpcServer {
         migrateStoragePath()
+
+        initMultipleTime().thenRun {
+            ApplicationManager.getApplication().messageBus.connect()
+                .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
+                    override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
+                        connectionsUpdated(newSettings.serverConnections)
+                        val changedConnections = newSettings.serverConnections.filter { connection ->
+                            val previousConnection = previousSettings.getServerConnectionByName(connection.name)
+                            previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                        }
+                        credentialsChanged(changedConnections)
+                    }
+
+                    override fun changed(serverList: MutableList<ServerConnection>) {
+                        connectionsUpdated(serverList)
+                    }
+                })
+            ApplicationManager.getApplication().messageBus.connect()
+                .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
+
+                    override fun projectClosing(project: Project) {
+                        this@BackendService.projectClosed(project)
+                    }
+                })
+        }.get()
+        return backend.rpcServer
+    }
+
+    private fun initMultipleTime(): CompletableFuture<Void> {
+        backend.onExit().thenAcceptAsync {
+            SonarLintIntelliJClient.showMessage(MessageType.ERROR, "SLOOP KILLED")
+            restartTest()
+        }
 
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
@@ -140,7 +176,8 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         val sonarQubeConnections =
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         val nodejsPath = getGlobalSettings().nodejsPath
-        backend.initialize(
+
+        return backend.rpcServer.initialize(
             InitializeParams(
                 ClientConstantInfoDto(
                     ApplicationInfo.getInstance().versionName,
@@ -161,33 +198,7 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
                 getGlobalSettings().isFocusOnNewCode,
                 if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
             )
-        ).thenRun {
-            ApplicationManager.getApplication().messageBus.connect()
-                .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
-                    override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                        runOnPooledThread {
-                            connectionsUpdated(newSettings.serverConnections)
-                            val changedConnections = newSettings.serverConnections.filter { connection ->
-                                val previousConnection = previousSettings.getServerConnectionByName(connection.name)
-                                previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
-                            }
-                            credentialsChanged(changedConnections)
-                        }
-                    }
-
-                    override fun changed(serverList: MutableList<ServerConnection>) {
-                        runOnPooledThread { connectionsUpdated(serverList) }
-                    }
-                })
-            ApplicationManager.getApplication().messageBus.connect()
-                .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
-
-                    override fun projectClosing(project: Project) {
-                        runOnPooledThread(project) { this@BackendService.projectClosed(project) }
-                    }
-                })
-        }.get()
-        backend
+        )
     }
 
     private fun getTelemetryConstantAttributes() =
@@ -664,12 +675,42 @@ class BackendService @NonInjectable constructor(private var backend: SonarLintRp
         initializedBackend.newCodeService.didToggleFocus()
     }
 
+    fun restartTest() {
+        backend = initBackend()
+        initMultipleTime().get()
+        initializedBackend = backend.rpcServer
+
+        ProjectManager.getInstance().openProjects.map { project ->
+            val binding = getService(project, ProjectBindingManager::class.java).binding
+            initializedBackend.configurationService.didAddConfigurationScopes(
+                DidAddConfigurationScopesParams(
+                    listOf(
+                        toBackendConfigurationScope(
+                            project,
+                            binding
+                        )
+                    )
+                )
+            )
+            refreshTaintVulnerabilities(project)
+        }
+
+        ProjectManager.getInstance().openProjects.map { project ->
+            val projectBinding = getService(project, ProjectBindingManager::class.java).binding
+            initializedBackend.configurationService.didAddConfigurationScopes(
+                DidAddConfigurationScopesParams(
+                    ModuleManager.getInstance(project).modules.map { toConfigurationScope(it, projectBinding) }
+                )
+            )
+        }
+    }
+
     companion object {
-        fun initBackend(): SonarLintRpcServer {
+
+        fun initBackend(): Sloop {
             val jreHomePath = System.getProperty("java.home")!!
             val sloopLauncher = SloopLauncher(SonarLintIntelliJClient)
-            sloopLauncher.start(getService(SonarLintPlugin::class.java).path.resolve("sloop"), Paths.get(jreHomePath))
-            return sloopLauncher.serverProxy
+            return sloopLauncher.start(getService(SonarLintPlugin::class.java).path.resolve("sloop"), Paths.get(jreHomePath))
         }
 
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
