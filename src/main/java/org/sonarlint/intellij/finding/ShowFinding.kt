@@ -48,7 +48,7 @@ data class ShowFinding<T : Finding>(
             val matcher = TextRangeMatcher(project)
             return flows.map { flow ->
                 flow.locations.stream().map {
-                    tryFindFile(project, it.ideFilePath.toString())?.let { file ->
+                    tryFindFile(project, it.ideFilePath)?.let { file ->
                         it.codeSnippet?.let { _ ->
                             val rangeMarker = ReadActionUtils.Companion.computeReadActionSafely(project) {
                                 matcher.matchWithCode(file, it.textRange, it.codeSnippet)

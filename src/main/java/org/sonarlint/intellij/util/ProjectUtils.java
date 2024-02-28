@@ -25,6 +25,7 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -93,21 +94,27 @@ public class ProjectUtils {
     });
   }
 
-  public static VirtualFile tryFindFile(Project project, String filePath) {
+  public static VirtualFile tryFindFile(Project project, Path filePath) {
+    var systemIndependentPath = getSystemIndependentPath(filePath);
+
     for (var contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
       if (contentRoot.isDirectory()) {
-        var matchedFile = contentRoot.findFileByRelativePath(filePath);
+        var matchedFile = contentRoot.findFileByRelativePath(systemIndependentPath);
         if (matchedFile != null) {
           return matchedFile;
         }
       } else {
         // On Rider, all source files are returned as individual content roots, so simply check for equality
-        if (contentRoot.getPath().endsWith(filePath)) {
+        if (contentRoot.getPath().endsWith(systemIndependentPath)) {
           return contentRoot;
         }
       }
     }
     return null;
+  }
+
+  private static String getSystemIndependentPath(Path filePath) {
+    return filePath.toString().replace(File.separatorChar, '/');
   }
 
   private ProjectUtils() {

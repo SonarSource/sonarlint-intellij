@@ -41,19 +41,6 @@ import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import java.io.ByteArrayInputStream
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.URI
-import java.net.URL
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.UUID
-import java.util.concurrent.CancellationException
 import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 import org.eclipse.lsp4j.jsonrpc.CancelChecker
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
@@ -123,6 +110,19 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.URI
+import java.net.URL
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.UUID
+import java.util.concurrent.CancellationException
 
 
 object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
@@ -270,7 +270,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (!project.isDisposed) {
             SonarLintProjectNotifications.get(project).expireCurrentFindingNotificationIfNeeded()
         }
-        val file = tryFindFile(project, filePath.toString())
+        val file = tryFindFile(project, filePath)
         if (file == null) {
             if (!project.isDisposed) {
                 SonarLintProjectNotifications.get(project)
