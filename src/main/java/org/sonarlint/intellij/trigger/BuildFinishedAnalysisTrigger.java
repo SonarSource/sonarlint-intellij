@@ -29,7 +29,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 public class BuildFinishedAnalysisTrigger implements BuildManagerListener {
 
   @Override public void buildFinished(Project project, UUID sessionId, boolean isAutomake) {
-    if (!isAutomake) {
+    if (!isAutomake || project.isDisposed()) {
       // covered by CompilationFinishedAnalysisTrigger.compilationFinished
       return;
     }
