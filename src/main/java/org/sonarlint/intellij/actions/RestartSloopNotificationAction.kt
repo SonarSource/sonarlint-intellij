@@ -17,23 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core;
+package org.sonarlint.intellij.actions
 
-import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 
-public interface EngineManager {
-  void stopAllDeletedConnectedEnginesAsync();
+class RestartSloopNotificationAction : NotificationAction("Restart SonarLint") {
 
-  void stopAllEngines(boolean async);
+    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+        notification.expire()
+        runOnPooledThread {
+            SonarLintUtils.getService(BackendService::class.java).restartBackendService()
+        }
+    }
 
-  SonarLintAnalysisEngine getStandaloneEngine();
-
-  SonarLintAnalysisEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId) throws InvalidBindingException;
-
-  @Nullable SonarLintAnalysisEngine getConnectedEngineIfStarted(String connectionId);
-
-  @Nullable SonarLintAnalysisEngine getStandaloneEngineIfStarted();
 }

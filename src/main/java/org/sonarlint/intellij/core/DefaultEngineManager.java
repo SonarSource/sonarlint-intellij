@@ -104,12 +104,6 @@ public class DefaultEngineManager implements EngineManager, Disposable {
     }
   }
 
-  @Override
-  public synchronized void stopStandaloneEngine() {
-    standalone.stop();
-    standalone = null;
-  }
-
   @NotNull
   private synchronized SonarLintAnalysisEngine getConnectedEngine(String connectionId) {
     return connectedEngines.computeIfAbsent(connectionId, this::createConnectedEngine);

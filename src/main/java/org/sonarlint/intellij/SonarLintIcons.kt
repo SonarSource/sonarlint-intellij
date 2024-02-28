@@ -46,6 +46,9 @@ object SonarLintIcons {
     val SONARLINT_ACTION_12PX = getIcon("/images/sonarlintAction_12px.svg")
     @JvmField
     val SONARLINT_ACTION_GREEN_12PX = getIcon("/images/sonarlintAction_green_12px.svg")
+
+    @JvmField
+    val SONARLINT_ACTION_ORANGE_12PX = getIcon("/images/sonarlintAction_orange_12px.svg")
     @JvmField
     val SONARLINT_TOOLWINDOW_EMPTY = getIcon("/images/sonarlintToolWindowEmpty.svg")
     @JvmField

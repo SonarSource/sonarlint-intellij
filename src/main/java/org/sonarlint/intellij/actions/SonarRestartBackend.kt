@@ -19,20 +19,21 @@
  */
 package org.sonarlint.intellij.actions
 
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.runOnPooledThread
 
-class RestartSloopAction : NotificationAction("Restart SonarLint") {
+class SonarRestartBackend : AbstractSonarAction("Restart SonarLint") {
 
-    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+    companion object {
+        const val SONARLINT_ERROR_MSG = "SonarLint encountered an issue and has stopped working"
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
         runOnPooledThread {
-            SonarLintUtils.getService(BackendService::class.java).restartTest()
+            SonarLintUtils.getService(BackendService::class.java).restartBackendService()
         }
-        notification.expire()
     }
 
 }

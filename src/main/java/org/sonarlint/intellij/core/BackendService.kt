@@ -43,8 +43,9 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
-import org.sonarlint.intellij.actions.RestartSloopAction
+import org.sonarlint.intellij.actions.RestartSloopNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.actions.SonarRestartBackend.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -62,6 +63,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarlint.intellij.util.VirtualFileUtils
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
@@ -157,9 +159,10 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                 })
             ApplicationManager.getApplication().messageBus.connect()
                 .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
-
                     override fun projectClosing(project: Project) {
-                        this@BackendService.projectClosed(project)
+                        runOnPooledThread(project) {
+                            this@BackendService.projectClosed(project)
+                        }
                     }
                 })
         }.get()
@@ -168,12 +171,19 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
 
     private fun initMultipleTime(): CompletableFuture<Void> {
         backend.onExit().thenAcceptAsync {
-            getService(EngineManager::class.java).stopStandaloneEngine()
+            getService(EngineManager::class.java).stopAllEngines(true)
+            ProjectManager.getInstance().openProjects.forEach { project ->
+                if (!project.isDisposed) {
+                    runOnUiThread(project) {
+                        getService(project, SonarLintToolWindow::class.java).refreshViews()
+                    }
+                }
+            }
             projectLessNotification(
-                "SonarLint encountered an issue",
-                "The process was stopped",
+                null,
+                SONARLINT_ERROR_MSG,
                 NotificationType.ERROR,
-                RestartSloopAction()
+                RestartSloopNotificationAction()
             )
         }
         val serverConnections = getGlobalSettings().serverConnections
@@ -681,12 +691,22 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         initializedBackend.newCodeService.didToggleFocus()
     }
 
-    fun restartTest() {
+    fun restartBackendService() {
+        if (backend.isAlive) {
+            return
+        }
+
         backend = initBackend()
         initMultipleTime().get()
         initializedBackend = backend.rpcServer
 
-        ProjectManager.getInstance().openProjects.map { project ->
+        ProjectManager.getInstance().openProjects.forEach { project ->
+            if (!project.isDisposed) {
+                runOnUiThread(project) {
+                    getService(project, SonarLintToolWindow::class.java).refreshViews()
+                }
+            }
+
             val binding = getService(project, ProjectBindingManager::class.java).binding
             initializedBackend.configurationService.didAddConfigurationScopes(
                 DidAddConfigurationScopesParams(
@@ -699,24 +719,24 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                 )
             )
             refreshTaintVulnerabilities(project)
-        }
 
-        ProjectManager.getInstance().openProjects.map { project ->
-            val projectBinding = getService(project, ProjectBindingManager::class.java).binding
             initializedBackend.configurationService.didAddConfigurationScopes(
                 DidAddConfigurationScopesParams(
-                    ModuleManager.getInstance(project).modules.map { toConfigurationScope(it, projectBinding) }
+                    ModuleManager.getInstance(project).modules.map { toConfigurationScope(it, binding) }
                 )
             )
         }
     }
 
     companion object {
+        private var sloopLauncher: SloopLauncher? = null
 
         fun initBackend(): Sloop {
+            if (sloopLauncher == null) {
+                sloopLauncher = SloopLauncher(SonarLintIntelliJClient)
+            }
             val jreHomePath = System.getProperty("java.home")!!
-            val sloopLauncher = SloopLauncher(SonarLintIntelliJClient)
-            return sloopLauncher.start(getService(SonarLintPlugin::class.java).path.resolve("sloop"), Paths.get(jreHomePath))
+            return sloopLauncher!!.start(getService(SonarLintPlugin::class.java).path.resolve("sloop"), Paths.get(jreHomePath))
         }
 
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
@@ -773,4 +793,7 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
             response.details?.let { NodeJsSettings(it.path, it.version) }
         }
     }
+
+    fun isAlive() = backend.isAlive
+
 }
