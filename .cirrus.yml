@@ -154,7 +154,7 @@ plugin_verifier_task:
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 4
-    memory: 8G
+    memory: 10G
   matrix:
     - env:
         IDEA_VERSION: '2022.3.1'
