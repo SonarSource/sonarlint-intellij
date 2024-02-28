@@ -25,7 +25,6 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
@@ -33,20 +32,20 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.GridBag
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import javax.swing.JPanel
 import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
-import org.sonarlint.intellij.util.HelpLabelUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.FindingType.ISSUE
 import org.sonarlint.intellij.finding.FindingType.SECURITY_HOTSPOT
 import org.sonarlint.intellij.finding.FindingType.TAINT_VULNERABILITY
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import javax.swing.JPanel
+import org.sonarlint.intellij.util.HelpLabelUtils
 
 
 class SonarLintDashboardPanel(private val editor: Editor) {
@@ -74,13 +73,9 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         }
         focusOnNewCodeCheckbox.isOpaque = false
 
-        val presentation = Presentation()
-        presentation.icon = AllIcons.Actions.More
-        presentation.putClientProperty(ActionButton.HIDE_DROPDOWN_ICON, true)
-
         val menuButton = ActionButton(
             MenuAction(),
-            presentation,
+            null,
             ActionPlaces.EDITOR_POPUP,
             ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE
         )
@@ -175,9 +170,11 @@ class SonarLintDashboardPanel(private val editor: Editor) {
 
     private class MenuAction : DefaultActionGroup(), HintManagerImpl.ActionToIgnore {
         init {
-            isPopup = true
             add(ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"))
             add(ShowLogAction())
+            templatePresentation.isPopupGroup = true
+            templatePresentation.icon = AllIcons.Actions.More
+            templatePresentation.putClientProperty(ActionButton.HIDE_DROPDOWN_ICON, true)
         }
     }
 
