@@ -52,10 +52,12 @@ import javax.swing.JPanel;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.actions.OpenInBrowserAction;
+import org.sonarlint.intellij.actions.RestartBackendAction;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
@@ -69,11 +71,13 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 
 import static java.util.function.Predicate.not;
+import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
+  private static final String SONARLINT_ERROR_CARD_ID = "SONARLINT_ERROR_CARD_ID";
   private static final String NOT_SUPPORTED_CARD_ID = "NOT_SUPPORTED_CARD";
   private static final String NO_SECURITY_HOTSPOT_CARD_ID = "NO_SECURITY_HOTSPOT_CARD_ID";
   private static final String NO_SECURITY_HOTSPOT_FILTERED_CARD_ID = "NO_SECURITY_HOTSPOT_FILTERED_CARD_ID";
@@ -124,6 +128,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
     sonarConfigureProject = new SonarConfigureProject();
     notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
+    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", new RestartBackendAction()), SONARLINT_ERROR_CARD_ID);
     cardPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
@@ -410,7 +415,9 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public int refreshView() {
-    if (currentFindings != null) {
+    if (!getService(BackendService.class).isAlive()) {
+      cardPanel.show(SONARLINT_ERROR_CARD_ID);
+    } else if (currentFindings != null) {
       return updateHotspots(currentFindings);
     }
     return 0;

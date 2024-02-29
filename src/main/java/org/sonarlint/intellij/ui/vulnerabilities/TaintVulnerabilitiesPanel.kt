@@ -51,12 +51,15 @@ import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
+import org.sonarlint.intellij.actions.RestartBackendAction
+import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TAINT_VULNERABILITIES_LINK
 import org.sonarlint.intellij.editor.EditorDecorator
@@ -85,6 +88,7 @@ import org.sonarlint.intellij.util.runOnPooledThread
 private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_SPLIT_PROPORTION"
 private const val DEFAULT_SPLIT_PROPORTION = 0.5f
 
+private const val ERROR_CARD_ID = "ERROR_CARD"
 private const val NO_BINDING_CARD_ID = "NO_BINDING_CARD"
 private const val NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID = "NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID"
 private const val INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD"
@@ -111,6 +115,10 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     init {
         val globalSettings = getGlobalSettings()
+        cards.add(
+            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", RestartBackendAction()),
+            ERROR_CARD_ID
+        )
         cards.add(centeredLabel("The project is not bound to SonarCloud/SonarQube", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
         cards.add(centeredLabel("No taint vulnerabilities shown due to the current filtering", "Show Resolved Taint Vulnerabilities",
@@ -234,6 +242,9 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     fun switchCard() {
         when {
+            !getService(BackendService::class.java).isAlive() -> {
+                showCard(ERROR_CARD_ID)
+            }
             !getSettingsFor(project).isBound -> {
                 showCard(NO_BINDING_CARD_ID)
             }

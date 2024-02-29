@@ -34,6 +34,7 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.core.BackendService;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
@@ -55,7 +56,8 @@ public class SonarAnalyzeFilesAction extends AbstractSonarAction {
 
   @Override
   protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
-    return !status.isRunning();
+    var backendIsAlive = getService(BackendService.class).isAlive();
+    return !status.isRunning() && backendIsAlive;
   }
 
   @Override

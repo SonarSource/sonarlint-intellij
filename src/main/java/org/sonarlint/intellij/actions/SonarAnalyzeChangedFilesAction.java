@@ -28,6 +28,9 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
   public SonarAnalyzeChangedFilesAction() {
@@ -43,7 +46,8 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
       return false;
     }
     var changeListManager = ChangeListManager.getInstance(project);
-    return !changeListManager.getAffectedFiles().isEmpty();
+    var backendIsAlive = getService(BackendService.class).isAlive();
+    return !changeListManager.getAffectedFiles().isEmpty() && backendIsAlive;
   }
 
   @Override

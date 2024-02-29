@@ -143,7 +143,10 @@ class SonarLintTrafficLightWidget(
     }
 
     fun refresh(model: SonarLintDashboardModel) {
-        if (model.hasFindings()) {
+        if (!model.isAlive) {
+            iconAndFindingsCountLabel.icon = SonarLintIcons.SONARLINT_ACTION_ORANGE_12PX
+            iconAndFindingsCountLabel.text = model.findingsCount().toString()
+        } else if (model.hasFindings()) {
             iconAndFindingsCountLabel.icon = SonarLintIcons.SONARLINT_ACTION_12PX
             iconAndFindingsCountLabel.text = model.findingsCount().toString()
         } else {

@@ -33,7 +33,9 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ProjectUtils.hasFiles;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
@@ -51,7 +53,8 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
   @Override
   protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
-    return !status.isRunning() && hasFiles(project);
+    var backendIsAlive = getService(BackendService.class).isAlive();
+    return !status.isRunning() && hasFiles(project) && backendIsAlive;
   }
 
   @Override

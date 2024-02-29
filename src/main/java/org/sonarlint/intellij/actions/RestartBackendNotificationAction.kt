@@ -17,15 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.traffic.light
+package org.sonarlint.intellij.actions
 
-data class SonarLintDashboardModel(
-    val isAlive: Boolean,
-    val issuesCount: Int,
-    val hotspotsCount: Int,
-    val taintVulnerabilitiesCount: Int,
-    val isFocusOnNewCode: Boolean,
-) {
-    fun findingsCount() = issuesCount + hotspotsCount + taintVulnerabilitiesCount
-    fun hasFindings() = findingsCount() != 0
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
+
+class RestartBackendNotificationAction : NotificationAction("Restart SonarLint") {
+
+    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+        notification.expire()
+        runOnPooledThread {
+            SonarLintUtils.getService(BackendService::class.java).restartBackendService()
+        }
+    }
+
 }

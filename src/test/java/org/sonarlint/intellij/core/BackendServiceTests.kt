@@ -44,6 +44,7 @@ import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.ConfigurationRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpdateBindingParams
@@ -58,6 +59,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnera
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
+    private lateinit var sloop: Sloop
     private lateinit var backend: SonarLintRpcServer
     private lateinit var backendConnectionService: ConnectionRpcService
     private lateinit var backendConfigurationService: ConfigurationRpcService
@@ -81,8 +83,11 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(backend.connectionService).thenReturn(backendConnectionService)
         `when`(backend.configurationService).thenReturn(backendConfigurationService)
         `when`(backend.taintVulnerabilityTrackingService).thenReturn(taintService)
+        sloop = mock(Sloop::class.java)
+        `when`(sloop.rpcServer).thenReturn(backend)
+        `when`(sloop.onExit()).thenReturn(CompletableFuture.completedFuture(null))
 
-        service = BackendService(backend)
+        service = BackendService(sloop)
         ApplicationManager.getApplication().replaceService(BackendService::class.java, service, testRootDisposable)
     }
 

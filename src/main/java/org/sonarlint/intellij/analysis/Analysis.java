@@ -108,6 +108,10 @@ public class Analysis implements Cancelable {
     var console = getService(project, SonarLintConsole.class);
     console.debug("Trigger: " + trigger);
     console.debug(String.format("[%s] %d file(s) submitted", trigger, files.size()));
+    if (!getService(BackendService.class).isAlive()) {
+      SonarLintConsole.get(project).info("Analysis skipped as SonarLint is not alive");
+      return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
+    }
     if (!getService(project, AnalysisReadinessCache.class).isReady()) {
       SonarLintConsole.get(project).info("Analysis skipped as the engine is not ready yet");
       return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
