@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.util;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -34,9 +36,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.finding.TextRangeMatcher;
-
-import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public class ProjectUtils {
 
@@ -94,23 +95,27 @@ public class ProjectUtils {
     });
   }
 
+  @CheckForNull
   public static VirtualFile tryFindFile(Project project, Path filePath) {
-    var systemIndependentPath = getSystemIndependentPath(filePath);
-
     for (var contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
       if (contentRoot.isDirectory()) {
-        var matchedFile = contentRoot.findFileByRelativePath(systemIndependentPath);
+        var matchedFile = findByRelativePath(contentRoot, filePath);
         if (matchedFile != null) {
           return matchedFile;
         }
       } else {
         // On Rider, all source files are returned as individual content roots, so simply check for equality
-        if (contentRoot.getPath().endsWith(systemIndependentPath)) {
+        if (contentRoot.getPath().endsWith(getSystemIndependentPath(filePath))) {
           return contentRoot;
         }
       }
     }
     return null;
+  }
+
+  @CheckForNull
+  private static VirtualFile findByRelativePath(VirtualFile file, Path path) {
+    return file.findFileByRelativePath(getSystemIndependentPath(path));
   }
 
   private static String getSystemIndependentPath(Path filePath) {

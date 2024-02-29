@@ -34,7 +34,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.io.FileUtilRt
@@ -458,18 +457,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             val filePath = params.ideFilePath
             val impactedFiles = ArrayList<VirtualFile>()
 
-            ProjectRootManager.getInstance(project).contentRoots.forEach {
-                if (it.isDirectory) {
-                    val matchedFile = it.findFileByRelativePath(filePath.toString())
-                    if (matchedFile != null && openFiles.contains(matchedFile)) {
-                        impactedFiles.add(matchedFile)
-                    }
-                } else {
-                    if (Paths.get(it.path).endsWith(filePath) && openFiles.contains(it)) {
-                        impactedFiles.add(it)
-                    }
-                }
+            val matchedFile = tryFindFile(project, filePath)
+
+            if (matchedFile != null && openFiles.contains(matchedFile)) {
+                impactedFiles.add(matchedFile)
             }
+
             getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(impactedFiles, TriggerType.SERVER_SENT_EVENT)
         }
     }
