@@ -43,9 +43,9 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
+import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -180,10 +180,8 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         backend.onExit().thenAcceptAsync {
             getService(EngineManager::class.java).stopAllEngines(true)
             ProjectManager.getInstance().openProjects.forEach { project ->
-                if (!project.isDisposed) {
-                    runOnUiThread(project) {
-                        getService(project, SonarLintToolWindow::class.java).refreshViews()
-                    }
+                runOnUiThread(project) {
+                    getService(project, SonarLintToolWindow::class.java).refreshViews()
                 }
             }
             projectLessNotification(
@@ -712,10 +710,8 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         initializedBackend = backend.rpcServer
 
         ProjectManager.getInstance().openProjects.forEach { project ->
-            if (!project.isDisposed) {
-                runOnUiThread(project) {
-                    getService(project, SonarLintToolWindow::class.java).refreshViews()
-                }
+            runOnUiThread(project) {
+                getService(project, SonarLintToolWindow::class.java).refreshViews()
             }
 
             val binding = getService(project, ProjectBindingManager::class.java).binding
