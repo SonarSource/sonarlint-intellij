@@ -52,7 +52,7 @@ import javax.swing.JPanel;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.actions.OpenInBrowserAction;
-import org.sonarlint.intellij.actions.SonarRestartBackend;
+import org.sonarlint.intellij.actions.RestartBackendAction;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
@@ -71,7 +71,7 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 
 import static java.util.function.Predicate.not;
-import static org.sonarlint.intellij.actions.SonarRestartBackend.SONARLINT_ERROR_MSG;
+import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
@@ -128,7 +128,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
     sonarConfigureProject = new SonarConfigureProject();
     notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
-    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", new SonarRestartBackend()), SONARLINT_ERROR_CARD_ID);
+    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", new RestartBackendAction()), SONARLINT_ERROR_CARD_ID);
     cardPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);

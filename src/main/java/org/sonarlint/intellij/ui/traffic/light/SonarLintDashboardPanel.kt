@@ -45,7 +45,7 @@ import javax.swing.event.HyperlinkEvent
 import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.ShowLogAction
-import org.sonarlint.intellij.actions.SonarRestartBackend.Companion.SONARLINT_ERROR_MSG
+import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings

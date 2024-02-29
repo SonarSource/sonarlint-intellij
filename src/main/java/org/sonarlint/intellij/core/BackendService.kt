@@ -43,9 +43,9 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
-import org.sonarlint.intellij.actions.RestartSloopNotificationAction
+import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.actions.SonarRestartBackend.Companion.SONARLINT_ERROR_MSG
+import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -63,6 +63,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarlint.intellij.util.VirtualFileUtils
+import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
@@ -136,44 +137,46 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
 
     constructor() : this(initBackend())
 
-    private var initializedBackend: SonarLintRpcServer = initOnce()
+    private var initializedBackend: SonarLintRpcServer = oneTimeInitialization()
 
-    private fun initOnce(): SonarLintRpcServer {
-        migrateStoragePath()
-
-        initMultipleTime().thenRun {
-            ApplicationManager.getApplication().messageBus.connect()
-                .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
-                    override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                        runOnPooledThread {
-                            connectionsUpdated(newSettings.serverConnections)
-                            val changedConnections = newSettings.serverConnections.filter { connection ->
-                                val previousConnection = previousSettings.getServerConnectionByName(connection.name)
-                                previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+    private fun oneTimeInitialization(): SonarLintRpcServer {
+        return computeOnPooledThread("SonarLint Initialization") {
+            migrateStoragePath()
+            listenForProcessExit()
+            initRpcServer().thenRun {
+                ApplicationManager.getApplication().messageBus.connect()
+                    .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
+                        override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
+                            runOnPooledThread {
+                                connectionsUpdated(newSettings.serverConnections)
+                                val changedConnections = newSettings.serverConnections.filter { connection ->
+                                    val previousConnection = previousSettings.getServerConnectionByName(connection.name)
+                                    previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                                }
+                                credentialsChanged(changedConnections)
                             }
-                            credentialsChanged(changedConnections)
                         }
-                    }
 
-                    override fun changed(serverList: MutableList<ServerConnection>) {
-                        runOnPooledThread {
-                            connectionsUpdated(serverList)
+                        override fun changed(serverList: MutableList<ServerConnection>) {
+                            runOnPooledThread {
+                                connectionsUpdated(serverList)
+                            }
                         }
-                    }
-                })
-            ApplicationManager.getApplication().messageBus.connect()
-                .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
-                    override fun projectClosing(project: Project) {
-                        runOnPooledThread(project) {
-                            this@BackendService.projectClosed(project)
+                    })
+                ApplicationManager.getApplication().messageBus.connect()
+                    .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
+                        override fun projectClosing(project: Project) {
+                            runOnPooledThread(project) {
+                                this@BackendService.projectClosed(project)
+                            }
                         }
-                    }
-                })
-        }.get()
-        return backend.rpcServer
+                    })
+            }.get()
+            backend.rpcServer
+        } ?: throw IllegalStateException("Could not initialize SonarLint")
     }
 
-    private fun initMultipleTime(): CompletableFuture<Void> {
+    private fun listenForProcessExit() {
         backend.onExit().thenAcceptAsync {
             getService(EngineManager::class.java).stopAllEngines(true)
             ProjectManager.getInstance().openProjects.forEach { project ->
@@ -187,9 +190,12 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                 null,
                 SONARLINT_ERROR_MSG,
                 NotificationType.ERROR,
-                RestartSloopNotificationAction()
+                RestartBackendNotificationAction()
             )
         }
+    }
+
+    private fun initRpcServer(): CompletableFuture<Void> {
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
             serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
@@ -701,7 +707,8 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         }
 
         backend = initBackend()
-        initMultipleTime().get()
+        listenForProcessExit()
+        initRpcServer().get()
         initializedBackend = backend.rpcServer
 
         ProjectManager.getInstance().openProjects.forEach { project ->

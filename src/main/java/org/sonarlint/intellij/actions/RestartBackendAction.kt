@@ -24,7 +24,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.runOnPooledThread
 
-class SonarRestartBackend : AbstractSonarAction("Restart SonarLint") {
+class RestartBackendAction : AbstractSonarAction("Restart SonarLint") {
 
     companion object {
         const val SONARLINT_ERROR_MSG = "SonarLint encountered an issue and has stopped working"

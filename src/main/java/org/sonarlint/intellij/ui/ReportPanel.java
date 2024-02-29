@@ -68,7 +68,7 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 
 import static java.util.function.Predicate.not;
-import static org.sonarlint.intellij.actions.SonarRestartBackend.SONARLINT_ERROR_MSG;
+import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;

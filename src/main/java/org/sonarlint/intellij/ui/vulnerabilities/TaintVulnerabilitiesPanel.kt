@@ -51,8 +51,8 @@ import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
-import org.sonarlint.intellij.actions.SonarRestartBackend
-import org.sonarlint.intellij.actions.SonarRestartBackend.Companion.SONARLINT_ERROR_MSG
+import org.sonarlint.intellij.actions.RestartBackendAction
+import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
@@ -116,7 +116,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     init {
         val globalSettings = getGlobalSettings()
         cards.add(
-            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", SonarRestartBackend()),
+            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", RestartBackendAction()),
             ERROR_CARD_ID
         )
         cards.add(centeredLabel("The project is not bound to SonarCloud/SonarQube", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
