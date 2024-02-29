@@ -12,4 +12,4 @@ jobs:
       contents: write
     uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v5
     with:
-      slackChannel: team-sonarlint-intelliclipse-notifs
+      slackChannel: squad-ide-intellij-family-bots
