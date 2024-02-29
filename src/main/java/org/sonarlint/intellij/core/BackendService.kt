@@ -67,6 +67,7 @@ import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
@@ -97,6 +98,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.G
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidUpdateFileSystemParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedParams
@@ -132,8 +134,10 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParam
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.MatchWithServerSecurityHotspotsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWithHashDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TrackWithServerIssuesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
 
@@ -835,6 +839,28 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         return initializedBackend.analysisService.autoDetectedNodeJs.thenApply { response ->
             response.details?.let { NodeJsSettings(it.path, it.version) }
         }
+    }
+
+    fun updateFileSystem(filesByModule: Map<Module, List<ClientModuleFileEvent>>) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
+        val deletedFileUris = filesByModule.values
+            .flatMap { it.filter { event -> event.type() == ModuleFileEvent.Type.DELETED } }
+            .mapNotNull { VirtualFileUtils.toURI(it.target().getClientObject()) }
+        val events = filesByModule.entries.flatMap { (module, event) ->
+            event.filter { it.type() != ModuleFileEvent.Type.DELETED }
+                .map {
+                    ClientFileDto(
+                        it.target().uri(),
+                        Paths.get(it.target().relativePath()),
+                        moduleId(module),
+                        it.target().isTest,
+                        it.target().charset.toString(),
+                        Paths.get(it.target().path),
+                        null
+                    )
+                }
+        }
+        initializedBackend.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events))
     }
 
     fun isAlive() = backend.isAlive
