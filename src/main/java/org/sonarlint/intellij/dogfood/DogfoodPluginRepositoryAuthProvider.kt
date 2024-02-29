@@ -30,28 +30,44 @@ import java.util.Properties
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.runOnPooledThread
 
+
+var dogfoodUsername: String? = null
+var dogfoodPassword: String? = null
+var connectionFailed = false
+var notificationAlreadyDisplayed = false
+
+fun loadCredentials() {
+    val inputStream = getSonarlintSystemPath().resolve("dogfood.properties").inputStreamIfExists()
+    if (inputStream != null) {
+        val props = Properties()
+        props.load(inputStream)
+        dogfoodUsername = props.getProperty("username")
+        dogfoodPassword = props.getProperty("password")
+    } else {
+        dogfoodUsername = null
+        dogfoodPassword = null
+    }
+}
+
+fun resetTries() {
+    connectionFailed = false
+    notificationAlreadyDisplayed = false
+}
+
+private fun getSonarlintSystemPath() = Paths.get(System.getProperty("user.home")).resolve(".sonarlint")
+
 class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
 
-    private val dogfoodUsername: String?
-    private val dogfoodPassword: String?
-    private val dogfoodUrl = "https://repox.jfrog.io"
-    private var connectionFailed = false
+    companion object {
+        private const val DOGFOOD_URL = "https://repox.jfrog.io"
+    }
 
     init {
-        val inputStream = getSonarlintSystemPath().resolve("dogfood.properties").inputStreamIfExists()
-        if (inputStream != null) {
-            val props = Properties()
-            props.load(inputStream)
-            dogfoodUsername = props.getProperty("username")
-            dogfoodPassword = props.getProperty("password")
-        } else {
-            dogfoodUsername = null
-            dogfoodPassword = null
-        }
+        loadCredentials()
     }
 
     override fun getAuthHeaders(url: String): Map<String, String> {
-        if (!connectionFailed) {
+        if (!connectionFailed && !notificationAlreadyDisplayed) {
             return if (dogfoodUsername != null && dogfoodPassword != null) {
                 val encodedAuth = "Basic " + "$dogfoodUsername:$dogfoodPassword".encodeBase64()
 
@@ -66,9 +82,9 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
                         if (responseCode == 401) {
                             SonarLintProjectNotifications.projectLessNotification(
                                 "Dogfooding credentials are not valid",
-                                "Connection to Repox was unauthorized, make sure the credentials 'username' and 'password' are valid in ~/.sonarlint/dogfood.properties" +
-                                    "and restart the IDE",
-                                NotificationType.WARNING
+                                "Connection to Repox was unauthorized, make sure the credentials 'username' and 'password' are valid in ~/.sonarlint/dogfood.properties",
+                                NotificationType.WARNING,
+                                DogfoodSetCredentialsAction()
                             )
                             connectionFailed = true
                         }
@@ -78,11 +94,12 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
                 mapOf("Authorization" to encodedAuth)
             } else {
                 SonarLintProjectNotifications.projectLessNotification(
-                    "Dogfooding credentials are missing",
-                    "Make sure the Repox credentials 'username' and 'password' are set in ~/.sonarlint/dogfood.properties" +
-                        "and restart the IDE",
-                    NotificationType.WARNING
+                    "",
+                    "Dogfooding credentials to Repox are missing in ~/.sonarlint/dogfood.properties",
+                    NotificationType.WARNING,
+                    DogfoodSetCredentialsAction()
                 )
+                notificationAlreadyDisplayed = true
                 emptyMap()
             }
         }
@@ -90,11 +107,9 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
     }
 
     override fun canHandle(url: String): Boolean {
-        return url.startsWith(dogfoodUrl)
+        return url.startsWith(DOGFOOD_URL)
     }
 
     private fun String.encodeBase64() = Base64.getEncoder().encodeToString(encodeToByteArray())
-
-    private fun getSonarlintSystemPath() = Paths.get(System.getProperty("user.home")).resolve(".sonarlint")
 
 }
