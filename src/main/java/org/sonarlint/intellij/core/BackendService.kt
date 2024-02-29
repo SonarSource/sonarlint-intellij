@@ -145,16 +145,20 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
             ApplicationManager.getApplication().messageBus.connect()
                 .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
                     override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                        connectionsUpdated(newSettings.serverConnections)
-                        val changedConnections = newSettings.serverConnections.filter { connection ->
-                            val previousConnection = previousSettings.getServerConnectionByName(connection.name)
-                            previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                        runOnPooledThread {
+                            connectionsUpdated(newSettings.serverConnections)
+                            val changedConnections = newSettings.serverConnections.filter { connection ->
+                                val previousConnection = previousSettings.getServerConnectionByName(connection.name)
+                                previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                            }
+                            credentialsChanged(changedConnections)
                         }
-                        credentialsChanged(changedConnections)
                     }
 
                     override fun changed(serverList: MutableList<ServerConnection>) {
-                        connectionsUpdated(serverList)
+                        runOnPooledThread {
+                            connectionsUpdated(serverList)
+                        }
                     }
                 })
             ApplicationManager.getApplication().messageBus.connect()
