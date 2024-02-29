@@ -35,9 +35,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
 import java.io.IOException
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -105,7 +107,10 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.OpenHotspotInBrowserParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.ClientConstantInfoDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.FeatureFlagsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.HttpConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.InitializeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SonarCloudAlternativeEnvironmentDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SslConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.TelemetryClientConstantAttributesDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.AddIssueCommentParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ChangeIssueStatusParams
@@ -131,6 +136,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
+
 
 @Service(Service.Level.APP)
 class BackendService @NonInjectable constructor(private var backend: Sloop) : Disposable {
@@ -208,6 +214,8 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                     "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version
                 ),
                 getTelemetryConstantAttributes(),
+                getHttpConfiguration(),
+                getSonarCloudAlternativeEnvironment(),
                 FeatureFlagsDto(true, true, true, true, true, true, false, true),
                 getLocalStoragePath(),
                 SonarLintEngineFactory.getWorkDir(),
@@ -223,6 +231,34 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                 if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
             )
         )
+    }
+
+    private fun getHttpConfiguration(): HttpConfigurationDto {
+        return HttpConfigurationDto(
+            SslConfigurationDto(getPathProperty("sonarlint.ssl.trustStorePath"), System.getProperty("sonarlint.ssl.trustStorePassword"),
+                System.getProperty("sonarlint.ssl.trustStoreType"), getPathProperty("sonarlint.ssl.keyStorePath"), System.getProperty("sonarlint.ssl.keyStorePassword"),
+                System.getProperty("sonarlint.ssl.keyStoreType")),
+            getTimeoutProperty("sonarlint.http.connectTimeout"), getTimeoutProperty("sonarlint.http.socketTimeout"), getTimeoutProperty("sonarlint.http.connectionRequestTimeout"),
+            getTimeoutProperty("sonarlint.http.responseTimeout"))
+    }
+
+    private fun getSonarCloudAlternativeEnvironment(): SonarCloudAlternativeEnvironmentDto? {
+        val sonarCloudUrl = System.getProperty("sonarlint.internal.sonarcloud.url")
+        val sonarCloudWebSocketUrl = System.getProperty("sonarlint.internal.sonarcloud.websocket.url")
+        if (sonarCloudUrl != null && sonarCloudWebSocketUrl != null) {
+            return SonarCloudAlternativeEnvironmentDto(URI.create(sonarCloudUrl), URI.create(sonarCloudWebSocketUrl))
+        }
+        return null
+    }
+
+    private fun getPathProperty(propertyName: String): Path? {
+        val property = System.getProperty(propertyName)
+        return property?.let { Paths.get(it) }
+    }
+
+    private fun getTimeoutProperty(propertyName: String): Duration? {
+        val property = System.getProperty(propertyName)
+        return property?.let { Duration.parse(it) }
     }
 
     private fun getTelemetryConstantAttributes() =
