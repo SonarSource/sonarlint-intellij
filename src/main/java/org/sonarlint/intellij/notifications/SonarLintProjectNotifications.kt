@@ -349,13 +349,14 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
-    fun simpleNotification(message: String, type: NotificationType) {
+    fun simpleNotification(title: String?, message: String, type: NotificationType, vararg actions: AnAction) {
         SONARLINT_GROUP.createNotification(
-            "",
+            title ?: "",
             message,
             type
         ).apply {
             icon = SonarLintIcons.SONARLINT
+            Stream.of(*actions).forEach(this::addAction)
             notify(myProject)
         }
     }

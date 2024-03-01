@@ -26,8 +26,8 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.connected.SonarProjectBranchListener
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.connected.SonarProjectBranchListener
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -62,7 +62,7 @@ class SecurityHotspotsRefreshTrigger(private val project: Project) {
     triggerRefresh()
   }
 
-  private fun triggerRefresh(onlyForModule: Module? = null) {
+  fun triggerRefresh(onlyForModule: Module? = null) {
     runOnPooledThread(project) {
       if (onlyForModule == null || project.getOpenFiles().any { onlyForModule == findModuleForFile(it, project) }) {
         getService(project, SecurityHotspotsPresenter::class.java).presentSecurityHotspotsForOpenFiles()

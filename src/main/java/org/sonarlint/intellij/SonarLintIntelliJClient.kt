@@ -81,6 +81,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROU
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
@@ -274,7 +275,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (file == null) {
             if (!project.isDisposed) {
                 SonarLintProjectNotifications.get(project)
-                    .simpleNotification("Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
+                    .simpleNotification(null, "Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
             }
             return
         }
@@ -283,6 +284,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (module == null) {
             if (!project.isDisposed) {
                 SonarLintProjectNotifications.get(project).simpleNotification(
+                    null,
                     "Unable to open finding. Can't find the module corresponding to file: $filePath",
                     NotificationType.WARNING
                 )
@@ -378,15 +380,16 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } else {
             val connection = getGlobalSettings().getServerConnectionByName(connectionId)
                 .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
-
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
-            SonarLintProjectNotifications.projectLessNotification(
+            SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
                     "You can now enjoy all capabilities of SonarLint Connected Mode. You can update the binding of this project in your SonarLint Settings.",
                 NotificationType.INFORMATION,
                 OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
             )
+            val module = BackendService.findModule(configScopeId)
+            getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh(module)
             AssistBindingResponse(BackendService.projectId(project))
         }
     }
