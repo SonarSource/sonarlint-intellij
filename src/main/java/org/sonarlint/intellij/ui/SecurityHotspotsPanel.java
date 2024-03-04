@@ -192,6 +192,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       }
       return isFocusOnNewCode? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     } else {
+      cardPanel.show(NOT_SUPPORTED_CARD_ID);
       return 0;
     }
   }
