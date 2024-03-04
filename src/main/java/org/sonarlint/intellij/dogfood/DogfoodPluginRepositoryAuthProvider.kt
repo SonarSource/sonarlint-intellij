@@ -21,40 +21,20 @@ package org.sonarlint.intellij.dogfood
 
 import com.intellij.ide.plugins.auth.PluginRepositoryAuthProvider
 import com.intellij.notification.NotificationType
-import com.intellij.util.io.inputStreamIfExists
 import java.net.HttpURLConnection
 import java.net.URL
-import java.nio.file.Paths
 import java.util.Base64
-import java.util.Properties
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.runOnPooledThread
 
-
-var dogfoodUsername: String? = null
-var dogfoodPassword: String? = null
 var connectionFailed = false
 var notificationAlreadyDisplayed = false
-
-fun loadCredentials() {
-    val inputStream = getSonarlintSystemPath().resolve("dogfood.properties").inputStreamIfExists()
-    if (inputStream != null) {
-        val props = Properties()
-        props.load(inputStream)
-        dogfoodUsername = props.getProperty("username")
-        dogfoodPassword = props.getProperty("password")
-    } else {
-        dogfoodUsername = null
-        dogfoodPassword = null
-    }
-}
 
 fun resetTries() {
     connectionFailed = false
     notificationAlreadyDisplayed = false
 }
-
-private fun getSonarlintSystemPath() = Paths.get(System.getProperty("user.home")).resolve(".sonarlint")
 
 class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
 
@@ -62,14 +42,11 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
         private const val DOGFOOD_URL = "https://repox.jfrog.io"
     }
 
-    init {
-        loadCredentials()
-    }
-
     override fun getAuthHeaders(url: String): Map<String, String> {
         if (!connectionFailed && !notificationAlreadyDisplayed) {
-            return if (dogfoodUsername != null && dogfoodPassword != null) {
-                val encodedAuth = "Basic " + "$dogfoodUsername:$dogfoodPassword".encodeBase64()
+            val dogfoodCredentials = getService(DogfoodCredentialsStore::class.java).state
+            return if (dogfoodCredentials.username != null && dogfoodCredentials.password != null) {
+                val encodedAuth = "Basic " + "${dogfoodCredentials.username}:${dogfoodCredentials.password}".encodeBase64()
 
                 val testUrlRepox = URL("https://repox.jfrog.io/repox/sonarsource")
                 runOnPooledThread {
