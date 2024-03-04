@@ -40,6 +40,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -49,6 +50,7 @@ import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_E
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -622,36 +624,40 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                     }
                 }
 
-        initializedBackend.issueTrackingService.trackWithServerIssues(
-            TrackWithServerIssuesParams(
-                moduleId(module),
-                rawIssuesByRelativePath,
-                shouldFetchIssuesFromServer
-            )
-        ).thenAccept { response ->
-            response.issuesByIdeRelativePath.forEach { (ideRelativePath, trackedIssues) ->
-                val file = virtualFileByRelativePath[ideRelativePath] ?: return@forEach
-                val liveIssues = liveIssuesByFile[file] ?: return@forEach
-                liveIssues.zip(trackedIssues).forEach { (liveIssue, serverOrLocalIssue) ->
-                    if (serverOrLocalIssue.isLeft) {
-                        val serverIssue = serverOrLocalIssue.left
-                        liveIssue.backendId = serverIssue.id
-                        liveIssue.introductionDate = serverIssue.introductionDate
-                        liveIssue.serverFindingKey = serverIssue.serverKey
-                        liveIssue.isResolved = serverIssue.isResolved
-                        serverIssue.overriddenSeverity?.let { liveIssue.setSeverity(it) }
-                        liveIssue.setType(serverIssue.type)
-                        liveIssue.setOnNewCode(serverIssue.isOnNewCode)
-                    } else {
-                        val localOnlyIssue = serverOrLocalIssue.right
-                        liveIssue.backendId = localOnlyIssue.id
-                        liveIssue.isResolved = localOnlyIssue.resolutionStatus != null
-                        liveIssue.setOnNewCode(true)
+        try {
+            initializedBackend.issueTrackingService.trackWithServerIssues(
+                TrackWithServerIssuesParams(
+                    moduleId(module),
+                    rawIssuesByRelativePath,
+                    shouldFetchIssuesFromServer
+                )
+            ).thenAccept { response ->
+                response.issuesByIdeRelativePath.forEach { (ideRelativePath, trackedIssues) ->
+                    val file = virtualFileByRelativePath[ideRelativePath] ?: return@forEach
+                    val liveIssues = liveIssuesByFile[file] ?: return@forEach
+                    liveIssues.zip(trackedIssues).forEach { (liveIssue, serverOrLocalIssue) ->
+                        if (serverOrLocalIssue.isLeft) {
+                            val serverIssue = serverOrLocalIssue.left
+                            liveIssue.backendId = serverIssue.id
+                            liveIssue.introductionDate = serverIssue.introductionDate
+                            liveIssue.serverFindingKey = serverIssue.serverKey
+                            liveIssue.isResolved = serverIssue.isResolved
+                            serverIssue.overriddenSeverity?.let { liveIssue.setSeverity(it) }
+                            liveIssue.setType(serverIssue.type)
+                            liveIssue.setOnNewCode(serverIssue.isOnNewCode)
+                        } else {
+                            val localOnlyIssue = serverOrLocalIssue.right
+                            liveIssue.backendId = localOnlyIssue.id
+                            liveIssue.isResolved = localOnlyIssue.resolutionStatus != null
+                            liveIssue.setOnNewCode(true)
+                        }
                     }
                 }
             }
+                .join()
+        } catch (e: CancellationException) {
+            SonarLintConsole.get(module.project).debug("The request to match issues has been canceled")
         }
-            .get()
     }
 
     fun trackWithServerHotspots(
@@ -679,34 +685,38 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                     }
                 }
 
-        initializedBackend.securityHotspotMatchingService.matchWithServerSecurityHotspots(
-            MatchWithServerSecurityHotspotsParams(
-                moduleId(module),
-                rawHotspotsByRelativePath,
-                shouldFetchHotspotsFromServer
-            )
-        ).thenAccept { response ->
-            response.securityHotspotsByIdeRelativePath.forEach { (serverRelativePath, trackedHotspots) ->
-                val file = virtualFileByRelativePath[serverRelativePath] ?: return@forEach
-                val liveHotspots = liveHotspotsByFile[file] ?: return@forEach
-                liveHotspots.zip(trackedHotspots).forEach { (liveHotspot, serverOrLocalHotspot) ->
-                    if (serverOrLocalHotspot.isLeft) {
-                        val serverHotspot = serverOrLocalHotspot.left
-                        liveHotspot.backendId = serverHotspot.id
-                        liveHotspot.introductionDate = serverHotspot.introductionDate
-                        liveHotspot.serverFindingKey = serverHotspot.serverKey
-                        liveHotspot.isResolved = serverHotspot.status == HotspotStatus.FIXED || serverHotspot.status == HotspotStatus.SAFE
-                        liveHotspot.setStatus(serverHotspot.status)
-                        liveHotspot.setOnNewCode(serverHotspot.isOnNewCode)
-                    } else {
-                        val localOnlyIssue = serverOrLocalHotspot.right
-                        liveHotspot.backendId = localOnlyIssue.id
-                        liveHotspot.setOnNewCode(true)
+        try {
+            initializedBackend.securityHotspotMatchingService.matchWithServerSecurityHotspots(
+                MatchWithServerSecurityHotspotsParams(
+                    moduleId(module),
+                    rawHotspotsByRelativePath,
+                    shouldFetchHotspotsFromServer
+                )
+            ).thenAccept { response ->
+                response.securityHotspotsByIdeRelativePath.forEach { (serverRelativePath, trackedHotspots) ->
+                    val file = virtualFileByRelativePath[serverRelativePath] ?: return@forEach
+                    val liveHotspots = liveHotspotsByFile[file] ?: return@forEach
+                    liveHotspots.zip(trackedHotspots).forEach { (liveHotspot, serverOrLocalHotspot) ->
+                        if (serverOrLocalHotspot.isLeft) {
+                            val serverHotspot = serverOrLocalHotspot.left
+                            liveHotspot.backendId = serverHotspot.id
+                            liveHotspot.introductionDate = serverHotspot.introductionDate
+                            liveHotspot.serverFindingKey = serverHotspot.serverKey
+                            liveHotspot.isResolved = serverHotspot.status == HotspotStatus.FIXED || serverHotspot.status == HotspotStatus.SAFE
+                            liveHotspot.setStatus(serverHotspot.status)
+                            liveHotspot.setOnNewCode(serverHotspot.isOnNewCode)
+                        } else {
+                            val localOnlyIssue = serverOrLocalHotspot.right
+                            liveHotspot.backendId = localOnlyIssue.id
+                            liveHotspot.setOnNewCode(true)
+                        }
                     }
                 }
             }
+                .join()
+        } catch (e: CancellationException) {
+            SonarLintConsole.get(module.project).debug("The request to match Security Hotspots has been canceled")
         }
-            .get()
     }
 
     private fun toTextRangeWithHashDto(project: Project, finding: LiveFinding): TextRangeWithHashDto? {
@@ -728,7 +738,7 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         // simplification as we ignore module bindings
         return try {
             initializedBackend.newCodeService.getNewCodeDefinition(GetNewCodeDefinitionParams(projectId(project)))
-                .thenApply { response -> if (response.isSupported) response.description else "(unsupported new code definition)" }.get()
+                .thenApply { response -> if (response.isSupported) response.description else "(unsupported new code definition)" }.join()
         } catch (e: Exception) {
             "(unknown code period)"
         }
@@ -825,9 +835,14 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
     fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): List<VirtualFile> {
         ApplicationManager.getApplication().assertIsNonDispatchThread()
         val filesByUri = files.associateBy { VirtualFileUtils.toURI(it) }
-        return initializedBackend.fileService.getFilesStatus(GetFilesStatusParams(mapOf(moduleId(module) to filesByUri.keys.filterNotNull().toList())))
-            .thenApply { response -> response.fileStatuses.filterValues { it.isExcluded }.keys.mapNotNull { filesByUri[it] } }
-            .get()
+        return try {
+            initializedBackend.fileService.getFilesStatus(GetFilesStatusParams(mapOf(moduleId(module) to filesByUri.keys.filterNotNull().toList())))
+                .thenApply { response -> response.fileStatuses.filterValues { it.isExcluded }.keys.mapNotNull { filesByUri[it] } }
+                .join()
+        } catch (e: CancellationException) {
+            SonarLintConsole.get(module.project).debug("The request to retrieve file exclusions has been canceled")
+            emptyList()
+        }
     }
 
     fun createEngine(engineConfiguration: EngineConfiguration, connectionId: String?): SonarLintAnalysisEngine {
