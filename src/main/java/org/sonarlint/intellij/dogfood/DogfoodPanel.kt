@@ -34,8 +34,6 @@ class DogfoodPanel : JPanel() {
     init {
         layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, true, false)
 
-        val contextLabel = JBLabel("Credentials will be written in ~/.sonarlint/dogfood.properties")
-
         val usernamePanel = JPanel(HorizontalLayout(5))
         val usernameLabel = JBLabel("Username")
         usernamePanel.add(usernameLabel)
@@ -48,7 +46,6 @@ class DogfoodPanel : JPanel() {
         passwordPanel.add(passwordField)
         passwordField.preferredSize = Dimension(400, passwordField.preferredSize.height)
 
-        add(contextLabel)
         add(usernamePanel)
         add(passwordPanel)
     }

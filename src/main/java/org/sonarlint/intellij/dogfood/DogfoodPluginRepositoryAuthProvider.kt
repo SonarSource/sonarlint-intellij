@@ -59,7 +59,7 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
                         if (responseCode == 401) {
                             SonarLintProjectNotifications.projectLessNotification(
                                 "Dogfooding credentials are not valid",
-                                "Connection to Repox was unauthorized, make sure the credentials 'username' and 'password' are valid in ~/.sonarlint/dogfood.properties",
+                                "Connection to Repox was unauthorized, make sure the credentials 'username' and 'password' are valid",
                                 NotificationType.WARNING,
                                 DogfoodSetCredentialsAction()
                             )
@@ -72,7 +72,7 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
             } else {
                 SonarLintProjectNotifications.projectLessNotification(
                     "",
-                    "Dogfooding credentials to Repox are missing in ~/.sonarlint/dogfood.properties",
+                    "Dogfooding credentials to Repox are missing",
                     NotificationType.WARNING,
                     DogfoodSetCredentialsAction()
                 )
