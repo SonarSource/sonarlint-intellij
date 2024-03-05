@@ -37,11 +37,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.BackendService;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTrailingSlash;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public final class SonarLintGlobalSettings {
   private boolean isFocusOnNewCode = false;
@@ -118,7 +115,6 @@ public final class SonarLintGlobalSettings {
 
   private void setRuleActive(String ruleKey, boolean active) {
     rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, active)).isActive = active;
-    runOnPooledThread(() -> getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey));
   }
 
   public boolean isRuleExplicitlyDisabled(String ruleKey) {
