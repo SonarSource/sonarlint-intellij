@@ -24,12 +24,12 @@ import com.intellij.openapi.util.PasswordUtil;
 public class DogfoodCredentials {
 
   private String username;
-  private String password;
+  private String pass;
 
-  public DogfoodCredentials(String username, String password) {
+  public DogfoodCredentials(String username, String pass) {
     this.username = username;
-    if (password != null) {
-      this.password = PasswordUtil.encodePassword(password);
+    if (pass != null) {
+      this.pass = PasswordUtil.encodePassword(pass);
     }
   }
 
@@ -41,8 +41,20 @@ public class DogfoodCredentials {
     return username;
   }
 
-  public String getPassword() {
-    return PasswordUtil.decodePassword(password);
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public String getDecodedPass() {
+    return PasswordUtil.decodePassword(pass);
+  }
+
+  public String getPass() {
+    return pass;
+  }
+
+  public void setPass(String pass) {
+    this.pass = PasswordUtil.encodePassword(pass);
   }
 
 }

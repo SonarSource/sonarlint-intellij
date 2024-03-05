@@ -45,8 +45,8 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
     override fun getAuthHeaders(url: String): Map<String, String> {
         if (!connectionFailed && !notificationAlreadyDisplayed) {
             val dogfoodCredentials = getService(DogfoodCredentialsStore::class.java).state
-            return if (dogfoodCredentials.username != null && dogfoodCredentials.password != null) {
-                val encodedAuth = "Basic " + "${dogfoodCredentials.username}:${dogfoodCredentials.password}".encodeBase64()
+            return if (dogfoodCredentials != null && !dogfoodCredentials.username.isNullOrBlank() && !dogfoodCredentials.decodedPass.isNullOrBlank()) {
+                val encodedAuth = "Basic " + "${dogfoodCredentials.username}:${dogfoodCredentials.decodedPass}".encodeBase64()
 
                 val testUrlRepox = URL("https://repox.jfrog.io/repox/sonarsource")
                 runOnPooledThread {

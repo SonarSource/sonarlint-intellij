@@ -17,32 +17,32 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.dogfood
+package org.sonarlint.intellij.dogfood;
 
-import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.State
-import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
+import org.jetbrains.annotations.NotNull;
 
 @State(
-    name = "SonarLintDogfoodCredentials",
-    storages = [Storage("sonarlint-dogfood.xml")]
-)
-@Service(Service.Level.APP)
-class DogfoodCredentialsStore : PersistentStateComponent<DogfoodCredentials> {
+  name = "SonarLintDogfoodCredentials",
+  storages = {@Storage("sonarlint-dogfood.xml")})
+public final class DogfoodCredentialsStore implements PersistentStateComponent<DogfoodCredentials> {
 
-    private var credentials = DogfoodCredentials()
+  private DogfoodCredentials credentials = new DogfoodCredentials();
 
-    override fun getState(): DogfoodCredentials {
-        return credentials
-    }
+  public void save(DogfoodCredentials credentials) {
+    this.credentials = credentials;
+  }
 
-    override fun loadState(credentials: DogfoodCredentials) {
-        this.credentials = credentials
-    }
+  @Override
+  public DogfoodCredentials getState() {
+    return credentials;
+  }
 
-    fun save(credentials: DogfoodCredentials) {
-        this.credentials = credentials
-    }
+  @Override
+  public void loadState(@NotNull DogfoodCredentials state) {
+    this.credentials = state;
+  }
 
 }

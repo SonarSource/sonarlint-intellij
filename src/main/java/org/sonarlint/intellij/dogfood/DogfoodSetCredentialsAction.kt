@@ -19,14 +19,15 @@
  */
 package org.sonarlint.intellij.dogfood
 
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
-class DogfoodSetCredentialsAction : AbstractSonarAction("Set Credentials") {
+class DogfoodSetCredentialsAction : NotificationAction("Set Credentials") {
 
-    override fun actionPerformed(e: AnActionEvent) {
+    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         val project = e.project ?: return
         runOnUiThread(project) {
             DogfoodDialog().setCredentials()?.let {
@@ -34,6 +35,7 @@ class DogfoodSetCredentialsAction : AbstractSonarAction("Set Credentials") {
                 resetTries()
             }
         }
+        notification.expire()
     }
 
 }
