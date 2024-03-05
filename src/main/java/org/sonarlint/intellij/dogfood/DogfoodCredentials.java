@@ -26,13 +26,6 @@ public class DogfoodCredentials {
   private String username;
   private String pass;
 
-  public DogfoodCredentials(String username, String pass) {
-    this.username = username;
-    if (pass != null) {
-      this.pass = PasswordUtil.encodePassword(pass);
-    }
-  }
-
   public DogfoodCredentials() {
     // necessary for XML deserialization
   }
@@ -50,7 +43,7 @@ public class DogfoodCredentials {
   }
 
   public void setPass(String pass) {
-    this.pass = pass;
+    this.pass = PasswordUtil.encodePassword(pass);
   }
 
 }
