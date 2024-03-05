@@ -28,7 +28,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
-import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.components.JBCheckBox
@@ -98,8 +97,6 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         val gc =
             GridBag().nextLine().next().anchor(GridBagConstraints.LINE_START).weightx(1.0).fillCellHorizontally().insets(10, 10, 10, 10)
 
-        panel.setBackground(if (ExperimentalUI.isNewUI()) JBUI.CurrentTheme.Editor.Tooltip.BACKGROUND else UIUtil.getToolTipBackground())
-
         sonarlintCrashed.isVisible = false
         panel.add(sonarlintCrashed, gc)
         panel.add(findingsSummaryLabel, gc)
@@ -109,7 +106,6 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         connectedModePanel.add(connectionIcon)
         connectedModePanel.add(connectionNameLabel)
         connectedModePanel.add(connectionHelp)
-        connectedModePanel.setBackground(if (ExperimentalUI.isNewUI()) JBUI.CurrentTheme.Editor.Tooltip.BACKGROUND else UIUtil.getToolTipBackground())
         panel.add(
             connectedModePanel,
             gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 10)
@@ -121,7 +117,6 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         focusPanel = JPanel(HorizontalLayout(5))
         focusPanel.add(focusOnNewCodeCheckbox)
         focusPanel.add(HelpLabelUtils.createCleanAsYouCode())
-        focusPanel.setBackground(if (ExperimentalUI.isNewUI()) JBUI.CurrentTheme.Editor.Tooltip.BACKGROUND else UIUtil.getToolTipBackground())
         panel.add(
             focusPanel,
             gc.nextLine().next().anchor(GridBagConstraints.LINE_START).fillCellHorizontally().coverLine().weightx(1.0).insets(0, 10, 10, 10)
