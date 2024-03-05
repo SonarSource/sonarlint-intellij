@@ -43,6 +43,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 /**
  * Coordinates creation of models and visual components from persisted settings.
@@ -122,7 +123,8 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       .then(dataContext -> {
         var allSettings = Settings.KEY.getData(dataContext);
         if (allSettings != null) {
-          final var globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
+          final var globalConfigurable = computeOnPooledThread("Find Global Configurable Task",
+            () -> allSettings.find(SonarLintGlobalConfigurable.class));
           if (globalConfigurable != null) {
             return globalConfigurable.getCurrentConnections();
           }
