@@ -209,6 +209,9 @@
         <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
         <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
 
+        <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
+        <applicationService serviceImplementation="org.sonarlint.intellij.dogfood.DogfoodCredentialsStore"/>
+
         <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.core.EngineManager"
                             serviceImplementation="org.sonarlint.intellij.core.DefaultEngineManager"
@@ -265,6 +268,7 @@
                            displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Mark Issue as Resolved"
                            displayType="BALLOON"/>
+        <pluginRepositoryAuthProvider implementation="org.sonarlint.intellij.dogfood.DogfoodPluginRepositoryAuthProvider"/>
     </extensions>
 
     <extensionPoints>
