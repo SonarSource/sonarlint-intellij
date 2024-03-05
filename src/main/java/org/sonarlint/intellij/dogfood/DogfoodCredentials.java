@@ -45,16 +45,12 @@ public class DogfoodCredentials {
     this.username = username;
   }
 
-  public String getDecodedPass() {
+  public String getPass() {
     return PasswordUtil.decodePassword(pass);
   }
 
-  public String getPass() {
-    return pass;
-  }
-
   public void setPass(String pass) {
-    this.pass = PasswordUtil.encodePassword(pass);
+    this.pass = pass;
   }
 
 }
