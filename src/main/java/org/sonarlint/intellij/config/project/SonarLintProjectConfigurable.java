@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.concurrency.Promise;
+import org.jetbrains.concurrency.Promises;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
@@ -120,13 +121,13 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   private static Promise<List<ServerConnection>> getServersFromApplicationConfigurable() {
     return DataManager.getInstance().getDataContextFromFocusAsync()
-      .then(dataContext -> {
+      .thenAsync(dataContext -> {
         var allSettings = Settings.KEY.getData(dataContext);
         if (allSettings != null) {
           final var globalConfigurable = computeOnPooledThread("Find Global Configurable Task",
             () -> allSettings.find(SonarLintGlobalConfigurable.class));
           if (globalConfigurable != null) {
-            return globalConfigurable.getCurrentConnections();
+            return Promises.resolvedPromise(globalConfigurable.getCurrentConnections());
           }
         }
         return null;
