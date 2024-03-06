@@ -32,6 +32,7 @@ import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
@@ -131,7 +132,9 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         treePanel = JBPanel<TaintVulnerabilitiesPanel>(VerticalFlowLayout(0, 0))
         treePanel.add(tree)
         treePanel.add(oldTree)
-        cards.add(createSplitter(project, this, this, treePanel, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
+
+        val treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel)
+        cards.add(createSplitter(project, this, this, treeScrollPane, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
         )
 
