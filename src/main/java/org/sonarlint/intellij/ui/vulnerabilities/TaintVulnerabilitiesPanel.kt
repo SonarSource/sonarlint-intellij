@@ -117,7 +117,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     init {
         val globalSettings = getGlobalSettings()
         cards.add(
-            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", RestartBackendAction()),
+            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint Service", RestartBackendAction()),
             ERROR_CARD_ID
         )
         cards.add(centeredLabel("The project is not bound to SonarCloud/SonarQube", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
