@@ -569,7 +569,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val files = mutableListOf<VirtualFile>()
         ModuleRootManager.getInstance(module).fileIndex.iterateContent { file ->
             if (!file.isDirectory && file.isValid) files.add(file)
-            true
+            !module.project.isDisposed
         }
         return files.toSet()
     }
