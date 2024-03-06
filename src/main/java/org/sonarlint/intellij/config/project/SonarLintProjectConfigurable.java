@@ -130,7 +130,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
             return Promises.resolvedPromise(globalConfigurable.getCurrentConnections());
           }
         }
-        return null;
+        return Promises.resolvedPromise(null);
       });
   }
 
