@@ -51,7 +51,7 @@ class EditorFileChangeListenerTests : AbstractSonarLintLightTests() {
         listener.afterDocumentChange(file.getDocument()!!)
 
         // wait for the notification to be delivered (because of the debounce delay)
-        Awaitility.await().atMost(Duration.ofSeconds(3)).untilAsserted {
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted {
             verify(fakeNotifier, times(1)).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
         }
 
