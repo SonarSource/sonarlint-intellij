@@ -67,6 +67,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 public class SonarLintProjectBindPanel {
   private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
@@ -289,7 +290,8 @@ public class SonarLintProjectBindPanel {
   private void actionConfigureConnections() {
     var allSettings = Settings.KEY.getData(DataManager.getInstance().getDataContext(rootPanel));
     if (allSettings != null) {
-      final var globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
+      final var globalConfigurable = computeOnPooledThread("Find Global Configurable Task",
+        () -> allSettings.find(SonarLintGlobalConfigurable.class));
       if (globalConfigurable != null) {
         allSettings.select(globalConfigurable);
       }
