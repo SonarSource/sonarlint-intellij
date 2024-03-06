@@ -10,6 +10,7 @@ env:
   BURGR_PASSWORD: VAULT[development/kv/data/burgr data.cirrus_password]
   SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
   SONAR_TOKEN: VAULT[development/kv/data/next data.token]
+  SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
   GRADLE_VERSION: "7.6.4"
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
 
@@ -95,6 +96,9 @@ build_task:
     source set_gradle_build_version
     regular_gradle_build_deploy_analyze -x build -x sonar :buildPlugin :cyclonedxBom
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  on_failure:
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
 
 validate_task:
   #  name: "Run UTs and trigger SonarQube analysis"
@@ -119,6 +123,8 @@ validate_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
 
 validate_windows_task:
   #  name: "Run unit tests on Windows"
@@ -142,6 +148,8 @@ validate_windows_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
 
 plugin_verifier_task:
   #  name: "Run plugin verifier on all IDEs"
@@ -180,6 +188,8 @@ plugin_verifier_task:
   on_failure:
     reports_artifacts:
       path: "**/reports/**/*"
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
 
 qa_task:
   #  name: "Run ITs"
@@ -269,6 +279,8 @@ qa_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
 
 mend_scan_task:
   depends_on:
@@ -291,6 +303,9 @@ mend_scan_task:
   always:
     ws_scan_artifacts:
       path: "whitesource/**/*"
+  on_failure:
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
 
 promote_task:
   depends_on:
@@ -314,6 +329,9 @@ promote_task:
     source .cirrus/use-gradle-wrapper.sh
     cirrus_promote_gradle
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  on_failure:
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
 
 dogfood_task:
   #  name: "Update internal dogfooding plugin repo"
@@ -335,3 +353,6 @@ dogfood_task:
     envsubst '$ARTIFACTORY_URL,$PROJECT_VERSION' <.cirrus/updatePlugins-template.xml >updatePlugins.xml
     jfrog rt u updatePlugins.xml sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/ \
       --url "${ARTIFACTORY_URL}" --access-token "${ARTIFACTORY_API_KEY}" --build-name "$CIRRUS_REPO_NAME" --build-number "$BUILD_NUMBER"
+  on_failure:
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
