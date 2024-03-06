@@ -31,9 +31,11 @@ class DogfoodDialog : DialogWrapper(false) {
         init()
 
         val accepted = showAndGet()
-        return if (accepted) DogfoodCredentials().apply {
-            username = centerPanel.getUsername()
-            pass = centerPanel.getPassword()
+        return if (accepted) {
+            DogfoodCredentials.newBuilder()
+                .setUsername(centerPanel.getUsername())
+                .setPassword(centerPanel.getPassword())
+                .build()
         } else null
     }
 
