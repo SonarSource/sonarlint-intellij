@@ -26,7 +26,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.runOnPooledThread
 
-class RestartBackendNotificationAction : NotificationAction("Restart SonarLint") {
+class RestartBackendNotificationAction : NotificationAction("Restart SonarLint Service") {
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         notification.expire()

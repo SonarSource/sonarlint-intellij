@@ -24,10 +24,10 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.runOnPooledThread
 
-class RestartBackendAction : AbstractSonarAction("Restart SonarLint") {
+class RestartBackendAction : AbstractSonarAction("Restart SonarLint Service") {
 
     companion object {
-        const val SONARLINT_ERROR_MSG = "SonarLint encountered an issue and has stopped working"
+        const val SONARLINT_ERROR_MSG = "SonarLint service encountered an issue and has stopped working"
     }
 
     override fun actionPerformed(e: AnActionEvent) {

@@ -207,7 +207,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         val gc = GridBag().nextLine()
 
         val constrains = gc.next()
-        val noAccessLabel = HyperlinkLabel("Restart SonarLint").apply {
+        val noAccessLabel = HyperlinkLabel("Restart SonarLint Service").apply {
             addHyperlinkListener(object : HyperlinkAdapter() {
                 override fun hyperlinkActivated(e: HyperlinkEvent) {
                     runOnPooledThread {

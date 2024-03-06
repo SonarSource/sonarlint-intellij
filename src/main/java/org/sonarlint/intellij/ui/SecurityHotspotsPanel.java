@@ -128,7 +128,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
     sonarConfigureProject = new SonarConfigureProject();
     notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
-    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint", new RestartBackendAction()), SONARLINT_ERROR_CARD_ID);
+    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint Service", new RestartBackendAction()), SONARLINT_ERROR_CARD_ID);
     cardPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);

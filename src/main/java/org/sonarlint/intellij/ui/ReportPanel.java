@@ -206,7 +206,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     var backendIsAlive = getService(BackendService.class).isAlive();
     if (!backendIsAlive) {
       statusText.setText(SONARLINT_ERROR_MSG);
-      statusText.appendLine("Restart SonarLint", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+      statusText.appendLine("Restart SonarLint Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
         ignore -> ActionUtil.invokeAction(restartSonarLintAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
     } else {
       var sonarLintActions = SonarLintActions.getInstance();
