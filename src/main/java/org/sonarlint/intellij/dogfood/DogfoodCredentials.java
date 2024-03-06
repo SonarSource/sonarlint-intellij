@@ -20,17 +20,21 @@
 package org.sonarlint.intellij.dogfood;
 
 import com.intellij.openapi.util.PasswordUtil;
+import com.intellij.util.xmlb.annotations.Tag;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 
+@Immutable
 public class DogfoodCredentials {
 
+  @Tag
   private String username;
+  @Tag
   private String pass;
 
-  public DogfoodCredentials(String username, String pass) {
-    this.username = username;
-    if (pass != null) {
-      this.pass = PasswordUtil.encodePassword(pass);
-    }
+  private DogfoodCredentials(Builder builder) {
+    this.username = builder.username;
+    this.pass = builder.pass;
   }
 
   public DogfoodCredentials() {
@@ -41,16 +45,41 @@ public class DogfoodCredentials {
     return username;
   }
 
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
   public String getPass() {
     return PasswordUtil.decodePassword(pass);
   }
 
-  public void setPass(String pass) {
-    this.pass = pass;
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+
+    private String username;
+    private String pass;
+
+    private Builder() {
+      // no args
+    }
+
+    public DogfoodCredentials build() {
+      return new DogfoodCredentials(this);
+    }
+
+    public Builder setUsername(@Nullable String username) {
+      this.username = username;
+      return this;
+    }
+
+    public Builder setPassword(@Nullable String pass) {
+      if (pass == null) {
+        this.pass = null;
+      } else {
+        this.pass = PasswordUtil.encodePassword(pass);
+      }
+      return this;
+    }
+
   }
 
 }
