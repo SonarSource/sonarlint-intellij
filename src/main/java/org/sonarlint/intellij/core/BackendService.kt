@@ -72,6 +72,7 @@ import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
@@ -153,9 +154,20 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
 
     private fun oneTimeInitialization(): SonarLintRpcServer {
         return computeOnPooledThread("SonarLint Initialization") {
-            migrateStoragePath()
-            listenForProcessExit()
-            initRpcServer().thenRun {
+            try {
+                getService(GlobalLogOutput::class.java).log("Migrating the storage", ClientLogOutput.Level.DEBUG)
+                migrateStoragePath()
+                getService(GlobalLogOutput::class.java).log("Listening for process exit", ClientLogOutput.Level.DEBUG)
+                listenForProcessExit()
+            } catch (e: Exception) {
+                getService(GlobalLogOutput::class.java).logError("Error while initializing: ${e.message}", e)
+                throw e
+            }
+            initRpcServer()
+                .exceptionally { e ->
+                    getService(GlobalLogOutput::class.java).logError("Error while initializing the backend: ${e.message}", e)
+                    null
+                }.thenRun {
                 ApplicationManager.getApplication().messageBus.connect()
                     .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
                         override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
@@ -185,7 +197,10 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                     })
             }.get()
             backend.rpcServer
-        } ?: throw IllegalStateException("Could not initialize SonarLint")
+        } ?: run {
+            getService(GlobalLogOutput::class.java).log("Could not initialize SonarLint", ClientLogOutput.Level.DEBUG)
+            throw IllegalStateException("Could not initialize SonarLint")
+        }
     }
 
     private fun listenForProcessExit() {
@@ -212,7 +227,7 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         val sonarQubeConnections =
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         val nodejsPath = getGlobalSettings().nodejsPath
-
+        getService(GlobalLogOutput::class.java).log("Initializing the backend", ClientLogOutput.Level.DEBUG)
         return backend.rpcServer.initialize(
             InitializeParams(
                 ClientConstantInfoDto(
