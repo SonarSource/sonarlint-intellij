@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.util;
 
-import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
-
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -38,6 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.finding.TextRangeMatcher;
+
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public class ProjectUtils {
 
@@ -64,6 +64,9 @@ public class ProjectUtils {
   private static void iterateFilesToAnalyze(Project project, Predicate<VirtualFile> fileProcessor) {
     var fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
     fileIndex.iterateContent(vFile -> {
+      if (project.isDisposed()) {
+        return false;
+      }
       if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
         return fileProcessor.test(vFile);
       }

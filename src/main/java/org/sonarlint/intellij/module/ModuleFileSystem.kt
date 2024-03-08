@@ -27,6 +27,7 @@ import java.util.stream.Stream
 import org.sonar.api.batch.fs.InputFile
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
+import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileSystem
@@ -43,7 +44,7 @@ internal class ModuleFileSystem(private val project: Project, private val module
         val sonarLintAnalyzer = project.getService(SonarLintAnalyzer::class.java)
 
         ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
-            if (project.isDisposed) {
+            if (module.isDisposed) {
                 return@iterateContent false
             }
 
