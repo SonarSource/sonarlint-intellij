@@ -47,12 +47,12 @@ fun <T> computeOnPooledThread(project: Project, taskName: String, callable: Call
         } else {
             null
         }
-    }, taskName, Duration.ofSeconds(30))
+    }, taskName, Duration.ofSeconds(60))
 }
 
 fun <T> computeOnPooledThread(taskName: String, callable: Callable<T>): T? {
     return waitForTask(ApplicationManager.getApplication().executeOnPooledThread<T> {
         callable.call()
-    }, taskName, Duration.ofSeconds(30))
+    }, taskName, Duration.ofSeconds(60))
 }
 

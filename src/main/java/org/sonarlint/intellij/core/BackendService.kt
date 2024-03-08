@@ -155,9 +155,9 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
     private fun oneTimeInitialization(): SonarLintRpcServer {
         return computeOnPooledThread("SonarLint Initialization") {
             try {
-                getService(GlobalLogOutput::class.java).log("Migrating the storage", ClientLogOutput.Level.DEBUG)
+                getService(GlobalLogOutput::class.java).log("Migrating the storage", ClientLogOutput.Level.INFO)
                 migrateStoragePath()
-                getService(GlobalLogOutput::class.java).log("Listening for process exit", ClientLogOutput.Level.DEBUG)
+                getService(GlobalLogOutput::class.java).log("Listening for process exit", ClientLogOutput.Level.INFO)
                 listenForProcessExit()
             } catch (e: Exception) {
                 getService(GlobalLogOutput::class.java).logError("Error while initializing: ${e.message}", e)
@@ -198,7 +198,7 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
             }.get()
             backend.rpcServer
         } ?: run {
-            getService(GlobalLogOutput::class.java).log("Could not initialize SonarLint", ClientLogOutput.Level.DEBUG)
+            getService(GlobalLogOutput::class.java).log("Could not initialize SonarLint", ClientLogOutput.Level.INFO)
             throw IllegalStateException("Could not initialize SonarLint")
         }
     }
@@ -227,7 +227,7 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         val sonarQubeConnections =
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         val nodejsPath = getGlobalSettings().nodejsPath
-        getService(GlobalLogOutput::class.java).log("Initializing the backend", ClientLogOutput.Level.DEBUG)
+        getService(GlobalLogOutput::class.java).log("Initializing the backend", ClientLogOutput.Level.INFO)
         return backend.rpcServer.initialize(
             InitializeParams(
                 ClientConstantInfoDto(
@@ -808,7 +808,12 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                 sloopLauncher = SloopLauncher(SonarLintIntelliJClient)
             }
             val jreHomePath = System.getProperty("java.home")!!
-            return sloopLauncher!!.start(getService(SonarLintPlugin::class.java).path.resolve("sloop"), Paths.get(jreHomePath))
+            val sloopPath = getService(SonarLintPlugin::class.java).path.resolve("sloop")
+            getService(GlobalLogOutput::class.java).log("Listing SLOOP files:", ClientLogOutput.Level.INFO)
+            sloopPath.toFile().walkTopDown().forEach { file ->
+                getService(GlobalLogOutput::class.java).log(file.absolutePath, ClientLogOutput.Level.INFO)
+            }
+            return sloopLauncher!!.start(sloopPath, Paths.get(jreHomePath))
         }
 
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
