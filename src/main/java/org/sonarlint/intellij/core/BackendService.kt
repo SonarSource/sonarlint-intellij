@@ -804,6 +804,7 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
         private var sloopLauncher: SloopLauncher? = null
 
         fun initBackend(): Sloop {
+            getService(GlobalLogOutput::class.java).log("Initializing SLOOP", ClientLogOutput.Level.INFO)
             if (sloopLauncher == null) {
                 sloopLauncher = SloopLauncher(SonarLintIntelliJClient)
             }
