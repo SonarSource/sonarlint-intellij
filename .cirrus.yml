@@ -33,6 +33,18 @@ only_main_branches: &ONLY_MAIN_BRANCHES
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && ($CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*") && $CIRRUS_BUILD_SOURCE != "cron"
 
+orchestrator_monthly_cache_template: &ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
+  set_orchestrator_home_script: |
+    export THIS_MONTH=$(date '+%Y-%m')
+    echo "THIS_MONTH=${THIS_MONTH}" >> $CIRRUS_ENV
+    echo "ORCHESTRATOR_HOME=${CIRRUS_WORKING_DIR}/orchestrator/${THIS_MONTH}" >> $CIRRUS_ENV
+  mkdir_orchestrator_home_script: |
+    echo "Create dir ${ORCHESTRATOR_HOME} if needed"
+    mkdir -p ${ORCHESTRATOR_HOME}
+  orchestrator_cache:
+    folder: ${ORCHESTRATOR_HOME}
+    fingerprint_script: echo ${THIS_MONTH}
+
 eks_container: &CONTAINER_DEFINITION
   image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-g7-latest
   region: eu-central-1
@@ -196,6 +208,7 @@ qa_task:
   depends_on:
     - build
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  <<: *ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 6
@@ -281,6 +294,21 @@ qa_task:
       format: junit
     slack_notification_script: |
       .cirrus/slack-notification.sh
+
+inspect_orchestrator_cache_task:
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  depends_on: build
+  eks_container:
+    <<: *CONTAINER_DEFINITION
+    cpu: 1
+    memory: 1G
+  <<: *ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
+  inspect_cache_script: |
+    echo "Inspecting cache ${ORCHESTRATOR_HOME}..."
+    cd "${ORCHESTRATOR_HOME}"
+    ls -l
+    find .
+    echo "Inspecting cache done."
 
 mend_scan_task:
   depends_on:
