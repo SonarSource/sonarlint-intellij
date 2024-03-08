@@ -178,9 +178,7 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
                 ApplicationManager.getApplication().messageBus.connect()
                     .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
                         override fun projectClosing(project: Project) {
-                            runOnPooledThread(project) {
-                                this@BackendService.projectClosed(project)
-                            }
+                            this@BackendService.projectClosed(project)
                         }
                     })
             }.get()
@@ -363,9 +361,11 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
     }
 
     internal fun projectClosed(project: Project) {
-        ApplicationManager.getApplication().assertIsNonDispatchThread()
-        ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
-        initializedBackend.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId(project)))
+        val listModuleIds = ModuleManager.getInstance(project).modules.map { moduleId(it) }
+        runOnPooledThread(project) {
+            listModuleIds.forEach { moduleRemoved(it) }
+            initializedBackend.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId(project)))
+        }
     }
 
     private fun toBackendConfigurationScope(project: Project, binding: ProjectBinding?) =
@@ -421,9 +421,9 @@ class BackendService @NonInjectable constructor(private var backend: Sloop) : Di
             BindingConfigurationDto(projectBinding?.connectionName, projectBinding?.let { moduleProjectKey }, true))
     }
 
-    fun moduleRemoved(module: Module) {
+    fun moduleRemoved(moduleId: String) {
         ApplicationManager.getApplication().assertIsNonDispatchThread()
-        initializedBackend.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(moduleId(module)))
+        initializedBackend.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(moduleId))
     }
 
     fun moduleUnbound(module: Module) {

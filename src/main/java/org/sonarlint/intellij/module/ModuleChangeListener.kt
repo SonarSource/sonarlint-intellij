@@ -45,8 +45,9 @@ class ModuleChangeListener(val project: Project) : ModuleListener {
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
+        val moduleId = BackendService.moduleId(module)
         Modules.removeModule(getEngineIfStarted(module.project), module)
-        runOnPooledThread(project) { getService(BackendService::class.java).moduleRemoved(module) }
+        runOnPooledThread(project) { getService(BackendService::class.java).moduleRemoved(moduleId) }
     }
 }
 
