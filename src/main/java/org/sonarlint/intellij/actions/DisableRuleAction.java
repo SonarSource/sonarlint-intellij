@@ -32,7 +32,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.util.DataKeys.ISSUE_DATA_KEY;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class DisableRuleAction extends AbstractSonarAction {
 
@@ -70,7 +69,7 @@ public class DisableRuleAction extends AbstractSonarAction {
   private static void disableRule(String ruleKey) {
     getGlobalSettings().disableRule(ruleKey);
     var rulesByKey = getGlobalSettings().getRulesByKey();
-    runOnPooledThread(() -> getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey));
+    getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey);
   }
 
 }

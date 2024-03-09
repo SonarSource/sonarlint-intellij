@@ -41,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -90,6 +91,10 @@ public class AutoTriggerStatusPanel {
     if (selectedFile != null) {
       // Computing server exclusions may take time, so lets move from EDT to pooled thread
       runOnPooledThread(project, () -> {
+        if (!getService(BackendService.class).isAlive()) {
+          switchCard(AUTO_TRIGGER_DISABLED);
+          return;
+        }
         var localFileExclusions = getService(project, LocalFileExclusions.class);
         try {
           var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> switchCard(FILE_DISABLED));

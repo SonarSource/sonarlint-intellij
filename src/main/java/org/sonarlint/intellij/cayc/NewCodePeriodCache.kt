@@ -17,19 +17,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions
+package org.sonarlint.intellij.cayc
 
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
+import java.util.Locale
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 
-class RestartBackendNotificationAction : NotificationAction("Restart SonarLint Service") {
+@Service(Service.Level.PROJECT)
+class NewCodePeriodCache(private val project: Project) {
+    var periodAsString: String = "(unknown code period)"
 
-    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
-        notification.expire()
-        SonarLintUtils.getService(BackendService::class.java).restartBackendService()
+    fun refreshAsync() {
+        getService(BackendService::class.java).getNewCodePeriodText(project)
+            .thenAccept { period ->
+                periodAsString = period.replaceFirstChar { char ->
+                    char.lowercase(
+                        Locale.getDefault()
+                    )
+                }
+            }
     }
-
 }

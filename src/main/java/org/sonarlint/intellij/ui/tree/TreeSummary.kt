@@ -20,11 +20,9 @@
 package org.sonarlint.intellij.ui.tree
 
 import com.intellij.openapi.project.Project
-import java.util.Locale
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
+import org.sonarlint.intellij.cayc.NewCodePeriodCache
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.util.computeOnPooledThread
 
 class TreeSummary(private val project: Project, private val treeContentKind: TreeContentKind, private val holdsOldFindings: Boolean) {
     private var emptyText = DEFAULT_EMPTY_TEXT
@@ -32,8 +30,9 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
         private set
 
     fun refresh(filesCount: Int, findingsCount: Int) {
-        emptyText = computeEmptyText()
-        text = computeText(filesCount, findingsCount)
+        val newCodePeriod = getService(project, NewCodePeriodCache::class.java).periodAsString
+        emptyText = computeEmptyText(newCodePeriod)
+        text = computeText(filesCount, findingsCount, newCodePeriod)
     }
 
     fun reset() {
@@ -41,7 +40,7 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
         text = emptyText
     }
 
-    private fun computeText(filesCount: Int, findingsCount: Int): String {
+    private fun computeText(filesCount: Int, findingsCount: Int, newCodePeriod: String): String {
         if (findingsCount == 0) {
             return emptyText
         }
@@ -49,31 +48,19 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
         var sinceText = ""
         var newOrOldOrNothing = ""
         if (isFocusOnNewCode()) {
-            sinceText = if (holdsOldFindings) "" else getCodePeriod()
+            sinceText = if (holdsOldFindings) "" else " $newCodePeriod"
             newOrOldOrNothing = if (holdsOldFindings) "older " else "new "
         }
 
         return String.format(FORMAT, findingsCount, newOrOldOrNothing, pluralize(treeContentKind.displayName, findingsCount), filesCount, pluralize("file", filesCount), sinceText)
     }
 
-    private fun getCodePeriod(): String {
-        val newCodePeriod = computeOnPooledThread(
-            project,
-            "Code Period Task"
-        ) { getService(BackendService::class.java).getNewCodePeriodText(project) }?.replaceFirstChar { char ->
-            char.lowercase(
-                Locale.getDefault()
-            )
-        } ?: "(unknown code period)"
-        return " $newCodePeriod"
-    }
-
-    private fun computeEmptyText(): String {
+    private fun computeEmptyText(newCodePeriod: String): String {
         if (isFocusOnNewCode()) {
             return if (holdsOldFindings) {
                 "No older ${treeContentKind.displayName}s"
             } else {
-                "No new ${treeContentKind.displayName}s${getCodePeriod()}"
+                "No new ${treeContentKind.displayName}s $newCodePeriod"
             }
         }
         return "No ${treeContentKind.displayName}s to display"

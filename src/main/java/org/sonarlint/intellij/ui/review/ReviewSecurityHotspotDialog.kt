@@ -35,7 +35,6 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.HOTSPOT_REVIEW_GROUP
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 
@@ -63,15 +62,13 @@ class ReviewSecurityHotspotDialog(
 
             override fun doAction(e: ActionEvent) {
                 val status = getStatus()
-                runOnPooledThread(project) {
-                    changeStatus(status, ModalityState.stateForComponent(contentPane))
-                }
+                changeStatus(status, ModalityState.stateForComponent(contentPane))
             }
 
             private fun changeStatus(status: HotspotStatus, modalityState: ModalityState) {
                 SonarLintUtils.getService(BackendService::class.java)
                     .changeStatusForHotspot(module, securityHotspotKey, status)
-                    .thenAccept {
+                    .thenAcceptAsync {
                         runOnUiThread(
                             project,
                             modalityState,

@@ -28,7 +28,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class ModuleBindingManager {
   private final Module module;
@@ -95,7 +94,7 @@ public class ModuleBindingManager {
 
   public void unbind() {
     getSettingsFor(module).clearBindingOverride();
-    runOnPooledThread(() -> getService(BackendService.class).moduleUnbound(module));
+    getService(BackendService.class).moduleUnbound(module);
   }
 
 }

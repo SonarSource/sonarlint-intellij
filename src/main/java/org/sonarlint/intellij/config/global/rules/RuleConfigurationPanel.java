@@ -113,7 +113,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.RULE_SELECTION_PAGE;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String MAIN_SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
@@ -236,8 +235,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void recomputeDirtyState() {
-    runOnPooledThread(() -> getService(BackendService.class).getListAllStandaloneRulesDefinitions()
-      .thenAccept(response -> {
+    getService(BackendService.class).getListAllStandaloneRulesDefinitions()
+      .thenAcceptAsync(response -> {
         var persistedRules = response.getRulesByKey().values().stream()
           .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
             loadRuleActivation(getGlobalSettings(), ruleDefinitionDto),
@@ -256,7 +255,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       .exceptionally(error -> {
         GlobalLogOutput.get().log("Could not recompute rules: " + error.getMessage(), ClientLogOutput.Level.ERROR);
         return null;
-      }));
+      });
   }
 
   @Override
@@ -270,15 +269,15 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         return rule;
       }));
     settings.setRulesByKey(nonDefaultRulesConfigurationByKey);
-    runOnPooledThread(project, () -> getService(BackendService.class).updateStandaloneRulesConfiguration(nonDefaultRulesConfigurationByKey));
+    getService(BackendService.class).updateStandaloneRulesConfiguration(nonDefaultRulesConfigurationByKey);
   }
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
     panel.startLoading();
     selectedRuleKey = null;
-    runOnPooledThread(() -> getService(BackendService.class).getListAllStandaloneRulesDefinitions()
-      .thenAccept(response -> {
+    getService(BackendService.class).getListAllStandaloneRulesDefinitions()
+      .thenAcceptAsync(response -> {
         allRulesStateByKey.clear();
 
         var ruleNodes = response.getRulesByKey().values().stream()
@@ -298,7 +297,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       .exceptionally(error -> {
         GlobalLogOutput.get().log("Could not load rules: " + error.getMessage(), ClientLogOutput.Level.ERROR);
         return null;
-      }));
+      });
   }
 
   private void restoreDefaults() {
@@ -509,41 +508,39 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     ruleHeaderPanel.updateForRuleConfiguration(singleNode.getKey(), singleNode.type(), singleNode.severity(), singleNode.attribute(), singleNode.impacts());
     var fileType = RuleLanguages.Companion.findFileTypeByRuleLanguage(singleNode.language());
 
-    runOnPooledThread(project,
-      () -> getService(BackendService.class).getStandaloneRuleDetails(new GetStandaloneRuleDescriptionParams(singleNode.getKey()))
-        .thenAccept(details -> runOnUiThread(project, ModalityState.stateForComponent(getComponent()), () -> {
-          details.getDescription().map(
-            monolithDescription -> {
-              ruleDescription.addMonolith(monolithDescription, fileType);
-              return null;
-            },
-            withSections -> {
-              ruleDescription.addSections(withSections, fileType);
-              return null;
-            });
+    getService(BackendService.class).getStandaloneRuleDetails(new GetStandaloneRuleDescriptionParams(singleNode.getKey()))
+      .thenAcceptAsync(details -> runOnUiThread(project, ModalityState.stateForComponent(getComponent()), () -> {
+        details.getDescription().map(
+          monolithDescription -> {
+            ruleDescription.addMonolith(monolithDescription, fileType);
+            return null;
+          },
+          withSections -> {
+            ruleDescription.addSections(withSections, fileType);
+            return null;
+          });
 
-          myParamsPanel.removeAll();
-          final var configPanelAnchor = new JBPanel<>(new GridLayout());
-          setConfigPanel(configPanelAnchor, singleNode, details.getRuleDefinition().getParamsByKey());
-          if (configPanelAnchor.getComponentCount() != 0) {
-            rulesParamsSeparator = new RulesParamsSeparator();
-            myParamsPanel.add(rulesParamsSeparator,
-              new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                JBUI.emptyInsets(), 0, 0));
-            myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-              JBUI.insetsLeft(2), 0, 0));
-          } else {
-            myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-              JBUI.insetsLeft(2), 0, 0));
-          }
-          myParamsPanel.revalidate();
-          myParamsPanel.repaint();
-        }))
-        .exceptionally(error -> {
-          GlobalLogOutput.get().log("Could not retrieve rule description", ClientLogOutput.Level.ERROR);
-          return null;
-        })
-    );
+        myParamsPanel.removeAll();
+        final var configPanelAnchor = new JBPanel<>(new GridLayout());
+        setConfigPanel(configPanelAnchor, singleNode, details.getRuleDefinition().getParamsByKey());
+        if (configPanelAnchor.getComponentCount() != 0) {
+          rulesParamsSeparator = new RulesParamsSeparator();
+          myParamsPanel.add(rulesParamsSeparator,
+            new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+              JBUI.emptyInsets(), 0, 0));
+          myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+            JBUI.insetsLeft(2), 0, 0));
+        } else {
+          myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+            JBUI.insetsLeft(2), 0, 0));
+        }
+        myParamsPanel.revalidate();
+        myParamsPanel.repaint();
+      }))
+      .exceptionally(error -> {
+        GlobalLogOutput.get().log("Could not retrieve rule description", ClientLogOutput.Level.ERROR);
+        return null;
+      });
   }
 
   private void setConfigPanel(final JPanel configPanelAnchor, RulesTreeNode.Rule rule, Map<String, RuleParamDefinitionDto> paramsByKey) {

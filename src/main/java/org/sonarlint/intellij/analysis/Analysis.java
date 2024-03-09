@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.sonarlint.intellij.cayc.NewCodePeriodCache;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -125,6 +126,8 @@ public class Analysis implements Cancelable {
       return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
     }
 
+    // refresh should ideally not be done here, see SLCORE-729
+    getService(project, NewCodePeriodCache.class).refreshAsync();
     var findingsCache = getService(project, FindingsCache.class);
 
     try {

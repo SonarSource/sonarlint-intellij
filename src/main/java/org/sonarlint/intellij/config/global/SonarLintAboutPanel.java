@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.global;
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
@@ -47,10 +48,12 @@ import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.BASE_DOCS_URL;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
   private final JPanel panel;
   private JCheckBox enableTelemetryCheckBox;
+  private boolean telemetryInitiallyEnabled;
 
   public SonarLintAboutPanel() {
     panel = new JPanel(new BorderLayout(0, 20));
@@ -230,7 +233,11 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
 
   @Override
   public void load(SonarLintTelemetry telemetry) {
-    enableTelemetryCheckBox.setSelected(telemetry.enabled());
+    // we could show a loader while getting the value
+    telemetry.enabled().thenAccept(enabled -> {
+      telemetryInitiallyEnabled = enabled;
+      runOnUiThread(() -> enableTelemetryCheckBox.setSelected(enabled), ModalityState.stateForComponent(getComponent()));
+    });
   }
 
   @Override
@@ -240,6 +247,6 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
 
   @Override
   public boolean isModified(SonarLintTelemetry telemetry) {
-    return telemetry.enabled() != enableTelemetryCheckBox.isSelected();
+    return telemetryInitiallyEnabled != enableTelemetryCheckBox.isSelected();
   }
 }

@@ -22,7 +22,6 @@ package org.sonarlint.intellij.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.util.runOnPooledThread
 
 class RestartBackendAction : AbstractSonarAction("Restart SonarLint Service") {
 
@@ -31,9 +30,7 @@ class RestartBackendAction : AbstractSonarAction("Restart SonarLint Service") {
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        runOnPooledThread {
-            SonarLintUtils.getService(BackendService::class.java).restartBackendService()
-        }
+        SonarLintUtils.getService(BackendService::class.java).restartBackendService()
     }
 
 }
