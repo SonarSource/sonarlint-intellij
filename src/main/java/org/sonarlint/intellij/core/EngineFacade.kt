@@ -21,7 +21,6 @@ package org.sonarlint.intellij.core
 
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import java.nio.file.Paths
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -32,7 +31,6 @@ import org.sonarlint.intellij.util.AnalysisLogOutput
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
 import org.sonarsource.sonarlint.core.client.legacy.analysis.AnalysisConfiguration
-import org.sonarsource.sonarlint.core.client.legacy.analysis.PluginDetails
 import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.core.commons.api.progress.ClientProgressMonitor
@@ -48,13 +46,5 @@ class EngineFacade(private val project: Project, private val engine: SonarLintAn
         val analysisResults: AnalysisResults = engine.analyze(config, issueListener, AnalysisLogOutput(project), progressMonitor, moduleId(module))
         AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, engine.pluginDetails, project)
         return analysisResults
-    }
-
-    fun getExcluded(module: Module, files: Collection<VirtualFile>): Collection<VirtualFile> {
-        return getService(BackendService::class.java).getExcludedFiles(module, files)
-    }
-
-    fun getPluginDetails(): Collection<PluginDetails> {
-        return engine.pluginDetails
     }
 }

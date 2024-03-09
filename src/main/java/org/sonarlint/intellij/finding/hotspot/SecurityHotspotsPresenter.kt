@@ -26,7 +26,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.util.runOnPooledThread
 
 sealed class SecurityHotspotsLocalDetectionSupport
 
@@ -36,18 +35,16 @@ object Supported : SecurityHotspotsLocalDetectionSupport()
 @Service(Service.Level.PROJECT)
 class SecurityHotspotsPresenter(private val project: Project) {
     fun presentSecurityHotspotsForOpenFiles() {
-        runOnPooledThread(project) {
-            getService(BackendService::class.java)
-                .checkLocalSecurityHotspotDetectionSupported(project)
-                .thenApply { response -> if (response.isSupported) Supported else NotSupported(response.reason!!) }
-                .thenAccept { status ->
-                    runOnUiThread(project) {
-                        getService(project, SonarLintToolWindow::class.java).populateSecurityHotspotsTab(status)
-                        if (status is Supported) {
-                            getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-                        }
+        getService(BackendService::class.java)
+            .checkLocalSecurityHotspotDetectionSupported(project)
+            .thenApplyAsync { response -> if (response.isSupported) Supported else NotSupported(response.reason!!) }
+            .thenAcceptAsync { status ->
+                runOnUiThread(project) {
+                    getService(project, SonarLintToolWindow::class.java).populateSecurityHotspotsTab(status)
+                    if (status is Supported) {
+                        getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
                     }
                 }
-        }
+            }
     }
 }

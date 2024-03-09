@@ -46,7 +46,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
@@ -54,6 +54,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.utils.ClientFileExclusions;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -261,16 +262,13 @@ public final class LocalFileExclusions {
     return excludeResultFromEp;
   }
 
-  private void filterWithServerExclusions(BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler, Map<Module, Collection<VirtualFile>> filesByModule)
-    throws InvalidBindingException {
-    var projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
+  private static void filterWithServerExclusions(BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler, Map<Module, Collection<VirtualFile>> filesByModule) {
     // Note: iterating over a copy of keys, because removal of last value removes the key,
     // resulting in ConcurrentModificationException
     var modules = List.copyOf(filesByModule.keySet());
     for (var module : modules) {
-      var sonarLintFacade = projectBindingManager.getFacade(module);
       var virtualFiles = filesByModule.get(module);
-      var excluded = sonarLintFacade.getExcluded(module, virtualFiles);
+      var excluded = getService(BackendService.class).getExcludedFiles(module, virtualFiles);
       for (var f : excluded) {
         excludedFileHandler.accept(f, ExcludeResult.excluded("exclusions configured in the bound project"));
       }

@@ -25,13 +25,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.util.runOnPooledThread
 
 class DisableBindingSuggestionsAction : NotificationAction("Don't ask again") {
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         notification.expire()
         val project = e.project!!
         getSettingsFor(project).isBindingSuggestionsEnabled = false
-        runOnPooledThread(project) { getService(BackendService::class.java).bindingSuggestionsDisabled(project) }
+        getService(BackendService::class.java).bindingSuggestionsDisabled(project)
     }
 }

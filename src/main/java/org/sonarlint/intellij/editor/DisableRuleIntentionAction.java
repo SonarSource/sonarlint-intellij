@@ -37,7 +37,6 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class DisableRuleIntentionAction implements IntentionAction, LowPriorityAction, Iconable {
   private final String ruleKey;
@@ -61,7 +60,7 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     getGlobalSettings().disableRule(ruleKey);
     var rulesByKey = getGlobalSettings().getRulesByKey();
-    runOnPooledThread(() -> getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey));
+    getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey);
     SonarLintUtils.getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE);
   }
 

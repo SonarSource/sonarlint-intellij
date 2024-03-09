@@ -20,13 +20,14 @@
 package org.sonarlint.intellij.telemetry;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
 
 public interface SonarLintTelemetry {
   void optOut(boolean optOut);
 
-  boolean enabled();
+  CompletableFuture<Boolean> enabled();
 
   void analysisDoneOnMultipleFiles();
 

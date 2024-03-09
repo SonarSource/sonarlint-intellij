@@ -54,7 +54,6 @@ import org.sonarlint.intellij.finding.FindingType.ISSUE
 import org.sonarlint.intellij.finding.FindingType.SECURITY_HOTSPOT
 import org.sonarlint.intellij.finding.FindingType.TAINT_VULNERABILITY
 import org.sonarlint.intellij.util.HelpLabelUtils
-import org.sonarlint.intellij.util.runOnPooledThread
 
 
 class SonarLintDashboardPanel(private val editor: Editor) {
@@ -210,9 +209,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         val noAccessLabel = HyperlinkLabel("Restart SonarLint Service").apply {
             addHyperlinkListener(object : HyperlinkAdapter() {
                 override fun hyperlinkActivated(e: HyperlinkEvent) {
-                    runOnPooledThread {
-                        getService(BackendService::class.java).restartBackendService()
-                    }
+                    getService(BackendService::class.java).restartBackendService()
                 }
             })
         }

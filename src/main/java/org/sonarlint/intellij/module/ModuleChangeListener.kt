@@ -30,7 +30,6 @@ import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.messages.ProjectBindingListener
-import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 
@@ -41,12 +40,12 @@ class ModuleChangeListener(val project: Project) : ModuleListener {
     override fun modulesAdded(project: Project, modules: List<Module>) {
         val engine = getEngineIfStarted(project)
         modules.forEach { Modules.declareModule(project, engine, it) }
-        runOnPooledThread(project) { getService(BackendService::class.java).modulesAdded(project, modules) }
+        getService(BackendService::class.java).modulesAdded(project, modules)
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
         Modules.removeModule(getEngineIfStarted(module.project), module)
-        runOnPooledThread(project) { getService(BackendService::class.java).moduleRemoved(module) }
+        getService(BackendService::class.java).moduleRemoved(module)
     }
 }
 

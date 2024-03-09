@@ -115,13 +115,12 @@ class MarkAsResolvedAction(
             resolution: MarkAsResolvedDialog.Resolution,
             issueKey: String,
         ) {
-            runOnPooledThread(project) {
                 getService(BackendService::class.java)
                     .markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
-                    .thenAccept {
+                    .thenAcceptAsync {
                         updateUI(project, issue)
                         val comment = resolution.comment
-                            ?: return@thenAccept SonarLintProjectNotifications.get(project)
+                            ?: return@thenAcceptAsync SonarLintProjectNotifications.get(project)
                                 .displaySuccessfulNotification(CONTENT, ISSUE_RESOLVED_GROUP)
                         addComment(project, module, issueKey, comment)
                     }
@@ -131,7 +130,6 @@ class MarkAsResolvedAction(
                             .displayErrorNotification("Could not mark the issue as resolved", ISSUE_RESOLVED_GROUP)
                         null
                     }
-            }
         }
 
         private fun updateUI(project: Project, issue: Issue) {

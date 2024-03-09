@@ -45,7 +45,6 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarlint.intellij.util.DataKeys
-import org.sonarlint.intellij.util.runOnPooledThread
 
 private const val SKIP_CONFIRM_REOPEN_DIALOG_PROPERTY = "SonarLint.reopenIssue.hideConfirmation"
 
@@ -77,7 +76,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
             serverKey ?: return displayNotificationError(project, "The issue key could not be found")
 
             if (confirm(project, connection.productName)) {
-                runOnPooledThread(project) { reopenFinding(project, module, issue, serverKey) }
+                reopenFinding(project, module, issue, serverKey)
             }
         }
 
@@ -87,7 +86,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
 
         private fun reopenFinding(project: Project, module: Module, issue: Issue, issueKey: String) {
             SonarLintUtils.getService(BackendService::class.java).reopenIssue(module, issueKey, issue is LocalTaintVulnerability)
-                .thenAccept {
+                .thenAcceptAsync {
                     updateUI(project, issue)
                     SonarLintProjectNotifications.get(project).displaySuccessfulNotification(CONTENT, GROUP)
                 }.exceptionally { error ->
