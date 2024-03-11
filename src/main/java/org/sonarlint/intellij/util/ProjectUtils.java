@@ -63,16 +63,21 @@ public class ProjectUtils {
 
   private static void iterateFilesToAnalyze(Project project, Predicate<VirtualFile> fileProcessor) {
     var fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
-    fileIndex.iterateContent(vFile -> {
-      if (project.isDisposed()) {
-        return false;
-      }
-      if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
-        return fileProcessor.test(vFile);
-      }
-      // Continue iteration
-      return true;
-    });
+    try {
+      fileIndex.iterateContent(vFile -> {
+        if (project.isDisposed()) {
+          return false;
+        }
+        if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
+          return fileProcessor.test(vFile);
+        }
+        // Continue iteration
+        return true;
+      });
+    } catch (Exception e) {
+      // https://github.com/JetBrains/intellij-community/commit/bd60b9545611826b4722e1babecb25113d02abfa
+      GlobalLogOutput.get().logError("Error while iterating files to analyze", e);
+    }
   }
 
   public static PsiFile toPsiFile(Project project, VirtualFile file) throws TextRangeMatcher.NoMatchException {

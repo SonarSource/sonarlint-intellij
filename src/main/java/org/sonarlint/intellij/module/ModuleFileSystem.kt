@@ -43,23 +43,29 @@ internal class ModuleFileSystem(private val project: Project, private val module
         val files: MutableList<ClientInputFile> = ArrayList()
         val sonarLintAnalyzer = project.getService(SonarLintAnalyzer::class.java)
 
-        ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
-            if (module.isDisposed) {
-                return@iterateContent false
-            }
-
-            // Analysis can only be done on actual files which contain text and not binary data
-            if (VirtualFileUtils.isNonBinaryFile(fileOrDir)) {
-                val element = computeReadActionSafely(module.project) {
-                    sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
+        try {
+            ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
+                if (module.isDisposed) {
+                    return@iterateContent false
                 }
-                if (element != null) {
-                    files.add(element)
-                }
-            }
 
-            true
+                // Analysis can only be done on actual files which contain text and not binary data
+                if (VirtualFileUtils.isNonBinaryFile(fileOrDir)) {
+                    val element = computeReadActionSafely(module.project) {
+                        sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
+                    }
+                    if (element != null) {
+                        files.add(element)
+                    }
+                }
+
+                true
+            }
+        } catch (e: Exception) {
+            // https://github.com/JetBrains/intellij-community/commit/bd60b9545611826b4722e1babecb25113d02abfa
+            GlobalLogOutput.get().logError("Error while listing module files", e)
         }
+
         return files.stream()
     }
 }
