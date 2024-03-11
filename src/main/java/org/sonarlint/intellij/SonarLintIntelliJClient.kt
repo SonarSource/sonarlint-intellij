@@ -567,9 +567,19 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         module: Module,
     ): Set<VirtualFile> {
         val files = mutableListOf<VirtualFile>()
-        ModuleRootManager.getInstance(module).fileIndex.iterateContent { file ->
-            if (!file.isDirectory && file.isValid) files.add(file)
-            !module.project.isDisposed
+        try {
+            ModuleRootManager.getInstance(module).fileIndex.iterateContent { file ->
+                if (module.isDisposed) {
+                    return@iterateContent false;
+                }
+
+                if (!file.isDirectory && file.isValid) files.add(file)
+
+                true
+            }
+        } catch (e: Exception) {
+            // https://github.com/JetBrains/intellij-community/commit/bd60b9545611826b4722e1babecb25113d02abfa
+            GlobalLogOutput.get().logError("Error while listing files in content roots", e)
         }
         return files.toSet()
     }
