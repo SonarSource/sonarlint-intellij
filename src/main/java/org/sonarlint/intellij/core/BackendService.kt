@@ -48,6 +48,9 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Filter
+import java.util.logging.Level
+import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
@@ -244,6 +247,15 @@ class BackendService : Disposable {
     }
 
     private fun startSloopProcess(): Sloop {
+        // SLI-1330
+        val lsp4jLogger = Logger.getLogger("org.eclipse.lsp4j.jsonrpc.RemoteEndpoint")
+        lsp4jLogger.filter = Filter { logRecord ->
+            return@Filter if (logRecord.level == Level.SEVERE) {
+                logRecord.level = Level.OFF
+                GlobalLogOutput.get().logError(logRecord.message, logRecord.thrown)
+                false
+            } else true
+        }
         getService(GlobalLogOutput::class.java).log("Starting the SonarLint service process...", ClientLogOutput.Level.INFO)
         val sloopLauncher = this.defaultSloopLauncher ?: SloopLauncher(SonarLintIntelliJClient)
         val jreHomePath = System.getProperty("java.home")!!
