@@ -33,11 +33,15 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyFilter
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.TestSourcesFilter
+import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.ui.MessageDialogBuilder
+import com.intellij.openapi.util.io.FileTooBigException
 import com.intellij.openapi.util.io.FileUtilRt
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
 import java.io.ByteArrayInputStream
@@ -556,7 +560,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             uri,
             Paths.get(relativePath),
             configScopeId,
-            computeReadActionSafely(project) { TestSourcesFilter.isTestSources(file, project) },
+            computeReadActionSafely(project) { isTestSources(file, project) },
             file.charset.name(),
             Paths.get(file.path),
             fileContent
@@ -567,19 +571,24 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         module: Module,
     ): Set<VirtualFile> {
         val files = mutableListOf<VirtualFile>()
-        try {
-            ModuleRootManager.getInstance(module).fileIndex.iterateContent { file ->
-                if (module.isDisposed) {
-                    return@iterateContent false;
-                }
-
-                if (!file.isDirectory && file.isValid) files.add(file)
-
-                true
+        ModuleRootManager.getInstance(module).contentRoots.forEach { contentRoot ->
+            if (module.isDisposed) {
+                return@forEach
             }
-        } catch (e: Exception) {
-            // https://github.com/JetBrains/intellij-community/commit/bd60b9545611826b4722e1babecb25113d02abfa
-            GlobalLogOutput.get().logError("Error while listing files in content roots", e)
+
+            try {
+                VfsUtilCore.visitChildrenRecursively(contentRoot, object : VirtualFileVisitor<Unit>() {
+                    override fun visitFile(file: VirtualFile): Boolean {
+                        if (module.isDisposed || isGeneratedSourceByAnyFilter(file, module.project)) return false
+
+                        if (!file.isDirectory && file.isValid) files.add(file)
+
+                        return true
+                    }
+                })
+            } catch (e: FileTooBigException) {
+                GlobalLogOutput.get().logError("File size is too big to be listed", e)
+            }
         }
         return files.toSet()
     }

@@ -22,6 +22,7 @@ package org.sonarlint.intellij.module
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.util.io.FileTooBigException
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.stream.Stream
 import org.sonar.api.batch.fs.InputFile
@@ -61,6 +62,8 @@ internal class ModuleFileSystem(private val project: Project, private val module
 
                 true
             }
+        } catch (e: FileTooBigException) {
+            GlobalLogOutput.get().logError("File size is too big to be listed", e)
         } catch (e: Exception) {
             // https://github.com/JetBrains/intellij-community/commit/bd60b9545611826b4722e1babecb25113d02abfa
             GlobalLogOutput.get().logError("Error while listing module files", e)
