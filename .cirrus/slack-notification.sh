@@ -20,7 +20,7 @@ curl -X POST https://slack.com/api/chat.postMessage \
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
-				"text": "Task <https://cirrus-ci.com/task/$CIRRUS_TASK_ID|$CIRRUS_TASK_ID> failed on *<$CIRRUS_REPO_CLONE_URL|$CIRRUS_REPO_FULL_NAME>* ($CIRRUS_BRANCH)"
+				"text": "Task *<https://cirrus-ci.com/task/$CIRRUS_TASK_ID|$CIRRUS_TASK_NAME>* failed on *<$CIRRUS_REPO_CLONE_URL|$CIRRUS_REPO_FULL_NAME>* (*$CIRRUS_BRANCH*)"
 			}
 		}
 	]
