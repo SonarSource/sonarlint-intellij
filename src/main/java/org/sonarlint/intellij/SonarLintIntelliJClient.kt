@@ -427,7 +427,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
     }
 
-    override fun getProxyPasswordAuthentication(host: String, port: Int, protocol: String, prompt: String, scheme: String, targetHost: URL): GetProxyPasswordAuthenticationResponse {
+    override fun getProxyPasswordAuthentication(
+        host: String,
+        port: Int,
+        protocol: String,
+        prompt: String?,
+        scheme: String?,
+        targetHost: URL,
+    ): GetProxyPasswordAuthenticationResponse {
         val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(host, null, port, protocol, prompt, scheme, targetHost, Authenticator.RequestorType.PROXY)
         return GetProxyPasswordAuthenticationResponse(auth?.userName, auth?.let { String(it.password) })
     }
