@@ -64,6 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.4.1 - Fix various errors when starting the SonarLint service. Fix an error when using a proxy.</li>
         <li>10.4 - SonarLint now runs in a separate process. Support of Java 21 and 2 new Java rules. 17 new accessibility rules for HTML. 2 new C++ rules. 2 new quick fixes for Python. 1 new JS/TS rule. Various UI fixes and improvements. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.3 - Allow detection of custom secrets in connected mode starting from SonarQube 10.4. Set up a connection in one click starting from SonarQube 10.4 when using the Open in IDE feature. Fix memory leaks and UI freezes. Support Jakarta namespace. 9 new C++ MISRA 2023 rules. Remove support for Node.js 14 and deprecate support for Node.js 16 and Node.js 17. Support TypeScript 5.3. 5 new rules for JavaScript. 8 new rules for Kubernetes. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.2.1 - Fix an error when using Rider or CLion in connected mode with SonarCloud.</li>
