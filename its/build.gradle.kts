@@ -38,7 +38,15 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform() {
+        val tag = System.getenv("TEST_SUITE")
+
+        if (tag != null) {
+            if (tag.equals("Suite1") || tag.equals("Suite2") || tag.equals("Standalone")) {
+                includeTags(tag)
+            }
+        }
+    }
     testLogging.showStandardStreams = true
 }
 

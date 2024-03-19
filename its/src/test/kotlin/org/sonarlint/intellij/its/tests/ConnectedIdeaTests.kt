@@ -27,6 +27,7 @@ import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.DisabledIf
@@ -164,6 +165,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
     }
 
+    @Tag("Suite1")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SampleJavaHotspotTests : BaseUiTest() {
@@ -205,6 +207,7 @@ class ConnectedIdeaTests : BaseUiTest() {
 
     }
 
+    @Tag("Suite1")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SampleScalaTests : BaseUiTest() {
@@ -278,6 +281,7 @@ class ConnectedIdeaTests : BaseUiTest() {
 
     }
 
+    @Tag("Suite2")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SampleJavaIssuesTests : BaseUiTest() {
@@ -374,6 +378,7 @@ class ConnectedIdeaTests : BaseUiTest() {
 
     }
 
+    @Tag("Suite1")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SampleJavaTaintVulnerabilityTests : BaseUiTest() {
