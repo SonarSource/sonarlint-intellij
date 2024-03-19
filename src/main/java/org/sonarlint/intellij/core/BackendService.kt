@@ -466,10 +466,11 @@ class BackendService : Disposable {
             )
         }
         newBinding.moduleBindingsOverrides.forEach { (module, projectKey) ->
+            val moduleId = moduleId(module)
             notifyBackend {
                 it.configurationService.didUpdateBinding(
                     DidUpdateBindingParams(
-                        moduleId(module), BindingConfigurationDto(
+                        moduleId, BindingConfigurationDto(
                         // we don't want binding suggestions for modules
                         newBinding.connectionName, projectKey, true
                     )
@@ -514,13 +515,14 @@ class BackendService : Disposable {
     }
 
     fun moduleUnbound(module: Module) {
+        val moduleId = moduleId(module)
         notifyBackend {
             it.configurationService.didUpdateBinding(
                 DidUpdateBindingParams(
-                    moduleId(module), BindingConfigurationDto(
-                    // we don't want binding suggestions for modules
-                    null, null, true
-                )
+                    moduleId, BindingConfigurationDto(
+                        // we don't want binding suggestions for modules
+                        null, null, true
+                    )
                 )
             )
         }
@@ -542,10 +544,11 @@ class BackendService : Disposable {
     }
 
     fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetEffectiveRuleDetailsResponse> {
+        val moduleId = moduleId(module)
         return requestFromBackend {
             it.rulesService.getEffectiveRuleDetails(
                 GetEffectiveRuleDetailsParams(
-                    moduleId(module),
+                    moduleId,
                     ruleKey,
                     contextKey
                 )
@@ -595,10 +598,11 @@ class BackendService : Disposable {
     }
 
     fun changeStatusForHotspot(module: Module, hotspotKey: String, newStatus: HotspotStatus): CompletableFuture<Void> {
+        val moduleId = moduleId(module)
         return requestFromBackend {
             it.hotspotService.changeStatus(
                 ChangeHotspotStatusParams(
-                    moduleId(module),
+                    moduleId,
                     hotspotKey,
                     newStatus
                 )
@@ -607,10 +611,11 @@ class BackendService : Disposable {
     }
 
     fun markAsResolved(module: Module, issueKey: String, newStatus: IssueResolutionStatus, isTaintVulnerability: Boolean): CompletableFuture<Void> {
+        val moduleId = moduleId(module)
         return requestFromBackend {
             it.issueService.changeStatus(
                 ChangeIssueStatusParams(
-                    moduleId(module),
+                    moduleId,
                     issueKey,
                     ResolutionStatus.valueOf(newStatus.name),
                     isTaintVulnerability
@@ -620,11 +625,13 @@ class BackendService : Disposable {
     }
 
     fun reopenIssue(module: Module, issueId: String, isTaintIssue: Boolean): CompletableFuture<ReopenIssueResponse> {
-        return requestFromBackend { it.issueService.reopenIssue(ReopenIssueParams(moduleId(module), issueId, isTaintIssue)) }
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.issueService.reopenIssue(ReopenIssueParams(moduleId, issueId, isTaintIssue)) }
     }
 
     fun addCommentOnIssue(module: Module, issueKey: String, comment: String): CompletableFuture<Void> {
-        return requestFromBackend { it.issueService.addComment(AddIssueCommentParams(moduleId(module), issueKey, comment)) }
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.issueService.addComment(AddIssueCommentParams(moduleId, issueKey, comment)) }
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
@@ -707,10 +714,11 @@ class BackendService : Disposable {
                 }
 
         try {
+            val moduleId = moduleId(module)
             requestFromBackend {
                 it.issueTrackingService.trackWithServerIssues(
                     TrackWithServerIssuesParams(
-                        moduleId(module),
+                        moduleId,
                         rawIssuesByRelativePath,
                         shouldFetchIssuesFromServer
                     )
@@ -769,10 +777,11 @@ class BackendService : Disposable {
                 }
 
         try {
+            val moduleId = moduleId(module)
             requestFromBackend {
                 it.securityHotspotMatchingService.matchWithServerSecurityHotspots(
                     MatchWithServerSecurityHotspotsParams(
-                        moduleId(module),
+                        moduleId,
                         rawHotspotsByRelativePath,
                         shouldFetchHotspotsFromServer
                     )
@@ -905,7 +914,16 @@ class BackendService : Disposable {
     fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): List<VirtualFile> {
         val filesByUri = files.associateBy { VirtualFileUtils.toURI(it) }
         return try {
-            requestFromBackend { it.fileService.getFilesStatus(GetFilesStatusParams(mapOf(moduleId(module) to filesByUri.keys.filterNotNull().toList()))) }
+            val moduleId = moduleId(module)
+            requestFromBackend {
+                it.fileService.getFilesStatus(
+                    GetFilesStatusParams(
+                        mapOf(
+                            moduleId to filesByUri.keys.filterNotNull().toList()
+                        )
+                    )
+                )
+            }
                 .thenApplyAsync { response -> response.fileStatuses.filterValues { it.isExcluded }.keys.mapNotNull { filesByUri[it] } }
                 .join()
         } catch (e: CancellationException) {
