@@ -35,9 +35,9 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyFilter
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.ui.MessageDialogBuilder
-import com.intellij.openapi.util.io.FileTooBigException
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -583,19 +583,20 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 return@forEach
             }
 
-            try {
-                VfsUtilCore.visitChildrenRecursively(contentRoot, object : VirtualFileVisitor<Unit>() {
-                    override fun visitFile(file: VirtualFile): Boolean {
-                        if (module.isDisposed || isGeneratedSourceByAnyFilter(file, module.project)) return false
+            VfsUtilCore.visitChildrenRecursively(contentRoot, object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
+                override fun visitFile(file: VirtualFile): Boolean {
+                    val toSkip = computeReadActionSafely(module) {
+                        isGeneratedSourceByAnyFilter(file, module.project)
+                            || ProjectFileIndex.getInstance(module.project).isExcluded(file)
+                            || ProjectFileIndex.getInstance(module.project).isInLibrary(file)
+                            || FileUtilRt.isTooLarge(file.length)
+                    } ?: true
 
-                        if (!file.isDirectory && file.isValid) files.add(file)
-
-                        return true
-                    }
-                })
-            } catch (e: FileTooBigException) {
-                GlobalLogOutput.get().logError("File size is too big to be listed", e)
-            }
+                    if (toSkip) return false
+                    if (!file.isDirectory && file.isValid) files.add(file)
+                    return true
+                }
+            })
         }
         return files.toSet()
     }
