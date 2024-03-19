@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.its.tests
 
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
@@ -29,6 +30,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProje
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 
+@Tag("Standalone")
 @DisabledIf("isCLionOrGoLand")
 class StandaloneIdeaTests : BaseUiTest() {
 

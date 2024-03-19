@@ -231,6 +231,15 @@ qa_task:
     - env:
         IDEA_VERSION: 'IC-2022.3.1'
         QA_CATEGORY: 'Idea2022'
+        TEST_SUITE: 'Suite1'
+    - env:
+        IDEA_VERSION: 'IC-2022.3.1'
+        QA_CATEGORY: 'Idea2022'
+        TEST_SUITE: 'Suite2'
+    - env:
+        IDEA_VERSION: 'IC-2022.3.1'
+        QA_CATEGORY: 'Idea2022'
+        TEST_SUITE: 'Standalone'
     - env:
         IDEA_VERSION: 'CL-2022.3.1'
         QA_CATEGORY: 'CLion2022'
@@ -240,6 +249,15 @@ qa_task:
     - env:
         IDEA_VERSION: 'IC-2023.2.1'
         QA_CATEGORY: 'Idea2023'
+        TEST_SUITE: 'Suite1'
+    - env:
+        IDEA_VERSION: 'IC-2023.2.1'
+        QA_CATEGORY: 'Idea2023'
+        TEST_SUITE: 'Suite2'
+    - env:
+        IDEA_VERSION: 'IC-2023.2.1'
+        QA_CATEGORY: 'Idea2023'
+        TEST_SUITE: 'Standalone'
     - env:
         IDEA_VERSION: 'CL-2023.2'
         QA_CATEGORY: 'CLion2023'
