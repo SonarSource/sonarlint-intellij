@@ -28,6 +28,7 @@ import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.projectImport.ProjectAttachProcessor;
 import com.intellij.ui.ColoredListCellRenderer;
@@ -58,15 +59,21 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
+import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto;
 
+import static java.awt.GridBagConstraints.EAST;
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 public class SonarLintProjectBindPanel {
@@ -78,6 +85,7 @@ public class SonarLintProjectBindPanel {
   // server mgmt
   private JComboBox<ServerConnection> connectionComboBox;
   private JButton configureConnectionButton;
+  private JButton exportConfigurationButton;
 
   // binding mgmt
   private JPanel bindPanel;
@@ -220,13 +228,23 @@ public class SonarLintProjectBindPanel {
     bindEnable.addItemListener(new BindItemListener());
 
     configureConnectionButton = new JButton();
+    exportConfigurationButton = new JButton();
+
     configureConnectionButton.setAction(new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
         actionConfigureConnections();
       }
     });
+    exportConfigurationButton.setAction(new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        exportConfiguration();
+      }
+    });
+
     configureConnectionButton.setText("Configure the connection...");
+    exportConfigurationButton.setText("Export configuration...");
 
     connectionComboBox = new ComboBox<>();
     connectionListLabel = new JLabel("Connection:");
@@ -275,13 +293,67 @@ public class SonarLintProjectBindPanel {
       WEST, HORIZONTAL, insets, 0, 0));
     bindPanel.add(configureConnectionButton, new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
-
+    bindPanel.add(exportConfigurationButton, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+      EAST, NONE, insets, 0, 0));
     bindPanel.add(projectKeyLabel, new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
     bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
     bindPanel.add(searchProjectButton, new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
+  }
+
+  private void exportConfiguration() {
+    if (project == null) return;
+
+    runOnUiThread(project, () -> {
+      if (confirm(project)) {
+        System.out.println("Confirmed to share");
+      }
+    });
+  }
+
+  private static boolean confirm(Project project) {
+    var binding = SonarLintUtils.getService(project, ProjectBindingManager.class).getBinding();
+    var isSonarCloud = false;
+
+    if (binding == null) {
+      SonarLintConsole.get(project).error("Binding is not available");
+      return false;
+    }
+
+    var connection = SonarLintUtils.getService(project, ProjectBindingManager.class).tryGetServerConnection();
+    if (connection.isPresent()) {
+      isSonarCloud = connection.get().isSonarCloud();
+    } else {
+      SonarLintConsole.get(project).error("Connection is not present");
+      return false;
+    }
+
+    var projectKey = binding.getProjectKey();
+    var connectionName = binding.getConnectionName();
+
+    String connectionKind;
+
+    if (isSonarCloud) {
+      connectionKind = "SonarCloud organization";
+    } else {
+      connectionKind = "SonarQube server";
+    }
+
+    return MessageDialogBuilder.okCancel(
+        "Share this Connected Mode configuration?",
+        "A configuration file connectedMode.json will be created in your local repository with a reference to " +
+          "project \"" + projectKey + "\" on " + connectionKind + " \"" + connectionName + "\""
+          + System.lineSeparator()
+          + System.lineSeparator() +
+          "This will help other team members configure the binding " +
+          "for the same project. " +
+          "<a href=\"" + SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK + "\">Learn more</a> "
+      )
+      .yesText("Share configuration")
+      .noText("Cancel")
+      .ask(project);
   }
 
   /**
@@ -385,6 +457,7 @@ public class SonarLintProjectBindPanel {
       searchProjectButton.setEnabled(bound);
       connectionComboBox.setEnabled(bound);
       configureConnectionButton.setEnabled(bound);
+      exportConfigurationButton.setEnabled(org.sonarlint.intellij.config.Settings.getSettingsFor(project).isBound() && bound);
       moduleBindingPanel.setEnabled(bound);
 
       if (bound) {
