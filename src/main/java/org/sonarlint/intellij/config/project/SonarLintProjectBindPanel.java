@@ -58,15 +58,18 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.actions.ExportConfigurationAction;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto;
 
+import static java.awt.GridBagConstraints.EAST;
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 public class SonarLintProjectBindPanel {
@@ -78,6 +81,7 @@ public class SonarLintProjectBindPanel {
   // server mgmt
   private JComboBox<ServerConnection> connectionComboBox;
   private JButton configureConnectionButton;
+  private JButton exportConfigurationButton;
 
   // binding mgmt
   private JPanel bindPanel;
@@ -220,13 +224,23 @@ public class SonarLintProjectBindPanel {
     bindEnable.addItemListener(new BindItemListener());
 
     configureConnectionButton = new JButton();
+    exportConfigurationButton = new JButton();
+
     configureConnectionButton.setAction(new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
         actionConfigureConnections();
       }
     });
+    exportConfigurationButton.setAction(new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        exportConfiguration();
+      }
+    });
+
     configureConnectionButton.setText("Configure the connection...");
+    exportConfigurationButton.setText("Export configuration...");
 
     connectionComboBox = new ComboBox<>();
     connectionListLabel = new JLabel("Connection:");
@@ -275,13 +289,22 @@ public class SonarLintProjectBindPanel {
       WEST, HORIZONTAL, insets, 0, 0));
     bindPanel.add(configureConnectionButton, new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
-
+    bindPanel.add(exportConfigurationButton, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+      EAST, NONE, insets, 0, 0));
     bindPanel.add(projectKeyLabel, new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
     bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
     bindPanel.add(searchProjectButton, new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
+  }
+
+  private void exportConfiguration() {
+    runOnUiThread(project, () -> {
+      if (ExportConfigurationAction.Companion.confirm(project)) {
+        System.out.println("Confirmed to share");
+      }
+    });
   }
 
   /**
@@ -385,6 +408,7 @@ public class SonarLintProjectBindPanel {
       searchProjectButton.setEnabled(bound);
       connectionComboBox.setEnabled(bound);
       configureConnectionButton.setEnabled(bound);
+      exportConfigurationButton.setEnabled(org.sonarlint.intellij.config.Settings.getSettingsFor(project).isBound() && bound);
       moduleBindingPanel.setEnabled(bound);
 
       if (bound) {
