@@ -92,8 +92,8 @@ build_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES_INCLUDING_NIGHTLY
   eks_container:
     <<: *CONTAINER_DEFINITION
-    cpu: 6
-    memory: 8G
+    cpu: 9
+    memory: 12G
   env:
     ARTIFACTORY_DEPLOY_REPO: sonarsource-public-qa
     ARTIFACTORY_DEPLOY_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer
@@ -121,8 +121,8 @@ validate_task:
     JDK_VERSION: "17"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 6
-    memory: 10G
+    cpu: 7
+    memory: 12G
   <<: *SETUP_GRADLE_CACHE
   build_script: |
     source cirrus-env QA
