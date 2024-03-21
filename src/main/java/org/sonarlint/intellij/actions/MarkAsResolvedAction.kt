@@ -25,7 +25,6 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DoNotAskOption
@@ -47,6 +46,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.resolve.MarkAsResolvedDialog
 import org.sonarlint.intellij.util.DataKeys.Companion.ISSUE_DATA_KEY
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse
@@ -81,7 +81,7 @@ class MarkAsResolvedAction(
         private fun openMarkAsResolvedDialog(project: Project, issue: Issue) {
             val connection = serverConnection(project) ?: return displayNotificationError(project, "No connection could be found")
             val file = issue.file() ?: return displayNotificationError(project, "The file could not be found")
-            val module = ModuleUtil.findModuleForFile(file, project) ?: return displayNotificationError(
+            val module = findModuleForFile(file, project) ?: return displayNotificationError(
                 project,
                 "No module could be found for this file"
             )

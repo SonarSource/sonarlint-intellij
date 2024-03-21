@@ -31,6 +31,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 
 class OpenIssueInBrowserAction : AbstractSonarAction(
   "Open In Browser",
@@ -53,7 +54,7 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
     val issue = e.getData(TAINT_VULNERABILITY_DATA_KEY)
     val key = issue?.key() ?: return
     val localFile = issue.file() ?: return
-    val localFileModule = ModuleUtil.findModuleForFile(localFile, project) ?: return
+    val localFileModule = findModuleForFile(localFile, project) ?: return
     val serverUrl = serverConnection(project)?.hostUrl ?: return
     val projectKey = getService(localFileModule, ModuleBindingManager::class.java).resolveProjectKey() ?: return
     BrowserUtil.browse(buildLink(serverUrl, projectKey, key))

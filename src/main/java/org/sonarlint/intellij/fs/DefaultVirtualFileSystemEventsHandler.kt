@@ -21,7 +21,6 @@ package org.sonarlint.intellij.fs
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.project.ProjectManager
@@ -37,6 +36,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -105,7 +105,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         file ?: return null
         return openProjects.asSequence()
             .filter { !it.isDisposed }
-            .map { ModuleUtil.findModuleForFile(file, it) }
+            .map { findModuleForFile(file, it) }
             .find { it != null }
     }
 

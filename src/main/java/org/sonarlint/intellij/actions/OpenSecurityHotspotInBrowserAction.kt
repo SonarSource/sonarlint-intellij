@@ -29,6 +29,7 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 
 class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
   "Open In Browser",
@@ -56,7 +57,7 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
     val securityHotspot = e.getData(SECURITY_HOTSPOT_DATA_KEY)
     val key = securityHotspot?.serverFindingKey ?: return
     val localFile = securityHotspot.file()
-    val localFileModule = ModuleUtil.findModuleForFile(localFile, project) ?: return
+    val localFileModule = findModuleForFile(localFile, project) ?: return
     getService(BackendService::class.java).openHotspotInBrowser(localFileModule, key)
   }
 
