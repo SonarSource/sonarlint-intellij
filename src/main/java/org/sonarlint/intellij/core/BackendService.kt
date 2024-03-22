@@ -293,6 +293,8 @@ class BackendService : Disposable {
         val sonarQubeConnections =
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         val nodejsPath = getGlobalSettings().nodejsPath
+        val nonDefaultRpcRulesConfigurationByKey =
+            getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
 
         return rpcServer.initialize(
             InitializeParams(
@@ -313,7 +315,7 @@ class BackendService : Disposable {
                 sonarQubeConnections,
                 sonarCloudConnections,
                 null,
-                mapOf(),
+                nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
                 if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
             )
