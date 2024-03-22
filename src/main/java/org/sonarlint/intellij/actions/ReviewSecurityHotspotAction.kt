@@ -24,7 +24,6 @@ import com.intellij.codeInsight.intention.PriorityAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Iconable
@@ -42,6 +41,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Compan
 import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
@@ -95,7 +95,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
         val hotspotKey =
             serverFindingKey ?: return displayNotificationError(project, "Could not find the Security Hotspot on ${connection.productName}")
         val currentStatus = status ?: return displayNotificationError(project, "Could not find the current Security Hotspot status")
-        val module = ModuleUtil.findModuleForFile(file, project) ?: return displayNotificationError(
+        val module = findModuleForFile(file, project) ?: return displayNotificationError(
             project,
             "No module could be found for this file"
         )

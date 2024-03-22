@@ -45,6 +45,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarlint.intellij.util.DataKeys
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 
 private const val SKIP_CONFIRM_REOPEN_DIALOG_PROPERTY = "SonarLint.reopenIssue.hideConfirmation"
 
@@ -63,7 +64,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         fun reopenIssueDialog(project: Project, issue: Issue) {
             val connection = serverConnection(project) ?: return displayNotificationError(project, "No connection could be found")
             val file = issue.file() ?: return displayNotificationError(project, "The file could not be found")
-            val module = ModuleUtil.findModuleForFile(file, project) ?: return displayNotificationError(
+            val module = findModuleForFile(file, project) ?: return displayNotificationError(
                 project, "No module could be found for this file"
             )
 
