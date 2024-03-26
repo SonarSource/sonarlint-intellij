@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -45,6 +46,12 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -63,9 +70,12 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.documentation.SonarLintDocumentation;
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.GetSharedConnectedModeConfigFileParams;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto;
 
 import static java.awt.GridBagConstraints.EAST;
@@ -73,7 +83,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
-import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 public class SonarLintProjectBindPanel {
@@ -306,15 +316,63 @@ public class SonarLintProjectBindPanel {
   private void exportConfiguration() {
     if (project == null) return;
 
-    runOnUiThread(project, () -> {
-      if (confirm(project)) {
-        System.out.println("Confirmed to share");
+    if (confirm(project)) {
+      var configScopeId = BackendService.Companion.projectId(project);
+      if (configScopeId == null) {
+        return;
       }
-    });
+
+      createFile(configScopeId);
+    }
+  }
+
+  private void createFile(String configScopeId) {
+    if (project.getBasePath() == null) {
+      return;
+    }
+
+    getService(BackendService.class).getSharedConnectedModeConfigFileContents(new GetSharedConnectedModeConfigFileParams(configScopeId))
+      .thenAcceptAsync(sharedFileContent -> {
+        var root = Paths.get(project.getBasePath());
+        String filename;
+
+        if ((SonarLintUtils.isRider())) {
+          filename = project.getName() + ".json";
+        } else {
+          filename = "connectedMode.json";
+        }
+
+        var directoryPath = root.resolve(".sonarlint");
+        var fullFilePath = directoryPath.resolve(filename);
+
+        try {
+          Files.createDirectories(directoryPath);
+        } catch (IOException e) {
+          SonarLintProjectNotifications.Companion.get(project).simpleNotification(
+            null,
+            "Could not create the directory \".sonarlint.\", please check the logs for more details",
+            NotificationType.ERROR
+          );
+          SonarLintConsole.get(project).error("Error while creating the directory, IO exception : " + e.getMessage());
+
+          return;
+        }
+
+        try (var writer = new BufferedWriter(new FileWriter(String.valueOf(fullFilePath), StandardCharsets.UTF_8))) {
+          writer.write(sharedFileContent.getJsonFileContent());
+        } catch (IOException e) {
+          SonarLintProjectNotifications.Companion.get(project).simpleNotification(
+            null,
+            "Could not create the file : \"" + filename + "\", please check the logs for more details",
+            NotificationType.ERROR
+          );
+          SonarLintConsole.get(project).error("Error while creating the shared file, IO exception : " + e.getMessage());
+        }
+      });
   }
 
   private static boolean confirm(Project project) {
-    var binding = SonarLintUtils.getService(project, ProjectBindingManager.class).getBinding();
+    var binding = getService(project, ProjectBindingManager.class).getBinding();
     var isSonarCloud = false;
 
     if (binding == null) {
@@ -322,7 +380,7 @@ public class SonarLintProjectBindPanel {
       return false;
     }
 
-    var connection = SonarLintUtils.getService(project, ProjectBindingManager.class).tryGetServerConnection();
+    var connection = getService(project, ProjectBindingManager.class).tryGetServerConnection();
     if (connection.isPresent()) {
       isSonarCloud = connection.get().isSonarCloud();
     } else {
