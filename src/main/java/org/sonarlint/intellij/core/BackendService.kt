@@ -99,6 +99,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.common.Tra
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.common.TransientSonarQubeConnectionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidChangeCredentialsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.GetSharedConnectedModeConfigFileParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.SonarQubeConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationParams
@@ -303,7 +305,8 @@ class BackendService : Disposable {
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
                 getSonarCloudAlternativeEnvironment(),
-                FeatureFlagsDto(true, true, true, true, true, true, false, true),
+                //TODO Create a ticket and provide right parameter for telemetry enabled
+                FeatureFlagsDto(true, true, true, true, true, true, false, true, true),
                 getLocalStoragePath(),
                 SonarLintEngineFactory.getWorkDir(),
                 EnabledLanguages.findEmbeddedPlugins(),
@@ -558,6 +561,10 @@ class BackendService : Disposable {
 
     fun getListAllStandaloneRulesDefinitions(): CompletableFuture<ListAllStandaloneRulesDefinitionsResponse> {
         return requestFromBackend { it.rulesService.listAllStandaloneRulesDefinitions() }
+    }
+
+    fun getSharedConnectedModeConfigFileContents(params: GetSharedConnectedModeConfigFileParams): CompletableFuture<GetSharedConnectedModeConfigFileResponse> {
+        return requestFromBackend { it.sharedConnectedModeSettingsService.getSharedConnectedModeConfigFileContents(params) }
     }
 
     fun getStandaloneRuleDetails(params: GetStandaloneRuleDescriptionParams): CompletableFuture<GetStandaloneRuleDescriptionResponse> {
