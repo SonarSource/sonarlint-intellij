@@ -41,6 +41,7 @@ public final class SonarLintProjectSettings {
   private String projectKey = null;
   private List<String> fileExclusions = new ArrayList<>();
   private boolean bindingSuggestionsEnabled = true;
+  private Map<String, String> moduleMapping = new LinkedHashMap<>();
 
   public boolean isVerboseEnabled() {
     return verboseEnabled || "true".equals(System.getProperty("sonarlint.logs.verbose"));
@@ -127,4 +128,13 @@ public final class SonarLintProjectSettings {
   public boolean isBindingSuggestionsEnabled() {
     return bindingSuggestionsEnabled;
   }
+
+  public Map<String, String> getModuleMapping() {
+    return moduleMapping;
+  }
+
+  public void setModuleMapping(Map<String, String> moduleMapping) {
+    this.moduleMapping = new LinkedHashMap<>(moduleMapping);
+  }
+
 }

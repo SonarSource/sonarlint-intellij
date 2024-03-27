@@ -19,23 +19,12 @@
  */
 package org.sonarlint.intellij.config.module;
 
-import java.util.UUID;
-
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 
 public final class SonarLintModuleSettings {
-  private String uniqueId = UUID.randomUUID().toString();
   private String sqPathPrefix = "";
   private String idePathPrefix = "";
   private String projectKey = "";
-
-  public String getUniqueId() {
-    return uniqueId;
-  }
-
-  public void setUniqueId(String uniqueId) {
-    this.uniqueId = uniqueId;
-  }
 
   public String getProjectKey() {
     return projectKey;
