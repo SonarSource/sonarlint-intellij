@@ -881,13 +881,14 @@ class BackendService : Disposable {
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
 
         fun moduleId(module: Module): String {
-            // there is no reliable unique identifier for modules, we store one in settings
-            return getSettingsFor(module).uniqueId
+            return getSettingsFor(module.project).moduleMapping[module.name] ?: module.name
         }
 
         fun findModule(configScopeId: String): Module? {
             return ProjectManager.getInstance().openProjects.firstNotNullOfOrNull { project ->
-                ModuleManager.getInstance(project).modules.firstOrNull { module -> getSettingsFor(module).uniqueId == configScopeId }
+                val mapping = getSettingsFor(project).moduleMapping.filterValues { scopeId -> scopeId == configScopeId }.keys
+                val currentModuleName = if (mapping.isNotEmpty()) mapping.first() else configScopeId
+                return ModuleManager.getInstance(project).modules.firstOrNull { module -> module.name == currentModuleName }
             }
         }
 
