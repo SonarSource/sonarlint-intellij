@@ -64,16 +64,6 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun should_not_notify_engine_of_a_non_py_file() {
-        val nonPyFile = myFixture.copyFileToProject("file.txt", "file.txt")
-        val vFileEvent = VFileDeleteEvent(null, nonPyFile, false)
-
-        virtualFileSystemListener.before(listOf(vFileEvent))
-
-        verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), eq(emptyList()))
-    }
-
-    @Test
     fun should_notify_engine_of_a_file_modified_event() {
         val vFileEvent = VFileContentChangeEvent(null, file, 0L, 0L, false)
 

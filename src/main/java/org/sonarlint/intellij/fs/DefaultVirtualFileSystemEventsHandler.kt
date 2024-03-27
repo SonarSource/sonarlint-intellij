@@ -24,19 +24,17 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.serviceContainer.NonInjectable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -87,18 +85,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
     }
 
     private fun allEventsFor(file: VirtualFile, fileModule: Module, type: ModuleFileEvent.Type): List<ClientModuleFileEvent> {
-        val allFilesInvolved = mutableListOf<VirtualFile>()
-        VfsUtilCore.visitChildrenRecursively(file, object : VirtualFileVisitor<Unit>() {
-            override fun visitFile(file: VirtualFile): Boolean {
-                // SLI-551 Only send events on .py files (avoid parse errors)
-                // For Rider, send all events for OmniSharp
-                if (!file.isDirectory && (isRider() || isPython(file))) {
-                    allFilesInvolved.add(file)
-                }
-                return !fileModule.project.isDisposed
-            }
-        })
-        return allFilesInvolved.mapNotNull { buildModuleFileEvent(fileModule, it, type) }
+        return visitAndAddFiles(file, fileModule).mapNotNull { buildModuleFileEvent(fileModule, it, type) }
     }
 
     private fun findModule(file: VirtualFile?, openProjects: List<Project>): Module? {
@@ -107,10 +94,6 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
             .filter { !it.isDisposed }
             .map { findModuleForFile(file, it) }
             .find { it != null }
-    }
-
-    private fun isPython(file: VirtualFile): Boolean {
-        return file.path.endsWith(".py")
     }
 
     override fun dispose() {

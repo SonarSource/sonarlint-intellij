@@ -30,11 +30,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.vfs.VirtualFile
 import java.time.Duration
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.Alarm
 import org.sonarlint.intellij.util.SonarLintAppUtils
+import org.sonarlint.intellij.util.SonarLintAppUtils.isFileValidForSonarLint
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
@@ -81,7 +81,7 @@ class EditorFileChangeListener(private val fileEventsNotifier: ModuleFileEventsN
 
         val engine = getService(project, ProjectBindingManager::class.java).engineIfStarted ?: return
         changedFiles
-            .filter { shouldNotify(it) }
+            .filter { it.isValid && isFileValidForSonarLint(it, project) }
             .forEach { file ->
                 val document = FileDocumentManager.getInstance().getCachedDocument(file) ?: return@forEach
                 val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return@forEach
@@ -93,11 +93,6 @@ class EditorFileChangeListener(private val fileEventsNotifier: ModuleFileEventsN
                 fileEventsNotifier.notifyAsync(engine, module, events.toList())
             }
     }
-
-    // SLI-551 Only send events on .py files (avoid parse errors)
-    // For Rider, send all events for OmniSharp
-    private fun shouldNotify(file: VirtualFile) = file.isValid && (SonarLintUtils.isRider() || file.path.endsWith(".py"))
-
 
     override fun dispose() {
         changedFiles.clear()
