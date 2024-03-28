@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
@@ -54,6 +55,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
@@ -73,6 +75,8 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
   private final Project project;
   private Content taintVulnerabilitiesContent;
   private Content securityHotspotsContent;
+
+  private static final String SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY = "SonarLint.shareConfiguration";
 
   public SonarLintToolWindow(Project project) {
     this.project = project;
@@ -244,7 +248,8 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     if (content != null) {
       var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
       taintVulnerabilitiesPanel.populate(taintVulnerabilities);
-      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
+        SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
   }
 
@@ -254,7 +259,8 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
     if (content != null) {
       var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
       taintVulnerabilitiesPanel.update(closedTaintVulnerabilityIds, addedTaintVulnerabilities, updatedTaintVulnerabilities);
-      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(), SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
+      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
+        SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
   }
 
@@ -469,5 +475,24 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
   @Override
   public void bindingChanged(@Nullable ProjectBinding previousBinding, @Nullable ProjectBinding newBinding) {
     runOnUiThread(project, this::refreshViews);
+
+    if (newBinding == null) return;
+
+    showSharedConfigurationNotification(project, String.format("""
+        Project successfully bound with "%s" on "%s".
+        If you share this configuration, a file will be created in this working directory,
+        making it easier for other team members to configure the binding for the same project.
+        You may also decide to share this configuration later from your list of bound projects
+        """, newBinding.getProjectKey(), newBinding.getConnectionName())
+      );
+  }
+
+  private static void showSharedConfigurationNotification(Project project, String message) {
+    if (!PropertiesComponent.getInstance().getBoolean(SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY)) {
+      SonarLintProjectNotifications.Companion.get(project).showSharedConfigurationNotification("Project successfully bound. Share " +
+          "configuration?",
+        message, SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY,
+        new ShareConfigurationAction("Share configuration"));
+    }
   }
 }
