@@ -565,8 +565,12 @@ class BackendService : Disposable {
         return requestFromBackend { it.rulesService.listAllStandaloneRulesDefinitions() }
     }
 
-    fun getSharedConnectedModeConfigFileContents(params: GetSharedConnectedModeConfigFileParams): CompletableFuture<GetSharedConnectedModeConfigFileResponse> {
-        return requestFromBackend { it.sharedConnectedModeSettingsService.getSharedConnectedModeConfigFileContents(params) }
+    fun getSharedConnectedModeConfigFileContents(configScopeId: String): CompletableFuture<GetSharedConnectedModeConfigFileResponse> {
+        return requestFromBackend {
+            it.sharedConnectedModeSettingsService.getSharedConnectedModeConfigFileContents(
+                GetSharedConnectedModeConfigFileParams(configScopeId)
+            )
+        }
     }
 
     fun getStandaloneRuleDetails(params: GetStandaloneRuleDescriptionParams): CompletableFuture<GetStandaloneRuleDescriptionResponse> {
