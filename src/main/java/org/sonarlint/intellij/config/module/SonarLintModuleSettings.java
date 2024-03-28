@@ -25,8 +25,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 
 public final class SonarLintModuleSettings {
   private String uniqueId = UUID.randomUUID().toString();
-  private String sqPathPrefix = "";
-  private String idePathPrefix = "";
   private String projectKey = "";
 
   public String getUniqueId() {
@@ -51,21 +49,5 @@ public final class SonarLintModuleSettings {
 
   public void clearBindingOverride() {
     this.projectKey = "";
-  }
-
-  public String getSqPathPrefix() {
-    return sqPathPrefix;
-  }
-
-  public void setSqPathPrefix(String sqPathPrefix) {
-    this.sqPathPrefix = sqPathPrefix;
-  }
-
-  public String getIdePathPrefix() {
-    return idePathPrefix;
-  }
-
-  public void setIdePathPrefix(String idePathPrefix) {
-    this.idePathPrefix = idePathPrefix;
   }
 }
