@@ -349,6 +349,19 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
+    fun showSharedConfigurationNotification(title: String,message: String, doNotShowAgainId: String, action: AnAction?) {
+        SONARLINT_GROUP.createNotification(
+            title,
+            message,
+            NotificationType.WARNING
+        ).apply {
+            icon = SonarLintIcons.SONARLINT
+            action?.let { addAction(it) }
+            addAction(DontShowAgainAction(doNotShowAgainId))
+            notify(myProject)
+        }
+    }
+
     fun simpleNotification(title: String?, message: String, type: NotificationType, vararg actions: AnAction) {
         SONARLINT_GROUP.createNotification(
             title ?: "",
