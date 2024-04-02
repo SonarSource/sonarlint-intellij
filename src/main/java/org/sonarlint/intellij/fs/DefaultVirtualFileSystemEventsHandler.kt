@@ -30,12 +30,12 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.serviceContainer.NonInjectable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
@@ -49,16 +49,22 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         executorService.submit { forwardEvents(events, eventTypeConverter, fileEventsNotifier) }
     }
 
-    private fun forwardEvents(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?, fileEventsNotifier: ModuleFileEventsNotifier) {
+    private fun forwardEvents(
+        events: List<VFileEvent>,
+        eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?,
+        fileEventsNotifier: ModuleFileEventsNotifier,
+    ) {
         val openProjects = ProjectManager.getInstance().openProjects.filter { !it.isDisposed }.toList()
         val startedEnginesByProject = openProjects.associateWith { getEngineIfStarted(it) }
         val filesByModule = fileEventsByModules(events, openProjects, eventTypeConverter)
         filesByModule.forEach { (module, fileEvents) ->
+            val filesToNotify = fileEvents.filter { f -> shouldNotify(f.virtualFile) }.map { f -> f.clientModuleFileEvent }.toList()
             startedEnginesByProject[module.project]?.let {
-                fileEventsNotifier.notifyAsync(it, module, fileEvents)
+                fileEventsNotifier.notifyAsync(it, module, filesToNotify)
             }
         }
-        getService(BackendService::class.java).updateFileSystem(filesByModule)
+        val allFilesByModule = filesByModule.entries.associate { it.key to it.value.map { f -> f.clientModuleFileEvent }.toList() }
+        getService(BackendService::class.java).updateFileSystem(allFilesByModule)
     }
 
     private fun getEngineIfStarted(project: Project): SonarLintAnalysisEngine? =
@@ -68,8 +74,8 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         events: List<VFileEvent>,
         openProjects: List<Project>,
         eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?,
-    ): Map<Module, List<ClientModuleFileEvent>> {
-        val map: MutableMap<Module, List<ClientModuleFileEvent>> = mutableMapOf()
+    ): Map<Module, List<ClientModuleFileEventToVirtual>> {
+        val map: MutableMap<Module, List<ClientModuleFileEventToVirtual>> = mutableMapOf()
         for (event in events) {
             // call event.file only once as it can be hurting performance
             val file = event.file ?: continue
@@ -84,8 +90,12 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         return map
     }
 
-    private fun allEventsFor(file: VirtualFile, fileModule: Module, type: ModuleFileEvent.Type): List<ClientModuleFileEvent> {
-        return visitAndAddFiles(file, fileModule).mapNotNull { buildModuleFileEvent(fileModule, it, type) }
+    private fun allEventsFor(
+        file: VirtualFile,
+        fileModule: Module,
+        type: ModuleFileEvent.Type,
+    ): List<ClientModuleFileEventToVirtual> {
+        return visitAndAddFiles(file, fileModule).mapNotNull { buildClientModuleFileEventToVirtual(fileModule, it, type) }
     }
 
     private fun findModule(file: VirtualFile?, openProjects: List<Project>): Module? {
@@ -95,6 +105,10 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
             .map { findModuleForFile(file, it) }
             .find { it != null }
     }
+
+    // SLI-551 Only send events on .py files (avoid parse errors)
+    // For Rider, send all events for OmniSharp
+    private fun shouldNotify(file: VirtualFile) = file.isValid && (SonarLintUtils.isRider() || file.path.endsWith(".py"))
 
     override fun dispose() {
         executorService.shutdownNow()

@@ -180,14 +180,11 @@ public class SonarLintAppUtils {
   }
 
   public static boolean isFileValidForSonarLint(VirtualFile file, Project project) {
-    if (ApplicationManager.getApplication().isUnitTestMode()) {
-      return true;
-    }
     var toSkip = computeReadActionSafely(project, () -> isGeneratedSourceByAnyFilter(file, project)
       || ProjectFileIndex.getInstance(project).isExcluded(file)
       || ProjectFileIndex.getInstance(project).isInLibrary(file)
-      || FileUtilRt.isTooLarge(file.getLength()));
-    return toSkip != null && !toSkip;
+      || (!ApplicationManager.getApplication().isUnitTestMode() && FileUtilRt.isTooLarge(file.getLength())));
+    return Boolean.FALSE == toSkip;
   }
 
   @CheckForNull
