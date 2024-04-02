@@ -24,7 +24,9 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.util.Function
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBinding
@@ -47,6 +49,20 @@ class ModuleChangeListener(val project: Project) : ModuleListener {
         Modules.removeModule(getEngineIfStarted(module.project), module)
         getService(BackendService::class.java).moduleRemoved(module)
     }
+
+    override fun modulesRenamed(project: Project, modules: MutableList<out Module>, oldNameProvider: Function<in Module, String>) {
+        val projectSettings = getSettingsFor(project)
+        val moduleMapping = projectSettings.moduleMapping
+        for (module in modules) {
+            val previousModuleName = oldNameProvider.`fun`(module)
+            if (moduleMapping[previousModuleName] != null) {
+                moduleMapping[module.name] = moduleMapping.remove(previousModuleName)
+            } else {
+                moduleMapping[module.name] = previousModuleName
+            }
+        }
+    }
+
 }
 
 private object Modules {
