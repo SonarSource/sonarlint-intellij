@@ -25,26 +25,24 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager
+import java.nio.charset.Charset
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
-import java.nio.charset.Charset
 
-fun buildModuleFileEvent(
+fun buildClientModuleFileEventToVirtual(
     module: Module,
     file: VirtualFile,
-    type: ModuleFileEvent.Type
-): ClientModuleFileEvent? {
+    type: ModuleFileEvent.Type,
+): ClientModuleFileEventToVirtual? {
     val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file) ?: return null
-    return ClientModuleFileEvent.of(
-        DefaultClientInputFile(
-            file,
-            relativePath,
-            TestSourcesFilter.isTestSources(file, module.project),
-            getEncoding(module.project, file)
-        ),
-        type
+    return ClientModuleFileEventToVirtual(
+        file, ClientModuleFileEvent.of(
+            DefaultClientInputFile(
+                file, relativePath, TestSourcesFilter.isTestSources(file, module.project), getEncoding(module.project, file)
+            ), type
+        )
     )
 }
 

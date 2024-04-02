@@ -33,15 +33,11 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyFilter
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.io.FileUtilRt
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
 import java.io.ByteArrayInputStream
@@ -98,6 +94,7 @@ import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
+import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
@@ -582,21 +579,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             if (module.isDisposed) {
                 return@forEach
             }
-
-            VfsUtilCore.visitChildrenRecursively(contentRoot, object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
-                override fun visitFile(file: VirtualFile): Boolean {
-                    val toSkip = computeReadActionSafely(module) {
-                        isGeneratedSourceByAnyFilter(file, module.project)
-                            || ProjectFileIndex.getInstance(module.project).isExcluded(file)
-                            || ProjectFileIndex.getInstance(module.project).isInLibrary(file)
-                            || FileUtilRt.isTooLarge(file.length)
-                    } ?: true
-
-                    if (toSkip) return false
-                    if (!file.isDirectory && file.isValid) files.add(file)
-                    return true
-                }
-            })
+            files.addAll(visitAndAddFiles(contentRoot, module))
         }
         return files.toSet()
     }
