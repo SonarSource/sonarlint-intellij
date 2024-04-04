@@ -85,6 +85,8 @@ import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpdateBindingParams
@@ -99,8 +101,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.common.Tra
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.common.TransientSonarQubeConnectionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidChangeCredentialsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.GetSharedConnectedModeConfigFileParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.SonarQubeConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationParams
@@ -600,7 +600,7 @@ class BackendService : Disposable {
 
     fun getSharedConnectedModeConfigFileContents(configScopeId: String): CompletableFuture<GetSharedConnectedModeConfigFileResponse> {
         return requestFromBackend {
-            it.sharedConnectedModeSettingsService.getSharedConnectedModeConfigFileContents(
+            it.bindingService.getSharedConnectedModeConfigFileContents(
                 GetSharedConnectedModeConfigFileParams(configScopeId)
             )
         }

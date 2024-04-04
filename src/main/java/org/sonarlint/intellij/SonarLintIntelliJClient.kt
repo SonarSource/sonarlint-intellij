@@ -90,6 +90,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.trigger.TriggerType
+import org.sonarlint.intellij.util.ConfigurationSharing
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -105,6 +106,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingP
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.event.DidReceiveServerHotspotEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.HotspotDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.http.GetProxyPasswordAuthenticationResponse
@@ -129,6 +131,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     private const val SONAR_SCANNER_CONFIG_FILENAME = "sonar-project.properties"
+    private const val SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY = "SonarLint.AutoShareConfiguration"
     private const val AUTOSCAN_CONFIG_FILENAME = ".sonarcloud.properties"
     private const val SONARLINT_CONFIGURATION_FOLDER = ".sonarlint"
     private var findingToShow: ShowFinding<*>? = null
@@ -136,6 +139,39 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun suggestBinding(suggestionsByConfigScopeId: Map<String, List<BindingSuggestionDto>>) {
         suggestionsByConfigScopeId.forEach { (configScopeId, suggestions) -> suggestAutoBind(findProject(configScopeId), suggestions) }
+    }
+
+    override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
+        for (suggestion in suggestionsByConfigScope) {
+            val project = BackendService.findModule(suggestion.key)?.project
+                ?: BackendService.findProject(suggestion.key) ?: continue
+
+            if (suggestion.value.size == 1) {
+                //It was decided to only handle the case where there is only one notification per configuration scope
+                val uniqueSuggestion = suggestion.value[0]
+
+                val (connectionKind, projectKey, connectionName) = getAutoShareConfigParams(uniqueSuggestion)
+
+                ConfigurationSharing.showAutoSharedConfigurationNotification(
+                    project, String.format(
+                        """
+                    A Connected Mode configuration file is available to bind to project "%s" on %s "%s".
+                    You can also configure the binding manually later.
+                """.trimIndent(), projectKey, connectionKind, connectionName
+                    ), SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY
+                )
+            }
+        }
+    }
+
+    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<String, String, String> {
+        return if (uniqueSuggestion.connectionSuggestion.isRight) {
+            Triple("SonarCloud organization", uniqueSuggestion.connectionSuggestion.right.projectKey,
+                uniqueSuggestion.connectionSuggestion.right.organization)
+        } else {
+            Triple("SonarQube server", uniqueSuggestion.connectionSuggestion.left.projectKey,
+                uniqueSuggestion.connectionSuggestion.left.serverUrl)
+        }
     }
 
     private fun suggestAutoBind(project: Project?, suggestions: List<BindingSuggestionDto>) {
