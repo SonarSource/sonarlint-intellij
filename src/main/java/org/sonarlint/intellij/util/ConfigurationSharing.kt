@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder.Companion.okCancel
@@ -29,6 +30,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import org.sonarlint.intellij.actions.filters.AutoShareTokenExchangeAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
@@ -36,7 +38,7 @@ import org.sonarlint.intellij.core.BackendService.Companion.projectId
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.GetSharedConnectedModeConfigFileResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 
 class ConfigurationSharing {
 
@@ -93,6 +95,18 @@ class ConfigurationSharing {
                 }
         }
 
+        @JvmStatic
+        fun showAutoSharedConfigurationNotification(project: Project, message: String, doNotShowAgainId: String) {
+            if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
+                get(project).showAutoSharedConfigurationNotification(
+                    "Connected Mode configuration available",
+                    message,
+                    doNotShowAgainId,
+                    AutoShareTokenExchangeAction("Use configuration")
+                )
+            }
+        }
+
         private fun confirm(project: Project): Boolean {
             val binding = SonarLintUtils.getService(
                 project,
@@ -134,5 +148,4 @@ class ConfigurationSharing {
                 .ask(project)
         }
     }
-
 }
