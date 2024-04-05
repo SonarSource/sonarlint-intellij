@@ -213,6 +213,7 @@ dependencies {
     implementation(project(":common"))
     compileOnly(libs.findbugs.jsr305)
     runtimeOnly(project(":clion"))
+    runtimeOnly(project(":resharper"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(platform(libs.junit.bom))

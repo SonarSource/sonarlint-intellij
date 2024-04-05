@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion;
+package org.sonarlint.intellij.resharper;
 
 import com.intellij.mock.MockLocalFileSystem;
 import java.io.File;
@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
-import org.sonarlint.intellij.clion.AnalyzerConfiguration;
-import org.sonarlint.intellij.clion.BuildWrapperJsonGenerator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

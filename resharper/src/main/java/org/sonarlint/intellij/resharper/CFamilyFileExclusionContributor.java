@@ -17,24 +17,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion;
+package org.sonarlint.intellij.resharper;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
-import com.jetbrains.cidr.lang.psi.OCPsiFile;
+import com.jetbrains.rider.cpp.fileType.psi.CppFile;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isCLion;
 
 public class CFamilyFileExclusionContributor implements FileExclusionContributor {
 
   @Override
   public ExcludeResult shouldExclude(Module module, VirtualFile fileToAnalyze) {
-    if (!isSupported()) {
+    if (!isCLion()) {
       return ExcludeResult.notExcluded();
     }
     var psiFile = PsiManager.getInstance(module.getProject()).findFile(fileToAnalyze);
-    if (!(psiFile instanceof OCPsiFile)) {
+    if (!(psiFile instanceof CppFile)) {
       return ExcludeResult.notExcluded();
     }
     var configurationResult = new AnalyzerConfiguration(module.getProject()).getConfiguration(fileToAnalyze);
@@ -42,15 +44,6 @@ public class CFamilyFileExclusionContributor implements FileExclusionContributor
       return ExcludeResult.notExcluded();
     }
     return ExcludeResult.excluded(configurationResult.getSkipReason());
-  }
-
-  private static boolean isSupported() {
-    try {
-      Class.forName("com.jetbrains.rider.cpp.fileType.psi.CppFile");
-      return false;
-    } catch (ClassNotFoundException e) {
-      return true;
-    }
   }
 
 }

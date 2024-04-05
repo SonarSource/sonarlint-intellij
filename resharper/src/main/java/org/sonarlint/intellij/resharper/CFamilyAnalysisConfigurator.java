@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion;
+package org.sonarlint.intellij.resharper;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -25,16 +25,18 @@ import java.util.Collection;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isCLion;
+
 public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
   @Override
   public AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
     var result = new AnalysisConfiguration();
-    if (!isSupported()) {
+    if (!isCLion()) {
       return result;
     }
 
-    SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for CLion");
+    SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for Resharper");
 
     var analyzerConfiguration = new AnalyzerConfiguration(module.getProject());
     var buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
@@ -50,15 +52,6 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
       });
     result.extraProperties.put("sonar.cfamily.build-wrapper-content", buildWrapperJsonGenerator.build());
     return result;
-  }
-
-  private static boolean isSupported() {
-    try {
-      Class.forName("com.jetbrains.rider.cpp.fileType.psi.CppFile");
-      return false;
-    } catch (ClassNotFoundException e) {
-      return true;
-    }
   }
 
 }
