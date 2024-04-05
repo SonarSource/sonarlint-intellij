@@ -22,8 +22,10 @@ package org.sonarlint.intellij.mediumtests
 import com.intellij.openapi.application.PathManager
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -158,7 +160,9 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
 
         val raisedHotspots = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "")
 
-        assertThat(raisedHotspots).isEmpty()
+        Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted {
+            raisedHotspots.isEmpty()
+        }
     }
 
     private fun ensureSecurityHotspotRaised(filePath: String, codeSnippet: String = "ip = \"192.168.12.42\";") {

@@ -130,6 +130,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     private const val SONAR_SCANNER_CONFIG_FILENAME = "sonar-project.properties"
     private const val AUTOSCAN_CONFIG_FILENAME = ".sonarcloud.properties"
+    private const val SONARLINT_CONFIGURATION_FOLDER = ".sonarlint"
     private var findingToShow: ShowFinding<*>? = null
     private val backendTaskProgressReporter = BackendTaskProgressReporter()
 
@@ -557,7 +558,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (!file.isValid || FileUtilRt.isTooLarge(file.length)) return null
         val uri = VirtualFileUtils.toURI(file) ?: return null
         var fileContent: String? = null
-        if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME) {
+        if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER) {
             fileContent = computeReadActionSafely(project) { getFileContent(file) }
         }
         return ClientFileDto(
