@@ -143,7 +143,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
         for (suggestion in suggestionsByConfigScope) {
-            val project = BackendService.findModule(suggestion.key)?.project ?: BackendService.findProject(suggestion.key) ?: continue
+            val project = BackendService.findModule(suggestion.key)?.project
+                ?: BackendService.findProject(suggestion.key) ?: continue
 
             if (suggestion.value.size == 1) {
                 //It was decided to only handle the case where there is only one notification per configuration scope
@@ -157,7 +158,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     A Connected Mode configuration file is available to bind to project "%s" on %s "%s".
                     You can also configure the binding manually later.
                 """.trimIndent(), projectKey, connectionKind, connectionName
-                    ), SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY
+                    ), SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
+                    uniqueSuggestion
                 )
             }
         }
@@ -406,9 +408,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val connectionId = params.connectionId
         val projectKey = params.projectKey
         val configScopeId = params.configScopeId
-        
         val project: Project? = if (configScopeId != null) {
-            BackendService.findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
+            ProjectManager.getInstance().openProjects.find { BackendService.projectId(it) == configScopeId }
         } else {
             null
         }
