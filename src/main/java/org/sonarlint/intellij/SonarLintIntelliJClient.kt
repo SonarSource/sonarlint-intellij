@@ -143,8 +143,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
         for (suggestion in suggestionsByConfigScope) {
-            val project = BackendService.findModule(suggestion.key)?.project
-                ?: BackendService.findProject(suggestion.key) ?: continue
+            val project = BackendService.findModule(suggestion.key)?.project ?: BackendService.findProject(suggestion.key) ?: continue
 
             if (suggestion.value.size == 1) {
                 //It was decided to only handle the case where there is only one notification per configuration scope
