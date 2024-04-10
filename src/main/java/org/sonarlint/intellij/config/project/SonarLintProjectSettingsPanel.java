@@ -102,7 +102,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     if (bindingEnabled) {
       var moduleBindingsMap = moduleBindings
         .stream().collect(Collectors.toMap(ModuleBindingPanel.ModuleBinding::getModule, ModuleBindingPanel.ModuleBinding::getSonarProjectKey));
-      bindingManager.bindTo(selectedConnection, selectedProjectKey, moduleBindingsMap);
+      bindingManager.bindToManually(selectedConnection, selectedProjectKey, moduleBindingsMap);
     } else {
       bindingManager.unbind();
     }

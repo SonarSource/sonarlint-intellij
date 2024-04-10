@@ -102,7 +102,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         client.suggestBinding(
             mapOf(
-                projectBackendId to listOf(BindingSuggestionDto("connectionId", "projectKey", "projectName"))
+                projectBackendId to listOf(BindingSuggestionDto("connectionId", "projectKey", "projectName", false))
             )
         )
 
@@ -134,8 +134,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         client.suggestBinding(
             mapOf(
                 projectBackendId to listOf(
-                    BindingSuggestionDto("connectionId", "projectKey", "projectName"),
-                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2")
+                    BindingSuggestionDto("connectionId", "projectKey", "projectName", false),
+                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", false)
                 )
             )
         )
@@ -155,8 +155,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         client.suggestBinding(
             mapOf(
                 "wrongProjectId" to listOf(
-                    BindingSuggestionDto("connectionId", "projectKey", "projectName"),
-                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2")
+                    BindingSuggestionDto("connectionId", "projectKey", "projectName", false),
+                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", false)
                 )
             )
         )
@@ -172,8 +172,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         client.suggestBinding(
             mapOf(
                 "wrongProjectId" to listOf(
-                    BindingSuggestionDto("connectionId", "projectKey", "projectName"),
-                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2")
+                    BindingSuggestionDto("connectionId", "projectKey", "projectName", false),
+                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", false)
                 )
             )
         )
