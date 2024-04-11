@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion;
+package org.sonarlint.intellij.clion.resharper;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -27,18 +27,23 @@ import org.sonarlint.intellij.clion.common.BuildWrapperJsonGenerator;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isCLion;
+
 public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
   @Override
   public AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
     var result = new AnalysisConfiguration();
-    if (isClionResharperOn()) {
+
+    // This configurator is loaded when a specific Rider package is loaded (now present in CLion).
+    // We want to run this configurator only for CLion and not Rider.
+    if (!isCLion()) {
       return result;
     }
 
-    SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for CLion");
+    SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for Resharper");
 
-    var analyzerConfiguration = new CLionAnalyzerConfiguration(module.getProject());
+    var analyzerConfiguration = new CLionResharperAnalyzerConfiguration(module.getProject());
     var buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
     filesToAnalyze.stream()
       .map(analyzerConfiguration::getConfiguration)
@@ -52,15 +57,6 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
       });
     result.extraProperties.put("sonar.cfamily.build-wrapper-content", buildWrapperJsonGenerator.build());
     return result;
-  }
-
-  private static boolean isClionResharperOn() {
-    try {
-      Class.forName("com.jetbrains.rider.cpp.fileType.psi.CppFile");
-      return true;
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
   }
 
 }

@@ -17,40 +17,34 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion;
+package org.sonarlint.intellij.clion.resharper;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
-import com.jetbrains.cidr.lang.psi.OCPsiFile;
+import com.jetbrains.rider.cpp.fileType.psi.CppFile;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isCLion;
 
 public class CFamilyFileExclusionContributor implements FileExclusionContributor {
 
   @Override
-  public ExcludeResult shouldExclude(Module module, VirtualFile fileToAnalyze) {
-    if (isClionResharperOn()) {
+  public ExcludeResult shouldExclude(@NotNull Module module, @NotNull VirtualFile fileToAnalyze) {
+    if (!isCLion()) {
       return ExcludeResult.notExcluded();
     }
     var psiFile = PsiManager.getInstance(module.getProject()).findFile(fileToAnalyze);
-    if (!(psiFile instanceof OCPsiFile)) {
+    if (!(psiFile instanceof CppFile)) {
       return ExcludeResult.notExcluded();
     }
-    var configurationResult = new CLionAnalyzerConfiguration(module.getProject()).getConfiguration(fileToAnalyze);
+    var configurationResult = new CLionResharperAnalyzerConfiguration(module.getProject()).getConfiguration(fileToAnalyze);
     if (configurationResult.hasConfiguration()) {
       return ExcludeResult.notExcluded();
     }
     return ExcludeResult.excluded(configurationResult.getSkipReason());
-  }
-
-  private static boolean isClionResharperOn() {
-    try {
-      Class.forName("com.jetbrains.rider.cpp.fileType.psi.CppFile");
-      return true;
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
   }
 
 }

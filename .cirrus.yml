@@ -264,6 +264,9 @@ qa_task:
     - env:
         IDEA_VERSION: 'GO-2023.2'
         QA_CATEGORY: 'GoLand2023'
+    - env:
+        IDEA_VERSION: 'CL-2024.1'
+        QA_CATEGORY: 'CLion2024'
   <<: *SETUP_GRADLE_CACHE
   xvfb_background_script: |
     /etc/init.d/xvfb start
