@@ -933,7 +933,9 @@ class BackendService : Disposable {
             SonarLintConsole.get(module.project).debug("The request to retrieve file exclusions has been canceled")
             emptyList()
         } catch (e: Exception) {
-            SonarLintConsole.get(module.project).error("Error when retrieving excluded files", e)
+            if (!module.isDisposed) {
+                SonarLintConsole.get(module.project).error("Error when retrieving excluded files", e)
+            }
             emptyList()
         }
     }
