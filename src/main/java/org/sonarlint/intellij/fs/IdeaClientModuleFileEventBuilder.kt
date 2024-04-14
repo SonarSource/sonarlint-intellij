@@ -22,11 +22,12 @@ package org.sonarlint.intellij.fs
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.TestSourcesFilter
+import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager
 import java.nio.charset.Charset
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -37,33 +38,34 @@ fun buildClientModuleFileEventToVirtual(
     type: ModuleFileEvent.Type,
 ): ClientModuleFileEventToVirtual? {
     val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file) ?: return null
-    return ClientModuleFileEventToVirtual(
-        file, ClientModuleFileEvent.of(
-            DefaultClientInputFile(
-                file, relativePath, TestSourcesFilter.isTestSources(file, module.project), getEncoding(module.project, file)
-            ), type
+    return computeReadActionSafely(module.project) {
+        ClientModuleFileEventToVirtual(
+            file, ClientModuleFileEvent.of(
+                DefaultClientInputFile(
+                    file, relativePath, isTestSources(file, module.project), getEncoding(module.project, file)
+                ), type
+            )
         )
-    )
+    }
 }
 
 fun buildModuleFileEvent(
-  module: Module,
-  file: VirtualFile,
-  document: Document,
-  type: ModuleFileEvent.Type
+    module: Module,
+    file: VirtualFile,
+    document: Document,
+    type: ModuleFileEvent.Type,
 ): ClientModuleFileEvent? {
     val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file) ?: return null
     return ClientModuleFileEvent.of(
-      DefaultClientInputFile(
-        file,
-        relativePath,
-        TestSourcesFilter.isTestSources(file, module.project),
-        getEncoding(module.project, file),
-        document.text,
-        document.modificationStamp,
-        null
-      ),
-      type
+        DefaultClientInputFile(
+            file,
+            relativePath,
+            isTestSources(file, module.project),
+            getEncoding(module.project, file),
+            document.text,
+            document.modificationStamp,
+            null
+        ), type
     )
 }
 
