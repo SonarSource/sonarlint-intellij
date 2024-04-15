@@ -12,7 +12,7 @@ sonar-xml = "2.10.0.4108"
 sonar-omnisharp = "1.19.0.86083"
 sonar-text = "2.10.0.2188"
 sonar-iac = "1.27.0.9518"
-sonar-cpp = "6.53.0.67215"
+sonar-cpp = "6.54.0.69031"
 
 sonarqube = "4.4.1.3373"
 
