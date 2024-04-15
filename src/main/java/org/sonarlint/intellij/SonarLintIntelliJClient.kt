@@ -408,10 +408,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val connectionId = params.connectionId
         val projectKey = params.projectKey
         val configScopeId = params.configScopeId
-        val project: Project? = if (configScopeId != null) {
-            ProjectManager.getInstance().openProjects.find { BackendService.projectId(it) == configScopeId }
-        } else {
-            null
+        val project: Project? = configScopeId?.let {
+            BackendService.findModule(it)?.project ?: findProject(it)
         }
 
         return if (project == null) {
