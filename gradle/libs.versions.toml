@@ -11,7 +11,7 @@ sonar-html = "3.15.0.5107"
 sonar-xml = "2.10.0.4108"
 sonar-omnisharp = "1.19.0.86083"
 sonar-text = "2.10.0.2188"
-sonar-iac = "1.26.0.8471"
+sonar-iac = "1.27.0.9518"
 sonar-cpp = "6.53.0.67215"
 
 sonarqube = "4.4.1.3373"
