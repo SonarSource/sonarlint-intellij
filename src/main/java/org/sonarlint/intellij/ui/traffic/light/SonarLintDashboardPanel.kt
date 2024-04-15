@@ -154,8 +154,8 @@ class SonarLintDashboardPanel(private val editor: Editor) {
                 if (hotspotsCount > 0) {
                     fragments.add(SECURITY_HOTSPOT.display(hotspotsCount))
                 }
-                if (taintVulnerabilitiesCount > 0) {
-                    fragments.add(TAINT_VULNERABILITY.display(taintVulnerabilitiesCount))
+                if (taintVulnerabilitiesCountForFile > 0) {
+                    fragments.add(TAINT_VULNERABILITY.display(taintVulnerabilitiesCountForFile))
                 }
                 findingsSummaryLabel.text = fragments.joinToString()
             }
