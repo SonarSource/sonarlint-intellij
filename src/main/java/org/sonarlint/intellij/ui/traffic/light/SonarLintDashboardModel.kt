@@ -23,9 +23,9 @@ data class SonarLintDashboardModel(
     val isAlive: Boolean,
     val issuesCount: Int,
     val hotspotsCount: Int,
-    val taintVulnerabilitiesCount: Int,
+    val taintVulnerabilitiesCountForFile: Int,
     val isFocusOnNewCode: Boolean,
 ) {
-    fun findingsCount() = issuesCount + hotspotsCount + taintVulnerabilitiesCount
+    fun findingsCount() = issuesCount + hotspotsCount + taintVulnerabilitiesCountForFile
     fun hasFindings() = findingsCount() != 0
 }
