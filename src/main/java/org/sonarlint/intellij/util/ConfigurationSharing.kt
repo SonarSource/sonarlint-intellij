@@ -39,6 +39,7 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 
 class ConfigurationSharing {
 
@@ -96,13 +97,16 @@ class ConfigurationSharing {
         }
 
         @JvmStatic
-        fun showAutoSharedConfigurationNotification(project: Project, message: String, doNotShowAgainId: String) {
+        fun showAutoSharedConfigurationNotification(
+            project: Project, message: String, doNotShowAgainId: String,
+            connectionSuggestionDto: ConnectionSuggestionDto,
+        ) {
             if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
                 get(project).showAutoSharedConfigurationNotification(
                     "Connected Mode configuration available",
                     message,
                     doNotShowAgainId,
-                    AutoShareTokenExchangeAction("Use configuration")
+                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project)
                 )
             }
         }

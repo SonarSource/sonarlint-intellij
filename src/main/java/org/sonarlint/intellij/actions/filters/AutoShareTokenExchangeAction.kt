@@ -20,16 +20,35 @@
 package org.sonarlint.intellij.actions.filters
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.AbstractSonarAction
+import org.sonarlint.intellij.config.global.AutomaticSharedConfigCreator
+import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 
 class AutoShareTokenExchangeAction(
     text: String,
+    private val connectionSuggestionDto: ConnectionSuggestionDto,
+    private val project: Project,
 ) : AbstractSonarAction(
     text, null, null
 ) {
 
     override fun actionPerformed(e: AnActionEvent) {
-        println("bind me")
+        val (isSQ, projectKey, connectionName) = getAutoShareConfigParams(connectionSuggestionDto)
+        AutomaticSharedConfigCreator(projectKey, connectionName, isSQ, project).chooseResolution()
     }
 
+    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<Boolean, String, String> {
+        return if (uniqueSuggestion.connectionSuggestion.isRight) {
+            Triple(
+                false, uniqueSuggestion.connectionSuggestion.right.projectKey,
+                uniqueSuggestion.connectionSuggestion.right.organization
+            )
+        } else {
+            Triple(
+                true, uniqueSuggestion.connectionSuggestion.left.projectKey,
+                uniqueSuggestion.connectionSuggestion.left.serverUrl
+            )
+        }
+    }
 }
