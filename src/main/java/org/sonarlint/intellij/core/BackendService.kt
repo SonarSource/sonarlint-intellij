@@ -295,6 +295,7 @@ class BackendService : Disposable {
         val nodejsPath = getGlobalSettings().nodejsPath
         val nonDefaultRpcRulesConfigurationByKey =
             getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
+        val telemetryEnabled = !System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()
 
         return rpcServer.initialize(
             InitializeParams(
@@ -305,7 +306,10 @@ class BackendService : Disposable {
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
                 getSonarCloudAlternativeEnvironment(),
-                FeatureFlagsDto(true, true, true, true, true, true, false, true),
+                FeatureFlagsDto(
+                    true, true, true, true, true,
+                    true, false, true, telemetryEnabled
+                ),
                 getLocalStoragePath(),
                 SonarLintEngineFactory.getWorkDir(),
                 EnabledLanguages.findEmbeddedPlugins(),
