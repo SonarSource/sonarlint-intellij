@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.ShareConfigurationAction;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
@@ -50,6 +52,8 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 @Service(Service.Level.PROJECT)
 public final class ProjectBindingManager {
   private final Project myProject;
+
+  private static final String SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY = "SonarLint.shareConfiguration";
 
   public ProjectBindingManager(Project project) {
     myProject = project;
@@ -135,6 +139,40 @@ public final class ProjectBindingManager {
   }
 
   public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides) {
+    var previousBinding = getProjectBinding(connection, projectKey, moduleBindingsOverrides);
+
+    SonarLintProjectNotifications.Companion.get(myProject).reset();
+    var newBinding = requireNonNull(getBinding());
+    if (!Objects.equals(previousBinding, newBinding)) {
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
+      getService(BackendService.class).projectBound(myProject, newBinding);
+    }
+  }
+
+  public void bindToManually(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides) {
+    var previousBinding = getProjectBinding(connection, projectKey, moduleBindingsOverrides);
+
+    SonarLintProjectNotifications.Companion.get(myProject).reset();
+    var newBinding = requireNonNull(getBinding());
+
+    if (!Objects.equals(previousBinding, newBinding)) {
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding,
+        newBinding);
+      getService(BackendService.class).projectBound(myProject, newBinding);
+
+      showSharedConfigurationNotification(myProject, String.format("""
+        Project successfully bound with "%s" on "%s".
+        If you share this configuration, a file will be created in this working directory,
+        making it easier for other team members to configure the binding for the same project.
+        You may also decide to share this configuration later from your list of bound projects
+        """, newBinding.getProjectKey(), newBinding.getConnectionName())
+      );
+
+    }
+  }
+
+  @Nullable
+  private ProjectBinding getProjectBinding(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides) {
     var previousBinding = getBinding();
 
     var projectSettings = getSettingsFor(myProject);
@@ -143,12 +181,15 @@ public final class ProjectBindingManager {
     var modulesToClearOverride = allModules().stream()
       .filter(m -> !moduleBindingsOverrides.containsKey(m));
     unbind(modulesToClearOverride.toList());
+    return previousBinding;
+  }
 
-    SonarLintProjectNotifications.Companion.get(myProject).reset();
-    var newBinding = requireNonNull(getBinding());
-    if (!Objects.equals(previousBinding, newBinding)) {
-      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
-      getService(BackendService.class).projectBound(myProject, newBinding);
+  private static void showSharedConfigurationNotification(Project project, String message) {
+    if (!PropertiesComponent.getInstance().getBoolean(SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY)) {
+      SonarLintProjectNotifications.Companion.get(project).showSharedConfigurationNotification("Project successfully bound. Share " +
+          "configuration?",
+        message, SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY,
+        new ShareConfigurationAction("Share configuration"));
     }
   }
 
