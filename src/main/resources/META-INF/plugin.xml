@@ -64,7 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.5 - 14 new rules for Python. 1 new rule for token detection. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.5 - 21 new rules for Java and improved support for Spring. 14 new rules for Python. 1 new rule for token detection. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.4.2 - Fix an issue where rule configuration is not loaded at startup. Stop the creation of configuration files at module level for storing module IDs. Improve performance during synchronization on large projects. Various bug fixes.</li>
         <li>10.4.1 - Fix various errors when starting the SonarLint service. Fix an error when using a proxy.</li>
         <li>10.4 - SonarLint now runs in a separate process. Support of Java 21 and 2 new Java rules. 17 new accessibility rules for HTML. 2 new C++ rules. 2 new quick fixes for Python. 1 new JS/TS rule. Various UI fixes and improvements. Bug fixes, fewer FPs and improvements for many languages.</li>
