@@ -36,10 +36,12 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.ShareConfigurationAction;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 import static java.util.Objects.requireNonNull;
@@ -138,13 +140,15 @@ public final class ProjectBindingManager {
     return null;
   }
 
-  public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides) {
+  public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides,
+    SonarLintUtils.BindingMode bindingMode) {
     var previousBinding = getProjectBinding(connection, projectKey, moduleBindingsOverrides);
 
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
+      updateTelemetryOnBind(bindingMode);
       getService(BackendService.class).projectBound(myProject, newBinding);
     }
   }
@@ -156,8 +160,8 @@ public final class ProjectBindingManager {
     var newBinding = requireNonNull(getBinding());
 
     if (!Objects.equals(previousBinding, newBinding)) {
-      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding,
-        newBinding);
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
+      updateTelemetryOnBind(SonarLintUtils.BindingMode.MANUAL);
       getService(BackendService.class).projectBound(myProject, newBinding);
 
       showSharedConfigurationNotification(myProject, String.format("""
@@ -233,5 +237,13 @@ public final class ProjectBindingManager {
     return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())
       .filter(projectKey -> !isBlank(projectKey))
       .collect(Collectors.toSet());
+  }
+
+  public static void updateTelemetryOnBind(SonarLintUtils.BindingMode bindingMode) {
+    switch (bindingMode) {
+      case AUTOMATIC -> getService(SonarLintTelemetry.class).addedAutomaticBindings();
+      case IMPORTED -> getService(SonarLintTelemetry.class).addedImportedBindings();
+      case MANUAL -> getService(SonarLintTelemetry.class).addedManualBindings();
+    }
   }
 }

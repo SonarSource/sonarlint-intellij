@@ -75,6 +75,18 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
         notifyTelemetry { it.helpAndFeedbackLinkClicked(HelpAndFeedbackClickedParams(itemId)) }
     }
 
+    override fun addedAutomaticBindings() {
+        notifyTelemetry { it.addedAutomaticBindings() }
+    }
+
+    override fun addedImportedBindings() {
+        notifyTelemetry { it.addedImportedBindings() }
+    }
+
+    override fun addedManualBindings() {
+        notifyTelemetry { it.addedManualBindings() }
+    }
+
     companion object {
         private fun notifyTelemetry(action: (TelemetryRpcService) -> Unit) {
             getService(BackendService::class.java).notifyTelemetry(action)
