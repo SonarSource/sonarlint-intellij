@@ -62,7 +62,8 @@ import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
 
-class AutomaticSharedConfigCreator(private val projectKey: String, private val serverUrl: String, isSQ: Boolean, project: Project) :
+class AutomaticSharedConfigCreator(private val projectKey: String, private val serverUrl: String, isSQ: Boolean, project: Project,
+                                   private val bindingMode: SonarLintUtils.BindingMode) :
     DialogWrapper(false) {
     private var tokenValue: String? = null
     private val centerPanel: JBPanel<JBPanel<*>>
@@ -111,7 +112,7 @@ class AutomaticSharedConfigCreator(private val projectKey: String, private val s
 
                 val connection = Settings.getGlobalSettings().getServerConnectionByName(serverUrl)
                     .orElseThrow { IllegalStateException("Unable to find connection '$serverUrl'") }
-                SonarLintUtils.getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
+                SonarLintUtils.getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
                 SonarLintProjectNotifications.get(project).simpleNotification(
                     "Project successfully bound",
                     "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +

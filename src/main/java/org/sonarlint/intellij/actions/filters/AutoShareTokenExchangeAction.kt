@@ -22,6 +22,7 @@ package org.sonarlint.intellij.actions.filters
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.AbstractSonarAction
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.AutomaticSharedConfigCreator
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 
@@ -29,13 +30,14 @@ class AutoShareTokenExchangeAction(
     text: String,
     private val connectionSuggestionDto: ConnectionSuggestionDto,
     private val project: Project,
+    private val bindingMode: SonarLintUtils.BindingMode
 ) : AbstractSonarAction(
     text, null, null
 ) {
 
     override fun actionPerformed(e: AnActionEvent) {
         val (isSQ, projectKey, connectionName) = getAutoShareConfigParams(connectionSuggestionDto)
-        AutomaticSharedConfigCreator(projectKey, connectionName, isSQ, project).chooseResolution()
+        AutomaticSharedConfigCreator(projectKey, connectionName, isSQ, project, bindingMode).chooseResolution()
     }
 
     private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<Boolean, String, String> {

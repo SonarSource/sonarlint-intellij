@@ -99,14 +99,14 @@ class ConfigurationSharing {
         @JvmStatic
         fun showAutoSharedConfigurationNotification(
             project: Project, message: String, doNotShowAgainId: String,
-            connectionSuggestionDto: ConnectionSuggestionDto,
+            connectionSuggestionDto: ConnectionSuggestionDto, bindingMode: SonarLintUtils.BindingMode
         ) {
             if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
                 get(project).showAutoSharedConfigurationNotification(
                     "Connected Mode configuration available",
                     message,
                     doNotShowAgainId,
-                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project)
+                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project, bindingMode)
                 )
             }
         }
