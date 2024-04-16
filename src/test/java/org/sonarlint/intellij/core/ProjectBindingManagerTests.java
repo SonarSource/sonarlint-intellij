@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
@@ -149,7 +150,7 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
     var connection = ServerConnection.newBuilder().setName("name").build();
     getGlobalSettings().setServerConnections(List.of(connection));
 
-    projectBindingManager.bindTo(connection, "projectKey", Collections.emptyMap());
+    projectBindingManager.bindTo(connection, "projectKey", Collections.emptyMap(), SonarLintUtils.BindingMode.AUTOMATIC);
 
     assertThat(getProjectSettings().isBoundTo(connection)).isTrue();
     assertThat(getProjectSettings().getProjectKey()).isEqualTo("projectKey");
@@ -159,7 +160,7 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
   void should_store_project_and_module_bindings_in_settings() {
     var connection = ServerConnection.newBuilder().setName("name").build();
     getGlobalSettings().setServerConnections(List.of(connection));
-    projectBindingManager.bindTo(connection, "projectKey", Map.of(getModule(), "moduleProjectKey"));
+    projectBindingManager.bindTo(connection, "projectKey", Map.of(getModule(), "moduleProjectKey"), SonarLintUtils.BindingMode.AUTOMATIC);
 
     assertThat(getProjectSettings().isBoundTo(connection)).isTrue();
     assertThat(getProjectSettings().getProjectKey()).isEqualTo("projectKey");

@@ -29,4 +29,5 @@ val PROJECT_BINDING_TOPIC = Topic.create(
 
 interface ProjectBindingListener {
     fun bindingChanged(previousBinding: ProjectBinding?, newBinding: ProjectBinding?)
+
 }

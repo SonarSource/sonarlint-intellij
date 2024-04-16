@@ -54,9 +54,7 @@ import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.CancellationException
 import org.apache.commons.lang.StringEscapeUtils.escapeHtml
-import org.eclipse.lsp4j.jsonrpc.CancelChecker
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
-import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.sonarlint.intellij.actions.OpenInBrowserAction
@@ -65,6 +63,7 @@ import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -99,6 +98,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
+import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
@@ -122,6 +122,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.StartProgress
 import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.TelemetryClientLiveAttributesResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
@@ -141,7 +142,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         suggestionsByConfigScopeId.forEach { (configScopeId, suggestions) -> suggestAutoBind(findProject(configScopeId), suggestions) }
     }
 
-    override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
+
+
+    override fun suggestConnection(suggestionsByConfigScope: MutableMap<String, MutableList<ConnectionSuggestionDto>>) {
         for (suggestion in suggestionsByConfigScope) {
             val project = BackendService.findModule(suggestion.key)?.project
                 ?: BackendService.findProject(suggestion.key) ?: continue
@@ -152,6 +155,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
                 val (connectionKind, projectKey, connectionName) = getAutoShareConfigParams(uniqueSuggestion)
 
+                val mode = SonarLintUtils.getBindingModeForSuggestion(uniqueSuggestion.isFromSharedConfiguration)
+
                 ConfigurationSharing.showAutoSharedConfigurationNotification(
                     project, String.format(
                         """
@@ -159,7 +164,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     You can also configure the binding manually later.
                 """.trimIndent(), projectKey, connectionKind, connectionName
                     ), SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
-                    uniqueSuggestion
+                    uniqueSuggestion,
+                    mode
                 )
             }
         }
@@ -183,7 +189,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (getSettingsFor(project).isBindingSuggestionsEnabled && !getSettingsFor(project).isBound) {
             val notifications = SonarLintProjectNotifications.get(project)
             notifications.suggestBindingOptions(suggestions.map {
-                BindingSuggestion(it.connectionId, it.sonarProjectKey, it.sonarProjectName)
+                BindingSuggestion(it.connectionId, it.sonarProjectKey, it.sonarProjectName, it.isFromSharedConfiguration)
             })
         }
     }
@@ -355,7 +361,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         OpenFileDescriptor(project, file, line - 1, -1).navigate(true)
     }
 
-    override fun assistCreatingConnection(params: AssistCreatingConnectionParams, cancelChecker: CancelChecker): AssistCreatingConnectionResponse {
+    override fun assistCreatingConnection(
+        params: AssistCreatingConnectionParams,
+        cancelChecker: SonarLintCancelChecker
+    ): AssistCreatingConnectionResponse {
         val serverUrl = params.serverUrl
         val tokenName = params.tokenName
         val tokenValue = params.tokenValue
@@ -404,7 +413,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return response
     }
 
-    override fun assistBinding(params: AssistBindingParams, cancelChecker: CancelChecker): AssistBindingResponse {
+    override fun assistBinding(params: AssistBindingParams, cancelChecker: SonarLintCancelChecker?): AssistBindingResponse {
         val connectionId = params.connectionId
         val projectKey = params.projectKey
         val configScopeId = params.configScopeId
@@ -419,7 +428,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } else {
             val connection = getGlobalSettings().getServerConnectionByName(connectionId)
                 .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
-            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
+            val mode = SonarLintUtils.getBindingModeForSuggestion(params.isFromSharedConfiguration)
+            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
@@ -542,7 +552,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
     }
 
-    override fun matchSonarProjectBranch(configurationScopeId: String, mainBranchName: String, allBranchesNames: Set<String>, cancelChecker: CancelChecker): String? {
+    override fun matchSonarProjectBranch(
+        configurationScopeId: String,
+        mainBranchName: String,
+        allBranchesNames: MutableSet<String>,
+        cancelChecker: SonarLintCancelChecker?
+    ): String? {
         val module = BackendService.findModule(configurationScopeId) ?: return null
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
         val repositories = repositoriesEPs.mapNotNull { it.getRepoFor(module) }.toList()
