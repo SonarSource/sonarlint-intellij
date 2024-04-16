@@ -52,7 +52,6 @@ import java.util.logging.Filter
 import java.util.logging.Level
 import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
-import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
@@ -148,6 +147,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.MatchWithSer
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWithHashDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TrackWithServerIssuesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent

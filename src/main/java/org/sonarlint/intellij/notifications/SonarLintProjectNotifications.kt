@@ -170,9 +170,10 @@ class SonarLintProjectNotifications(private val myProject: Project) {
     fun suggestBindingOptions(suggestedBindings: List<BindingSuggestion>) {
         if (suggestedBindings.size == 1) {
             val suggestedBinding = suggestedBindings[0]
+            val mode = SonarLintUtils.getBindingModeForSuggestion(suggestedBinding.isFromSharedConfiguration)
             notifyBindingSuggestions(
                 "Bind this project to '${suggestedBinding.projectName}' on '${suggestedBinding.connectionId}'?",
-                BindProjectAction(suggestedBinding), OpenProjectSettingsAction(myProject, "Select another one")
+                BindProjectAction(suggestedBinding, mode), OpenProjectSettingsAction(myProject, "Select another one")
             )
         } else {
             notifyBindingSuggestions(

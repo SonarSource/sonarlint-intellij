@@ -23,6 +23,7 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -34,6 +35,8 @@ class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingS
         val dialog = BindingSuggestionSelectionDialog(suggestedBindings)
         val acceptedSuggestion = dialog.chooseSuggestion() ?: return
 
+        val mode = SonarLintUtils.getBindingModeForSuggestion(acceptedSuggestion.isFromSharedConfiguration)
+
         notification.expire()
         val project = e.project!!
         getGlobalSettings().getServerConnectionByName(acceptedSuggestion.connectionId)
@@ -42,7 +45,8 @@ class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingS
                     getService(project, ProjectBindingManager::class.java).bindTo(
                         connection,
                         acceptedSuggestion.projectKey,
-                        emptyMap()
+                        emptyMap(),
+                        mode
                     )
                 },
                 {
