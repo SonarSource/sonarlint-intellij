@@ -33,8 +33,10 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
 import com.intellij.openapi.vcs.changes.committed.MockAbstractVcs
 import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.openapi.vfs.VirtualFile
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.awaitility.Awaitility
 import org.jetbrains.annotations.NotNull
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -406,6 +408,9 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private fun analyze(vararg filesToAnalyze: VirtualFile): List<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
         submitter.analyzeFilesPreCommit(filesToAnalyze.toList())
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            assertThat(filesToAnalyze.flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }).isNotEmpty
+        }
         return filesToAnalyze.flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
     }
 
