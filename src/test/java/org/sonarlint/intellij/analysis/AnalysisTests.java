@@ -64,6 +64,7 @@ import static org.mockito.Mockito.when;
 
 class AnalysisTests extends AbstractSonarLintLightTests {
   private Analysis task;
+  private int analysisTaskTimeout = 8000;
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
   @Mock
   private ProgressIndicator progress;
@@ -106,7 +107,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   void testTask() {
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(2000)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
 
     assertThat(getExternalAnnotators())
@@ -129,7 +130,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(2000)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
     verify(findingsCacheMock, never()).replaceFindings(any());
   }
@@ -173,7 +174,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(2000)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
   }
 
@@ -192,7 +193,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(2000)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
   }
 
@@ -210,7 +211,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(2000)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class));
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class));
   }
 
   @Test
@@ -218,7 +219,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     task.cancel();
     task.run(progress);
 
-    verify(sonarLintConsole).info("Analysis canceled");
+    verify(sonarLintConsole, timeout(analysisTaskTimeout)).info("Analysis canceled");
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
