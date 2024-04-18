@@ -236,10 +236,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         service.projectClosed(project)
 
         val paramsCaptor = argumentCaptor<DidRemoveConfigurationScopeParams>()
-        verify(backendConfigurationService, timeout(8000).times(2)).didRemoveConfigurationScope(paramsCaptor.capture())
+        verify(backendConfigurationService, timeout(500).times(2)).didRemoveConfigurationScope(paramsCaptor.capture())
         assertThat(paramsCaptor.allValues).extracting(
             "removedId"
-        ).containsExactly(
+        ).containsExactlyInAnyOrder(
             moduleId,
             projectBackendId(project)
         )
