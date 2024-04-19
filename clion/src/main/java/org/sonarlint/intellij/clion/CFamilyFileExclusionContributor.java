@@ -30,7 +30,7 @@ public class CFamilyFileExclusionContributor implements FileExclusionContributor
 
   @Override
   public ExcludeResult shouldExclude(Module module, VirtualFile fileToAnalyze) {
-    if (isClionResharperOn()) {
+    if (CFamilyAnalysisConfigurator.isClionResharperOn()) {
       return ExcludeResult.notExcluded();
     }
     var psiFile = PsiManager.getInstance(module.getProject()).findFile(fileToAnalyze);
@@ -42,15 +42,6 @@ public class CFamilyFileExclusionContributor implements FileExclusionContributor
       return ExcludeResult.notExcluded();
     }
     return ExcludeResult.excluded(configurationResult.getSkipReason());
-  }
-
-  private static boolean isClionResharperOn() {
-    try {
-      Class.forName("com.jetbrains.rider.cpp.fileType.psi.CppFile");
-      return true;
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
   }
 
 }

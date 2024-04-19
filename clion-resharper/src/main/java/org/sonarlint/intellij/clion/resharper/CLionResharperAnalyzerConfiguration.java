@@ -36,7 +36,6 @@ import com.jetbrains.cidr.project.workspace.CidrWorkspace;
 import com.jetbrains.rider.cpp.fileType.CppLanguage;
 import com.jetbrains.rider.cpp.fileType.psi.CppFile;
 import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.clion.common.AnalyzerConfiguration;
@@ -46,7 +45,6 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
-  private static final Map<ForcedLanguage, String> LANGUAGE_KEYS = Map.of(ForcedLanguage.C, "c", ForcedLanguage.CPP, "cpp", ForcedLanguage.OBJC, "objc");
   private final Project project;
 
   public CLionResharperAnalyzerConfiguration(@NotNull Project project) {
@@ -145,7 +143,7 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
         }
       }
     }
-    return cppEnvironment != null && (cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker());
+    return cppEnvironment != null && (cppEnvironment.getToolSet().isSsh() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker());
   }
 
   @Nullable

@@ -54,7 +54,7 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
     return result;
   }
 
-  private static boolean isClionResharperOn() {
+  public static boolean isClionResharperOn() {
     try {
       Class.forName("com.jetbrains.rider.cpp.fileType.psi.CppFile");
       return true;
