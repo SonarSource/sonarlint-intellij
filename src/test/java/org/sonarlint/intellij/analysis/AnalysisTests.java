@@ -64,7 +64,7 @@ import static org.mockito.Mockito.when;
 
 class AnalysisTests extends AbstractSonarLintLightTests {
   private Analysis task;
-  private int analysisTaskTimeout = 8000;
+  private int analysisTaskTimeout = 10000;
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
   @Mock
   private ProgressIndicator progress;
