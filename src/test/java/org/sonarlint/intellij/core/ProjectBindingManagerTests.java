@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
@@ -37,7 +36,7 @@ import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEn
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.mock;
-import static org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.*;
+import static org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC;
 
 class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager;

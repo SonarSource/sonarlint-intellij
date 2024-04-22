@@ -26,7 +26,8 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.*
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
 import org.sonarlint.intellij.ui.BindingSuggestionSelectionDialog
 
 class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingSuggestion>) :

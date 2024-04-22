@@ -128,11 +128,10 @@ class ConfigurationSharing {
             return okCancel(
                 "Share this Connected Mode configuration?",
                 """
-                    A configuration file connectedMode.json will be created in your local repository 
-                    with a reference to project "$projectKey" on $connectionKind "$connectionName"
+                    A configuration file connectedMode.json will be created in your local repository with a reference to project "$projectKey" on $connectionKind "$connectionName"
                     
-                    This will help other team members configure the binding for the same project. 
-                    <a href="${SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK}">Learn more</a> """.trimMargin()
+                    This will help other team members configure the binding for the same project.
+                    <a href="${SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK}">Learn more</a> """.trimIndent()
             )
                 .yesText("Share configuration")
                 .noText("Cancel")

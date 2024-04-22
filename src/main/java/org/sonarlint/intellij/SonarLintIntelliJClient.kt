@@ -152,8 +152,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 // It was decided to only handle the case where there is only one notification per configuration scope
                 val uniqueSuggestion = suggestion.value[0]
                 val (connectionKind, projectKey, connectionName) = getAutoShareConfigParams(uniqueSuggestion)
-                val mode =
-                    if (uniqueSuggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
+                val mode = if (uniqueSuggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
 
                 ConfigurationSharing.showAutoSharedConfigurationNotification(
                     project, String.format(
@@ -454,7 +453,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
     }
 
-    override fun didSynchronizeConfigurationScopes(configurationScopeIds: MutableSet<String>) {
+    override fun didSynchronizeConfigurationScopes(configurationScopeIds: Set<String>) {
         GlobalLogOutput.get().log("Did synchronize config scopes $configurationScopeIds", ClientLogOutput.Level.INFO)
     }
 
@@ -535,7 +534,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         )
     }
 
-    override fun didChangeAnalysisReadiness(configurationScopeIds: MutableSet<String>, areReadyForAnalysis: Boolean) {
+    override fun didChangeAnalysisReadiness(configurationScopeIds: Set<String>, areReadyForAnalysis: Boolean) {
         GlobalLogOutput.get().log("Analysis became ready=$areReadyForAnalysis for $configurationScopeIds", ClientLogOutput.Level.DEBUG)
         configurationScopeIds.mapNotNull { BackendService.findModule(it)?.project ?: findProject(it) }.toSet()
             .forEach { project ->

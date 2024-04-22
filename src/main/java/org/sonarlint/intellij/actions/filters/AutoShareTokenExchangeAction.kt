@@ -34,8 +34,8 @@ class AutoShareTokenExchangeAction(
 ) : AbstractSonarAction(text, null, null) {
 
     override fun actionPerformed(e: AnActionEvent) {
-        val (isSQ, projectKey, connectionName) = getAutoShareConfigParams(connectionSuggestionDto)
-        AutomaticSharedConfigCreator(projectKey, connectionName, isSQ, project, bindingMode).chooseResolution()
+        val (isSQ, projectKey, orgOrServerUrl) = getAutoShareConfigParams(connectionSuggestionDto)
+        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, bindingMode).chooseResolution()
     }
 
     private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<Boolean, String, String> {

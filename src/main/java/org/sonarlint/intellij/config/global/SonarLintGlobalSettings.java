@@ -19,12 +19,24 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.util.xmlb.annotations.*;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-
-import java.util.*;
+import com.intellij.util.xmlb.annotations.Attribute;
+import com.intellij.util.xmlb.annotations.OptionTag;
+import com.intellij.util.xmlb.annotations.Transient;
+import com.intellij.util.xmlb.annotations.XCollection;
+import com.intellij.util.xmlb.annotations.XMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTrailingSlash;
 
@@ -82,8 +94,6 @@ public final class SonarLintGlobalSettings {
     this.taintVulnerabilitiesTabDisclaimerDismissed = dismissed;
   }
 
-  class my_class {
-  } // Noncompliant
   public void setRuleParam(String ruleKey, String paramName, String paramValue) {
     rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, true)).getParams().put(paramName, paramValue);
   }
