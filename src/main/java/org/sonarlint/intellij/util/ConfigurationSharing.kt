@@ -85,6 +85,12 @@ class ConfigurationSharing {
                                 sharedFileContent.jsonFileContent
                             )
                         }
+
+                        get(project).simpleNotification(
+                            null,
+                            "File \'$filename\' has been created. It might take some time for changes to be reflected in the project view.",
+                            NotificationType.INFORMATION
+                        )
                     } catch (e: IOException) {
                         get(project).simpleNotification(
                             null,
