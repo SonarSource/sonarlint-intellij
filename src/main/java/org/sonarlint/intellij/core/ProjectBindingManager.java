@@ -35,8 +35,6 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.actions.ShareConfigurationAction;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
@@ -141,7 +139,7 @@ public final class ProjectBindingManager {
   }
 
   public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides,
-    SonarLintUtils.BindingMode bindingMode) {
+    BindingMode bindingMode) {
     var previousBinding = getProjectBinding(connection, projectKey, moduleBindingsOverrides);
 
     SonarLintProjectNotifications.Companion.get(myProject).reset();
@@ -161,7 +159,7 @@ public final class ProjectBindingManager {
 
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
-      updateTelemetryOnBind(SonarLintUtils.BindingMode.MANUAL);
+      updateTelemetryOnBind(BindingMode.MANUAL);
       getService(BackendService.class).projectBound(myProject, newBinding);
 
       showSharedConfigurationNotification(myProject, String.format("""
@@ -192,8 +190,7 @@ public final class ProjectBindingManager {
     if (!PropertiesComponent.getInstance().getBoolean(SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY)) {
       SonarLintProjectNotifications.Companion.get(project).showSharedConfigurationNotification("Project successfully bound. Share " +
           "configuration?",
-        message, SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY,
-        new ShareConfigurationAction("Share configuration"));
+        message, SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY);
     }
   }
 
@@ -239,11 +236,18 @@ public final class ProjectBindingManager {
       .collect(Collectors.toSet());
   }
 
-  public static void updateTelemetryOnBind(SonarLintUtils.BindingMode bindingMode) {
+  public static void updateTelemetryOnBind(BindingMode bindingMode) {
     switch (bindingMode) {
       case AUTOMATIC -> getService(SonarLintTelemetry.class).addedAutomaticBindings();
       case IMPORTED -> getService(SonarLintTelemetry.class).addedImportedBindings();
       case MANUAL -> getService(SonarLintTelemetry.class).addedManualBindings();
     }
   }
+
+  public enum BindingMode {
+    AUTOMATIC,
+    IMPORTED,
+    MANUAL
+  }
+
 }

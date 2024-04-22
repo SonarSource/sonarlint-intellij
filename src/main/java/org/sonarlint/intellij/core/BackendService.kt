@@ -602,9 +602,7 @@ class BackendService : Disposable {
         return requestFromBackend {
             it.hotspotService.checkLocalDetectionSupported(
                 CheckLocalDetectionSupportedParams(
-                    projectId(
-                        project
-                    )
+                    projectId(project)
                 )
             )
         }

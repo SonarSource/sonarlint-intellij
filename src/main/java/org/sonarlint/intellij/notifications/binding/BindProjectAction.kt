@@ -24,9 +24,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.common.util.SonarLintUtils.BindingMode
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 
 class BindProjectAction(private val bindingSuggestion: BindingSuggestion, private val bindingMode: BindingMode)
     : AbstractSonarAction("Bind project") {

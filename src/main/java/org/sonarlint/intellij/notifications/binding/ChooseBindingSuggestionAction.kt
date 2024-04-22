@@ -23,10 +23,10 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.*
 import org.sonarlint.intellij.ui.BindingSuggestionSelectionDialog
 
 class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingSuggestion>) :
@@ -35,7 +35,7 @@ class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingS
         val dialog = BindingSuggestionSelectionDialog(suggestedBindings)
         val acceptedSuggestion = dialog.chooseSuggestion() ?: return
 
-        val mode = SonarLintUtils.getBindingModeForSuggestion(acceptedSuggestion.isFromSharedConfiguration)
+        val mode = if (acceptedSuggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
 
         notification.expire()
         val project = e.project!!

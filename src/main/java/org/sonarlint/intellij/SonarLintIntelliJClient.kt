@@ -63,7 +63,6 @@ import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -73,6 +72,8 @@ import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_SETUP_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SUPPORT_POLICY_LINK
@@ -142,20 +143,17 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         suggestionsByConfigScopeId.forEach { (configScopeId, suggestions) -> suggestAutoBind(findProject(configScopeId), suggestions) }
     }
 
-
-
-    override fun suggestConnection(suggestionsByConfigScope: MutableMap<String, MutableList<ConnectionSuggestionDto>>) {
+    override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
         for (suggestion in suggestionsByConfigScope) {
             val project = BackendService.findModule(suggestion.key)?.project
                 ?: BackendService.findProject(suggestion.key) ?: continue
 
             if (suggestion.value.size == 1) {
-                //It was decided to only handle the case where there is only one notification per configuration scope
+                // It was decided to only handle the case where there is only one notification per configuration scope
                 val uniqueSuggestion = suggestion.value[0]
-
                 val (connectionKind, projectKey, connectionName) = getAutoShareConfigParams(uniqueSuggestion)
-
-                val mode = SonarLintUtils.getBindingModeForSuggestion(uniqueSuggestion.isFromSharedConfiguration)
+                val mode =
+                    if (uniqueSuggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
 
                 ConfigurationSharing.showAutoSharedConfigurationNotification(
                     project, String.format(
@@ -363,7 +361,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun assistCreatingConnection(
         params: AssistCreatingConnectionParams,
-        cancelChecker: SonarLintCancelChecker
+        cancelChecker: SonarLintCancelChecker,
     ): AssistCreatingConnectionResponse {
         val serverUrl = params.serverUrl
         val tokenName = params.tokenName
@@ -413,7 +411,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return response
     }
 
-    override fun assistBinding(params: AssistBindingParams, cancelChecker: SonarLintCancelChecker?): AssistBindingResponse {
+    override fun assistBinding(params: AssistBindingParams, cancelChecker: SonarLintCancelChecker): AssistBindingResponse {
         val connectionId = params.connectionId
         val projectKey = params.projectKey
         val configScopeId = params.configScopeId
@@ -428,7 +426,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } else {
             val connection = getGlobalSettings().getServerConnectionByName(connectionId)
                 .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
-            val mode = SonarLintUtils.getBindingModeForSuggestion(params.isFromSharedConfiguration)
+            val mode =
+                if (params.isFromSharedConfiguration) IMPORTED else AUTOMATIC
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
@@ -555,8 +554,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun matchSonarProjectBranch(
         configurationScopeId: String,
         mainBranchName: String,
-        allBranchesNames: MutableSet<String>,
-        cancelChecker: SonarLintCancelChecker?
+        allBranchesNames: Set<String>,
+        cancelChecker: SonarLintCancelChecker,
     ): String? {
         val module = BackendService.findModule(configurationScopeId) ?: return null
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
