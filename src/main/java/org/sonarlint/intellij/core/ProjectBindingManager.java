@@ -163,10 +163,10 @@ public final class ProjectBindingManager {
       getService(BackendService.class).projectBound(myProject, newBinding);
 
       showSharedConfigurationNotification(myProject, String.format("""
-        Project successfully bound with "%s" on "%s".
-        If you share this configuration, a file will be created in this working directory,
+        Project successfully bound with '%s' on '%s'.
+        When sharing this configuration, a file will be created in this working directory,
         making it easier for other team members to configure the binding for the same project.
-        You may also decide to share this configuration later from your list of bound projects
+        This configuration may also be shared later from your list of bound projects
         """, newBinding.getProjectKey(), newBinding.getConnectionName())
       );
 
@@ -188,8 +188,7 @@ public final class ProjectBindingManager {
 
   private static void showSharedConfigurationNotification(Project project, String message) {
     if (!PropertiesComponent.getInstance().getBoolean(SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY)) {
-      SonarLintProjectNotifications.Companion.get(project).showSharedConfigurationNotification("Project successfully bound. Share " +
-          "configuration?",
+      SonarLintProjectNotifications.Companion.get(project).showSharedConfigurationNotification("Project successfully bound",
         message, SKIP_SHARED_CONFIGURATION_DIALOG_PROPERTY);
     }
   }

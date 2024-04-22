@@ -157,8 +157,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 ConfigurationSharing.showAutoSharedConfigurationNotification(
                     project, String.format(
                         """
-                    A Connected Mode configuration file is available to bind to project "%s" on %s "%s".
-                    You can also configure the binding manually later.
+                    A Connected Mode configuration file is available to bind to project '%s' on %s '%s'.
+                    The binding can also be manually configured later.
                 """.trimIndent(), projectKey, connectionKind, connectionName
                     ), SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
                     uniqueSuggestion,
@@ -317,7 +317,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (file == null) {
             if (!project.isDisposed) {
                 SonarLintProjectNotifications.get(project)
-                    .simpleNotification(null, "Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
+                    .simpleNotification(null, "Unable to open finding. Cannot find the file: $filePath", NotificationType.WARNING)
             }
             return
         }
@@ -327,7 +327,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             if (!project.isDisposed) {
                 SonarLintProjectNotifications.get(project).simpleNotification(
                     null,
-                    "Unable to open finding. Can't find the module corresponding to file: $filePath",
+                    "Unable to open finding. Cannot find the module corresponding to file: $filePath",
                     NotificationType.WARNING
                 )
             }
@@ -374,14 +374,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
             AssistCreatingConnectionResponse(newConnection.name)
         } else {
-            val warningTitle = "Do you trust this SonarQube server?"
+            val warningTitle = "Trust This SonarQube Server?"
             val message = """
                         The server <b>${escapeHtml(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
                         
                         If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
                     """.trimIndent()
-            val connectButtonText = "Connect to this SonarQube server"
-            val dontTrustButtonText = "I don't trust this server"
+            val connectButtonText = "Connect to This SonarQube Server"
+            val dontTrustButtonText = "I Don't Trust This Server"
 
             val choice = ApplicationManager.getApplication().computeInEDT {
                 MessageDialogBuilder.Message(warningTitle, message)
@@ -431,7 +431,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
-                    "You can now enjoy all capabilities of SonarLint Connected Mode. You can update the binding of this project in your SonarLint Settings.",
+                    "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint Settings.",
                 NotificationType.INFORMATION,
                 OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
             )
@@ -528,7 +528,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun noBindingSuggestionFound(projectKey: String) {
         SonarLintProjectNotifications.projectLessNotification(
             "No matching open project found",
-            "IntelliJ can't match SonarQube project '$projectKey' to any of the currently open projects. Please open your project in IntelliJ and try again.",
+            "IntelliJ cannot match SonarQube project '$projectKey' to any of the currently open projects. Please open your project and try again.",
             NotificationType.WARNING,
             OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK)
         )

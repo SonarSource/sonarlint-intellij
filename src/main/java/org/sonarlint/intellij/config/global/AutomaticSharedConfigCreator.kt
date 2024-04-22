@@ -100,7 +100,7 @@ class AutomaticSharedConfigCreator(
         val connectionNames = getGlobalSettings().serverNames
         connectionNameField.text = findFirstUniqueConnectionName(connectionNames, orgOrServerUrl)
 
-        val connectionActionName = if (isSQ) "Connect To This SonarQube Server" else "Connect To SonarCloud"
+        val connectionActionName = if (isSQ) "Connect to This SonarQube Server" else "Connect to SonarCloud"
         createConnectionAction = object : DialogWrapperAction(connectionActionName) {
             init {
                 putValue(DEFAULT_ACTION, true)
@@ -113,7 +113,7 @@ class AutomaticSharedConfigCreator(
             }
         }
 
-        cancelConnectionAction = object : DialogWrapperAction("Do Not Connect") {
+        cancelConnectionAction = object : DialogWrapperAction("Don't Connect") {
             init {
                 putValue(DEFAULT_ACTION, false)
             }
@@ -159,9 +159,9 @@ class AutomaticSharedConfigCreator(
         SonarLintProjectNotifications.get(project).simpleNotification(
             "Project successfully bound",
             "Local project bound to project '$projectKey' of $connectionTypeMessage '${connection.name}'. " +
-                "You can now enjoy all capabilities of SonarLint Connected Mode. You can update the binding of this project in your SonarLint Settings.",
+                "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint settings.",
             NotificationType.INFORMATION,
-            OpenInBrowserAction("Learn More in Documentation", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
+            OpenInBrowserAction("Learn more", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
         )
 
         getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh()
@@ -287,7 +287,7 @@ class AutomaticSharedConfigCreator(
 
     private fun openTokenCreationPage(serverUrl: String) {
         if (!BrowserUtil.isAbsoluteURL(serverUrl)) {
-            Messages.showErrorDialog(centerPanel, "Can't launch browser for URL: $serverUrl", "Invalid Server URL")
+            Messages.showErrorDialog(centerPanel, "Cannot launch browser for URL: $serverUrl", "Invalid Server URL")
             return
         }
         val progressWindow = ProgressWindow(true, false, null, centerPanel, "Cancel").apply {

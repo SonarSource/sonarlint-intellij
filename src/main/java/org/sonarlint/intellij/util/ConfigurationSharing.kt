@@ -74,7 +74,7 @@ class ConfigurationSharing {
                     } catch (e: IOException) {
                         get(project).simpleNotification(
                             null,
-                            "Could not create the directory \".sonarlint.\", please check the logs for more details",
+                            "Could not create the directory '.sonarlint', please check the logs for more details",
                             ERROR
                         )
                         SonarLintConsole.get(project).error("Error while creating the directory, IO exception : " + e.message)
@@ -87,7 +87,7 @@ class ConfigurationSharing {
                     } catch (e: IOException) {
                         get(project).simpleNotification(
                             null,
-                            "Could not create the file : \"$filename\", please check the logs for more details",
+                            "Could not create the file '$filename', please check the logs for more details",
                             ERROR
                         )
                         SonarLintConsole.get(project).error("Error while creating the shared file, IO exception : " + e.message)
@@ -102,7 +102,7 @@ class ConfigurationSharing {
         ) {
             if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
                 get(project).showAutoSharedConfigurationNotification(
-                    "Connected Mode configuration available",
+                    "",
                     message,
                     doNotShowAgainId,
                     AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project, bindingMode)
@@ -126,14 +126,14 @@ class ConfigurationSharing {
             val projectKey = binding.projectKey
             val connectionName = binding.connectionName
             return okCancel(
-                "Share this Connected Mode configuration?",
+                "Share This Connected Mode Configuration?",
                 """
-                    A configuration file connectedMode.json will be created in your local repository with a reference to project "$projectKey" on $connectionKind "$connectionName"
+                    A configuration file 'connectedMode.json' will be created in your local repository with a reference to project '$projectKey' on $connectionKind '$connectionName'
                     
                     This will help other team members configure the binding for the same project.
                     <a href="${SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK}">Learn more</a> """.trimIndent()
             )
-                .yesText("Share configuration")
+                .yesText("Share Configuration")
                 .noText("Cancel")
                 .ask(project)
         }
