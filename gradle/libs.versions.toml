@@ -16,8 +16,8 @@ sonar-cpp = "6.54.0.69031"
 
 sonarqube = "4.4.1.3373"
 
-kotlin-plugin = "1.9.22"
-intellij-plugin = "1.17.2"
+kotlin-plugin = "1.9.23"
+intellij-plugin = "1.17.3"
 license-plugin = "0.16.1"
 artifactory-plugin = "4.33.1"
 protobuf-plugin-version = "0.9.4"
