@@ -49,6 +49,7 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.actions.OpenInBrowserAction
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -59,9 +60,10 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
-import org.sonarlint.intellij.util.ProgressUtils
+import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
 
 class AutomaticSharedConfigCreator(
@@ -72,7 +74,6 @@ class AutomaticSharedConfigCreator(
     private val bindingMode: BindingMode,
 ) :
     DialogWrapper(false) {
-    private var tokenValue: String? = null
     private var serverConnection: ServerConnection? = null
     private val centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())
     private val createConnectionAction: DialogWrapperAction
@@ -108,8 +109,9 @@ class AutomaticSharedConfigCreator(
             }
 
             override fun doAction(e: ActionEvent) {
-                handleConnectionCreation()
-                close(OK_EXIT_CODE)
+                if (handleConnectionCreation()) {
+                    close(OK_EXIT_CODE)
+                }
             }
         }
 
@@ -135,17 +137,23 @@ class AutomaticSharedConfigCreator(
         init()
     }
 
-    private fun handleConnectionCreation() {
-        val serverConnectionBuilder =
-            ServerConnection.newBuilder().setDisableNotifications(false).setToken(tokenValue).setName(connectionNameField.text)
+    private fun handleConnectionCreation(): Boolean {
+        val serverConnectionBuilder = ServerConnection.newBuilder().setDisableNotifications(false).setToken(String(tokenField.password))
+            .setName(connectionNameField.text)
         if (isSQ) {
             serverConnectionBuilder.setHostUrl(orgOrServerUrl)
         } else {
             serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(SONARCLOUD_URL)
         }
-        serverConnection = serverConnectionBuilder.build().apply {
+        serverConnection = serverConnectionBuilder.build()
+
+        if (!validateConnection()) {
+            return false
+        }
+
+        serverConnection.apply {
             val globalSettings = getGlobalSettings()
-            getGlobalSettings().addServerConnection(this)
+            getGlobalSettings().addServerConnection(this!!)
             val serverChangeListener =
                 ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
             // Notify in case the connections settings dialog is open to reflect the change
@@ -154,6 +162,7 @@ class AutomaticSharedConfigCreator(
 
         val connection = getGlobalSettings().getServerConnectionByName(connectionNameField.text)
             .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
+
         getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
         val connectionTypeMessage = if (isSQ) "SonarQube server" else "SonarCloud organization"
         SonarLintProjectNotifications.get(project).simpleNotification(
@@ -166,6 +175,7 @@ class AutomaticSharedConfigCreator(
 
         getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh()
         AssistBindingResponse(BackendService.projectId(project))
+        return true
     }
 
     private fun initPanel() {
@@ -285,6 +295,45 @@ class AutomaticSharedConfigCreator(
         return uniqueName
     }
 
+    private fun validateConnection(): Boolean {
+        try {
+            val progressWindow = ProgressWindow(true, false, null, centerPanel, "Cancel").apply {
+                title = ("Validating connection...")
+            }
+            val progressResult = ProgressRunner<ValidateConnectionResponse> { pi: ProgressIndicator ->
+                computeOnPooledThread<ValidateConnectionResponse>("Validate Connection") {
+                    val future = getService(BackendService::class.java).validateConnection(serverConnection!!)
+                    waitForFuture(pi, future)
+                }
+            }
+                .sync()
+                .onThread(ProgressRunner.ThreadToUse.POOLED)
+                .withProgress(progressWindow)
+                .modal()
+                .submitAndGet()
+            progressResult.result?.let { res ->
+                if (!res.isSuccess) {
+                    SonarLintConsole.get(project).error("Connection test failed. Reason: " + res.message)
+                    Messages.showErrorDialog(
+                        centerPanel,
+                        res.message,
+                        "Connection Test Failed"
+                    )
+                    return false
+                }
+            }
+        } catch (e: Exception) {
+            SonarLintConsole.get(project).error("Connection test failed", e)
+            Messages.showErrorDialog(
+                centerPanel,
+                "Failed to connect to the server. Please check the configuration.",
+                "Connection Test Failed"
+            )
+            return false
+        }
+        return true
+    }
+
     private fun openTokenCreationPage(serverUrl: String) {
         if (!BrowserUtil.isAbsoluteURL(serverUrl)) {
             Messages.showErrorDialog(centerPanel, "Cannot launch browser for URL: $serverUrl", "Invalid Server URL")
@@ -298,7 +347,7 @@ class AutomaticSharedConfigCreator(
             val progressResult = ProgressRunner<HelpGenerateUserTokenResponse> { pi: ProgressIndicator ->
                 computeOnPooledThread<HelpGenerateUserTokenResponse>("Generate User Token Task") {
                     val future = getService(BackendService::class.java).helpGenerateUserToken(serverUrl, !isSQ)
-                    ProgressUtils.waitForFuture(pi, future)
+                    waitForFuture(pi, future)
                 }
             }
                 .sync()
@@ -308,11 +357,11 @@ class AutomaticSharedConfigCreator(
                 .submitAndGet()
             progressResult.result?.let { res ->
                 res.token?.let {
-                    tokenValue = it
-                    tokenField.text = tokenValue
+                    tokenField.text = it
                 }
             }
         } catch (e: Exception) {
+            SonarLintConsole.get(project).error("Unable to Generate Token", e)
             Messages.showErrorDialog(centerPanel, e.message, "Unable to Generate Token")
         }
     }
