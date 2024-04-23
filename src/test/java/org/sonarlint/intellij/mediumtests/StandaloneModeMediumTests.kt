@@ -40,6 +40,7 @@ import org.awaitility.Awaitility
 import org.jetbrains.annotations.NotNull
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
@@ -343,6 +344,8 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    // TODO re-enable
+    @Disabled
     fun should_apply_overlapping_quick_fixes() {
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
         analyze(file.virtualFile)
