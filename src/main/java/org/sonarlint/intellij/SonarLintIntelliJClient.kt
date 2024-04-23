@@ -618,7 +618,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             computeReadActionSafely(project) { isTestSources(file, project) },
             file.charset.name(),
             Paths.get(file.path),
-            fileContent
+            fileContent,
+            null
         )
     }
 
