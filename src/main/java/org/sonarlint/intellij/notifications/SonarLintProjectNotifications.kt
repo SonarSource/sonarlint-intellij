@@ -32,10 +32,13 @@ import java.util.stream.Stream
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
+import org.sonarlint.intellij.actions.ShareConfigurationAction
 import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK
 import org.sonarlint.intellij.notifications.binding.BindProjectAction
@@ -174,7 +177,8 @@ class SonarLintProjectNotifications(private val myProject: Project) {
     fun suggestBindingOptions(suggestedBindings: List<BindingSuggestion>) {
         if (suggestedBindings.size == 1) {
             val suggestedBinding = suggestedBindings[0]
-            val mode = SonarLintUtils.getBindingModeForSuggestion(suggestedBinding.isFromSharedConfiguration)
+            val mode =
+                if (suggestedBinding.isFromSharedConfiguration) IMPORTED else AUTOMATIC
             notifyBindingSuggestions(
                 "Bind this project to '${suggestedBinding.projectName}' on '${suggestedBinding.connectionId}'?",
                 BindProjectAction(suggestedBinding, mode), OpenProjectSettingsAction(myProject, "Select another one")
@@ -350,14 +354,14 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
-    fun showSharedConfigurationNotification(title: String,message: String, doNotShowAgainId: String, action: AnAction?) {
+    fun showSharedConfigurationNotification(title: String, message: String, doNotShowAgainId: String) {
         SONARLINT_GROUP.createNotification(
             title,
             message,
             NotificationType.WARNING
         ).apply {
             icon = SonarLintIcons.SONARLINT
-            action?.let { addAction(it) }
+            addAction(ShareConfigurationAction("Share configuration"))
             addAction(DontShowAgainAction(doNotShowAgainId))
             notify(myProject)
         }

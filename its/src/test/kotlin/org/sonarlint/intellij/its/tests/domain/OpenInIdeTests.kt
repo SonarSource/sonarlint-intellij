@@ -38,8 +38,8 @@ class OpenInIdeTests {
         fun createConnection(token: String) {
             with(remoteRobot) {
                 idea {
-                    dialog("Do you trust this SonarQube server?") {
-                        button("Connect to this SonarQube server").click()
+                    dialog("Trust This SonarQube Server?") {
+                        button("Connect to This SonarQube Server").click()
                     }
                     dialog("New Connection: Server Details") {
                         keyboard { enterText("Orchestrator") }
@@ -63,9 +63,9 @@ class OpenInIdeTests {
         fun acceptNewAutomatedConnection() {
             with(remoteRobot) {
                 idea {
-                    dialog("Do You Trust This SonarQube Server?") {
+                    dialog("Trust This SonarQube Server?") {
                         jbTextFields()[1].text = "Orchestrator"
-                        buttonContainsText("Connect To This SonarQube").click()
+                        buttonContainsText("Connect to This SonarQube").click()
                     }
                     waitBackgroundTasksFinished()
                 }

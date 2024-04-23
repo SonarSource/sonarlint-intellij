@@ -49,10 +49,12 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.actions.OpenInBrowserAction
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
@@ -62,11 +64,17 @@ import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
 
-class AutomaticSharedConfigCreator(private val projectKey: String, private val serverUrl: String, isSQ: Boolean, project: Project,
-                                   private val bindingMode: SonarLintUtils.BindingMode) :
+class AutomaticSharedConfigCreator(
+    private val projectKey: String,
+    private val orgOrServerUrl: String,
+    private val isSQ: Boolean,
+    private val project: Project,
+    private val bindingMode: BindingMode,
+) :
     DialogWrapper(false) {
     private var tokenValue: String? = null
-    private val centerPanel: JBPanel<JBPanel<*>>
+    private var serverConnection: ServerConnection? = null
+    private val centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())
     private val createConnectionAction: DialogWrapperAction
     private val cancelConnectionAction: DialogWrapperAction
     private val warningIcon = JBLabel()
@@ -75,59 +83,37 @@ class AutomaticSharedConfigCreator(private val projectKey: String, private val s
     private val connectionNameField = JBTextField()
     private val tokenField = JBPasswordField()
     private val connectedModeDescriptionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
-    private val serverUrlLabel = SwingHelper.createHtmlViewer(false, null, null, null)
+    private val connectionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val projectKeyLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val projectKeyField = JBTextField(projectKey).apply {
         isEditable = false
     }
-    private val serverUrlField = JBTextField(serverUrl).apply {
+    private val serverUrlField = JBTextField(orgOrServerUrl).apply {
         isEditable = false
     }
     private val connectionNameLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val tokenLabel = SwingHelper.createHtmlViewer(false, null, null, null)
-    private var serverConnection: ServerConnection? = null
     private val tokenGenerationButton = JButton("Generate Token")
 
     init {
-        title = "Connect to This SonarQube Server?"
-        val connectionNames = Settings.getGlobalSettings().serverNames
-        connectionNameField.text = findFirstUniqueConnectionName(connectionNames, serverUrl)
+        title = if (isSQ) "Connect to This SonarQube Server?" else "Connect to SonarCloud?"
+        val connectionNames = getGlobalSettings().serverNames
+        connectionNameField.text = findFirstUniqueConnectionName(connectionNames, orgOrServerUrl)
 
-        createConnectionAction = object : DialogWrapperAction("Connect To This SonarQube Server") {
+        val connectionActionName = if (isSQ) "Connect to This SonarQube Server" else "Connect to SonarCloud"
+        createConnectionAction = object : DialogWrapperAction(connectionActionName) {
             init {
                 putValue(DEFAULT_ACTION, true)
                 isEnabled = false
             }
 
             override fun doAction(e: ActionEvent) {
-                serverConnection = ServerConnection.newBuilder().setHostUrl(serverUrl).setDisableNotifications(false).setToken(tokenValue)
-                    .setName(connectionNameField.text).build().apply {
-                        val globalSettings = Settings.getGlobalSettings()
-                        Settings.getGlobalSettings().addServerConnection(this)
-                        val serverChangeListener =
-                            ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-                        // notify in case the connections settings dialog is open to reflect the change
-                        serverChangeListener.changed(globalSettings.serverConnections)
-                    }
-
-                val connection = Settings.getGlobalSettings().getServerConnectionByName(serverUrl)
-                    .orElseThrow { IllegalStateException("Unable to find connection '$serverUrl'") }
-                SonarLintUtils.getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
-                SonarLintProjectNotifications.get(project).simpleNotification(
-                    "Project successfully bound",
-                    "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
-                        "You can now enjoy all capabilities of SonarLint Connected Mode. You can update the binding of this project in your SonarLint Settings.",
-                    NotificationType.INFORMATION,
-                    OpenInBrowserAction("Learn More in Documentation", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
-                )
-
-                SonarLintUtils.getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh()
-                AssistBindingResponse(BackendService.projectId(project))
+                handleConnectionCreation()
                 close(OK_EXIT_CODE)
             }
         }
 
-        cancelConnectionAction = object : DialogWrapperAction("Do Not Connect") {
+        cancelConnectionAction = object : DialogWrapperAction("Don't Connect") {
             init {
                 putValue(DEFAULT_ACTION, false)
             }
@@ -137,92 +123,125 @@ class AutomaticSharedConfigCreator(private val projectKey: String, private val s
             }
         }
 
-        centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())
+        initPanel()
 
-        warningIcon.setIconWithAlignment(AllIcons.General.InformationDialog, SwingConstants.TOP, SwingConstants.TOP)
-        centerPanel.add(
-            warningIcon, GridBagConstraints(
-                0, 0, 1, 1, 0.0,
-                0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, JBUI.insets(0, 10), 0, 18
-            )
+        if (isSQ) {
+            tokenGenerationButton.addActionListener { openTokenCreationPage(orgOrServerUrl) }
+        } else {
+            tokenGenerationButton.addActionListener { openTokenCreationPage(SONARCLOUD_URL) }
+        }
+        isResizable = false
+
+        init()
+    }
+
+    private fun handleConnectionCreation() {
+        val serverConnectionBuilder =
+            ServerConnection.newBuilder().setDisableNotifications(false).setToken(tokenValue).setName(connectionNameField.text)
+        if (isSQ) {
+            serverConnectionBuilder.setHostUrl(orgOrServerUrl)
+        } else {
+            serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(SONARCLOUD_URL)
+        }
+        serverConnection = serverConnectionBuilder.build().apply {
+            val globalSettings = getGlobalSettings()
+            getGlobalSettings().addServerConnection(this)
+            val serverChangeListener =
+                ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+            // Notify in case the connections settings dialog is open to reflect the change
+            serverChangeListener.changed(globalSettings.serverConnections)
+        }
+
+        val connection = getGlobalSettings().getServerConnectionByName(connectionNameField.text)
+            .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
+        getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
+        val connectionTypeMessage = if (isSQ) "SonarQube server" else "SonarCloud organization"
+        SonarLintProjectNotifications.get(project).simpleNotification(
+            "Project successfully bound",
+            "Local project bound to project '$projectKey' of $connectionTypeMessage '${connection.name}'. " +
+                "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint settings.",
+            NotificationType.INFORMATION,
+            OpenInBrowserAction("Learn more", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
         )
 
-        connectedModeDescriptionLabel.text = "Connecting SonarLint to SonarQube will enable issues " +
-            "to be opened directly in your IDE and enable other <a href=\"${SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK}\">features and benefits</a>."
+        getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh()
+        AssistBindingResponse(BackendService.projectId(project))
+    }
+
+    private fun initPanel() {
+        warningIcon.setIconWithAlignment(AllIcons.General.InformationDialog, SwingConstants.TOP, SwingConstants.TOP)
+        centerPanel.add(
+            warningIcon,
+            GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, JBUI.insets(0, 10), 0, 18)
+        )
+
+        val sqOrScMessage = if (isSQ) "SonarQube" else "SonarCloud"
+        connectedModeDescriptionLabel.text =
+            "Connect SonarLint with $sqOrScMessage to apply the same Clean Code standards as your team, analyze more languages, " +
+                "detect more issues, and receive notifications about the quality gate status."
         connectedModeDescriptionLabel.addHyperlinkListener(object : HyperlinkAdapter() {
             override fun hyperlinkActivated(e: HyperlinkEvent) {
                 BrowserUtil.browse(e.url)
             }
         })
         centerPanel.add(
-            connectedModeDescriptionLabel, GridBagConstraints(
-                1, 0, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
-            )
+            connectedModeDescriptionLabel,
+            GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
         )
 
-        serverUrlLabel.text = "Server URL"
-        projectKeyLabel.text = "Project Key"
+        connectionLabel.text = if (isSQ) "Server URL" else "SonarCloud organization"
+        projectKeyLabel.text = "Project key"
         centerPanel.add(
-            projectKeyLabel, GridBagConstraints(
-                1, 1, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
-            )
+            projectKeyLabel,
+            GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
         centerPanel.add(
-            serverUrlLabel, GridBagConstraints(
-                1, 3, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
-            )
+            connectionLabel,
+            GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
-        val urlLabel = JBPanel<JBPanel<*>>(BorderLayout())
-        urlLabel.add(serverUrlField, BorderLayout.CENTER)
-        val projectKeyLabel = JBPanel<JBPanel<*>>(BorderLayout())
-        projectKeyLabel.add(projectKeyField, BorderLayout.CENTER)
+        val urlLabel = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(serverUrlField, BorderLayout.CENTER) }
+        val projectKeyLabel = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(projectKeyField, BorderLayout.CENTER) }
         centerPanel.add(
-            projectKeyLabel, GridBagConstraints(
-                1, 2, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
-            )
+            projectKeyLabel,
+            GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
         centerPanel.add(
-            urlLabel, GridBagConstraints(
-                1, 4, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
-            )
+            urlLabel,
+            GridBagConstraints(1, 4, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
-        val warningPanel = JBPanel<JBPanel<*>>(BorderLayout())
-        redWarningIcon.icon = AllIcons.Ide.FatalError
-        warningLabel.text = "Always ensure that your Server URL matches your SonarQube instance. " +
-            "Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous."
-        warningPanel.add(redWarningIcon, BorderLayout.WEST)
-        warningPanel.add(warningLabel, BorderLayout.CENTER)
-        centerPanel.add(warningPanel, GridBagConstraints(1, 5, 1, 1, 1.0,
-            0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0))
-
-        connectionNameLabel.text = "Connection Name"
-        centerPanel.add(
-            connectionNameLabel, GridBagConstraints(
-                1, 6, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+        if (isSQ) {
+            redWarningIcon.icon = AllIcons.Ide.FatalError
+            warningLabel.text = "Always ensure that your Server URL matches your SonarQube instance. " +
+                "Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous."
+            val warningPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+                add(redWarningIcon, BorderLayout.WEST)
+                add(warningLabel, BorderLayout.CENTER)
+            }
+            centerPanel.add(
+                warningPanel,
+                GridBagConstraints(
+                    1, 5, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0
+                )
             )
+        }
+
+        connectionNameLabel.text = "Connection name"
+        centerPanel.add(
+            connectionNameLabel,
+            GridBagConstraints(1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         centerPanel.add(
-            connectionNameField, GridBagConstraints(
-                1, 7, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
-            )
+            connectionNameField,
+            GridBagConstraints(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         tokenLabel.text = "Token"
         centerPanel.add(
-            tokenLabel, GridBagConstraints(
-                1, 8, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
-            )
+            tokenLabel,
+            GridBagConstraints(1, 8, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         val listener: DocumentListener = object : DocumentAdapter() {
@@ -233,24 +252,16 @@ class AutomaticSharedConfigCreator(private val projectKey: String, private val s
         tokenField.document.addDocumentListener(listener)
 
         centerPanel.add(
-            tokenField, GridBagConstraints(
-                1, 9, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
-            )
+            tokenField,
+            GridBagConstraints(1, 9, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
         )
 
         centerPanel.add(
-            tokenGenerationButton, GridBagConstraints(
-                1, 10, 1, 1, 1.0,
-                0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insetsBottom(20), 0, 0
-            )
+            tokenGenerationButton,
+            GridBagConstraints(1, 10, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insetsBottom(20), 0, 0)
         )
 
         centerPanel.preferredSize = Dimension(600, 300)
-        isResizable = false
-
-        tokenGenerationButton.addActionListener { openTokenCreationPage(isSQ, serverUrl) }
-        init()
     }
 
     fun chooseResolution(): ServerConnection? {
@@ -274,30 +285,20 @@ class AutomaticSharedConfigCreator(private val projectKey: String, private val s
         return uniqueName
     }
 
-    private fun openTokenCreationPage(isSQ: Boolean, serverUrl: String) {
+    private fun openTokenCreationPage(serverUrl: String) {
         if (!BrowserUtil.isAbsoluteURL(serverUrl)) {
-            Messages.showErrorDialog(centerPanel, "Can't launch browser for URL: $serverUrl", "Invalid Server URL")
+            Messages.showErrorDialog(centerPanel, "Cannot launch browser for URL: $serverUrl", "Invalid Server URL")
             return
         }
-        val progressWindow = ProgressWindow(true, false, null, centerPanel, "Cancel")
-        progressWindow.title = ("Generating token...")
+        val progressWindow = ProgressWindow(true, false, null, centerPanel, "Cancel").apply {
+            title = ("Generating token...")
+        }
 
         try {
-            val progressResult = ProgressRunner<HelpGenerateUserTokenResponse?> { pi: ProgressIndicator? ->
-                computeOnPooledThread<HelpGenerateUserTokenResponse>(
-                    "Generate User Token Task"
-                ) {
-                    val future =
-                        SonarLintUtils.getService(
-                            BackendService::class.java
-                        ).helpGenerateUserToken(
-                            serverUrl,
-                            !isSQ
-                        )
-                    ProgressUtils.waitForFuture(
-                        pi!!,
-                        future
-                    )
+            val progressResult = ProgressRunner<HelpGenerateUserTokenResponse> { pi: ProgressIndicator ->
+                computeOnPooledThread<HelpGenerateUserTokenResponse>("Generate User Token Task") {
+                    val future = getService(BackendService::class.java).helpGenerateUserToken(serverUrl, !isSQ)
+                    ProgressUtils.waitForFuture(pi, future)
                 }
             }
                 .sync()
@@ -305,10 +306,8 @@ class AutomaticSharedConfigCreator(private val projectKey: String, private val s
                 .withProgress(progressWindow)
                 .modal()
                 .submitAndGet()
-            val result = progressResult.result
-            result?.let {
-                val token = result.token
-                token?.let {
+            progressResult.result?.let { res ->
+                res.token?.let {
                     tokenValue = it
                     tokenField.text = tokenValue
                 }
