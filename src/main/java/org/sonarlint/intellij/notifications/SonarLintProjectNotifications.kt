@@ -28,6 +28,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import java.util.Arrays
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.stream.Stream
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.OpenInBrowserAction
@@ -95,18 +96,16 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
-    @Volatile
-    private var storageErrorNotificationShown = false
-
+    private var storageErrorNotificationShown = AtomicBoolean(false)
     private var lastBindingSuggestion: Notification? = null
     private var currentOpenFindingNotification: Notification? = null
 
     fun reset() {
-        storageErrorNotificationShown = false
+        storageErrorNotificationShown.set(false)
     }
 
     fun notifyConnectionIdInvalid() {
-        if (storageErrorNotificationShown) {
+        if (storageErrorNotificationShown.getAndSet(true)) {
             return
         }
         BINDING_PROBLEM_GROUP.createNotification(
@@ -119,11 +118,10 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             isImportant = true
             notify(myProject)
         }
-        storageErrorNotificationShown = true
     }
 
     fun notifyProjectStorageInvalid() {
-        if (storageErrorNotificationShown) {
+        if (storageErrorNotificationShown.getAndSet(true)) {
             return
         }
         BINDING_PROBLEM_GROUP.createNotification(
@@ -136,11 +134,10 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             isImportant = true
             notify(myProject)
         }
-        storageErrorNotificationShown = true
     }
 
     fun notifyProjectBindingInvalidAndUnbound() {
-        if (storageErrorNotificationShown) {
+        if (storageErrorNotificationShown.getAndSet(true)) {
             return
         }
         BINDING_PROBLEM_GROUP.createNotification(
@@ -153,7 +150,6 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             isImportant = true
             notify(myProject)
         }
-        storageErrorNotificationShown = true
     }
 
     fun notifyLanguagePromotion(content: String) {
