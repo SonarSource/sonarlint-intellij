@@ -306,9 +306,16 @@ class BackendService : Disposable {
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
                 getSonarCloudAlternativeEnvironment(),
-                FeatureFlagsDto(
-                    true, true, true, true, true,
-                    true, false, true, telemetryEnabled
+                generateFeatureFlagsDto(
+                    shouldManageSmartNotifications = true,
+                    taintVulnerabilitiesEnabled = true,
+                    shouldSynchronizeProjects = true,
+                    shouldManageLocalServer = true,
+                    enableSecurityHotspots = true,
+                    shouldManageServerSentEvents = true,
+                    enableDataflowBugDetection = false,
+                    shouldManageFullSynchronization = true,
+                    enableTelemetry = telemetryEnabled
                 ),
                 getLocalStoragePath(),
                 SonarLintEngineFactory.getWorkDir(),
@@ -325,6 +332,29 @@ class BackendService : Disposable {
             )
         )
     }
+
+    private fun generateFeatureFlagsDto(
+        shouldManageSmartNotifications: Boolean,
+        taintVulnerabilitiesEnabled: Boolean,
+        shouldSynchronizeProjects: Boolean,
+        shouldManageLocalServer: Boolean,
+        enableSecurityHotspots: Boolean,
+        shouldManageServerSentEvents: Boolean,
+        enableDataflowBugDetection: Boolean,
+        shouldManageFullSynchronization: Boolean,
+        enableTelemetry: Boolean,
+    ) =
+        FeatureFlagsDto(
+            shouldManageSmartNotifications,
+            taintVulnerabilitiesEnabled,
+            shouldSynchronizeProjects,
+            shouldManageLocalServer,
+            enableSecurityHotspots,
+            shouldManageServerSentEvents,
+            enableDataflowBugDetection,
+            shouldManageFullSynchronization,
+            enableTelemetry
+        )
 
     private fun getHttpConfiguration(): HttpConfigurationDto {
         return HttpConfigurationDto(
