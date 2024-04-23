@@ -196,18 +196,4 @@ public class SonarLintUtils {
   public static boolean isModuleLevelBindingEnabled() {
     return !isRider() && !isCLion() && !isAppCode();
   }
-
-  public enum BindingMode {
-    AUTOMATIC,
-    IMPORTED,
-    MANUAL
-  }
-
-  public static BindingMode getBindingModeForSuggestion(boolean isFromSharedConfig) {
-    if (isFromSharedConfig) {
-      return BindingMode.IMPORTED;
-    } else {
-      return BindingMode.AUTOMATIC;
-    }
-  }
 }

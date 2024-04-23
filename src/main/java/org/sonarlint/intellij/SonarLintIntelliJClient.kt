@@ -63,7 +63,6 @@ import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -73,6 +72,8 @@ import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
+import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_SETUP_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SUPPORT_POLICY_LINK
@@ -142,26 +143,22 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         suggestionsByConfigScopeId.forEach { (configScopeId, suggestions) -> suggestAutoBind(findProject(configScopeId), suggestions) }
     }
 
-
-
-    override fun suggestConnection(suggestionsByConfigScope: MutableMap<String, MutableList<ConnectionSuggestionDto>>) {
+    override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
         for (suggestion in suggestionsByConfigScope) {
             val project = BackendService.findModule(suggestion.key)?.project
                 ?: BackendService.findProject(suggestion.key) ?: continue
 
             if (suggestion.value.size == 1) {
-                //It was decided to only handle the case where there is only one notification per configuration scope
+                // It was decided to only handle the case where there is only one notification per configuration scope
                 val uniqueSuggestion = suggestion.value[0]
-
                 val (connectionKind, projectKey, connectionName) = getAutoShareConfigParams(uniqueSuggestion)
-
-                val mode = SonarLintUtils.getBindingModeForSuggestion(uniqueSuggestion.isFromSharedConfiguration)
+                val mode = if (uniqueSuggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
 
                 ConfigurationSharing.showAutoSharedConfigurationNotification(
                     project, String.format(
                         """
-                    A Connected Mode configuration file is available to bind to project "%s" on %s "%s".
-                    You can also configure the binding manually later.
+                    A Connected Mode configuration file is available to bind to project '%s' on %s '%s'.
+                    The binding can also be manually configured later.
                 """.trimIndent(), projectKey, connectionKind, connectionName
                     ), SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
                     uniqueSuggestion,
@@ -320,7 +317,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (file == null) {
             if (!project.isDisposed) {
                 SonarLintProjectNotifications.get(project)
-                    .simpleNotification(null, "Unable to open finding. Can't find the file: $filePath", NotificationType.WARNING)
+                    .simpleNotification(null, "Unable to open finding. Cannot find the file: $filePath", NotificationType.WARNING)
             }
             return
         }
@@ -330,7 +327,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             if (!project.isDisposed) {
                 SonarLintProjectNotifications.get(project).simpleNotification(
                     null,
-                    "Unable to open finding. Can't find the module corresponding to file: $filePath",
+                    "Unable to open finding. Cannot find the module corresponding to file: $filePath",
                     NotificationType.WARNING
                 )
             }
@@ -363,7 +360,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun assistCreatingConnection(
         params: AssistCreatingConnectionParams,
-        cancelChecker: SonarLintCancelChecker
+        cancelChecker: SonarLintCancelChecker,
     ): AssistCreatingConnectionResponse {
         val serverUrl = params.serverUrl
         val tokenName = params.tokenName
@@ -377,14 +374,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
             AssistCreatingConnectionResponse(newConnection.name)
         } else {
-            val warningTitle = "Do you trust this SonarQube server?"
+            val warningTitle = "Trust This SonarQube Server?"
             val message = """
                         The server <b>${escapeHtml(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
                         
                         If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
                     """.trimIndent()
-            val connectButtonText = "Connect to this SonarQube server"
-            val dontTrustButtonText = "I don't trust this server"
+            val connectButtonText = "Connect to This SonarQube Server"
+            val dontTrustButtonText = "I Don't Trust This Server"
 
             val choice = ApplicationManager.getApplication().computeInEDT {
                 MessageDialogBuilder.Message(warningTitle, message)
@@ -413,7 +410,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return response
     }
 
-    override fun assistBinding(params: AssistBindingParams, cancelChecker: SonarLintCancelChecker?): AssistBindingResponse {
+    override fun assistBinding(params: AssistBindingParams, cancelChecker: SonarLintCancelChecker): AssistBindingResponse {
         val connectionId = params.connectionId
         val projectKey = params.projectKey
         val configScopeId = params.configScopeId
@@ -428,12 +425,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } else {
             val connection = getGlobalSettings().getServerConnectionByName(connectionId)
                 .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
-            val mode = SonarLintUtils.getBindingModeForSuggestion(params.isFromSharedConfiguration)
+            val mode =
+                if (params.isFromSharedConfiguration) IMPORTED else AUTOMATIC
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
-                    "You can now enjoy all capabilities of SonarLint Connected Mode. You can update the binding of this project in your SonarLint Settings.",
+                    "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint Settings.",
                 NotificationType.INFORMATION,
                 OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
             )
@@ -455,7 +453,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
     }
 
-    override fun didSynchronizeConfigurationScopes(configurationScopeIds: MutableSet<String>) {
+    override fun didSynchronizeConfigurationScopes(configurationScopeIds: Set<String>) {
         GlobalLogOutput.get().log("Did synchronize config scopes $configurationScopeIds", ClientLogOutput.Level.INFO)
     }
 
@@ -530,13 +528,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun noBindingSuggestionFound(projectKey: String) {
         SonarLintProjectNotifications.projectLessNotification(
             "No matching open project found",
-            "IntelliJ can't match SonarQube project '$projectKey' to any of the currently open projects. Please open your project in IntelliJ and try again.",
+            "IntelliJ cannot match SonarQube project '$projectKey' to any of the currently open projects. Please open your project and try again.",
             NotificationType.WARNING,
             OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK)
         )
     }
 
-    override fun didChangeAnalysisReadiness(configurationScopeIds: MutableSet<String>, areReadyForAnalysis: Boolean) {
+    override fun didChangeAnalysisReadiness(configurationScopeIds: Set<String>, areReadyForAnalysis: Boolean) {
         GlobalLogOutput.get().log("Analysis became ready=$areReadyForAnalysis for $configurationScopeIds", ClientLogOutput.Level.DEBUG)
         configurationScopeIds.mapNotNull { BackendService.findModule(it)?.project ?: findProject(it) }.toSet()
             .forEach { project ->
@@ -555,8 +553,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun matchSonarProjectBranch(
         configurationScopeId: String,
         mainBranchName: String,
-        allBranchesNames: MutableSet<String>,
-        cancelChecker: SonarLintCancelChecker?
+        allBranchesNames: Set<String>,
+        cancelChecker: SonarLintCancelChecker,
     ): String? {
         val module = BackendService.findModule(configurationScopeId) ?: return null
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
