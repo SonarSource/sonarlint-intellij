@@ -185,7 +185,7 @@ class BackendService : Disposable {
                     credentialsChanged(changedConnections)
                 }
 
-                override fun changed(serverList: MutableList<ServerConnection>) {
+                override fun changed(serverList: List<ServerConnection>) {
                     connectionsUpdated(serverList)
                 }
             })
@@ -635,9 +635,7 @@ class BackendService : Disposable {
         return requestFromBackend {
             it.hotspotService.checkLocalDetectionSupported(
                 CheckLocalDetectionSupportedParams(
-                    projectId(
-                        project
-                    )
+                    projectId(project)
                 )
             )
         }

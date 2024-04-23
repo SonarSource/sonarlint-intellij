@@ -63,11 +63,11 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
     private val proxyButton = JButton("Proxy")
 
     init {
-        title = "Do You Trust This SonarQube Server?"
+        title = "Trust This SonarQube Server?"
         val connectionNames = Settings.getGlobalSettings().serverNames
         connectionNameField.text = findFirstUniqueConnectionName(connectionNames, serverUrl)
 
-        createConnectionAction = object : DialogWrapperAction("Connect To This SonarQube Server") {
+        createConnectionAction = object : DialogWrapperAction("Connect to This SonarQube Server") {
             init {
                 putValue(DEFAULT_ACTION, true)
             }
