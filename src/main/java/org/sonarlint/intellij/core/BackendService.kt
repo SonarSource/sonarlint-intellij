@@ -123,6 +123,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.ClientCons
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.FeatureFlagsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.HttpConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.InitializeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.LanguageSpecificRequirements
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.OmnisharpRequirementsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SonarCloudAlternativeEnvironmentDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SslConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.TelemetryClientConstantAttributesDto
@@ -298,12 +300,19 @@ class BackendService : Disposable {
         val nonDefaultRpcRulesConfigurationByKey =
             getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
         val telemetryEnabled = !System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()
+        val nodeJsPath = if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
+        val omnisharpRequirementsDto = OmnisharpRequirementsDto(
+            getService(SonarLintPlugin::class.java).path.resolve("omnisharp/mono"),
+            getService(SonarLintPlugin::class.java).path.resolve("omnisharp/net6"),
+            getService(SonarLintPlugin::class.java).path.resolve("omnisharp/net472")
+        )
 
         return rpcServer.initialize(
             InitializeParams(
                 ClientConstantInfoDto(
                     ApplicationInfo.getInstance().versionName,
-                    "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version
+                    "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version,
+                    Long.MIN_VALUE
                 ),
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
@@ -330,7 +339,7 @@ class BackendService : Disposable {
                 null,
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
-                if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
+                LanguageSpecificRequirements(nodeJsPath, omnisharpRequirementsDto)
             )
         )
     }
@@ -1009,6 +1018,7 @@ class BackendService : Disposable {
                         it.target().isTest,
                         it.target().charset.toString(),
                         Paths.get(it.target().path),
+                        null,
                         null
                     )
                 }
