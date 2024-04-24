@@ -37,6 +37,7 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.io.FileUtilRt
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
@@ -64,6 +65,7 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -538,6 +540,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         GlobalLogOutput.get().log("Analysis became ready=$areReadyForAnalysis for $configurationScopeIds", ClientLogOutput.Level.DEBUG)
         configurationScopeIds.mapNotNull { BackendService.findModule(it)?.project ?: findProject(it) }.toSet()
             .forEach { project ->
+                if (project.isDisposed) return@forEach
                 getService(project, AnalysisReadinessCache::class.java).isReady = areReadyForAnalysis
                 if (areReadyForAnalysis) {
                     if (findingToShow != null) {
@@ -580,12 +583,57 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
-        return BackendService.findModule(configScopeId)?.let { module -> listModuleFiles(module, configScopeId) }
-            ?: findProject(configScopeId)?.let { project -> listProjectFiles(project, configScopeId) }
-            ?: emptyList()
+        val listClientFiles = BackendService.findModule(configScopeId)?.let { module ->
+            val listModulesFiles = listModuleFiles(module, configScopeId)
+
+            if (isRider()) {
+                computeRiderSharedConfiguration(module.project, configScopeId)?.let {
+                    listModulesFiles.add(it)
+                }
+            }
+
+            listModulesFiles
+        } ?: findProject(configScopeId)?.let { project ->
+            val listProjectFiles = listProjectFiles(project, configScopeId)
+
+            if (isRider()) {
+                computeRiderSharedConfiguration(project, configScopeId)?.let {
+                    listProjectFiles.add(it)
+                }
+            }
+
+            listProjectFiles
+        } ?: emptyList()
+
+        return listClientFiles
     }
 
-    private fun listModuleFiles(module: Module, configScopeId: String): List<ClientFileDto> {
+    private fun computeRiderSharedConfiguration(project: Project, configScopeId: String): ClientFileDto? {
+        project.basePath?.let { Paths.get(it) }?.let {
+            VfsUtil.findFile(it.resolve(".sonarlint"), false)?.let { sonarlintDir ->
+                sonarlintDir.children.forEach { conf ->
+                    val solutionName = conf.nameWithoutExtension
+                    if (project.name == solutionName) {
+                        getRelativePathForAnalysis(project, conf)?.let { path ->
+                            val clientFileDto = toClientFileDto(
+                                project,
+                                configScopeId,
+                                conf,
+                                path
+                            )
+                            if (clientFileDto != null) {
+                                return clientFileDto
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+        return null
+    }
+
+    private fun listModuleFiles(module: Module, configScopeId: String): MutableList<ClientFileDto> {
         return listFilesInContentRoots(module).mapNotNull { file ->
             getRelativePathForAnalysis(module, file)?.let { relativePath ->
                 toClientFileDto(
@@ -595,13 +643,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     relativePath
                 )
             }
-        }
+        }.toMutableList()
     }
 
-    private fun listProjectFiles(project: Project, configScopeId: String): List<ClientFileDto> {
+    private fun listProjectFiles(project: Project, configScopeId: String): MutableList<ClientFileDto> {
         return listFilesInProjectBaseDir(project).mapNotNull { file ->
             getRelativePathForAnalysis(project, file)?.let { relativePath -> toClientFileDto(project, configScopeId, file, relativePath) }
-        }
+        }.toMutableList()
     }
 
     private fun toClientFileDto(project: Project, configScopeId: String, file: VirtualFile, relativePath: String): ClientFileDto? {

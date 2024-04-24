@@ -22,13 +22,12 @@ package org.sonarlint.intellij.util
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.NotificationType
 import com.intellij.notification.NotificationType.ERROR
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder.Companion.okCancel
-import java.io.BufferedWriter
-import java.io.FileWriter
+import com.intellij.openapi.vfs.VfsUtil
 import java.io.IOException
-import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import org.sonarlint.intellij.actions.filters.AutoShareTokenExchangeAction
@@ -41,6 +40,7 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 
@@ -48,16 +48,16 @@ class ConfigurationSharing {
 
     companion object {
         @JvmStatic
-        fun exportConfiguration(project: Project?) {
+        fun exportConfiguration(project: Project?, modalityState: ModalityState) {
             if (project == null || project.isDisposed) return
 
             if (confirm(project)) {
                 val configScopeId = projectId(project)
-                createFile(configScopeId, project)
+                createFile(configScopeId, project, modalityState)
             }
         }
 
-        private fun createFile(configScopeId: String, project: Project) {
+        private fun createFile(configScopeId: String, project: Project, modalityState: ModalityState) {
             val root: Path = project.basePath?.let { Paths.get(it) } ?: return
 
             getService(BackendService::class.java)
@@ -68,29 +68,27 @@ class ConfigurationSharing {
                     } else {
                         "connectedMode.json"
                     }
-                    val directoryPath = root.resolve(".sonarlint")
-                    val fullFilePath = directoryPath.resolve(filename)
-                    try {
-                        Files.createDirectories(directoryPath)
-                    } catch (e: IOException) {
-                        get(project).simpleNotification(
-                            null,
-                            "Could not create the directory '.sonarlint', please check the logs for more details",
-                            ERROR
-                        )
-                        SonarLintConsole.get(project).error("Error while creating the directory, IO exception : " + e.message)
-                        return@thenAcceptAsync
-                    }
-                    try {
-                        BufferedWriter(FileWriter(fullFilePath.toString(), UTF_8)).use { writer ->
-                            writer.write(sharedFileContent.jsonFileContent)
-                        }
 
-                        get(project).simpleNotification(
-                            null,
-                            "File \'$filename\' has been created. It might take some time for changes to be reflected in the project view.",
-                            NotificationType.INFORMATION
-                        )
+                    try {
+                        runOnUiThread(project, modalityState) {
+                            ApplicationManager.getApplication().runWriteAction {
+                                VfsUtil.createDirectoryIfMissing(root.resolve(".sonarlint").toString())
+
+                                val sonarlintDir = VfsUtil.findFile(root.resolve(".sonarlint"), true)
+                                if (sonarlintDir != null) {
+                                    val sonarlintFile = sonarlintDir.createChildData(project, filename)
+                                    sonarlintFile.refresh(true, false) {
+                                        sonarlintFile.setBinaryContent(sharedFileContent.jsonFileContent.toByteArray())
+                                    }
+                                }
+
+                                get(project).simpleNotification(
+                                    null,
+                                    "File \'$filename\' has been created",
+                                    NotificationType.INFORMATION
+                                )
+                            }
+                        }
                     } catch (e: IOException) {
                         get(project).simpleNotification(
                             null,
