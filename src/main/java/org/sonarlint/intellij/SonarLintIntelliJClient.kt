@@ -33,6 +33,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.ui.MessageDialogBuilder
@@ -593,17 +594,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
 
             listModulesFiles
-        } ?: findProject(configScopeId)?.let { project ->
-            val listProjectFiles = listProjectFiles(project, configScopeId)
-
-            if (isRider()) {
-                computeRiderSharedConfiguration(project, configScopeId)?.let {
-                    listProjectFiles.add(it)
-                }
-            }
-
-            listProjectFiles
-        } ?: emptyList()
+        } ?: findProject(configScopeId)?.let { project -> listProjectFiles(project, configScopeId) }
+        ?: emptyList()
 
         return listClientFiles
     }
@@ -614,7 +606,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 sonarlintDir.children.forEach { conf ->
                     val solutionName = conf.nameWithoutExtension
                     if (project.name == solutionName) {
-                        getRelativePathForAnalysis(project, conf)?.let { path ->
+                        getRelativePathForAnalysis(project.modules[0], conf)?.let { path ->
                             val clientFileDto = toClientFileDto(
                                 project,
                                 configScopeId,
