@@ -53,6 +53,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
+import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
@@ -64,7 +65,6 @@ import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
-import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
 
 class AutomaticSharedConfigCreator(
     private val projectKey: String,
@@ -138,43 +138,48 @@ class AutomaticSharedConfigCreator(
     }
 
     private fun handleConnectionCreation(): Boolean {
-        val serverConnectionBuilder = ServerConnection.newBuilder().setDisableNotifications(false).setToken(String(tokenField.password))
-            .setName(connectionNameField.text)
-        if (isSQ) {
-            serverConnectionBuilder.setHostUrl(orgOrServerUrl)
-        } else {
-            serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(SONARCLOUD_URL)
+        val currBindingSuggestion = getSettingsFor(project).isBindingSuggestionsEnabled
+        try {
+            getSettingsFor(project).isBindingSuggestionsEnabled = false
+            val serverConnectionBuilder = ServerConnection.newBuilder().setDisableNotifications(false).setToken(String(tokenField.password))
+                .setName(connectionNameField.text)
+            if (isSQ) {
+                serverConnectionBuilder.setHostUrl(orgOrServerUrl)
+            } else {
+                serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(SONARCLOUD_URL)
+            }
+            serverConnection = serverConnectionBuilder.build()
+
+            if (!validateConnection()) {
+                return false
+            }
+
+            serverConnection.apply {
+                val globalSettings = getGlobalSettings()
+                getGlobalSettings().addServerConnection(this!!)
+                val serverChangeListener =
+                    ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+                // Notify in case the connections settings dialog is open to reflect the change
+                serverChangeListener.changed(globalSettings.serverConnections)
+            }
+
+            val connection = getGlobalSettings().getServerConnectionByName(connectionNameField.text)
+                .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
+
+            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
+            val connectionTypeMessage = if (isSQ) "SonarQube server" else "SonarCloud organization"
+            SonarLintProjectNotifications.get(project).simpleNotification(
+                "Project successfully bound",
+                "Local project bound to project '$projectKey' of $connectionTypeMessage '${connection.name}'. " +
+                    "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint settings.",
+                NotificationType.INFORMATION,
+                OpenInBrowserAction("Learn more", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
+            )
+
+            getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh()
+        } finally {
+            getSettingsFor(project).isBindingSuggestionsEnabled = currBindingSuggestion
         }
-        serverConnection = serverConnectionBuilder.build()
-
-        if (!validateConnection()) {
-            return false
-        }
-
-        serverConnection.apply {
-            val globalSettings = getGlobalSettings()
-            getGlobalSettings().addServerConnection(this!!)
-            val serverChangeListener =
-                ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-            // Notify in case the connections settings dialog is open to reflect the change
-            serverChangeListener.changed(globalSettings.serverConnections)
-        }
-
-        val connection = getGlobalSettings().getServerConnectionByName(connectionNameField.text)
-            .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
-
-        getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
-        val connectionTypeMessage = if (isSQ) "SonarQube server" else "SonarCloud organization"
-        SonarLintProjectNotifications.get(project).simpleNotification(
-            "Project successfully bound",
-            "Local project bound to project '$projectKey' of $connectionTypeMessage '${connection.name}'. " +
-                "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint settings.",
-            NotificationType.INFORMATION,
-            OpenInBrowserAction("Learn more", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
-        )
-
-        getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh()
-        AssistBindingResponse(BackendService.projectId(project))
         return true
     }
 
