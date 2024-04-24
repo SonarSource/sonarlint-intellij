@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.waitFor
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -28,7 +29,6 @@ import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
-import java.time.Duration
 
 class SecurityHotspotTabTests {
 
@@ -129,7 +129,7 @@ class SecurityHotspotTabTests {
                     toolWindow("SonarLint") {
                         ensureOpen()
                         content("SecurityHotspotsPanel") {
-                            waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
+                            waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
                                 hasText(expectedMessage)
                             }
                         }

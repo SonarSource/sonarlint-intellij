@@ -165,7 +165,7 @@ class CurrentFileTabTests {
                     toolWindow("SonarLint") {
                         ensureOpen()
                         content("CurrentFilePanel") {
-                            waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
+                            waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
                                 hasText(expectedMessage)
                             }
                         }

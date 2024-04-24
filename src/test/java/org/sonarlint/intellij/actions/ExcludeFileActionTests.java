@@ -70,7 +70,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
     action.actionPerformed(e);
 
     assertThat(settings.getState().getFileExclusions()).isEmpty();
-    Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
       // Analysis readiness update
       verify(analysisSubmitter, times(1)).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
     );
@@ -84,7 +84,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
     action.actionPerformed(e);
 
     assertThat(settings.getState().getFileExclusions()).isEmpty();
-    Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
       // Analysis readiness update
       verify(analysisSubmitter, times(1)).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
     );

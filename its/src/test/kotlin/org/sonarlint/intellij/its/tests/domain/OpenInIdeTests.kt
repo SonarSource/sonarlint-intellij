@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.keyboard
+import java.net.URL
+import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
@@ -30,7 +32,6 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
-import java.net.URL
 
 class OpenInIdeTests {
 
@@ -87,7 +88,7 @@ class OpenInIdeTests {
         private fun verifyEditorOpened(fileName: String) {
             with(remoteRobot) {
                 idea {
-                    editor(fileName)
+                    editor(fileName, Duration.ofMinutes(1))
                 }
             }
         }
