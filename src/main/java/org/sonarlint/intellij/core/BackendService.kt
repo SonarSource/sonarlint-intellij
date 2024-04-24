@@ -43,6 +43,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
+import java.time.format.DateTimeParseException
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -391,8 +392,18 @@ class BackendService : Disposable {
     }
 
     private fun getTimeoutProperty(propertyName: String): Duration? {
-        val property = System.getProperty(propertyName)
-        return property?.let { Duration.parse(it) }
+        return System.getProperty(propertyName)?.let {
+            try {
+                Duration.ofMinutes(it.toLong())
+            } catch (e: NumberFormatException) {
+                try {
+                    Duration.parse(it)
+                } catch (d: DateTimeParseException) {
+                    GlobalLogOutput.get().logError("Timeout property format is not valid", d)
+                    null
+                }
+            }
+        }
     }
 
     private fun getTelemetryConstantAttributes() =
