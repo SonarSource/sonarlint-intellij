@@ -24,18 +24,22 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore;
+import org.sonarlint.intellij.trigger.TriggerType;
 
 import static com.intellij.openapi.actionSystem.ActionPlaces.EDITOR_POPUP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
@@ -66,19 +70,25 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
     action.actionPerformed(e);
 
     assertThat(settings.getState().getFileExclusions()).isEmpty();
-    verifyNoInteractions(analysisSubmitter);
+    Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+      // Analysis readiness update
+      verify(analysisSubmitter, times(1)).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+    );
+    verifyNoMoreInteractions(analysisSubmitter);
   }
 
   @Test
-  // TODO re-enable
-  @Disabled
   void do_nothing_if_there_are_no_files() {
     when(projectSpy.isDisposed()).thenReturn(true);
 
     action.actionPerformed(e);
 
     assertThat(settings.getState().getFileExclusions()).isEmpty();
-    verifyNoInteractions(analysisSubmitter);
+    Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+      // Analysis readiness update
+      verify(analysisSubmitter, times(1)).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+    );
+    verifyNoMoreInteractions(analysisSubmitter);
   }
 
   @Test

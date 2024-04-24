@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ModalityState
 import org.sonarlint.intellij.util.ConfigurationSharing.Companion.exportConfiguration
 
 class ShareConfigurationAction (
@@ -29,7 +30,7 @@ class ShareConfigurationAction (
 ) {
 
     override fun actionPerformed(e: AnActionEvent) {
-        exportConfiguration(e.project)
+        exportConfiguration(e.project, ModalityState.defaultModalityState())
     }
 
 }

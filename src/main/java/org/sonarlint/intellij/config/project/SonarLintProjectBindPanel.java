@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
@@ -234,7 +235,7 @@ public class SonarLintProjectBindPanel {
     exportConfigurationButton.setAction(new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        ConfigurationSharing.Companion.exportConfiguration(project);
+        ConfigurationSharing.Companion.exportConfiguration(project, ModalityState.stateForComponent(bindPanel));
       }
     });
 
