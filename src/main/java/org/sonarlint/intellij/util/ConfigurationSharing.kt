@@ -136,7 +136,7 @@ class ConfigurationSharing {
                     A configuration file 'connectedMode.json' will be created in your local repository with a reference to project '$projectKey' on $connectionKind '$connectionName'
                     
                     This will help other team members configure the binding for the same project.
-                    <a href="${SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK}">Learn more</a> """.trimIndent()
+                    <a href="${SonarLintDocumentation.Intellij.SHARING_CONNECTED_MODE_CONFIGURATION_LINK}">Learn more</a> """.trimIndent()
             )
                 .yesText("Share Configuration")
                 .noText("Cancel")

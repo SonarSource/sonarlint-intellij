@@ -31,6 +31,7 @@ object SonarLintDocumentation {
         const val SUPPORT_POLICY_LINK = "$CONNECTED_MODE_SETUP_LINK/#sonarlint-sonarqube-version-support-policy"
         const val FOCUS_ON_NEW_CODE_LINK = "$BASE_DOCS_URL/using-sonarlint/investigating-issues/#focusing-on-new-code"
         const val CONNECTED_MODE_BENEFITS_LINK = "$CONNECTED_MODE_LINK/#benefits"
+        const val SHARING_CONNECTED_MODE_CONFIGURATION_LINK = "$CONNECTED_MODE_SETUP_LINK/#reuse-the-binding-configuration"
         const val TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK = "$BASE_DOCS_URL/troubleshooting/#troubleshooting-connected-mode-setup"
         const val RULE_SECTION_LINK = "$BASE_DOCS_URL/using-sonarlint/rules/#rule-selection"
         const val FILE_EXCLUSION_LINK = "$BASE_DOCS_URL/using-sonarlint/file-exclusions"
