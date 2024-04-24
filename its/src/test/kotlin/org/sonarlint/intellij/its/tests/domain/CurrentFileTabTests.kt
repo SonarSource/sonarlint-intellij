@@ -61,7 +61,7 @@ class CurrentFileTabTests {
                             click()
                         }
 
-                        pressButton("Mark Issue as...")
+                        pressButton("Mark Issue as…")
                     }
                 }
             }
@@ -99,7 +99,7 @@ class CurrentFileTabTests {
                         tabTitleContains("Current File") { select() }
                         findText(issueMessage).rightClick()
                     }
-                    actionMenuItem("Mark Issue as...") {
+                    actionMenuItem("Mark Issue as…") {
                         click()
                     }
                 }

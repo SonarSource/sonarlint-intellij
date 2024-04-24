@@ -34,7 +34,7 @@ class ConnectionTestTask(private val server: ServerConnection) :
     ) {
 
     override fun compute(indicator: ProgressIndicator): ValidateConnectionResponse? {
-        indicator.text = "Connecting to " + server.hostUrl + "..."
+        indicator.text = "Connecting to " + server.hostUrl + "…"
         indicator.isIndeterminate = true
         return try {
             waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(server))

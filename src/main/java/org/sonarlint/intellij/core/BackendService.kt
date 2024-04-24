@@ -225,7 +225,7 @@ class BackendService : Disposable {
     }
 
     private fun createServiceStartingTask(): Task.Backgroundable {
-        return object : Task.Backgroundable(null, "Starting SonarLint service...", false, ALWAYS_BACKGROUND) {
+        return object : Task.Backgroundable(null, "Starting SonarLint service…", false, ALWAYS_BACKGROUND) {
             override fun run(indicator: ProgressIndicator) {
                 try {
                     val sloop = startSloopProcess()
@@ -239,7 +239,10 @@ class BackendService : Disposable {
                     getService(GlobalLogOutput::class.java).log("SonarLint service initialized...", ClientLogOutput.Level.INFO)
                     backendFuture.complete(sloop.rpcServer)
                 } catch (t: TimeoutException) {
-                    GlobalLogOutput.get().log("The 'Starting SonarLint service...' task timed out, please capture thread dumps of the 'SonarLintServerCli' process and report the problem to the SonarLint maintainers", ClientLogOutput.Level.ERROR)
+                    GlobalLogOutput.get().log(
+                        "The 'Starting SonarLint service...' task timed out, please capture thread dumps of the 'SonarLintServerCli' process and report the problem to the SonarLint maintainers",
+                        ClientLogOutput.Level.ERROR
+                    )
                     handleSloopExited()
                     backendFuture.cancel(true)
                 } catch (t: Throwable) {

@@ -64,7 +64,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 
 class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayout()) {
     companion object {
-        private const val MARK_AS_RESOLVED = "Mark Issue as..."
+        private const val MARK_AS_RESOLVED = "Mark Issue as…"
         private const val REOPEN = "Reopen"
     }
 

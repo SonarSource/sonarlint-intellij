@@ -48,7 +48,7 @@ class ConfigurationSharing {
 
     companion object {
         @JvmStatic
-        fun exportConfiguration(project: Project?, modalityState: ModalityState) {
+        fun shareConfiguration(project: Project?, modalityState: ModalityState) {
             if (project == null || project.isDisposed) return
 
             if (confirm(project)) {

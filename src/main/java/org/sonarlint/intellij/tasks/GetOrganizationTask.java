@@ -45,7 +45,7 @@ public class GetOrganizationTask extends Task.Modal {
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to SonarCloud...");
+    indicator.setText("Connecting to SonarCloud…");
     indicator.setIndeterminate(false);
 
     try {
