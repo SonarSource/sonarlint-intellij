@@ -262,7 +262,7 @@ public class AuthStep extends AbstractWizardStepEx {
       return;
     }
     var progressWindow = new ProgressWindow(true, false, null, panel, "Cancel");
-    progressWindow.setTitle("Generating token...");
+    progressWindow.setTitle("Generating token…");
     Disposer.register(this, progressWindow);
     try {
       ProgressResult<HelpGenerateUserTokenResponse> progressResult = new ProgressRunner<>(pi -> computeOnPooledThread("Generate User Token Task", () -> {

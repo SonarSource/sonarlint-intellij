@@ -95,7 +95,7 @@ class ProjectBindingUtils {
 
                 pressOk()
                 errorMessage("Project key for module 'sample-scala-module' should not be empty")
-                buttons(JButtonFixture.byText("Search in list..."))[1].click()
+                buttons(JButtonFixture.byText("Search in list…"))[1].click()
                 dialog("Select SonarQube Project To Bind") {
                     jList {
                         clickItem(MODULE_PROJECT_KEY, false)

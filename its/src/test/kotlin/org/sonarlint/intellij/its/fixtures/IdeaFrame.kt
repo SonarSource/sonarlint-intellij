@@ -28,8 +28,8 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
 import com.intellij.remoterobot.utils.waitFor
-import org.sonarlint.intellij.its.utils.optionalStep
 import java.time.Duration
+import org.sonarlint.intellij.its.utils.optionalStep
 
 fun RemoteRobot.idea(duration: Duration = Duration.ofSeconds(20), function: IdeaFrame.() -> Unit = {}): IdeaFrame {
   return find<IdeaFrame>(duration).apply(function)
@@ -106,6 +106,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
   fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
     return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
   }
+    
     fun IdeaFrame.analyzeFile() {
         editorComponent().rightClick()
         actionMenuItem("Analyze with SonarLint") {
@@ -117,17 +118,22 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         return findElement<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
     }
 
-  fun actionHyperLink(accessiblename: String, function: ActionHyperLinkFixture.() -> Unit): ActionHyperLinkFixture {
-    return findElement<ActionHyperLinkFixture>(byXpath("link $accessiblename", "//div[@accessiblename='$accessiblename' and @class='ActionHyperlinkLabel']")).apply(function)
-  }
-
-  fun openSettings() {
-    actionMenu("File") {
-      open()
-      item("Settings...") {
-        click()
-      }
+    fun actionHyperLink(accessiblename: String, function: ActionHyperLinkFixture.() -> Unit): ActionHyperLinkFixture {
+        return findElement<ActionHyperLinkFixture>(
+            byXpath(
+                "link $accessiblename",
+                "//div[@accessiblename='$accessiblename' and @class='ActionHyperlinkLabel']"
+            )
+        ).apply(function)
     }
-  }
+
+    fun openSettings() {
+        actionMenu("File") {
+            open()
+            item("Settings...") {
+                click()
+            }
+        }
+    }
 
 }

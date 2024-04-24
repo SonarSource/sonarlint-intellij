@@ -58,7 +58,7 @@ class MarkAsResolvedAction(
     private var issue: Issue? = null,
 ) :
     AbstractSonarAction(
-        "Mark Issue as...", "Change the issue resolution status", null
+        "Mark Issue as…", "Change the issue resolution status", null
     ), IntentionAction, PriorityAction, Iconable {
     companion object {
         private const val ERROR_TITLE = "<b>SonarLint - Unable to mark the issue as resolved</b>"
@@ -226,10 +226,10 @@ class MarkAsResolvedAction(
 
     override fun startInWriteAction() = false
 
-    override fun getText() = "SonarLint: Mark issue as..."
+    override fun getText() = "SonarLint: Mark issue as…"
 
     override fun getFamilyName(): String {
-        return "SonarLint mark issue as..."
+        return "SonarLint mark issue as…"
     }
 
     override fun isVisible(e: AnActionEvent): Boolean {
