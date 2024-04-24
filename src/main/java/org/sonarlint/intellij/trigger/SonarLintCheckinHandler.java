@@ -116,7 +116,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       .flatMap(e -> e.getValue().stream())
       .filter(Predicate.not(LiveIssue::isResolved))
       .filter(issue -> !shouldFocusOnNewCode || issue.isOnNewCode())
-      .filter(i -> IssueSeverity.BLOCKER.equals(i.getUserSeverity()))
+      .filter(i -> i.getUserSeverity() != null && i.getUserSeverity().name().equals(IssueSeverity.BLOCKER.name()))
       .count();
 
     if (numIssues == 0) {
