@@ -351,6 +351,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
     }
 
     fun showSharedConfigurationNotification(title: String, message: String, doNotShowAgainId: String) {
+        expireCurrentBindingSuggestionIfNeeded()
         SONARLINT_GROUP.createNotification(
             title,
             message,
@@ -364,6 +365,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
     }
 
     fun showAutoSharedConfigurationNotification(title: String, message: String, doNotShowAgainId: String, action: AnAction?) {
+        expireCurrentBindingSuggestionIfNeeded()
         SONARLINT_GROUP.createNotification(
             title,
             message,
