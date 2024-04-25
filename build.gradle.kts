@@ -84,7 +84,7 @@ allprojects {
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            apiVersion = "1.7"
+            apiVersion = "1.9"
             jvmTarget = "17"
         }
     }
