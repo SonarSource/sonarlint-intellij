@@ -239,8 +239,8 @@ public class SonarLintProjectBindPanel {
       }
     });
 
-    configureConnectionButton.setText("Configure the connection…");
-    shareConfigurationButton.setText("Share configuration…");
+    configureConnectionButton.setText("Configure the connection\u2026");
+    shareConfigurationButton.setText("Share configuration\u2026");
 
     connectionComboBox = new ComboBox<>();
     connectionListLabel = new JLabel("Connection:");
@@ -269,7 +269,7 @@ public class SonarLintProjectBindPanel {
         }
       }
     });
-    searchProjectButton.setText("Search in list…");
+    searchProjectButton.setText("Search in list\u2026");
 
     connectionListLabel.setLabelFor(connectionComboBox);
 

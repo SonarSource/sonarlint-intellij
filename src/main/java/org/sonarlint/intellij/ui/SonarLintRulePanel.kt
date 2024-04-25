@@ -111,7 +111,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         }, BorderLayout.SOUTH)
 
         add(mainPanel)
-        setLoadingText("Loading rule description…")
+        setLoadingText("Loading rule description\u2026")
         clear()
 
         ApplicationManager.getApplication().messageBus.connect(parent)
@@ -143,7 +143,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             }
             state = newState
             startLoading()
-            ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description…", false) {
+            ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description\u2026", false) {
                 override fun run(progressIndicator: ProgressIndicator) {
                     SonarLintUtils.getService(BackendService::class.java)
                         .getActiveRuleDetails(module, ruleKey, ruleDescriptionContextKey)
