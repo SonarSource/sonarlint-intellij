@@ -303,7 +303,7 @@ class AutomaticSharedConfigCreator(
     private fun validateConnection(): Boolean {
         try {
             val progressWindow = ProgressWindow(true, false, null, centerPanel, "Cancel").apply {
-                title = ("Validating connection…")
+                title = ("Validating connection\u2026")
             }
             val progressResult = ProgressRunner<ValidateConnectionResponse> { pi: ProgressIndicator ->
                 computeOnPooledThread<ValidateConnectionResponse>("Validate Connection") {
@@ -345,7 +345,7 @@ class AutomaticSharedConfigCreator(
             return
         }
         val progressWindow = ProgressWindow(true, false, null, centerPanel, "Cancel").apply {
-            title = ("Generating token…")
+            title = ("Generating token\u2026")
         }
 
         try {

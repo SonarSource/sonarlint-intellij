@@ -46,7 +46,7 @@ public class GetOrganizationsTask extends Task.Modal {
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to " + connection.getHostUrl() + "…");
+    indicator.setText("Connecting to " + connection.getHostUrl() + "\u2026");
     indicator.setIndeterminate(false);
 
     try {

@@ -40,7 +40,7 @@ class MarkAsResolvedDialog(
     init {
         title = "Mark Issue as Resolved on ${connection.productName}"
         isResizable = false
-        changeStatusAction = object : DialogWrapperAction("Mark Issue as…") {
+        changeStatusAction = object : DialogWrapperAction("Mark Issue as\u2026") {
             init {
                 putValue(DEFAULT_ACTION, true)
                 isEnabled = false

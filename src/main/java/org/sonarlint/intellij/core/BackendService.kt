@@ -225,7 +225,7 @@ class BackendService : Disposable {
     }
 
     private fun createServiceStartingTask(): Task.Backgroundable {
-        return object : Task.Backgroundable(null, "Starting SonarLint service…", false, ALWAYS_BACKGROUND) {
+        return object : Task.Backgroundable(null, "Starting SonarLint service\u2026", false, ALWAYS_BACKGROUND) {
             override fun run(indicator: ProgressIndicator) {
                 try {
                     val sloop = startSloopProcess()

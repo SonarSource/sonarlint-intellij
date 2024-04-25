@@ -153,7 +153,7 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
                 }
             }
         }
-        searchProjectKeyButton.text = "Search in list…"
+        searchProjectKeyButton.text = "Search in list\u2026"
 
         projectKeyTextField.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent?) {
