@@ -87,6 +87,11 @@ allprojects {
             apiVersion = "1.7"
             jvmTarget = "17"
         }
+        java {
+            toolchain {
+                languageVersion.set(JavaLanguageVersion.of(17))
+            }
+        }
     }
 
     tasks.cyclonedxBom {
