@@ -1,0 +1,4 @@
+{
+    "sonarQubeUri": "https://next.sonarqube.com/sonarqube",
+    "projectKey": "org.sonarsource.sonarlint.intellij:sonarlint-intellij"
+}
