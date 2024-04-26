@@ -26,7 +26,6 @@ import com.sonar.orchestrator.locator.FileLocation
 import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -185,8 +184,6 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
-        // TODO re-enable
-        @Disabled
         fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
             clearConnections()
             openExistingProject("sample-java-hotspot", true)
