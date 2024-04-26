@@ -63,8 +63,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-// TODO re-enable
-@Disabled
 class AnalysisTests extends AbstractSonarLintLightTests {
   private Analysis task;
   private int analysisTaskTimeout = 10000;

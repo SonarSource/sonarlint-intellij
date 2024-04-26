@@ -344,8 +344,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    // TODO re-enable
-    @Disabled
     fun should_apply_overlapping_quick_fixes() {
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
         analyze(file.virtualFile)
