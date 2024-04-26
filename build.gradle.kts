@@ -354,7 +354,7 @@ artifactory {
             setProperty("username", System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
             setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_PASSWORD"))
         })
-        defaults(delegateClosureOf<GroovyObject> {
+        defaults {
             setProperty(
                 "properties", mapOf(
                 "vcs.revision" to System.getenv("CIRRUS_CHANGE_IN_REPO"),
@@ -364,10 +364,10 @@ artifactory {
                 "build.number" to System.getenv("BUILD_ID")
             )
             )
-            invokeMethod("publishConfigs", "archives")
+            publishConfigs("archives")
             setProperty("publishPom", true) // Publish generated POM files to Artifactory (true by default)
             setProperty("publishIvy", false) // Publish generated Ivy descriptor files to Artifactory (true by default)
-        })
+        }
     })
 }
 
