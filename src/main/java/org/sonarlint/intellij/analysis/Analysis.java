@@ -109,7 +109,7 @@ public class Analysis implements Cancelable {
   }
 
   private AnalysisResult doRun(ProgressIndicator indicator) {
-    LOGGER.info("came inside doRun");
+    System.out.println("came inside doRun");
     var console = getService(project, SonarLintConsole.class);
     console.debug("Trigger: " + trigger);
     console.debug(String.format("[%s] %d file(s) submitted", trigger, files.size()));
@@ -145,7 +145,7 @@ public class Analysis implements Cancelable {
         return analysisResult;
       }
 
-      LOGGER.info("came before analyzePerModule");
+      System.out.println("came before analyzePerModule");
       var summary = analyzePerModule(scope, indicator, previousFindings);
 
       getService(SonarLintTelemetry.class).addReportedRules(summary.getReportedRuleKeys());
@@ -225,7 +225,7 @@ public class Analysis implements Cancelable {
     var progressMonitor = new TaskProgressMonitor(indicator, project, () -> cancelled);
     var results = new LinkedHashMap<Module, ModuleAnalysisResult>();
     RawFindingHandler rawFindingHandler;
-    LOGGER.info("Came before finding streamer");
+    System.out.println("Came before finding streamer");
     try (var findingStreamer = new FindingStreamer(callback)) {
       rawFindingHandler = new RawFindingHandler(findingStreamer, cachedFindings);
       for (var entry : scope.getFilesByModule().entrySet()) {
