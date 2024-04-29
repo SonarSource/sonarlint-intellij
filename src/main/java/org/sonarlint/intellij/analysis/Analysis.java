@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -46,6 +47,7 @@ import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.trigger.SonarLintCheckinHandler;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.commons.api.progress.CanceledException;
@@ -64,6 +66,8 @@ public class Analysis implements Cancelable {
   private boolean finished = false;
   private boolean cancelled;
   private ProgressIndicator indicator;
+
+  private static final Logger LOGGER = Logger.getInstance(Analysis.class);
 
   public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
     this.project = project;
@@ -106,6 +110,7 @@ public class Analysis implements Cancelable {
   }
 
   private AnalysisResult doRun(ProgressIndicator indicator) {
+    LOGGER.info("came inside doRun");
     var console = getService(project, SonarLintConsole.class);
     console.debug("Trigger: " + trigger);
     console.debug(String.format("[%s] %d file(s) submitted", trigger, files.size()));
@@ -140,6 +145,8 @@ public class Analysis implements Cancelable {
         callback.onSuccess(analysisResult);
         return analysisResult;
       }
+
+      LOGGER.info("came before analyzePerModule");
       var summary = analyzePerModule(scope, indicator, previousFindings);
 
       getService(SonarLintTelemetry.class).addReportedRules(summary.getReportedRuleKeys());
@@ -219,9 +226,10 @@ public class Analysis implements Cancelable {
     var progressMonitor = new TaskProgressMonitor(indicator, project, () -> cancelled);
     var results = new LinkedHashMap<Module, ModuleAnalysisResult>();
     RawFindingHandler rawFindingHandler;
+    LOGGER.info("Came before finding streamer");
     try (var findingStreamer = new FindingStreamer(callback)) {
       rawFindingHandler = new RawFindingHandler(findingStreamer, cachedFindings);
-
+      System.out.println();
       for (var entry : scope.getFilesByModule().entrySet()) {
         var module = entry.getKey();
         rawFindingHandler.setCurrentModule(module);
