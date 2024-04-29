@@ -26,6 +26,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,6 +68,16 @@ public class Analysis implements Cancelable {
   private ProgressIndicator indicator;
 
   private static final Logger LOGGER = Logger.getInstance(Analysis.class);
+
+  void m() {
+    var file = new File("");
+    var array = new int[5];
+    if (file != null) {
+      if (file.isFile() || array.toString().equals("")) {
+        /* ... */
+      }
+    }
+  }
 
   public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
     this.project = project;

@@ -352,7 +352,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         myFixture.editor.caretModel.currentCaret.moveToOffset(180)
         myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Merge this if statement with the enclosing one"))
 
-        myFixture.checkResultByFile("src/quick_fixes/overlapping_quick_fixes.expected.java")
+        myFixture.checkResultByFile("src/quick_fixes/overlapping_quick_fixes.expected.java", true)
     }
 
     @Test
