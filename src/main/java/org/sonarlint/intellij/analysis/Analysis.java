@@ -229,7 +229,6 @@ public class Analysis implements Cancelable {
     LOGGER.info("Came before finding streamer");
     try (var findingStreamer = new FindingStreamer(callback)) {
       rawFindingHandler = new RawFindingHandler(findingStreamer, cachedFindings);
-      System.out.println();
       for (var entry : scope.getFilesByModule().entrySet()) {
         var module = entry.getKey();
         rawFindingHandler.setCurrentModule(module);
