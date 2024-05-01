@@ -67,18 +67,6 @@ public class Analysis implements Cancelable {
   private boolean cancelled;
   private ProgressIndicator indicator;
 
-  private static final Logger LOGGER = Logger.getInstance(Analysis.class);
-
-  void m() {
-    var file = new File("");
-    var array = new int[5];
-    if (file != null) {
-      if (file.isFile() || array.toString().equals("")) {
-        /* ... */
-      }
-    }
-  }
-
   public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
     this.project = project;
     this.files = files;
