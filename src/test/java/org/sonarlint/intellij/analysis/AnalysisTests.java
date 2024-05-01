@@ -217,6 +217,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
   @Test
   void testCancel() {
+    //
     task.cancel();
     task.run(progress);
 
