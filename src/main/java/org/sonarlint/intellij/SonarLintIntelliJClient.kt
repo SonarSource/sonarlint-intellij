@@ -582,6 +582,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
+        println("Client Listfiles begun with config: " + configScopeId)
         val listClientFiles = BackendService.findModule(configScopeId)?.let { module ->
             val listModulesFiles = listModuleFiles(module, configScopeId)
 
@@ -595,6 +596,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } ?: findProject(configScopeId)?.let { project -> listProjectFiles(project, configScopeId) }
         ?: emptyList()
 
+        println("Client Listfiles returning")
         return listClientFiles
     }
 
