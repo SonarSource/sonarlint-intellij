@@ -121,11 +121,6 @@ public class Analysis implements Cancelable {
 
   private AnalysisResult doRun(ProgressIndicator indicator) {
     var console = getService(project, SonarLintConsole.class);
-    try {
-      checkCanceled(indicator);
-    } catch (CanceledException | ProcessCanceledException e1) {
-      console.info("Analysis canceled");
-    }
     System.out.println("came inside doRun");
     console.debug("Trigger: " + trigger);
     console.debug(String.format("[%s] %d file(s) submitted", trigger, files.size()));

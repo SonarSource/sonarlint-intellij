@@ -36,7 +36,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -57,6 +56,7 @@ import org.sonarsource.sonarlint.core.commons.api.progress.ClientProgressMonitor
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
@@ -100,6 +100,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     // IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     AnalysisStatus.get(getProject()).stopRun();
+    waitForReadinessAndResetMockInvocations();
   }
 
   @AfterEach
@@ -109,9 +110,6 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
   @Test
   void testTask() {
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue();
-    });
     task.run(progress);
     verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
@@ -124,9 +122,6 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
   @Test
   void shouldIgnoreProjectLevelIssues() {
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue();
-    });
     var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class)))
@@ -146,9 +141,6 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
   @Test
   void shouldIgnoreInvalidFiles() {
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue();
-    });
     var vFile = filesToAnalyze.iterator().next();
     WriteCommandAction.runWriteCommandAction(getProject(), () -> {
       try {
@@ -168,9 +160,6 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
   @Test
   void shouldReportIssueForValidFile() {
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue();
-    });
     var issue = mock(RawIssue.class);
     var clientInputFile = mock(ClientInputFile.class);
     when(issue.getInputFile()).thenReturn(clientInputFile);
@@ -189,15 +178,12 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).times(2)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
   }
 
   @Test
   void shouldSkipIfFailedToFindIssueLocation() {
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue();
-    });
     var issue = buildValidIssue();
 
     var listener = mock(AnalysisListener.class);
@@ -211,45 +197,36 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).times(2)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
   }
 
   @Test
-  void shouldSkipIfException() {
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue();
-    });
-    var issue = buildValidIssue();
-    var listener = mock(AnalysisListener.class);
-    getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class)))
-      .thenAnswer((Answer<AnalysisResults>) invocation -> {
-        RawIssueListener issueListener = invocation.getArgument(2);
-        issueListener.handle(issue);
-        return analysisResults;
-      });
-
-    task.run(progress);
-
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).times(2)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class));
-  }
-
-  @Test
   void testCancel() {
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue();
-    });
     task.cancel();
     task.run(progress);
 
-    //Sometimes we have more than 1 interaction To be investigated later
-    verify(sonarLintConsole, timeout(analysisTaskTimeout).times(2)).info("Analysis canceled");
+    verify(sonarLintConsole, timeout(analysisTaskTimeout)).info("Analysis canceled");
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
     ExtensionPoint<LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
     return extensionPoint.extensions().toList();
+  }
+
+  // Readiness check happens once for the all the tests under SonarLintLightTests
+  // If multiple tests are run, only the first test will wait for it
+  private void waitForReadinessAndResetMockInvocations() {
+    var wasAnalysisReady = getService(getProject(), AnalysisReadinessCache.class).isReady();
+    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
+      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue());
+    if (!wasAnalysisReady) {
+      verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+        any(ClientProgressMonitor.class));
+      clearInvocations(sonarLintAnalyzer);
+      clearInvocations(sonarLintConsole);
+      clearInvocations(findingsCacheMock);
+    }
   }
 
   @NotNull
