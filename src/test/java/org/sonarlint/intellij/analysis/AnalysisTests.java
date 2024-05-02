@@ -109,17 +109,16 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
   @Test
   void testTask() {
-    task.run(progress);
     Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
       assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue();
     });
+    task.run(progress);
     verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
 
     assertThat(getExternalAnnotators())
       .extracting("implementationClass")
       .contains("org.sonarlint.intellij.editor.SonarExternalAnnotator");
-    //TODO check if sometimes we have more than 1 interaction, To be investigated later
     verifyNoMoreInteractions(sonarLintAnalyzer);
   }
 
@@ -190,7 +189,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).atLeastOnce()).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).times(2)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
   }
 
@@ -212,7 +211,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).atLeastOnce()).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).times(2)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
       any(ClientProgressMonitor.class));
   }
 
@@ -233,7 +232,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).atLeastOnce()).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class));
+    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout).times(2)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class));
   }
 
   @Test
@@ -245,7 +244,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     task.run(progress);
 
     //Sometimes we have more than 1 interaction To be investigated later
-    verify(sonarLintConsole, timeout(analysisTaskTimeout).atLeastOnce()).info("Analysis canceled");
+    verify(sonarLintConsole, timeout(analysisTaskTimeout).times(2)).info("Analysis canceled");
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
