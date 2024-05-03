@@ -96,6 +96,7 @@ public final class AnalysisSubmitter {
       return null;
     }
     var callback = new UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder);
+    System.out.println("analyzeInBackround files size:" + files.size());
     return analyzeInBackground(files, triggerType, callback);
   }
 

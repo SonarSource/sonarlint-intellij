@@ -77,6 +77,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
 
   @Override
   public void documentChanged(DocumentEvent event) {
+    System.out.println("Came into documentChanged with event ");
     if (!getGlobalSettings().isAutoTrigger()) {
       return;
     }
@@ -134,6 +135,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
     private void triggerFiles(List<VirtualFile> files) {
       if (getGlobalSettings().isAutoTrigger()) {
         var openFilesToAnalyze = SonarLintAppUtils.retainOpenFiles(myProject, files);
+        System.out.println("Before empty check: " + openFilesToAnalyze.size());
         if (!openFilesToAnalyze.isEmpty()) {
           if (task != null) {
             task.cancel();
@@ -141,6 +143,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
             return;
           }
           files.forEach(eventMap::remove);
+          System.out.println("Open files to analyze size is: " + openFilesToAnalyze.size());
           task = SonarLintUtils.getService(myProject, AnalysisSubmitter.class).autoAnalyzeFiles(openFilesToAnalyze, TriggerType.EDITOR_CHANGE);
         }
       }
@@ -161,6 +164,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
         // filter files opened in the editor
         // use some heuristics based on analysis time or average pauses? Or make it configurable?
         if (event.getValue() + DEFAULT_TIMER_MS < now) {
+          System.out.println("Key and value of events" + event.getKey() + ": " + event.getValue());
           filesToTrigger.add(event.getKey());
         }
       }
