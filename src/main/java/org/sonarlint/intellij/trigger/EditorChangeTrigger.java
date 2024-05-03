@@ -133,6 +133,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
     }
 
     private void triggerFiles(List<VirtualFile> files) {
+      System.out.println("Triggering files " + files);
       if (getGlobalSettings().isAutoTrigger()) {
         var openFilesToAnalyze = SonarLintAppUtils.retainOpenFiles(myProject, files);
         System.out.println("Before empty check: " + openFilesToAnalyze.size());
@@ -168,6 +169,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
           filesToTrigger.add(event.getKey());
         }
       }
+      System.out.println("Total files to trigger: " + filesToTrigger.size());
       triggerFiles(filesToTrigger);
     }
 
