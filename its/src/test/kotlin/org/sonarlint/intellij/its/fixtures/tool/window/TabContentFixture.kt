@@ -25,12 +25,18 @@ import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.EditorFixture
 import com.intellij.remoterobot.fixtures.FixtureName
+import com.intellij.remoterobot.search.locators.byXpath
 import org.sonarlint.intellij.its.fixtures.findElement
 
 @FixtureName(name = "Tool Window Tab Content")
 class TabContentFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
 
   fun console() = findElement<EditorFixture>(EditorFixture.locator)
-  fun toolBarButton(tooltipText: String) = findElement<ActionButtonFixture>(ActionButtonFixture.byTooltipTextContains(tooltipText))
+  fun toolBarButton(name: String) =
+    findElement<ActionButtonFixture>(byXpath("finding action button with text '$name'", "//div[@accessiblename='$name']"))
+  fun focusOnNewCodeButton() =
+    findElement<ActionButtonFixture>(byXpath("focus on new code action button", "//div[@myicon='focus.svg']"))
+  fun resolvedIssuesButton() =
+    findElement<ActionButtonFixture>(byXpath("resolved issues action button", "//div[@myicon='resolved.svg']"))
 
 }

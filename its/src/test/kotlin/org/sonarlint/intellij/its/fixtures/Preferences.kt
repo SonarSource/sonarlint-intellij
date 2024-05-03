@@ -21,6 +21,7 @@ package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JLabelFixture
 import com.intellij.remoterobot.fixtures.JTreeFixture
@@ -63,6 +64,12 @@ open class PreferencesDialog(
     fun errorMessage(message: String) {
         jLabel(JLabelFixture.byContainsText(message))
     }
+
+    fun removeConnectionButton() =
+        findElement<ActionButtonFixture>(byXpath("remove connection action button", "//div[@myicon='remove.svg']"))
+
+    fun addConnectionButton() =
+        findElement<ActionButtonFixture>(byXpath("add connection action button", "//div[@myicon='add.svg']"))
 }
 
 fun RemoteRobot.preferencesTitle() = if (this.isMac()) "Preferences" else "Settings"
