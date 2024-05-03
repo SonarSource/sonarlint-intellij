@@ -43,14 +43,17 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.util.ProjectUtils
+import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
+
 
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private val diamondQuickFix = "SonarLint: Replace with <>"
@@ -344,9 +347,10 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    // TODO re-enable
+    // TODO re-enable after SLCORE-784 is fixed
     @Disabled
     fun should_apply_overlapping_quick_fixes() {
+        val expectedFile = myFixture.copyFileToProject("src/quick_fixes/overlapping_quick_fixes.expected.java")
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
         analyze(file.virtualFile)
 
@@ -354,7 +358,8 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         myFixture.editor.caretModel.currentCaret.moveToOffset(180)
         myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Merge this if statement with the enclosing one"))
 
-        myFixture.checkResultByFile("src/quick_fixes/overlapping_quick_fixes.expected.java")
+        //Their stripTrailingSpaces function don't work
+        myFixture.checkResult(expectedFile.getDocument()!!.text.trim(), true)
     }
 
     @Test
@@ -410,6 +415,10 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     private fun analyze(vararg filesToAnalyze: VirtualFile): List<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
+        }
+        //Backend listFiles needs to be fixed till this test is completely non-flaky
         submitter.analyzeFilesPreCommit(filesToAnalyze.toList())
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(filesToAnalyze.flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }).isNotEmpty
