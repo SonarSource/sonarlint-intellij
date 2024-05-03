@@ -42,7 +42,7 @@ class FiltersUtils {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
-                            val toolBarButton = toolBarButton("Set Focus on New Code")
+                            val toolBarButton = focusOnNewCodeButton()
                             val isFocusActivated = toolBarButton.popState() == ActionButtonFixture.PopState.SELECTED || toolBarButton.popState() == ActionButtonFixture.PopState.PUSHED
                             if (focusOnNewCode != isFocusActivated) {
                                 toolBarButton.click()
@@ -60,7 +60,7 @@ class FiltersUtils {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
-                            toolBarButton("Include Resolved Issues").click()
+                            resolvedIssuesButton().click()
                         }
                     }
                 }

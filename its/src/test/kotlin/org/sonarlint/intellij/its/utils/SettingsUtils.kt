@@ -19,10 +19,10 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
+import java.time.Duration
 import org.assertj.swing.timing.Pause
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.IdeaFrame
@@ -37,7 +37,6 @@ import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.fixtures.preferencesDialog
 import org.sonarlint.intellij.its.fixtures.waitUntilLoaded
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
-import java.time.Duration
 
 class SettingsUtils {
 
@@ -85,7 +84,7 @@ class SettingsUtils {
 
         fun clearConnections() {
             sonarLintGlobalSettings {
-                val removeButton = actionButton(ActionButtonFixture.byTooltipText("Remove"))
+                val removeButton = removeConnectionButton()
                 jList(JListFixture.byType()) {
                     while (collectItems().isNotEmpty()) {
                         removeButton.clickWhenEnabled()
@@ -102,7 +101,7 @@ class SettingsUtils {
 
         fun clearConnectionsAndAddSonarQubeConnection(serverUrl: String, token: String) {
             sonarLintGlobalSettings {
-                val removeButton = actionButton(ActionButtonFixture.byTooltipText("Remove"))
+                val removeButton = removeConnectionButton()
                 jList(JListFixture.byType()) {
                     while (collectItems().isNotEmpty()) {
                         removeButton.clickWhenEnabled()
@@ -113,7 +112,7 @@ class SettingsUtils {
                         }
                     }
                 }
-                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
+                addConnectionButton().clickWhenEnabled()
                 dialog("New Connection: Server Details") {
                     keyboard { enterText("Orchestrator") }
                     jRadioButtons()[1].select()
@@ -136,7 +135,7 @@ class SettingsUtils {
 
         fun addSonarCloudConnection(token: String, connectionName: String) {
             sonarLintGlobalSettings {
-                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
+                addConnectionButton().clickWhenEnabled()
                 dialog("New Connection: Server Details") {
                     keyboard { enterText(connectionName) }
                     button("Next").click()

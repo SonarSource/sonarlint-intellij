@@ -17,16 +17,15 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion;
+package org.sonarlint.intellij.clion.resharper;
 
 import com.intellij.openapi.vfs.VirtualFile;
-import com.jetbrains.cidr.lang.CLanguageKind;
-import com.jetbrains.cidr.lang.CUDALanguageKind;
 import com.jetbrains.cidr.lang.workspace.compiler.AppleClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangClCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
+import com.jetbrains.rider.cpp.fileType.CppLanguage;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -34,35 +33,30 @@ import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-class AnalyzerConfigurationTest {
+class CLionResharperAnalyzerConfigurationTest {
 
   @Test
   void get_sonar_language() {
-    assertEquals(ForcedLanguage.C, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.C));
-    assertEquals(ForcedLanguage.CPP, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.CPP));
-    assertEquals(ForcedLanguage.OBJC, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_C));
-    assertNull(AnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_CPP));
-    assertNull(AnalyzerConfiguration.getSonarLanguage(CUDALanguageKind.CUDA));
+    assertEquals(ForcedLanguage.CPP, CLionResharperAnalyzerConfiguration.getSonarLanguage(CppLanguage.INSTANCE));
   }
 
   @Test
   void map_to_cfamily_compiler() {
-    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(ClangCompilerKind.INSTANCE));
-    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(GCCCompilerKind.INSTANCE));
-    assertEquals("clang-cl", AnalyzerConfiguration.mapToCFamilyCompiler(ClangClCompilerKind.INSTANCE));
-    assertEquals("msvc-cl", AnalyzerConfiguration.mapToCFamilyCompiler(MSVCCompilerKind.INSTANCE));
-    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(AppleClangCompilerKind.INSTANCE));
+    assertEquals("clang", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(ClangCompilerKind.INSTANCE));
+    assertEquals("clang", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(GCCCompilerKind.INSTANCE));
+    assertEquals("clang-cl", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(ClangClCompilerKind.INSTANCE));
+    assertEquals("msvc-cl", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(MSVCCompilerKind.INSTANCE));
+    assertEquals("clang", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(AppleClangCompilerKind.INSTANCE));
   }
 
   @Test
   void configuration() {
     var file = mock(VirtualFile.class);
-    var configuration = new AnalyzerConfiguration.Configuration(
+    var configuration = new CLionResharperAnalyzerConfiguration.Configuration(
       file,
       "compilerExecutable",
       "compilerWorkingDir",
@@ -82,7 +76,7 @@ class AnalyzerConfigurationTest {
 
   @Test
   void configuration_result() {
-    var configuration = new AnalyzerConfiguration.Configuration(
+    var configuration = new CLionResharperAnalyzerConfiguration.Configuration(
       null,
       null,
       null,
@@ -90,7 +84,7 @@ class AnalyzerConfigurationTest {
       null,
       null,
       Map.of("isHeaderFile", "false"));
-    var result = AnalyzerConfiguration.ConfigurationResult.of(configuration);
+    var result = CLionResharperAnalyzerConfiguration.ConfigurationResult.of(configuration);
     assertTrue(result.hasConfiguration());
     assertEquals(configuration, result.getConfiguration());
     assertThrows(UnsupportedOperationException.class, result::getSkipReason);
@@ -98,7 +92,7 @@ class AnalyzerConfigurationTest {
 
   @Test
   void configuration_result_skipped() {
-    var result = AnalyzerConfiguration.ConfigurationResult.skip("reason");
+    var result = CLionResharperAnalyzerConfiguration.ConfigurationResult.skip("reason");
     assertFalse(result.hasConfiguration());
     assertEquals("reason", result.getSkipReason());
     assertThrows(UnsupportedOperationException.class, result::getConfiguration);

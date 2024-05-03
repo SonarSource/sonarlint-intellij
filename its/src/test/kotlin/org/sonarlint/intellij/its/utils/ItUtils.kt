@@ -19,15 +19,8 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.util.Properties
-
 object ItUtils {
 
-    private var javaVersion: String
     val SONAR_VERSION: String = sonarVersion
 
     private val sonarVersion: String
@@ -35,22 +28,5 @@ object ItUtils {
             val versionProperty = System.getProperty("sonar.runtimeVersion")
             return versionProperty ?: "LATEST_RELEASE"
         }
-
-    init {
-        if ("LATEST_RELEASE[6.7]" == System.getProperty("sonar.runtimeVersion")) {
-            val props = Properties()
-            try {
-                Files.newBufferedReader(Paths.get("../../core/src/main/resources/plugins_min_versions.txt"), StandardCharsets.UTF_8)
-                    .use { r ->
-                        props.load(r)
-                        javaVersion = props.getProperty("java")
-                    }
-            } catch (e: IOException) {
-                throw IllegalStateException(e)
-            }
-        } else {
-            javaVersion = "LATEST_RELEASE"
-        }
-    }
 
 }

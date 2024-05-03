@@ -19,11 +19,11 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.waitFor
+import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -33,7 +33,6 @@ import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.tests.ConnectedIdeaTests.Companion.MODULE_PROJECT_KEY
 import org.sonarlint.intellij.its.tests.ConnectedIdeaTests.Companion.PROJECT_KEY
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.sonarLintGlobalSettings
-import java.time.Duration
 
 class ProjectBindingUtils {
 
@@ -87,7 +86,7 @@ class ProjectBindingUtils {
 
                 jbTextField().text = PROJECT_KEY
 
-                actionButton(ActionButtonFixture.byTooltipText("Add")).clickWhenEnabled()
+                addConnectionButton().clickWhenEnabled()
                 dialog("Select module") {
                     jbTable().selectItemContaining("sample-scala-module")
                     pressOk()
