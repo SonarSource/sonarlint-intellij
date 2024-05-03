@@ -66,8 +66,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-// TODO re-enable
-@Disabled
 class AnalysisTests extends AbstractSonarLintLightTests {
   private Analysis task;
   private int analysisTaskTimeout = 10000;
