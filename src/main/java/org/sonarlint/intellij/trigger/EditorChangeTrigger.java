@@ -164,6 +164,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
         // don't trigger if file currently has errors?
         // filter files opened in the editor
         // use some heuristics based on analysis time or average pauses? Or make it configurable?
+        System.out.println("Key and value of events before heuristics" + event.getKey() + ": " + event.getValue());
         if (event.getValue() + DEFAULT_TIMER_MS < now) {
           System.out.println("Key and value of events" + event.getKey() + ": " + event.getValue());
           filesToTrigger.add(event.getKey());
