@@ -21,6 +21,7 @@ package org.sonarlint.intellij
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.lang.LanguageUtil
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationInfo
@@ -74,6 +75,7 @@ import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
 import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.core.FileLanguages.Companion.findAssociatedLanguage
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
@@ -654,6 +656,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER) {
             fileContent = computeReadActionSafely(project) { getFileContent(file) }
         }
+        val lang = LanguageUtil.getFileLanguage(file)?.let { l -> findAssociatedLanguage(l) }
         return ClientFileDto(
             uri,
             Paths.get(relativePath),
@@ -662,7 +665,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             file.charset.name(),
             Paths.get(file.path),
             fileContent,
-            null
+            lang
         )
     }
 

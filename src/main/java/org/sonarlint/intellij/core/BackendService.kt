@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core
 
+import com.intellij.lang.LanguageUtil
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
@@ -66,6 +67,7 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.core.FileLanguages.Companion.findAssociatedLanguage
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
@@ -316,7 +318,7 @@ class BackendService : Disposable {
                 ClientConstantInfoDto(
                     ApplicationInfo.getInstance().versionName,
                     "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version,
-                    Long.MIN_VALUE
+                    ProcessHandle.current().pid()
                 ),
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
@@ -1025,6 +1027,7 @@ class BackendService : Disposable {
         val events = filesByModule.entries.flatMap { (module, event) ->
             event.filter { it.type() != ModuleFileEvent.Type.DELETED }
                 .map {
+                    val lang = LanguageUtil.getFileLanguage(it.target().getClientObject())?.let { l -> findAssociatedLanguage(l) }
                     ClientFileDto(
                         it.target().uri(),
                         Paths.get(it.target().relativePath()),
@@ -1033,7 +1036,7 @@ class BackendService : Disposable {
                         it.target().charset.toString(),
                         Paths.get(it.target().path),
                         null,
-                        null
+                        lang
                     )
                 }
         }
