@@ -102,10 +102,12 @@ import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
+import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
@@ -121,6 +123,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogLevel
 import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.ShowSoonUnsupportedMessageParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.ReportProgressParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.StartProgressParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
@@ -128,6 +131,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.TelemetryCli
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
@@ -705,4 +709,30 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private fun findProjects(projectKey: String?) = ProjectManager.getInstance().openProjects.filter { project ->
         getService(project, ProjectBindingManager::class.java).uniqueProjectKeys.contains(projectKey)
     }.toSet()
+
+    override fun didRaiseIssue(configurationScopeId: String, analysisId: UUID, rawIssue: RawIssueDto) {
+        // TODO: Move 'raw' analysis to SLCORE
+    }
+
+    override fun didSkipLoadingPlugin(
+        configurationScopeId: String, language: Language, reason: DidSkipLoadingPluginParams.SkipReason,
+        minVersion: String, currentVersion: String?,
+    ) {
+        // TODO: Move 'raw' analysis to SLCORE
+    }
+
+    override fun didDetectSecret() {
+        // TODO: Move 'raw' analysis to SLCORE
+    }
+
+    override fun promoteExtraEnabledLanguagesInConnectedMode(configurationScopeId: String, languagesToPromote: Set<Language>) {
+        // TODO: Move 'raw' analysis to SLCORE
+    }
+
+    @Throws(ConfigScopeNotFoundException::class)
+    override fun getBaseDir(configurationScopeId: String): Path {
+        // TODO: Move 'raw' analysis to SLCORE
+        return Path.of("")
+    }
+
 }
