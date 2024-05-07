@@ -10,4 +10,5 @@ intellij {
 
 dependencies {
     implementation(project(":common"))
+    compileOnly(libs.findbugs.jsr305)
 }
