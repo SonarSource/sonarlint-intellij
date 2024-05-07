@@ -1,5 +1,5 @@
 rootProject.name = "sonarlint-intellij"
-include("its", "clion", "clion-resharper", "common", "git", "rider")
+include("its", "clion", "clion-resharper", "clion-common", "common", "git", "rider")
 
 dependencyResolutionManagement {
     versionCatalogs {
@@ -28,4 +28,3 @@ buildCache {
         isPush = isMasterBranch
     }
 }
-include("clion-common")

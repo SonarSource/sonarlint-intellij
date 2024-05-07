@@ -31,13 +31,8 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
   @Override
   public AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
-    var result = new AnalysisConfiguration();
-    if (isClionResharperOn()) {
-      return result;
-    }
-
     SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for CLion");
-
+    var result = new AnalysisConfiguration();
     var analyzerConfiguration = new CLionAnalyzerConfiguration(module.getProject());
     var buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
     filesToAnalyze.stream()
@@ -52,15 +47,6 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
       });
     result.extraProperties.put("sonar.cfamily.build-wrapper-content", buildWrapperJsonGenerator.build());
     return result;
-  }
-
-  public static boolean isClionResharperOn() {
-    try {
-      Class.forName("com.jetbrains.rider.cpp.fileType.psi.CppFile");
-      return true;
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
   }
 
 }
