@@ -92,6 +92,7 @@ import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
+import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.ConfigurationSharing
 import org.sonarlint.intellij.util.GlobalLogOutput
@@ -726,7 +727,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun promoteExtraEnabledLanguagesInConnectedMode(configurationScopeId: String, languagesToPromote: Set<Language>) {
-        // TODO: Move 'raw' analysis to SLCORE
+        if (languagesToPromote.isEmpty()) return
+
+        val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return
+
+        getService(project, PromotionProvider::class.java).processExtraLanguagePromotion(languagesToPromote)
     }
 
     @Throws(ConfigScopeNotFoundException::class)

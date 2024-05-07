@@ -70,7 +70,6 @@ class PromotionProvider(private val project: Project) {
                     val notifications = getSonarLintProjectNotifications(source)
 
                     if (isPromotionEnabled()) {
-                        processExtraLanguagePromotion(notifications, extension)
                         processAdvancedLanguagePromotion(notifications, extension)
                     }
                 }
@@ -172,12 +171,17 @@ class PromotionProvider(private val project: Project) {
         }
     }
 
-    private fun processExtraLanguagePromotion(notifications: SonarLintProjectNotifications, extension: String) {
-        val language = findLanguage(extension, extraEnabledLanguagesInConnectedMode)
+    fun processExtraLanguagePromotion(languagesToPromote: Set<Language>) {
+        if (!isPromotionEnabled()) return
 
-        if (language != null) {
-            showPromotion(notifications, "Enable " + language.label + " analysis by connecting your project")
-        }
+        val notifications = getSonarLintProjectNotifications()
+
+        val languages = findExtraLanguages(languagesToPromote, extraEnabledLanguagesInConnectedMode)
+
+        if (languages.isEmpty()) return
+
+        val languagesText = languages.joinToString(" / ")
+        showPromotion(notifications, "Enable $languagesText analysis by connecting your project")
     }
 
     private fun findLanguage(extension: String, languages: Set<Language>): org.sonarsource.sonarlint.core.client.utils.Language? {
@@ -186,6 +190,14 @@ class PromotionProvider(private val project: Project) {
                 suffix.equals(extension) || suffix.equals(".$extension")
             }
         }?.let { org.sonarsource.sonarlint.core.client.utils.Language.fromDto(it) }
+    }
+
+    private fun findExtraLanguages(languagesToPromote: Set<Language>, languages: Set<Language>): List<String> {
+        return languagesToPromote.mapNotNull { language ->
+            languages.find {
+                it.name == language.name
+            }?.let { org.sonarsource.sonarlint.core.client.utils.Language.fromDto(it).label }
+        }.toList()
     }
 
     private fun showPromotion(notifications: SonarLintProjectNotifications, content: String) {
