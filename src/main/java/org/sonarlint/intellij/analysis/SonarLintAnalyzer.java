@@ -22,9 +22,12 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -33,23 +36,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener;
-import org.sonarsource.sonarlint.core.commons.api.progress.ClientProgressMonitor;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintAnalyzer {
@@ -59,10 +61,10 @@ public final class SonarLintAnalyzer {
     myProject = project;
   }
 
-  public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, RawIssueListener listener, ClientProgressMonitor progressMonitor) {
+  public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, AnalysisState analysisState, ProgressIndicator indicator) {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     var start = System.currentTimeMillis();
-    var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+    var console = getService(myProject, SonarLintConsole.class);
     var contributedConfigurations = getConfigurationFromConfiguratorEP(module, filesToAnalyze, console);
 
     var contributedProperties = collectContributedExtraProperties(console, contributedConfigurations);
@@ -74,29 +76,34 @@ public final class SonarLintAnalyzer {
     if (inputFiles == null) {
       return new ModuleAnalysisResult(Collections.emptyList());
     }
-    // Analyze
 
+    // Analyze
     try {
-      var projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
-      var facade = projectBindingManager.getFacade(module);
+      getService(myProject, RunningAnalysesTracker.class).track(analysisState);
 
       var what = filesToAnalyze.size() == 1 ? String.format("'%s'", filesToAnalyze.iterator().next().getName()) : String.format("%d files", filesToAnalyze.size());
+      console.info("Analysing " + what + " (ID " + analysisState.getId() + ")...");
 
-      console.info("Analysing " + what + "...");
-      var result = facade.startAnalysis(module, inputFiles, contributedProperties, listener, progressMonitor);
-      console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
-      var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-      if (result.languagePerFile().size() == 1 && result.failedAnalysisFiles().isEmpty()) {
-        var fileLanguage = result.languagePerFile().values().iterator().next();
-        telemetry.analysisDoneOnSingleLanguage(fileLanguage == null ? null : Language.valueOf(fileLanguage.name()), (int) (System.currentTimeMillis() - start));
-      } else {
-        telemetry.analysisDoneOnMultipleFiles();
+      var listFileUrisToAnalyze = inputFiles.stream().map(ClientInputFile::uri).toList();
+      var analysisTask = getService(myProject, BackendService.class).analyzeFiles(module, analysisState.getId(), listFileUrisToAnalyze, contributedProperties, start);
+
+      AnalyzeFilesResponse result = null;
+      try {
+        result = waitForFuture(indicator, analysisTask);
+      } catch (ProcessCanceledException e) {
+        console.debug("Analysis " + analysisState.getId() + " canceled");
+      } catch (Exception e) {
+        console.error("Error during analysis ID " + analysisState.getId(), e);
       }
 
-      return new ModuleAnalysisResult(result.failedAnalysisFiles());
-    } catch (InvalidBindingException e) {
-      // should not happen, as analysis should not have been submitted in this case.
-      throw new IllegalStateException(e);
+      Set<VirtualFile> failedAnalysisFiles = Collections.emptySet();
+      if (result != null) {
+        failedAnalysisFiles = result.getFailedAnalysisFiles().stream().map(uri -> VirtualFileManager.getInstance().findFileByUrl(uri.getPath())).collect(Collectors.toSet());
+      }
+
+      return new ModuleAnalysisResult(failedAnalysisFiles);
+    } finally {
+      getService(myProject, RunningAnalysesTracker.class).finish(analysisState);
     }
   }
 

@@ -21,6 +21,8 @@ package org.sonarlint.intellij.finding;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,8 +34,9 @@ import java.util.Optional;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.QuickFixDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueFlowDto;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.finding.LocationKt.resolvedLocation;
@@ -42,53 +45,57 @@ import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
 
 public class RawIssueAdapter {
 
-  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RawIssue rawHotspot, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
+  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RawIssueDto rawHotspot, VirtualFile virtualFile) throws TextRangeMatcher.NoMatchException {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
-      var psiFile = toPsiFile(project, inputFile.getClientObject());
+      var psiFile = toPsiFile(project, virtualFile);
       var textRange = rawHotspot.getTextRange();
-      var quickFixes = transformQuickFixes(project, rawHotspot.quickFixes());
+      var quickFixes = transformQuickFixes(project, rawHotspot.getQuickFixes());
       if (textRange != null) {
         var rangeMarker = matcher.match(psiFile, textRange);
         var context = transformFlows(project, matcher, psiFile, rawHotspot.getFlows(), rawHotspot.getRuleKey());
-        return new LiveSecurityHotspot(module, rawHotspot, inputFile.getClientObject(), rangeMarker, context.orElse(null), quickFixes);
+        return new LiveSecurityHotspot(module, rawHotspot, virtualFile, rangeMarker, context.orElse(null), quickFixes);
       } else {
-        return new LiveSecurityHotspot(module, rawHotspot, inputFile.getClientObject(), quickFixes);
+        return new LiveSecurityHotspot(module, rawHotspot, virtualFile, quickFixes);
       }
     });
   }
 
-  public static LiveIssue toLiveIssue(Module module, RawIssue rawIssue, ClientInputFile inputFile) throws TextRangeMatcher.NoMatchException {
+  public static LiveIssue toLiveIssue(Module module, RawIssueDto rawIssue, VirtualFile virtualFile) throws TextRangeMatcher.NoMatchException {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
-      var psiFile = toPsiFile(project, inputFile.getClientObject());
+      var psiFile = toPsiFile(project, virtualFile);
       var textRange = rawIssue.getTextRange();
-      var quickFixes = transformQuickFixes(project, rawIssue.quickFixes());
+      var quickFixes = transformQuickFixes(project, rawIssue.getQuickFixes());
       if (textRange != null) {
         var rangeMarker = matcher.match(psiFile, textRange);
         var context = transformFlows(project, matcher, psiFile, rawIssue.getFlows(), rawIssue.getRuleKey());
-        return new LiveIssue(module, rawIssue, inputFile.getClientObject(), rangeMarker, context.orElse(null), quickFixes);
+        return new LiveIssue(module, rawIssue, virtualFile, rangeMarker, context.orElse(null), quickFixes);
       } else {
-        return new LiveIssue(module, rawIssue, inputFile.getClientObject(), quickFixes);
+        return new LiveIssue(module, rawIssue, virtualFile, quickFixes);
       }
     });
   }
 
   private static Optional<FindingContext> transformFlows(Project project, TextRangeMatcher matcher, PsiFile psiFile,
-    List<org.sonarsource.sonarlint.core.analysis.api.Flow> flows, String rule) {
+    List<RawIssueFlowDto> flows, String rule) {
     List<Flow> matchedFlows = new LinkedList<>();
 
     for (var i = 0; i < flows.size(); i++) {
       var flow = flows.get(i);
       List<Location> matchedLocations = new LinkedList<>();
-      for (var loc : flow.locations()) {
+      for (var loc : flow.getLocations()) {
         try {
           var textRange = loc.getTextRange();
-          var locInputFile = loc.getInputFile();
-          if (textRange != null && locInputFile != null) {
-            var locPsiFile = toPsiFile(project, locInputFile.getClientObject());
+          var fileUri = loc.getFileUri();
+          if (fileUri == null) {
+            continue;
+          }
+          var locVirtualFile = VirtualFileManager.getInstance().findFileByUrl(loc.getFileUri().toString());
+          if (textRange != null && locVirtualFile != null) {
+            var locPsiFile = toPsiFile(project, locVirtualFile);
             var range = matcher.match(locPsiFile, textRange);
             matchedLocations.add(resolvedLocation(locPsiFile.getVirtualFile(), range, loc.getMessage(), null));
           }
@@ -99,10 +106,10 @@ public class RawIssueAdapter {
         } catch (Exception e) {
           var detailString = String.join(",",
             rule,
-            String.valueOf(loc.getStartLine()),
-            String.valueOf(loc.getStartLineOffset()),
-            String.valueOf(loc.getEndLine()),
-            String.valueOf(loc.getEndLineOffset()));
+            String.valueOf(loc.getTextRange() == null ? null : loc.getTextRange().getStartLine()),
+            String.valueOf(loc.getTextRange() == null ? null : loc.getTextRange().getStartLineOffset()),
+            String.valueOf(loc.getTextRange() == null ? null : loc.getTextRange().getEndLine()),
+            String.valueOf(loc.getTextRange() == null ? null : loc.getTextRange().getEndLineOffset()));
           SonarLintConsole.get(project).error("Error finding secondary location for finding: " + detailString, e);
           return Optional.empty();
         }
@@ -147,7 +154,7 @@ public class RawIssueAdapter {
   }
 
   private static List<QuickFix> transformQuickFixes(Project project,
-    List<org.sonarsource.sonarlint.core.analysis.api.QuickFix> quickFixes) {
+    List<QuickFixDto> quickFixes) {
     return quickFixes
       .stream().map(fix -> convert(project, fix))
       .filter(Objects::nonNull)

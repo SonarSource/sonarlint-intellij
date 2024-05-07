@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
 
+import com.intellij.openapi.progress.ProgressIndicator;
 import java.util.Collections;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +61,7 @@ class SonarLintAnalyzerTests extends AbstractSonarLintLightTests {
     var file = myFixture.copyFileToProject("foo.php", "foo.php");
     var listener = mock(RawIssueListener.class);
 
-    analyzer.analyzeModule(getModule(), Collections.singleton(file), listener, mock(ClientProgressMonitor.class));
+    analyzer.analyzeModule(getModule(), Collections.singleton(file), listener, mock(ProgressIndicator.class));
 
     verify(facade).startAnalysis(eq(getModule()), anyList(), anyMap(), eq(listener), any(ClientProgressMonitor.class));
   }

@@ -63,6 +63,7 @@ import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -713,7 +714,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }.toSet()
 
     override fun didRaiseIssue(configurationScopeId: String, analysisId: UUID, rawIssue: RawIssueDto) {
-        // TODO: Move 'raw' analysis to SLCORE
+        val project = BackendService.findProject(configurationScopeId) ?: BackendService.findModule(configurationScopeId)?.project ?: return
+        val runningAnalysis = getService(project, RunningAnalysesTracker::class.java).getById(analysisId) ?: return
+        runningAnalysis.addRawIssue(rawIssue)
     }
 
     override fun didSkipLoadingPlugin(
@@ -727,7 +730,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun didDetectSecret() {
-        // TODO: Move 'raw' analysis to SLCORE
+        println("test")
     }
 
     override fun promoteExtraEnabledLanguagesInConnectedMode(configurationScopeId: String, languagesToPromote: Set<Language>) {
@@ -741,8 +744,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     @Throws(ConfigScopeNotFoundException::class)
     override fun getBaseDir(configurationScopeId: String): Path {
-        // TODO: Move 'raw' analysis to SLCORE
-        return Path.of("")
+        val project = BackendService.findProject(configurationScopeId)
+            ?: BackendService.findModule(configurationScopeId)?.project
+            ?: throw ConfigScopeNotFoundException()
+        return project.guessProjectDir()?.let {
+            it.fileSystem.getNioPath(it)
+        } ?: throw ConfigScopeNotFoundException()
     }
 
 }

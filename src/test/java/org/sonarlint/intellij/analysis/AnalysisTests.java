@@ -51,7 +51,6 @@ import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
 import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener;
-import org.sonarsource.sonarlint.core.commons.api.progress.ClientProgressMonitor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -87,7 +86,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
     var moduleAnalysisResult = new ModuleAnalysisResult(analysisResults.failedAnalysisFiles());
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class)))
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ProgressIndicator.class)))
       .thenReturn(moduleAnalysisResult);
     when(findingsCacheMock.getSnapshot(any())).thenReturn(new CachedFindings(Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet()));
 
@@ -112,7 +111,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   void testTask() {
     task.run(progress);
     verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
-      any(ClientProgressMonitor.class));
+      any(ProgressIndicator.class));
 
     assertThat(getExternalAnnotators())
       .extracting("implementationClass")
@@ -124,7 +123,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   void shouldIgnoreProjectLevelIssues() {
     var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class)))
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ProgressIndicator.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         RawIssueListener issueListener = invocation.getArgument(2);
         RawIssue issue = SonarLintTestUtils.createIssue(1);
@@ -135,7 +134,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     task.run(progress);
 
     verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
-      any(ClientProgressMonitor.class));
+      any(ProgressIndicator.class));
     verify(findingsCacheMock, never()).replaceFindings(any());
   }
 
@@ -169,7 +168,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class)))
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ProgressIndicator.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         RawIssueListener issueListener = invocation.getArgument(2);
         issueListener.handle(issue);
@@ -179,7 +178,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     task.run(progress);
 
     verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
-      any(ClientProgressMonitor.class));
+      any(ProgressIndicator.class));
   }
 
   @Test
@@ -188,7 +187,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
     var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ClientProgressMonitor.class)))
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class), any(ProgressIndicator.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         RawIssueListener issueListener = invocation.getArgument(2);
         issueListener.handle(issue);
@@ -198,7 +197,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     task.run(progress);
 
     verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
-      any(ClientProgressMonitor.class));
+      any(ProgressIndicator.class));
   }
 
   @Test
@@ -222,7 +221,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
       assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue());
     if (!wasAnalysisReady) {
       verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(RawIssueListener.class),
-        any(ClientProgressMonitor.class));
+        any(ProgressIndicator.class));
       clearInvocations(sonarLintAnalyzer);
       clearInvocations(sonarLintConsole);
       clearInvocations(findingsCacheMock);

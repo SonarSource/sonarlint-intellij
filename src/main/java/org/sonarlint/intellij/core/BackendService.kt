@@ -44,6 +44,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.format.DateTimeParseException
+import java.util.UUID
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -85,6 +86,8 @@ import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -316,7 +319,7 @@ class BackendService : Disposable {
                 ClientConstantInfoDto(
                     ApplicationInfo.getInstance().versionName,
                     "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version,
-                    Long.MIN_VALUE
+                    ProcessHandle.current().pid()
                 ),
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
@@ -1038,6 +1041,27 @@ class BackendService : Disposable {
                 }
         }
         notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }
+    }
+
+    fun analyzeFiles(
+        module: Module,
+        analysisId: UUID,
+        filesToAnalyze: List<URI>,
+        extraProperties: Map<String, String>,
+        startTime: Long,
+    ): CompletableFuture<AnalyzeFilesResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend {
+            it.analysisService.analyzeFiles(
+                AnalyzeFilesParams(
+                    moduleId,
+                    analysisId,
+                    filesToAnalyze,
+                    extraProperties,
+                    startTime
+                )
+            )
+        }
     }
 
     fun isAlive(): Boolean {

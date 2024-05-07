@@ -23,16 +23,16 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.util.stream.Collectors
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFileEdit
-import org.sonarsource.sonarlint.core.analysis.api.TextEdit
-import java.util.stream.Collectors
-import org.sonarsource.sonarlint.core.analysis.api.QuickFix as CoreQuickFix
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.FileEditDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.QuickFixDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.TextEditDto
 
-fun convert(project: Project, coreQuickFix: CoreQuickFix): QuickFix? {
-    val virtualFileEdits = coreQuickFix.inputFileEdits().map { convert(it) }
+fun convert(project: Project, coreQuickFix: QuickFixDto): QuickFix? {
+    val virtualFileEdits = coreQuickFix.fileEdits().map { convert(it) }
     if (virtualFileEdits.contains(null)) {
         log(project, "Quick fix won't be proposed as it is invalid")
         return null
@@ -48,7 +48,7 @@ private fun log(project: Project, message: String) {
     SonarLintConsole.get(project).debug(message)
 }
 
-private fun convert(fileEdit: ClientInputFileEdit): VirtualFileEdit? {
+private fun convert(fileEdit: FileEditDto): VirtualFileEdit? {
     val clientInputFile = fileEdit.target() as DefaultClientInputFile
     val targetVirtualFile = clientInputFile.clientObject
     val document = targetVirtualFile.getDocument() ?: return null
@@ -64,7 +64,7 @@ private fun convert(fileEdit: ClientInputFileEdit): VirtualFileEdit? {
     return VirtualFileEdit(targetVirtualFile, virtualFileEdits.mapNotNull { it })
 }
 
-private fun convert(document: Document, textEdit: TextEdit): RangeMarkerEdit? {
+private fun convert(document: Document, textEdit: TextEditDto): RangeMarkerEdit? {
     val range = textEdit.range()
     val lineCount = document.lineCount
     val beginLine = range.startLine.minus(1)

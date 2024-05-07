@@ -22,9 +22,11 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -36,12 +38,13 @@ import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.tracking.LocalHistoryFindingTracker;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener;
+import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
-class RawFindingHandler implements RawIssueListener {
+public class AnalysisState {
+
+  private final UUID id;
   private Module module;
   private final ConcurrentHashMap<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile = new ConcurrentHashMap<>();
@@ -49,48 +52,58 @@ class RawFindingHandler implements RawIssueListener {
   private final FindingStreamer findingStreamer;
   private final LocalHistoryFindingTracker localHistoryFindingTracker;
 
-  public RawFindingHandler(FindingStreamer findingStreamer, CachedFindings previousFindings) {
+  public AnalysisState(UUID analysisId, FindingStreamer findingStreamer, CachedFindings previousFindings) {
+    this.id = analysisId;
     this.localHistoryFindingTracker = new LocalHistoryFindingTracker(previousFindings);
     this.findingStreamer = findingStreamer;
+  }
+
+  public UUID getId() {
+    return id;
   }
 
   public void setCurrentModule(Module module) {
     this.module = module;
   }
 
-  @Override
-  public void handle(RawIssue rawIssue) {
+  public void addRawIssue(RawIssueDto rawIssue) {
     rawIssueCounter.incrementAndGet();
 
     // Do issue tracking for the single issue
-    var inputFile = rawIssue.getInputFile();
-    if (inputFile == null || inputFile.getPath() == null) {
+    var fileUri = rawIssue.getFileUri();
+    if (fileUri == null) {
       // ignore project level issues
       return;
     }
-    VirtualFile file = inputFile.getClientObject();
-    if (!file.isValid()) {
+
+    var virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileUri.toString());
+    if (virtualFile == null) {
+      SonarLintLogger.get().error("Cannot retrieve the file on which an issue has been raised. File URI is " + fileUri);
+      return;
+    }
+
+    if (!virtualFile.isValid()) {
       // file is no longer valid (might have been deleted meanwhile) or there has been an error matching an issue in it
       return;
     }
+
     if (RuleType.SECURITY_HOTSPOT.equals(rawIssue.getType())) {
-      processSecurityHotspot(inputFile, rawIssue);
+      processSecurityHotspot(virtualFile, rawIssue);
     } else {
-      processIssue(inputFile, rawIssue);
+      processIssue(virtualFile, rawIssue);
     }
   }
 
-  private void processSecurityHotspot(ClientInputFile inputFile, RawIssue rawIssue) {
+  private void processSecurityHotspot(VirtualFile virtualFile, RawIssueDto rawIssue) {
     LiveSecurityHotspot liveSecurityHotspot;
-    VirtualFile file = inputFile.getClientObject();
     try {
-      liveSecurityHotspot = RawIssueAdapter.toLiveSecurityHotspot(module, rawIssue, inputFile);
+      liveSecurityHotspot = RawIssueAdapter.toLiveSecurityHotspot(module, rawIssue, virtualFile);
       if (liveSecurityHotspot == null) {
         return;
       }
     } catch (TextRangeMatcher.NoMatchException e) {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
-      SonarLintConsole.get(module.getProject()).debug("Failed to find location of Security Hotspot for file: '" + file.getName() + "'." + e.getMessage());
+      SonarLintConsole.get(module.getProject()).debug("Failed to find location of Security Hotspot for file: '" + virtualFile.getName() + "'." + e.getMessage());
       return;
     } catch (ProcessCanceledException e) {
       throw e;
@@ -99,22 +112,21 @@ class RawFindingHandler implements RawIssueListener {
       return;
     }
 
-    localHistoryFindingTracker.matchWithPreviousSecurityHotspot(file, liveSecurityHotspot);
-    securityHotspotsPerFile.computeIfAbsent(file, f -> new ArrayList<>()).add(liveSecurityHotspot);
-    findingStreamer.streamSecurityHotspot(file, liveSecurityHotspot);
+    localHistoryFindingTracker.matchWithPreviousSecurityHotspot(virtualFile, liveSecurityHotspot);
+    securityHotspotsPerFile.computeIfAbsent(virtualFile, f -> new ArrayList<>()).add(liveSecurityHotspot);
+    findingStreamer.streamSecurityHotspot(virtualFile, liveSecurityHotspot);
   }
 
-  private void processIssue(ClientInputFile inputFile, RawIssue rawIssue) {
+  private void processIssue(VirtualFile virtualFile, RawIssueDto rawIssue) {
     LiveIssue liveIssue;
-    VirtualFile file = inputFile.getClientObject();
     try {
-      liveIssue = RawIssueAdapter.toLiveIssue(module, rawIssue, inputFile);
+      liveIssue = RawIssueAdapter.toLiveIssue(module, rawIssue, virtualFile);
       if (liveIssue == null) {
         return;
       }
     } catch (TextRangeMatcher.NoMatchException e) {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
-      SonarLintConsole.get(module.getProject()).debug("Failed to find location of issue for file: '" + file.getName() + "'." + e.getMessage());
+      SonarLintConsole.get(module.getProject()).debug("Failed to find location of issue for file: '" + virtualFile.getName() + "'." + e.getMessage());
       return;
     } catch (ProcessCanceledException e) {
       throw e;
@@ -123,9 +135,9 @@ class RawFindingHandler implements RawIssueListener {
       return;
     }
 
-    localHistoryFindingTracker.matchWithPreviousIssue(file, liveIssue);
-    issuesPerFile.computeIfAbsent(file, f -> new ArrayList<>()).add(liveIssue);
-    findingStreamer.streamIssue(file, liveIssue);
+    localHistoryFindingTracker.matchWithPreviousIssue(virtualFile, liveIssue);
+    issuesPerFile.computeIfAbsent(virtualFile, f -> new ArrayList<>()).add(liveIssue);
+    findingStreamer.streamIssue(virtualFile, liveIssue);
 
     var sonarLintGlobalSettings = Settings.getGlobalSettings();
     if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains("secrets")) {
