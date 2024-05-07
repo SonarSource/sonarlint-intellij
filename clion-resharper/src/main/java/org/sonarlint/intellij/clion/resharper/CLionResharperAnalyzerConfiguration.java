@@ -143,21 +143,7 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
         }
       }
     }
-    return cppEnvironment != null && (cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker() || isSupportingAndUsingSsh(cppEnvironment));
-  }
-
-  private boolean isSupportingAndUsingSsh(CPPEnvironment cppEnvironment) {
-    try {
-      var method = cppEnvironment.getClass().getMethod("isSsh");
-      var result = method.invoke(cppEnvironment);
-      if (result instanceof Boolean supporting) {
-        return supporting;
-      }
-      return false;
-    } catch (ReflectiveOperationException e) {
-      SonarLintConsole.get(project).debug("Could not support SSH");
-      return false;
-    }
+    return cppEnvironment != null && (cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker() || cppEnvironment.getToolSet().isRemote());
   }
 
   @Nullable
