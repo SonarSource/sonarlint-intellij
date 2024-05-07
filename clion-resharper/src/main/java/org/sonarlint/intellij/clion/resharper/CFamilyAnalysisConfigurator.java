@@ -27,22 +27,12 @@ import org.sonarlint.intellij.clion.common.BuildWrapperJsonGenerator;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.isCLion;
-
 public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
   @Override
   public AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
-    var result = new AnalysisConfiguration();
-
-    // This configurator is loaded when a specific Rider package is loaded (now present in CLion).
-    // We want to run this configurator only for CLion and not Rider.
-    if (!isCLion()) {
-      return result;
-    }
-
     SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for Resharper");
-
+    var result = new AnalysisConfiguration();
     var analyzerConfiguration = new CLionResharperAnalyzerConfiguration(module.getProject());
     var buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
     filesToAnalyze.stream()
