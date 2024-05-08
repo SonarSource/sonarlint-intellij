@@ -88,6 +88,7 @@ import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
@@ -719,7 +720,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         configurationScopeId: String, language: Language, reason: DidSkipLoadingPluginParams.SkipReason,
         minVersion: String, currentVersion: String?,
     ) {
-        // TODO: Move 'raw' analysis to SLCORE
+        val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return
+
+        notifyOnceForSkippedPlugins(project, language, reason, minVersion, currentVersion)
     }
 
     override fun didDetectSecret() {

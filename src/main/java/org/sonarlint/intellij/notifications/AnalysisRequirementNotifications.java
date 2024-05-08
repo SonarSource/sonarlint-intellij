@@ -21,16 +21,11 @@ package org.sonarlint.intellij.notifications;
 
 import com.intellij.notification.NotificationAction;
 import com.intellij.openapi.project.Project;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.PluginDetails;
+import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.client.utils.Language;
-import org.sonarsource.sonarlint.core.plugin.commons.api.SkipReason;
-
-import static java.util.stream.Collectors.toSet;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams;
 
 public class AnalysisRequirementNotifications {
 
@@ -44,36 +39,27 @@ public class AnalysisRequirementNotifications {
     alreadyNotified.clear();
   }
 
-  public static void notifyOnceForSkippedPlugins(AnalysisResults analysisResults, Collection<PluginDetails> allPlugins, Project project) {
-    var attemptedLanguages = analysisResults.languagePerFile().values()
-      .stream()
-      .filter(Objects::nonNull)
-      .collect(toSet());
-    attemptedLanguages.forEach(l -> {
-      final var correspondingPlugin = allPlugins.stream().filter(p -> p.key().equals(l.getPluginKey())).findFirst();
-      correspondingPlugin.flatMap(PluginDetails::skipReason).ifPresent(skipReason -> {
-        if (skipReason instanceof SkipReason.UnsatisfiedRuntimeRequirement runtimeRequirement) {
-          var languageLabel = Language.valueOf(l.name()).getLabel();
-          final var title = "<b>SonarLint failed to analyze " + languageLabel + " code</b>";
-          if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE) {
-            var content = String.format(
-              "SonarLint requires Java runtime version %s or later to analyze %s code. Current version is %s.",
-              runtimeRequirement.getMinVersion(), languageLabel, runtimeRequirement.getCurrentVersion());
-            createNotificationOnce(project, title, content,
-              new OpenLinkAction("https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under",
-                "How to change the IDE-running JDK?"));
-          } else if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS) {
-            var content = new StringBuilder(
-              String.format("SonarLint requires Node.js runtime version %s or later to analyze %s code.", runtimeRequirement.getMinVersion(), languageLabel));
-            if (runtimeRequirement.getCurrentVersion() != null) {
-              content.append(String.format(" Current version is %s.", runtimeRequirement.getCurrentVersion()));
-            }
-            content.append("<br>Please configure the Node.js path in the SonarLint settings.");
-            createNotificationOnce(project, title, content.toString(), new OpenGlobalSettingsAction(project));
-          }
-        }
-      });
-    });
+  public static void notifyOnceForSkippedPlugins(Project project, org.sonarsource.sonarlint.core.rpc.protocol.common.Language language,
+    DidSkipLoadingPluginParams.SkipReason reason, String minVersion, @Nullable String currentVersion) {
+    var languageLabel = Language.valueOf(language.name()).getLabel();
+    final var title = "<b>SonarLint failed to analyze " + languageLabel + " code</b>";
+    if (reason == DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_JRE) {
+      var content = String.format(
+        "SonarLint requires Java runtime version %s or later to analyze %s code. Current version is %s.",
+        minVersion, languageLabel, currentVersion);
+      createNotificationOnce(project, title, content,
+        new OpenLinkAction("https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run" +
+          "-under",
+          "How to change the IDE-running JDK?"));
+    } else if (reason == DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_NODE_JS) {
+      var content = new StringBuilder(
+        String.format("SonarLint requires Node.js runtime version %s or later to analyze %s code.", minVersion, languageLabel));
+      if (currentVersion != null) {
+        content.append(String.format(" Current version is %s.", currentVersion));
+      }
+      content.append("<br>Please configure the Node.js path in the SonarLint settings.");
+      createNotificationOnce(project, title, content.toString(), new OpenGlobalSettingsAction(project));
+    }
   }
 
   private static void createNotificationOnce(Project project, String title, String content, NotificationAction... actions) {
