@@ -81,6 +81,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONN
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_SETUP_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SUPPORT_POLICY_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK
+import org.sonarlint.intellij.dogfood.DogfoodSetCredentialsAction
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -90,6 +91,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.promotion.PromotionProvider
@@ -722,8 +724,26 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         // TODO: Move 'raw' analysis to SLCORE
     }
 
+    //TODO Find project by using configscopeId
     override fun didDetectSecret() {
-        // TODO: Move 'raw' analysis to SLCORE
+        if (getGlobalSettings().isSecretsNeverBeenAnalysed) {
+            SonarLintProjectNotifications.projectLessNotification(
+                "SonarLint: secret(s) detected",
+                "SonarLint detected some secrets in one of the open files. " +
+                    "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +
+                    "Please refer to the SonarLint tool window for more information.",
+                NotificationType.WARNING,
+            )
+            getGlobalSettings().rememberNotificationOnSecretsBeenSent()
+        }
+
+        /*val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return
+
+        if (getGlobalSettings().isSecretsNeverBeenAnalysed) {
+            get(module.getProject()).sendNotification()
+            getGlobalSettings().rememberNotificationOnSecretsBeenSent()
+        }*/
     }
 
     override fun promoteExtraEnabledLanguagesInConnectedMode(configurationScopeId: String, languagesToPromote: Set<Language>) {
