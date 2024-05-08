@@ -104,6 +104,7 @@ public final class SonarLintAnalyzer {
       return new ModuleAnalysisResult(failedAnalysisFiles);
     } finally {
       getService(myProject, RunningAnalysesTracker.class).finish(analysisState);
+      console.debug("Analysis " + analysisState.getId() + " finished");
     }
   }
 

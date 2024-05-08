@@ -69,10 +69,6 @@ public class DefaultClientInputFile implements ClientInputFile {
     this(vFile, relativePath, isTest, charset, null, 0, null);
   }
 
-  public boolean isOlderThan(Document document) {
-    return documentModificationStamp < document.getModificationStamp();
-  }
-
   @Override public String getPath() {
     return path;
   }

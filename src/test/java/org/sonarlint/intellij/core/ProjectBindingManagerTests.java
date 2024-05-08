@@ -80,30 +80,6 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void fail_invalid_server_binding() {
-    getProjectSettings().setBindingEnabled(true);
-
-    var throwable = catchThrowable(() -> projectBindingManager.getFacade(getModule()));
-
-    assertThat(throwable)
-      .isInstanceOf(InvalidBindingException.class)
-      .hasMessage("Project has an invalid binding");
-  }
-
-  @Test
-  void fail_invalid_module_binding() {
-    getProjectSettings().setBindingEnabled(true);
-    getProjectSettings().setConnectionName("server1");
-    getProjectSettings().setProjectKey(null);
-
-    var throwable = catchThrowable(() -> projectBindingManager.getFacade(getModule()));
-
-    assertThat(throwable)
-      .isInstanceOf(InvalidBindingException.class)
-      .hasMessage("Project has an invalid binding");
-  }
-
-  @Test
   void should_return_connected_engine_if_started() {
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setConnectionName("server1");

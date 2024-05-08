@@ -31,7 +31,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.junit.jupiter.api.Assertions;
@@ -43,10 +42,10 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
@@ -249,10 +248,10 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     when(virtualFile.getPath()).thenReturn(path);
     when(virtualFile.isValid()).thenReturn(true);
 
-    var issue = mock(RawIssue.class);
+    var issue = mock(RawIssueDto.class);
     when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
     when(issue.getRuleKey()).thenReturn(rule);
-    when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(vulnerability));
+    when(issue.getVulnerabilityProbability()).thenReturn(vulnerability);
     when(issue.getType()).thenReturn(RuleType.SECURITY_HOTSPOT);
 
     var document = mock(Document.class);

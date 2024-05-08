@@ -21,11 +21,10 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
@@ -46,9 +45,9 @@ class SecurityHotspotNodeTests {
   private static LiveSecurityHotspot createSecurityHotspot() {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
-    var issue = mock(RawIssue.class);
-    when(issue.getMessage()).thenReturn("rule");
-    when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(VulnerabilityProbability.HIGH));
+    var issue = mock(RawIssueDto.class);
+    when(issue.getPrimaryMessage()).thenReturn("rule");
+    when(issue.getVulnerabilityProbability()).thenReturn(VulnerabilityProbability.HIGH);
     when(issue.getType()).thenReturn(RuleType.BUG);
     when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
     return new LiveSecurityHotspot(null, issue, file, Collections.emptyList());

@@ -23,8 +23,8 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import java.util.stream.Collectors
-import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.FileEditDto
@@ -49,10 +49,9 @@ private fun log(project: Project, message: String) {
 }
 
 private fun convert(fileEdit: FileEditDto): VirtualFileEdit? {
-    val clientInputFile = fileEdit.target() as DefaultClientInputFile
-    val targetVirtualFile = clientInputFile.clientObject
-    val document = targetVirtualFile.getDocument() ?: return null
-    if (clientInputFile.isOlderThan(document)) {
+    val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileEdit.target().toString()) ?: return null
+    val document = virtualFile.getDocument() ?: return null
+    if (virtualFile.modificationStamp < document.modificationStamp) {
         // we don't want to show potentially outdated fixes
         // next analysis will bring more up-to-date quick fixes
         return null
@@ -61,7 +60,7 @@ private fun convert(fileEdit: FileEditDto): VirtualFileEdit? {
     if (virtualFileEdits.contains(null)) {
         return null
     }
-    return VirtualFileEdit(targetVirtualFile, virtualFileEdits.mapNotNull { it })
+    return VirtualFileEdit(virtualFile, virtualFileEdits.mapNotNull { it })
 }
 
 private fun convert(document: Document, textEdit: TextEditDto): RangeMarkerEdit? {

@@ -59,28 +59,6 @@ public final class ProjectBindingManager {
     myProject = project;
   }
 
-  /**
-   * Returns a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
-   * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an InvalidBindingException.
-   *
-   * @throws InvalidBindingException If current project binding is invalid
-   */
-  public EngineFacade getFacade(Module module) throws InvalidBindingException {
-    var engineManager = getService(EngineManager.class);
-    var projectSettings = getSettingsFor(myProject);
-    var notifications = getService(myProject, SonarLintProjectNotifications.class);
-    if (projectSettings.isBindingEnabled()) {
-      var moduleBindingManager = getService(module, ModuleBindingManager.class);
-      var connectionId = projectSettings.getConnectionName();
-      var projectKey = moduleBindingManager.resolveProjectKey();
-      checkBindingStatus(notifications, connectionId, projectKey);
-      var engine = engineManager.getConnectedEngine(notifications, requireNonNull(connectionId));
-      return new EngineFacade(myProject, engine);
-    }
-
-    return new EngineFacade(myProject, engineManager.getStandaloneEngine());
-  }
-
   @CheckForNull
   public SonarLintAnalysisEngine getEngineIfStarted() {
     var engineManager = getService(EngineManager.class);
@@ -116,16 +94,6 @@ public final class ProjectBindingManager {
       return Optional.empty();
     } else {
       return connectionFound;
-    }
-  }
-
-  private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String connectionName, @Nullable String projectKey) throws InvalidBindingException {
-    if (connectionName == null) {
-      notifications.notifyConnectionIdInvalid();
-      throw new InvalidBindingException("Project has an invalid binding");
-    } else if (projectKey == null) {
-      notifications.notifyProjectStorageInvalid();
-      throw new InvalidBindingException("Project has an invalid binding");
     }
   }
 

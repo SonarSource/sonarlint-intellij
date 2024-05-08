@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
@@ -145,7 +144,7 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
 
-    var issue = mock(RawIssue.class);
+    var issue = mock(RawIssueDto.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getSeverity()).thenReturn(severity);
     when(issue.getType()).thenReturn(RuleType.BUG);
@@ -162,10 +161,10 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
 
-    var issue = mock(RawIssue.class);
+    var issue = mock(RawIssueDto.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getType()).thenReturn(RuleType.BUG);
-    when(issue.getCleanCodeAttribute()).thenReturn(Optional.of(CleanCodeAttribute.CONVENTIONAL));
+    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.CONVENTIONAL);
     when(issue.getImpacts()).thenReturn(impacts);
     when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
 
