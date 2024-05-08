@@ -26,7 +26,6 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.BackendService.Companion.moduleId
-import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications
 import org.sonarlint.intellij.util.AnalysisLogOutput
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
@@ -44,7 +43,6 @@ class EngineFacade(private val project: Project, private val engine: SonarLintAn
         console.debug("Starting analysis with configuration:\n$config")
 
         val analysisResults: AnalysisResults = engine.analyze(config, issueListener, AnalysisLogOutput(project), progressMonitor, moduleId(module))
-        AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, engine.pluginDetails, project)
         return analysisResults
     }
 }
