@@ -24,7 +24,6 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.Notifications;
 import com.intellij.notification.NotificationsManager;
 import com.intellij.util.messages.MessageBusConnection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +35,9 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.PluginDetails;
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
-import org.sonarsource.sonarlint.core.plugin.commons.api.SkipReason;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -82,35 +81,17 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
   }
 
   @Test
-  void do_nothing_if_no_files() {
-    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(mock(AnalysisResults.class), Collections.emptyList(), getProject());
-
-    assertThat(notifications).isEmpty();
-  }
-
-  // SLI-453
-  @Test
-  void dont_fail_if_null_language() {
-    detectedLang.put(mock(ClientInputFile.class), null);
-    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, Collections.emptyList(), getProject());
-
-    assertThat(notifications).isEmpty();
-  }
-
-  @Test
   void notifyIfSkippedLanguage_JRE() {
-    detectedLang.put(mock(ClientInputFile.class), SonarLanguage.JAVA);
-    List<PluginDetails> plugins = List.of(new PluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
-    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
+    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(getProject(), Language.JAVA, DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_JRE,
+      "11", "1.8");
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Java runtime version 11 or later to analyze Java code. Current version is 1.8.");
   }
 
   @Test
   void notifyIfSkippedLanguage_Node() {
-    detectedLang.put(mock(ClientInputFile.class), SonarLanguage.JS);
-    List<PluginDetails> plugins = List.of(new PluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
-    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
+    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(getProject(), Language.JS, DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_NODE_JS,
+      "8.0", "7.2");
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Node.js runtime version 8.0 or later to analyze JavaScript code. Current version is 7.2.<br>Please configure the Node.js path in the SonarLint settings.");
     assertThat(notifications.get(0).getActions()).hasSize(1);
