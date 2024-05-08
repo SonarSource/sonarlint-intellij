@@ -90,6 +90,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.promotion.PromotionProvider
@@ -722,8 +723,15 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         // TODO: Move 'raw' analysis to SLCORE
     }
 
+    //Find project by using configscopeId
     override fun didDetectSecret() {
-        // TODO: Move 'raw' analysis to SLCORE
+        /*val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return
+
+        if (getGlobalSettings().isSecretsNeverBeenAnalysed) {
+            get(module.getProject()).sendNotification()
+            getGlobalSettings().rememberNotificationOnSecretsBeenSent()
+        }*/
     }
 
     override fun promoteExtraEnabledLanguagesInConnectedMode(configurationScopeId: String, languagesToPromote: Set<Language>) {

@@ -28,14 +28,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.finding.RawIssueAdapter;
 import org.sonarlint.intellij.finding.TextRangeMatcher;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.tracking.LocalHistoryFindingTracker;
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
 import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssueListener;
@@ -126,12 +124,6 @@ class RawFindingHandler implements RawIssueListener {
     localHistoryFindingTracker.matchWithPreviousIssue(file, liveIssue);
     issuesPerFile.computeIfAbsent(file, f -> new ArrayList<>()).add(liveIssue);
     findingStreamer.streamIssue(file, liveIssue);
-
-    var sonarLintGlobalSettings = Settings.getGlobalSettings();
-    if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains("secrets")) {
-      SonarLintProjectNotifications.Companion.get(module.getProject()).sendNotification();
-      sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
-    }
   }
 
   public int getRawIssueCount() {
