@@ -143,7 +143,7 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
         }
       }
     }
-    return cppEnvironment != null && (cppEnvironment.getToolSet().isSsh() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker());
+    return cppEnvironment != null && (cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker() || cppEnvironment.getToolSet().isRemote());
   }
 
   @Nullable
