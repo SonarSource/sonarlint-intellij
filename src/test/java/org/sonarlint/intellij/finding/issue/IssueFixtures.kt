@@ -59,7 +59,12 @@ fun aRawIssue(file: PsiFile, textRange: TextRangeDto?) =
             SoftwareQuality.MAINTAINABILITY to ImpactSeverity.HIGH,
             SoftwareQuality.RELIABILITY to ImpactSeverity.MEDIUM,
             SoftwareQuality.SECURITY to ImpactSeverity.LOW
-        ), "", "", VirtualFileUtils.toURI(file.virtualFile), mutableListOf<RawIssueFlowDto>(), mutableListOf<QuickFixDto>(),
+        ),
+        "rule:key",
+        "message",
+        VirtualFileUtils.toURI(file.virtualFile),
+        mutableListOf<RawIssueFlowDto>(),
+        mutableListOf<QuickFixDto>(),
         textRange,
         null, null
     )

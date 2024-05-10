@@ -46,6 +46,7 @@ import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
@@ -253,6 +254,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getVulnerabilityProbability()).thenReturn(vulnerability);
     when(issue.getType()).thenReturn(RuleType.SECURITY_HOTSPOT);
+    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.COMPLETE);
 
     var document = mock(Document.class);
     when(document.getText(any())).thenReturn("");

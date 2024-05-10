@@ -22,13 +22,15 @@ package org.sonarlint.intellij.util
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.vfs.VirtualFile
 import java.net.URI
-import java.nio.file.Paths
+import java.net.URISyntaxException
 
 object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
-        // Don't use VfsUtilCore.convertToURL as it doesn't work on Windows (it produces invalid URL)
-        // Instead, since we are currently limiting ourselves to analyze files in LocalFileSystem
-        return if (file.isInLocalFileSystem) Paths.get(file.path).toUri() else null
+        return try {
+            URI(file.url.replace(" ", "%20"))
+        } catch (e: URISyntaxException) {
+            null
+        }
     }
 
     /** Checks a virtual file to be an actual file (not a directory) and contain non-binary information (text) */

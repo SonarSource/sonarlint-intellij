@@ -751,7 +751,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             ?: BackendService.findModule(configurationScopeId)?.project
             ?: throw ConfigScopeNotFoundException()
         return project.guessProjectDir()?.let {
-            it.fileSystem.getNioPath(it)
+            Paths.get(it.path)
         } ?: throw ConfigScopeNotFoundException()
     }
 

@@ -27,6 +27,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.ProgressIndicator
@@ -1038,12 +1039,23 @@ class BackendService : Disposable {
                         it.target().isTest,
                         it.target().charset.toString(),
                         Paths.get(it.target().path),
-                        null,
+                        getFileContent(it.target().getClientObject()),
                         lang
                     )
                 }
         }
         notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }
+    }
+
+    private fun getFileContent(virtualFile: VirtualFile): String {
+        val fileDocumentManager = FileDocumentManager.getInstance()
+        if (fileDocumentManager.isFileModified(virtualFile)) {
+            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
+            if (document != null) {
+                return document.text
+            }
+        }
+        return virtualFile.contentsToByteArray().toString(virtualFile.charset)
     }
 
     fun analyzeFiles(

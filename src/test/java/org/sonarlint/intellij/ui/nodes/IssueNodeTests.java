@@ -24,6 +24,7 @@ import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
@@ -49,6 +50,7 @@ class IssueNodeTests {
     when(issue.getPrimaryMessage()).thenReturn(message);
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getType()).thenReturn(RuleType.BUG);
+    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.COMPLETE);
     var issuePointer = new LiveIssue(null, issue, file, Collections.emptyList());
     issuePointer.setIntroductionDate(date);
     return issuePointer;
