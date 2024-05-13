@@ -25,10 +25,8 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddReportedRulesParams
-import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisDoneOnSingleLanguageParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.HelpAndFeedbackClickedParams
-import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 class SonarLintTelemetryImpl : SonarLintTelemetry {
     override fun optOut(optOut: Boolean) {
@@ -41,14 +39,6 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
 
     override fun enabled(): CompletableFuture<Boolean> {
         return getService(BackendService::class.java).isTelemetryEnabled()
-    }
-
-    override fun analysisDoneOnMultipleFiles() {
-        notifyTelemetry { it.analysisDoneOnMultipleFiles() }
-    }
-
-    override fun analysisDoneOnSingleLanguage(language: Language?, time: Int) {
-        notifyTelemetry { it.analysisDoneOnSingleLanguage(AnalysisDoneOnSingleLanguageParams(language, time)) }
     }
 
     override fun devNotificationsClicked(eventType: String) {
