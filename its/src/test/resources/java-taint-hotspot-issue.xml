@@ -15,11 +15,11 @@
       <key>S1313</key>
       <priority>MAJOR</priority>
     </rule>
-    <!-- Move this trailing comment on the previous empty line -->
+    <!-- Remove this empty class, write its code or make it an "interface". -->
     <rule>
       <repositoryKey>java</repositoryKey>
-      <key>S139</key>
-      <priority>MINOR</priority>
+      <key>S106</key>
+      <priority>MAJOR</priority>
     </rule>
   </rules>
 </profile>

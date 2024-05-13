@@ -81,7 +81,7 @@ class OpenInIdeTests {
 
         fun verifyIssueOpened() {
             verifyEditorOpened("Bar.java")
-            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+            verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
             verifyCurrentFileRuleDescriptionTabContains("Comments should not be located at the end of lines of code")
         }
 

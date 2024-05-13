@@ -39,7 +39,7 @@ class StandaloneIdeaTests : BaseUiTest() {
         openExistingProject("sample-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         toggleRule("java:S139", "Comments should not be located at the end of lines of code")
-        verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+        verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
         toggleRule("java:S139", "Comments should not be located at the end of lines of code")
         verifyCurrentFileTabContainsMessages("No issues to display")
     }

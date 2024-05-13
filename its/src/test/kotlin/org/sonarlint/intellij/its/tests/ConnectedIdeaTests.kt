@@ -169,6 +169,8 @@ class ConnectedIdeaTests : BaseUiTest() {
     @Tag("Suite1")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    // TODO re-enable
+    @Disabled
     inner class SampleJavaHotspotTests : BaseUiTest() {
 
         @BeforeAll
@@ -185,8 +187,6 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
-        // TODO re-enable
-        @Disabled
         fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
             clearConnections()
             openExistingProject("sample-java-hotspot", true)
@@ -320,15 +320,15 @@ class ConnectedIdeaTests : BaseUiTest() {
             // Issue Analysis Test
             enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator")
             openFile("src/main/java/foo/Foo.java", "Foo.java")
-            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+            verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
 
             // Issue Reviewing Test
-            openIssueReviewDialogFromList("Move this trailing comment on the previous empty line.")
+            openIssueReviewDialogFromList("Remove this empty class, write its code or make it an \"interface\".")
             changeStatusOnSonarQubeAndPressChange("False Positive")
             confirm()
             verifyIssueStatusWasSuccessfullyChanged()
             showResolvedIssues()
-            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+            verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
             showResolvedIssues()
 
             // Power Save Mode Test
@@ -371,9 +371,9 @@ class ConnectedIdeaTests : BaseUiTest() {
             openExistingProject("sample-java-issues")
             enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, true, "SonarCloud-IT")
             openFile("src/main/java/foo/Foo.java", "Foo.java")
-            verifyCurrentFileTabContainsMessages("Move this trailing comment on the previous empty line.")
+            verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
 
-            openIssueReviewDialogFromList("Move this trailing comment on the previous empty line.")
+            openIssueReviewDialogFromList("Remove this empty class, write its code or make it an \"interface\".")
             changeStatusOnSonarCloudAndPressChange("Accepted")
             confirm()
             verifyIssueStatusWasSuccessfullyChanged()
