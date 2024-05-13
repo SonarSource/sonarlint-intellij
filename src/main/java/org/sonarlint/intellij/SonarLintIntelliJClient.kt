@@ -732,8 +732,26 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         notifyOnceForSkippedPlugins(project, language, reason, minVersion, currentVersion)
     }
 
+    //TODO implement with configscopeid
     override fun didDetectSecret() {
-        println("test")
+        if (getGlobalSettings().isSecretsNeverBeenAnalysed) {
+            SonarLintProjectNotifications.projectLessNotification(
+                "SonarLint: secret(s) detected",
+                "SonarLint detected some secrets in one of the open files. " +
+                    "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +
+                    "Please refer to the SonarLint tool window for more information.",
+                NotificationType.WARNING,
+            )
+            getGlobalSettings().rememberNotificationOnSecretsBeenSent()
+        }
+
+        /*val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return
+
+        if (getGlobalSettings().isSecretsNeverBeenAnalysed) {
+            get(module.getProject()).sendNotification()
+            getGlobalSettings().rememberNotificationOnSecretsBeenSent()
+        }*/
     }
 
     override fun promoteExtraEnabledLanguagesInConnectedMode(configurationScopeId: String, languagesToPromote: Set<Language>) {

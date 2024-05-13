@@ -138,12 +138,6 @@ public class AnalysisState {
     localHistoryFindingTracker.matchWithPreviousIssue(virtualFile, liveIssue);
     issuesPerFile.computeIfAbsent(virtualFile, f -> new ArrayList<>()).add(liveIssue);
     findingStreamer.streamIssue(virtualFile, liveIssue);
-
-    var sonarLintGlobalSettings = Settings.getGlobalSettings();
-    if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains("secrets")) {
-      SonarLintProjectNotifications.Companion.get(module.getProject()).sendNotification();
-      sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
-    }
   }
 
   public int getRawIssueCount() {
