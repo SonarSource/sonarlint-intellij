@@ -31,8 +31,6 @@ import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.vfs.VirtualFile
 import java.time.Duration
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.Alarm
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.SonarLintAppUtils.isFileValidForSonarLint
@@ -42,7 +40,7 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 const val DEBOUNCE_DELAY_MS = 1000L
 
 @Service(Service.Level.APP)
-class EditorFileChangeListener(private val fileEventsNotifier: ModuleFileEventsNotifier = ModuleFileEventsNotifier()) : BulkAwareDocumentListener.Simple, Disposable {
+class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
     private val triggerAlarm = Alarm("sonarlint-editor-changes-notifier", Duration.ofMillis(DEBOUNCE_DELAY_MS)) { notifyPendingChanges() }
     private val changedFiles = LinkedHashSet<VirtualFile>()
 
@@ -80,7 +78,6 @@ class EditorFileChangeListener(private val fileEventsNotifier: ModuleFileEventsN
     private fun notifyFileChangesForProject(project: Project, changedFiles: List<VirtualFile>) {
         val eventsToSendPerModule = LinkedHashMap<Module, MutableList<ClientModuleFileEvent>>()
 
-        val engine = getService(project, ProjectBindingManager::class.java).engineIfStarted ?: return
         changedFiles
             .filter { it.isValid && shouldNotify(it) && isFileValidForSonarLint(it, project) }
             .forEach { file ->
@@ -88,10 +85,6 @@ class EditorFileChangeListener(private val fileEventsNotifier: ModuleFileEventsN
                 val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return@forEach
                 val event = buildModuleFileEvent(module, file, document, ModuleFileEvent.Type.MODIFIED) ?: return@forEach
                 eventsToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(event)
-            }
-        eventsToSendPerModule
-            .forEach { (module, events) ->
-                fileEventsNotifier.notifyAsync(engine, module, events.toList())
             }
     }
 

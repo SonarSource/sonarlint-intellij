@@ -60,10 +60,6 @@ public class DefaultClientInputFile implements ClientInputFile {
     this.uri = createURI(vFile);
   }
 
-  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable ForcedLanguage sonarLanguage) {
-    this(vFile, relativePath, isTest, charset, null, 0, sonarLanguage);
-  }
-
   public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset) {
     this(vFile, relativePath, isTest, charset, null, 0, null);
   }

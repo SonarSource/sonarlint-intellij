@@ -40,7 +40,6 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -57,17 +56,6 @@ public final class ProjectBindingManager {
 
   public ProjectBindingManager(Project project) {
     myProject = project;
-  }
-
-  @CheckForNull
-  public SonarLintAnalysisEngine getEngineIfStarted() {
-    var engineManager = getService(EngineManager.class);
-    var projectSettings = getSettingsFor(myProject);
-    if (projectSettings.isBound()) {
-      var connectionId = projectSettings.getConnectionName();
-      return engineManager.getConnectedEngineIfStarted(requireNonNull(connectionId));
-    }
-    return engineManager.getStandaloneEngineIfStarted();
   }
 
   public boolean isBindingValid() {

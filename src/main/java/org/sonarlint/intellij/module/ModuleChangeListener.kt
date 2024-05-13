@@ -20,33 +20,20 @@
 package org.sonarlint.intellij.module
 
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.util.Function
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.core.EngineManager
-import org.sonarlint.intellij.core.ProjectBinding
-import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.messages.ProjectBindingListener
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
-
-private fun getEngineIfStarted(project: Project) = getService(project, ProjectBindingManager::class.java).engineIfStarted
 
 class ModuleChangeListener(val project: Project) : ModuleListener {
 
     override fun modulesAdded(project: Project, modules: List<Module>) {
-        val engine = getEngineIfStarted(project)
-        modules.forEach { Modules.declareModule(project, engine, it) }
         getService(BackendService::class.java).modulesAdded(project, modules)
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
-        Modules.removeModule(getEngineIfStarted(module.project), module)
         getService(BackendService::class.java).moduleRemoved(module)
     }
 
@@ -63,49 +50,4 @@ class ModuleChangeListener(val project: Project) : ModuleListener {
         }
     }
 
-}
-
-private object Modules {
-    fun declareAllModules(project: Project, engine: SonarLintAnalysisEngine?) {
-        ModuleManager.getInstance(project).modules.forEach { declareModule(project, engine, it) }
-    }
-
-    fun declareModule(project: Project, engine: SonarLintAnalysisEngine?, module: Module) {
-        val moduleInfo = ClientModuleInfo(module, ModuleFileSystem(project, module))
-        getService(ModulesRegistry::class.java).add(module, moduleInfo)
-        engine?.declareModule(moduleInfo)
-    }
-
-    fun removeModule(engine: SonarLintAnalysisEngine?, module: Module) {
-        engine?.stopModule(module)
-        getService(ModulesRegistry::class.java).remove(module)
-    }
-
-    fun removeAllModules(project: Project, engine: SonarLintAnalysisEngine?) {
-        ModuleManager.getInstance(project).modules.forEach { removeModule(engine, it) }
-    }
-}
-
-class ProjectClosedListener : ProjectManagerListener {
-    override fun projectClosing(project: Project) {
-        val engine = getEngineIfStarted(project)
-        ModuleManager.getInstance(project).modules.forEach {
-            Modules.removeModule(engine, it)
-        }
-    }
-}
-
-class MoveModulesOnBindingChange(private val project: Project) : ProjectBindingListener {
-    override fun bindingChanged(previousBinding: ProjectBinding?, newBinding: ProjectBinding?) {
-        if (previousBinding?.connectionName != newBinding?.connectionName) {
-            Modules.removeAllModules(project, getEngineIfStarted(previousBinding))
-            Modules.declareAllModules(project, getEngineIfStarted(newBinding))
-        }
-    }
-
-    private fun getEngineIfStarted(binding: ProjectBinding?): SonarLintAnalysisEngine? {
-        val engineManager = getService(EngineManager::class.java)
-        return if (binding == null) engineManager.standaloneEngineIfStarted
-        else engineManager.getConnectedEngineIfStarted(binding.connectionName)
-    }
 }

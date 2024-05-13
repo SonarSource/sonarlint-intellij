@@ -19,12 +19,10 @@
  */
 package org.sonarlint.intellij.finding.issue
 
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiFile
 import java.net.URI
-import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.FileEditDto
@@ -74,9 +72,6 @@ private fun toTextRange(rangeMarker: RangeMarker?): TextRangeDto? {
         TextRangeDto(1, 2, 3, 4)
     }
 }
-
-fun aClientInputFile(file: PsiFile, document: Document) =
-    DefaultClientInputFile(file.virtualFile, file.name, false, file.virtualFile.charset, document.text, document.modificationStamp, null)
 
 fun aQuickFix(message: String, fileEdits: List<FileEditDto>) = QuickFixDto(fileEdits, message)
 

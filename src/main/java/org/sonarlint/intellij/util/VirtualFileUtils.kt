@@ -28,6 +28,13 @@ object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
         return try {
             URI(file.url.replace(" ", "%20"))
+            // Don't use VfsUtilCore.convertToURL as it doesn't work on Windows (it produces invalid URL)
+            // Instead, since we are currently limiting ourselves to analyze files in LocalFileSystem
+            //return if (file.isInLocalFileSystem) {
+            //   val path = file.path.replace(" ", "%20")
+            //   if (path.startsWith("/"))
+            //       URI("${file.fileSystem.protocol}:///${P}")
+            //} else null
         } catch (e: URISyntaxException) {
             null
         }

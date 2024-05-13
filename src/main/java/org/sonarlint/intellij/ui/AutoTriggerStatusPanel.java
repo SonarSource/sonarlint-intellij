@@ -96,17 +96,12 @@ public class AutoTriggerStatusPanel {
           return;
         }
         var localFileExclusions = getService(project, LocalFileExclusions.class);
-        try {
-          var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> switchCard(FILE_DISABLED));
+        var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> switchCard(FILE_DISABLED));
 
-          if (PowerSaveMode.isEnabled()) {
-            switchCard(POWER_SAVE_MODE_ENABLED);
-          }
-          if (!nonExcluded.isEmpty()) {
-            switchCard(AUTO_TRIGGER_ENABLED);
-          }
-        } catch (InvalidBindingException e) {
-          // not much we can do, analysis won't run anyway. Notification about it was shown by SonarLintEngineManager
+        if (PowerSaveMode.isEnabled()) {
+          switchCard(POWER_SAVE_MODE_ENABLED);
+        }
+        if (!nonExcluded.isEmpty()) {
           switchCard(AUTO_TRIGGER_ENABLED);
         }
       });

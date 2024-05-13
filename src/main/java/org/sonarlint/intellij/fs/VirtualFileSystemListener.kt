@@ -35,9 +35,7 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 /**
  * The BulkFileListener is not tied to a specific project but global to the IDE instance
  */
-class VirtualFileSystemListener(
-    private val fileEventsNotifier: ModuleFileEventsNotifier = ModuleFileEventsNotifier(),
-) : BulkFileListener {
+class VirtualFileSystemListener : BulkFileListener {
     override fun before(events: List<VFileEvent>) {
         forwardEvents(events.filter { it is VFileMoveEvent || it is VFileDeleteEvent }) { ModuleFileEvent.Type.DELETED }
     }
@@ -59,6 +57,6 @@ class VirtualFileSystemListener(
     }
 
     private fun forwardEvents(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?) {
-        getService(VirtualFileSystemEventsHandler::class.java).forwardEventsAsync(events, eventTypeConverter, fileEventsNotifier)
+        getService(VirtualFileSystemEventsHandler::class.java).forwardEventsAsync(events, eventTypeConverter)
     }
 }

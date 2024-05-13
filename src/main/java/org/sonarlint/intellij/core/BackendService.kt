@@ -82,8 +82,6 @@ import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
@@ -286,7 +284,6 @@ class BackendService : Disposable {
     }
 
     private fun handleSloopExited() {
-        getService(EngineManager::class.java).stopAllEngines(true)
         ProjectManager.getInstance().openProjects.forEach { project ->
             runOnUiThread(project) {
                 getService(project, SonarLintToolWindow::class.java).refreshViews()
@@ -316,6 +313,7 @@ class BackendService : Disposable {
             getService(SonarLintPlugin::class.java).path.resolve("omnisharp/net6"),
             getService(SonarLintPlugin::class.java).path.resolve("omnisharp/net472")
         )
+        val workDir = Paths.get(PathManager.getTempPath()).resolve("sonarlint")
 
         return rpcServer.initialize(
             InitializeParams(
@@ -339,7 +337,7 @@ class BackendService : Disposable {
                     enableTelemetry = telemetryEnabled
                 ),
                 getLocalStoragePath(),
-                SonarLintEngineFactory.getWorkDir(),
+                workDir,
                 EnabledLanguages.findEmbeddedPlugins(),
                 EnabledLanguages.getEmbeddedPluginsForConnectedMode(),
                 EnabledLanguages.enabledLanguagesInStandaloneMode,
@@ -1009,13 +1007,6 @@ class BackendService : Disposable {
             }
             emptyList()
         }
-    }
-
-    fun createEngine(engineConfiguration: EngineConfiguration, connectionId: String?): SonarLintAnalysisEngine {
-        // this will throw if the backend is not ready after 1min. Should be called only from Analysis thread
-        // the concept of engine will soon disappear for clients
-        val initializedBackend = backendFuture.get(1, TimeUnit.MINUTES)
-        return SonarLintAnalysisEngine(engineConfiguration, initializedBackend, connectionId)
     }
 
     fun getAutoDetectedNodeJs(): CompletableFuture<NodeJsSettings?> {
