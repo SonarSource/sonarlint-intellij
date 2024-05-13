@@ -39,16 +39,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 public class ProjectStorageFixture {
 
-  public static class ProjectStorage {
-    private final Path path;
-
-    public ProjectStorage(Path path) {
-      this.path = path;
-    }
-
-    public Path getPath() {
-      return path;
-    }
+  public record ProjectStorage(Path path) {
 
     public void setSettings(Map<String, String> settings) {
       var configFile = path.resolve("analyzer_config.pb");
@@ -57,6 +48,7 @@ public class ProjectStorageFixture {
         .clearSettings()
         .putAllSettings(settings).build(), configFile);
     }
+
   }
 
   public static class ProjectStorageBuilder {
@@ -116,7 +108,6 @@ public class ProjectStorageFixture {
     }
 
     private void createProjectBranches(Path projectFolder) {
-      Map<String, Sonarlint.ProjectBranches> protoBranches = new HashMap<>();
       var builder = Sonarlint.ProjectBranches.newBuilder()
         .setMainBranchName(mainBranchName)
         .addAllBranchName(branchNames);

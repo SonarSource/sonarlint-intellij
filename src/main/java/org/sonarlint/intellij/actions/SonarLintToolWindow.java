@@ -41,7 +41,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
-import org.sonarlint.intellij.core.ProjectBinding;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.Issue;
@@ -469,7 +468,7 @@ public final class SonarLintToolWindow implements ContentManagerListenerAdapter,
   }
 
   @Override
-  public void bindingChanged(@Nullable ProjectBinding previousBinding, @Nullable ProjectBinding newBinding) {
+  public void bindingChanged() {
     runOnUiThread(project, this::refreshViews);
   }
 }

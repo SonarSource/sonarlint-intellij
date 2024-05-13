@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 import org.sonarlint.intellij.cayc.NewCodePeriodCache;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
@@ -120,13 +119,7 @@ public class Analysis implements Cancelable {
       return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
     }
 
-    AnalysisScope scope;
-    try {
-      scope = AnalysisScope.defineFrom(project, files, trigger);
-    } catch (InvalidBindingException e) {
-      // nothing to do, SonarLintEngineManager already showed notification
-      return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
-    }
+    var scope = AnalysisScope.defineFrom(project, files, trigger);
 
     // refresh should ideally not be done here, see SLCORE-729
     getService(project, NewCodePeriodCache.class).refreshAsync();
