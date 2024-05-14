@@ -72,7 +72,7 @@ public final class SonarLintAnalyzer {
 
     // Analyze
     try {
-      getService(RunningAnalysesTracker.class).track(analysisState);
+      getService(myProject, RunningAnalysesTracker.class).track(analysisState);
 
       var what = filesToAnalyze.size() == 1 ? String.format("'%s'", filesToAnalyze.iterator().next().getName()) : String.format("%d files", filesToAnalyze.size());
       console.info("Analysing " + what + " (ID " + analysisState.getId() + ")...");

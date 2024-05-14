@@ -244,7 +244,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             ),
         )
 
-        getService(project, BackendService::class.java).updateFileSystem(
+        getService(BackendService::class.java).updateFileSystem(
             mapOf(module to listModuleFileEvent)
         )
         Awaitility.await().during(1, TimeUnit.SECONDS)
@@ -278,7 +278,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             )
         )
 
-        getService(project, BackendService::class.java).updateFileSystem(
+        getService(BackendService::class.java).updateFileSystem(
             mapOf(module to listModuleFileEvent)
         )
         Awaitility.await().during(1, TimeUnit.SECONDS)
@@ -491,7 +491,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             )
         )
 
-        getService(project, BackendService::class.java).updateFileSystem(
+        getService(BackendService::class.java).updateFileSystem(
             mapOf(module to listModuleFileEvent)
         )
         Awaitility.await().during(1, TimeUnit.SECONDS)
