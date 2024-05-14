@@ -35,13 +35,13 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
-    fun should_exclude_rule_() = uiTest {
+    fun should_exclude_rule() = uiTest {
         openExistingProject("sample-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
-        toggleRule("java:S139", "Comments should not be located at the end of lines of code")
-        verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-        toggleRule("java:S139", "Comments should not be located at the end of lines of code")
+        toggleRule("java:S2094", "Classes should not be empty")
         verifyCurrentFileTabContainsMessages("No issues to display")
+        toggleRule("java:S2094", "Classes should not be empty")
+        verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
     }
 
     @Test
