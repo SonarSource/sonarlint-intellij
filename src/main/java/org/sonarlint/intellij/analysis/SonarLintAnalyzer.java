@@ -72,12 +72,12 @@ public final class SonarLintAnalyzer {
 
     // Analyze
     try {
-      getService(myProject, RunningAnalysesTracker.class).track(analysisState);
+      getService(RunningAnalysesTracker.class).track(analysisState);
 
       var what = filesToAnalyze.size() == 1 ? String.format("'%s'", filesToAnalyze.iterator().next().getName()) : String.format("%d files", filesToAnalyze.size());
       console.info("Analysing " + what + " (ID " + analysisState.getId() + ")...");
 
-      var analysisTask = getService(myProject, BackendService.class).analyzeFiles(module, analysisState.getId(), inputFiles, contributedProperties, start);
+      var analysisTask = getService(BackendService.class).analyzeFiles(module, analysisState.getId(), inputFiles, contributedProperties, start);
 
       AnalyzeFilesResponse result = null;
       try {
