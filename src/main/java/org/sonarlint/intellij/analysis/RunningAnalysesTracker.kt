@@ -20,12 +20,11 @@
 package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
-class RunningAnalysesTracker(private val project: Project) {
+class RunningAnalysesTracker {
 
     private val analysisStateById: MutableMap<UUID, AnalysisState> = ConcurrentHashMap<UUID, AnalysisState>()
 

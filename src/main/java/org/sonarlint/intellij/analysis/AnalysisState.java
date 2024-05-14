@@ -30,14 +30,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.finding.RawIssueAdapter;
 import org.sonarlint.intellij.finding.TextRangeMatcher;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.tracking.LocalHistoryFindingTracker;
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
@@ -52,10 +50,18 @@ public class AnalysisState {
   private final FindingStreamer findingStreamer;
   private final LocalHistoryFindingTracker localHistoryFindingTracker;
 
-  public AnalysisState(UUID analysisId, FindingStreamer findingStreamer, CachedFindings previousFindings) {
+  public AnalysisState(UUID analysisId, FindingStreamer findingStreamer, CachedFindings previousFindings, Collection<VirtualFile> filesToAnalyze) {
     this.id = analysisId;
     this.localHistoryFindingTracker = new LocalHistoryFindingTracker(previousFindings);
     this.findingStreamer = findingStreamer;
+    this.initFiles(filesToAnalyze);
+  }
+
+  public void initFiles(Collection<VirtualFile> files) {
+    files.forEach(file -> {
+      issuesPerFile.computeIfAbsent(file, f -> new ArrayList<>());
+      securityHotspotsPerFile.computeIfAbsent(file, f -> new ArrayList<>());
+    });
   }
 
   public UUID getId() {
