@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core
 
-import com.intellij.lang.LanguageUtil
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
@@ -36,6 +35,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
@@ -57,6 +57,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
+import org.sonarlint.intellij.SonarLintIntelliJClient.collectContributedLanguages
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
@@ -69,19 +70,19 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.core.FileLanguages.Companion.findAssociatedLanguage
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
+import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.runOnPooledThread
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
@@ -155,6 +156,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWit
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TrackWithServerIssuesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -1015,23 +1017,33 @@ class BackendService : Disposable {
         }
     }
 
-    fun updateFileSystem(filesByModule: Map<Module, List<ClientModuleFileEvent>>) {
+    fun updateFileSystem(filesByModule: Map<Module, List<VirtualFileEvent>>) {
         val deletedFileUris = filesByModule.values
-            .flatMap { it.filter { event -> event.type() == ModuleFileEvent.Type.DELETED } }
-            .mapNotNull { VirtualFileUtils.toURI(it.target().getClientObject()) }
+            .flatMap { it.filter { event -> event.type == ModuleFileEvent.Type.DELETED } }
+            .mapNotNull { VirtualFileUtils.toURI(it.virtualFile) }
+
         val events = filesByModule.entries.flatMap { (module, event) ->
-            event.filter { it.type() != ModuleFileEvent.Type.DELETED }
-                .map {
-                    val lang = LanguageUtil.getFileLanguage(it.target().getClientObject())?.let { l -> findAssociatedLanguage(l) }
+            val moduleId = moduleId(module)
+
+            val virtualFiles: List<VirtualFile> = event.filter { it.type != ModuleFileEvent.Type.DELETED }
+                .map { it.virtualFile }.toList()
+
+            val contributedLanguages = collectContributedLanguages(module, virtualFiles)
+
+            event.filter { it.type != ModuleFileEvent.Type.DELETED }
+                .mapNotNull {
+                    val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
+                    val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
+                    val uri = VirtualFileUtils.toURI(it.virtualFile)
                     ClientFileDto(
-                        it.target().uri(),
-                        Paths.get(it.target().relativePath()),
-                        moduleId(module),
-                        it.target().isTest,
-                        it.target().charset.toString(),
-                        Paths.get(it.target().path),
-                        getFileContent(it.target().getClientObject()),
-                        lang
+                        uri,
+                        Paths.get(relativePath),
+                        moduleId,
+                        isTestSources(it.virtualFile, module.project),
+                        it.getEncoding(module.project).toString(),
+                        Paths.get(it.virtualFile.path),
+                        getFileContent(it.virtualFile),
+                        forcedLanguage
                     )
                 }
         }

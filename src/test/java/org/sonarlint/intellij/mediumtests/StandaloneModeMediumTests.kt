@@ -51,7 +51,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.persistence.FindingsCache
-import org.sonarlint.intellij.fs.buildModuleFileEvent
+import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.util.ProjectUtils
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
@@ -59,7 +59,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 
-@Disabled("To be reworked")
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private val diamondQuickFix = "SonarLint: Replace with <>"
 
@@ -237,17 +236,16 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         val fileToAnalyze = myFixture.configureByFiles("src/main.py", "src/mod.py").first().virtualFile
         val module = project.modules[0]
         val listModuleFileEvent = listOf(
-            buildModuleFileEvent(
-                project.modules[0],
-                fileToAnalyze,
-                fileToAnalyze.getDocument()!!,
-                ModuleFileEvent.Type.CREATED
-            )!!,
+            VirtualFileEvent(
+                ModuleFileEvent.Type.CREATED,
+                fileToAnalyze
+            ),
         )
 
         getService(project, BackendService::class.java).updateFileSystem(
             mapOf(module to listModuleFileEvent)
         )
+        Awaitility.await().during(1, TimeUnit.SECONDS)
 
         val issues = analyze(fileToAnalyze)
 
@@ -267,23 +265,20 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         val files = myFixture.configureByFiles("src/mod.py", "src/main.py")
         val module = project.modules[0]
         val listModuleFileEvent = listOf(
-            buildModuleFileEvent(
-                project.modules[0],
-                files[0].virtualFile,
-                files[0].virtualFile.getDocument()!!,
-                ModuleFileEvent.Type.CREATED
-            )!!,
-            buildModuleFileEvent(
-                project.modules[1],
-                files[1].virtualFile,
-                files[1].virtualFile.getDocument()!!,
-                ModuleFileEvent.Type.CREATED
-            )!!
+            VirtualFileEvent(
+                ModuleFileEvent.Type.CREATED,
+                files[0].virtualFile
+            ),
+            VirtualFileEvent(
+                ModuleFileEvent.Type.CREATED,
+                files[1].virtualFile
+            )
         )
 
         getService(project, BackendService::class.java).updateFileSystem(
             mapOf(module to listModuleFileEvent)
         )
+        Awaitility.await().during(1, TimeUnit.SECONDS)
 
         val moduleFile = files[0].virtualFile
         val fileToAnalyze = files[1].virtualFile
@@ -457,17 +452,26 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
         }
-        //Backend listFiles needs to be fixed till this test is completely non-flaky
+
         submitter.analyzeFilesPreCommit(filesToAnalyze.toList())
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
         }
+
         return filesToAnalyze.flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
     }
 
     private fun analyzeAll(): List<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
+        }
+
         submitter.analyzeAllFiles()
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
+        }
+
         return ProjectUtils.getAllFiles(project).flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
     }
 
@@ -475,17 +479,17 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         val file = myFixture.configureByFile(filePath)
         val module = project.modules[0]
         val listModuleFileEvent = listOf(
-            buildModuleFileEvent(
-                project.modules[0],
-                file.virtualFile,
-                file.virtualFile.getDocument()!!,
-                ModuleFileEvent.Type.CREATED
-            )!!
+            VirtualFileEvent(
+                ModuleFileEvent.Type.CREATED,
+                file.virtualFile
+            )
         )
 
         getService(project, BackendService::class.java).updateFileSystem(
             mapOf(module to listModuleFileEvent)
         )
+        Awaitility.await().during(1, TimeUnit.SECONDS)
+
         return file.virtualFile
     }
 }

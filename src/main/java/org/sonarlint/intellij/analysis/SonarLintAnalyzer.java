@@ -20,16 +20,13 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
-import java.nio.charset.Charset;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,14 +36,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
-import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
+import org.sonarlint.intellij.util.VirtualFileUtils;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
@@ -65,15 +60,13 @@ public final class SonarLintAnalyzer {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     var start = System.currentTimeMillis();
     var console = getService(myProject, SonarLintConsole.class);
-    var contributedConfigurations = getConfigurationFromConfiguratorEP(module, filesToAnalyze, console);
 
+    var contributedConfigurations = getConfigurationFromConfiguratorEP(module, filesToAnalyze, console);
     var contributedProperties = collectContributedExtraProperties(console, contributedConfigurations);
 
-    var contributedLanguages = collectContributedLanguages(console, contributedConfigurations);
-
     // configure files
-    var inputFiles = getInputFiles(module, filesToAnalyze, contributedLanguages);
-    if (inputFiles == null) {
+    var inputFiles = getInputFiles(module, filesToAnalyze);
+    if (inputFiles == null || inputFiles.isEmpty()) {
       return new ModuleAnalysisResult(Collections.emptyList());
     }
 
@@ -84,8 +77,7 @@ public final class SonarLintAnalyzer {
       var what = filesToAnalyze.size() == 1 ? String.format("'%s'", filesToAnalyze.iterator().next().getName()) : String.format("%d files", filesToAnalyze.size());
       console.info("Analysing " + what + " (ID " + analysisState.getId() + ")...");
 
-      var listFileUrisToAnalyze = inputFiles.stream().map(ClientInputFile::uri).toList();
-      var analysisTask = getService(myProject, BackendService.class).analyzeFiles(module, analysisState.getId(), listFileUrisToAnalyze, contributedProperties, start);
+      var analysisTask = getService(myProject, BackendService.class).analyzeFiles(module, analysisState.getId(), inputFiles, contributedProperties, start);
 
       AnalyzeFilesResponse result = null;
       try {
@@ -101,7 +93,6 @@ public final class SonarLintAnalyzer {
         failedAnalysisFiles = result.getFailedAnalysisFiles().stream()
           .map(uri -> VirtualFileManager.getInstance().findFileByUrl(uri.toString())).collect(Collectors.toSet());
       }
-
 
       return new ModuleAnalysisResult(failedAnalysisFiles);
     } finally {
@@ -126,22 +117,6 @@ public final class SonarLintAnalyzer {
   }
 
   @NotNull
-  private static Map<VirtualFile, ForcedLanguage> collectContributedLanguages(SonarLintConsole console,
-    List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations) {
-    var contributedLanguages = new HashMap<VirtualFile, ForcedLanguage>();
-    for (var config : contributedConfigurations) {
-      for (var entry : config.forcedLanguages.entrySet()) {
-        if (contributedLanguages.containsKey(entry.getKey()) && !Objects.equals(contributedLanguages.get(entry.getKey()), entry.getValue())) {
-          console.error("The same file " + entry.getKey() + " has its language forced by multiple configurators with different values: " +
-            contributedLanguages.get(entry.getKey()) + " / " + entry.getValue());
-        }
-        contributedLanguages.put(entry.getKey(), entry.getValue());
-      }
-    }
-    return contributedLanguages;
-  }
-
-  @NotNull
   private static List<AnalysisConfigurator.AnalysisConfiguration> getConfigurationFromConfiguratorEP(Module module, Collection<VirtualFile> filesToAnalyze,
     SonarLintConsole console) {
     return AnalysisConfigurator.EP_NAME.getExtensionList().stream()
@@ -152,57 +127,28 @@ public final class SonarLintAnalyzer {
       .toList();
   }
 
-  private List<ClientInputFile> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze, Map<VirtualFile, ForcedLanguage> contributedLanguages) {
+  private List<URI> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze) {
     return computeReadActionSafely(module.getProject(), () -> filesToAnalyze.stream()
-      .map(f -> createClientInputFile(module, f, contributedLanguages.get(f)))
+      .map(f -> createClientInputFile(module, f))
       .filter(Objects::nonNull)
       .toList());
   }
 
   @CheckForNull
-  public ClientInputFile createClientInputFile(Module module, VirtualFile virtualFile, @Nullable ForcedLanguage language) {
-    var test = TestSourcesFilter.isTestSources(virtualFile, module.getProject());
-    var charset = getEncoding(virtualFile);
+  public URI createClientInputFile(Module module, VirtualFile virtualFile) {
     var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
     if (relativePath != null) {
-      var fileDocumentManager = FileDocumentManager.getInstance();
-      if (fileDocumentManager.isFileModified(virtualFile)) {
-        return createInputFileFromDocument(myProject, virtualFile, language, test, charset, relativePath);
-      } else {
-        var documentModificationStamp = readDocumentModificationStamp(myProject, virtualFile);
-        if (documentModificationStamp == null) {
-          return null;
-        }
-        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, null, documentModificationStamp, language);
-      }
+      return createURI(virtualFile);
     }
     return null;
   }
 
-  private static DefaultClientInputFile createInputFileFromDocument(Project project, VirtualFile virtualFile, @org.jetbrains.annotations.Nullable ForcedLanguage language,
-    boolean test,
-    Charset charset, String relativePath) {
-    return computeReadActionSafely(virtualFile, project, () -> {
-      var document = FileDocumentManager.getInstance().getDocument(virtualFile);
-      var textInDocument = document != null ? document.getText() : null;
-      var documentModificationStamp = document != null ? document.getModificationStamp() : 0;
-      return new DefaultClientInputFile(virtualFile, relativePath, test, charset, textInDocument, documentModificationStamp, language);
-    });
-  }
-
-  private static Long readDocumentModificationStamp(Project project, VirtualFile virtualFile) {
-    return computeReadActionSafely(virtualFile, project, () -> {
-      var document = FileDocumentManager.getInstance().getDocument(virtualFile);
-      return document != null ? document.getModificationStamp() : 0;
-    });
-  }
-
-  private Charset getEncoding(VirtualFile f) {
-    var encodingProjectManager = EncodingProjectManager.getInstance(myProject);
-    var encoding = encodingProjectManager.getEncoding(f, true);
-    if (encoding != null) {
-      return encoding;
+  private static URI createURI(VirtualFile file) {
+    var uri = VirtualFileUtils.INSTANCE.toURI(file);
+    if (uri == null) {
+      throw new IllegalStateException("Not a local file");
     }
-    return Charset.defaultCharset();
+    return uri;
   }
+
 }

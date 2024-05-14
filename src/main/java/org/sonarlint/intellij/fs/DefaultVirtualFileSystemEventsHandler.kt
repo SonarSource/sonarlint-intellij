@@ -52,7 +52,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
     ) {
         val openProjects = ProjectManager.getInstance().openProjects.filter { !it.isDisposed }.toList()
         val filesByModule = fileEventsByModules(events, openProjects, eventTypeConverter)
-        val allFilesByModule = filesByModule.entries.associate { it.key to it.value.map { f -> f.clientModuleFileEvent }.toList() }
+        val allFilesByModule = filesByModule.entries.associate { it.key to it.value.toList() }
         getService(BackendService::class.java).updateFileSystem(allFilesByModule)
     }
 
@@ -60,8 +60,8 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         events: List<VFileEvent>,
         openProjects: List<Project>,
         eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?,
-    ): Map<Module, List<ClientModuleFileEventToVirtual>> {
-        val map: MutableMap<Module, List<ClientModuleFileEventToVirtual>> = mutableMapOf()
+    ): Map<Module, List<VirtualFileEvent>> {
+        val map: MutableMap<Module, List<VirtualFileEvent>> = mutableMapOf()
         for (event in events) {
             // call event.file only once as it can be hurting performance
             val file = event.file ?: continue
@@ -80,8 +80,8 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         file: VirtualFile,
         fileModule: Module,
         type: ModuleFileEvent.Type,
-    ): List<ClientModuleFileEventToVirtual> {
-        return visitAndAddFiles(file, fileModule).mapNotNull { buildClientModuleFileEventToVirtual(fileModule, it, type) }
+    ): List<VirtualFileEvent> {
+        return visitAndAddFiles(file, fileModule).mapNotNull { VirtualFileEvent(type, it) }
     }
 
     private fun findModule(file: VirtualFile?, openProjects: List<Project>): Module? {

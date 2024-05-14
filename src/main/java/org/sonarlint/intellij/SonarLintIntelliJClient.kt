@@ -21,7 +21,6 @@ package org.sonarlint.intellij
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.lang.LanguageUtil
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationInfo
@@ -65,6 +64,8 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
+import org.sonarlint.intellij.common.analysis.AnalysisConfigurator
+import org.sonarlint.intellij.common.analysis.ForcedLanguage
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -76,7 +77,6 @@ import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
 import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.core.FileLanguages.Companion.findAssociatedLanguage
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
@@ -607,6 +607,20 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return listClientFiles
     }
 
+    fun collectContributedLanguages(module: Module, listFiles: Collection<VirtualFile>): Map<VirtualFile, ForcedLanguage> {
+        val contributedConfigurations = AnalysisConfigurator.EP_NAME.extensionList.stream()
+            .map { config: AnalysisConfigurator -> config.configure(module, listFiles) }
+            .toList()
+
+        val contributedLanguages = HashMap<VirtualFile, ForcedLanguage>()
+        for (config in contributedConfigurations) {
+            for ((key, value) in config.forcedLanguages) {
+                contributedLanguages[key] = value
+            }
+        }
+        return contributedLanguages
+    }
+
     private fun computeRiderSharedConfiguration(project: Project, configScopeId: String): ClientFileDto? {
         project.basePath?.let { Paths.get(it) }?.let {
             VfsUtil.findFile(it.resolve(".sonarlint"), false)?.let { sonarlintDir ->
@@ -618,7 +632,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                                 project,
                                 configScopeId,
                                 conf,
-                                path
+                                path,
+                                null
                             )
                             if (clientFileDto != null) {
                                 return clientFileDto
@@ -633,13 +648,19 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     private fun listModuleFiles(module: Module, configScopeId: String): MutableList<ClientFileDto> {
-        return listFilesInContentRoots(module).mapNotNull { file ->
+        val filesInContentRoots = listFilesInContentRoots(module)
+
+        val forcedLanguages = collectContributedLanguages(module, filesInContentRoots)
+
+        return filesInContentRoots.mapNotNull { file ->
+            val forcedLanguage = forcedLanguages[file]?.let { fl -> Language.valueOf(fl.name) }
             getRelativePathForAnalysis(module, file)?.let { relativePath ->
                 toClientFileDto(
                     module.project,
                     configScopeId,
                     file,
-                    relativePath
+                    relativePath,
+                    forcedLanguage
                 )
             }
         }.toMutableList()
@@ -647,18 +668,31 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     private fun listProjectFiles(project: Project, configScopeId: String): MutableList<ClientFileDto> {
         return listFilesInProjectBaseDir(project).mapNotNull { file ->
-            getRelativePathForAnalysis(project, file)?.let { relativePath -> toClientFileDto(project, configScopeId, file, relativePath) }
+            getRelativePathForAnalysis(project, file)?.let { relativePath ->
+                toClientFileDto(
+                    project,
+                    configScopeId,
+                    file,
+                    relativePath,
+                    null
+                )
+            }
         }.toMutableList()
     }
 
-    private fun toClientFileDto(project: Project, configScopeId: String, file: VirtualFile, relativePath: String): ClientFileDto? {
+    private fun toClientFileDto(
+        project: Project,
+        configScopeId: String,
+        file: VirtualFile,
+        relativePath: String,
+        language: Language?,
+    ): ClientFileDto? {
         if (!file.isValid || FileUtilRt.isTooLarge(file.length)) return null
         val uri = VirtualFileUtils.toURI(file) ?: return null
         var fileContent: String? = null
         if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER) {
             fileContent = computeReadActionSafely(project) { getFileContent(file) }
         }
-        val lang = LanguageUtil.getFileLanguage(file)?.let { l -> findAssociatedLanguage(l) }
         return ClientFileDto(
             uri,
             Paths.get(relativePath),
@@ -667,7 +701,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             file.charset.name(),
             Paths.get(file.path),
             fileContent,
-            lang
+            language
         )
     }
 
