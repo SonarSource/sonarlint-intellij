@@ -21,5 +21,11 @@
       <key>S106</key>
       <priority>MAJOR</priority>
     </rule>
+    <!-- Resources should be closed -->
+    <rule>
+      <repositoryKey>java</repositoryKey>
+      <key>S2095</key>
+      <priority>BLOCKER</priority>
+    </rule>
   </rules>
 </profile>
