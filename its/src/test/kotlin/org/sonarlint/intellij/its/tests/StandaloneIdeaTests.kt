@@ -50,7 +50,7 @@ class StandaloneIdeaTests : BaseUiTest() {
         excludeFile("src/main/java/foo/Foo.java")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         verifyCurrentFileTabContainsMessages("No issues to display")
-        removeFileExclusion("Foo.java")
+        removeFileExclusion("src/main/java/foo/Foo.java")
     }
 
 }
