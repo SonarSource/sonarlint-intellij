@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.RawIssueAdapter;
-import org.sonarlint.intellij.finding.TextRangeMatcher;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
@@ -117,10 +116,6 @@ public class AnalysisState {
       if (liveSecurityHotspot == null) {
         return;
       }
-    } catch (TextRangeMatcher.NoMatchException e) {
-      // File content is likely to have changed during the analysis, should be fixed in next analysis
-      SonarLintConsole.get(module.getProject()).debug("Failed to find location of Security Hotspot for file: '" + virtualFile.getName() + "'." + e.getMessage());
-      return;
     } catch (ProcessCanceledException e) {
       throw e;
     } catch (Exception e) {
@@ -140,10 +135,6 @@ public class AnalysisState {
       if (liveIssue == null) {
         return;
       }
-    } catch (TextRangeMatcher.NoMatchException e) {
-      // File content is likely to have changed during the analysis, should be fixed in next analysis
-      SonarLintConsole.get(module.getProject()).debug("Failed to find location of issue for file: '" + virtualFile.getName() + "'." + e.getMessage());
-      return;
     } catch (ProcessCanceledException e) {
       throw e;
     } catch (Exception e) {
