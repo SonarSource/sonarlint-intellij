@@ -139,7 +139,7 @@ public final class SonarLintAnalyzer {
   }
 
   @CheckForNull
-  public URI createClientInputFile(Module module, VirtualFile virtualFile) {
+  private static URI createClientInputFile(Module module, VirtualFile virtualFile) {
     var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
     if (relativePath != null) {
       return createURI(virtualFile);

@@ -45,7 +45,7 @@ import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
 
 public class RawIssueAdapter {
 
-  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RawIssueDto rawHotspot, VirtualFile virtualFile) throws TextRangeMatcher.NoMatchException {
+  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RawIssueDto rawHotspot, VirtualFile virtualFile) {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
@@ -62,7 +62,7 @@ public class RawIssueAdapter {
     });
   }
 
-  public static LiveIssue toLiveIssue(Module module, RawIssueDto rawIssue, VirtualFile virtualFile) throws TextRangeMatcher.NoMatchException {
+  public static LiveIssue toLiveIssue(Module module, RawIssueDto rawIssue, VirtualFile virtualFile) {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
@@ -93,7 +93,10 @@ public class RawIssueAdapter {
           if (fileUri == null) {
             continue;
           }
-          var locVirtualFile = VirtualFileManager.getInstance().findFileByUrl(loc.getFileUri().toString());
+          VirtualFile locVirtualFile = null;
+          if (loc.getFileUri() != null) {
+            locVirtualFile = VirtualFileManager.getInstance().findFileByUrl(loc.getFileUri().toString());
+          }
           if (textRange != null && locVirtualFile != null) {
             var locPsiFile = toPsiFile(project, locVirtualFile);
             var range = matcher.match(locPsiFile, textRange);
@@ -104,12 +107,13 @@ public class RawIssueAdapter {
           SonarLintConsole.get(project)
             .debug("Failed to find secondary location of finding for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
         } catch (Exception e) {
+          var textRange = loc.getTextRange();
           var detailString = String.join(",",
             rule,
-            String.valueOf(loc.getTextRange() == null ? null : loc.getTextRange().getStartLine()),
-            String.valueOf(loc.getTextRange() == null ? null : loc.getTextRange().getStartLineOffset()),
-            String.valueOf(loc.getTextRange() == null ? null : loc.getTextRange().getEndLine()),
-            String.valueOf(loc.getTextRange() == null ? null : loc.getTextRange().getEndLineOffset()));
+            String.valueOf(textRange == null ? null : textRange.getStartLine()),
+            String.valueOf(textRange == null ? null : textRange.getStartLineOffset()),
+            String.valueOf(textRange == null ? null : textRange.getEndLine()),
+            String.valueOf(textRange == null ? null : textRange.getEndLineOffset()));
           SonarLintConsole.get(project).error("Error finding secondary location for finding: " + detailString, e);
           return Optional.empty();
         }
