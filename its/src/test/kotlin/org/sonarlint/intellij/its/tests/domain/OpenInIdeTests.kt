@@ -82,7 +82,7 @@ class OpenInIdeTests {
         fun verifyIssueOpened() {
             verifyEditorOpened("Bar.java")
             verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-            verifyCurrentFileRuleDescriptionTabContains("There is no good excuse for an empty class.")
+            verifyCurrentFileRuleDescriptionTabContains("Classes should not be empty")
         }
 
         private fun verifyEditorOpened(fileName: String) {
