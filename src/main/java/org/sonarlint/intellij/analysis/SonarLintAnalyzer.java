@@ -88,10 +88,14 @@ public final class SonarLintAnalyzer {
         console.error("Error during analysis ID " + analysisState.getId(), e);
       }
 
+      getService(myProject, RunningAnalysesTracker.class).finish(analysisState);
+
       Set<VirtualFile> failedAnalysisFiles = Collections.emptySet();
       if (result != null) {
         failedAnalysisFiles = result.getFailedAnalysisFiles().stream()
           .map(uri -> VirtualFileManager.getInstance().findFileByUrl(uri.toString())).collect(Collectors.toSet());
+
+        result.getRawIssues().stream().filter(analysisState::wasIssueNotAlreadyReceived).forEach(i -> analysisState.addRawIssue(i, false));
       }
 
       return new ModuleAnalysisResult(failedAnalysisFiles);

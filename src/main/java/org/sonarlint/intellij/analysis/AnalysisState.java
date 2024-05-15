@@ -26,8 +26,10 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.RawIssueAdapter;
@@ -49,6 +51,7 @@ public class AnalysisState {
   private final AtomicInteger rawIssueCounter = new AtomicInteger();
   private final FindingStreamer findingStreamer;
   private final LocalHistoryFindingTracker localHistoryFindingTracker;
+  private final ConcurrentLinkedQueue<RawIssueDto> currentIssueHashReceived = new ConcurrentLinkedQueue<>();
 
   public AnalysisState(UUID analysisId, FindingStreamer findingStreamer, CachedFindings previousFindings, Collection<VirtualFile> filesToAnalyze) {
     this.id = analysisId;
@@ -72,7 +75,14 @@ public class AnalysisState {
     this.module = module;
   }
 
-  public void addRawIssue(RawIssueDto rawIssue) {
+  public boolean wasIssueNotAlreadyReceived(RawIssueDto rawIssue) {
+    return currentIssueHashReceived.stream().noneMatch(i -> this.areSameRawIssues(i, rawIssue));
+  }
+
+  public void addRawIssue(RawIssueDto rawIssue, boolean storeRawIssueInMemory) {
+    if (storeRawIssueInMemory) {
+      currentIssueHashReceived.add(rawIssue);
+    }
     rawIssueCounter.incrementAndGet();
 
     // Do issue tracking for the single issue
@@ -157,4 +167,33 @@ public class AnalysisState {
   public Map<VirtualFile, Collection<LiveSecurityHotspot>> getSecurityHotspotsPerFile() {
     return securityHotspotsPerFile;
   }
+
+  private boolean areSameRawIssues(RawIssueDto rawIssue1, RawIssueDto rawIssue2) {
+    var areSame = rawIssue1.getCleanCodeAttribute().name().equals(rawIssue2.getCleanCodeAttribute().name())
+      && rawIssue1.getPrimaryMessage().equals(rawIssue2.getPrimaryMessage())
+      && Objects.equals(rawIssue1.getFileUri(), rawIssue2.getFileUri())
+      && Objects.equals(rawIssue1.getRuleDescriptionContextKey(), (rawIssue2.getRuleDescriptionContextKey()))
+      && rawIssue1.getRuleKey().equals(rawIssue2.getRuleKey())
+      && rawIssue1.getSeverity().name().equals(rawIssue2.getSeverity().name())
+      && rawIssue1.getType().name().equals(rawIssue2.getType().name());
+    var textRange1 = rawIssue1.getTextRange();
+    var textRange2 = rawIssue2.getTextRange();
+    if (textRange1 != null && textRange2 != null) {
+      areSame = areSame && textRange1.getStartLine() == textRange2.getStartLine()
+        && textRange1.getEndLine() == textRange2.getEndLine()
+        && textRange1.getStartLineOffset() == textRange2.getStartLineOffset()
+        && textRange1.getEndLineOffset() == textRange2.getEndLineOffset();
+    } else {
+      areSame = areSame && textRange1 == textRange2;
+    }
+    var vulnProb1 = rawIssue1.getVulnerabilityProbability();
+    var vulnProb2 = rawIssue2.getVulnerabilityProbability();
+    if (vulnProb1 != null && vulnProb2 != null) {
+      areSame = vulnProb1.name().equals(vulnProb2.name());
+    } else {
+      areSame = areSame && vulnProb1 == vulnProb2;
+    }
+    return areSame;
+  }
+
 }
