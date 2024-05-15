@@ -47,7 +47,6 @@ import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.messages.AnalysisListener;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.commons.api.progress.CanceledException;
 
@@ -136,8 +135,6 @@ public class Analysis implements Cancelable {
         return analysisResult;
       }
       var summary = analyzePerModule(scope, indicator, previousFindings);
-
-      getService(SonarLintTelemetry.class).addReportedRules(summary.getReportedRuleKeys());
 
       indicator.setIndeterminate(false);
       indicator.setFraction(.9);

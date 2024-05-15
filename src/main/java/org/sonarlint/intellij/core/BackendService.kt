@@ -1039,10 +1039,10 @@ class BackendService : Disposable {
                         uri,
                         Paths.get(relativePath),
                         moduleId,
-                        isTestSources(it.virtualFile, module.project),
+                        computeReadActionSafely(module.project) { isTestSources(it.virtualFile, module.project) },
                         it.getEncoding(module.project).toString(),
                         Paths.get(it.virtualFile.path),
-                        getFileContent(it.virtualFile),
+                        computeReadActionSafely(module.project) { getFileContent(it.virtualFile) },
                         forcedLanguage
                     )
                 }

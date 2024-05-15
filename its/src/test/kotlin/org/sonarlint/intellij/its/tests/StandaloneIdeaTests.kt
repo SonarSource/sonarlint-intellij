@@ -49,7 +49,7 @@ class StandaloneIdeaTests : BaseUiTest() {
         openExistingProject("sample-java-issues")
         excludeFile("src/main/java/foo/Foo.java")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
-        verifyCurrentFileTabContainsMessages("No issues to display")
+        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
         removeFileExclusion("src/main/java/foo/Foo.java")
     }
 

@@ -24,7 +24,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
-import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddReportedRulesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.HelpAndFeedbackClickedParams
 
@@ -51,10 +50,6 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
 
     override fun taintVulnerabilitiesInvestigatedLocally() {
         notifyTelemetry { it.taintVulnerabilitiesInvestigatedLocally() }
-    }
-
-    override fun addReportedRules(ruleKeys: Set<String>) {
-        notifyTelemetry { it.addReportedRules(AddReportedRulesParams(ruleKeys)) }
     }
 
     override fun addQuickFixAppliedForRule(ruleKey: String) {

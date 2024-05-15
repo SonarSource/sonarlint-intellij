@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public interface SonarLintTelemetry {
@@ -32,8 +31,6 @@ public interface SonarLintTelemetry {
   void taintVulnerabilitiesInvestigatedRemotely();
 
   void taintVulnerabilitiesInvestigatedLocally();
-
-  void addReportedRules(Set<String> reportedRules);
 
   void addQuickFixAppliedForRule(String ruleKey);
 
