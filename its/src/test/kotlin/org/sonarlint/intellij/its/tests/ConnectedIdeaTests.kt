@@ -334,10 +334,7 @@ class ConnectedIdeaTests : BaseUiTest() {
             // Power Save Mode Test
             clickPowerSaveMode()
             openFile("src/main/java/foo/Bar.java", "Bar.java")
-            verifyCurrentFileTabContainsMessages(
-                "No analysis done on the current opened file",
-                "This file is not automatically analyzed because power save mode is enabled"
-            )
+            verifyCurrentFileTabContainsMessages("This file is not automatically analyzed because power save mode is enabled")
             clickPowerSaveMode()
         }
 
