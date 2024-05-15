@@ -124,7 +124,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
         RawIssueDto issue = SonarLintTestUtils.createIssue(1);
-        analysisState.addRawIssue(issue, false);
+        analysisState.addRawIssue(issue);
         return analysisResults;
       });
 
@@ -163,7 +163,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
-        analysisState.addRawIssue(issue, false);
+        analysisState.addRawIssue(issue);
         return analysisResults;
       });
 
@@ -182,7 +182,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
-        analysisState.addRawIssue(issue, false);
+        analysisState.addRawIssue(issue);
         return analysisResults;
       });
 

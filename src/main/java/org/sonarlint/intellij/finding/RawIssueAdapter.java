@@ -94,8 +94,9 @@ public class RawIssueAdapter {
             continue;
           }
           VirtualFile locVirtualFile = null;
-          if (loc.getFileUri() != null) {
-            locVirtualFile = VirtualFileManager.getInstance().findFileByUrl(loc.getFileUri().toString());
+          var locFileUri = loc.getFileUri();
+          if (locFileUri != null) {
+            locVirtualFile = VirtualFileManager.getInstance().findFileByUrl(locFileUri.toString());
           }
           if (textRange != null && locVirtualFile != null) {
             var locPsiFile = toPsiFile(project, locVirtualFile);

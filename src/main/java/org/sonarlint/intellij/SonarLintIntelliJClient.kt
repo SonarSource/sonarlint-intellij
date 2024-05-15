@@ -754,7 +754,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun didRaiseIssue(configurationScopeId: String, analysisId: UUID, rawIssue: RawIssueDto) {
         val project = BackendService.findProject(configurationScopeId) ?: BackendService.findModule(configurationScopeId)?.project ?: return
         val runningAnalysis = getService(project, RunningAnalysesTracker::class.java).getById(analysisId) ?: return
-        runningAnalysis.addRawIssue(rawIssue, true)
+        runningAnalysis.addRawStreamingIssue(rawIssue)
     }
 
     override fun didSkipLoadingPlugin(

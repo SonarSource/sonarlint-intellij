@@ -78,10 +78,12 @@ public class AnalysisState {
     return currentIssueHashReceived.stream().noneMatch(i -> this.areSameRawIssues(i, rawIssue));
   }
 
-  public void addRawIssue(RawIssueDto rawIssue, boolean storeRawIssueInMemory) {
-    if (storeRawIssueInMemory) {
-      currentIssueHashReceived.add(rawIssue);
-    }
+  public void addRawStreamingIssue(RawIssueDto rawIssue) {
+    currentIssueHashReceived.add(rawIssue);
+    addRawIssue(rawIssue);
+  }
+
+  public void addRawIssue(RawIssueDto rawIssue) {
     rawIssueCounter.incrementAndGet();
 
     // Do issue tracking for the single issue
@@ -159,7 +161,7 @@ public class AnalysisState {
     return securityHotspotsPerFile;
   }
 
-  private boolean areSameRawIssues(RawIssueDto rawIssue1, RawIssueDto rawIssue2) {
+  private static boolean areSameRawIssues(RawIssueDto rawIssue1, RawIssueDto rawIssue2) {
     var areSame = rawIssue1.getCleanCodeAttribute().name().equals(rawIssue2.getCleanCodeAttribute().name())
       && rawIssue1.getPrimaryMessage().equals(rawIssue2.getPrimaryMessage())
       && Objects.equals(rawIssue1.getFileUri(), rawIssue2.getFileUri())

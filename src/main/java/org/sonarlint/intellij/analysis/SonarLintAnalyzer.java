@@ -95,7 +95,7 @@ public final class SonarLintAnalyzer {
         failedAnalysisFiles = result.getFailedAnalysisFiles().stream()
           .map(uri -> VirtualFileManager.getInstance().findFileByUrl(uri.toString())).collect(Collectors.toSet());
 
-        result.getRawIssues().stream().filter(analysisState::wasIssueNotAlreadyReceived).forEach(i -> analysisState.addRawIssue(i, false));
+        result.getRawIssues().stream().filter(analysisState::wasIssueNotAlreadyReceived).forEach(analysisState::addRawIssue);
       }
 
       return new ModuleAnalysisResult(failedAnalysisFiles);
@@ -131,7 +131,7 @@ public final class SonarLintAnalyzer {
       .toList();
   }
 
-  private List<URI> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze) {
+  private static List<URI> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze) {
     return computeReadActionSafely(module.getProject(), () -> filesToAnalyze.stream()
       .map(f -> createClientInputFile(module, f))
       .filter(Objects::nonNull)
