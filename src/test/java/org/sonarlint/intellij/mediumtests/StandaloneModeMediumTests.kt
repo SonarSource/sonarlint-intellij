@@ -351,7 +351,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    @Disabled("Quickfix issue")
     fun should_apply_quick_fix_on_original_range_when_no_code_is_modified() {
         val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
         analyze(virtualFile)
@@ -362,7 +361,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    @Disabled("Quickfix issue")
     fun should_apply_quick_fix_on_adapted_range_when_code_is_modified_within_the_range() {
         val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
         analyze(virtualFile)
@@ -413,7 +411,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    @Disabled("Quickfix issue")
     fun should_make_the_quick_fix_not_available_after_applying_it() {
         val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
 

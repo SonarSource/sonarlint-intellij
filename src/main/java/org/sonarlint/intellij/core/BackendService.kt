@@ -37,6 +37,7 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiManager
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
 import java.io.IOException
@@ -1047,7 +1048,9 @@ class BackendService : Disposable {
                     )
                 }
         }
-        notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }
+        if (deletedFileUris.isNotEmpty() || events.isNotEmpty()) {
+            notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }
+        }
     }
 
     private fun getFileContent(virtualFile: VirtualFile): String {
