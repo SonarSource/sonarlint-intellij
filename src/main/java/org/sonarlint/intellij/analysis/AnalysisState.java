@@ -75,7 +75,7 @@ public class AnalysisState {
   }
 
   public boolean wasIssueNotAlreadyReceived(RawIssueDto rawIssue) {
-    return currentIssueHashReceived.stream().noneMatch(i -> this.areSameRawIssues(i, rawIssue));
+    return currentIssueHashReceived.stream().noneMatch(i -> areSameRawIssues(i, rawIssue));
   }
 
   public void addRawStreamingIssue(RawIssueDto rawIssue) {

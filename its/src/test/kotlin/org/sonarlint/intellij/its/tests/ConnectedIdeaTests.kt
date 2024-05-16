@@ -169,8 +169,6 @@ class ConnectedIdeaTests : BaseUiTest() {
     @Tag("Suite1")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    // TODO re-enable
-    @Disabled
     inner class SampleJavaHotspotTests : BaseUiTest() {
 
         @BeforeAll
@@ -339,8 +337,6 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
-        // TODO re-enable
-        @Disabled
         fun click_open_in_ide_issue_then_should_manually_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
             openExistingProject("sample-java-issues")
