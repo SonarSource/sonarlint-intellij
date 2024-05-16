@@ -185,6 +185,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
+        @Disabled("Flaky test - after creating the binding, the Security Hotspot is not always detected as from SQ")
         fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
             clearConnections()
             openExistingProject("sample-java-hotspot", true)

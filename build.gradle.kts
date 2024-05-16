@@ -178,6 +178,7 @@ tasks.test {
     }
     useJUnitPlatform()
     systemProperty("sonarlint.telemetry.disabled", "true")
+    systemProperty("intellij.progress.task.ignoreHeadless", "true")
 }
 
 val runIdeDirectory: String by project
