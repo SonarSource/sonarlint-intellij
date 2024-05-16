@@ -347,8 +347,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    // TODO re-enable after SLCORE-784 is fixed
-    @Disabled
     fun should_apply_overlapping_quick_fixes() {
         val expectedFile = myFixture.copyFileToProject("src/quick_fixes/overlapping_quick_fixes.expected.java")
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
