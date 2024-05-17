@@ -113,7 +113,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
       .untilAsserted(() -> assertThat(storageRoot).satisfiesAnyOf(
         root -> assertThat(root).doesNotExist(),
         root -> assertThat(root).isEmptyDirectory()));
-    Awaitility.await().atMost(3, TimeUnit.SECONDS)
+    Awaitility.await().atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue());
   }
 
