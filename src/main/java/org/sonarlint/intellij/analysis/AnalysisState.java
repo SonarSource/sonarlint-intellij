@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.RawIssueAdapter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
@@ -40,6 +41,7 @@ import org.sonarlint.intellij.finding.tracking.LocalHistoryFindingTracker;
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
 public class AnalysisState {
 
@@ -159,31 +161,26 @@ public class AnalysisState {
   }
 
   private static boolean areSameRawIssues(RawIssueDto rawIssue1, RawIssueDto rawIssue2) {
-    var areSame = rawIssue1.getCleanCodeAttribute().name().equals(rawIssue2.getCleanCodeAttribute().name())
+    return rawIssue1.getCleanCodeAttribute().name().equals(rawIssue2.getCleanCodeAttribute().name())
       && rawIssue1.getPrimaryMessage().equals(rawIssue2.getPrimaryMessage())
       && Objects.equals(rawIssue1.getFileUri(), rawIssue2.getFileUri())
       && Objects.equals(rawIssue1.getRuleDescriptionContextKey(), (rawIssue2.getRuleDescriptionContextKey()))
       && rawIssue1.getRuleKey().equals(rawIssue2.getRuleKey())
       && rawIssue1.getSeverity().name().equals(rawIssue2.getSeverity().name())
-      && rawIssue1.getType().name().equals(rawIssue2.getType().name());
-    var textRange1 = rawIssue1.getTextRange();
-    var textRange2 = rawIssue2.getTextRange();
+      && rawIssue1.getType().name().equals(rawIssue2.getType().name())
+      && rawIssue1.getVulnerabilityProbability() == rawIssue2.getVulnerabilityProbability()
+      && areSameRange(rawIssue1.getTextRange(), rawIssue2.getTextRange());
+  }
+
+  private static boolean areSameRange(@Nullable TextRangeDto textRange1, @Nullable TextRangeDto textRange2) {
     if (textRange1 != null && textRange2 != null) {
-      areSame = areSame && textRange1.getStartLine() == textRange2.getStartLine()
+      return textRange1.getStartLine() == textRange2.getStartLine()
         && textRange1.getEndLine() == textRange2.getEndLine()
         && textRange1.getStartLineOffset() == textRange2.getStartLineOffset()
         && textRange1.getEndLineOffset() == textRange2.getEndLineOffset();
     } else {
-      areSame = areSame && textRange1 == textRange2;
+      return textRange1 == textRange2;
     }
-    var vulnProb1 = rawIssue1.getVulnerabilityProbability();
-    var vulnProb2 = rawIssue2.getVulnerabilityProbability();
-    if (vulnProb1 != null && vulnProb2 != null) {
-      areSame = vulnProb1.name().equals(vulnProb2.name());
-    } else {
-      areSame = areSame && vulnProb1 == vulnProb2;
-    }
-    return areSame;
   }
 
 }
