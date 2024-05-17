@@ -556,7 +556,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
                         findingToShow = null
                     }
-                    runOnPooledThread(project) {
+
+                    if (ApplicationManager.getApplication().isUnitTestMode) {
+                        runOnPooledThread(project) {
+                            // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
+                            getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+                        }
+                    } else {
                         // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
                         getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
                     }
