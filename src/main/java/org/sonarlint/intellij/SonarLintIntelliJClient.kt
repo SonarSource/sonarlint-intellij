@@ -26,7 +26,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.module.Module
@@ -63,9 +62,8 @@ import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
-import org.sonarlint.intellij.common.analysis.AnalysisConfigurator
-import org.sonarlint.intellij.common.analysis.ForcedLanguage
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -106,6 +104,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
 import org.sonarlint.intellij.util.VirtualFileUtils
+import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
@@ -608,20 +607,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return listClientFiles
     }
 
-    fun collectContributedLanguages(module: Module, listFiles: Collection<VirtualFile>): Map<VirtualFile, ForcedLanguage> {
-        val contributedConfigurations = AnalysisConfigurator.EP_NAME.extensionList.stream()
-            .map { config: AnalysisConfigurator -> config.configure(module, listFiles) }
-            .toList()
-
-        val contributedLanguages = HashMap<VirtualFile, ForcedLanguage>()
-        for (config in contributedConfigurations) {
-            for ((key, value) in config.forcedLanguages) {
-                contributedLanguages[key] = value
-            }
-        }
-        return contributedLanguages
-    }
-
     private fun computeRiderSharedConfiguration(project: Project, configScopeId: String): ClientFileDto? {
         project.basePath?.let { Paths.get(it) }?.let {
             VfsUtil.findFile(it.resolve(".sonarlint"), false)?.let { sonarlintDir ->
@@ -722,17 +707,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     // useful for Rider where the files to find are not located in content roots
     private fun listFilesInProjectBaseDir(project: Project): Set<VirtualFile> {
         return project.guessProjectDir()?.children?.filter { !it.isDirectory && it.isValid }?.toSet() ?: return emptySet()
-    }
-
-    private fun getFileContent(virtualFile: VirtualFile): String {
-        val fileDocumentManager = FileDocumentManager.getInstance()
-        if (fileDocumentManager.isFileModified(virtualFile)) {
-            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
-            if (document != null) {
-                return document.text
-            }
-        }
-        return virtualFile.contentsToByteArray().toString(virtualFile.charset)
     }
 
     override fun didChangeTaintVulnerabilities(

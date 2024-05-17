@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util
 
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.vfs.VirtualFile
 import java.net.URI
@@ -28,13 +29,6 @@ object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
         return try {
             URI(file.url.replace(" ", "%20"))
-            // Don't use VfsUtilCore.convertToURL as it doesn't work on Windows (it produces invalid URL)
-            // Instead, since we are currently limiting ourselves to analyze files in LocalFileSystem
-            //return if (file.isInLocalFileSystem) {
-            //   val path = file.path.replace(" ", "%20")
-            //   if (path.startsWith("/"))
-            //       URI("${file.fileSystem.protocol}:///${P}")
-            //} else null
         } catch (e: URISyntaxException) {
             null
         }
@@ -47,5 +41,16 @@ object VirtualFileUtils {
             || fileOrDir.fileType.isBinary -> false
 
         else -> true
+    }
+
+    fun getFileContent(virtualFile: VirtualFile): String {
+        val fileDocumentManager = FileDocumentManager.getInstance()
+        if (fileDocumentManager.isFileModified(virtualFile)) {
+            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
+            if (document != null) {
+                return document.text
+            }
+        }
+        return virtualFile.contentsToByteArray().toString(virtualFile.charset)
     }
 }

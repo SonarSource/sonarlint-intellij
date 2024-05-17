@@ -44,19 +44,20 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 public class AnalysisState {
 
   private final UUID id;
-  private Module module;
+  private final Module module;
   private final ConcurrentHashMap<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile = new ConcurrentHashMap<>();
   private final AtomicInteger rawIssueCounter = new AtomicInteger();
   private final FindingStreamer findingStreamer;
   private final LocalHistoryFindingTracker localHistoryFindingTracker;
-  private final ConcurrentLinkedQueue<RawIssueDto> currentIssueHashReceived = new ConcurrentLinkedQueue<>();
+  private final ConcurrentLinkedQueue<RawIssueDto> currentRawIssuesReceived = new ConcurrentLinkedQueue<>();
 
-  public AnalysisState(UUID analysisId, FindingStreamer findingStreamer, CachedFindings previousFindings, Collection<VirtualFile> filesToAnalyze) {
+  public AnalysisState(UUID analysisId, FindingStreamer findingStreamer, CachedFindings previousFindings, Collection<VirtualFile> filesToAnalyze, Module module) {
     this.id = analysisId;
     this.localHistoryFindingTracker = new LocalHistoryFindingTracker(previousFindings);
     this.findingStreamer = findingStreamer;
     this.initFiles(filesToAnalyze);
+    this.module = module;
   }
 
   public void initFiles(Collection<VirtualFile> files) {
@@ -70,16 +71,12 @@ public class AnalysisState {
     return id;
   }
 
-  public void setCurrentModule(Module module) {
-    this.module = module;
-  }
-
   public boolean wasIssueNotAlreadyReceived(RawIssueDto rawIssue) {
-    return currentIssueHashReceived.stream().noneMatch(i -> areSameRawIssues(i, rawIssue));
+    return currentRawIssuesReceived.stream().noneMatch(i -> areSameRawIssues(i, rawIssue));
   }
 
   public void addRawStreamingIssue(RawIssueDto rawIssue) {
-    currentIssueHashReceived.add(rawIssue);
+    currentRawIssuesReceived.add(rawIssue);
     addRawIssue(rawIssue);
   }
 

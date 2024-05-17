@@ -57,6 +57,8 @@ class VirtualFileSystemListener : BulkFileListener {
     }
 
     private fun forwardEvents(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?) {
-        getService(VirtualFileSystemEventsHandler::class.java).forwardEventsAsync(events, eventTypeConverter)
+        if (events.isNotEmpty()) {
+            getService(VirtualFileSystemEventsHandler::class.java).forwardEventsAsync(events, eventTypeConverter)
+        }
     }
 }

@@ -28,6 +28,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManagerEvent;
+import com.intellij.ui.content.ContentManagerListener;
 import com.intellij.util.ui.UIUtil;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,7 +54,6 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
-import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
@@ -67,7 +67,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 @Service(Service.Level.PROJECT)
-public final class SonarLintToolWindow implements ContentManagerListenerAdapter, ProjectBindingListener {
+public final class SonarLintToolWindow implements ContentManagerListener, ProjectBindingListener {
 
   private final Project project;
   private Content taintVulnerabilitiesContent;

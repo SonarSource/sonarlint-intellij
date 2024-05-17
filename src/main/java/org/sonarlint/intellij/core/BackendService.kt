@@ -26,7 +26,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.ProgressIndicator
@@ -37,7 +36,6 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiManager
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
 import java.io.IOException
@@ -58,11 +56,11 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
-import org.sonarlint.intellij.SonarLintIntelliJClient.collectContributedLanguages
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -83,6 +81,7 @@ import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.VirtualFileUtils
+import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
@@ -1051,17 +1050,6 @@ class BackendService : Disposable {
         if (deletedFileUris.isNotEmpty() || events.isNotEmpty()) {
             notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }
         }
-    }
-
-    private fun getFileContent(virtualFile: VirtualFile): String {
-        val fileDocumentManager = FileDocumentManager.getInstance()
-        if (fileDocumentManager.isFileModified(virtualFile)) {
-            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
-            if (document != null) {
-                return document.text
-            }
-        }
-        return virtualFile.contentsToByteArray().toString(virtualFile.charset)
     }
 
     fun analyzeFiles(

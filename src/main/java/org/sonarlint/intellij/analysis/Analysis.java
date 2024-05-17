@@ -214,8 +214,7 @@ public class Analysis implements Cancelable {
       for (var entry : scope.getFilesByModule().entrySet()) {
         var module = entry.getKey();
         var analysisId = UUID.randomUUID();
-        var analysisState = new AnalysisState(analysisId, findingStreamer, cachedFindings, entry.getValue());
-        analysisState.setCurrentModule(module);
+        var analysisState = new AnalysisState(analysisId, findingStreamer, cachedFindings, entry.getValue(), module);
         listAnalysis.add(analysisState);
         results.put(module, analyzer.analyzeModule(module, entry.getValue(), analysisState, indicator));
         checkCanceled(indicator);
