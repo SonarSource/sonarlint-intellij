@@ -23,7 +23,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import java.awt.GraphicsEnvironment;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
@@ -45,12 +46,13 @@ public class SonarLintTestUtils {
     return event;
   }
 
-  public static RawIssue createIssue(int id) {
-    var issue = mock(RawIssue.class);
+  public static RawIssueDto createIssue(int id) {
+    var issue = mock(RawIssueDto.class);
     when(issue.getRuleKey()).thenReturn(Integer.toString(id));
-    when(issue.getMessage()).thenReturn("issue " + id);
+    when(issue.getPrimaryMessage()).thenReturn("issue " + id);
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getType()).thenReturn(RuleType.BUG);
+    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.COMPLETE);
     return issue;
   }
 }

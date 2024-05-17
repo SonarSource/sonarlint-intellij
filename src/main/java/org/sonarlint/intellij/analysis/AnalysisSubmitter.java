@@ -23,18 +23,23 @@ import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.actions.ShowFindingCallable;
 import org.sonarlint.intellij.actions.ShowReportCallable;
 import org.sonarlint.intellij.actions.ShowUpdatedCurrentFileCallable;
 import org.sonarlint.intellij.actions.UpdateOnTheFlyFindingsCallable;
+import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
+import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.Finding;
@@ -150,6 +155,17 @@ public final class AnalysisSubmitter {
   private static boolean shouldExecuteInBackground(AnActionEvent e) {
     return ActionPlaces.isMainMenuOrActionSearch(e.getPlace())
       || ActionPlaces.UNKNOWN.equals(e.getPlace());
+  }
+
+  public static Map<VirtualFile, ForcedLanguage> collectContributedLanguages(Module module, Collection<VirtualFile> listFiles) {
+    var contributedConfigurations = AnalysisConfigurator.EP_NAME.getExtensionList().stream()
+      .map(config -> config.configure(module, listFiles)).toList();
+
+    var contributedLanguages = new HashMap<VirtualFile, ForcedLanguage>();
+    for (var config : contributedConfigurations) {
+      contributedLanguages.putAll(config.forcedLanguages);
+    }
+    return contributedLanguages;
   }
 
   private Cancelable analyzeInBackground(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {

@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.messages
 
 import com.intellij.util.messages.Topic
-import org.sonarlint.intellij.core.ProjectBinding
 
 val PROJECT_BINDING_TOPIC = Topic.create(
     "Project binding events",
@@ -28,6 +27,7 @@ val PROJECT_BINDING_TOPIC = Topic.create(
 )
 
 interface ProjectBindingListener {
-    fun bindingChanged(previousBinding: ProjectBinding?, newBinding: ProjectBinding?)
+
+    fun bindingChanged()
 
 }

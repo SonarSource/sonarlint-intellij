@@ -31,7 +31,6 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -41,16 +40,12 @@ import static org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTO
 class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager;
 
-  private SonarLintAnalysisEngine standaloneEngine = mock(SonarLintAnalysisEngine.class);
-  private SonarLintAnalysisEngine connectedEngine = mock(SonarLintAnalysisEngine.class);
-
   @BeforeEach
   void before() {
     var console = mock(SonarLintConsole.class);
     var notifications = mock(SonarLintProjectNotifications.class);
     replaceProjectService(SonarLintConsole.class, console);
     replaceProjectService(SonarLintProjectNotifications.class, notifications);
-    getEngineManager().stopAllEngines(false);
 
     projectBindingManager = new ProjectBindingManager(getProject());
   }
@@ -77,72 +72,6 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
     var throwable = catchThrowable(() -> projectBindingManager.getServerConnection());
 
     assertThat(throwable).isInstanceOf(InvalidBindingException.class);
-  }
-
-  @Test
-  void fail_invalid_server_binding() {
-    getProjectSettings().setBindingEnabled(true);
-
-    var throwable = catchThrowable(() -> projectBindingManager.getFacade(getModule()));
-
-    assertThat(throwable)
-      .isInstanceOf(InvalidBindingException.class)
-      .hasMessage("Project has an invalid binding");
-  }
-
-  @Test
-  void fail_invalid_module_binding() {
-    getProjectSettings().setBindingEnabled(true);
-    getProjectSettings().setConnectionName("server1");
-    getProjectSettings().setProjectKey(null);
-
-    var throwable = catchThrowable(() -> projectBindingManager.getFacade(getModule()));
-
-    assertThat(throwable)
-      .isInstanceOf(InvalidBindingException.class)
-      .hasMessage("Project has an invalid binding");
-  }
-
-  @Test
-  void should_return_connected_engine_if_started() {
-    getProjectSettings().setBindingEnabled(true);
-    getProjectSettings().setConnectionName("server1");
-    getProjectSettings().setProjectKey("key");
-    getEngineManager().registerEngine(connectedEngine, "server1");
-
-    var engine = projectBindingManager.getEngineIfStarted();
-
-    assertThat(engine).isEqualTo(connectedEngine);
-  }
-
-  @Test
-  void should_return_standalone_engine_if_started() {
-    getProjectSettings().setBindingEnabled(false);
-    getEngineManager().registerEngine(standaloneEngine);
-
-    var engine = projectBindingManager.getEngineIfStarted();
-
-    assertThat(engine).isEqualTo(standaloneEngine);
-  }
-
-  @Test
-  void should_not_return_connected_engine_if_not_started() {
-    getProjectSettings().setBindingEnabled(true);
-    getProjectSettings().setConnectionName("server1");
-    getProjectSettings().setProjectKey(null);
-
-    var engine = projectBindingManager.getEngineIfStarted();
-
-    assertThat(engine).isNull();
-  }
-
-  @Test
-  void should_not_return_standalone_engine_if_not_started() {
-    getProjectSettings().setBindingEnabled(false);
-
-    var engine = projectBindingManager.getEngineIfStarted();
-
-    assertThat(engine).isNull();
   }
 
   @Test

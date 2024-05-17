@@ -26,6 +26,7 @@ import com.intellij.testFramework.replaceService
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility.await
@@ -134,7 +135,9 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         service.projectOpened(project)
 
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
-        verify(backendConfigurationService, timeout(500)).didAddConfigurationScopes(paramsCaptor.capture())
+        await().during(500, TimeUnit.MILLISECONDS).untilAsserted {
+            verify(backendConfigurationService, timeout(500).atLeastOnce()).didAddConfigurationScopes(paramsCaptor.capture())
+        }
         assertThat(paramsCaptor.firstValue.addedScopes).extracting(
             "id",
             "name",
@@ -155,7 +158,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         service.projectOpened(project)
 
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
-        verify(backendConfigurationService, timeout(500)).didAddConfigurationScopes(paramsCaptor.capture())
+        verify(backendConfigurationService, timeout(500).atLeastOnce()).didAddConfigurationScopes(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.addedScopes).extracting(
             "id",
             "name",
@@ -222,7 +225,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             "updatedBinding.connectionId",
             "updatedBinding.sonarProjectKey",
             "updatedBinding.bindingSuggestionDisabled"
-        ).containsExactly(
+        ).containsExactlyInAnyOrder(
             tuple(projectBackendId(project), "id", "key", true),
             tuple(moduleBackendId, "id", "moduleKey", true)
         )
@@ -358,6 +361,6 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     fun test_shut_backend_down_when_disposing_service() {
         service.dispose()
 
-        verify(backend).shutdown()
+        verify(backend, timeout(500)).shutdown()
     }
 }

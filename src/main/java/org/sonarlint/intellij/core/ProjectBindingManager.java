@@ -40,7 +40,6 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -57,39 +56,6 @@ public final class ProjectBindingManager {
 
   public ProjectBindingManager(Project project) {
     myProject = project;
-  }
-
-  /**
-   * Returns a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
-   * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an InvalidBindingException.
-   *
-   * @throws InvalidBindingException If current project binding is invalid
-   */
-  public EngineFacade getFacade(Module module) throws InvalidBindingException {
-    var engineManager = getService(EngineManager.class);
-    var projectSettings = getSettingsFor(myProject);
-    var notifications = getService(myProject, SonarLintProjectNotifications.class);
-    if (projectSettings.isBindingEnabled()) {
-      var moduleBindingManager = getService(module, ModuleBindingManager.class);
-      var connectionId = projectSettings.getConnectionName();
-      var projectKey = moduleBindingManager.resolveProjectKey();
-      checkBindingStatus(notifications, connectionId, projectKey);
-      var engine = engineManager.getConnectedEngine(notifications, requireNonNull(connectionId));
-      return new EngineFacade(myProject, engine);
-    }
-
-    return new EngineFacade(myProject, engineManager.getStandaloneEngine());
-  }
-
-  @CheckForNull
-  public SonarLintAnalysisEngine getEngineIfStarted() {
-    var engineManager = getService(EngineManager.class);
-    var projectSettings = getSettingsFor(myProject);
-    if (projectSettings.isBound()) {
-      var connectionId = projectSettings.getConnectionName();
-      return engineManager.getConnectedEngineIfStarted(requireNonNull(connectionId));
-    }
-    return engineManager.getStandaloneEngineIfStarted();
   }
 
   public boolean isBindingValid() {
@@ -119,16 +85,6 @@ public final class ProjectBindingManager {
     }
   }
 
-  private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String connectionName, @Nullable String projectKey) throws InvalidBindingException {
-    if (connectionName == null) {
-      notifications.notifyConnectionIdInvalid();
-      throw new InvalidBindingException("Project has an invalid binding");
-    } else if (projectKey == null) {
-      notifications.notifyProjectStorageInvalid();
-      throw new InvalidBindingException("Project has an invalid binding");
-    }
-  }
-
   @CheckForNull
   public ProjectBinding getBinding() {
     if (isBindingValid()) {
@@ -145,7 +101,7 @@ public final class ProjectBindingManager {
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
-      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
       updateTelemetryOnBind(bindingMode);
       getService(BackendService.class).projectBound(myProject, newBinding);
     }
@@ -158,7 +114,7 @@ public final class ProjectBindingManager {
     var newBinding = requireNonNull(getBinding());
 
     if (!Objects.equals(previousBinding, newBinding)) {
-      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
       updateTelemetryOnBind(BindingMode.MANUAL);
       getService(BackendService.class).projectBound(myProject, newBinding);
 
@@ -202,7 +158,7 @@ public final class ProjectBindingManager {
 
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     if (previousBinding != null) {
-      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, null);
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
       getService(BackendService.class).projectUnbound(myProject);
     }
   }

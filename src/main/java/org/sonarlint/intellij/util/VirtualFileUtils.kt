@@ -19,16 +19,19 @@
  */
 package org.sonarlint.intellij.util
 
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.vfs.VirtualFile
 import java.net.URI
-import java.nio.file.Paths
+import java.net.URISyntaxException
 
 object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
-        // Don't use VfsUtilCore.convertToURL as it doesn't work on Windows (it produces invalid URL)
-        // Instead, since we are currently limiting ourselves to analyze files in LocalFileSystem
-        return if (file.isInLocalFileSystem) Paths.get(file.path).toUri() else null
+        return try {
+            URI(file.url.replace(" ", "%20"))
+        } catch (e: URISyntaxException) {
+            null
+        }
     }
 
     /** Checks a virtual file to be an actual file (not a directory) and contain non-binary information (text) */
@@ -38,5 +41,16 @@ object VirtualFileUtils {
             || fileOrDir.fileType.isBinary -> false
 
         else -> true
+    }
+
+    fun getFileContent(virtualFile: VirtualFile): String {
+        val fileDocumentManager = FileDocumentManager.getInstance()
+        if (fileDocumentManager.isFileModified(virtualFile)) {
+            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
+            if (document != null) {
+                return document.text
+            }
+        }
+        return virtualFile.contentsToByteArray().toString(virtualFile.charset)
     }
 }

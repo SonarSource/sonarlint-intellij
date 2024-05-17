@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,9 +56,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ProjectBinding;
-import org.sonarlint.intellij.core.TestEngineManager;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 
@@ -142,16 +139,6 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     }
   }
 
-  @AfterAll
-  static void stopEngines() {
-    try {
-      getEngineManager().stopAllEngines(false);
-    } catch (Exception e) {
-      System.out.println("Error stoping all engines");
-      e.printStackTrace();
-    }
-  }
-
   protected void clearNotifications() {
     var mgr = getNotificationsManager();
     Stream.of(mgr.getNotificationsOfType(Notification.class, getProject()))
@@ -180,10 +167,6 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
 
   protected SonarLintModuleSettings getModuleSettings() {
     return getSettingsFor(getModule());
-  }
-
-  protected static TestEngineManager getEngineManager() {
-    return (TestEngineManager) getService(EngineManager.class);
   }
 
   protected SonarLintConsole getConsole() {
@@ -216,10 +199,6 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getProjectSettings().bindTo(connection, projectKey);
     getService(BackendService.class).connectionsUpdated(getGlobalSettings().getServerConnections());
     getService(BackendService.class).projectBound(getProject(), new ProjectBinding(connectionName, projectKey, Collections.emptyMap()));
-  }
-
-  protected void connectModuleTo(String projectKey) {
-    getModuleSettings().setProjectKey(projectKey);
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {

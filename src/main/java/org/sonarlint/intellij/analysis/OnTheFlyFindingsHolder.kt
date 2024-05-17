@@ -24,6 +24,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -32,7 +33,6 @@ import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import java.util.concurrent.ConcurrentHashMap
 
 class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerListener {
     private var selectedFile: VirtualFile? = null
@@ -54,16 +54,14 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         with(findings.onlyFor(openFiles)) {
             currentIssuesPerOpenFile.putAll(issuesPerFile)
             currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
-            runOnUiThread(project) {
-                if (selectedFile == null) {
-                    selectedFile = SonarLintUtils.getSelectedFile(project)
-                }
-                if (issuesPerFile.keys.contains(selectedFile)) {
-                    updateCurrentFileTab()
-                }
-                updateSecurityHotspots()
-                getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(filesInvolved)
+        }
+        runOnUiThread(project) {
+            if (selectedFile == null) {
+                selectedFile = SonarLintUtils.getSelectedFile(project)
             }
+            updateCurrentFileTab()
+            updateSecurityHotspots()
+            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openFiles).filesInvolved)
         }
     }
 

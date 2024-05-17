@@ -23,21 +23,22 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.finding.issue.aClientInputFile
 import org.sonarlint.intellij.finding.issue.aFileEdit
 import org.sonarlint.intellij.finding.issue.aQuickFix
 import org.sonarlint.intellij.finding.issue.aTextEdit
 import org.sonarlint.intellij.finding.issue.aTextRange
+import org.sonarlint.intellij.util.VirtualFileUtils
 
 class QuickFixTests : AbstractSonarLintLightTests() {
     @Test
     fun should_convert_quick_fix_if_file_and_text_edit_are_valid() {
         val file = myFixture.configureByText("file.ext", "Text")
+        val fileUri = VirtualFileUtils.toURI(file.virtualFile)
         val fix = aQuickFix(
             "Fix message",
             listOf(
                 aFileEdit(
-                    aClientInputFile(file, myFixture.getDocument(file)),
+                    fileUri!!,
                     listOf(aTextEdit(aTextRange(1, 0, 1, 4), "newText"))
                 )
             )
@@ -61,11 +62,12 @@ class QuickFixTests : AbstractSonarLintLightTests() {
     @Test
     fun should_not_convert_quick_fix_if_edit_range_line_overflows() {
         val file = myFixture.configureByText("file.ext", "Text")
+        val fileUri = VirtualFileUtils.toURI(file.virtualFile)
         val fix = aQuickFix(
             "Fix message",
             listOf(
                 aFileEdit(
-                    aClientInputFile(file, myFixture.getDocument(file)),
+                    fileUri!!,
                     listOf(aTextEdit(aTextRange(2, 0, 2, 1), "newText"))
                 )
             )
@@ -79,16 +81,18 @@ class QuickFixTests : AbstractSonarLintLightTests() {
     @Test
     fun should_not_convert_quick_fix_if_it_targets_several_files() {
         val file = myFixture.configureByText("file.ext", "Text")
+        val fileUri = VirtualFileUtils.toURI(file.virtualFile)
         val file2 = myFixture.configureByText("file2.ext", "Text")
+        val file2Uri = VirtualFileUtils.toURI(file2.virtualFile)
         val fix = aQuickFix(
             "Fix message",
             listOf(
                 aFileEdit(
-                    aClientInputFile(file, myFixture.getDocument(file)),
+                    fileUri!!,
                     listOf(aTextEdit(aTextRange(1, 0, 1, 0), "newText"))
                 ),
                 aFileEdit(
-                    aClientInputFile(file2, myFixture.getDocument(file2)),
+                    file2Uri!!,
                     listOf(aTextEdit(aTextRange(1, 0, 1, 0), "newText"))
                 )
             )
@@ -102,11 +106,12 @@ class QuickFixTests : AbstractSonarLintLightTests() {
     @Test
     fun should_not_convert_quick_fix_if_edit_range_line_offset_overflows() {
         val file = myFixture.configureByText("file.ext", "Text")
+        val fileUri = VirtualFileUtils.toURI(file.virtualFile)
         val fix = aQuickFix(
             "Fix message",
             listOf(
                 aFileEdit(
-                    aClientInputFile(file, myFixture.getDocument(file)),
+                    fileUri!!,
                     listOf(aTextEdit(aTextRange(1, 0, 1, 5), "newText"))
                 )
             )
@@ -120,10 +125,10 @@ class QuickFixTests : AbstractSonarLintLightTests() {
     @Test
     fun should_not_convert_quick_fix_if_document_has_changed() {
         val file = myFixture.configureByText("file.ext", "Text")
-        val document = myFixture.getDocument(file)
+        val fileUri = VirtualFileUtils.toURI(file.virtualFile)
         val fix = aQuickFix(
             "Fix message",
-            listOf(aFileEdit(aClientInputFile(file, document), listOf(aTextEdit(aTextRange(1, 0, 1, 4), "newText"))))
+            listOf(aFileEdit(fileUri!!, listOf(aTextEdit(aTextRange(1, 0, 1, 4), "newText"))))
         )
         myFixture.type("new content")
 

@@ -17,23 +17,31 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core;
+package org.sonarlint.intellij.analysis
 
-import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine;
+import com.intellij.openapi.components.Service
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
-public interface EngineManager {
-  void stopAllDeletedConnectedEnginesAsync();
+@Service(Service.Level.PROJECT)
+class RunningAnalysesTracker {
 
-  void stopAllEngines(boolean async);
+    private val analysisStateById: MutableMap<UUID, AnalysisState> = ConcurrentHashMap<UUID, AnalysisState>()
 
-  SonarLintAnalysisEngine getStandaloneEngine();
+    fun track(analysisState: AnalysisState) {
+        analysisStateById[analysisState.id] = analysisState
+    }
 
-  SonarLintAnalysisEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId) throws InvalidBindingException;
+    fun finish(analysisState: AnalysisState) {
+        analysisStateById.remove(analysisState.id)
+    }
 
-  @Nullable SonarLintAnalysisEngine getConnectedEngineIfStarted(String connectionId);
+    fun getById(analysisId: UUID): AnalysisState? {
+        return analysisStateById[analysisId]
+    }
 
-  @Nullable SonarLintAnalysisEngine getStandaloneEngineIfStarted();
+    fun isAnalysisRunning(): Boolean {
+        return analysisStateById.isNotEmpty()
+    }
+
 }
