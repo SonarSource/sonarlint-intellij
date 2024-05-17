@@ -107,6 +107,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.computeInEDT
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
@@ -556,8 +557,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
                         findingToShow = null
                     }
-                    // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
-                    getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+                    runOnPooledThread(project) {
+                        // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
+                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+                    }
                 }
             }
     }
