@@ -7,7 +7,7 @@ public class QuickFixableFile {
     var array = new int[5];
     if (file != null && (file.isFile() || Arrays.toString(array).equals(""))) {
       /* ... */
-
     }
+
   }
 }
