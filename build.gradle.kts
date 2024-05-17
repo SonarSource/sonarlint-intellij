@@ -58,6 +58,7 @@ allprojects {
     }
 
     repositories {
+        mavenLocal()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
                 credentials {
@@ -204,8 +205,8 @@ configurations {
 
 dependencies {
     implementation(libs.sonarlint.java.client.legacy)
-    implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
+//    implementation(libs.sonarlint.backend.cli)
     implementation(libs.protobuf)
     implementation(libs.commons.langs3)
     implementation(project(":common"))
