@@ -39,10 +39,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +48,6 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
@@ -113,8 +110,6 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
       .untilAsserted(() -> assertThat(storageRoot).satisfiesAnyOf(
         root -> assertThat(root).doesNotExist(),
         root -> assertThat(root).isEmptyDirectory()));
-    Awaitility.await().atMost(10, TimeUnit.SECONDS)
-      .untilAsserted(() -> assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue());
   }
 
   @RegisterExtension
