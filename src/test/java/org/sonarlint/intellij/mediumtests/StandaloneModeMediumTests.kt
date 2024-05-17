@@ -63,9 +63,12 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private val diamondQuickFix = "SonarLint: Replace with <>"
 
     @BeforeEach
-    fun notifyProjectOpened() {
+    fun notifyProjectOpenedAndCheckReadiness() {
         getService(BackendService::class.java).projectOpened(project)
         getService(BackendService::class.java).modulesAdded(project, listOf(module))
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
+        }
     }
 
     @AfterEach
@@ -384,7 +387,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    @Disabled("re-enable after SLCORE-784 is fixed")
     fun should_apply_overlapping_quick_fixes() {
         val expectedFile = myFixture.copyFileToProject("src/quick_fixes/overlapping_quick_fixes.expected.java")
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
@@ -466,9 +468,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     private fun analyzeAll(): List<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
-        }
 
         submitter.analyzeAllFiles()
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
