@@ -62,7 +62,7 @@ public class AnalysisState {
     this.module = module;
   }
 
-  public void initFiles(Collection<VirtualFile> files) {
+  private void initFiles(Collection<VirtualFile> files) {
     files.forEach(file -> {
       issuesPerFile.computeIfAbsent(file, f -> new ArrayList<>());
       securityHotspotsPerFile.computeIfAbsent(file, f -> new ArrayList<>());

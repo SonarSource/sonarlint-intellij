@@ -53,7 +53,6 @@ import org.sonarsource.sonarlint.core.commons.api.progress.CanceledException;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThreadAndWait;
 
 public class Analysis implements Cancelable {
@@ -139,7 +138,7 @@ public class Analysis implements Cancelable {
       indicator.setIndeterminate(false);
       indicator.setFraction(.9);
 
-      summary.logInConsole();
+      summary.logFailedFiles();
 
       findingsCache.replaceFindings(summary.findings);
 
@@ -228,8 +227,7 @@ public class Analysis implements Cancelable {
     var issuesPerAnalyzedFile = getLiveFindingsPerAnalyzedFile(listAnalysis);
     var securityHotspotsPerAnalyzedFile = getSecurityHotspotsPerAnalyzedFile(listAnalysis);
     var findings = new LiveFindings(issuesPerAnalyzedFile, securityHotspotsPerAnalyzedFile);
-    var rawIssueCount = listAnalysis.stream().mapToInt(AnalysisState::getRawIssueCount).sum();
-    return new Summary(project, scope.getFilesByModule(), allFailedFiles, rawIssueCount, findings);
+    return new Summary(project, scope.getFilesByModule(), allFailedFiles, findings);
   }
 
   private static Map<VirtualFile, Collection<LiveIssue>> getLiveFindingsPerAnalyzedFile(Set<AnalysisState> listAnalysis) {
@@ -255,29 +253,16 @@ public class Analysis implements Cancelable {
   private static class Summary {
     private final Project project;
     private final Set<VirtualFile> failedFiles;
-    private final int rawIssueCount;
     private final LiveFindings findings;
-    private final Set<String> reportedRuleKeys = new HashSet<>();
-    private final long issuesCount;
-    private final long securityHotspotsCount;
-    private final boolean onlyFailedFiles;
     private final Map<Module, Collection<VirtualFile>> filesHavingIssuesByModule;
     private final Map<Module, Collection<VirtualFile>> filesHavingSecurityHotspotsByModule;
 
-    public Summary(Project project, Map<Module, Collection<VirtualFile>> filesByModule, Set<VirtualFile> failedFiles, int rawIssueCount,
-      LiveFindings findings) {
+    public Summary(Project project, Map<Module, Collection<VirtualFile>> filesByModule, Set<VirtualFile> failedFiles, LiveFindings findings) {
       this.project = project;
       this.failedFiles = failedFiles;
-      this.rawIssueCount = rawIssueCount;
       this.findings = findings;
-      this.reportedRuleKeys.addAll(findings.getIssuesPerFile().values().stream().flatMap(issues -> issues.stream().map(LiveIssue::getRuleKey)).collect(Collectors.toSet()));
-      this.reportedRuleKeys.addAll(findings.getSecurityHotspotsPerFile().values().stream()
-        .flatMap(hotspots -> hotspots.stream().map(LiveFinding::getRuleKey)).collect(Collectors.toSet()));
       this.filesHavingIssuesByModule = filterFilesHavingFindingsByModule(filesByModule, findings.getIssuesPerFile());
       this.filesHavingSecurityHotspotsByModule = filterFilesHavingFindingsByModule(filesByModule, findings.getSecurityHotspotsPerFile());
-      this.securityHotspotsCount = findings.getSecurityHotspotsPerFile().values().stream().mapToLong(Collection::size).sum();
-      this.issuesCount = findings.getIssuesPerFile().values().stream().mapToLong(Collection::size).sum();
-      this.onlyFailedFiles = failedFiles.containsAll(filesByModule.values().stream().flatMap(Collection::stream).collect(toSet()));
     }
 
     private static <L extends LiveFinding> Map<Module, Collection<VirtualFile>> filterFilesHavingFindingsByModule(Map<Module,
@@ -295,30 +280,9 @@ public class Analysis implements Cancelable {
       return filesWithIssuesPerModule;
     }
 
-    public Set<String> getReportedRuleKeys() {
-      return reportedRuleKeys;
-    }
-
-    private void logInConsole() {
-      logFailedFiles();
-      if (!onlyFailedFiles) {
-        logFoundIssues();
-      }
-    }
-
-    private void logFailedFiles() {
+    public void logFailedFiles() {
       failedFiles.forEach(vFile -> SonarLintConsole.get(project).debug("Analysis of file '" + vFile.getPath() + "' might not be " +
         "accurate because there were errors" + " during analysis"));
-    }
-
-    private void logFoundIssues() {
-      var issueStr = pluralize("issue", rawIssueCount);
-      var console = SonarLintConsole.get(project);
-      console.debug(String.format("Processed %d %s", rawIssueCount, issueStr));
-
-      var issuesText = pluralize("issue", issuesCount);
-      var hotspotsText = pluralize("hotspot", securityHotspotsCount);
-      console.info("Found " + issuesCount + " " + issuesText + " and " + securityHotspotsCount + " " + hotspotsText);
     }
   }
 
