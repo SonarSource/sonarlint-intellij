@@ -31,6 +31,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.JBColor;
 import java.awt.CardLayout;
 import java.awt.event.ItemEvent;
 import javax.swing.DefaultComboBoxModel;
@@ -38,6 +39,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
@@ -68,6 +70,7 @@ public class AuthStep extends AbstractWizardStepEx {
   private JPasswordField passwordField;
   private JPanel cardPanel;
   private JButton openTokenCreationPageButton;
+  private JLabel deprecated;
   private final ErrorPainter errorPainter;
 
   public AuthStep(WizardModel model) {
@@ -129,6 +132,7 @@ public class AuthStep extends AbstractWizardStepEx {
     } else {
       passwordField.setText(null);
     }
+    deprecated.setForeground(JBColor.red);
     openTokenCreationPageButton.setText("Create token");
   }
 
