@@ -31,8 +31,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.FileEditDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.QuickFixDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.TextEditDto
 
-fun convert(project: Project, coreQuickFix: QuickFixDto): QuickFix? {
-    val virtualFileEdits = coreQuickFix.fileEdits().map { convert(it) }
+fun convert(project: Project, coreQuickFix: QuickFixDto, modificationStamp: Long?): QuickFix? {
+    val virtualFileEdits = coreQuickFix.fileEdits().map { convert(it, modificationStamp) }
     if (virtualFileEdits.contains(null)) {
         log(project, "Quick fix won't be proposed as it is invalid")
         return null
@@ -48,10 +48,10 @@ private fun log(project: Project, message: String) {
     SonarLintConsole.get(project).debug(message)
 }
 
-private fun convert(fileEdit: FileEditDto): VirtualFileEdit? {
+private fun convert(fileEdit: FileEditDto, modificationStamp: Long?): VirtualFileEdit? {
     val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileEdit.target().toString()) ?: return null
     val document = virtualFile.getDocument() ?: return null
-    if (virtualFile.modificationStamp < document.modificationStamp) {
+    if (modificationStamp != null && modificationStamp < document.modificationStamp) {
         // we don't want to show potentially outdated fixes
         // next analysis will bring more up-to-date quick fixes
         return null

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -43,12 +44,15 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+
 public class AnalysisState {
 
   private final UUID id;
   private final Module module;
   private final ConcurrentHashMap<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<VirtualFile, Long> modificationStampByFile = new ConcurrentHashMap<>();
   private final AtomicInteger rawIssueCounter = new AtomicInteger();
   private final FindingStreamer findingStreamer;
   private final LocalHistoryFindingTracker localHistoryFindingTracker;
@@ -66,6 +70,10 @@ public class AnalysisState {
     files.forEach(file -> {
       issuesPerFile.computeIfAbsent(file, f -> new ArrayList<>());
       securityHotspotsPerFile.computeIfAbsent(file, f -> new ArrayList<>());
+      var document = computeReadActionSafely(file, () -> FileDocumentManager.getInstance().getDocument(file));
+      if (document != null) {
+        modificationStampByFile.put(file, document.getModificationStamp());
+      }
     });
   }
 
@@ -113,7 +121,7 @@ public class AnalysisState {
   private void processSecurityHotspot(VirtualFile virtualFile, RawIssueDto rawIssue) {
     LiveSecurityHotspot liveSecurityHotspot;
     try {
-      liveSecurityHotspot = RawIssueAdapter.toLiveSecurityHotspot(module, rawIssue, virtualFile);
+      liveSecurityHotspot = RawIssueAdapter.toLiveSecurityHotspot(module, rawIssue, virtualFile, modificationStampByFile.get(virtualFile));
       if (liveSecurityHotspot == null) {
         return;
       }
@@ -132,7 +140,7 @@ public class AnalysisState {
   private void processIssue(VirtualFile virtualFile, RawIssueDto rawIssue) {
     LiveIssue liveIssue;
     try {
-      liveIssue = RawIssueAdapter.toLiveIssue(module, rawIssue, virtualFile);
+      liveIssue = RawIssueAdapter.toLiveIssue(module, rawIssue, virtualFile, modificationStampByFile.get(virtualFile));
       if (liveIssue == null) {
         return;
       }

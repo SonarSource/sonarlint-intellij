@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -45,13 +46,14 @@ import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
 
 public class RawIssueAdapter {
 
-  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RawIssueDto rawHotspot, VirtualFile virtualFile) {
+  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RawIssueDto rawHotspot,
+    VirtualFile virtualFile, @Nullable Long modificationStamp) {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
       var psiFile = toPsiFile(project, virtualFile);
       var textRange = rawHotspot.getTextRange();
-      var quickFixes = transformQuickFixes(project, rawHotspot.getQuickFixes());
+      var quickFixes = transformQuickFixes(project, rawHotspot.getQuickFixes(), modificationStamp);
       if (textRange != null) {
         var rangeMarker = matcher.match(psiFile, textRange);
         var context = transformFlows(project, matcher, psiFile, rawHotspot.getFlows(), rawHotspot.getRuleKey());
@@ -62,13 +64,14 @@ public class RawIssueAdapter {
     });
   }
 
-  public static LiveIssue toLiveIssue(Module module, RawIssueDto rawIssue, VirtualFile virtualFile) {
+  public static LiveIssue toLiveIssue(Module module, RawIssueDto rawIssue,
+    VirtualFile virtualFile, @Nullable Long modificationStamp) {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
       var matcher = new TextRangeMatcher(project);
       var psiFile = toPsiFile(project, virtualFile);
       var textRange = rawIssue.getTextRange();
-      var quickFixes = transformQuickFixes(project, rawIssue.getQuickFixes());
+      var quickFixes = transformQuickFixes(project, rawIssue.getQuickFixes(), modificationStamp);
       if (textRange != null) {
         var rangeMarker = matcher.match(psiFile, textRange);
         var context = transformFlows(project, matcher, psiFile, rawIssue.getFlows(), rawIssue.getRuleKey());
@@ -159,9 +162,9 @@ public class RawIssueAdapter {
   }
 
   private static List<QuickFix> transformQuickFixes(Project project,
-    List<QuickFixDto> quickFixes) {
+    List<QuickFixDto> quickFixes, @Nullable Long modificationStamp) {
     return quickFixes
-      .stream().map(fix -> convert(project, fix))
+      .stream().map(fix -> convert(project, fix, modificationStamp))
       .filter(Objects::nonNull)
       .toList();
   }
