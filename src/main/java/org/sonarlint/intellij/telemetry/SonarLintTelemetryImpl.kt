@@ -24,11 +24,8 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
-import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddReportedRulesParams
-import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisDoneOnSingleLanguageParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.HelpAndFeedbackClickedParams
-import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 class SonarLintTelemetryImpl : SonarLintTelemetry {
     override fun optOut(optOut: Boolean) {
@@ -43,14 +40,6 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
         return getService(BackendService::class.java).isTelemetryEnabled()
     }
 
-    override fun analysisDoneOnMultipleFiles() {
-        notifyTelemetry { it.analysisDoneOnMultipleFiles() }
-    }
-
-    override fun analysisDoneOnSingleLanguage(language: Language?, time: Int) {
-        notifyTelemetry { it.analysisDoneOnSingleLanguage(AnalysisDoneOnSingleLanguageParams(language, time)) }
-    }
-
     override fun devNotificationsClicked(eventType: String) {
         notifyTelemetry { it.devNotificationsClicked(DevNotificationsClickedParams(eventType)) }
     }
@@ -61,10 +50,6 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
 
     override fun taintVulnerabilitiesInvestigatedLocally() {
         notifyTelemetry { it.taintVulnerabilitiesInvestigatedLocally() }
-    }
-
-    override fun addReportedRules(ruleKeys: Set<String>) {
-        notifyTelemetry { it.addReportedRules(AddReportedRulesParams(ruleKeys)) }
     }
 
     override fun addQuickFixAppliedForRule(ruleKey: String) {

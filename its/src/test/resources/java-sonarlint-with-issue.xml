@@ -3,10 +3,10 @@
   <name>SonarLint IT Java Issue</name>
   <language>java</language>
   <rules>
-    <!-- Move this trailing comment on the previous empty line -->
+    <!-- Remove this empty class, write its code or make it an "interface". -->
     <rule>
       <repositoryKey>java</repositoryKey>
-      <key>S139</key>
+      <key>S2094</key>
       <priority>MINOR</priority>
     </rule>
   </rules>

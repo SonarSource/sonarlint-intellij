@@ -23,5 +23,5 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 fun interface VirtualFileSystemEventsHandler {
-    fun forwardEventsAsync(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?, fileEventsNotifier: ModuleFileEventsNotifier)
+    fun forwardEventsAsync(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?)
 }

@@ -19,27 +19,18 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
 
 public interface SonarLintTelemetry {
   void optOut(boolean optOut);
 
   CompletableFuture<Boolean> enabled();
 
-  void analysisDoneOnMultipleFiles();
-
-  void analysisDoneOnSingleLanguage(@Nullable Language language, int time);
-
   void devNotificationsClicked(String eventType);
 
   void taintVulnerabilitiesInvestigatedRemotely();
 
   void taintVulnerabilitiesInvestigatedLocally();
-
-  void addReportedRules(Set<String> reportedRules);
 
   void addQuickFixAppliedForRule(String ruleKey);
 

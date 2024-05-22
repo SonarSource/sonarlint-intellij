@@ -26,7 +26,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.module.Module
@@ -63,6 +62,8 @@ import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
+import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -88,10 +89,13 @@ import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
+import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.ConfigurationSharing
 import org.sonarlint.intellij.util.GlobalLogOutput
@@ -100,12 +104,16 @@ import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
 import org.sonarlint.intellij.util.VirtualFileUtils
+import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.computeInEDT
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
+import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
@@ -121,6 +129,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogLevel
 import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.ShowSoonUnsupportedMessageParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.ReportProgressParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.StartProgressParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
@@ -128,6 +137,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.TelemetryCli
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
@@ -546,8 +556,16 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
                         findingToShow = null
                     }
-                    // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
-                    getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+
+                    if (ApplicationManager.getApplication().isUnitTestMode) {
+                        runOnPooledThread(project) {
+                            // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
+                            getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+                        }
+                    } else {
+                        // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
+                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+                    }
                 }
             }
     }
@@ -609,7 +627,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                                 project,
                                 configScopeId,
                                 conf,
-                                path
+                                path,
+                                null
                             )
                             if (clientFileDto != null) {
                                 return clientFileDto
@@ -624,13 +643,19 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     private fun listModuleFiles(module: Module, configScopeId: String): MutableList<ClientFileDto> {
-        return listFilesInContentRoots(module).mapNotNull { file ->
+        val filesInContentRoots = listFilesInContentRoots(module)
+
+        val forcedLanguages = collectContributedLanguages(module, filesInContentRoots)
+
+        return filesInContentRoots.mapNotNull { file ->
+            val forcedLanguage = forcedLanguages[file]?.let { fl -> Language.valueOf(fl.name) }
             getRelativePathForAnalysis(module, file)?.let { relativePath ->
                 toClientFileDto(
                     module.project,
                     configScopeId,
                     file,
-                    relativePath
+                    relativePath,
+                    forcedLanguage
                 )
             }
         }.toMutableList()
@@ -638,11 +663,25 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     private fun listProjectFiles(project: Project, configScopeId: String): MutableList<ClientFileDto> {
         return listFilesInProjectBaseDir(project).mapNotNull { file ->
-            getRelativePathForAnalysis(project, file)?.let { relativePath -> toClientFileDto(project, configScopeId, file, relativePath) }
+            getRelativePathForAnalysis(project, file)?.let { relativePath ->
+                toClientFileDto(
+                    project,
+                    configScopeId,
+                    file,
+                    relativePath,
+                    null
+                )
+            }
         }.toMutableList()
     }
 
-    private fun toClientFileDto(project: Project, configScopeId: String, file: VirtualFile, relativePath: String): ClientFileDto? {
+    private fun toClientFileDto(
+        project: Project,
+        configScopeId: String,
+        file: VirtualFile,
+        relativePath: String,
+        language: Language?,
+    ): ClientFileDto? {
         if (!file.isValid || FileUtilRt.isTooLarge(file.length)) return null
         val uri = VirtualFileUtils.toURI(file) ?: return null
         var fileContent: String? = null
@@ -657,7 +696,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             file.charset.name(),
             Paths.get(file.path),
             fileContent,
-            null
+            language
         )
     }
 
@@ -679,17 +718,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return project.guessProjectDir()?.children?.filter { !it.isDirectory && it.isValid }?.toSet() ?: return emptySet()
     }
 
-    private fun getFileContent(virtualFile: VirtualFile): String {
-        val fileDocumentManager = FileDocumentManager.getInstance()
-        if (fileDocumentManager.isFileModified(virtualFile)) {
-            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
-            if (document != null) {
-                return document.text
-            }
-        }
-        return virtualFile.contentsToByteArray().toString(virtualFile.charset)
-    }
-
     override fun didChangeTaintVulnerabilities(
         configurationScopeId: String, closedTaintVulnerabilityIds: Set<UUID>, addedTaintVulnerabilities: List<TaintVulnerabilityDto>,
         updatedTaintVulnerabilities: List<TaintVulnerabilityDto>,
@@ -705,4 +733,50 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private fun findProjects(projectKey: String?) = ProjectManager.getInstance().openProjects.filter { project ->
         getService(project, ProjectBindingManager::class.java).uniqueProjectKeys.contains(projectKey)
     }.toSet()
+
+    override fun didRaiseIssue(configurationScopeId: String, analysisId: UUID, rawIssue: RawIssueDto) {
+        val project = BackendService.findProject(configurationScopeId) ?: BackendService.findModule(configurationScopeId)?.project ?: return
+        val runningAnalysis = getService(project, RunningAnalysesTracker::class.java).getById(analysisId) ?: return
+        runningAnalysis.addRawStreamingIssue(rawIssue)
+    }
+
+    override fun didSkipLoadingPlugin(
+        configurationScopeId: String, language: Language, reason: DidSkipLoadingPluginParams.SkipReason,
+        minVersion: String, currentVersion: String?,
+    ) {
+        val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return
+
+        notifyOnceForSkippedPlugins(project, language, reason, minVersion, currentVersion)
+    }
+
+    override fun didDetectSecret(configurationScopeId: String) {
+        val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return
+
+        if (getGlobalSettings().isSecretsNeverBeenAnalysed) {
+            get(project).sendNotification()
+            getGlobalSettings().rememberNotificationOnSecretsBeenSent()
+        }
+    }
+
+    override fun promoteExtraEnabledLanguagesInConnectedMode(configurationScopeId: String, languagesToPromote: Set<Language>) {
+        if (languagesToPromote.isEmpty()) return
+
+        val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return
+
+        getService(project, PromotionProvider::class.java).processExtraLanguagePromotion(languagesToPromote)
+    }
+
+    @Throws(ConfigScopeNotFoundException::class)
+    override fun getBaseDir(configurationScopeId: String): Path {
+        val project = BackendService.findProject(configurationScopeId)
+            ?: BackendService.findModule(configurationScopeId)?.project
+            ?: throw ConfigScopeNotFoundException()
+        return project.guessProjectDir()?.let {
+            Paths.get(it.path)
+        } ?: throw ConfigScopeNotFoundException()
+    }
+
 }

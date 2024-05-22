@@ -20,7 +20,11 @@
 
 -->
 <idea-plugin>
-    <extensions defaultExtensionNs="org.sonarlint.idea">
-      <vcsProvider implementation="org.sonarlint.intellij.git.ModuleGitRepoProvider"/>
-    </extensions>
+  <extensions defaultExtensionNs="org.sonarlint.idea">
+    <vcsProvider implementation="org.sonarlint.intellij.git.ModuleGitRepoProvider"/>
+  </extensions>
+
+  <projectListeners>
+    <listener class="org.sonarlint.intellij.git.RefreshVcsCacheOnRepositoryChange" topic="git4idea.repo.GitRepositoryChangeListener"/>
+  </projectListeners>
 </idea-plugin>

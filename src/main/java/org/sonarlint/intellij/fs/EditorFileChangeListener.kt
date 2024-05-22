@@ -30,19 +30,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.vfs.VirtualFile
 import java.time.Duration
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.Alarm
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.SonarLintAppUtils.isFileValidForSonarLint
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 const val DEBOUNCE_DELAY_MS = 1000L
 
 @Service(Service.Level.APP)
-class EditorFileChangeListener(private val fileEventsNotifier: ModuleFileEventsNotifier = ModuleFileEventsNotifier()) : BulkAwareDocumentListener.Simple, Disposable {
+class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
     private val triggerAlarm = Alarm("sonarlint-editor-changes-notifier", Duration.ofMillis(DEBOUNCE_DELAY_MS)) { notifyPendingChanges() }
     private val changedFiles = LinkedHashSet<VirtualFile>()
 
@@ -78,26 +76,19 @@ class EditorFileChangeListener(private val fileEventsNotifier: ModuleFileEventsN
         }.toMap()
 
     private fun notifyFileChangesForProject(project: Project, changedFiles: List<VirtualFile>) {
-        val eventsToSendPerModule = LinkedHashMap<Module, MutableList<ClientModuleFileEvent>>()
+        val filesToSendPerModule = HashMap<Module, MutableList<VirtualFileEvent>>()
 
-        val engine = getService(project, ProjectBindingManager::class.java).engineIfStarted ?: return
         changedFiles
-            .filter { it.isValid && shouldNotify(it) && isFileValidForSonarLint(it, project) }
+            .filter { it.isValid && isFileValidForSonarLint(it, project) }
             .forEach { file ->
-                val document = FileDocumentManager.getInstance().getCachedDocument(file) ?: return@forEach
                 val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return@forEach
-                val event = buildModuleFileEvent(module, file, document, ModuleFileEvent.Type.MODIFIED) ?: return@forEach
-                eventsToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(event)
+                filesToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file))
             }
-        eventsToSendPerModule
-            .forEach { (module, events) ->
-                fileEventsNotifier.notifyAsync(engine, module, events.toList())
-            }
-    }
 
-    // SLI-551 Only send events on .py files (avoid parse errors)
-    // For Rider, send all events for OmniSharp
-    private fun shouldNotify(file: VirtualFile) = file.isValid && (SonarLintUtils.isRider() || file.path.endsWith(".py"))
+        if (filesToSendPerModule.isNotEmpty()) {
+            getService(BackendService::class.java).updateFileSystem(filesToSendPerModule)
+        }
+    }
 
     override fun dispose() {
         changedFiles.clear()

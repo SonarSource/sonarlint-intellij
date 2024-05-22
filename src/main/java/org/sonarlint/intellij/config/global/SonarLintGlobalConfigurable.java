@@ -33,7 +33,6 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
-import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -96,8 +95,6 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     ApplicationManager.getApplication().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC)
       .applied(currentSettings, newSettings);
 
-    getService(EngineManager.class).stopAllDeletedConnectedEnginesAsync();
-
     // Force reload of the node version and rules in case the nodejs path has been changed
     reset();
 
@@ -151,7 +148,6 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       Disposer.dispose(rules);
       rules = null;
     }
-    getService(EngineManager.class).stopAllDeletedConnectedEnginesAsync();
   }
 
   private JPanel getPanel() {

@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.fs
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
@@ -26,20 +28,19 @@ import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
+import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.reset
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.timeout
+import org.mockito.kotlin.verifyNoInteractions
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.eq
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 private const val FILE_NAME = "main.py"
@@ -48,137 +49,174 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
     @BeforeEach
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
-        whenever(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
+        ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
         file = myFixture.copyFileToProject(FILE_NAME, FILE_NAME)
-        reset(fileEventsNotifier)
-        virtualFileSystemListener = VirtualFileSystemListener(fileEventsNotifier)
+        virtualFileSystemListener = VirtualFileSystemListener()
     }
 
     @Test
-    fun should_notify_engine_of_a_file_deleted_event() {
+    fun should_notify_of_a_file_deleted_event() {
         val vFileEvent = VFileDeleteEvent(null, file, false)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.before(listOf(vFileEvent))
 
-        assertEventNotified(ModuleFileEvent.Type.DELETED, FILE_NAME)
+        val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+
+        assertThat(paramsCaptor.allValues).hasSize(1)
+        assertThat(paramsCaptor.firstValue.values).hasSize(1)
+        paramsCaptor.firstValue.values.forEach {
+            assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.DELETED)
+            assertThat(it[0].virtualFile).isEqualTo(file)
+        }
     }
 
     @Test
-    fun should_not_notify_engine_of_a_non_py_file() {
+    fun should_not_notify_of_a_non_py_file() {
         val nonPyFile = myFixture.copyFileToProject("file.txt", "file.txt")
         val vFileEvent = VFileDeleteEvent(null, nonPyFile, false)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.before(listOf(vFileEvent))
-
-        verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), eq(emptyList()))
     }
 
     @Test
-    fun should_notify_engine_of_a_file_modified_event() {
+    fun should_notify_of_a_file_modified_event() {
         val vFileEvent = VFileContentChangeEvent(null, file, 0L, 0L, false)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        assertEventNotified(ModuleFileEvent.Type.MODIFIED, FILE_NAME)
+        val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+
+        assertThat(paramsCaptor.allValues).hasSize(1)
+        assertThat(paramsCaptor.firstValue.values).hasSize(1)
+        paramsCaptor.firstValue.values.forEach {
+            assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.MODIFIED)
+            assertThat(it[0].virtualFile).isEqualTo(file)
+        }
     }
 
     @Test
-    fun should_notify_engine_of_a_file_created_event() {
+    fun should_notify_of_a_file_created_event() {
         val vFileEvent = VFileCreateEvent(null, file.parent, FILE_NAME, false, null, null, false, null)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        assertEventNotified(ModuleFileEvent.Type.CREATED, FILE_NAME)
+        val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+
+        assertThat(paramsCaptor.allValues).hasSize(1)
+        assertThat(paramsCaptor.firstValue.values).hasSize(1)
+        paramsCaptor.firstValue.values.forEach {
+            assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.CREATED)
+            assertThat(it[0].virtualFile).isEqualTo(file)
+        }
     }
 
     @Test
-    fun should_notify_engine_of_a_file_copied_event() {
+    fun should_notify_of_a_file_copied_event() {
         val copiedFile = myFixture.copyFileToProject(FILE_NAME, "$FILE_NAME.cp.py")
         val vFileEvent = VFileCopyEvent(null, file, file.parent, "$FILE_NAME.cp.py")
 
+        clearInvocations(backendService)
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        assertEventNotified(ModuleFileEvent.Type.CREATED, "$FILE_NAME.cp.py", copiedFile)
+        val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+
+        assertThat(paramsCaptor.allValues).hasSize(1)
+        assertThat(paramsCaptor.firstValue.values).hasSize(1)
+        paramsCaptor.firstValue.values.forEach {
+            assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.CREATED)
+            assertThat(it[0].virtualFile).isEqualTo(copiedFile)
+            assertThat(it[0].virtualFile.name).isEqualTo("$FILE_NAME.cp.py")
+        }
     }
 
     @Test
-    fun should_notify_engine_of_a_file_deleted_event_before_a_file_is_moved() {
+    fun should_notify_of_a_file_deleted_event_before_a_file_is_moved() {
         val vFileEvent = VFileMoveEvent(null, file, file.parent)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.before(listOf(vFileEvent))
 
-        assertEventNotified(ModuleFileEvent.Type.DELETED, FILE_NAME)
+        val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+
+        assertThat(paramsCaptor.allValues).hasSize(1)
+        assertThat(paramsCaptor.firstValue.values).hasSize(1)
+        paramsCaptor.firstValue.values.forEach {
+            assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.DELETED)
+            assertThat(it[0].virtualFile).isEqualTo(file)
+        }
     }
 
     @Test
-    fun should_notify_engine_of_a_file_created_event_after_a_file_is_moved() {
+    fun should_notify_of_a_file_created_event_after_a_file_is_moved() {
         val vFileEvent = VFileMoveEvent(null, file, file.parent)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        assertEventNotified(ModuleFileEvent.Type.CREATED, FILE_NAME)
+        val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+
+        assertThat(paramsCaptor.allValues).hasSize(1)
+        assertThat(paramsCaptor.firstValue.values).hasSize(1)
+        paramsCaptor.firstValue.values.forEach {
+            assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.CREATED)
+            assertThat(it[0].virtualFile).isEqualTo(file)
+        }
     }
 
     @Test
-    fun should_not_notify_engine_of_a_file_property_changed_event() {
+    fun should_not_notify_of_a_file_property_changed_event() {
         val vFileEvent = VFilePropertyChangeEvent(null, file, VirtualFile.PROP_NAME, "oldName", "newName", false)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verifyNoInteractions(fileEventsNotifier)
+        verifyNoInteractions(backendService)
     }
 
     @Test
-    fun should_not_notify_engine_if_not_started() {
-        whenever(projectBindingManager.engineIfStarted).thenReturn(null)
-        val vFileEvent = VFileDeleteEvent(null, file, false)
-
-        virtualFileSystemListener.after(listOf(vFileEvent))
-
-        verifyNoInteractions(fileEventsNotifier)
-    }
-
-    @Test
-    fun should_not_notify_engine_when_event_happens_on_an_empty_directory() {
+    fun should_not_notify_when_event_happens_on_an_empty_directory() {
         val directory = myFixture.tempDirFixture.findOrCreateDir("emptyDir")
         val vFileEvent = VFileDeleteEvent(null, directory, false)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verifyNoInteractions(fileEventsNotifier)
+        verifyNoInteractions(backendService)
     }
 
     @Test
-    fun should_notify_engine_about_subfiles_when_event_happens_on_a_directory() {
+    fun should_notify_about_subfiles_when_event_happens_on_a_directory() {
         val directory = myFixture.copyDirectoryToProject("sub/folder", "sub/folder")
         val subfileName = "subfile.py"
         val childFile = directory.findChild(subfileName)!!
         val vFileEvent = VFileDeleteEvent(null, directory, false)
 
+        clearInvocations(backendService)
         virtualFileSystemListener.before(listOf(vFileEvent))
 
-        assertEventNotified(ModuleFileEvent.Type.DELETED, subfileName, childFile, "sub/folder/$subfileName")
-    }
+        val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
 
-    private fun assertEventNotified(type: ModuleFileEvent.Type, fileName: String, file: VirtualFile = this.file, relativePath: String = fileName) {
-        argumentCaptor<List<ClientModuleFileEvent>>().apply {
-            verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), capture())
-
-            val events = firstValue
-            assertThat(events).hasSize(1)
-            val event = events[0]
-            assertThat(event.type()).isEqualTo(type)
-            val inputFile = event.target()
-            assertThat(inputFile.contents()).contains("content")
-            assertThat(inputFile.relativePath()).isEqualTo(relativePath)
-            assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
-            assertThat(inputFile.path).isEqualTo("/src/$relativePath")
+        assertThat(paramsCaptor.allValues).hasSize(1)
+        assertThat(paramsCaptor.firstValue.values).hasSize(1)
+        paramsCaptor.firstValue.values.forEach {
+            assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.DELETED)
+            assertThat(it[0].virtualFile).isEqualTo(childFile)
         }
     }
 
     private var projectBindingManager: ProjectBindingManager = mock()
-    private var fakeEngine: SonarLintAnalysisEngine = mock()
-    private var fileEventsNotifier: ModuleFileEventsNotifier = mock()
+    private var backendService: BackendService = mock()
     private lateinit var file: VirtualFile
     private lateinit var virtualFileSystemListener: VirtualFileSystemListener
 }

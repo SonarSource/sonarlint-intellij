@@ -121,7 +121,7 @@ public class ProjectUtils {
     return file.findFileByRelativePath(getSystemIndependentPath(path));
   }
 
-  private static String getSystemIndependentPath(Path filePath) {
+  public static String getSystemIndependentPath(Path filePath) {
     return filePath.toString().replace(File.separatorChar, '/');
   }
 

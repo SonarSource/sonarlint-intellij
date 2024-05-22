@@ -37,6 +37,10 @@ class ModuleAnalysisResult {
       .collect(toSet());
   }
 
+  public ModuleAnalysisResult(Set<VirtualFile> failedAnalysisFiles) {
+    failedFiles = failedAnalysisFiles;
+  }
+
   public Collection<VirtualFile> failedFiles() {
     return failedFiles;
   }

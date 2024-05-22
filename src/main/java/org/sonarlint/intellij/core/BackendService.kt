@@ -34,6 +34,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
@@ -44,6 +45,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.format.DateTimeParseException
+import java.util.UUID
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -58,6 +60,7 @@ import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -70,21 +73,23 @@ import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
+import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.VirtualFileUtils
+import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.runOnPooledThread
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.legacy.analysis.EngineConfiguration
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -151,6 +156,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWit
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TrackWithServerIssuesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -280,7 +286,6 @@ class BackendService : Disposable {
     }
 
     private fun handleSloopExited() {
-        getService(EngineManager::class.java).stopAllEngines(true)
         ProjectManager.getInstance().openProjects.forEach { project ->
             runOnUiThread(project) {
                 getService(project, SonarLintToolWindow::class.java).refreshViews()
@@ -310,13 +315,14 @@ class BackendService : Disposable {
             getService(SonarLintPlugin::class.java).path.resolve("omnisharp/net6"),
             getService(SonarLintPlugin::class.java).path.resolve("omnisharp/net472")
         )
+        val workDir = Paths.get(PathManager.getTempPath()).resolve("sonarlint")
 
         return rpcServer.initialize(
             InitializeParams(
                 ClientConstantInfoDto(
                     ApplicationInfo.getInstance().versionName,
                     "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version,
-                    Long.MIN_VALUE
+                    ProcessHandle.current().pid()
                 ),
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
@@ -333,7 +339,7 @@ class BackendService : Disposable {
                     enableTelemetry = telemetryEnabled
                 ),
                 getLocalStoragePath(),
-                SonarLintEngineFactory.getWorkDir(),
+                workDir,
                 EnabledLanguages.findEmbeddedPlugins(),
                 EnabledLanguages.getEmbeddedPluginsForConnectedMode(),
                 EnabledLanguages.enabledLanguagesInStandaloneMode,
@@ -1005,39 +1011,66 @@ class BackendService : Disposable {
         }
     }
 
-    fun createEngine(engineConfiguration: EngineConfiguration, connectionId: String?): SonarLintAnalysisEngine {
-        // this will throw if the backend is not ready after 1min. Should be called only from Analysis thread
-        // the concept of engine will soon disappear for clients
-        val initializedBackend = backendFuture.get(1, TimeUnit.MINUTES)
-        return SonarLintAnalysisEngine(engineConfiguration, initializedBackend, connectionId)
-    }
-
     fun getAutoDetectedNodeJs(): CompletableFuture<NodeJsSettings?> {
         return requestFromBackend { it.analysisService.autoDetectedNodeJs }.thenApplyAsync { response ->
             response.details?.let { NodeJsSettings(it.path, it.version) }
         }
     }
 
-    fun updateFileSystem(filesByModule: Map<Module, List<ClientModuleFileEvent>>) {
+    fun updateFileSystem(filesByModule: Map<Module, List<VirtualFileEvent>>) {
         val deletedFileUris = filesByModule.values
-            .flatMap { it.filter { event -> event.type() == ModuleFileEvent.Type.DELETED } }
-            .mapNotNull { VirtualFileUtils.toURI(it.target().getClientObject()) }
+            .flatMap { it.filter { event -> event.type == ModuleFileEvent.Type.DELETED } }
+            .mapNotNull { VirtualFileUtils.toURI(it.virtualFile) }
+
         val events = filesByModule.entries.flatMap { (module, event) ->
-            event.filter { it.type() != ModuleFileEvent.Type.DELETED }
-                .map {
+            val moduleId = moduleId(module)
+
+            val virtualFiles: List<VirtualFile> = event.filter { it.type != ModuleFileEvent.Type.DELETED }
+                .map { it.virtualFile }.toList()
+
+            val contributedLanguages = collectContributedLanguages(module, virtualFiles)
+
+            event.filter { it.type != ModuleFileEvent.Type.DELETED }
+                .mapNotNull {
+                    val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
+                    val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
+                    val uri = VirtualFileUtils.toURI(it.virtualFile)
                     ClientFileDto(
-                        it.target().uri(),
-                        Paths.get(it.target().relativePath()),
-                        moduleId(module),
-                        it.target().isTest,
-                        it.target().charset.toString(),
-                        Paths.get(it.target().path),
-                        null,
-                        null
+                        uri,
+                        Paths.get(relativePath),
+                        moduleId,
+                        computeReadActionSafely(module.project) { isTestSources(it.virtualFile, module.project) },
+                        it.getEncoding(module.project).toString(),
+                        Paths.get(it.virtualFile.path),
+                        computeReadActionSafely(module.project) { getFileContent(it.virtualFile) },
+                        forcedLanguage
                     )
                 }
         }
-        notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }
+        if (deletedFileUris.isNotEmpty() || events.isNotEmpty()) {
+            notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }
+        }
+    }
+
+    fun analyzeFiles(
+        module: Module,
+        analysisId: UUID,
+        filesToAnalyze: List<URI>,
+        extraProperties: Map<String, String>,
+        startTime: Long,
+    ): CompletableFuture<AnalyzeFilesResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend {
+            it.analysisService.analyzeFiles(
+                AnalyzeFilesParams(
+                    moduleId,
+                    analysisId,
+                    filesToAnalyze,
+                    extraProperties,
+                    startTime
+                )
+            )
+        }
     }
 
     fun isAlive(): Boolean {

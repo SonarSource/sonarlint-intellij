@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static java.util.stream.Collectors.toSet;
@@ -34,7 +33,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class AnalysisScope {
 
-  public static AnalysisScope defineFrom(Project project, Collection<VirtualFile> files, TriggerType trigger) throws InvalidBindingException {
+  public static AnalysisScope defineFrom(Project project, Collection<VirtualFile> files, TriggerType trigger) {
     var isForcedAnalysis = trigger == TriggerType.CURRENT_FILE_ACTION || trigger == TriggerType.RIGHT_CLICK;
     var localFileExclusions = getService(project, LocalFileExclusions.class);
     var console = getService(project, SonarLintConsole.class);
@@ -53,10 +52,6 @@ class AnalysisScope {
 
   public Map<Module, Collection<VirtualFile>> getFilesByModule() {
     return filesByModule;
-  }
-
-  public Set<VirtualFile> getAllFilesToAnalyze() {
-    return allFilesToAnalyze;
   }
 
   public boolean isEmpty() {

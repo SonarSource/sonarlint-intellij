@@ -151,8 +151,7 @@ public final class LocalFileExclusions {
   }
 
   public Map<Module, Collection<VirtualFile>> retainNonExcludedFilesByModules(Collection<VirtualFile> files, boolean forcedAnalysis,
-    BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler)
-    throws InvalidBindingException {
+    BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler) {
     var filesByModule = new LinkedHashMap<Module, Collection<VirtualFile>>();
 
     for (var file : files) {

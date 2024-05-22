@@ -20,9 +20,8 @@
 package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
 
 @Service(Service.Level.PROJECT)
-class AnalysisReadinessCache(private val project: Project) {
+class AnalysisReadinessCache {
     var isReady: Boolean = false
 }

@@ -19,21 +19,21 @@
  */
 package org.sonarlint.intellij.fs
 
-import com.intellij.openapi.module.Module
-import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.legacy.analysis.SonarLintAnalysisEngine
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.encoding.EncodingProjectManager
+import java.nio.charset.Charset
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-class ModuleFileEventsNotifier {
-    fun notifyAsync(engine: SonarLintAnalysisEngine, module: Module, events: List<ClientModuleFileEvent>) {
-        if (events.isEmpty() || module.isDisposed || module.project.isDisposed) return
-        SonarLintConsole.get(module.project).info("Processing ${events.size} file system events")
-        events.forEach {
-            try {
-                engine.fireModuleFileEvent(module, it)
-            } catch (e: Exception) {
-                SonarLintConsole.get(module.project).error("Error notifying analyzer of a file event", e)
-            }
-        }
+data class VirtualFileEvent(
+    val type: ModuleFileEvent.Type,
+    val virtualFile: VirtualFile,
+) {
+
+    fun getEncoding(project: Project): Charset {
+        val encodingProjectManager = EncodingProjectManager.getInstance(project)
+        val encoding = encodingProjectManager.getEncoding(virtualFile, true)
+        return encoding ?: Charset.defaultCharset()
     }
+
 }

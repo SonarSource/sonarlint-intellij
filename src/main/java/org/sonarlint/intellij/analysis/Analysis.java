@@ -33,27 +33,26 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.cayc.NewCodePeriodCache;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.LiveFindings;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.messages.AnalysisListener;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.commons.api.progress.CanceledException;
 
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThreadAndWait;
 
 public class Analysis implements Cancelable {
@@ -118,13 +117,7 @@ public class Analysis implements Cancelable {
       return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
     }
 
-    AnalysisScope scope;
-    try {
-      scope = AnalysisScope.defineFrom(project, files, trigger);
-    } catch (InvalidBindingException e) {
-      // nothing to do, SonarLintEngineManager already showed notification
-      return new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
-    }
+    var scope = AnalysisScope.defineFrom(project, files, trigger);
 
     // refresh should ideally not be done here, see SLCORE-729
     getService(project, NewCodePeriodCache.class).refreshAsync();
@@ -142,12 +135,10 @@ public class Analysis implements Cancelable {
       }
       var summary = analyzePerModule(scope, indicator, previousFindings);
 
-      getService(SonarLintTelemetry.class).addReportedRules(summary.getReportedRuleKeys());
-
       indicator.setIndeterminate(false);
       indicator.setFraction(.9);
 
-      summary.logInConsole();
+      summary.logFailedFiles();
 
       findingsCache.replaceFindings(summary.findings);
 
@@ -216,65 +207,62 @@ public class Analysis implements Cancelable {
     indicator.setText("Running SonarLint Analysis for " + scope.getDescription());
 
     var analyzer = getService(project, SonarLintAnalyzer.class);
-    var progressMonitor = new TaskProgressMonitor(indicator, project, () -> cancelled);
     var results = new LinkedHashMap<Module, ModuleAnalysisResult>();
-    RawFindingHandler rawFindingHandler;
+    var listAnalysis = new HashSet<AnalysisState>();
     try (var findingStreamer = new FindingStreamer(callback)) {
-      rawFindingHandler = new RawFindingHandler(findingStreamer, cachedFindings);
-
       for (var entry : scope.getFilesByModule().entrySet()) {
         var module = entry.getKey();
-        rawFindingHandler.setCurrentModule(module);
-        results.put(module, analyzer.analyzeModule(module, entry.getValue(), rawFindingHandler, progressMonitor));
+        var analysisId = UUID.randomUUID();
+        var analysisState = new AnalysisState(analysisId, findingStreamer, cachedFindings, entry.getValue(), module);
+        listAnalysis.add(analysisState);
+        results.put(module, analyzer.analyzeModule(module, entry.getValue(), analysisState, indicator));
         checkCanceled(indicator);
       }
     }
-    return summarize(scope, rawFindingHandler, results);
+    return summarize(scope, listAnalysis, results);
   }
 
-  private Summary summarize(AnalysisScope scope, RawFindingHandler rawFindingHandler, Map<Module, ModuleAnalysisResult> resultsByModule) {
+  private Summary summarize(AnalysisScope scope, Set<AnalysisState> listAnalysis, Map<Module, ModuleAnalysisResult> resultsByModule) {
     var allFailedFiles = resultsByModule.values().stream().flatMap(r -> r.failedFiles().stream()).collect(toSet());
-    var analyzedFiles = scope.getAllFilesToAnalyze();
-    var issuesPerAnalyzedFile = getFindingsPerAnalyzedFile(rawFindingHandler.getIssuesPerFile(), analyzedFiles);
-    var securityHotspotsPerAnalyzedFile = getFindingsPerAnalyzedFile(rawFindingHandler.getSecurityHotspotsPerFile(), analyzedFiles);
+    var issuesPerAnalyzedFile = getLiveFindingsPerAnalyzedFile(listAnalysis);
+    var securityHotspotsPerAnalyzedFile = getSecurityHotspotsPerAnalyzedFile(listAnalysis);
     var findings = new LiveFindings(issuesPerAnalyzedFile, securityHotspotsPerAnalyzedFile);
-    return new Summary(project, scope.getFilesByModule(), allFailedFiles, rawFindingHandler.getRawIssueCount(), findings);
+    return new Summary(project, scope.getFilesByModule(), allFailedFiles, findings);
   }
 
-  private static <T> Map<VirtualFile, Collection<T>> getFindingsPerAnalyzedFile(Map<VirtualFile, Collection<T>> detectedFindingsPerFile,
-    Set<VirtualFile> analyzedFiles) {
-    Map<VirtualFile, Collection<T>> findingsPerAnalyzedFile = analyzedFiles.stream().collect(toMap(Function.identity(),
-      k -> new ArrayList<>()));
-    findingsPerAnalyzedFile.putAll(detectedFindingsPerFile);
-    return findingsPerAnalyzedFile;
+  private static Map<VirtualFile, Collection<LiveIssue>> getLiveFindingsPerAnalyzedFile(Set<AnalysisState> listAnalysis) {
+    return listAnalysis.stream().flatMap(a -> a.getIssuesPerFile().entrySet().stream())
+      .collect(groupingBy(Map.Entry::getKey, Collector.of(ArrayList<LiveIssue>::new,
+        (list, item) -> list.addAll(item.getValue()),
+        (left, right) -> {
+          left.addAll(right);
+          return left;
+        })));
+  }
+
+  private static Map<VirtualFile, Collection<LiveSecurityHotspot>> getSecurityHotspotsPerAnalyzedFile(Set<AnalysisState> listAnalysis) {
+    return listAnalysis.stream().flatMap(a -> a.getSecurityHotspotsPerFile().entrySet().stream())
+      .collect(groupingBy(Map.Entry::getKey, Collector.of(ArrayList<LiveSecurityHotspot>::new,
+        (list, item) -> list.addAll(item.getValue()),
+        (left, right) -> {
+          left.addAll(right);
+          return left;
+        })));
   }
 
   private static class Summary {
     private final Project project;
     private final Set<VirtualFile> failedFiles;
-    private final int rawIssueCount;
     private final LiveFindings findings;
-    private final Set<String> reportedRuleKeys = new HashSet<>();
-    private final long issuesCount;
-    private final long securityHotspotsCount;
-    private final boolean onlyFailedFiles;
     private final Map<Module, Collection<VirtualFile>> filesHavingIssuesByModule;
     private final Map<Module, Collection<VirtualFile>> filesHavingSecurityHotspotsByModule;
 
-    public Summary(Project project, Map<Module, Collection<VirtualFile>> filesByModule, Set<VirtualFile> failedFiles, int rawIssueCount,
-      LiveFindings findings) {
+    public Summary(Project project, Map<Module, Collection<VirtualFile>> filesByModule, Set<VirtualFile> failedFiles, LiveFindings findings) {
       this.project = project;
       this.failedFiles = failedFiles;
-      this.rawIssueCount = rawIssueCount;
       this.findings = findings;
-      this.reportedRuleKeys.addAll(findings.getIssuesPerFile().values().stream().flatMap(issues -> issues.stream().map(LiveIssue::getRuleKey)).collect(Collectors.toSet()));
-      this.reportedRuleKeys.addAll(findings.getSecurityHotspotsPerFile().values().stream()
-        .flatMap(hotspots -> hotspots.stream().map(LiveFinding::getRuleKey)).collect(Collectors.toSet()));
       this.filesHavingIssuesByModule = filterFilesHavingFindingsByModule(filesByModule, findings.getIssuesPerFile());
       this.filesHavingSecurityHotspotsByModule = filterFilesHavingFindingsByModule(filesByModule, findings.getSecurityHotspotsPerFile());
-      this.securityHotspotsCount = findings.getSecurityHotspotsPerFile().values().stream().mapToLong(Collection::size).sum();
-      this.issuesCount = findings.getIssuesPerFile().values().stream().mapToLong(Collection::size).sum();
-      this.onlyFailedFiles = failedFiles.containsAll(filesByModule.values().stream().flatMap(Collection::stream).collect(toSet()));
     }
 
     private static <L extends LiveFinding> Map<Module, Collection<VirtualFile>> filterFilesHavingFindingsByModule(Map<Module,
@@ -292,30 +280,9 @@ public class Analysis implements Cancelable {
       return filesWithIssuesPerModule;
     }
 
-    public Set<String> getReportedRuleKeys() {
-      return reportedRuleKeys;
-    }
-
-    private void logInConsole() {
-      logFailedFiles();
-      if (!onlyFailedFiles) {
-        logFoundIssues();
-      }
-    }
-
-    private void logFailedFiles() {
+    public void logFailedFiles() {
       failedFiles.forEach(vFile -> SonarLintConsole.get(project).debug("Analysis of file '" + vFile.getPath() + "' might not be " +
         "accurate because there were errors" + " during analysis"));
-    }
-
-    private void logFoundIssues() {
-      var issueStr = pluralize("issue", rawIssueCount);
-      var console = SonarLintConsole.get(project);
-      console.debug(String.format("Processed %d %s", rawIssueCount, issueStr));
-
-      var issuesText = pluralize("issue", issuesCount);
-      var hotspotsText = pluralize("hotspot", securityHotspotsCount);
-      console.info("Found " + issuesCount + " " + issuesText + " and " + securityHotspotsCount + " " + hotspotsText);
     }
   }
 

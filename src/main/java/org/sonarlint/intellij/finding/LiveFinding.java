@@ -36,10 +36,10 @@ import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.tracking.Trackable;
-import org.sonarsource.sonarlint.core.client.legacy.analysis.RawIssue;
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -77,20 +77,20 @@ public abstract class LiveFinding implements Trackable, Finding {
   private SoftwareQuality highestQuality = null;
   private ImpactSeverity highestImpact = null;
 
-  protected LiveFinding(Module module, RawIssue issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
+  protected LiveFinding(Module module, RawIssueDto issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
     List<QuickFix> quickFixes) {
     this.module = module;
     this.range = range;
-    this.message = issue.getMessage();
+    this.message = issue.getPrimaryMessage();
     this.ruleKey = issue.getRuleKey();
     this.severity = issue.getSeverity();
     this.virtualFile = virtualFile;
     this.uid = UID_GEN.getAndIncrement();
     this.context = context;
     this.quickFixes = quickFixes;
-    this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey().orElse(null);
+    this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey();
 
-    this.cleanCodeAttribute = issue.getCleanCodeAttribute().map(CleanCodeAttribute::fromDto).orElse(null);
+    this.cleanCodeAttribute = CleanCodeAttribute.fromDto(issue.getCleanCodeAttribute());
     this.impacts = issue.getImpacts().entrySet().stream().map(e -> Map.entry(SoftwareQuality.fromDto(e.getKey()), ImpactSeverity.fromDto(e.getValue())))
       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     var highestQualityImpact = getImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
