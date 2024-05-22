@@ -28,6 +28,7 @@ import org.sonarlint.intellij.finding.issue.aQuickFix
 import org.sonarlint.intellij.finding.issue.aTextEdit
 import org.sonarlint.intellij.finding.issue.aTextRange
 import org.sonarlint.intellij.util.VirtualFileUtils
+import org.sonarlint.intellij.util.getDocument
 
 class QuickFixTests : AbstractSonarLintLightTests() {
     @Test
@@ -44,7 +45,7 @@ class QuickFixTests : AbstractSonarLintLightTests() {
             )
         )
 
-        val convertedFix = convert(project, fix)
+        val convertedFix = convert(project, fix, file.virtualFile.getDocument()?.modificationStamp)
 
         assertThat(convertedFix).isNotNull
         assertThat(convertedFix!!.isApplicable(myFixture.getDocument(file))).isTrue
@@ -73,7 +74,7 @@ class QuickFixTests : AbstractSonarLintLightTests() {
             )
         )
 
-        val convertedFix = convert(project, fix)
+        val convertedFix = convert(project, fix, file.virtualFile.getDocument()?.modificationStamp)
 
         assertThat(convertedFix).isNull()
     }
@@ -98,7 +99,7 @@ class QuickFixTests : AbstractSonarLintLightTests() {
             )
         )
 
-        val convertedFix = convert(project, fix)
+        val convertedFix = convert(project, fix, file.virtualFile.getDocument()?.modificationStamp)
 
         assertThat(convertedFix).isNull()
     }
@@ -117,7 +118,7 @@ class QuickFixTests : AbstractSonarLintLightTests() {
             )
         )
 
-        val convertedFix = convert(project, fix)
+        val convertedFix = convert(project, fix, file.virtualFile.getDocument()?.modificationStamp)
 
         assertThat(convertedFix).isNull()
     }
@@ -126,13 +127,14 @@ class QuickFixTests : AbstractSonarLintLightTests() {
     fun should_not_convert_quick_fix_if_document_has_changed() {
         val file = myFixture.configureByText("file.ext", "Text")
         val fileUri = VirtualFileUtils.toURI(file.virtualFile)
+        val modifStamp = file.virtualFile.getDocument()?.modificationStamp
         val fix = aQuickFix(
             "Fix message",
             listOf(aFileEdit(fileUri!!, listOf(aTextEdit(aTextRange(1, 0, 1, 4), "newText"))))
         )
         myFixture.type("new content")
 
-        val convertedFix = convert(project, fix)
+        val convertedFix = convert(project, fix, modifStamp)
 
         assertThat(convertedFix).isNull()
     }
