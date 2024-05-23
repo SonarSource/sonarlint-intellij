@@ -96,8 +96,9 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Compan
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.promotion.PromotionProvider
+import org.sonarlint.intellij.sharing.ConfigurationSharing
+import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.util.ConfigurationSharing
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -611,31 +612,39 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
 
             listModulesFiles
-        } ?: findProject(configScopeId)?.let { project -> listProjectFiles(project, configScopeId) }
+        } ?: findProject(configScopeId)?.let { project ->
+            val listProjectFiles = listProjectFiles(project, configScopeId)
+
+            if (isRider()) {
+                computeRiderSharedConfiguration(project, configScopeId)?.let {
+                    listProjectFiles.add(it)
+                }
+            }
+
+            listProjectFiles
+        }
         ?: emptyList()
 
         return listClientFiles
     }
 
     private fun computeRiderSharedConfiguration(project: Project, configScopeId: String): ClientFileDto? {
-        project.basePath?.let { Paths.get(it) }?.let {
-            VfsUtil.findFile(it.resolve(".sonarlint"), false)?.let { sonarlintDir ->
-                sonarlintDir.children.forEach { conf ->
-                    val solutionName = conf.nameWithoutExtension
-                    if (project.name == solutionName) {
-                        getRelativePathForAnalysis(project.modules[0], conf)?.let { path ->
-                            val clientFileDto = toClientFileDto(
-                                project,
-                                configScopeId,
-                                conf,
-                                path,
-                                null
-                            )
-                            if (clientFileDto != null) {
-                                return clientFileDto
-                            }
+        val sonarlintFolder = findSharedFolder(project) ?: return null
+        VfsUtil.findFile(sonarlintFolder, false)?.let { sonarlintDir ->
+            sonarlintDir.children.forEach { conf ->
+                val solutionName = conf.nameWithoutExtension
+                if (project.name == solutionName) {
+                    getRelativePathForAnalysis(project.modules[0], conf)?.let { path ->
+                        val clientFileDto = toClientFileDto(
+                            project,
+                            configScopeId,
+                            conf,
+                            path,
+                            Language.JSON
+                        )
+                        if (clientFileDto != null) {
+                            return clientFileDto
                         }
-
                     }
                 }
             }

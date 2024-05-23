@@ -21,7 +21,7 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ModalityState
-import org.sonarlint.intellij.util.ConfigurationSharing.Companion.shareConfiguration
+import org.sonarlint.intellij.sharing.ConfigurationSharing.Companion.shareConfiguration
 
 class ShareConfigurationAction (
     text: String,

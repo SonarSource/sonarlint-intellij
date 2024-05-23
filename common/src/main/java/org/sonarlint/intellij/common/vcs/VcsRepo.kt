@@ -19,6 +19,9 @@
  */
 package org.sonarlint.intellij.common.vcs
 
+import java.nio.file.Path
+
 interface VcsRepo {
-    fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>) : String?
+    fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>): String?
+    fun getGitDir(): Path?
 }

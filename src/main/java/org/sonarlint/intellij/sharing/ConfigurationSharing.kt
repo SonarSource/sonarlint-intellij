@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util
+package org.sonarlint.intellij.sharing
 
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.NotificationType
@@ -28,18 +28,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder.Companion.okCancel
 import com.intellij.openapi.vfs.VfsUtil
 import java.io.IOException
-import java.nio.file.Path
-import java.nio.file.Paths
 import org.sonarlint.intellij.actions.filters.AutoShareTokenExchangeAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.core.BackendService.Companion.projectId
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
+import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
@@ -52,19 +50,27 @@ class ConfigurationSharing {
             if (project == null || project.isDisposed) return
 
             if (confirm(project)) {
-                val configScopeId = projectId(project)
-                createFile(configScopeId, project, modalityState)
+                createFile(project, modalityState)
             }
         }
 
-        private fun createFile(configScopeId: String, project: Project, modalityState: ModalityState) {
-            val root: Path = project.basePath?.let { Paths.get(it) } ?: return
+        private fun createFile(project: Project, modalityState: ModalityState) {
+            val sonarlintFolder = findSharedFolder(project)
+
+            if (sonarlintFolder == null) {
+                get(project).simpleNotification(
+                    null,
+                    "Could not find the directory where to store the configuration file",
+                    ERROR
+                )
+                return
+            }
 
             getService(BackendService::class.java)
-                .getSharedConnectedModeConfigFileContents(configScopeId)
+                .getSharedConnectedModeConfigFileContents(project)
                 .thenAcceptAsync { sharedFileContent: GetSharedConnectedModeConfigFileResponse ->
                     val filename = if (isRider()) {
-                        project.name + ".json"
+                        "${project.name}.json"
                     } else {
                         "connectedMode.json"
                     }
@@ -72,9 +78,9 @@ class ConfigurationSharing {
                     try {
                         runOnUiThread(project, modalityState) {
                             ApplicationManager.getApplication().runWriteAction {
-                                VfsUtil.createDirectoryIfMissing(root.resolve(".sonarlint").toString())
+                                VfsUtil.createDirectoryIfMissing(sonarlintFolder.toString())
 
-                                val sonarlintDir = VfsUtil.findFile(root.resolve(".sonarlint"), true)
+                                val sonarlintDir = VfsUtil.findFile(sonarlintFolder, true)
                                 if (sonarlintDir != null) {
                                     val sonarlintFile = sonarlintDir.createChildData(project, filename)
                                     sonarlintFile.refresh(true, false) {
@@ -84,7 +90,7 @@ class ConfigurationSharing {
 
                                 get(project).simpleNotification(
                                     null,
-                                    "File \'$filename\' has been created",
+                                    "File '$filename' has been created",
                                     NotificationType.INFORMATION
                                 )
                             }
