@@ -65,6 +65,7 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
@@ -93,6 +94,7 @@ import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.not
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.promotion.PromotionProvider
@@ -325,12 +327,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val project = BackendService.findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
         ?: throw IllegalStateException("Unable to find project with id '$configScopeId'")
         if (!project.isDisposed) {
-            SonarLintProjectNotifications.get(project).expireCurrentFindingNotificationIfNeeded()
+            get(project).expireCurrentFindingNotificationIfNeeded()
         }
         val file = tryFindFile(project, filePath)
         if (file == null) {
             if (!project.isDisposed) {
-                SonarLintProjectNotifications.get(project)
+                get(project)
                     .simpleNotification(null, "Unable to open finding. Cannot find the file: $filePath", NotificationType.WARNING)
             }
             return
@@ -339,7 +341,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val module = findModuleForFile(file, project)
         if (module == null) {
             if (!project.isDisposed) {
-                SonarLintProjectNotifications.get(project).simpleNotification(
+                get(project).simpleNotification(
                     null,
                     "Unable to open finding. Cannot find the module corresponding to file: $filePath",
                     NotificationType.WARNING
@@ -347,9 +349,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
             return
         }
-        ApplicationManager.getApplication().invokeAndWait {
-            openFile(project, file, textRange.startLine)
-        }
+        openFile(project, file, textRange.startLine)
         val showFinding = ShowFinding(
             module,
             ruleKey,
@@ -369,7 +369,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     private fun openFile(project: Project, file: VirtualFile, line: Int) {
-        OpenFileDescriptor(project, file, line - 1, -1).navigate(true)
+        runReadActionSafely(project) {
+            OpenFileDescriptor(project, file, line - 1, -1).navigate(true)
+        }
     }
 
     override fun assistCreatingConnection(
@@ -415,7 +417,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             AssistCreatingConnectionResponse(newConnection.name)
         }
 
-        SonarLintProjectNotifications.projectLessNotification(
+        projectLessNotification(
             "",
             "You have successfully established a connection to the SonarQube server",
             NotificationType.INFORMATION
@@ -440,7 +442,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             val mode =
                 if (params.isFromSharedConfiguration) IMPORTED else AUTOMATIC
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
-            SonarLintProjectNotifications.get(project).simpleNotification(
+            get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
                     "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint Settings.",
@@ -486,8 +488,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         host: String,
         port: Int,
         protocol: String,
-        prompt: String?,
-        scheme: String?,
+        prompt: String,
+        scheme: String,
         targetHost: URL,
     ): GetProxyPasswordAuthenticationResponse {
         val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(host, null, port, protocol, prompt, scheme, targetHost, Authenticator.RequestorType.PROXY)
@@ -538,7 +540,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun noBindingSuggestionFound(projectKey: String) {
-        SonarLintProjectNotifications.projectLessNotification(
+        projectLessNotification(
             "No matching open project found",
             "IntelliJ cannot match SonarQube project '$projectKey' to any of the currently open projects. Please open your project and try again.",
             NotificationType.WARNING,
