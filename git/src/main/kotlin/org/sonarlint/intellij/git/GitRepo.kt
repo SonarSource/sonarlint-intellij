@@ -25,6 +25,7 @@ import git4idea.commands.GitCommand
 import git4idea.commands.GitLineHandler
 import git4idea.history.GitHistoryUtils
 import git4idea.repo.GitRepository
+import java.nio.file.Path
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.vcs.VcsRepo
 
@@ -51,6 +52,14 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
             } else bestCandidates.first()
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Couldn't find best matching branch", e)
+            null
+        }
+    }
+
+    override fun getGitDir(): Path? {
+        return try {
+            repo.root.toNioPath()
+        } catch (e: UnsupportedOperationException) {
             null
         }
     }

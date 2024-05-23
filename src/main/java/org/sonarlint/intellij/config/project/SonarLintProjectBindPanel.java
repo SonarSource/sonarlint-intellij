@@ -62,7 +62,7 @@ import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
-import org.sonarlint.intellij.util.ConfigurationSharing;
+import org.sonarlint.intellij.sharing.ConfigurationSharing;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto;
 
 import static java.awt.GridBagConstraints.EAST;
