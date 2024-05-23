@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyFilter;
 import static com.intellij.openapi.vfs.VirtualFileVisitor.NO_FOLLOW_SYMLINKS;
@@ -180,11 +181,16 @@ public class SonarLintAppUtils {
   }
 
   public static boolean isFileValidForSonarLint(VirtualFile file, Project project) {
-    var toSkip = computeReadActionSafely(project, () -> isGeneratedSourceByAnyFilter(file, project)
-      || ProjectFileIndex.getInstance(project).isExcluded(file)
-      || ProjectFileIndex.getInstance(project).isInLibrary(file)
-      || (!ApplicationManager.getApplication().isUnitTestMode() && FileUtilRt.isTooLarge(file.getLength())));
-    return Boolean.FALSE == toSkip;
+    try {
+      var toSkip = computeReadActionSafely(project, () -> isGeneratedSourceByAnyFilter(file, project)
+        || ProjectFileIndex.getInstance(project).isExcluded(file)
+        || ProjectFileIndex.getInstance(project).isInLibrary(file)
+        || (!ApplicationManager.getApplication().isUnitTestMode() && FileUtilRt.isTooLarge(file.getLength())));
+      return Boolean.FALSE == toSkip;
+    } catch (Exception e) {
+      SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.getMessage());
+      return false;
+    }
   }
 
   @CheckForNull
