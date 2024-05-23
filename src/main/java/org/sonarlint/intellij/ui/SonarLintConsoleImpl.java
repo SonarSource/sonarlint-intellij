@@ -114,13 +114,7 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
     // nothing to do, the console view is already registered for dispose
   }
 
-  private static class Log {
-    private final String text;
-    private final ConsoleViewContentType outputType;
-
-    public Log(String text, ConsoleViewContentType outputType) {
-      this.text = text;
-      this.outputType = outputType;
-    }
+  private record Log(String text, ConsoleViewContentType outputType) {
   }
+
 }

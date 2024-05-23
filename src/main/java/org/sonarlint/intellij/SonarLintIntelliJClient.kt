@@ -221,16 +221,16 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val configScopeId = params.configScopeId
 
         configScopeId?.let {
-            val project = BackendService.findModule(configScopeId)?.project ?: BackendService.findProject(params.configScopeId!!)
+            val project = BackendService.findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
             project?.let {
                 val console: SonarLintConsole = getService(project, SonarLintConsole::class.java)
-                logProjectLevel(params, console)
+                logProjectLevel(params.level, params.toString(), console)
                 return
             }
         }
 
         val globalLogOutput = getService(GlobalLogOutput::class.java)
-        globalLogOutput.log(params.message, mapLevel(params.level))
+        globalLogOutput.log(params.toString(), mapLevel(params.level))
     }
 
 
@@ -266,13 +266,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     private fun logProjectLevel(
-        params: LogParams,
+        logLevel: LogLevel,
+        message: String,
         console: SonarLintConsole,
     ) {
-        when (params.level) {
-            LogLevel.TRACE, LogLevel.DEBUG -> console.debug(params.message)
-            LogLevel.ERROR -> console.error(params.message)
-            else -> console.info(params.message)
+        when (logLevel) {
+            LogLevel.TRACE, LogLevel.DEBUG -> console.debug(message)
+            LogLevel.ERROR -> console.error(message)
+            else -> console.info(message)
         }
     }
 
