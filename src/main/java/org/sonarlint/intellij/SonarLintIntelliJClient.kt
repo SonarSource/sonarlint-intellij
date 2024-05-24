@@ -487,8 +487,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         host: String,
         port: Int,
         protocol: String,
-        prompt: String?,
-        scheme: String?,
+        prompt: String,
+        scheme: String,
         targetHost: URL,
     ): GetProxyPasswordAuthenticationResponse {
         val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(host, null, port, protocol, prompt, scheme, targetHost, Authenticator.RequestorType.PROXY)
