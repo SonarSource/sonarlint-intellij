@@ -183,11 +183,13 @@ plugin_verifier_task:
     - env:
         # It automatically retrieves the latest version available for the given year
         IDEA_VERSION: '2023'
-    # Temporarily disabling plugin verification on EAP axis - see https://youtrack.jetbrains.com/issue/IDEA-353635
-    #- env:
-    #    # It automatically retrieves the latest version available for the given year (likely to be the EAP)
-    #    IDEA_VERSION: '2024'
+    - env:
+        # It automatically retrieves the latest version available for the given year (likely to be the EAP)
+        IDEA_VERSION: '2024'
   <<: *SETUP_GRADLE_CACHE
+  sync_script: |
+    git fetch origin +refs/heads/master:refs/remotes/origin/master
+    git reset --hard refs/remotes/origin/master
   # The versions are retrieved by querying JB API, we only keep the IDE flavors we handle, then we filter by our specified version.
   # Since there can be multiple 2021.3 (2021.3.1, 2021.3.2, etc.) we only keep the latest one.
   build_script: |
