@@ -59,6 +59,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
@@ -70,6 +71,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 public class SonarLintProjectBindPanel {
@@ -160,7 +162,8 @@ public class SonarLintProjectBindPanel {
     try {
       return ProgressManager.getInstance().run(downloadTask);
     } catch (Exception e) {
-      var msg = e.getMessage() != null ? e.getMessage() : "Failed to download list of projects";
+      var msg = "Failed to download list of projects. Please check the logs for more details.";
+      getService(project, SonarLintConsole.class).error(e.getMessage());
       Messages.showErrorDialog(rootPanel, msg, "Error Downloading Project List");
       return null;
     }
