@@ -95,7 +95,10 @@ public final class SonarLintAnalyzer {
         failedAnalysisFiles = result.getFailedAnalysisFiles().stream()
           .map(uri -> VirtualFileManager.getInstance().findFileByUrl(uri.toString())).collect(Collectors.toSet());
 
-        result.getRawIssues().stream().filter(analysisState::wasIssueNotAlreadyReceived).forEach(analysisState::addRawIssue);
+        var rawIssues = result.getRawIssues();
+        if (rawIssues != null) {
+          result.getRawIssues().stream().filter(analysisState::wasIssueNotAlreadyReceived).forEach(analysisState::addRawIssue);
+        }
       }
 
       return new ModuleAnalysisResult(failedAnalysisFiles);
