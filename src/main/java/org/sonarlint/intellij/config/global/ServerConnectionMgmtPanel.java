@@ -106,7 +106,10 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     toolbarDecorator.setAddAction(new AddConnectionAction());
     toolbarDecorator.setRemoveAction(new RemoveServerAction());
 
-    serversPanel.add(toolbarDecorator.createPanel(), BorderLayout.CENTER);
+    var serversPanelToolbar = toolbarDecorator.createPanel();
+    serversPanelToolbar.setMinimumSize(new Dimension(200, 200));
+    serversPanelToolbar.setPreferredSize(new Dimension(200, 200));
+    serversPanel.add(serversPanelToolbar, BorderLayout.CENTER);
 
     var emptyLabel = new JBLabel("No connection selected", SwingConstants.CENTER);
     var emptyPanel = new JPanel(new BorderLayout());
@@ -131,8 +134,6 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     panel.add(titlePanel);
     panel.add(optionsPanel);
     panel.add(serversPanel);
-
-    serversPanel.setPreferredSize(new Dimension(0, 125));
 
     connectionList.setCellRenderer(new ColoredListCellRenderer<>() {
       @Override
