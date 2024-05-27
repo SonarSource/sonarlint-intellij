@@ -68,9 +68,11 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
+import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
+import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
@@ -88,6 +90,7 @@ import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
@@ -131,6 +134,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
+import java.util.Optional
 
 
 object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
@@ -365,17 +369,33 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         params: AssistCreatingConnectionParams,
         cancelChecker: SonarLintCancelChecker,
     ): AssistCreatingConnectionResponse {
-        val serverUrl = params.serverUrl
+        val isSonarCloud = params.connectionParams.isRight
         val tokenName = params.tokenName
         val tokenValue = params.tokenValue
+        val serverUrl = if(isSonarCloud) System.getProperty("sonarlint.internal.sonarcloud.url") else params.serverUrl
 
         val response = if (tokenName != null && tokenValue != null) {
-            val newConnection = ApplicationManager.getApplication().computeInEDT {
-                AutomaticServerConnectionCreator(serverUrl, tokenValue).chooseResolution()
-            } ?: run {
-                throw CancellationException("Connection creation cancelled by the user")
+            if(isSonarCloud) {
+                val globalSettings = getGlobalSettings()
+                val organizationKey = params.connectionParams.right?.organizationKey;
+                val serverConnection =
+                    ServerConnection.newBuilder().setHostUrl(serverUrl).setDisableNotifications(false).setToken(tokenValue)
+                        .setOrganizationKey(organizationKey).setName("SC-$organizationKey").build().apply {
+                            getGlobalSettings().addServerConnection(this)
+                            val serverChangeListener =
+                                ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+                            // notify in case the connections settings dialog is open to reflect the change
+                            serverChangeListener.changed(globalSettings.serverConnections)
+                        }
+                AssistCreatingConnectionResponse(serverConnection.name)
+            } else {
+                val newConnection = ApplicationManager.getApplication().computeInEDT {
+                    AutomaticServerConnectionCreator(serverUrl, tokenValue).chooseResolution()
+                } ?: run {
+                    throw CancellationException("Connection creation cancelled by the user")
+                }
+                AssistCreatingConnectionResponse(newConnection.name)
             }
-            AssistCreatingConnectionResponse(newConnection.name)
         } else {
             val warningTitle = "Trust This SonarQube Server?"
             val message = """

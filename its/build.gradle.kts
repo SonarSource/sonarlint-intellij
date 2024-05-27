@@ -74,8 +74,12 @@ intellij {
 val runIdeDirectory: String by project
 
 tasks.runIdeForUiTests {
-    systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
-    systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.sc-staging.io/")
+//    systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
+//    systemProperty("sonarlint.internal.sonarcloud.url", "http://localhost:3000/")
+//    systemProperty("sonarlint.internal.sonarcloud.url", "https://sysc.eu.ngrok.io")
+    systemProperty("sonarlint.internal.sonarcloud.url", "https://squad-3-core.sc-dev.io")
+
+    systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.squad-3-core.sc-dev.io/")
     systemProperty("robot-server.port", "8082")
     systemProperty("sonarlint.telemetry.disabled", "true")
     systemProperty("sonarlint.logs.verbose", "true")
