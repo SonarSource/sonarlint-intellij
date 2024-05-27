@@ -64,7 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
-      <li>10.6 - 5 new rules for Python. Support for Spring configuration files. 7 new rules for C#. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.6 - Support of CLion Nova. Deprecate authentication with login/password. Improve the shared connected mode settings compatibility on C# projects with Visual Studio and VS Code. 5 new rules for Python. Support for Spring configuration files. Support of 21 Java rules on test sources. 7 new rules for C#. 1 new rule for ASP.NET. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.5 - Allow users to share connected mode settings among contributors. Remove support for Node.js 16 (18 required). 21 new rules for Java and improved support for Spring. 14 new rules for Python. Support analysis of C++23. 1 new rule for token detection. 18 new rules for C#. 4 new accessibility rules for JS/TS. 6 new accessibility rules for HTML. Bug fixes, fewer FPs and improvements for many languages. Various bug fixes and performance improvements.</li>
         <li>10.4.2 - Fix an issue where rule configuration is not loaded at startup. Stop the creation of configuration files at module level for storing module IDs. Improve performance during synchronization on large projects. Various bug fixes.</li>
         <li>10.4.1 - Fix various errors when starting the SonarLint service. Fix an error when using a proxy.</li>
