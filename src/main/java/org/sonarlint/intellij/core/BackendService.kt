@@ -960,7 +960,7 @@ class BackendService : Disposable {
             return ProjectManager.getInstance().openProjects.firstNotNullOfOrNull { project ->
                 val mapping = getSettingsFor(project).moduleMapping.filterValues { scopeId -> scopeId == configScopeId }.keys
                 val currentModuleName = if (mapping.isNotEmpty()) mapping.first() else configScopeId
-                return ModuleManager.getInstance(project).modules.firstOrNull { module -> module.name == currentModuleName }
+                return@firstNotNullOfOrNull ModuleManager.getInstance(project).modules.firstOrNull { module -> module.name == currentModuleName }
             }
         }
 
