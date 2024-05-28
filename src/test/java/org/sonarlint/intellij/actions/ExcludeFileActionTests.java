@@ -41,6 +41,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.MockitoKotlinHelperKt.any;
+import static org.sonarlint.intellij.MockitoKotlinHelperKt.eq;
 
 class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
   private VirtualFile file1 = mock(VirtualFile.class);
@@ -72,7 +74,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
     assertThat(settings.getState().getFileExclusions()).isEmpty();
     Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
       // Analysis readiness update
-      verify(analysisSubmitter, times(1)).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+      verify(analysisSubmitter, times(1)).autoAnalyzeOpenFilesForModule(eq(TriggerType.BINDING_UPDATE), any(), any())
     );
     verifyNoMoreInteractions(analysisSubmitter);
   }
@@ -86,7 +88,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
     assertThat(settings.getState().getFileExclusions()).isEmpty();
     Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
       // Analysis readiness update
-      verify(analysisSubmitter, times(1)).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+      verify(analysisSubmitter, times(1)).autoAnalyzeOpenFilesForModule(eq(TriggerType.BINDING_UPDATE), any(), any())
     );
     verifyNoMoreInteractions(analysisSubmitter);
   }
