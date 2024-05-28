@@ -27,6 +27,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.CheckForNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.ShowFindingCallable;
 import org.sonarlint.intellij.actions.ShowReportCallable;
 import org.sonarlint.intellij.actions.ShowUpdatedCurrentFileCallable;
@@ -47,6 +49,7 @@ import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.tasks.TaskRunnerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.ProjectUtils.getAllFiles;
@@ -82,6 +85,22 @@ public final class AnalysisSubmitter {
     var callback = new ShowReportCallable(project);
     var analysis = new Analysis(project, changedFiles, TriggerType.CHANGED_FILES, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
+  }
+
+  public void autoAnalyzeOpenFilesForModule(TriggerType triggerType, Project project, @Nullable Module module) {
+    if (module == null) {
+      autoAnalyzeOpenFiles(triggerType);
+      return;
+    }
+
+    var openFiles = FileEditorManager.getInstance(project).getOpenFiles();
+    var filesToAnalyze = Arrays.stream(openFiles)
+      .filter(file -> module.equals(SonarLintAppUtils.findModuleForFile(file, project)))
+      .toList();
+
+    if (!filesToAnalyze.isEmpty()) {
+      autoAnalyzeFiles(filesToAnalyze, triggerType);
+    }
   }
 
   public void autoAnalyzeOpenFiles(TriggerType triggerType) {
