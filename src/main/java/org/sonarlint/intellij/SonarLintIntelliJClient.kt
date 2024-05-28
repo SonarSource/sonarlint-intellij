@@ -549,9 +549,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun didChangeAnalysisReadiness(configurationScopeIds: Set<String>, areReadyForAnalysis: Boolean) {
         GlobalLogOutput.get().log("Analysis became ready=$areReadyForAnalysis for $configurationScopeIds", ClientLogOutput.Level.DEBUG)
-        configurationScopeIds.mapNotNull { BackendService.findModule(it)?.project ?: findProject(it) }.toSet()
-            .forEach { project ->
-                if (project.isDisposed) return@forEach
+        configurationScopeIds.associateBy(
+            { BackendService.findModule(it)?.project ?: findProject(it) },
+            { BackendService.findModule(it) }
+        )
+            .forEach { (project, module) ->
+                if (project == null || project.isDisposed) return@forEach
                 getService(project, AnalysisReadinessCache::class.java).isReady = areReadyForAnalysis
                 if (areReadyForAnalysis) {
                     if (findingToShow != null) {
@@ -561,12 +564,18 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
                     if (ApplicationManager.getApplication().isUnitTestMode) {
                         runOnPooledThread(project) {
-                            // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
-                            getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+                            getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFilesForModule(
+                                TriggerType.BINDING_UPDATE,
+                                project,
+                                module
+                            )
                         }
                     } else {
-                        // could probably be optimized by re-analyzing only the files from the ready modules, but the non-ready modules will be filtered out later
-                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE)
+                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFilesForModule(
+                            TriggerType.BINDING_UPDATE,
+                            project,
+                            module
+                        )
                     }
                 }
             }
