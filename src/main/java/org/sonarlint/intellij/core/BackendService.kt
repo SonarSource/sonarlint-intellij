@@ -334,7 +334,7 @@ class BackendService : Disposable {
                     shouldManageLocalServer = true,
                     enableSecurityHotspots = true,
                     shouldManageServerSentEvents = true,
-                    enableDataflowBugDetection = false,
+                    enableDataflowBugDetection = true,
                     shouldManageFullSynchronization = true,
                     enableTelemetry = telemetryEnabled
                 ),
