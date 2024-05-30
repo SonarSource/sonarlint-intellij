@@ -28,7 +28,7 @@ import java.net.URISyntaxException
 object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
         return try {
-            URI(file.url.replace(" ", "%20"))
+            URI("${file.fileSystem.protocol}:///${file.path}".replace(" ", "%20"))
         } catch (e: URISyntaxException) {
             null
         }
