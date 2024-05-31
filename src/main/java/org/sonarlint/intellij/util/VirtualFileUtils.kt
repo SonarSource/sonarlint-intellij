@@ -24,12 +24,19 @@ import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.vfs.VirtualFile
 import java.net.URI
 import java.net.URISyntaxException
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
         return try {
-            URI(file.url.replace(" ", "%20"))
+            if (file.isInLocalFileSystem) {
+                URI("${file.fileSystem.protocol}:///${file.path}".replace(" ", "%20"))
+            } else {
+                null
+            }
         } catch (e: URISyntaxException) {
+            getService(GlobalLogOutput::class.java).log("Could not transform ${file.url} to URI", ClientLogOutput.Level.DEBUG)
             null
         }
     }
