@@ -62,7 +62,7 @@ class SonarLintSharedFolderUtils {
                     ).debug("Several candidate Vcs repositories detected for module $module, choosing first")
                 }
                 repositories.first()
-            }.toSet().first().getGitDir()
+            }.toSet().firstOrNull()?.getGitDir()
         }
 
     }
