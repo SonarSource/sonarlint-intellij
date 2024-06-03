@@ -48,6 +48,7 @@ import javax.swing.Box;
 import javax.swing.JScrollPane;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreeSelectionModel;
+import org.sonarlint.intellij.actions.filters.IssueSeverityFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -175,6 +176,32 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   public void updateStatusForOldSecurityHotspots(String securityHotspotKey, HotspotStatus status) {
     var wasUpdated = oldSecurityHotspotTreeBuilder.updateStatusForHotspotWithFileNode(securityHotspotKey, status);
     if (wasUpdated) {
+      expandTree();
+    }
+  }
+
+  public void filterByIssueSeverity(IssueSeverityFilters filter) {
+    if (lastAnalysisResult != null) {
+      var oldIssues = lastAnalysisResult.getFindings().getIssuesPerFile().entrySet().stream()
+              .map(e -> Map.entry(e.getKey(), e.getValue().stream()
+                      .filter(not(LiveFinding::isOnNewCode))
+                      .filter(v -> filter.shouldIncludeIssue(v.getUserSeverity()))
+                      .toList()))
+              .filter(e -> !e.getValue().isEmpty())
+              .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveIssue>) e.getValue()));
+
+      var newIssues = lastAnalysisResult.getFindings().getIssuesPerFile().entrySet().stream()
+              .map(e -> Map.entry(e.getKey(), e.getValue().stream()
+                      .filter(LiveFinding::isOnNewCode)
+                      .filter(v -> filter.shouldIncludeIssue(v.getUserSeverity()))
+                      .toList()))
+              .filter(e -> !e.getValue().isEmpty())
+              .collect(Collectors.toMap(Map.Entry::getKey, e -> (Collection<LiveIssue>) e.getValue()));
+
+      treeBuilder.updateModel(newIssues);
+      oldTreeBuilder.updateModel(oldIssues);
+
+      disableEmptyDisplay(true);
       expandTree();
     }
   }
@@ -314,6 +341,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     actionGroup.add(sonarLintActions.analyzeChangedFiles());
     actionGroup.add(sonarLintActions.analyzeAllFiles());
     actionGroup.add(sonarLintActions.cancelAnalysis());
+    actionGroup.add(sonarLintActions.filterIssueSeverity());
     actionGroup.add(sonarLintActions.configure());
     actionGroup.add(sonarLintActions.clearReport());
     return actionGroup;

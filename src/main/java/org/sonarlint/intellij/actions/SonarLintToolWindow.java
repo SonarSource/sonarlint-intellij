@@ -40,6 +40,7 @@ import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.actions.filters.IssueSeverityFilters;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
@@ -146,6 +147,14 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void filterCurrentFileTab(boolean isResolved) {
     this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.allowResolvedIssues(isResolved));
+  }
+
+  public void filterCurrentFileTab(IssueSeverityFilters filter) {
+    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.filterByIssueSeverity(filter));
+  }
+
+  public void filterReportTab(IssueSeverityFilters filter) {
+    this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.filterByIssueSeverity(filter));
   }
 
   public void filterTaintVulnerabilityTab(boolean isResolved) {

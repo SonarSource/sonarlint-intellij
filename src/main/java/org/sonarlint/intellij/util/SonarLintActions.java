@@ -29,6 +29,7 @@ import com.intellij.serviceContainer.NonInjectable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
 import org.sonarlint.intellij.actions.ClearReportAction;
+import org.sonarlint.intellij.actions.FilterIssueSeverityActionGroup;
 import org.sonarlint.intellij.actions.FilterSecurityHotspotActionGroup;
 import org.sonarlint.intellij.actions.RestartBackendAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
@@ -56,6 +57,7 @@ public final class SonarLintActions {
   private final AnAction configureAction;
   private final AnAction analyzeChangedFilesAction;
   private final AnAction analyzeAllFilesAction;
+  private final FilterIssueSeverityActionGroup filterIssueSeverityAction;
   private final FilterSecurityHotspotActionGroup filterAction;
   private final IncludeResolvedFindingsAction<LiveSecurityHotspot> includeResolvedHotspotsAction;
   private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
@@ -94,6 +96,9 @@ public final class SonarLintActions {
     analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
       "Run a SonarLint analysis on VCS changed files",
       SonarLintIcons.SCM);
+    filterIssueSeverityAction = new FilterIssueSeverityActionGroup("Filter Severity",
+       "Filter Severity",
+       AllIcons.General.Filter);
     filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
       "Filter Security Hotspots",
       AllIcons.General.Filter);
@@ -145,6 +150,10 @@ public final class SonarLintActions {
 
   public AnAction analyzeAllFiles() {
     return analyzeAllFilesAction;
+  }
+
+  public FilterIssueSeverityActionGroup filterIssueSeverity() {
+    return filterIssueSeverityAction;
   }
 
   public FilterSecurityHotspotActionGroup filterSecurityHotspots() {

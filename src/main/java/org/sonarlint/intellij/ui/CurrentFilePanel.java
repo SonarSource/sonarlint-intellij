@@ -45,6 +45,7 @@ import javax.annotation.Nullable;
 import javax.swing.JScrollPane;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.actions.filters.IssueSeverityFilters;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
@@ -112,6 +113,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     refreshModel();
   }
 
+
   @Override
   public void dispose() {
     // Nothing to do
@@ -123,6 +125,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       SonarLintActions.getInstance().analyzeCurrentFileAction(),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
       SonarLintActions.getInstance().includeResolvedIssuesAction(),
+      SonarLintActions.getInstance().filterIssueSeverity(),
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"),
       SonarLintActions.getInstance().clearIssues());
   }
@@ -239,5 +242,30 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
   public void refreshView() {
     update(currentFile, currentIssues);
+  }
+
+  public void filterByIssueSeverity(IssueSeverityFilters filter) {
+    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)) {
+      var oldIssues = currentIssues.stream()
+              .filter(not(LiveFinding::isOnNewCode))
+              .filter(v -> filter.shouldIncludeIssue(v.getUserSeverity()))
+              .toList();
+      var newIssues = currentIssues.stream()
+              .filter(LiveFinding::isOnNewCode)
+              .filter(v -> filter.shouldIncludeIssue(v.getUserSeverity()))
+              .toList();
+      populateSubTree(tree, treeBuilder, Map.of(currentFile, newIssues));
+      populateSubTree(oldTree, oldTreeBuilder, Map.of(currentFile, oldIssues));
+      oldTree.setVisible(true);
+    } else {
+      var filteredIssues = currentIssues.stream()
+              .filter(v -> filter.shouldIncludeIssue(v.getUserSeverity()))
+              .toList();
+      populateSubTree(tree, treeBuilder, Map.of(currentFile, filteredIssues));
+      populateSubTree(oldTree, oldTreeBuilder, Collections.emptyMap());
+      oldTree.setVisible(false);
+    }
+    expandTree();
+    updateIcon(currentFile, currentIssues);
   }
 }
