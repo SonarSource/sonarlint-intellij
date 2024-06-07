@@ -223,7 +223,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 Upon review, you’ll either find there is no threat or you need to apply a fix to secure the code.
                 """.trimIndent()
                 )
-                val serverFindingKey = finding.serverFindingKey
+                val serverFindingKey = finding.getServerKey()
                 if (serverFindingKey != null) {
                     val projectKey = Settings.getSettingsFor(project).projectKey
                     if (projectKey != null) {

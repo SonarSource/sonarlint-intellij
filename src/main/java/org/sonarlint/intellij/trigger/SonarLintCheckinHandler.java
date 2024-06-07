@@ -33,9 +33,14 @@ import com.intellij.ui.NonFocusableCheckBox;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -43,8 +48,11 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.finding.LiveFindings;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
@@ -82,11 +90,20 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
     // this will block EDT (modal)
     try {
-      var result = SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
-      if (result == null) {
+      var analysisIdsByCallback = SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+      if (analysisIdsByCallback == null) {
         return ReturnResult.CANCEL;
       }
-      return processResult(result);
+      var analysis = analysisIdsByCallback.getRight().stream().map(id -> getService(project, RunningAnalysesTracker.class).getById(id)).filter(Objects::nonNull).toList();
+      while (!analysis.isEmpty()) {
+        Thread.sleep(100);
+        analysis = analysisIdsByCallback.getRight().stream().map(id -> getService(project, RunningAnalysesTracker.class).getById(id)).filter(Objects::nonNull).toList();
+      }
+      if (!analysisIdsByCallback.getLeft().analysisSucceeded()) {
+        return ReturnResult.CANCEL;
+      }
+      var results = analysisIdsByCallback.getLeft().getResult();
+      return processResults(results);
     } catch (Exception e) {
       handleError(e, affectedFiles.size());
       return ReturnResult.CANCEL;
@@ -102,8 +119,19 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     Messages.showErrorDialog(project, msg, "Error Analysing Files");
   }
 
-  private ReturnResult processResult(AnalysisResult result) {
-    var issuesPerFile = result.getFindings().getIssuesPerFile();
+  private ReturnResult processResults(List<AnalysisResult> results) {
+    var issuesPerFile = results.stream()
+      .flatMap(result -> result.getFindings().getIssuesPerFile().entrySet().stream())
+      .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        Map.Entry::getValue,
+        (issues1, issues2) -> {
+          List<LiveIssue> merged = new ArrayList<>();
+          merged.addAll(issues1);
+          merged.addAll(issues2);
+          return merged;
+        }));
+
     var shouldFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
 
     var numIssues = issuesPerFile.entrySet().stream()
@@ -136,6 +164,19 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var choice = showYesNoCancel(msg);
 
     if (choice == ReturnResult.CLOSE_WINDOW) {
+      var hotspotsPerFile = results.stream()
+        .flatMap(result -> result.getFindings().getSecurityHotspotsPerFile().entrySet().stream())
+        .collect(Collectors.toMap(
+          Map.Entry::getKey,
+          Map.Entry::getValue,
+          (issues1, issues2) -> {
+            List<LiveSecurityHotspot> merged = new ArrayList<>();
+            merged.addAll(issues1);
+            merged.addAll(issues2);
+            return merged;
+          }));
+      var allFilesAnalyzed = results.stream().flatMap(result -> result.getAnalyzedFiles().stream()).collect(Collectors.toList());
+      var result = new AnalysisResult(new LiveFindings(issuesPerFile, hotspotsPerFile), allFilesAnalyzed, results.get(0).getTriggerType(), results.get(0).getAnalysisDate());
       showChangedFilesTab(result);
     }
     return choice;

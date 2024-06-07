@@ -23,13 +23,13 @@ import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiFile
 import java.net.URI
-import org.sonarlint.intellij.util.VirtualFileUtils
+import java.util.UUID
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.FileEditDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.QuickFixDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueFlowDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.TextEditDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.FileEditDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.QuickFixDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.TextEditDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
@@ -41,30 +41,34 @@ fun aLiveIssue(
     module: Module,
     file: PsiFile,
     rangeMarker: RangeMarker? = file.virtualFile.getDocument()!!.createRangeMarker(0, 1),
-    coreIssue: RawIssueDto = aRawIssue(file, toTextRange(rangeMarker)),
+    coreIssue: RaisedIssueDto = aRawIssue(toTextRange(rangeMarker)),
 ): LiveIssue {
     val liveIssue = LiveIssue(module, coreIssue, file.virtualFile, rangeMarker, null, emptyList())
-    liveIssue.serverFindingKey = "serverIssueKey"
+    liveIssue.setServerFindingKey("serverIssueKey")
     return liveIssue
 }
 
-fun aRawIssue(file: PsiFile, textRange: TextRangeDto?) =
-    RawIssueDto(
+fun aRawIssue(textRange: TextRangeDto?) =
+    RaisedIssueDto(
+        UUID.randomUUID(),
+        "serverKey",
+        "rule:key",
+        "message",
         IssueSeverity.INFO,
         RuleType.BUG,
         CleanCodeAttribute.COMPLETE,
-        mutableMapOf(
-            SoftwareQuality.MAINTAINABILITY to ImpactSeverity.HIGH,
-            SoftwareQuality.RELIABILITY to ImpactSeverity.MEDIUM,
-            SoftwareQuality.SECURITY to ImpactSeverity.LOW
+        listOf(
+            ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH),
+            ImpactDto(SoftwareQuality.RELIABILITY, ImpactSeverity.MEDIUM),
+            ImpactDto(SoftwareQuality.SECURITY, ImpactSeverity.LOW)
         ),
-        "rule:key",
-        "message",
-        VirtualFileUtils.toURI(file.virtualFile),
-        mutableListOf<RawIssueFlowDto>(),
-        mutableListOf<QuickFixDto>(),
+        java.time.Instant.now(),
+        false,
+        false,
         textRange,
-        null, null
+        emptyList(),
+        mutableListOf<QuickFixDto>(),
+        null
     )
 
 private fun toTextRange(rangeMarker: RangeMarker?): TextRangeDto? {
@@ -75,7 +79,8 @@ private fun toTextRange(rangeMarker: RangeMarker?): TextRangeDto? {
 
 fun aQuickFix(message: String, fileEdits: List<FileEditDto>) = QuickFixDto(fileEdits, message)
 
-fun aFileEdit(fileUri: URI, textEdits: List<TextEditDto>) = FileEditDto(fileUri, textEdits)
+fun aFileEdit(fileUri: URI, textEdits: List<TextEditDto>) =
+    FileEditDto(fileUri, textEdits)
 
 fun aTextEdit(range: TextRangeDto, newText: String) = TextEditDto(range, newText)
 

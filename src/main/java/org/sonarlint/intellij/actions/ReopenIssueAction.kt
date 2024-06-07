@@ -27,7 +27,6 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DoNotAskOption
 import com.intellij.openapi.ui.MessageDialogBuilder
@@ -70,7 +69,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
 
             var serverKey: String? = null
             if (issue is LiveIssue) {
-                serverKey = issue.getServerKey() ?: issue.id?.toString()
+                serverKey = issue.getServerKey() ?: issue.id.toString()
             } else if (issue is LocalTaintVulnerability) {
                 serverKey = issue.key()
             }

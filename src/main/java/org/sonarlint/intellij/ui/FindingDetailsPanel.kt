@@ -73,7 +73,7 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
     }
 
     fun show(liveFinding: LiveFinding) {
-        rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.ruleKey, liveFinding.getRuleDescriptionContextKey())
+        rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.getRuleKey(), liveFinding.getRuleDescriptionContextKey())
         flowsTreeBuilder.populateForFinding(liveFinding)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightFinding(liveFinding)
         flowsTree.emptyText.setText("Selected $findingKindText doesn't have flows")

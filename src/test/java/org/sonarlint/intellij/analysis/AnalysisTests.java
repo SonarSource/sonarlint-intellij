@@ -26,9 +26,11 @@ import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -40,19 +42,17 @@ import org.mockito.stubbing.Answer;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.finding.persistence.CachedFindings;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.util.VirtualFileUtils;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -60,8 +60,8 @@ import static org.mockito.Mockito.when;
 
 class AnalysisTests extends AbstractSonarLintLightTests {
   private Analysis task;
-  private int analysisTaskTimeout = 10000;
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
+  private URI fileUri;
   @Mock
   private ProgressIndicator progress;
   @Mock
@@ -69,24 +69,22 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   @Mock
   private AnalysisResults analysisResults;
   private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
-  private final FindingsCache findingsCacheMock = mock(FindingsCache.class);
 
   @BeforeEach
   void prepare() {
     MockitoAnnotations.openMocks(this);
     var testFile = myFixture.configureByText("MyClass.java", "class MyClass {]");
+    this.fileUri = VirtualFileUtils.INSTANCE.toURI(testFile.getVirtualFile());
     filesToAnalyze.add(testFile.getVirtualFile());
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
     var moduleAnalysisResult = new ModuleAnalysisResult(analysisResults.failedAnalysisFiles());
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class)))
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenReturn(moduleAnalysisResult);
-    when(findingsCacheMock.getSnapshot(any())).thenReturn(new CachedFindings(Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet()));
 
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
     replaceProjectService(SonarLintConsole.class, sonarLintConsole);
-    replaceProjectService(FindingsCache.class, findingsCacheMock);
 
     task = new Analysis(getProject(), filesToAnalyze, TriggerType.CURRENT_FILE_ACTION, mock(AnalysisCallback.class));
 
@@ -102,8 +100,8 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   @Test
   void testTask() {
     task.run(progress);
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
-      any(ProgressIndicator.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
+      any(ProgressIndicator.class), any(Boolean.class));
 
     assertThat(getExternalAnnotators())
       .extracting("implementationClass")
@@ -115,19 +113,19 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   void shouldIgnoreProjectLevelIssues() {
     var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class)))
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
-        RawIssueDto issue = SonarLintTestUtils.createIssue(1);
-        analysisState.addRawIssue(issue);
+        var issue = SonarLintTestUtils.createIssue(1);
+        analysisState.addRawIssues(Map.of(fileUri, List.of(issue)), false);
         return analysisResults;
       });
 
+    clearInvocations(sonarLintAnalyzer);
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
-      any(ProgressIndicator.class));
-    verify(findingsCacheMock, never()).replaceFindings(any());
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
+      any(ProgressIndicator.class), any(Boolean.class));
   }
 
   @Test
@@ -143,48 +141,49 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
 
+    clearInvocations(sonarLintAnalyzer);
     task.run(progress);
 
     verifyNoInteractions(sonarLintAnalyzer);
-    verify(findingsCacheMock, never()).replaceFindings(any());
   }
 
   @Test
   void shouldReportIssueForValidFile() {
-    var issue = mock(RawIssueDto.class);
+    var issue = mock(RaisedIssueDto.class);
 
     var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class)))
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
-        analysisState.addRawIssue(issue);
+        analysisState.addRawIssues(Map.of(fileUri, List.of(issue)), false);
         return analysisResults;
       });
 
+    clearInvocations(sonarLintAnalyzer);
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
-      any(ProgressIndicator.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
+      any(ProgressIndicator.class), any(Boolean.class));
   }
 
   @Test
   void shouldSkipIfFailedToFindIssueLocation() {
-    var issue = mock(RawIssueDto.class);
+    var issue = mock(RaisedIssueDto.class);
 
     var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class)))
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
-        analysisState.addRawIssue(issue);
+        analysisState.addRawIssues(Map.of(fileUri, List.of(issue)), false);
         return analysisResults;
       });
 
+    clearInvocations(sonarLintAnalyzer);
     task.run(progress);
 
-    verify(sonarLintAnalyzer, timeout(analysisTaskTimeout)).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
-      any(ProgressIndicator.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class));
   }
 
   @Test
@@ -192,7 +191,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     task.cancel();
     task.run(progress);
 
-    verify(sonarLintConsole, timeout(analysisTaskTimeout)).info("Analysis canceled");
+    verify(sonarLintConsole).info("Analysis canceled");
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {

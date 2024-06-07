@@ -158,7 +158,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             border = BorderFactory.createEmptyBorder(0, 0, 0, 15)
         }
 
-        securityHotspot.serverFindingKey?.let {
+        securityHotspot.getServerKey()?.let {
             changeStatusButton.action = object : AbstractAction("Change Status") {
                 override fun actionPerformed(e: ActionEvent?) {
                     ReviewSecurityHotspotAction(it, securityHotspot.status).openReviewingDialogAsync(project, securityHotspot.file())

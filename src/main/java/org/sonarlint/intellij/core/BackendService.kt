@@ -69,16 +69,12 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.finding.LiveFinding
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarlint.intellij.util.ProjectUtils.getRelativePaths
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
@@ -88,7 +84,7 @@ import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesAndTrackParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
@@ -148,12 +144,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ListAllStandalo
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.StandaloneRuleConfigDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.UpdateStandaloneRulesConfigurationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ClientTrackedFindingDto
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.LineWithHashDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.MatchWithServerSecurityHotspotsParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWithHashDto
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TrackWithServerIssuesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
@@ -321,8 +312,7 @@ class BackendService : Disposable {
             InitializeParams(
                 ClientConstantInfoDto(
                     ApplicationInfo.getInstance().versionName,
-                    "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version,
-                    ProcessHandle.current().pid()
+                    "SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version
                 ),
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
@@ -763,144 +753,6 @@ class BackendService : Disposable {
         return requestFromBackend { it.connectionService.getOrganization(params) }
     }
 
-    fun trackWithServerIssues(
-        module: Module,
-        liveIssuesByFile: Map<VirtualFile, Collection<LiveIssue>>,
-        shouldFetchIssuesFromServer: Boolean,
-    ) {
-        val relativePathByVirtualFile = getRelativePaths(module.project, liveIssuesByFile.keys)
-        val virtualFileByRelativePath = relativePathByVirtualFile.map { Pair(it.value, it.key) }.toMap()
-        val rawIssuesByRelativePath =
-            liveIssuesByFile
-                .filterKeys { file -> relativePathByVirtualFile.containsKey(file) }
-                .entries.associate { (file, issues) ->
-                    relativePathByVirtualFile[file]!! to issues.map {
-                        val textRangeWithHashDto = toTextRangeWithHashDto(module.project, it)
-                        ClientTrackedFindingDto(
-                            it.backendId,
-                            it.serverFindingKey,
-                            textRangeWithHashDto,
-                            textRangeWithHashDto?.let { range -> LineWithHashDto(range.startLine, it.lineHashString!!) },
-                            it.ruleKey,
-                            it.message
-                        )
-                    }
-                }
-
-        try {
-            val moduleId = moduleId(module)
-            requestFromBackend {
-                it.issueTrackingService.trackWithServerIssues(
-                    TrackWithServerIssuesParams(
-                        moduleId,
-                        rawIssuesByRelativePath,
-                        shouldFetchIssuesFromServer
-                    )
-                )
-            }.thenAcceptAsync { response ->
-                response.issuesByIdeRelativePath.forEach { (ideRelativePath, trackedIssues) ->
-                    val file = virtualFileByRelativePath[ideRelativePath] ?: return@forEach
-                    val liveIssues = liveIssuesByFile[file] ?: return@forEach
-                    liveIssues.zip(trackedIssues).forEach { (liveIssue, serverOrLocalIssue) ->
-                        if (serverOrLocalIssue.isLeft) {
-                            val serverIssue = serverOrLocalIssue.left
-                            liveIssue.backendId = serverIssue.id
-                            liveIssue.introductionDate = serverIssue.introductionDate
-                            liveIssue.serverFindingKey = serverIssue.serverKey
-                            liveIssue.isResolved = serverIssue.isResolved
-                            serverIssue.overriddenSeverity?.let { liveIssue.setSeverity(it) }
-                            liveIssue.setType(serverIssue.type)
-                            liveIssue.setOnNewCode(serverIssue.isOnNewCode)
-                        } else {
-                            val localOnlyIssue = serverOrLocalIssue.right
-                            liveIssue.backendId = localOnlyIssue.id
-                            liveIssue.isResolved = localOnlyIssue.resolutionStatus != null
-                            liveIssue.setOnNewCode(true)
-                        }
-                    }
-                }
-            }
-                .join()
-        } catch (e: CancellationException) {
-            SonarLintConsole.get(module.project).debug("The request to match issues has been canceled")
-        }
-    }
-
-    fun trackWithServerHotspots(
-        module: Module,
-        liveHotspotsByFile: Map<VirtualFile, Collection<LiveSecurityHotspot>>,
-        shouldFetchHotspotsFromServer: Boolean,
-    ) {
-        val relativePathByVirtualFile = getRelativePaths(module.project, liveHotspotsByFile.keys)
-        val virtualFileByRelativePath = relativePathByVirtualFile.map { Pair(it.value, it.key) }.toMap()
-        val rawHotspotsByRelativePath =
-            liveHotspotsByFile
-                .filterKeys { file -> relativePathByVirtualFile.containsKey(file) }
-                .entries.associate { (file, hotspots) ->
-                    relativePathByVirtualFile[file]!! to hotspots.map {
-                        val textRangeWithHashDto = toTextRangeWithHashDto(module.project, it)
-                        ClientTrackedFindingDto(
-                            it.backendId,
-                            it.serverFindingKey,
-                            textRangeWithHashDto,
-                            textRangeWithHashDto?.let { range -> LineWithHashDto(range.startLine, it.lineHashString!!) },
-                            it.ruleKey,
-                            it.message
-                        )
-                    }
-                }
-
-        try {
-            val moduleId = moduleId(module)
-            requestFromBackend {
-                it.securityHotspotMatchingService.matchWithServerSecurityHotspots(
-                    MatchWithServerSecurityHotspotsParams(
-                        moduleId,
-                        rawHotspotsByRelativePath,
-                        shouldFetchHotspotsFromServer
-                    )
-                )
-            }.thenAcceptAsync { response ->
-                response.securityHotspotsByIdeRelativePath.forEach { (serverRelativePath, trackedHotspots) ->
-                    val file = virtualFileByRelativePath[serverRelativePath] ?: return@forEach
-                    val liveHotspots = liveHotspotsByFile[file] ?: return@forEach
-                    liveHotspots.zip(trackedHotspots).forEach { (liveHotspot, serverOrLocalHotspot) ->
-                        if (serverOrLocalHotspot.isLeft) {
-                            val serverHotspot = serverOrLocalHotspot.left
-                            liveHotspot.backendId = serverHotspot.id
-                            liveHotspot.introductionDate = serverHotspot.introductionDate
-                            liveHotspot.serverFindingKey = serverHotspot.serverKey
-                            liveHotspot.isResolved = serverHotspot.status == HotspotStatus.FIXED || serverHotspot.status == HotspotStatus.SAFE
-                            liveHotspot.setStatus(serverHotspot.status)
-                            liveHotspot.setOnNewCode(serverHotspot.isOnNewCode)
-                        } else {
-                            val localOnlyIssue = serverOrLocalHotspot.right
-                            liveHotspot.backendId = localOnlyIssue.id
-                            liveHotspot.setOnNewCode(true)
-                        }
-                    }
-                }
-            }
-                .join()
-        } catch (e: CancellationException) {
-            SonarLintConsole.get(module.project).debug("The request to match Security Hotspots has been canceled")
-        }
-    }
-
-    private fun toTextRangeWithHashDto(project: Project, finding: LiveFinding): TextRangeWithHashDto? {
-        val rangeMarker = finding.range ?: return null
-        if (!rangeMarker.isValid) {
-            return null
-        }
-        return computeReadActionSafely(project) {
-            val startLine = rangeMarker.document.getLineNumber(rangeMarker.startOffset)
-            val startLineOffset = rangeMarker.startOffset - rangeMarker.document.getLineStartOffset(startLine)
-            val endLine = rangeMarker.document.getLineNumber(rangeMarker.endOffset)
-            val endLineOffset = rangeMarker.endOffset - rangeMarker.document.getLineStartOffset(endLine)
-            TextRangeWithHashDto(startLine + 1, startLineOffset, endLine + 1, endLineOffset, finding.textRangeHashString)
-        }
-    }
-
     fun getNewCodePeriodText(project: Project): CompletableFuture<String> {
         // simplification as we ignore module bindings
         return requestFromBackend { it.newCodeService.getNewCodeDefinition(GetNewCodeDefinitionParams(projectId(project))) }
@@ -1053,21 +905,23 @@ class BackendService : Disposable {
         }
     }
 
-    fun analyzeFiles(
+    fun analyzeFilesAndTrack(
         module: Module,
         analysisId: UUID,
         filesToAnalyze: List<URI>,
         extraProperties: Map<String, String>,
+        shouldFetchServerIssues: Boolean,
         startTime: Long,
     ): CompletableFuture<AnalyzeFilesResponse> {
         val moduleId = moduleId(module)
         return requestFromBackend {
-            it.analysisService.analyzeFiles(
-                AnalyzeFilesParams(
+            it.analysisService.analyzeFilesAndTrack(
+                AnalyzeFilesAndTrackParams(
                     moduleId,
                     analysisId,
                     filesToAnalyze,
                     extraProperties,
+                    shouldFetchServerIssues,
                     startTime
                 )
             )

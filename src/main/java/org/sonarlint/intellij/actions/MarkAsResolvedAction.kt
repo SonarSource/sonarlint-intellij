@@ -85,11 +85,7 @@ class MarkAsResolvedAction(
                 project,
                 "No module could be found for this file"
             )
-            val serverKey = issue.getServerKey() ?: issue.getId()?.toString() ?: return displayNotificationError(
-                project,
-                "The issue key could not be found"
-            )
-
+            val serverKey = issue.getServerKey() ?: issue.getId().toString()
             val response = checkPermission(project, connection, serverKey) ?: return
 
             runOnUiThread(project) {

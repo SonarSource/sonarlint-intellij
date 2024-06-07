@@ -22,17 +22,24 @@ package org.sonarlint.intellij.analysis
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
+import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.LiveFindings
+import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
 class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerListener {
     private var selectedFile: VirtualFile? = null
@@ -65,6 +72,44 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
     }
 
+    fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>) {
+        val fileManager = VirtualFileManager.getInstance()
+        val issues = raisedIssues.mapNotNull { (uri, rawIssues) ->
+            val virtualFile = fileManager.findFileByUrl(uri.toString()) ?: return
+            val liveIssues = rawIssues.mapNotNull {
+                RawIssueAdapter.toLiveIssue(module, it, virtualFile, null)
+            }
+            virtualFile to liveIssues
+        }.toMap()
+        currentIssuesPerOpenFile.putAll(issues)
+        runOnUiThread(project) {
+            if (selectedFile == null) {
+                selectedFile = SonarLintUtils.getSelectedFile(project)
+            }
+            updateCurrentFileTab()
+            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(issues.keys)
+        }
+    }
+
+    fun updateViewsWithNewSecurityHotspots(module: Module, raisedSecurityHotspots: Map<URI, List<RaisedHotspotDto>>) {
+        val fileManager = VirtualFileManager.getInstance()
+        val securityHotspots = raisedSecurityHotspots.mapNotNull { (uri, rawSecurityHotspots) ->
+            val virtualFile = fileManager.findFileByUrl(uri.toString()) ?: return
+            val liveIssues = rawSecurityHotspots.mapNotNull {
+                RawIssueAdapter.toLiveSecurityHotspot(module, it, virtualFile, null)
+            }
+            virtualFile to liveIssues
+        }.toMap().filterKeys { openFiles.contains(it) }
+        currentSecurityHotspotsPerOpenFile.putAll(securityHotspots)
+        runOnUiThread(project) {
+            if (selectedFile == null) {
+                selectedFile = SonarLintUtils.getSelectedFile(project)
+            }
+            updateSecurityHotspots()
+            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(securityHotspots.keys)
+        }
+    }
+
     override fun selectionChanged(event: FileEditorManagerEvent) {
         selectedFile = event.newFile
         updateCurrentFileTab()
@@ -91,6 +136,18 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
                 project, SonarLintToolWindow::class.java
             ).updateCurrentFileTab(selectedFile, selectedFile?.let { currentIssuesPerOpenFile[it] })
         }
+    }
+
+    fun getFindingsForFile(file: VirtualFile): Collection<LiveFinding> {
+        return currentIssuesPerOpenFile[file]?.plus(currentSecurityHotspotsPerOpenFile[file] ?: emptyList()) ?: emptyList()
+    }
+
+    fun getIssuesForFile(file: VirtualFile): Collection<LiveIssue> {
+        return currentIssuesPerOpenFile[file] ?: emptyList()
+    }
+
+    fun getSecurityHotspotsForFile(file: VirtualFile): Collection<LiveSecurityHotspot> {
+        return currentSecurityHotspotsPerOpenFile[file] ?: emptyList()
     }
 
     fun clearCurrentFile() {

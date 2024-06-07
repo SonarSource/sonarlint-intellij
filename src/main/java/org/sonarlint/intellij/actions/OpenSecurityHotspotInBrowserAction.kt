@@ -21,7 +21,6 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -42,7 +41,7 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
 
   override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
     return e.getData(SECURITY_HOTSPOT_DATA_KEY) != null &&
-        e.getData(SECURITY_HOTSPOT_DATA_KEY)?.serverFindingKey != null
+        e.getData(SECURITY_HOTSPOT_DATA_KEY)?.getServerKey() != null
   }
 
   override fun updatePresentation(e: AnActionEvent, project: Project) {
@@ -55,7 +54,7 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
     val securityHotspot = e.getData(SECURITY_HOTSPOT_DATA_KEY)
-    val key = securityHotspot?.serverFindingKey ?: return
+    val key = securityHotspot?.getServerKey() ?: return
     val localFile = securityHotspot.file()
     val localFileModule = findModuleForFile(localFile, project) ?: return
     getService(BackendService::class.java).openHotspotInBrowser(localFileModule, key)

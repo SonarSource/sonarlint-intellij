@@ -29,13 +29,11 @@ import com.intellij.openapi.util.Key
 import javax.swing.JComponent
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
-import org.sonarlint.intellij.finding.persistence.FindingsCache
 
 class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {
 
@@ -59,15 +57,22 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAct
             val isAlive = getService(BackendService::class.java).isAlive()
             val presentation = e.presentation
             val isFocusOnNewCode = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
-            val relevantFindings = getService(project, FindingsCache::class.java).getFindingsForFile(file)
-                .filter { !it.isResolved && (!isFocusOnNewCode || it.isOnNewCode()) }
-            val issues = relevantFindings.filterIsInstance<LiveIssue>()
-            val hotspots = relevantFindings.filterIsInstance<LiveSecurityHotspot>()
+            val relevantIssues = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder.getIssuesForFile(file)
+                .filter { !it.isResolved() && (!isFocusOnNewCode || it.isOnNewCode()) }
+            val relevantSecurityHotspots =
+                getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder.getSecurityHotspotsForFile(file)
+                    .filter { !it.isResolved() && (!isFocusOnNewCode || it.isOnNewCode()) }
             val relevantTaintVulnerabilitiesCount =
                 getService(project, TaintVulnerabilitiesCache::class.java).getTaintVulnerabilitiesForFile(file)
                     .filter { !it.isResolved() && (!isFocusOnNewCode || it.isOnNewCode()) }
             val model =
-                SonarLintDashboardModel(isAlive, issues.size, hotspots.size, relevantTaintVulnerabilitiesCount.size, isFocusOnNewCode)
+                SonarLintDashboardModel(
+                    isAlive,
+                    relevantIssues.size,
+                    relevantSecurityHotspots.size,
+                    relevantTaintVulnerabilitiesCount.size,
+                    isFocusOnNewCode
+                )
             presentation.putClientProperty(DASHBOARD_MODEL, model)
         }
     }

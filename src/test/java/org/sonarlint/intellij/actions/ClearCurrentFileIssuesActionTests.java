@@ -24,65 +24,66 @@ import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
+import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ClearCurrentFileIssuesActionTests extends AbstractSonarLintLightTests {
-  private AnActionEvent event = mock(AnActionEvent.class);
 
-  private ClearCurrentFileIssuesAction clearIssues = new ClearCurrentFileIssuesAction(null, null, null);
+  private final ClearCurrentFileIssuesAction clearIssues = new ClearCurrentFileIssuesAction(null, null, null);
+  private final AnActionEvent event = mock(AnActionEvent.class);
+  private OnTheFlyFindingsHolder findingsHolder;
   private VirtualFile file;
-  private FindingsCache findingsCache;
 
   @BeforeEach
   void prepare() {
     when(event.getProject()).thenReturn(getProject());
     file = myFixture.copyFileToProject("foo.php", "foo.php");
-    findingsCache = SonarLintUtils.getService(getProject(), FindingsCache.class);
-    findingsCache.replaceFindings(new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()));
+    findingsHolder = SonarLintUtils.getService(getProject(), AnalysisSubmitter.class).getOnTheFlyFindingsHolder();
+    findingsHolder.clearCurrentFile();
+    FileEditorManager.getInstance(getProject()).openFile(file, true);
+    findingsHolder.updateOnAnalysisResult(new AnalysisResult(new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()), List.of(file), TriggerType.CURRENT_FILE_ACTION, Instant.now()));
   }
 
   @Test
   void testClear() {
-    FileEditorManager.getInstance(getProject()).openFile(file, true);
-
     clearIssues.actionPerformed(event);
 
-    // TODO test highlights are removed
-    assertThat(findingsCache.getIssuesForFile(file)).isEmpty();
+    assertThat(findingsHolder.getIssuesForFile(file)).isEmpty();
   }
 
   @Test
   void testClearWithInvalidFiles() throws IOException {
-    FileEditorManager.getInstance(getProject()).openFile(file, true);
-
-    WriteAction.run(() -> {
-      file.delete(getProject());
-    });
+    WriteAction.run(() -> file.delete(getProject()));
 
     clearIssues.actionPerformed(event);
 
-    assertThat(findingsCache.getIssuesForFile(file)).isEmpty();
+    assertThat(findingsHolder.getIssuesForFile(file)).isEmpty();
   }
 
   @Test
   void testDoNothingIfNoProject() {
-    when(event.getProject()).thenReturn(null);
+    var file2 = myFixture.copyFileToProject("foo2.php", "foo2.php");
+    FileEditorManager.getInstance(getProject()).openFile(file2, true);
 
     clearIssues.actionPerformed(event);
 
-    assertThat(findingsCache.getIssuesForFile(file)).isNotEmpty();
+    assertThat(findingsHolder.getIssuesForFile(file)).isNotEmpty();
   }
+
 }

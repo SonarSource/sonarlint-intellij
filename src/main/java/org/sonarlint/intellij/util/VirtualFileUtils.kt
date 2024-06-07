@@ -30,8 +30,10 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
         return try {
+            // Should follow RFC-8089
             if (file.isInLocalFileSystem) {
-                URI("${file.fileSystem.protocol}:///${file.path}".replace(" ", "%20"))
+                val path = if (file.path.startsWith("/")) "//${file.path}" else "///${file.path}"
+                URI("${file.fileSystem.protocol}:$path".replace(" ", "%20"))
             } else {
                 null
             }

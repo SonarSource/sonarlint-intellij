@@ -47,9 +47,9 @@ public enum SecurityHotspotFilters {
     if (this == SHOW_ALL) {
       return true;
     } else if (this == LOCAL_ONLY) {
-      return null == securityHotspot.getServerFindingKey();
+      return null == securityHotspot.getServerKey();
     } else if (this == EXISTING_ON_SERVER) {
-      return null != securityHotspot.getServerFindingKey();
+      return null != securityHotspot.getServerKey();
     }
     return true;
   }

@@ -424,4 +424,8 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return 0;
   }
 
+  public Map<VirtualFile, Collection<LiveSecurityHotspot>> getCurrentFindings() {
+    return currentFindings;
+  }
+
 }

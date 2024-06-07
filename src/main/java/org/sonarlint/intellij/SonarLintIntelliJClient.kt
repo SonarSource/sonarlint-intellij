@@ -114,7 +114,6 @@ import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
@@ -122,10 +121,12 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreat
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.event.DidReceiveServerHotspotEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.HotspotDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.http.GetProxyPasswordAuthenticationResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.http.ProxyDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.http.X509CertificateDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.IssueDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogLevel
 import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
@@ -566,14 +567,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                         runOnPooledThread(project) {
                             getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFilesForModule(
                                 TriggerType.BINDING_UPDATE,
-                                project,
                                 module
                             )
                         }
                     } else {
                         getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFilesForModule(
                             TriggerType.BINDING_UPDATE,
-                            project,
                             module
                         )
                     }
@@ -753,10 +752,46 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         getService(project, ProjectBindingManager::class.java).uniqueProjectKeys.contains(projectKey)
     }.toSet()
 
-    override fun didRaiseIssue(configurationScopeId: String, analysisId: UUID, rawIssue: RawIssueDto) {
-        val project = BackendService.findProject(configurationScopeId) ?: BackendService.findModule(configurationScopeId)?.project ?: return
-        val runningAnalysis = getService(project, RunningAnalysesTracker::class.java).getById(analysisId) ?: return
-        runningAnalysis.addRawStreamingIssue(rawIssue)
+    override fun raiseIssues(
+        configurationScopeId: String,
+        issuesByFileUri: Map<URI, List<RaisedIssueDto>>,
+        isIntermediatePublication: Boolean,
+        analysisId: UUID?,
+    ) {
+        val module = BackendService.findModule(configurationScopeId)
+        val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
+        val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
+
+        if (runningAnalysis != null) {
+            runningAnalysis.addRawIssues(issuesByFileUri, isIntermediatePublication)
+            if (runningAnalysis.isAnalysisFinished()) {
+                getService(project, RunningAnalysesTracker::class.java).finish(runningAnalysis)
+            }
+        } else if (analysisId == null && module != null) {
+            val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+            onTheFlyFindingsHolder.updateViewsWithNewIssues(module, issuesByFileUri)
+        }
+    }
+
+    override fun raiseHotspots(
+        configurationScopeId: String,
+        issuesByFileUri: Map<URI, List<RaisedHotspotDto>>,
+        isIntermediatePublication: Boolean,
+        analysisId: UUID?,
+    ) {
+        val module = BackendService.findModule(configurationScopeId)
+        val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
+        val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
+
+        if (runningAnalysis != null) {
+            runningAnalysis.addRawHotspots(issuesByFileUri, isIntermediatePublication)
+            if (runningAnalysis.isAnalysisFinished()) {
+                getService(project, RunningAnalysesTracker::class.java).finish(runningAnalysis)
+            }
+        } else if (analysisId == null && module != null) {
+            val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+            onTheFlyFindingsHolder.updateViewsWithNewSecurityHotspots(module, issuesByFileUri)
+        }
     }
 
     override fun didSkipLoadingPlugin(
