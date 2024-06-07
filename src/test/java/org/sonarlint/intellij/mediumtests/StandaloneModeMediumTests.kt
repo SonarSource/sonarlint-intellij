@@ -103,7 +103,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                     IssueSeverity.CRITICAL,
                     Pair(62, 67),
 
-                )
+                    )
             )
     }
 
@@ -235,7 +235,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             )
         // contains another annotation for the TO-DO
         assertThat(highlightInfos)
-            .extracting({it.description})
+            .extracting({ it.description })
             .contains(tuple("Complete the task associated to this \"TODO\" comment."))
     }
 
@@ -347,10 +347,30 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                     { it.message },
                     { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
                 .containsExactlyInAnyOrder(
-                    tuple("devenv.js", "secrets:S6290", "Make sure the access granted with this AWS access key ID is restricted", Pair(286, 306)),
-                    tuple("devenv_unversionned.js", "secrets:S6290", "Make sure the access granted with this AWS access key ID is restricted", Pair(286, 306)),
-                    tuple("devenv.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72)),
-                    tuple("devenv_unversionned.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72)),
+                    tuple(
+                        "devenv.js",
+                        "secrets:S6290",
+                        "Make sure the access granted with this AWS access key ID is restricted",
+                        Pair(286, 306)
+                    ),
+                    tuple(
+                        "devenv_unversionned.js",
+                        "secrets:S6290",
+                        "Make sure the access granted with this AWS access key ID is restricted",
+                        Pair(286, 306)
+                    ),
+                    tuple(
+                        "devenv.js",
+                        "javascript:S2703",
+                        "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.",
+                        Pair(62, 72)
+                    ),
+                    tuple(
+                        "devenv_unversionned.js",
+                        "javascript:S2703",
+                        "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.",
+                        Pair(62, 72)
+                    ),
                 )
         } finally {
             myVcsManager.unregisterVcs(myVcs)
@@ -360,33 +380,30 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     @Test
     fun should_apply_quick_fix_on_original_range_when_no_code_is_modified() {
         val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
+
         analyze(virtualFile)
-
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-
         myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
     }
 
     @Test
     fun should_apply_quick_fix_on_adapted_range_when_code_is_modified_within_the_range() {
         val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
+
         analyze(virtualFile)
         myFixture.performEditorAction(IdeActions.ACTION_EDITOR_BACKSPACE)
-
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-
         myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
     }
 
     @Test
     fun should_apply_multiple_quick_fixes_on_different_lines() {
         val virtualFile = sendFileToBackend("src/quick_fixes/multiple_quick_fixes_on_different_lines.input.java")
-        analyze(virtualFile)
 
+        analyze(virtualFile)
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
         myFixture.editor.caretModel.currentCaret.moveToOffset(140)
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-
         myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_different_lines.expected.java")
     }
 
@@ -394,12 +411,11 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     fun should_apply_overlapping_quick_fixes() {
         val expectedFile = myFixture.copyFileToProject("src/quick_fixes/overlapping_quick_fixes.expected.java")
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
-        analyze(file.virtualFile)
 
+        analyze(file.virtualFile)
         myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Use \"Arrays.toString(array)\" instead"))
         myFixture.editor.caretModel.currentCaret.moveToOffset(180)
         myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Merge this if statement with the enclosing one"))
-
         //Their stripTrailingSpaces function don't work
         myFixture.checkResult(expectedFile.getDocument()!!.text.trim(), true)
     }
@@ -407,12 +423,11 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     @Test
     fun should_apply_multiple_quick_fixes_on_same_line() {
         val virtualFile = sendFileToBackend("src/quick_fixes/multiple_quick_fixes_on_same_line.input.java")
-        analyze(virtualFile)
 
+        analyze(virtualFile)
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
         myFixture.editor.caretModel.currentCaret.moveToOffset(120)
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-
         myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_same_line.expected.java")
     }
 
@@ -421,10 +436,10 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
 
         analyze(virtualFile)
+        // Let the DaemonCodeAnalyzer finishes his job
+        Thread.sleep(3000)
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-
         val availableIntention = myFixture.filterAvailableIntentions(diamondQuickFix)
-
         assertThat(availableIntention).isEmpty()
     }
 
@@ -458,6 +473,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     private fun analyze(vararg filesToAnalyze: VirtualFile): Collection<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
+        val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
         }
@@ -467,7 +483,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
         }
 
-        val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
         val issues = filesToAnalyze.toList().map {
             onTheFlyFindingsHolder.getIssuesForFile(it)
         }.toList().flatten()
