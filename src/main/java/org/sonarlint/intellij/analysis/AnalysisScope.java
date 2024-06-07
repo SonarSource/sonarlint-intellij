@@ -39,15 +39,17 @@ class AnalysisScope {
     var console = getService(project, SonarLintConsole.class);
     var filesByModule = localFileExclusions.retainNonExcludedFilesByModules(files, isForcedAnalysis,
       (f, r) -> console.debug("File '" + f.getName() + "' excluded: " + r.excludeReason()));
-    return new AnalysisScope(filesByModule);
+    return new AnalysisScope(filesByModule, trigger);
   }
 
   private final Map<Module, Collection<VirtualFile>> filesByModule;
   private final Set<VirtualFile> allFilesToAnalyze;
+  private final TriggerType triggerType;
 
-  public AnalysisScope(Map<Module, Collection<VirtualFile>> filesByModule) {
+  public AnalysisScope(Map<Module, Collection<VirtualFile>> filesByModule, TriggerType triggerType) {
     this.filesByModule = filesByModule;
     this.allFilesToAnalyze = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toSet());
+    this.triggerType = triggerType;
   }
 
   public Map<Module, Collection<VirtualFile>> getFilesByModule() {
@@ -56,6 +58,10 @@ class AnalysisScope {
 
   public boolean isEmpty() {
     return allFilesToAnalyze.isEmpty();
+  }
+
+  public boolean shouldFetchServerIssues() {
+    return this.triggerType.isShouldUpdateServerIssues();
   }
 
   private int modulesCount() {

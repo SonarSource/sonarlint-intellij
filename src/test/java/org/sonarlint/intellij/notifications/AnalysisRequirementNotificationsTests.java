@@ -75,8 +75,8 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
   @AfterEach
   void expireAfterTest() {
     var mgr = NotificationsManager.getNotificationsManager();
-    var notifications = mgr.getNotificationsOfType(Notification.class, getProject());
-    Stream.of(notifications).forEach(mgr::expire);
+    var notifs = mgr.getNotificationsOfType(Notification.class, getProject());
+    Stream.of(notifs).forEach(mgr::expire);
     busConnection.disconnect();
   }
 

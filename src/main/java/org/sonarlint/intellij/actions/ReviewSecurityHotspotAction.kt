@@ -59,7 +59,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
     }
 
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
-        return e.getData(SECURITY_HOTSPOT_KEY) != null && e.getData(SECURITY_HOTSPOT_KEY)?.serverFindingKey != null
+        return e.getData(SECURITY_HOTSPOT_KEY) != null && e.getData(SECURITY_HOTSPOT_KEY)?.getServerKey() != null
             && e.getData(SECURITY_HOTSPOT_KEY)?.isValid() == true
     }
 
@@ -78,7 +78,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
         val securityHotspot = e.getData(SECURITY_HOTSPOT_KEY)
             ?: return SonarLintProjectNotifications.get(project)
                 .displayErrorNotification(errorTitle, "The Security Hotspot could not be found", HOTSPOT_REVIEW_GROUP)
-        serverFindingKey = securityHotspot.serverFindingKey
+        serverFindingKey = securityHotspot.getServerKey()
         status = securityHotspot.status
 
         openReviewingDialogAsync(project, securityHotspot.file())

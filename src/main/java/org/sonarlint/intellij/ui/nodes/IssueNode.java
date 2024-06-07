@@ -32,7 +32,6 @@ import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarlint.intellij.util.DateUtils;
@@ -42,15 +41,14 @@ import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafe
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class IssueNode extends FindingNode {
-  // not available in IJ15
   private static final SimpleTextAttributes GRAYED_SMALL_ATTRIBUTES = new SimpleTextAttributes(STYLE_SMALLER,
     UIUtil.getInactiveTextColor());
 
   private final LiveIssue issue;
 
-  public IssueNode(Trackable issue) {
-    super((LiveIssue) issue);
-    this.issue = ((LiveIssue) issue);
+  public IssueNode(LiveIssue issue) {
+    super(issue);
+    this.issue = issue;
   }
 
   private Optional<ServerConnection> retrieveServerConnection() {
@@ -78,7 +76,7 @@ public class IssueNode extends FindingNode {
       var qualityText = StringUtil.capitalize(highestQuality.toString().toLowerCase(Locale.ENGLISH));
       var impactIcon = SonarLintIcons.impact(highestImpact);
 
-      if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
+      if (issue.getServerKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();
         renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " " +
           "analysis");
@@ -100,7 +98,7 @@ public class IssueNode extends FindingNode {
       var typeIcon = SonarLintIcons.type(type);
       var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
 
-      if (issue.getServerFindingKey() != null && serverConnection.isPresent()) {
+      if (issue.getServerKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();
         renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
         setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, severityIcon));
@@ -139,7 +137,7 @@ public class IssueNode extends FindingNode {
     var introductionDate = issue.getIntroductionDate();
     if (introductionDate != null) {
       renderer.append(" ");
-      var age = DateUtils.toAge(introductionDate);
+      var age = DateUtils.toAge(introductionDate.toEpochMilli());
       renderer.append(age, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
   }

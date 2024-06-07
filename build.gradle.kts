@@ -18,7 +18,6 @@ plugins {
     jacoco
     alias(libs.plugins.license)
     alias(libs.plugins.artifactory)
-    alias(libs.plugins.protobuf)
     idea
     signing
     alias(libs.plugins.cyclonedx)
@@ -37,7 +36,6 @@ group = "org.sonarsource.sonarlint.intellij"
 description = "SonarLint for IntelliJ IDEA"
 
 val sonarlintCoreVersion: String by project
-val protobufVersion: String by project
 val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
 
@@ -162,14 +160,6 @@ tasks.runPluginVerifier {
     )
 }
 
-protobuf {
-    // Configure the protoc executable
-    protoc {
-        // Download from repositories. Must be the same as the one used in sonarlint-core
-        artifact = "com.google.protobuf:protoc:$protobufVersion"
-    }
-}
-
 tasks.test {
     java {
         toolchain {
@@ -206,7 +196,6 @@ dependencies {
     implementation(libs.sonarlint.java.client.legacy)
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
-    implementation(libs.protobuf)
     implementation(libs.commons.langs3)
     implementation(project(":common"))
     compileOnly(libs.findbugs.jsr305)
@@ -215,8 +204,6 @@ dependencies {
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(platform(libs.junit.bom))
-    // TODO only for protobuf generated classes, should be done differently
-    testImplementation(libs.sonarlint.rpc.impl)
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

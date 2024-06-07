@@ -31,14 +31,14 @@ dependencies {
     testImplementation(libs.its.sonar.ws)
     testImplementation(libs.bundles.its.remote)
     testImplementation(libs.junit.api)
+    testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.engine)
     // Needed for https://github.com/gradle/gradle/issues/22333
     testRuntimeOnly(libs.junit.launcher)
-    testImplementation(libs.assertj.core)
 }
 
 tasks.test {
-    useJUnitPlatform() {
+    useJUnitPlatform {
         val tag = System.getenv("TEST_SUITE")
 
         if (tag != null) {

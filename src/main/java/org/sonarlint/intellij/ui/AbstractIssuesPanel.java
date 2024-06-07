@@ -189,7 +189,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   public boolean hasNextOccurence() {
     // relies on the assumption that a TreeNodes will always be the last row in the table view of the tree
     var isOldTree = tree.getSelectionPath() == null;
-    var path = isOldTree ? oldTree.getSelectionPath() : null;
+    var path = isOldTree ? oldTree.getSelectionPath() : tree.getSelectionPath();
     if (path == null) {
       return false;
     }
@@ -272,8 +272,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   public void setSelectedIssue(LiveIssue issue) {
-    var issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()),
-      node -> node instanceof IssueNode && ((IssueNode) node).issue().equals(issue));
+    var issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()), node -> node instanceof IssueNode iNode && iNode.issue().equals(issue));
     if (issueNode == null) {
       SonarLintConsole.get(project).error("Cannot select issue in the tree");
       return;

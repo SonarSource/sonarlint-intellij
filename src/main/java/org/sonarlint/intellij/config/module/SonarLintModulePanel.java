@@ -45,7 +45,7 @@ public class SonarLintModulePanel {
   }
 
   public void load() {
-    String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();;
+    String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();
     if (projectKey != null) {
       SonarLintModuleSettings settings = getSettingsFor(module);
       idePathText.setText(settings.getIdePathPrefix());

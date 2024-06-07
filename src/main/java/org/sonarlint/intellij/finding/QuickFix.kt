@@ -27,28 +27,31 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import java.util.stream.Collectors
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.FileEditDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.QuickFixDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.TextEditDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.FileEditDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.QuickFixDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.TextEditDto
 
-fun convert(project: Project, coreQuickFix: QuickFixDto, modificationStamp: Long?): QuickFix? {
+fun convert(
+    project: Project,
+    coreQuickFix: QuickFixDto,
+    modificationStamp: Long?,
+): QuickFix? {
     val virtualFileEdits = coreQuickFix.fileEdits().map { convert(it, modificationStamp) }
     if (virtualFileEdits.contains(null)) {
-        log(project, "Quick fix won't be proposed as it is invalid")
+        SonarLintConsole.get(project).debug("Quick fix won't be proposed as it is invalid")
         return null
     }
     if (virtualFileEdits.distinctBy { it!!.target }.size > 1) {
-        log(project, "Quick fix won't be proposed because multi-files edits are not supported")
+        SonarLintConsole.get(project).debug("Quick fix won't be proposed because multi-files edits are not supported")
         return null
     }
     return QuickFix(coreQuickFix.message(), virtualFileEdits.mapNotNull { it })
 }
 
-private fun log(project: Project, message: String) {
-    SonarLintConsole.get(project).debug(message)
-}
-
-private fun convert(fileEdit: FileEditDto, modificationStamp: Long?): VirtualFileEdit? {
+private fun convert(
+    fileEdit: FileEditDto,
+    modificationStamp: Long?,
+): VirtualFileEdit? {
     val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileEdit.target().toString()) ?: return null
     val document = virtualFile.getDocument() ?: return null
     if (modificationStamp != null && modificationStamp < document.modificationStamp) {

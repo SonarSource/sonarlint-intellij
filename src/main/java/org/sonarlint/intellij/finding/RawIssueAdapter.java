@@ -35,9 +35,10 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.QuickFixDto;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueFlowDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.IssueFlowDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.QuickFixDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.finding.LocationKt.resolvedLocation;
@@ -46,7 +47,7 @@ import static org.sonarlint.intellij.util.ProjectUtils.toPsiFile;
 
 public class RawIssueAdapter {
 
-  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RawIssueDto rawHotspot,
+  public static LiveSecurityHotspot toLiveSecurityHotspot(Module module, RaisedHotspotDto rawHotspot,
     VirtualFile virtualFile, @Nullable Long modificationStamp) {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
@@ -64,7 +65,8 @@ public class RawIssueAdapter {
     });
   }
 
-  public static LiveIssue toLiveIssue(Module module, RawIssueDto rawIssue,
+  @Nullable
+  public static LiveIssue toLiveIssue(Module module, RaisedIssueDto rawIssue,
     VirtualFile virtualFile, @Nullable Long modificationStamp) {
     return computeReadActionSafely(module, () -> {
       var project = module.getProject();
@@ -83,7 +85,7 @@ public class RawIssueAdapter {
   }
 
   private static Optional<FindingContext> transformFlows(Project project, TextRangeMatcher matcher, PsiFile psiFile,
-    List<RawIssueFlowDto> flows, String rule) {
+    List<IssueFlowDto> flows, String rule) {
     List<Flow> matchedFlows = new LinkedList<>();
 
     for (var i = 0; i < flows.size(); i++) {

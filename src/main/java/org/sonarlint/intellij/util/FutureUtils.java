@@ -22,7 +22,6 @@ package org.sonarlint.intellij.util;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -60,12 +59,6 @@ public class FutureUtils {
       Thread.currentThread().interrupt();
     } catch (Exception ex) {
       SonarLintConsole.get(project).error(taskName + " task failed", ex);
-    }
-  }
-
-  public static void waitForTasks(Project project, ProgressIndicator indicator, List<Future<?>> updateTasks, String taskName) {
-    for (var f : updateTasks) {
-      waitForTask(project, indicator, f, taskName, Duration.ofSeconds(20));
     }
   }
 

@@ -20,9 +20,9 @@
 package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.vfs.VirtualFile
+import java.time.Instant
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.trigger.TriggerType
-import java.time.Instant
 
 data class AnalysisResult(
     val findings: LiveFindings,

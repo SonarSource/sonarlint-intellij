@@ -17,7 +17,31 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-@ParametersAreNonnullByDefault
-package org.sonarlint.intellij.finding.tracking;
+package org.sonarlint.intellij.callable
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.concurrent.atomic.AtomicBoolean
+import org.sonarlint.intellij.analysis.AnalysisCallback
+import org.sonarlint.intellij.analysis.AnalysisResult
+
+class CheckInCallable : AnalysisCallback {
+
+    private var result = mutableListOf<AnalysisResult>()
+    private val errored = AtomicBoolean(false)
+
+    override fun onSuccess(analysisResult: AnalysisResult) {
+        result.add(analysisResult)
+    }
+
+    override fun onError(e: Throwable) {
+        errored.set(true)
+    }
+
+    fun analysisSucceeded(): Boolean {
+        return !errored.get()
+    }
+
+    fun getResult(): List<AnalysisResult> {
+        return result
+    }
+
+}

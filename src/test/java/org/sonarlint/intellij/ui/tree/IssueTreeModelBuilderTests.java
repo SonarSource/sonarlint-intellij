@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,12 +36,11 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -63,7 +63,6 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
 
   @Test
   void createModel() {
-    var model = treeBuilder.createModel(false);
     assertThat(model.getRoot()).isNotNull();
   }
 
@@ -97,8 +96,8 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var list = new ArrayList<LiveIssue>();
 
     list.add(mockIssuePointer(100, "rule1", MAJOR, null));
-    list.add(mockIssuePointer(100, "rule2", MAJOR, 1000L));
-    list.add(mockIssuePointer(100, "rule3", MINOR, 2000L));
+    list.add(mockIssuePointer(100, "rule2", MAJOR, Instant.now().minusSeconds(50)));
+    list.add(mockIssuePointer(100, "rule3", MINOR, Instant.now().minusSeconds(20)));
     list.add(mockIssuePointer(50, "rule4", MINOR, null));
     list.add(mockIssuePointer(100, "rule5", MAJOR, null));
 
@@ -113,11 +112,11 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
   void testIssueComparatorNewCct() {
     var list = new ArrayList<LiveIssue>();
 
-    list.add(mockIssuePointer(100, "rule1", Map.of(MAINTAINABILITY, HIGH), null));
-    list.add(mockIssuePointer(100, "rule2", Map.of(MAINTAINABILITY, HIGH), 1000L));
-    list.add(mockIssuePointer(100, "rule3", Map.of(MAINTAINABILITY, LOW), 2000L));
-    list.add(mockIssuePointer(50, "rule4", Map.of(MAINTAINABILITY, LOW), null));
-    list.add(mockIssuePointer(100, "rule5", Map.of(MAINTAINABILITY, HIGH), null));
+    list.add(mockIssuePointer(100, "rule1", List.of(new ImpactDto(MAINTAINABILITY, HIGH)), null));
+    list.add(mockIssuePointer(100, "rule2", List.of(new ImpactDto(MAINTAINABILITY, HIGH)), Instant.now().minusSeconds(50)));
+    list.add(mockIssuePointer(100, "rule3", List.of(new ImpactDto(MAINTAINABILITY, LOW)), Instant.now().minusSeconds(20)));
+    list.add(mockIssuePointer(50, "rule4", List.of(new ImpactDto(MAINTAINABILITY, LOW)), null));
+    list.add(mockIssuePointer(100, "rule5", List.of(new ImpactDto(MAINTAINABILITY, HIGH)), null));
 
     var sorted = new ArrayList<>(list);
     sorted.sort(new IssueTreeModelBuilder.IssueComparator());
@@ -134,17 +133,17 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var issueList = new LinkedList<LiveIssue>();
 
     for (var i = 0; i < numIssues; i++) {
-      issueList.add(mockIssuePointer(i, "rule" + i, MAJOR, (long) i));
+      issueList.add(mockIssuePointer(i, "rule" + i, MAJOR, Instant.now()));
     }
 
     data.put(file, issueList);
   }
 
-  private LiveIssue mockIssuePointer(int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) {
+  private LiveIssue mockIssuePointer(int startOffset, String rule, IssueSeverity severity, @Nullable Instant introductionDate) {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
 
-    var issue = mock(RawIssueDto.class);
+    var issue = mock(RaisedIssueDto.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getSeverity()).thenReturn(severity);
     when(issue.getType()).thenReturn(RuleType.BUG);
@@ -158,11 +157,11 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     return liveIssue;
   }
 
-  private LiveIssue mockIssuePointer(int startOffset, String rule, Map<SoftwareQuality, ImpactSeverity> impacts, @Nullable Long introductionDate) {
+  private LiveIssue mockIssuePointer(int startOffset, String rule, List<ImpactDto> impacts, @Nullable Instant introductionDate) {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
 
-    var issue = mock(RawIssueDto.class);
+    var issue = mock(RaisedIssueDto.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getType()).thenReturn(RuleType.BUG);
     when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.CONVENTIONAL);

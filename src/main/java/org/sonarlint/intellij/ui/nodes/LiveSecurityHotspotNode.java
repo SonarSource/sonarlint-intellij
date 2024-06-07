@@ -58,7 +58,7 @@ public class LiveSecurityHotspotNode extends FindingNode {
     var typeIcon = SonarLintIcons.hotspotTypeWithProbability(vulnerability);
     var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
     var serverConnection = getService(securityHotspot.project(), ProjectBindingManager.class).tryGetServerConnection();
-    if (securityHotspot.getServerFindingKey() != null && serverConnection.isPresent()) {
+    if (securityHotspot.getServerKey() != null && serverConnection.isPresent()) {
       var productIcon = serverConnection.get().getProductIcon();
       var tooltip = vulnerabilityText + " " + typeStr + " existing on " + serverConnection.get().getProductName();
       renderer.setIconToolTip(tooltip);

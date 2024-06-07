@@ -26,20 +26,21 @@ import java.util.List;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.FindingContext;
+import org.sonarlint.intellij.finding.Issue;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
-public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.finding.Issue {
+public class LiveIssue extends LiveFinding implements Issue {
 
-  private RuleType type;
+  private final RuleType type;
 
-  public LiveIssue(Module module, RawIssueDto issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
+  public LiveIssue(Module module, RaisedIssueDto issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
     this(module, issue, virtualFile, null, null, quickFixes);
   }
 
-  public LiveIssue(Module module, RawIssueDto issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
+  public LiveIssue(Module module, RaisedIssueDto issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
     super(module, issue, virtualFile, range, context, quickFixes);
     this.type = issue.getType();
   }
@@ -48,10 +49,6 @@ public class LiveIssue extends LiveFinding implements org.sonarlint.intellij.fin
   @Override
   public RuleType getType() {
     return type;
-  }
-
-  public void setType(@Nullable RuleType type) {
-    this.type = type;
   }
 
   @Override

@@ -33,7 +33,6 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -50,12 +49,10 @@ public class ClearCurrentFileIssuesAction extends AbstractSonarAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      var issueManager = getService(project, FindingsCache.class);
       var codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
 
       runReadActionSafely(project, () -> {
-        issueManager.clearAllIssuesForAllFiles();
-        getService(project, AnalysisSubmitter.class).clearCurrentFileIssues();
+        getService(project, AnalysisSubmitter.class).getOnTheFlyFindingsHolder().clearCurrentFile();
 
         // run annotator to remove highlighting of issues
         var editorManager = FileEditorManager.getInstance(project);

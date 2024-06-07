@@ -106,7 +106,7 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
   @Test
   void testRuleIsNotLoaded() {
     var settings = new SonarLintGlobalSettings();
-    assertThat(settings.getRuleParamValue(RULE, PARAM).isPresent()).isFalse();
+    assertThat(settings.getRuleParamValue(RULE, PARAM)).isNotPresent();
   }
 
   @Test

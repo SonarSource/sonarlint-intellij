@@ -50,8 +50,8 @@ import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.fs.VirtualFileEvent
+import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.ProjectUtils
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
@@ -64,10 +64,14 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
     fun notifyProjectOpened() {
+        getService(project, RunningAnalysesTracker::class.java).finishAll()
         getService(BackendService::class.java).projectOpened(project)
         getService(BackendService::class.java).modulesAdded(project, listOf(module))
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
+        }
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
         }
     }
 
@@ -85,12 +89,12 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
-                { it.type },
+                { it.getType() },
                 { it.userSeverity },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } },
-                { it.introductionDate })
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } }
+            )
             .containsExactly(
                 tuple(
                     "xml:S1778",
@@ -98,7 +102,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                     RuleType.BUG,
                     IssueSeverity.CRITICAL,
                     Pair(62, 67),
-                    null
+
                 )
             )
     }
@@ -112,7 +116,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
@@ -129,7 +133,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
@@ -147,7 +151,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
@@ -163,7 +167,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
@@ -181,7 +185,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
@@ -198,7 +202,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
@@ -219,7 +223,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
@@ -256,7 +260,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
@@ -296,7 +300,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         assertThat(issues)
             .extracting(
-                { it.ruleKey },
+                { it.getRuleKey() },
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
@@ -339,7 +343,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             assertThat(issues)
                 .extracting(
                     { it.file().name },
-                    { it.ruleKey },
+                    { it.getRuleKey() },
                     { it.message },
                     { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
                 .containsExactlyInAnyOrder(
@@ -449,21 +453,25 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     private fun analyzeAndHighlight(vararg filesToAnalyze: VirtualFile): Pair<List<LiveIssue>, List<HighlightInfo>> {
-        return analyze(*filesToAnalyze) to myFixture.doHighlighting()
+        return analyze(*filesToAnalyze).toList() to myFixture.doHighlighting()
     }
 
-    private fun analyze(vararg filesToAnalyze: VirtualFile): List<LiveIssue> {
+    private fun analyze(vararg filesToAnalyze: VirtualFile): Collection<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
         }
 
-        submitter.analyzeFilesPreCommit(filesToAnalyze.toList())
+        submitter.autoAnalyzeFiles(filesToAnalyze.toList(), TriggerType.EDITOR_CHANGE)
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
         }
 
-        return filesToAnalyze.flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
+        val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+        val issues = filesToAnalyze.toList().map {
+            onTheFlyFindingsHolder.getIssuesForFile(it)
+        }.toList().flatten()
+        return issues
     }
 
     private fun analyzeAll(): List<LiveIssue> {
@@ -474,7 +482,11 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
         }
 
-        return ProjectUtils.getAllFiles(project).flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
+        val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+        val issues = ProjectUtils.getAllFiles(project).toList().map {
+            onTheFlyFindingsHolder.getIssuesForFile(it)
+        }.toList().flatten()
+        return issues
     }
 
     private fun sendFileToBackend(filePath: String): VirtualFile {

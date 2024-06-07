@@ -181,7 +181,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     var nodes = summaryNode.children();
     while (nodes.hasMoreElements()) {
       var securityHotspotNode = (LiveSecurityHotspotNode) nodes.nextElement();
-      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
+      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerKey())) {
         return securityHotspotNode.getHotspot();
       }
     }
@@ -191,7 +191,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   public Optional<LiveSecurityHotspot> findHotspotByKey(String securityHotspotKey) {
     return nonFilteredNodes.stream()
       .map(LiveSecurityHotspotNode::getHotspot)
-      .filter(hotspot -> hotspot.getServerFindingKey() != null && hotspot.getServerFindingKey().equals(securityHotspotKey))
+      .filter(hotspot -> hotspot.getServerKey() != null && hotspot.getServerKey().equals(securityHotspotKey))
       .findFirst();
   }
 
@@ -242,7 +242,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   public boolean updateStatusForHotspotWithFileNode(String securityHotspotKey, HotspotStatus status) {
     var optionalNode = nonFilteredNodes
       .stream()
-      .filter(node -> securityHotspotKey.equals(node.getHotspot().getServerFindingKey()))
+      .filter(node -> securityHotspotKey.equals(node.getHotspot().getServerKey()))
       .findFirst();
 
     if (optionalNode.isPresent()) {
@@ -273,7 +273,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
   public int updateStatusAndApplyCurrentFiltering(Project project, String securityHotspotKey, HotspotStatus status) {
     for (var securityHotspotNode : nonFilteredNodes) {
-      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
+      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerKey())) {
         securityHotspotNode.getHotspot().setStatus(status);
         break;
       }
