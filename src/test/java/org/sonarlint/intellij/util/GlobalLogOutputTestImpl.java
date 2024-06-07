@@ -23,9 +23,6 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 public class GlobalLogOutputTestImpl implements GlobalLogOutput {
 
-  private String lastMsg = "";
-
-
   @Override
   public void log(String msg, ClientLogOutput.Level level) {
     System.out.println(msg);
@@ -37,7 +34,4 @@ public class GlobalLogOutputTestImpl implements GlobalLogOutput {
     t.printStackTrace();
   }
 
-  public String getLastMsg() {
-    return lastMsg;
-  }
 }

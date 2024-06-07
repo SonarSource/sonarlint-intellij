@@ -20,10 +20,11 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.Instant;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
@@ -37,16 +38,16 @@ class IssueNodeTests {
 
   @Test
   void testCount() {
-    var i = createIssue(System.currentTimeMillis(), "rule");
+    var i = createIssue(Instant.now(), "rule");
     node = new IssueNode(i);
     assertThat(node.getFindingCount()).isEqualTo(1);
     assertThat(node.issue()).isEqualTo(i);
   }
 
-  private static LiveIssue createIssue(long date, String message) {
+  private static LiveIssue createIssue(Instant date, String message) {
     var file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
-    var issue = mock(RawIssueDto.class);
+    var issue = mock(RaisedIssueDto.class);
     when(issue.getPrimaryMessage()).thenReturn(message);
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getType()).thenReturn(RuleType.BUG);

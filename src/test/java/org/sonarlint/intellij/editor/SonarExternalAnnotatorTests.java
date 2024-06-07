@@ -29,7 +29,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
@@ -40,12 +39,10 @@ import static org.mockito.Mockito.when;
 class SonarExternalAnnotatorTests extends AbstractSonarLintLightTests {
   private final PsiFile psiFile = mock(PsiFile.class);
   private final VirtualFile virtualFile = mock(VirtualFile.class);
-  private final FindingsCache store = mock(FindingsCache.class);
   private final TextRange psiFileRange = new TextRange(0, 100);
 
   @BeforeEach
   void set() {
-    replaceProjectService(FindingsCache.class, store);
     when(psiFile.getTextRange()).thenReturn(psiFileRange);
     when(psiFile.getVirtualFile()).thenReturn(virtualFile);
     when(psiFile.getFileType()).thenReturn(JavaFileType.INSTANCE);

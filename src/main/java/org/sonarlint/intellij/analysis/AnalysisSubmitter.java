@@ -33,13 +33,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.UUID;
 import javax.annotation.CheckForNull;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.actions.ShowFindingCallable;
-import org.sonarlint.intellij.actions.ShowReportCallable;
-import org.sonarlint.intellij.actions.ShowUpdatedCurrentFileCallable;
-import org.sonarlint.intellij.actions.UpdateOnTheFlyFindingsCallable;
+import org.sonarlint.intellij.callable.CheckInCallable;
+import org.sonarlint.intellij.callable.ShowFindingCallable;
+import org.sonarlint.intellij.callable.ShowReportCallable;
+import org.sonarlint.intellij.callable.ShowUpdatedCurrentFileCallable;
+import org.sonarlint.intellij.callable.UpdateOnTheFlyFindingsCallable;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -66,6 +68,10 @@ public final class AnalysisSubmitter {
     this.onTheFlyFindingsHolder = new OnTheFlyFindingsHolder(project);
   }
 
+  public OnTheFlyFindingsHolder getOnTheFlyFindingsHolder() {
+    return onTheFlyFindingsHolder;
+  }
+
   public void cancelCurrentManualAnalysis() {
     if (currentManualAnalysis != null) {
       currentManualAnalysis.cancel();
@@ -87,7 +93,7 @@ public final class AnalysisSubmitter {
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
-  public void autoAnalyzeOpenFilesForModule(TriggerType triggerType, Project project, @Nullable Module module) {
+  public void autoAnalyzeOpenFilesForModule(TriggerType triggerType, @Nullable Module module) {
     if (module == null) {
       autoAnalyzeOpenFiles(triggerType);
       return;
@@ -124,7 +130,7 @@ public final class AnalysisSubmitter {
   }
 
   @CheckForNull
-  public AnalysisResult analyzeFilesPreCommit(Collection<VirtualFile> files) {
+  public Pair<CheckInCallable, List<UUID>> analyzeFilesPreCommit(Collection<VirtualFile> files) {
     var console = SonarLintUtils.getService(project, SonarLintConsole.class);
     var trigger = TriggerType.CHECK_IN;
     console.debug("Trigger: " + trigger);
@@ -132,10 +138,10 @@ public final class AnalysisSubmitter {
       return null;
     }
 
-    var callback = new ErrorAwareAnalysisCallback();
+    var callback = new CheckInCallable();
     var analysis = new Analysis(project, files, trigger, callback);
-    var result = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
-    return callback.analysisSucceeded() ? result : null;
+    var analysisIds = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
+    return Pair.of(callback, analysisIds);
   }
 
   public void analyzeFilesOnUserAction(Collection<VirtualFile> files, AnActionEvent actionEvent) {
@@ -212,26 +218,4 @@ public final class AnalysisSubmitter {
     return false;
   }
 
-  public void clearCurrentFileIssues() {
-    onTheFlyFindingsHolder.clearCurrentFile();
-  }
-
-  private static class ErrorAwareAnalysisCallback implements AnalysisCallback {
-    private final AtomicBoolean errored = new AtomicBoolean(false);
-
-    @Override
-    public void onSuccess(AnalysisResult analysisResult) {
-      // do nothing
-    }
-
-    @Override
-    public void onError(Throwable e) {
-      errored.set(true);
-    }
-
-    public boolean analysisSucceeded() {
-      return !errored.get();
-    }
-
-  }
 }

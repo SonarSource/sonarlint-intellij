@@ -25,6 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.DocumentUtil;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,34 +34,28 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedFindingDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.codec.digest.DigestUtils.md5;
 import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
-public abstract class LiveFinding implements Trackable, Finding {
+public abstract class LiveFinding implements Finding {
   private static final AtomicLong UID_GEN = new AtomicLong();
 
   private final long uid;
-  private UUID backendId;
+  private final UUID backendId;
   private final Module module;
   private final RangeMarker range;
   private final VirtualFile virtualFile;
-  private final Integer textRangeHash;
   private final String textRangeHashString;
-  private final Integer lineHash;
-  private final String lineHashString;
   private final String message;
   private final String ruleKey;
+  private final boolean isOnNewCode;
 
   private final FindingContext context;
   private final List<QuickFix> quickFixes;
@@ -70,28 +65,32 @@ public abstract class LiveFinding implements Trackable, Finding {
   // tracked fields (mutable)
   private IssueSeverity severity;
 
-  private Long introductionDate;
+  private Instant introductionDate;
   private String serverFindingKey;
   private boolean resolved;
-  private boolean isOnNewCode;
   private SoftwareQuality highestQuality = null;
   private ImpactSeverity highestImpact = null;
 
-  protected LiveFinding(Module module, RawIssueDto issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
+  protected LiveFinding(Module module, RaisedFindingDto finding, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
     List<QuickFix> quickFixes) {
+    this.backendId = finding.getId();
+    this.serverFindingKey = finding.getServerKey();
     this.module = module;
     this.range = range;
-    this.message = issue.getPrimaryMessage();
-    this.ruleKey = issue.getRuleKey();
-    this.severity = issue.getSeverity();
+    this.message = finding.getPrimaryMessage();
+    this.ruleKey = finding.getRuleKey();
+    this.severity = finding.getSeverity();
     this.virtualFile = virtualFile;
     this.uid = UID_GEN.getAndIncrement();
     this.context = context;
     this.quickFixes = quickFixes;
-    this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey();
+    this.ruleDescriptionContextKey = finding.getRuleDescriptionContextKey();
+    this.introductionDate = finding.getIntroductionDate();
+    this.isOnNewCode = finding.isOnNewCode();
+    this.resolved = finding.isResolved();
 
-    this.cleanCodeAttribute = CleanCodeAttribute.fromDto(issue.getCleanCodeAttribute());
-    this.impacts = issue.getImpacts().entrySet().stream().map(e -> Map.entry(SoftwareQuality.fromDto(e.getKey()), ImpactSeverity.fromDto(e.getValue())))
+    this.cleanCodeAttribute = CleanCodeAttribute.fromDto(finding.getCleanCodeAttribute());
+    this.impacts = finding.getImpacts().stream().map(e -> Map.entry(SoftwareQuality.fromDto(e.getSoftwareQuality()), ImpactSeverity.fromDto(e.getImpactSeverity())))
       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     var highestQualityImpact = getImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
     this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
@@ -101,36 +100,17 @@ public abstract class LiveFinding implements Trackable, Finding {
       var document = computeReadActionSafely(virtualFile, range::getDocument);
       if (document != null) {
         var lineContent = document.getText(new TextRange(range.getStartOffset(), range.getEndOffset()));
-        this.textRangeHash = checksum(lineContent);
         this.textRangeHashString = md5Hex(lineContent.replaceAll("[\\s]", ""));
-
-        var line = document.getLineNumber(range.getStartOffset());
-        var lineStartOffset = document.getLineStartOffset(line);
-        var lineEndOffset = document.getLineEndOffset(line);
-        var rangeContent = document.getText(new TextRange(lineStartOffset, lineEndOffset));
-        this.lineHash = checksum(rangeContent);
-        this.lineHashString = md5Hex(rangeContent.replaceAll("[\\s]", ""));
       } else {
-        this.textRangeHash = null;
         this.textRangeHashString = null;
-        this.lineHash = null;
-        this.lineHashString = null;
       }
     } else {
-      this.textRangeHash = null;
       this.textRangeHashString = null;
-      this.lineHash = null;
-      this.lineHashString = null;
     }
   }
 
-  @Override
   public UUID getId() {
     return getBackendId();
-  }
-
-  public void setBackendId(UUID backendId) {
-    this.backendId = backendId;
   }
 
   public Module getModule() {
@@ -142,10 +122,6 @@ public abstract class LiveFinding implements Trackable, Finding {
     return backendId;
   }
 
-  private static int checksum(String content) {
-    return Hex.encodeHexString(md5(content.replaceAll("\\s", "").getBytes(UTF_8))).hashCode();
-  }
-
   @Override
   public boolean isValid() {
     if (Boolean.TRUE.equals(computeReadActionSafely(virtualFile, virtualFile::isValid))) {
@@ -155,36 +131,12 @@ public abstract class LiveFinding implements Trackable, Finding {
     }
   }
 
-  @Override
-  public Integer getLine() {
-    if (range != null) {
-      return computeReadActionSafely(virtualFile, () -> range.getDocument().getLineNumber(range.getStartOffset()) + 1);
-    }
-
-    return null;
-  }
-
-  @Override
   public String getMessage() {
     return message;
   }
 
-  @Override
-  public Integer getTextRangeHash() {
-    return textRangeHash;
-  }
-
   public String getTextRangeHashString() {
     return textRangeHashString;
-  }
-
-  @Override
-  public Integer getLineHash() {
-    return lineHash;
-  }
-
-  public String getLineHashString() {
-    return lineHashString;
   }
 
   @NotNull
@@ -235,23 +187,16 @@ public abstract class LiveFinding implements Trackable, Finding {
     return module.getProject();
   }
 
-  @Override
   public IssueSeverity getUserSeverity() {
     return severity;
   }
 
-  @Override
-  public Long getIntroductionDate() {
+  public Instant getIntroductionDate() {
     return introductionDate;
   }
 
   @Override
   public String getServerKey() {
-    return serverFindingKey;
-  }
-
-  @Override
-  public String getServerFindingKey() {
     return serverFindingKey;
   }
 
@@ -276,16 +221,12 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.serverFindingKey = serverHotspotKey;
   }
 
-  public void setIntroductionDate(@Nullable Long introductionDate) {
+  public void setIntroductionDate(@Nullable Instant introductionDate) {
     this.introductionDate = introductionDate;
   }
 
   public void setResolved(boolean resolved) {
     this.resolved = resolved;
-  }
-
-  public void setSeverity(IssueSeverity severity) {
-    this.severity = severity;
   }
 
   public Optional<FindingContext> context() {
@@ -302,11 +243,6 @@ public abstract class LiveFinding implements Trackable, Finding {
     return ruleDescriptionContextKey;
   }
 
-  public void setOnNewCode(boolean onNewCode) {
-    isOnNewCode = onNewCode;
-  }
-
-  @Override
   public boolean isOnNewCode() {
     return isOnNewCode;
   }

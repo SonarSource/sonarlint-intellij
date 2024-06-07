@@ -39,6 +39,7 @@ import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.VirtualFileUtils;
@@ -56,13 +57,14 @@ public final class SonarLintAnalyzer {
     myProject = project;
   }
 
-  public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, AnalysisState analysisState, ProgressIndicator indicator) {
+  public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, AnalysisState analysisState, ProgressIndicator indicator,
+    boolean shouldFetchServerIssues) {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     var start = System.currentTimeMillis();
     var console = getService(myProject, SonarLintConsole.class);
 
     var contributedConfigurations = getConfigurationFromConfiguratorEP(module, filesToAnalyze, console);
-    var contributedProperties = collectContributedExtraProperties(console, contributedConfigurations);
+    var contributedProperties = collectContributedExtraProperties(module, console, contributedConfigurations);
 
     // configure files
     var inputFiles = getInputFiles(module, filesToAnalyze);
@@ -77,39 +79,34 @@ public final class SonarLintAnalyzer {
       var what = filesToAnalyze.size() == 1 ? String.format("'%s'", filesToAnalyze.iterator().next().getName()) : String.format("%d files", filesToAnalyze.size());
       console.info("Analysing " + what + " (ID " + analysisState.getId() + ")...");
 
-      var analysisTask = getService(BackendService.class).analyzeFiles(module, analysisState.getId(), inputFiles, contributedProperties, start);
+      var analysisTask = getService(BackendService.class).analyzeFilesAndTrack(module, analysisState.getId(), inputFiles, contributedProperties, shouldFetchServerIssues, start);
 
       AnalyzeFilesResponse result = null;
       try {
         result = waitForFuture(indicator, analysisTask);
       } catch (ProcessCanceledException e) {
+        getService(myProject, RunningAnalysesTracker.class).finish(analysisState);
         console.debug("Analysis " + analysisState.getId() + " canceled");
       } catch (Exception e) {
+        getService(myProject, RunningAnalysesTracker.class).finish(analysisState);
         console.error("Error during analysis ID " + analysisState.getId(), e);
       }
-
-      getService(myProject, RunningAnalysesTracker.class).finish(analysisState);
 
       Set<VirtualFile> failedAnalysisFiles = Collections.emptySet();
       if (result != null) {
         failedAnalysisFiles = result.getFailedAnalysisFiles().stream()
           .map(uri -> VirtualFileManager.getInstance().findFileByUrl(uri.toString())).collect(Collectors.toSet());
-
-        var rawIssues = result.getRawIssues();
-        if (rawIssues != null) {
-          result.getRawIssues().stream().filter(analysisState::wasIssueNotAlreadyReceived).forEach(analysisState::addRawIssue);
-        }
       }
 
       return new ModuleAnalysisResult(failedAnalysisFiles);
     } finally {
-      getService(myProject, RunningAnalysesTracker.class).finish(analysisState);
       console.debug("Analysis " + analysisState.getId() + " finished");
     }
   }
 
   @NotNull
-  private static Map<String, String> collectContributedExtraProperties(SonarLintConsole console, List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations) {
+  private static Map<String, String> collectContributedExtraProperties(Module module, SonarLintConsole console,
+    List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations) {
     var contributedProperties = new HashMap<String, String>();
     for (var config : contributedConfigurations) {
       for (var entry : config.extraProperties.entrySet()) {
@@ -119,6 +116,14 @@ public final class SonarLintAnalyzer {
         }
         contributedProperties.put(entry.getKey(), entry.getValue());
       }
+    }
+    var extraProperties = Settings.getSettingsFor(module.getProject()).getAdditionalProperties();
+    for (var entry : extraProperties.entrySet()) {
+      if (contributedProperties.containsKey(entry.getKey()) && !Objects.equals(contributedProperties.get(entry.getKey()), entry.getValue())) {
+        console.error("The same property " + entry.getKey() + " was contributed by multiple configurators with different values: " +
+          contributedProperties.get(entry.getKey()) + " / " + entry.getValue());
+      }
+      contributedProperties.put(entry.getKey(), entry.getValue());
     }
     return contributedProperties;
   }

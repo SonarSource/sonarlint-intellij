@@ -36,20 +36,21 @@ import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
-import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 public class LiveSecurityHotspot extends LiveFinding {
   private final VulnerabilityProbability vulnerabilityProbability;
   private HotspotReviewStatus status;
 
-  public LiveSecurityHotspot(Module module, RawIssueDto issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
-    this(module, issue, virtualFile, null, null, quickFixes);
+  public LiveSecurityHotspot(Module module, RaisedHotspotDto hotspot, VirtualFile virtualFile, List<QuickFix> quickFixes) {
+    this(module, hotspot, virtualFile, null, null, quickFixes);
   }
 
-  public LiveSecurityHotspot(Module module, RawIssueDto issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
-    super(module, issue, virtualFile, range, context, quickFixes);
-    this.vulnerabilityProbability = issue.getVulnerabilityProbability();
+  public LiveSecurityHotspot(Module module, RaisedHotspotDto hotspot, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
+    List<QuickFix> quickFixes) {
+    super(module, hotspot, virtualFile, range, context, quickFixes);
+    this.vulnerabilityProbability = hotspot.getVulnerabilityProbability();
     this.status = HotspotReviewStatus.TO_REVIEW;
   }
 

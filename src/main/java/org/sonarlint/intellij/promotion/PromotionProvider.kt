@@ -52,7 +52,7 @@ class PromotionProvider(private val project: Project) {
     )
 
     private val reportAnalysisTriggers: Set<TriggerType> = EnumSet.of(
-        TriggerType.RIGHT_CLICK, TriggerType.ALL
+        TriggerType.RIGHT_CLICK, TriggerType.CHANGED_FILES, TriggerType.ALL
     )
 
     private val nonReportAnalysisTriggers: Set<TriggerType> = EnumSet.of(
@@ -187,7 +187,7 @@ class PromotionProvider(private val project: Project) {
     private fun findLanguage(extension: String, languages: Set<Language>): org.sonarsource.sonarlint.core.client.utils.Language? {
         return languages.find {
             SonarLanguage.valueOf(it.name).defaultFileSuffixes.any { suffix ->
-                suffix.equals(extension) || suffix.equals(".$extension")
+                suffix == extension || suffix == ".$extension"
             }
         }?.let { org.sonarsource.sonarlint.core.client.utils.Language.fromDto(it) }
     }

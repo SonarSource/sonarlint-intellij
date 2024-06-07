@@ -40,13 +40,13 @@ public class FindingStreamer implements AutoCloseable {
     this.streamingTriggeringAlarm = new Alarm("sonarlint-finding-streamer", STREAMING_INTERVAL, () -> this.triggerStreaming(analysisCallback));
   }
 
-  public void streamIssue(VirtualFile file, LiveIssue issue) {
-    issuesPerFile.computeIfAbsent(file, k -> new ArrayList<>()).add(issue);
+  public void streamIssues(VirtualFile file, Collection<LiveIssue> issue) {
+    issuesPerFile.computeIfAbsent(file, k -> new ArrayList<>()).addAll(issue);
     streamingTriggeringAlarm.schedule();
   }
 
-  public void streamSecurityHotspot(VirtualFile file, LiveSecurityHotspot securityHotspot) {
-    securityHotspotsPerFile.computeIfAbsent(file, k -> new ArrayList<>()).add(securityHotspot);
+  public void streamSecurityHotspots(VirtualFile file, Collection<LiveSecurityHotspot> securityHotspot) {
+    securityHotspotsPerFile.computeIfAbsent(file, k -> new ArrayList<>()).addAll(securityHotspot);
     streamingTriggeringAlarm.schedule();
   }
 

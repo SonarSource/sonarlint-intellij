@@ -21,7 +21,6 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService

@@ -37,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
@@ -45,7 +46,6 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
@@ -68,8 +68,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     var project = psiFile.getProject();
     var file = psiFile.getVirtualFile();
-    var issueManager = getService(project, FindingsCache.class);
-    var issues = issueManager.getIssuesForFile(file);
+
+    var onTheFlyFindingsHolder = getService(project, AnalysisSubmitter.class).getOnTheFlyFindingsHolder();
+    var issues = onTheFlyFindingsHolder.getFindingsForFile(file);
     issues.stream()
       .filter(issue -> !issue.isResolved())
       .forEach(issue -> {
@@ -140,7 +141,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     if (finding instanceof LiveSecurityHotspot hotspot) {
-      intentionActions.add(new ReviewSecurityHotspotAction(finding.getServerFindingKey(), hotspot.getStatus()));
+      intentionActions.add(new ReviewSecurityHotspotAction(finding.getServerKey(), hotspot.getStatus()));
     }
 
     if (finding instanceof LiveIssue liveIssue) {
