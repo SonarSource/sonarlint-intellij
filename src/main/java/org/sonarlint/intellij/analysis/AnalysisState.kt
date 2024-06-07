@@ -35,7 +35,6 @@ import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
@@ -127,7 +126,8 @@ class AnalysisState(
         issuesByFileUri.forEach { (fileUri, rawIssues) ->
             val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileUri.toString())
             if (virtualFile == null) {
-                SonarLintLogger.get().error("Cannot retrieve the file on which an issue has been raised. File URI is $fileUri")
+                SonarLintConsole.get(module.project)
+                    .error("Cannot retrieve the file on which an issue has been raised. File URI is $fileUri")
             } else {
                 val liveIssues = convertRawIssues(virtualFile, rawIssues)
                 findingStreamer.streamIssues(virtualFile, liveIssues)
@@ -139,7 +139,8 @@ class AnalysisState(
         hotspotsByFileUri.forEach { (fileUri, rawHotspots) ->
             val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileUri.toString())
             if (virtualFile == null) {
-                SonarLintLogger.get().error("Cannot retrieve the file on which a Security Hotspot has been raised. File URI is $fileUri")
+                SonarLintConsole.get(module.project)
+                    .error("Cannot retrieve the file on which a Security Hotspot has been raised. File URI is $fileUri")
             } else {
                 val liveHotspots = convertRawHotspots(virtualFile, rawHotspots)
                 findingStreamer.streamSecurityHotspots(virtualFile, liveHotspots)
