@@ -30,6 +30,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -51,11 +52,13 @@ class AnalysisState(
     private val findingStreamer = FindingStreamer(analysisCallback)
     private val liveIssues = mutableMapOf<VirtualFile, Collection<LiveIssue>>()
     private val liveHotspots = mutableMapOf<VirtualFile, Collection<LiveSecurityHotspot>>()
+    private val shouldReceiveHotspot: Boolean
     private var hasReceivedFinalIssues = false
     private var hasReceivedFinalHotspots = false
 
     init {
         this.initFiles(filesToAnalyze)
+        shouldReceiveHotspot = Settings.getSettingsFor(module.project).isBound
     }
 
     private fun initFiles(files: Collection<VirtualFile>) {
@@ -184,7 +187,9 @@ class AnalysisState(
         return emptyList()
     }
 
-    fun isAnalysisFinished() = hasReceivedFinalIssues
+    fun isAnalysisFinished(): Boolean {
+        return hasReceivedFinalIssues && (!shouldReceiveHotspot || hasReceivedFinalHotspots)
+    }
 
     override fun close() {
         findingStreamer.close()
