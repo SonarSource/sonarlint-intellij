@@ -33,7 +33,7 @@ import org.sonarlint.intellij.core.BackendService
 @Service(Service.Level.APP)
 class CleanAsYouCodeService {
     fun shouldFocusOnNewCode(project: Project): Boolean {
-        return getGlobalSettings().isFocusOnNewCode && getSettingsFor(project).isBound
+        return getGlobalSettings().isFocusOnNewCode //&& getSettingsFor(project).isBound
     }
 
     fun setFocusOnNewCode(isFocusOnNewCode: Boolean) {

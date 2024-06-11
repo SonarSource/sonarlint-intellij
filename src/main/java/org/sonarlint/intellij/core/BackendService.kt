@@ -88,6 +88,7 @@ import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesAndTrackParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
@@ -1062,12 +1063,13 @@ class BackendService : Disposable {
     ): CompletableFuture<AnalyzeFilesResponse> {
         val moduleId = moduleId(module)
         return requestFromBackend {
-            it.analysisService.analyzeFiles(
-                AnalyzeFilesParams(
+            it.analysisService.analyzeFilesAndTrack(
+                AnalyzeFilesAndTrackParams(
                     moduleId,
                     analysisId,
                     filesToAnalyze,
                     extraProperties,
+                    true,
                     startTime
                 )
             )
