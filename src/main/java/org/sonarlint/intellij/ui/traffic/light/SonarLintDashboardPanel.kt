@@ -27,7 +27,6 @@ import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
 import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.components.JBCheckBox
@@ -80,7 +79,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
     private val restartPanel: JPanel
 
     init {
-        editor.project?.let { refreshCheckbox(it) }
+        editor.project?.let { refreshCheckbox() }
         focusOnNewCodeCheckbox.addActionListener {
             getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCodeCheckbox.isSelected)
         }
@@ -141,7 +140,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
     fun refresh(summary: SonarLintDashboardModel) {
         val project = editor.project ?: return
         handleIfAlive(summary.isAlive)
-        refreshCheckbox(project)
+        refreshCheckbox()
 
         if (summary.findingsCount() == 0) {
             findingsSummaryLabel.text = NO_FINDINGS_TEXT
@@ -192,13 +191,9 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         }
     }
 
-    private fun refreshCheckbox(project: Project) {
-        Settings.getSettingsFor(project).isBound.let {
-            focusOnNewCodeCheckbox.isEnabled = it
-            focusOnNewCodeCheckbox.text = if (it) CHECKBOX_TITLE else "$CHECKBOX_TITLE (connected mode only)"
-        }
-        val isFocusOnNewCode = Settings.getGlobalSettings().isFocusOnNewCode
-        focusOnNewCodeCheckbox.isSelected = isFocusOnNewCode
+    private fun refreshCheckbox() {
+        focusOnNewCodeCheckbox.text = CHECKBOX_TITLE
+        focusOnNewCodeCheckbox.isSelected = Settings.getGlobalSettings().isFocusOnNewCode
     }
 
     private fun createLowerPanel(): JPanel {

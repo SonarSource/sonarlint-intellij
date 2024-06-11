@@ -26,14 +26,13 @@ import com.intellij.openapi.project.ProjectManager
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
-import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.BackendService
 
 @Service(Service.Level.APP)
 class CleanAsYouCodeService {
     fun shouldFocusOnNewCode(project: Project): Boolean {
-        return getGlobalSettings().isFocusOnNewCode && getSettingsFor(project).isBound
+        return getGlobalSettings().isFocusOnNewCode
     }
 
     fun setFocusOnNewCode(isFocusOnNewCode: Boolean) {
