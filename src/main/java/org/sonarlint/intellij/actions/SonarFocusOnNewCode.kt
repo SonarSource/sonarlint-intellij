@@ -36,8 +36,6 @@ class SonarFocusOnNewCode : AbstractSonarToggleAction() {
     }
 
     override fun updatePresentation(project: Project, presentation: Presentation) {
-        val enabled = Settings.getSettingsFor(project).isBound
-        presentation.setEnabled(enabled)
-        presentation.text = "Set Focus on New Code" + if (enabled) "" else " (Connected Mode Only)"
+        presentation.text = "Set Focus on New Code"
     }
 }
