@@ -32,7 +32,6 @@ import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.SeparatorComponent;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.ToolbarDecorator;
-import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.panels.HorizontalLayout;
@@ -58,12 +57,10 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarLintIcons;
-import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.util.HelpLabelUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -74,7 +71,6 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   // UI
   private JPanel panel;
   private JPanel serversPanel;
-  private JBCheckBox focusOnNewCode;
   private JBList<ServerConnection> connectionList;
 
   // Model
@@ -120,14 +116,6 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     var optionsPanel = new JPanel(new VerticalFlowLayout());
     var connectedModeDescription = initConnectedModeDescription();
     optionsPanel.add(connectedModeDescription);
-
-    focusOnNewCode = new JBCheckBox("Focus on new code (connected mode only)");
-    focusOnNewCode.setFocusable(false);
-    var helpLabel = HelpLabelUtils.createCleanAsYouCode();
-    var horizontalLayout = new JPanel(new HorizontalLayout(5));
-    horizontalLayout.add(focusOnNewCode);
-    horizontalLayout.add(helpLabel);
-    optionsPanel.add(horizontalLayout);
 
     panel = new JPanel(new VerticalFlowLayout());
     panel.add(new SeparatorComponent(5, 0, JBUI.CurrentTheme.CustomFrameDecorations.separatorForeground(), null));
@@ -212,12 +200,11 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   @Override
   public boolean isModified(SonarLintGlobalSettings settings) {
-    return !connections.equals(settings.getServerConnections()) || settings.isFocusOnNewCode() != focusOnNewCode.isSelected();
+    return !connections.equals(settings.getServerConnections());
   }
 
   @Override
   public void save(SonarLintGlobalSettings newSettings) {
-    getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), newSettings);
     var newConnections = new ArrayList<>(connections);
     newSettings.setServerConnections(newConnections);
 
@@ -227,7 +214,6 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
-    focusOnNewCode.setSelected(settings.isFocusOnNewCode());
     connections.clear();
     deletedServerIds.clear();
 

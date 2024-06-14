@@ -19,26 +19,35 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.SwingHelper;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.Objects;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.event.HyperlinkEvent;
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.util.HelpLabelUtils;
 
 import static java.awt.GridBagConstraints.WEST;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.FOCUS_ON_NEW_CODE_LINK;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
@@ -47,15 +56,42 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   private JBCheckBox autoTrigger;
   private JBTextField nodeJsPath;
   private JBLabel nodeJsVersion;
+  private JBCheckBox focusOnNewCode;
 
   @Override
   public JComponent getComponent() {
     if (rootPane == null) {
       rootPane = new JBPanel<>(new BorderLayout());
-      rootPane.add(createTopPanel(), BorderLayout.NORTH);
+      focusOnNewCode = new JBCheckBox("Focus on new code");
+      focusOnNewCode.setFocusable(false);
+      var helpLabel = HelpLabelUtils.createCleanAsYouCode();
+      var cleanAsYouCodeOption = new JPanel(new HorizontalLayout(5));
+      cleanAsYouCodeOption.add(focusOnNewCode);
+      cleanAsYouCodeOption.add(helpLabel);
+      var cleanAsYouCodeDocumentation = new JPanel(new HorizontalLayout(5));
+      cleanAsYouCodeDocumentation.add(cleanAsYouCodeLink());
+      rootPane.add(createTopPanel(), BorderLayout.SOUTH);
+      rootPane.add(cleanAsYouCodeDocumentation, BorderLayout.CENTER);
+      rootPane.add(cleanAsYouCodeOption, BorderLayout.NORTH);
     }
 
     return rootPane;
+  }
+
+  private JEditorPane cleanAsYouCodeLink() {
+    var connectedModeLabel = new JEditorPane();
+    initHtmlPane(connectedModeLabel);
+    connectedModeLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 15, 0));
+    SwingHelper.setHtml(connectedModeLabel, "Focusing on new code helps you practice"+
+      " <a href=\"" + FOCUS_ON_NEW_CODE_LINK + "\">Clean as You Code.</a>",
+      JBUI.CurrentTheme.ContextHelp.FOREGROUND);
+    connectedModeLabel .addHyperlinkListener(new HyperlinkAdapter() {
+      @Override
+      protected void hyperlinkActivated(HyperlinkEvent e) {
+        BrowserUtil.browse(FOCUS_ON_NEW_CODE_LINK);
+      }
+    });
+    return connectedModeLabel;
   }
 
   private JPanel createTopPanel() {
@@ -90,7 +126,8 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();
     return model.isAutoTrigger() != autoTrigger.isSelected()
-      || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText());
+      || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText())
+      || model.isFocusOnNewCode() != focusOnNewCode.isSelected();
   }
 
   @Override
@@ -98,6 +135,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     autoTrigger.setSelected(model.isAutoTrigger());
     nodeJsPath.setText(model.getNodejsPath());
+    focusOnNewCode.setSelected(model.isFocusOnNewCode());
     loadNodeJsSettings();
   }
 
@@ -116,6 +154,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public void save(SonarLintGlobalSettings settings) {
     getComponent();
+    getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
     settings.setNodejsPath(nodeJsPath.getText());
   }

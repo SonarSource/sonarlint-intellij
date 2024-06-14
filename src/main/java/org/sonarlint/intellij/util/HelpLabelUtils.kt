@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.util
 
-import com.intellij.ide.BrowserUtil
 import com.intellij.ui.ContextHelpLabel
-import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.FOCUS_ON_NEW_CODE_LINK
 import org.sonarlint.intellij.telemetry.LinkTelemetry
 
 class HelpLabelUtils {
@@ -41,9 +39,11 @@ class HelpLabelUtils {
 
         @JvmStatic
         fun createCleanAsYouCode() =
-            ContextHelpLabel.createWithLink(null,
-                "Deliver clean code by focusing on code that was recently modified",
-                "Learn more about Clean as You Code", true) { BrowserUtil.browse(FOCUS_ON_NEW_CODE_LINK) }
+            ContextHelpLabel.create(
+                "<html>Use connected mode to benefit from an<br>accurate new code definition based on your SonarQube or SonarCloud settings." +
+                    "<br>" +
+                    "<br>Without connected mode, any code added or changed in the last 30 days is considered new code.</html>"
+            )
 
         @JvmStatic
         fun createConnectedMode() =
