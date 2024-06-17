@@ -60,7 +60,6 @@ public class TaskProgressMonitor implements ClientProgressMonitor {
   /**
    * Handles a message regarding the current action
    */
-  @Override
   public void setMessage(String msg) {
     indicator.setText(msg);
   }
@@ -70,7 +69,6 @@ public class TaskProgressMonitor implements ClientProgressMonitor {
    *
    * @param fraction Number between 0.0f and 1.0f
    */
-  @Override
   public void setFraction(float fraction) {
     if (indicator.isIndeterminate()) {
       indicator.setIndeterminate(false);
@@ -82,7 +80,6 @@ public class TaskProgressMonitor implements ClientProgressMonitor {
    * Handles whether the task in progress can determinate the fraction of its progress.
    * If not set, it should be assumed false
    */
-  @Override
   public void setIndeterminate(boolean indeterminate) {
     indicator.setIndeterminate(indeterminate);
   }
@@ -90,7 +87,6 @@ public class TaskProgressMonitor implements ClientProgressMonitor {
   /**
    * Execute a section of code that can't be canceled
    */
-  @Override
   public void executeNonCancelableSection(Runnable nonCancelable) {
     progressManager.executeNonCancelableSection(nonCancelable);
   }

@@ -41,19 +41,6 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import java.io.ByteArrayInputStream
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.URI
-import java.net.URL
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.UUID
-import java.util.concurrent.CancellationException
 import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
@@ -63,6 +50,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
+import org.sonarlint.intellij.analysis.LocalFileExclusions
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -142,6 +130,19 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
+import java.io.ByteArrayInputStream
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.URI
+import java.net.URL
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.UUID
+import java.util.concurrent.CancellationException
 
 
 object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
@@ -796,6 +797,15 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return project.guessProjectDir()?.let {
             Paths.get(it.path)
         } ?: throw ConfigScopeNotFoundException()
+    }
+
+    @Throws(ConfigScopeNotFoundException::class)
+    override fun getFileExclusions(configurationScopeId: String): MutableSet<String> {
+        val project = BackendService.findProject(configurationScopeId)
+            ?: BackendService.findModule(configurationScopeId)?.project
+            ?: throw ConfigScopeNotFoundException()
+        val localFileExclusions = getService(project, LocalFileExclusions::class.java)
+        return localFileExclusions.getFileExclusions();
     }
 
 }

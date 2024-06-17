@@ -29,6 +29,7 @@ import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -278,4 +279,24 @@ public final class LocalFileExclusions {
     }
   }
 
+  public Set<String> getFileExclusions() {
+    HashSet<String> exclusions = new HashSet<>(getGlobalSettings().getFileExclusions());
+    List<String> projectExclusions = getSettingsFor(myProject).getFileExclusions();
+
+    projectExclusions.stream()
+      .map(ExclusionItem::parse)
+      .filter(Objects::nonNull)
+      .map(exclusionItem -> {
+        if(exclusionItem.type().equals(ExclusionItem.Type.FILE)) {
+          return "**/" + exclusionItem.item();
+        }
+        if(exclusionItem.type().equals(ExclusionItem.Type.DIRECTORY)) {
+          return "**/" + exclusionItem.item() + "/**";
+        }
+        return exclusionItem.item();
+      })
+      .forEach(exclusions::add);
+
+    return exclusions;
+  }
 }
