@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.lang.LanguageExtensionPoint;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
@@ -42,6 +43,7 @@ import org.mockito.stubbing.Answer;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.VirtualFileUtils;
@@ -68,11 +70,16 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   private SonarLintAnalyzer sonarLintAnalyzer;
   @Mock
   private AnalysisResults analysisResults;
+  @Mock
+  private BackendService backendService;
+  @Mock
+  private AnalysisReadinessCache analysisReadinessCache;
   private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
 
   @BeforeEach
   void prepare() {
     MockitoAnnotations.openMocks(this);
+    replaceProjectService(BackendService.class, backendService);
     var testFile = myFixture.configureByText("MyClass.java", "class MyClass {]");
     this.fileUri = VirtualFileUtils.INSTANCE.toURI(testFile.getVirtualFile());
     filesToAnalyze.add(testFile.getVirtualFile());
@@ -82,6 +89,8 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenReturn(moduleAnalysisResult);
 
+    analysisReadinessCache.setReady(true);
+    replaceModuleService(AnalysisReadinessCache.class, analysisReadinessCache);
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
     replaceProjectService(SonarLintConsole.class, sonarLintConsole);
