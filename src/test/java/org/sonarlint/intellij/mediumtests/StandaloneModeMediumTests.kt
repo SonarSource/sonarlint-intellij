@@ -383,6 +383,8 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         analyze(virtualFile)
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
+        val availableIntention = myFixture.filterAvailableIntentions(diamondQuickFix)
+        assertThat(availableIntention).isEmpty()
         myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
     }
 
@@ -429,18 +431,6 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         myFixture.editor.caretModel.currentCaret.moveToOffset(120)
         myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
         myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_same_line.expected.java")
-    }
-
-    @Test
-    fun should_make_the_quick_fix_not_available_after_applying_it() {
-        val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
-
-        analyze(virtualFile)
-        // Let the DaemonCodeAnalyzer finishes his job
-        Thread.sleep(3000)
-        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-        val availableIntention = myFixture.filterAvailableIntentions(diamondQuickFix)
-        assertThat(availableIntention).isEmpty()
     }
 
     /**
