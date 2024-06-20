@@ -21,6 +21,7 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -107,13 +108,18 @@ public class ProjectUtils {
           return matchedFile;
         }
       } else {
-        // On Rider, all source files are returned as individual content roots, so simply check for equality
+        // On some version of Rider, all source files are returned as individual content roots, so simply check for equality
         if (contentRoot.getPath().endsWith(getSystemIndependentPath(filePath))) {
           return contentRoot;
         }
       }
     }
-    return null;
+
+    // getContentRoots function does not have consistent behaviour across different version of IDEs,
+    // so find the file using root path if it does not work
+    var root = ProjectUtil.guessProjectDir(project);
+    if (root == null) return null;
+    return findByRelativePath(root, filePath);
   }
 
   @CheckForNull
