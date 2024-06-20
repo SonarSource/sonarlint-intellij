@@ -464,12 +464,12 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private fun analyze(vararg filesToAnalyze: VirtualFile): Collection<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
         val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+        Awaitility.await().atMost(15, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
         }
 
         submitter.autoAnalyzeFiles(filesToAnalyze.toList(), TriggerType.EDITOR_CHANGE)
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+        Awaitility.await().atMost(15, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
         }
 

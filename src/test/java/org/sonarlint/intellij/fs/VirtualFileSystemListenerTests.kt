@@ -30,9 +30,13 @@ import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.mock
@@ -42,6 +46,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
+import java.util.concurrent.TimeUnit
 
 private const val FILE_NAME = "main.py"
 
@@ -49,9 +54,21 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
     @BeforeEach
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
+        actualBackendService = ApplicationManager.getApplication().getService(BackendService::class.java)
+        backendService = spy(actualBackendService)
         ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
         file = myFixture.copyFileToProject(FILE_NAME, FILE_NAME)
         virtualFileSystemListener = VirtualFileSystemListener()
+    }
+
+    @AfterEach
+    fun cleanup() {
+        // Avoid polluting other tests with SLOOP left running
+        backendService.dispose()
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            assertThat(backendService.isAlive()).isFalse()
+        }
+        ApplicationManager.getApplication().replaceService(BackendService::class.java, actualBackendService, testRootDisposable)
     }
 
     @Test
@@ -216,7 +233,8 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
     }
 
     private var projectBindingManager: ProjectBindingManager = mock()
-    private var backendService: BackendService = mock()
+    private lateinit var backendService: BackendService
+    private lateinit var actualBackendService: BackendService
     private lateinit var file: VirtualFile
     private lateinit var virtualFileSystemListener: VirtualFileSystemListener
 }
