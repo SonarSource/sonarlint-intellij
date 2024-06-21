@@ -72,6 +72,8 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   private AnalysisResults analysisResults;
   @Mock
   private BackendService backendService;
+  @Mock
+  private AnalysisReadinessCache analysisReadinessCache;
   private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
 
   @BeforeEach
@@ -87,6 +89,8 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenReturn(moduleAnalysisResult);
 
+    analysisReadinessCache.setReady(true);
+    replaceModuleService(AnalysisReadinessCache.class, analysisReadinessCache);
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
     replaceProjectService(SonarLintConsole.class, sonarLintConsole);
