@@ -175,7 +175,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
             merged.addAll(issues2);
             return merged;
           }));
-      var allFilesAnalyzed = results.stream().flatMap(result -> result.getAnalyzedFiles().stream()).collect(Collectors.toList());
+      var allFilesAnalyzed = results.stream().flatMap(result -> result.getAnalyzedFiles().stream()).toList();
       var result = new AnalysisResult(new LiveFindings(issuesPerFile, hotspotsPerFile), allFilesAnalyzed, results.get(0).getTriggerType(), results.get(0).getAnalysisDate());
       showChangedFilesTab(result);
     }
