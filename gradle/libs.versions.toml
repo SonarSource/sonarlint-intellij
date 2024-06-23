@@ -1,7 +1,7 @@
 [versions]
 sonarlint-core = "10.2.0.78029"
 
-sonar-java = "7.34.0.35958"
+sonar-java = "8.0.1.36337"
 sonar-javascript = "10.14.0.26080"
 sonar-php = "3.35.0.11659"
 sonar-python = "4.19.0.15616"
@@ -42,6 +42,7 @@ sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarli
 sonarlint-rpc-java-client = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-java-client", version.ref = "sonarlint-core" }
 sonarlint-rpc-impl = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-impl", version.ref = "sonarlint-core" }
 
+sonar-java-symbolic-execution = { module = "org.sonarsource.java:sonar-java-symbolic-execution-plugin", version.ref = "sonar-java" }
 sonar-java = { module = "org.sonarsource.java:sonar-java-plugin", version.ref = "sonar-java" }
 sonar-javascript = { module = "org.sonarsource.javascript:sonar-javascript-plugin", version.ref = "sonar-javascript" }
 sonar-php = { module = "org.sonarsource.php:sonar-php-plugin", version.ref = "sonar-php" }
@@ -71,7 +72,7 @@ its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", ver
 
 [bundles]
 # Does not include cfamily
-sonar-analyzers = ["sonar-java", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac"]
+sonar-analyzers = ["sonar-java", "sonar-java-symbolic-execution", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac"]
 its-remote = ["its-remote-robot", "its-remote-fixtures"]
 
 [plugins]
