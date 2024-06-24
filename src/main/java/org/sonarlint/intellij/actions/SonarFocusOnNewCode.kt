@@ -36,6 +36,8 @@ class SonarFocusOnNewCode : AbstractSonarToggleAction() {
     }
 
     override fun updatePresentation(project: Project, presentation: Presentation) {
-        presentation.text = "Set Focus on New Code"
+        val shouldFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+        val scope = if (shouldFocusOnNewCode) "Overall" else "New"
+        presentation.text = "Set Focus on $scope Code"
     }
 }
