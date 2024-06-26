@@ -143,7 +143,7 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     try {
       Class.forName("com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace");
       return true;
-    } catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException | NoClassDefFoundError e) {
       SonarLintConsole.get(project).debug("Could not support remote or WSL toolchain");
       return false;
     }
