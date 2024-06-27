@@ -94,7 +94,7 @@ public final class SonarLintAnalyzer {
       Set<VirtualFile> failedAnalysisFiles = Collections.emptySet();
       if (result != null) {
         failedAnalysisFiles = result.getFailedAnalysisFiles().stream()
-          .map(VirtualFileUtils.INSTANCE::uriToVirtualFile).collect(Collectors.toSet());
+          .map(VirtualFileUtils.INSTANCE::uriToVirtualFile).filter(Objects::nonNull).collect(Collectors.toSet());
       }
 
       return new ModuleAnalysisResult(failedAnalysisFiles);
