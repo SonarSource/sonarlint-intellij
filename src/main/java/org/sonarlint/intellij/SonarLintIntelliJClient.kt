@@ -611,12 +611,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
         val listClientFiles = BackendService.findModule(configScopeId)?.let { module ->
-            val listModulesFiles = listModuleFiles(module, configScopeId)
-
-            if (isRider()) {
+            val listModulesFiles = if (isRider()) {
+                val listFiles = listModuleFilesForRider(module, configScopeId)
                 computeRiderSharedConfiguration(module.project, configScopeId)?.let {
-                    listModulesFiles.add(it)
+                    listFiles.add(it)
                 }
+                listFiles
+            } else {
+                listModuleFiles(module, configScopeId)
             }
 
             listModulesFiles
@@ -668,6 +670,31 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return filesInContentRoots.mapNotNull { file ->
             val forcedLanguage = forcedLanguages[file]?.let { fl -> Language.valueOf(fl.name) }
             getRelativePathForAnalysis(module, file)?.let { relativePath ->
+                toClientFileDto(
+                    module.project,
+                    configScopeId,
+                    file,
+                    relativePath,
+                    forcedLanguage
+                )
+            }
+        }.toMutableList()
+    }
+
+    private fun listModuleFilesForRider(module: Module, configScopeId: String): MutableList<ClientFileDto> {
+        val filesInContentRoots = mutableSetOf<VirtualFile>()
+        module.project.guessProjectDir()?.children?.forEach { contentRoot ->
+            if (module.isDisposed) {
+                return@forEach
+            }
+            filesInContentRoots.addAll(visitAndAddFiles(contentRoot, module))
+        }
+
+        val forcedLanguages = collectContributedLanguages(module, filesInContentRoots)
+
+        return filesInContentRoots.mapNotNull { file ->
+            val forcedLanguage = forcedLanguages[file]?.let { fl -> Language.valueOf(fl.name) }
+            getRelativePathForAnalysis(module.project, file)?.let { relativePath ->
                 toClientFileDto(
                     module.project,
                     configScopeId,
