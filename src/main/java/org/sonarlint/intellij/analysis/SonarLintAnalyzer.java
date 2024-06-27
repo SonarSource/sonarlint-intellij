@@ -25,7 +25,6 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
@@ -95,7 +94,7 @@ public final class SonarLintAnalyzer {
       Set<VirtualFile> failedAnalysisFiles = Collections.emptySet();
       if (result != null) {
         failedAnalysisFiles = result.getFailedAnalysisFiles().stream()
-          .map(uri -> VirtualFileManager.getInstance().findFileByUrl(uri.toString())).collect(Collectors.toSet());
+          .map(VirtualFileUtils.INSTANCE::uriToVirtualFile).collect(Collectors.toSet());
       }
 
       return new ModuleAnalysisResult(failedAnalysisFiles);
