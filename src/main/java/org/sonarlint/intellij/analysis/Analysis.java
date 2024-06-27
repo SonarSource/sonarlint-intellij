@@ -144,7 +144,7 @@ public class Analysis implements Cancelable {
 
       if (indicator.isShowing()) {
         var dialogMsg = "SonarLint analysis failed: " + e.getMessage();
-        runOnUiThreadAndWait(project, () -> Messages.showErrorDialog(dialogMsg, "Error Running SonarLint Analysis"));
+        runOnUiThreadAndWait(project, indicator.getModalityState(), () -> Messages.showErrorDialog(dialogMsg, "Error Running SonarLint Analysis"));
       }
 
       callback.onError(e);

@@ -45,12 +45,12 @@ class UiUtils {
         }
 
         @JvmStatic
-        fun runOnUiThreadAndWait(project: Project, runnable: Runnable) {
-            ApplicationManager.getApplication().invokeAndWait {
+        fun runOnUiThreadAndWait(project: Project, modality: ModalityState, runnable: Runnable) {
+            ApplicationManager.getApplication().invokeAndWait({
                 if (!project.isDisposed) {
                     runnable.run()
                 }
-            }
+            }, modality)
         }
     }
 }
