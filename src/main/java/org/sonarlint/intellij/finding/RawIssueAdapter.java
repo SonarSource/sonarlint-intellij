@@ -22,7 +22,6 @@ package org.sonarlint.intellij.finding;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +34,10 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.util.VirtualFileUtils;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.QuickFixDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.analysis.RawIssueFlowDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.IssueFlowDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.QuickFixDto;
@@ -101,7 +104,7 @@ public class RawIssueAdapter {
           VirtualFile locVirtualFile = null;
           var locFileUri = loc.getFileUri();
           if (locFileUri != null) {
-            locVirtualFile = VirtualFileManager.getInstance().findFileByUrl(locFileUri.toString());
+            locVirtualFile = VirtualFileUtils.INSTANCE.uriToVirtualFile(fileUri);
           }
           if (textRange != null && locVirtualFile != null) {
             var locPsiFile = toPsiFile(project, locVirtualFile);

@@ -23,9 +23,9 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileManager
 import java.util.stream.Collectors
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.FileEditDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.QuickFixDto
@@ -48,11 +48,12 @@ fun convert(
     return QuickFix(coreQuickFix.message(), virtualFileEdits.mapNotNull { it })
 }
 
-private fun convert(
-    fileEdit: FileEditDto,
-    modificationStamp: Long?,
-): VirtualFileEdit? {
-    val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileEdit.target().toString()) ?: return null
+private fun log(project: Project, message: String) {
+    SonarLintConsole.get(project).debug(message)
+}
+
+private fun convert(fileEdit: FileEditDto, modificationStamp: Long?): VirtualFileEdit? {
+    val virtualFile = uriToVirtualFile(fileEdit.target()) ?: return null
     val document = virtualFile.getDocument() ?: return null
     if (modificationStamp != null && modificationStamp < document.modificationStamp) {
         // we don't want to show potentially outdated fixes
@@ -90,8 +91,8 @@ data class QuickFix(val message: String, val virtualFileEdits: List<VirtualFileE
     var applied = false
 
     fun isApplicable(document: Document) = !applied
-            && virtualFileEdits.all { it.target.isValid && it.edits.all { e -> e.rangeMarker.isValid } }
-            && isWithinBounds(document)
+        && virtualFileEdits.all { it.target.isValid && it.edits.all { e -> e.rangeMarker.isValid } }
+        && isWithinBounds(document)
 
     private fun isWithinBounds(document: Document): Boolean {
         return virtualFileEdits.flatMap { it.edits }.all { (rangeMarker, _) ->

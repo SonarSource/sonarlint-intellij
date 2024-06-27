@@ -22,23 +22,37 @@ package org.sonarlint.intellij.util
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import java.net.URI
 import java.net.URISyntaxException
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 object VirtualFileUtils {
+
     fun toURI(file: VirtualFile): URI? {
         return try {
             // Should follow RFC-8089
             if (file.isInLocalFileSystem) {
                 val path = if (file.path.startsWith("/")) "//${file.path}" else "///${file.path}"
-                URI("${file.fileSystem.protocol}:$path".replace(" ", "%20"))
+                URI("${file.fileSystem.protocol}:${URLEncoder.encode(path, StandardCharsets.UTF_8)}")
             } else {
                 null
             }
         } catch (e: URISyntaxException) {
             getService(GlobalLogOutput::class.java).log("Could not transform ${file.url} to URI", ClientLogOutput.Level.DEBUG)
+            null
+        }
+    }
+
+    fun uriToVirtualFile(fileUri: URI): VirtualFile? {
+        return try {
+            VirtualFileManager.getInstance().findFileByUrl(URLDecoder.decode(fileUri.toString(), StandardCharsets.UTF_8))
+        } catch (e: IllegalArgumentException) {
+            getService(GlobalLogOutput::class.java).log("Could not find file for URI $fileUri", ClientLogOutput.Level.DEBUG)
             null
         }
     }
