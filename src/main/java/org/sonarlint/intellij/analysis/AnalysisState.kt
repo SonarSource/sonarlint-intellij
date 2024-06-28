@@ -23,7 +23,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileManager
 import java.net.URI
 import java.time.Instant
 import java.util.UUID
@@ -36,6 +35,7 @@ import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.trigger.TriggerType
+import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
@@ -75,9 +75,8 @@ class AnalysisState(
         } else {
             hasReceivedFinalHotspots = true
 
-            val fileManager = VirtualFileManager.getInstance()
             liveHotspots.putAll(hotspotsByFile.mapNotNull { (uri, rawHotspots) ->
-                val virtualFile = fileManager.findFileByUrl(uri.toString())
+                val virtualFile = uriToVirtualFile(uri)
                 if (virtualFile != null) {
                     val liveHotspots = convertRawHotspots(virtualFile, rawHotspots)
                     virtualFile to liveHotspots
@@ -103,9 +102,8 @@ class AnalysisState(
         } else {
             hasReceivedFinalIssues = true
 
-            val fileManager = VirtualFileManager.getInstance()
             liveIssues.putAll(issuesByFile.mapNotNull { (uri, rawIssues) ->
-                val virtualFile = fileManager.findFileByUrl(uri.toString())
+                val virtualFile = uriToVirtualFile(uri)
                 if (virtualFile != null) {
                     val liveIssues = convertRawIssues(virtualFile, rawIssues)
                     virtualFile to liveIssues
@@ -127,7 +125,7 @@ class AnalysisState(
 
     private fun addRawStreamingIssues(issuesByFileUri: Map<URI, List<RaisedIssueDto>>) {
         issuesByFileUri.forEach { (fileUri, rawIssues) ->
-            val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileUri.toString())
+            val virtualFile = uriToVirtualFile(fileUri)
             if (virtualFile == null) {
                 SonarLintConsole.get(module.project)
                     .error("Cannot retrieve the file on which an issue has been raised. File URI is $fileUri")
@@ -140,7 +138,7 @@ class AnalysisState(
 
     private fun addRawStreamingHotspots(hotspotsByFileUri: Map<URI, List<RaisedHotspotDto>>) {
         hotspotsByFileUri.forEach { (fileUri, rawHotspots) ->
-            val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileUri.toString())
+            val virtualFile = uriToVirtualFile(fileUri)
             if (virtualFile == null) {
                 SonarLintConsole.get(module.project)
                     .error("Cannot retrieve the file on which a Security Hotspot has been raised. File URI is $fileUri")
