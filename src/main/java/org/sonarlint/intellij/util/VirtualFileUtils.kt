@@ -26,7 +26,6 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
@@ -38,7 +37,12 @@ object VirtualFileUtils {
             // Should follow RFC-8089
             if (file.isInLocalFileSystem) {
                 val path = if (file.path.startsWith("/")) "//${file.path}" else "///${file.path}"
-                URI("${file.fileSystem.protocol}:${URLEncoder.encode(path, StandardCharsets.UTF_8)}")
+                URI(
+                    "${file.fileSystem.protocol}:$path"
+                        .replace(" ", "%20")
+                        .replace("[", "%5B")
+                        .replace("]", "%5D")
+                )
             } else {
                 null
             }

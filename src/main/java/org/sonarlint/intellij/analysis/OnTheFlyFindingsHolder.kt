@@ -25,7 +25,6 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileManager
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -38,6 +37,7 @@ import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
@@ -73,9 +73,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
     }
 
     fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>) {
-        val fileManager = VirtualFileManager.getInstance()
         val issues = raisedIssues.mapNotNull { (uri, rawIssues) ->
-            val virtualFile = fileManager.findFileByUrl(uri.toString()) ?: return
+            val virtualFile = uriToVirtualFile(uri) ?: return
             val liveIssues = rawIssues.mapNotNull {
                 RawIssueAdapter.toLiveIssue(module, it, virtualFile, null)
             }
@@ -92,9 +91,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
     }
 
     fun updateViewsWithNewSecurityHotspots(module: Module, raisedSecurityHotspots: Map<URI, List<RaisedHotspotDto>>) {
-        val fileManager = VirtualFileManager.getInstance()
         val securityHotspots = raisedSecurityHotspots.mapNotNull { (uri, rawSecurityHotspots) ->
-            val virtualFile = fileManager.findFileByUrl(uri.toString()) ?: return
+            val virtualFile = uriToVirtualFile(uri) ?: return
             val liveIssues = rawSecurityHotspots.mapNotNull {
                 RawIssueAdapter.toLiveSecurityHotspot(module, it, virtualFile, null)
             }
