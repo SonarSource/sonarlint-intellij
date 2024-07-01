@@ -91,8 +91,8 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
 import org.sonarlint.intellij.notifications.OpenLinkAction
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.promotion.PromotionProvider
@@ -199,7 +199,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             return
         }
         if (getSettingsFor(project).isBindingSuggestionsEnabled && !getSettingsFor(project).isBound) {
-            val notifications = SonarLintProjectNotifications.get(project)
+            val notifications = get(project)
             notifications.suggestBindingOptions(suggestions.map {
                 BindingSuggestion(it.connectionId, it.sonarProjectKey, it.sonarProjectName, it.isFromSharedConfiguration)
             })
@@ -216,7 +216,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun showMessage(type: MessageType, text: String) {
-        SonarLintProjectNotifications.projectLessNotification(null, text, convert(type))
+        projectLessNotification(null, text, convert(type))
     }
 
     override fun log(params: LogParams) {
@@ -283,12 +283,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val projects = params.scopeIds.mapNotNull {
             BackendService.findModule(it)?.project ?: BackendService.findProject(it)
         }.toSet()
-        projects.map { SonarLintProjectNotifications.get(it).handle(params) }
+        projects.map { get(it).handle(params) }
     }
 
     private fun showOneTimeBalloon(project: Project, message: String, doNotShowAgainId: String, action: AnAction?) {
         if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
-            SonarLintProjectNotifications.get(project).showOneTimeBalloon(message, doNotShowAgainId, action)
+            get(project).showOneTimeBalloon(message, doNotShowAgainId, action)
         }
     }
 
@@ -327,13 +327,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val project = BackendService.findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
         ?: throw IllegalStateException("Unable to find project with id '$configScopeId'")
         if (!project.isDisposed) {
-            SonarLintProjectNotifications.get(project).expireCurrentFindingNotificationIfNeeded()
+            get(project).expireCurrentFindingNotificationIfNeeded()
         }
         val file = tryFindFile(project, filePath)
         if (file == null) {
             if (!project.isDisposed) {
-                SonarLintProjectNotifications.get(project)
-                    .simpleNotification(null, "Unable to open finding. Cannot find the file: $filePath", NotificationType.WARNING)
+                get(project).simpleNotification(null, "Unable to open finding. Cannot find the file: $filePath", NotificationType.WARNING)
             }
             return
         }
@@ -341,10 +340,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val module = findModuleForFile(file, project)
         if (module == null) {
             if (!project.isDisposed) {
-                SonarLintProjectNotifications.get(project).simpleNotification(
-                    null,
-                    "Unable to open finding. Cannot find the module corresponding to file: $filePath",
-                    NotificationType.WARNING
+                get(project).simpleNotification(
+                    null, "Unable to open finding. Cannot find the module corresponding to file: $filePath", NotificationType.WARNING
                 )
             }
             return
@@ -378,52 +375,61 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         params: AssistCreatingConnectionParams,
         cancelChecker: SonarLintCancelChecker,
     ): AssistCreatingConnectionResponse {
-        val serverUrl = params.serverUrl
-        val tokenName = params.tokenName
-        val tokenValue = params.tokenValue
+        val isSQ = params.connectionParams.isLeft
+        val serverOrOrg = if (isSQ) params.connectionParams.left.serverUrl else params.connectionParams.right.organizationKey
+        val tokenName = if (isSQ) params.connectionParams.left.tokenName else params.connectionParams.right.tokenName
+        val tokenValue = if (isSQ) params.connectionParams.left.tokenValue else params.connectionParams.right.tokenValue
 
         val response = if (tokenName != null && tokenValue != null) {
-            val newConnection = ApplicationManager.getApplication().computeInEDT {
-                AutomaticServerConnectionCreator(serverUrl, tokenValue).chooseResolution()
-            } ?: run {
-                throw CancellationException("Connection creation cancelled by the user")
-            }
-            AssistCreatingConnectionResponse(newConnection.name)
+            setUpAutomaticConnection(serverOrOrg, tokenValue, isSQ)
         } else {
-            val warningTitle = "Trust This SonarQube Server?"
-            val message = """
-                        The server <b>${escapeHtml(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
-                        
-                        If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
-                    """.trimIndent()
-            val connectButtonText = "Connect to This SonarQube Server"
-            val dontTrustButtonText = "I Don't Trust This Server"
-
-            val choice = ApplicationManager.getApplication().computeInEDT {
-                MessageDialogBuilder.Message(warningTitle, message)
-                    .buttons(connectButtonText, dontTrustButtonText)
-                    .defaultButton(connectButtonText)
-                    .focusedButton(dontTrustButtonText)
-                    .asWarning()
-                    .show()
+            if (isSQ) {
+                setUpManualConnection(serverOrOrg)
+            } else {
+                throw CancellationException("SonarLint cannot assist with manual connection to SonarCloud organization")
             }
-
-            if (connectButtonText != choice) {
-                throw CancellationException("Connection creation rejected by the user")
-            }
-            val newConnection = ApplicationManager.getApplication().computeInEDT {
-                ManualServerConnectionCreator().createThroughWizard(serverUrl)
-            } ?: throw CancellationException("Connection creation cancelled by the user")
-            AssistCreatingConnectionResponse(newConnection.name)
         }
 
-        SonarLintProjectNotifications.projectLessNotification(
+        projectLessNotification(
             "",
-            "You have successfully established a connection to the SonarQube server",
+            "You have successfully established a connection to the ${if (isSQ) "SonarQube server" else "SonarCloud organization"}",
             NotificationType.INFORMATION
         )
 
         return response
+    }
+
+    private fun setUpAutomaticConnection(serverOrOrg: String, tokenValue: String, isSQ: Boolean): AssistCreatingConnectionResponse {
+        val newConnection = ApplicationManager.getApplication().computeInEDT {
+            AutomaticServerConnectionCreator(serverOrOrg, tokenValue, isSQ).chooseResolution()
+        } ?: run {
+            throw CancellationException("Connection creation cancelled by the user")
+        }
+        return AssistCreatingConnectionResponse(newConnection.name)
+    }
+
+    private fun setUpManualConnection(serverUrl: String): AssistCreatingConnectionResponse {
+        val warningTitle = "Trust This SonarQube Server?"
+        val message = """
+                        The server <b>${escapeHtml(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
+                        
+                        If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
+                    """.trimIndent()
+        val connectButtonText = "Connect to This SonarQube Server"
+        val dontTrustButtonText = "I Don't Trust This Server"
+
+        val choice = ApplicationManager.getApplication().computeInEDT {
+            MessageDialogBuilder.Message(warningTitle, message).buttons(connectButtonText, dontTrustButtonText)
+                .defaultButton(connectButtonText).focusedButton(dontTrustButtonText).asWarning().show()
+        }
+
+        if (connectButtonText != choice) {
+            throw CancellationException("Connection creation rejected by the user")
+        }
+        val newConnection = ApplicationManager.getApplication().computeInEDT {
+            ManualServerConnectionCreator().createThroughWizard(serverUrl)
+        } ?: throw CancellationException("Connection creation cancelled by the user")
+        return AssistCreatingConnectionResponse(newConnection.name)
     }
 
     override fun assistBinding(params: AssistBindingParams, cancelChecker: SonarLintCancelChecker): AssistBindingResponse {
@@ -442,7 +448,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             val mode =
                 if (params.isFromSharedConfiguration) IMPORTED else AUTOMATIC
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
-            SonarLintProjectNotifications.get(project).simpleNotification(
+            get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
                     "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint Settings.",
@@ -540,7 +546,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun noBindingSuggestionFound(projectKey: String) {
-        SonarLintProjectNotifications.projectLessNotification(
+        projectLessNotification(
             "No matching open project found",
             "IntelliJ cannot match SonarQube project '$projectKey' to any of the currently open projects. Please open your project and try again.",
             NotificationType.WARNING,
