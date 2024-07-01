@@ -38,11 +38,12 @@ import java.awt.event.ActionEvent
 import javax.swing.JButton
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 
-class AutomaticServerConnectionCreator(private val serverUrl: String, private val tokenValue: String) :
+class AutomaticServerConnectionCreator(private val serverOrOrg: String, private val tokenValue: String, private val isSQ: Boolean) :
     DialogWrapper(false) {
 
     private val centerPanel: JBPanel<JBPanel<*>>
@@ -51,8 +52,8 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
     private val warningIcon = JBLabel()
     private val connectionNameField = JBTextField()
     private val connectedModeDescriptionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
-    private val serverUrlLabel = SwingHelper.createHtmlViewer(false, null, null, null)
-    private val serverUrlField = JBTextField(serverUrl).apply {
+    private val serverUrlOrOrgLabel = SwingHelper.createHtmlViewer(false, null, null, null)
+    private val serverUrlOrOrgField = JBTextField(serverOrOrg).apply {
         isEditable = false
     }
     private val redWarningIcon = JBLabel()
@@ -63,20 +64,30 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
     private val proxyButton = JButton("Proxy")
 
     init {
-        title = "Trust This SonarQube Server?"
+        title = if (isSQ) "Trust This SonarQube Server?" else "Trust This SonarCloud Organization?"
         val connectionNames = Settings.getGlobalSettings().serverNames
-        connectionNameField.text = findFirstUniqueConnectionName(connectionNames, serverUrl)
+        connectionNameField.text = findFirstUniqueConnectionName(connectionNames, serverOrOrg)
 
-        createConnectionAction = object : DialogWrapperAction("Connect to This SonarQube Server") {
+        val buttonTextAction = if (isSQ) "Connect to This SonarQube Server" else "Connect to This SonarCloud Organization"
+
+        createConnectionAction = object : DialogWrapperAction(buttonTextAction) {
             init {
                 putValue(DEFAULT_ACTION, true)
             }
 
             override fun doAction(e: ActionEvent) {
                 val globalSettings = Settings.getGlobalSettings()
-                serverConnection = ServerConnection.newBuilder().setHostUrl(serverUrl).setDisableNotifications(false).setToken(tokenValue).setName(connectionNameField.text).build().apply {
+                serverConnection = if (isSQ) {
+                    ServerConnection.newBuilder().setHostUrl(serverOrOrg).setDisableNotifications(false).setToken(tokenValue)
+                        .setName(connectionNameField.text).build()
+                } else {
+                    ServerConnection.newBuilder().setOrganizationKey(serverOrOrg).setDisableNotifications(false).setToken(tokenValue)
+                        .setName(connectionNameField.text).setHostUrl(SONARCLOUD_URL).build()
+                }
+                serverConnection?.apply {
                     Settings.getGlobalSettings().addServerConnection(this)
-                    val serverChangeListener = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+                    val serverChangeListener =
+                        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
                     // notify in case the connections settings dialog is open to reflect the change
                     serverChangeListener.changed(globalSettings.serverConnections)
                 }
@@ -84,7 +95,8 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
             }
         }
 
-        cancelConnectionAction = object : DialogWrapperAction("I Don't Trust This Server") {
+        val cancelTextButton = if (isSQ) "I Don't Trust This Server" else "I Don't Trust This Organization"
+        cancelConnectionAction = object : DialogWrapperAction(cancelTextButton) {
             init {
                 putValue(DEFAULT_ACTION, false)
             }
@@ -97,48 +109,76 @@ class AutomaticServerConnectionCreator(private val serverUrl: String, private va
         centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())
 
         warningIcon.setIconWithAlignment(AllIcons.General.InformationDialog, SwingConstants.TOP, SwingConstants.TOP)
-        centerPanel.add(warningIcon, GridBagConstraints(0, 0, 1, 1, 0.0,
-            0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, JBUI.insets(0, 10), 0, 18))
+        centerPanel.add(
+            warningIcon, GridBagConstraints(
+                0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, JBUI.insets(0, 10), 0, 18
+            )
+        )
 
-        connectedModeDescriptionLabel.text = "Connecting SonarLint to SonarQube will enable issues " +
-            "to be opened directly in your IDE and enable other <a href=\"$CONNECTED_MODE_BENEFITS_LINK\">features and benefits</a>."
+        connectedModeDescriptionLabel.text =
+            "Connecting SonarLint to ${if (isSQ) "SonarQube" else "SonarCloud"} will enable issues " + "to be opened directly in your IDE and enable other <a href=\"$CONNECTED_MODE_BENEFITS_LINK\">features and benefits</a>."
         connectedModeDescriptionLabel.addHyperlinkListener(object : HyperlinkAdapter() {
             override fun hyperlinkActivated(e: HyperlinkEvent) {
                 BrowserUtil.browse(e.url)
             }
         })
-        centerPanel.add(connectedModeDescriptionLabel, GridBagConstraints(1, 0, 1, 1, 1.0,
-            0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0))
+        centerPanel.add(
+            connectedModeDescriptionLabel, GridBagConstraints(
+                1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
+            )
+        )
 
-        serverUrlLabel.text = "Server URL"
-        centerPanel.add(serverUrlLabel, GridBagConstraints(1, 1, 1, 1, 1.0,
-            0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0))
+        serverUrlOrOrgLabel.text = if (isSQ) "Server URL" else "Organization Name"
+        centerPanel.add(
+            serverUrlOrOrgLabel, GridBagConstraints(
+                1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+            )
+        )
 
         val urlProxyLabel = JBPanel<JBPanel<*>>(BorderLayout())
-        urlProxyLabel.add(serverUrlField, BorderLayout.CENTER)
+        urlProxyLabel.add(serverUrlOrOrgField, BorderLayout.CENTER)
         urlProxyLabel.add(proxyButton, BorderLayout.EAST)
-        centerPanel.add(urlProxyLabel, GridBagConstraints(1, 2, 1, 1, 1.0,
-            0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0))
+        centerPanel.add(
+            urlProxyLabel, GridBagConstraints(
+                1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+            )
+        )
 
         val warningPanel = JBPanel<JBPanel<*>>(BorderLayout())
         redWarningIcon.icon = AllIcons.Ide.FatalError
-        warningLabel.text = "Always ensure that your Server URL matches your SonarQube instance. " +
-            "Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous."
+        warningLabel.text = if (isSQ) {
+            "Always ensure that your Server URL matches your SonarQube instance. " + "Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous."
+        } else {
+            "Ensure that the organization matches your SonarCloud organization."
+        }
         warningPanel.add(redWarningIcon, BorderLayout.WEST)
         warningPanel.add(warningLabel, BorderLayout.CENTER)
-        centerPanel.add(warningPanel, GridBagConstraints(1, 3, 1, 1, 1.0,
-            0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0))
+        centerPanel.add(
+            warningPanel, GridBagConstraints(
+                1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0
+            )
+        )
 
         connectionNameLabel.text = "Connection Name"
-        centerPanel.add(connectionNameLabel, GridBagConstraints(1, 4, 1, 1, 1.0,
-            0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0))
+        centerPanel.add(
+            connectionNameLabel, GridBagConstraints(
+                1, 4, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+            )
+        )
 
-        centerPanel.add(connectionNameField, GridBagConstraints(1, 5, 1, 1, 1.0,
-            0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0))
+        centerPanel.add(
+            connectionNameField, GridBagConstraints(
+                1, 5, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
+            )
+        )
 
-        tokenLabel.text = "A token will be automatically generated to allow access to your <u>SonarQube instance</u>."
-        centerPanel.add(tokenLabel, GridBagConstraints(1, 6, 1, 1, 1.0,
-            0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0))
+        tokenLabel.text =
+            "A token will be automatically generated to allow access to your <u>${if (isSQ) "SonarQube instance" else "SonarCloud organization"}</u>."
+        centerPanel.add(
+            tokenLabel, GridBagConstraints(
+                1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+            )
+        )
 
         proxyButton.addActionListener { _ -> HttpConfigurable.editConfigurable(centerPanel) }
 
