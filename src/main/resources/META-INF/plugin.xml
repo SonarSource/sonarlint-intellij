@@ -64,7 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.7 - Support for multiple project level issues on C#. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.7 - Allow users to focus on new code without connected mode. Help users to generate a token when creating a new connection to SonarCloud. Support for more complex rules in Python and Java. Support for multiple project-level issues on C#. Support for C/C++ analysis from Linux ARM. Fix an issue in Rider that prevented file analysis. Fix an issue where files with special characters would not get analyzed. Avoid an issue in CLion when WSL is not supported. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.6.1 - Fix an issue preventing analysis from running when multiple projects are opened simultaneously.</li>
         <li>10.6 - Support of CLion Nova. Deprecate authentication with login/password. Improve the shared connected mode settings compatibility on C# projects with Visual Studio and VS Code. 5 new rules for Python. Support for Spring configuration files. Support of 21 Java rules on test sources. 7 new rules for C#. 1 new rule for ASP.NET. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.5 - Allow users to share connected mode settings among contributors. Remove support for Node.js 16 (18 required). 21 new rules for Java and improved support for Spring. 14 new rules for Python. Support analysis of C++23. 1 new rule for token detection. 18 new rules for C#. 4 new accessibility rules for JS/TS. 6 new accessibility rules for HTML. Bug fixes, fewer FPs and improvements for many languages. Various bug fixes and performance improvements.</li>
