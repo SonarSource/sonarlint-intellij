@@ -139,41 +139,6 @@ qa_windows_task:
         IDEA_VERSION: 'IC-2022.3.1'
         QA_CATEGORY: 'Idea2022'
         TEST_SUITE: 'Suite1'
-    - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'Suite2'
-    - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'Standalone'
-    - env:
-        IDEA_VERSION: 'CL-2022.3.1'
-        QA_CATEGORY: 'CLion2022'
-    - env:
-        IDEA_VERSION: 'GO-2022.3.1'
-        QA_CATEGORY: 'GoLand2022'
-    - env:
-        IDEA_VERSION: 'IC-2023.2.1'
-        QA_CATEGORY: 'Idea2023'
-        TEST_SUITE: 'Suite1'
-    - env:
-        IDEA_VERSION: 'IC-2023.2.1'
-        QA_CATEGORY: 'Idea2023'
-        TEST_SUITE: 'Suite2'
-    - env:
-        IDEA_VERSION: 'IC-2023.2.1'
-        QA_CATEGORY: 'Idea2023'
-        TEST_SUITE: 'Standalone'
-    - env:
-        IDEA_VERSION: 'CL-2023.2'
-        QA_CATEGORY: 'CLion2023'
-    - env:
-        IDEA_VERSION: 'GO-2023.2'
-        QA_CATEGORY: 'GoLand2023'
-    - env:
-        IDEA_VERSION: 'CL-2024.1'
-        QA_CATEGORY: 'CLion2024'
   <<: *SETUP_GRADLE_CACHE
   prepare_background_script: |
     set -euo pipefail
@@ -188,7 +153,7 @@ qa_windows_task:
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
-    .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500
+    sleep 30
   recording_background_script: |
     echo 'Recording tests on video'
     ffmpeg -loglevel warning -f gdigrab -framerate 12 -i desktop -video_size 1280x960 -vcodec libx264 ${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4
@@ -198,9 +163,6 @@ qa_windows_task:
     gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
-    stop_recording_script: |
-      pkill -SIGINT -f ffmpeg
-      while pgrep ffmpeg >/dev/null; do sleep 1; done
     display_log_script:
       - cat ${CIRRUS_WORKING_DIR}/runIdeGradle.log
     test_recording_artifacts:
@@ -215,8 +177,6 @@ qa_windows_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
-    slack_notification_script: |
-      .cirrus/slack-notification.sh
 
 inspect_orchestrator_cache_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
