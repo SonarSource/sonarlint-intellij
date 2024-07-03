@@ -46,7 +46,7 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
 
     fun openPreferences() = step("Opening preferences dialog") {
         selectTab("Customize")
-        findElement<ComponentFixture>(byXpath("//div[@accessiblename='All settings\u2026']")).click()
+        findElement<ComponentFixture>(byXpath("//div[contains(@accessiblename, 'All settings')]")).click()
         log.info("Successfully opened the preferences dialog")
     }
 
