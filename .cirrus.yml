@@ -112,110 +112,14 @@ build_task:
     slack_notification_script: |
       .cirrus/slack-notification.sh
 
-validate_task:
-  #  name: "Run UTs and trigger SonarQube analysis"
-  depends_on:
-    - build
-  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
-  env:
-    JDK_VERSION: "17"
-  eks_container:
-    <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 7
-    memory: 12G
-  <<: *SETUP_GRADLE_CACHE
-  build_script: |
-    source cirrus-env QA
-    source .cirrus/use-gradle-wrapper.sh
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport
-  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
-  on_failure:
-    reports_artifacts:
-      path: "**/reports/**/*"
-    junit_artifacts:
-      path: "**/test-results/**/*.xml"
-      format: junit
-    slack_notification_script: |
-      .cirrus/slack-notification.sh
-
-validate_windows_task:
-  #  name: "Run unit tests on Windows"
-  depends_on:
-    - build
-  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
-  env:
-    JDK_VERSION: "17"
-  ec2_instance:
-    <<: *WINVM_DEFINITION
-  <<: *SETUP_GRADLE_CACHE
-  # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
-  build_script: |
-    source cirrus-env QA
-    source .cirrus/use-gradle-wrapper.sh
-    ./gradlew :check
-  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
-  on_failure:
-    reports_artifacts:
-      path: "**/reports/**/*"
-    junit_artifacts:
-      path: "**/test-results/**/*.xml"
-      format: junit
-    slack_notification_script: |
-      .cirrus/slack-notification.sh
-
-plugin_verifier_task:
-  #  name: "Run plugin verifier on all IDEs"
-  depends_on:
-    - build
-  <<: *ONLY_IF_NIGHTLY
-  env:
-    JDK_VERSION: "17"
-    ALLOWED_IDE: "AS|CL|DG|GO|IIU|IIC|IIE|PS|PCP|PCC|PCE|RDCPPP|RD|RM|WS"
-  eks_container:
-    <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 4
-    memory: 10G
-  matrix:
-    - env:
-        IDEA_VERSION: '2022.3.1'
-    - env:
-        IDEA_VERSION: '2023.2'
-    - env:
-        # It automatically retrieves the latest version available for the given year
-        IDEA_VERSION: '2023'
-    - env:
-        # It automatically retrieves the latest version available for the given year (likely to be the EAP)
-        IDEA_VERSION: '2024'
-  <<: *SETUP_GRADLE_CACHE
-  sync_script: |
-    git fetch origin +refs/heads/master:refs/remotes/origin/master
-    git reset --hard refs/remotes/origin/master
-  # The versions are retrieved by querying JB API, we only keep the IDE flavors we handle, then we filter by our specified version.
-  # Since there can be multiple 2021.3 (2021.3.1, 2021.3.2, etc.) we only keep the latest one.
-  build_script: |
-    echo "Run plugin verifier on ${IDEA_VERSION}"
-    source cirrus-env QA
-    source .cirrus/use-gradle-wrapper.sh
-    VERSIONS=$(curl -s -L https://jb.gg/intellij-platform-builds-list | jq '.[] | "\(.code) \(.releases[].version)"' | grep -Ew "${ALLOWED_IDE}" | grep "${IDEA_VERSION}" | tr -d '"' | awk '{k=$1} $2>a[k]{a[k]=$2} END{for (i in a) print i, a[i]}' | sort -u | sed 's/ /-/' | paste -s -d',')
-    echo ${VERSIONS}
-    ./gradlew :runPluginVerifier -PverifierVersions=${VERSIONS}
-  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
-  on_failure:
-    reports_artifacts:
-      path: "**/reports/**/*"
-    slack_notification_script: |
-      .cirrus/slack-notification.sh
-
-qa_task:
-  #  name: "Run ITs"
+qa_windows_task:
+  #  name: "Run ITs on Windows"
   depends_on:
     - build
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   <<: *ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
-  eks_container:
-    <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 6
-    memory: 16G
+  ec2_instance:
+    <<: *WINVM_DEFINITION
   env:
     CLION_KEY: VAULT[development/team/sonarlint/kv/data/clion.key data.key]
     GOLAND_KEY: VAULT[development/team/sonarlint/kv/data/goland.key data.key]
@@ -271,8 +175,6 @@ qa_task:
         IDEA_VERSION: 'CL-2024.1'
         QA_CATEGORY: 'CLion2024'
   <<: *SETUP_GRADLE_CACHE
-  xvfb_background_script: |
-    /etc/init.d/xvfb start
   prepare_background_script: |
     set -euo pipefail
     echo "Prepare env and start IDE ${IDEA_VERSION}"
@@ -283,15 +185,13 @@ qa_task:
     mkdir -p its/build/idea-sandbox/config-uiTest/
     base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/config-uiTest/clion.key
     base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/config-uiTest/goland.key
-    metacity --sm-disable --replace &
-    sleep 10 # give metacity some time to start
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
     .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500
   recording_background_script: |
     echo 'Recording tests on video'
-    ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -i ${DISPLAY} -codec:v libx264 -r 12 ${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4
+    ffmpeg -loglevel warning -f gdigrab -framerate 12 -i desktop -video_size 1280x960 -vcodec libx264 ${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
@@ -301,7 +201,6 @@ qa_task:
     stop_recording_script: |
       pkill -SIGINT -f ffmpeg
       while pgrep ffmpeg >/dev/null; do sleep 1; done
-      /etc/init.d/xvfb stop
     display_log_script:
       - cat ${CIRRUS_WORKING_DIR}/runIdeGradle.log
     test_recording_artifacts:
