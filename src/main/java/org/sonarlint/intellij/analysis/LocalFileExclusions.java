@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,11 +48,13 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.VirtualFileUtils;
 import org.sonarsource.sonarlint.core.client.utils.ClientFileExclusions;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -267,14 +270,27 @@ public final class LocalFileExclusions {
     var modules = List.copyOf(filesByModule.keySet());
     for (var module : modules) {
       var virtualFiles = filesByModule.get(module);
-      var excluded = getService(BackendService.class).getExcludedFiles(module, virtualFiles);
-      for (var f : excluded) {
-        excludedFileHandler.accept(f, ExcludeResult.excluded("exclusions configured in the bound project"));
-      }
-      virtualFiles.removeAll(excluded);
-      if (virtualFiles.isEmpty()) {
-        filesByModule.remove(module);
-      }
+      getService(BackendService.class).getExcludedFiles(module, virtualFiles).thenAccept(response -> {
+        var filesByUri = virtualFiles.stream().collect(Collectors.toMap(VirtualFileUtils.INSTANCE::toURI, Function.identity()));
+        var excludedFiles = response.getFileStatuses().entrySet().stream()
+          .filter(entry -> entry.getValue().isExcluded())
+          .map(Map.Entry::getKey)
+          .map(filesByUri::get)
+          .filter(Objects::nonNull)
+          .toList();
+
+        for (var f : excludedFiles) {
+          excludedFileHandler.accept(f, ExcludeResult.excluded("exclusions configured in the bound project"));
+        }
+        virtualFiles.removeAll(excludedFiles);
+        if (virtualFiles.isEmpty()) {
+          filesByModule.remove(module);
+        }
+      })
+        .exceptionally(error -> {
+          GlobalLogOutput.get().log("Error when retrieving excluded files: " + error.getMessage(), ClientLogOutput.Level.ERROR);
+          return null;
+        });
     }
   }
 

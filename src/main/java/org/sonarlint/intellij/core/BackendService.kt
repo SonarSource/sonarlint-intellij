@@ -38,6 +38,21 @@ import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
+import java.io.IOException
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.Duration
+import java.time.format.DateTimeParseException
+import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Filter
+import java.util.logging.Level
+import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
@@ -46,7 +61,6 @@ import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
-import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -98,6 +112,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.V
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidUpdateFileSystemParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedResponse
@@ -135,22 +150,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
-import java.io.IOException
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.Duration
-import java.time.format.DateTimeParseException
-import java.util.UUID
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Filter
-import java.util.logging.Level
-import java.util.logging.Logger
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
 
@@ -839,29 +838,17 @@ class BackendService : Disposable {
             }
     }
 
-    fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): List<VirtualFile> {
+    fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): CompletableFuture<GetFilesStatusResponse> {
         val filesByUri = files.associateBy { VirtualFileUtils.toURI(it) }
-        return try {
-            val moduleId = moduleId(module)
-            requestFromBackend {
-                it.fileService.getFilesStatus(
-                    GetFilesStatusParams(
-                        mapOf(
-                            moduleId to filesByUri.keys.filterNotNull().toList()
-                        )
+        val moduleId = moduleId(module)
+        return requestFromBackend {
+            it.fileService.getFilesStatus(
+                GetFilesStatusParams(
+                    mapOf(
+                        moduleId to filesByUri.keys.filterNotNull().toList()
                     )
                 )
-            }
-                .thenApplyAsync { response -> response.fileStatuses.filterValues { it.isExcluded }.keys.mapNotNull { filesByUri[it] } }
-                .join()
-        } catch (e: CancellationException) {
-            SonarLintConsole.get(module.project).debug("The request to retrieve file exclusions has been canceled")
-            emptyList()
-        } catch (e: Exception) {
-            if (!module.isDisposed) {
-                SonarLintConsole.get(module.project).error("Error when retrieving excluded files", e)
-            }
-            emptyList()
+            )
         }
     }
 
