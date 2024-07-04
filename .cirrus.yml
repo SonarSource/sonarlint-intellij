@@ -340,8 +340,8 @@ qa_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
-    slack_notification_script: |
-      .cirrus/slack-notification.sh
+    #slack_notification_script: |
+    #  .cirrus/slack-notification.sh
 
 inspect_orchestrator_cache_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
