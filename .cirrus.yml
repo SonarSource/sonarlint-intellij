@@ -247,6 +247,33 @@ qa_task:
         IDEA_VERSION: 'GO-2022.3.1'
         QA_CATEGORY: 'GoLand2022'
     - env:
+        IDEA_VERSION: 'GO-2022.3.1'
+        QA_CATEGORY: 'GoLand2022'
+    - env:
+        IDEA_VERSION: 'IU-2022.3.1'
+        QA_CATEGORY: 'IdeaUltimate2022'
+    - env:
+        IDEA_VERSION: 'DG-2022.3.1'
+        QA_CATEGORY: 'DataGrip2022'
+    - env:
+        IDEA_VERSION: 'WS-2022.3.1'
+        QA_CATEGORY: 'WebStorm2022'
+    - env:
+        IDEA_VERSION: 'RM-2022.3.1'
+        QA_CATEGORY: 'RubyMine2022'
+    - env:
+        IDEA_VERSION: 'RD-2022.3.1'
+        QA_CATEGORY: 'Rider2022'
+    - env:
+        IDEA_VERSION: 'PCC-2022.3.1'
+        QA_CATEGORY: 'PyCharmProfessional2022'
+    - env:
+        IDEA_VERSION: 'PCP-2022.3.1'
+        QA_CATEGORY: 'PyCharmCommunity2022'
+    - env:
+        IDEA_VERSION: 'PS-2022.3.1'
+        QA_CATEGORY: 'PhpStorm2022'
+    - env:
         IDEA_VERSION: 'IC-2023.2.1'
         QA_CATEGORY: 'Idea2023'
         TEST_SUITE: 'Suite1'

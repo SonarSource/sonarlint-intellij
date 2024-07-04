@@ -21,7 +21,7 @@ package org.sonarlint.intellij.its.tests
 
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledIf
+import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
@@ -31,7 +31,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 
 @Tag("Standalone")
-@DisabledIf("isCLionOrGoLand")
+@EnabledIf("isIdea")
 class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
