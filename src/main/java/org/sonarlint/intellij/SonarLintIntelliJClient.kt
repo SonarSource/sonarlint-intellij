@@ -331,6 +331,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
         val file = tryFindFile(project, filePath)
         if (file == null) {
+            System.out.println("File is null for path : $filePath , project : ${project.name}")
             if (!project.isDisposed) {
                 get(project).simpleNotification(null, "Unable to open finding. Cannot find the file: $filePath", NotificationType.WARNING)
             }
@@ -339,6 +340,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
         val module = findModuleForFile(file, project)
         if (module == null) {
+            System.out.println("Module is null for file : ${file.name} , project : ${project.name}")
             if (!project.isDisposed) {
                 get(project).simpleNotification(
                     null, "Unable to open finding. Cannot find the module corresponding to file: $filePath", NotificationType.WARNING
@@ -347,6 +349,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             return
         }
         ApplicationManager.getApplication().invokeAndWait {
+            System.out.println("Came to invokeAndWait for file : ${file.name} , project : ${project.name}," +
+                " textRange startline : ${textRange.startLine}")
             openFile(project, file, textRange.startLine)
         }
         val showFinding = ShowFinding(

@@ -88,7 +88,7 @@ class OpenInIdeTests {
         private fun verifyEditorOpened(fileName: String) {
             with(remoteRobot) {
                 idea {
-                    editor(fileName, Duration.ofMinutes(2))
+                    editor(fileName, Duration.ofMinutes(1))
                 }
             }
         }
