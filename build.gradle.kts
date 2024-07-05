@@ -1,4 +1,3 @@
-
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -56,6 +55,7 @@ allprojects {
     }
 
     repositories {
+        mavenLocal()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
                 credentials {
@@ -193,6 +193,7 @@ configurations {
 }
 
 dependencies {
+    implementation("org.jetbrains:markdown:0.7.3")
     implementation(libs.sonarlint.java.client.legacy)
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
@@ -334,7 +335,8 @@ artifactory {
     clientConfig.info.buildName = "sonarlint-intellij"
     clientConfig.info.buildNumber = System.getenv("BUILD_ID")
     clientConfig.isIncludeEnvVars = true
-    clientConfig.envVarsExcludePatterns = "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
+    clientConfig.envVarsExcludePatterns =
+        "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
     clientConfig.info.addEnvironmentProperty(
         "ARTIFACTS_TO_DOWNLOAD",
         "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip,org.sonarsource.sonarlint.intellij:sonarlint-intellij:json:cyclonedx"

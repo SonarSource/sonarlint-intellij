@@ -58,6 +58,7 @@ import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.ui.grip.AiSuggestionsMainPanel;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
@@ -87,6 +88,14 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void clearReportTab() {
     updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::clear);
+  }
+
+  public void clearAiSuggestionsTab() {
+    updateTab(SonarLintToolWindowFactory.AI_SUGGESTIONS_TAB_TITLE, AiSuggestionsMainPanel::clear);
+  }
+
+  public void regenerateSnippet() {
+    this.<AiSuggestionsMainPanel>updateTab(SonarLintToolWindowFactory.AI_SUGGESTIONS_TAB_TITLE, panel -> panel.handleLocationClick(this.getToolWindow().getProject(), false, true));
   }
 
   public void updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
@@ -161,6 +170,13 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
    */
   public void openCurrentFileTab() {
     openTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
+  }
+
+  /**
+   * Must run in EDT
+   */
+  public void openAiSuggestionsTab() {
+    openTab(SonarLintToolWindowFactory.AI_SUGGESTIONS_TAB_TITLE);
   }
 
   /**
@@ -362,6 +378,62 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
         var issue = currentFilePanel.doesIssueExist(showFinding.getFindingKey());
         currentFilePanel.trySelectFilteredIssue(issue, showFinding);
+      }
+    }
+  }
+
+  public void tryShowAiLoading(Finding finding) {
+    openAiSuggestionsTab();
+    bringToFront();
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(SonarLintToolWindowFactory.AI_SUGGESTIONS_TAB_TITLE);
+      if (content != null) {
+        var aiSuggestionsPanel = (AiSuggestionsMainPanel) content.getComponent();
+        aiSuggestionsPanel.addFinding(finding);
+      }
+    }
+  }
+
+  public void tryShowAiResponseFailure(String failureMessage, Finding finding) {
+    openAiSuggestionsTab();
+    bringToFront();
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(SonarLintToolWindowFactory.AI_SUGGESTIONS_TAB_TITLE);
+      if (content != null) {
+        var aiSuggestionsPanel = (AiSuggestionsMainPanel) content.getComponent();
+        aiSuggestionsPanel.addAiFailure(failureMessage, finding);
+      }
+    }
+  }
+
+  public void tryShowAiResponse(String aiResponse, Finding finding) {
+    openAiSuggestionsTab();
+    bringToFront();
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(SonarLintToolWindowFactory.AI_SUGGESTIONS_TAB_TITLE);
+      if (content != null) {
+        var aiSuggestionsPanel = (AiSuggestionsMainPanel) content.getComponent();
+        aiSuggestionsPanel.addAiResponse(aiResponse, finding);
+      }
+    }
+  }
+
+  public void tryRefreshAiTab(UUID findingId) {
+    openAiSuggestionsTab();
+    bringToFront();
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(SonarLintToolWindowFactory.AI_SUGGESTIONS_TAB_TITLE);
+      if (content != null) {
+        var aiSuggestionsPanel = (AiSuggestionsMainPanel) content.getComponent();
+        aiSuggestionsPanel.refresh(findingId);
       }
     }
   }

@@ -73,6 +73,8 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.notifications.OpenGlobalSettingsAction
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
@@ -116,6 +118,11 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.V
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidUpdateFileSystemParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.FeedbackRating
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.ProvideFeedbackParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.SuggestFixParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.SuggestFixResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.SuggestionReviewStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedResponse
@@ -150,6 +157,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParam
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -376,11 +384,19 @@ class BackendService : Disposable {
 
     private fun getHttpConfiguration(): HttpConfigurationDto {
         return HttpConfigurationDto(
-            SslConfigurationDto(getPathProperty("sonarlint.ssl.trustStorePath"), System.getProperty("sonarlint.ssl.trustStorePassword"),
-                System.getProperty("sonarlint.ssl.trustStoreType"), getPathProperty("sonarlint.ssl.keyStorePath"), System.getProperty("sonarlint.ssl.keyStorePassword"),
-                System.getProperty("sonarlint.ssl.keyStoreType")),
-            getTimeoutProperty("sonarlint.http.connectTimeout"), getTimeoutProperty("sonarlint.http.socketTimeout"), getTimeoutProperty("sonarlint.http.connectionRequestTimeout"),
-            getTimeoutProperty("sonarlint.http.responseTimeout"))
+            SslConfigurationDto(
+                getPathProperty("sonarlint.ssl.trustStorePath"),
+                System.getProperty("sonarlint.ssl.trustStorePassword"),
+                System.getProperty("sonarlint.ssl.trustStoreType"),
+                getPathProperty("sonarlint.ssl.keyStorePath"),
+                System.getProperty("sonarlint.ssl.keyStorePassword"),
+                System.getProperty("sonarlint.ssl.keyStoreType")
+            ),
+            getTimeoutProperty("sonarlint.http.connectTimeout"),
+            getTimeoutProperty("sonarlint.http.socketTimeout"),
+            getTimeoutProperty("sonarlint.http.connectionRequestTimeout"),
+            getTimeoutProperty("sonarlint.http.responseTimeout")
+        )
     }
 
     private fun getSonarCloudAlternativeEnvironment(): SonarCloudAlternativeEnvironmentDto? {
@@ -413,7 +429,13 @@ class BackendService : Disposable {
     }
 
     private fun getTelemetryConstantAttributes() =
-        TelemetryClientConstantAttributesDto("idea", "SonarLint IntelliJ", getService(SonarLintPlugin::class.java).version, getIdeVersionForTelemetry(), mapOf("intellij" to mapOf("jcefSupported" to JBCefApp.isSupported())))
+        TelemetryClientConstantAttributesDto(
+            "idea",
+            "SonarLint IntelliJ",
+            getService(SonarLintPlugin::class.java).version,
+            getIdeVersionForTelemetry(),
+            mapOf("intellij" to mapOf("jcefSupported" to JBCefApp.isSupported()))
+        )
 
     private fun getIdeVersionForTelemetry(): String {
         var ideVersion: String
@@ -506,6 +528,27 @@ class BackendService : Disposable {
             )
         }
         refreshTaintVulnerabilities(project)
+
+        val serviceUri = URI(getGlobalSettings().gripUrl)
+        val serviceAuthToken = getGlobalSettings().gripAuthToken
+        val promptVersion = getGlobalSettings().gripPromptVersion
+        if (promptVersion.isNullOrEmpty()) {
+            GlobalLogOutput.get().log("GRIP prompt version is not set, please check your configuration", ClientLogOutput.Level.ERROR)
+            get(project).simpleNotification(
+                null,
+                "GRIP prompt version is not set, please check your configuration",
+                NotificationType.ERROR,
+                OpenGlobalSettingsAction(project)
+            )
+        }
+        if (serviceUri.toString().isEmpty() || serviceAuthToken.isNullOrEmpty()) {
+            GlobalLogOutput.get()
+                .log("GRIP URL or GRIP auth token are missing, please check your configuration", ClientLogOutput.Level.ERROR)
+            get(project).simpleNotification(
+                null, "GRIP URL or GRIP auth token are missing, please check your configuration", NotificationType.ERROR,
+                OpenGlobalSettingsAction(project)
+            )
+        }
     }
 
     internal fun projectClosed(project: Project) {
@@ -515,8 +558,10 @@ class BackendService : Disposable {
     }
 
     private fun toBackendConfigurationScope(project: Project, binding: ProjectBinding?) =
-        ConfigurationScopeDto(projectId(project), null, true, project.name,
-            BindingConfigurationDto(binding?.connectionName, binding?.projectKey, areBindingSuggestionsDisabledFor(project)))
+        ConfigurationScopeDto(
+            projectId(project), null, true, project.name,
+            BindingConfigurationDto(binding?.connectionName, binding?.projectKey, areBindingSuggestionsDisabledFor(project))
+        )
 
 
     fun projectBound(project: Project, newBinding: ProjectBinding) {
@@ -524,8 +569,8 @@ class BackendService : Disposable {
             it.configurationService.didUpdateBinding(
                 DidUpdateBindingParams(
                     projectId(project), BindingConfigurationDto(
-                    newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project)
-                )
+                        newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project)
+                    )
                 )
             )
         }
@@ -535,9 +580,9 @@ class BackendService : Disposable {
                 it.configurationService.didUpdateBinding(
                     DidUpdateBindingParams(
                         moduleId, BindingConfigurationDto(
-                        // we don't want binding suggestions for modules
-                        newBinding.connectionName, projectKey, true
-                    )
+                            // we don't want binding suggestions for modules
+                            newBinding.connectionName, projectKey, true
+                        )
                     )
                 )
             }
@@ -639,8 +684,15 @@ class BackendService : Disposable {
     }
 
     fun updateStandaloneRulesConfiguration(nonDefaultRulesConfigurationByKey: Map<String, SonarLintGlobalSettings.Rule>) {
-        val nonDefaultRpcRulesConfigurationByKey = nonDefaultRulesConfigurationByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
-        notifyBackend { it.rulesService.updateStandaloneRulesConfiguration(UpdateStandaloneRulesConfigurationParams(nonDefaultRpcRulesConfigurationByKey)) }
+        val nonDefaultRpcRulesConfigurationByKey =
+            nonDefaultRulesConfigurationByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
+        notifyBackend {
+            it.rulesService.updateStandaloneRulesConfiguration(
+                UpdateStandaloneRulesConfigurationParams(
+                    nonDefaultRpcRulesConfigurationByKey
+                )
+            )
+        }
     }
 
     fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {
@@ -682,7 +734,12 @@ class BackendService : Disposable {
         }
     }
 
-    fun markAsResolved(module: Module, issueKey: String, newStatus: IssueResolutionStatus, isTaintVulnerability: Boolean): CompletableFuture<Void> {
+    fun markAsResolved(
+        module: Module,
+        issueKey: String,
+        newStatus: IssueResolutionStatus,
+        isTaintVulnerability: Boolean,
+    ): CompletableFuture<Void> {
         val moduleId = moduleId(module)
         return requestFromBackend {
             it.issueService.changeStatus(
@@ -707,7 +764,14 @@ class BackendService : Disposable {
     }
 
     fun checkStatusChangePermitted(connectionId: String, hotspotKey: String): CompletableFuture<CheckStatusChangePermittedResponse> {
-        return requestFromBackend { it.hotspotService.checkStatusChangePermitted(CheckStatusChangePermittedParams(connectionId, hotspotKey)) }
+        return requestFromBackend {
+            it.hotspotService.checkStatusChangePermitted(
+                CheckStatusChangePermittedParams(
+                    connectionId,
+                    hotspotKey
+                )
+            )
+        }
     }
 
     fun checkIssueStatusChangePermitted(
@@ -944,6 +1008,55 @@ class BackendService : Disposable {
 
     fun changeAutomaticAnalysisSetting(analysisEnabled: Boolean) {
         return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
+    }
+
+    fun suggestFix(
+        serviceUri: URI,
+        authenticationToken: String,
+        promptVersion: String,
+        module: Module,
+        fileUri: URI,
+        issueMessage: String,
+        issueRange: TextRangeDto,
+        ruleKey: String,
+    ): CompletableFuture<SuggestFixResponse> {
+        val configScopeId = moduleId(module)
+        return requestFromBackend {
+            it.gripService.suggestFix(
+                SuggestFixParams(
+                    serviceUri,
+                    authenticationToken,
+                    promptVersion,
+                    configScopeId,
+                    fileUri,
+                    issueMessage,
+                    issueRange,
+                    ruleKey
+                )
+            )
+        }
+    }
+
+    fun provideFeedback(
+        serviceUri: URI,
+        authenticationToken: String,
+        promptId: String,
+        correlationId: UUID,
+        status: SuggestionReviewStatus, rating: FeedbackRating?, comment: String?,
+    ) {
+        notifyBackend {
+            it.gripService.provideFeedback(
+                ProvideFeedbackParams(
+                    serviceUri,
+                    authenticationToken,
+                    promptId,
+                    correlationId,
+                    status,
+                    rating,
+                    comment
+                )
+            )
+        }
     }
 
     fun isAlive(): Boolean {

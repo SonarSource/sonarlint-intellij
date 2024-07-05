@@ -38,11 +38,17 @@ enum class FindingKind {
     ISSUE, SECURITY_HOTSPOT, MIX
 }
 
-class FindingDetailsPanel(private val project: Project, parentDisposable: Disposable, findingKind: FindingKind) : JBTabbedPane() {
+class FindingDetailsPanel(
+    private val project: Project,
+    parentDisposable: Disposable,
+    findingKind: FindingKind,
+) :
+    JBTabbedPane() {
+
     private lateinit var rulePanel: SonarLintRulePanel
     private lateinit var flowsTree: FlowsTree
     private lateinit var flowsTreeBuilder: FlowsTreeModelBuilder
-    private val findingKindText: String = when(findingKind) {
+    private val findingKindText: String = when (findingKind) {
         FindingKind.ISSUE -> "issue"
         FindingKind.SECURITY_HOTSPOT -> "Security Hotspot"
         else -> "finding"
@@ -73,14 +79,22 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
     }
 
     fun show(liveFinding: LiveFinding) {
-        rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.getRuleKey(), liveFinding.getRuleDescriptionContextKey())
+        liveFinding.module()
+            ?.let { rulePanel.setSelectedFinding(it, liveFinding, liveFinding.ruleKey, liveFinding.getRuleDescriptionContextKey()) }
         flowsTreeBuilder.populateForFinding(liveFinding)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightFinding(liveFinding)
         flowsTree.emptyText.setText("Selected $findingKindText doesn't have flows")
         flowsTree.expandAll()
     }
 
-    fun showServerOnlyIssue(module: Module, file: VirtualFile, ruleKey: String, range: RangeMarker, flows: MutableList<Flow>, flowMessage: String) {
+    fun showServerOnlyIssue(
+        module: Module,
+        file: VirtualFile,
+        ruleKey: String,
+        range: RangeMarker,
+        flows: MutableList<Flow>,
+        flowMessage: String,
+    ) {
         rulePanel.setSelectedFinding(module, null, ruleKey, null)
         flowsTreeBuilder.populateForFinding(file, range, flowMessage, flows)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightRange(range)
@@ -106,4 +120,5 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
         private const val RULE_TAB_INDEX = 0
         private const val LOCATIONS_TAB_INDEX = 1
     }
+
 }
