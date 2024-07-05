@@ -32,53 +32,76 @@ object SonarLintIcons {
 
     @JvmField
     val ICON_SONARQUBE = getIcon("/images/SonarQube.png")
+
     @JvmField
     val ICON_SONARCLOUD = getIcon("/images/SonarCloud.png")
+
     @JvmField
     val ICON_SONARQUBE_16 = getIcon("/images/onde-sonar-16.png")
+
     @JvmField
     val ICON_SONARCLOUD_16 = getIcon("/images/sonarcloud-16.png")
+
     @JvmField
     val SONARLINT_TOOLWINDOW = getIcon("/images/sonarlintToolWindow.svg")
+
     @JvmField
     val SONARLINT_ACTION = getIcon("/images/sonarlintAction.svg")
+
     @JvmField
     val SONARLINT_ACTION_12PX = getIcon("/images/sonarlintAction_12px.svg")
+
     @JvmField
     val SONARLINT_ACTION_GREEN_12PX = getIcon("/images/sonarlintAction_green_12px.svg")
 
     @JvmField
     val SONARLINT_ACTION_ORANGE_12PX = getIcon("/images/sonarlintAction_orange_12px.svg")
+
     @JvmField
     val SONARLINT_TOOLWINDOW_EMPTY = getIcon("/images/sonarlintToolWindowEmpty.svg")
+
     @JvmField
     val SONARLINT = getIcon("/images/sonarlint.png")
+
     @JvmField
     val SONARLINT_32 = getIcon("/images/sonarlint@2x.png")
+
     @JvmField
     val PLAY = getIcon("/images/execute.png")
+
     @JvmField
     val CLEAN = getIcon("/images/clean.png")
+
     @JvmField
     val TOOLS = getIcon("/images/externalToolsSmall.png")
+
     @JvmField
     val SUSPEND = getIcon("/images/suspend.png")
+
     @JvmField
     val INFO = getIcon("/images/info.png")
+
     @JvmField
     val WARN = getIcon("/images/warn.png")
+
     @JvmField
     val SCM = getIcon("/images/toolWindowChanges.png")
+
     @JvmField
     val PROJECT = getIcon("/images/ideaProject.png")
+
     @JvmField
     val NOT_CONNECTED = getIcon("/images/not_connected.svg")
+
     @JvmField
     val CONNECTED = getIcon("/images/connected.svg")
+
     @JvmField
     val CONNECTION_ERROR = getIcon("/images/io_error.svg")
+
     @JvmField
     val RESOLVED = getIcon("/images/resolved.svg")
+
     @JvmField
     val FOCUS = getIcon("/images/focus.svg")
 
@@ -88,6 +111,14 @@ object SonarLintIcons {
         IssueSeverity.INFO to getIcon("/images/severity/info.svg"),
         IssueSeverity.MAJOR to getIcon("/images/severity/major.svg"),
         IssueSeverity.MINOR to getIcon("/images/severity/minor.svg")
+    )
+
+    private val SEVERITY2_ICONS = mapOf(
+        org.sonarsource.sonarlint.core.commons.IssueSeverity.BLOCKER to getIcon("/images/severity/blocker.svg"),
+        org.sonarsource.sonarlint.core.commons.IssueSeverity.CRITICAL to getIcon("/images/severity/critical.svg"),
+        org.sonarsource.sonarlint.core.commons.IssueSeverity.INFO to getIcon("/images/severity/info.svg"),
+        org.sonarsource.sonarlint.core.commons.IssueSeverity.MAJOR to getIcon("/images/severity/major.svg"),
+        org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR to getIcon("/images/severity/minor.svg")
     )
 
     private val IMPACT_ICONS = mapOf(
@@ -128,6 +159,11 @@ object SonarLintIcons {
     @JvmStatic
     fun severity(severity: IssueSeverity): Icon {
         return SEVERITY_ICONS[severity]!!
+    }
+
+    @JvmStatic
+    fun severity(severity: org.sonarsource.sonarlint.core.commons.IssueSeverity): Icon {
+        return SEVERITY2_ICONS[severity]!!
     }
 
     @JvmStatic

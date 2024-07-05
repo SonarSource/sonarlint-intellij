@@ -190,7 +190,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       if (!isExpanded) {
         oldSecurityHotspotTree.collapseRow(0);
       }
-      return isFocusOnNewCode? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+      return isFocusOnNewCode ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     } else {
       cardPanel.show(NOT_SUPPORTED_CARD_ID);
       return 0;

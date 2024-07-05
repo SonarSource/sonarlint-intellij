@@ -19,10 +19,7 @@
  */
 package org.sonarlint.intellij.finding
 
-import java.util.UUID
-
 interface Issue : Finding {
-    fun getId(): UUID
     fun resolve()
     fun reopen()
 }

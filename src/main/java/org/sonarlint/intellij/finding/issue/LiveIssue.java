@@ -31,6 +31,7 @@ import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
 public class LiveIssue extends LiveFinding implements Issue {
 
@@ -59,6 +60,11 @@ public class LiveIssue extends LiveFinding implements Issue {
   @Override
   public void reopen() {
     setResolved(false);
+  }
+
+  @Override
+  public TextRangeDto getTextRange() {
+    return getTextRangeDto();
   }
 
 }

@@ -189,11 +189,15 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<String, String, String> {
         return if (uniqueSuggestion.connectionSuggestion.isRight) {
-            Triple("SonarCloud organization", uniqueSuggestion.connectionSuggestion.right.projectKey,
-                uniqueSuggestion.connectionSuggestion.right.organization)
+            Triple(
+                "SonarCloud organization", uniqueSuggestion.connectionSuggestion.right.projectKey,
+                uniqueSuggestion.connectionSuggestion.right.organization
+            )
         } else {
-            Triple("SonarQube server", uniqueSuggestion.connectionSuggestion.left.projectKey,
-                uniqueSuggestion.connectionSuggestion.left.serverUrl)
+            Triple(
+                "SonarQube server", uniqueSuggestion.connectionSuggestion.left.projectKey,
+                uniqueSuggestion.connectionSuggestion.left.serverUrl
+            )
         }
     }
 
@@ -316,12 +320,32 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun showHotspot(configurationScopeId: String, hotspotDetails: HotspotDetailsDto) {
-        showFinding(configurationScopeId, hotspotDetails.ideFilePath, hotspotDetails.key, hotspotDetails.rule.key, hotspotDetails.textRange, hotspotDetails.codeSnippet, LiveSecurityHotspot::class.java, emptyList(), hotspotDetails.message)
+        showFinding(
+            configurationScopeId,
+            hotspotDetails.ideFilePath,
+            hotspotDetails.key,
+            hotspotDetails.rule.key,
+            hotspotDetails.textRange,
+            hotspotDetails.codeSnippet,
+            LiveSecurityHotspot::class.java,
+            emptyList(),
+            hotspotDetails.message
+        )
     }
 
     override fun showIssue(configurationScopeId: String, issueDetails: IssueDetailsDto) {
         val findingType = if (issueDetails.isTaint) LocalTaintVulnerability::class.java else LiveIssue::class.java
-        showFinding(configurationScopeId, issueDetails.ideFilePath, issueDetails.issueKey, issueDetails.ruleKey, issueDetails.textRange, issueDetails.codeSnippet, findingType, issueDetails.flows, issueDetails.message)
+        showFinding(
+            configurationScopeId,
+            issueDetails.ideFilePath,
+            issueDetails.issueKey,
+            issueDetails.ruleKey,
+            issueDetails.textRange,
+            issueDetails.codeSnippet,
+            findingType,
+            issueDetails.flows,
+            issueDetails.message
+        )
     }
 
     override fun showFixSuggestion(configurationScopeId: String, issueKey: String, fixSuggestion: FixSuggestionDto) {
@@ -525,13 +549,24 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         scheme: String,
         targetHost: URL,
     ): GetProxyPasswordAuthenticationResponse {
-        val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(host, null, port, protocol, prompt, scheme, targetHost, Authenticator.RequestorType.PROXY)
+        val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(
+            host,
+            null,
+            port,
+            protocol,
+            prompt,
+            scheme,
+            targetHost,
+            Authenticator.RequestorType.PROXY
+        )
         return GetProxyPasswordAuthenticationResponse(auth?.userName, auth?.let { String(it.password) })
     }
 
     override fun checkServerTrusted(chain: List<X509CertificateDto>, authType: String): Boolean {
         val certificateFactory = CertificateFactory.getInstance("X.509")
-        val certificates: Array<X509Certificate> = chain.stream().map { certificateFactory.generateCertificate(ByteArrayInputStream(it.pem.toByteArray())) as X509Certificate }.toList().toTypedArray()
+        val certificates: Array<X509Certificate> =
+            chain.stream().map { certificateFactory.generateCertificate(ByteArrayInputStream(it.pem.toByteArray())) as X509Certificate }
+                .toList().toTypedArray()
         return try {
             CertificateManager.getInstance().trustManager.checkServerTrusted(certificates, authType)
             true
@@ -626,7 +661,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             return null
         }
         if (repositories.size > 1) {
-            getService(module.project, SonarLintConsole::class.java).debug("Several candidate Vcs repositories detected for module $module, choosing first")
+            getService(
+                module.project,
+                SonarLintConsole::class.java
+            ).debug("Several candidate Vcs repositories detected for module $module, choosing first")
         }
         val repo = repositories.first()
         return repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
@@ -809,9 +847,17 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val project = findProject(configurationScopeId) ?: return
         val taintVulnerabilityMatcher = TaintVulnerabilityMatcher(project)
         val (locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities) = computeReadActionSafely(project) {
-            addedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) } to updatedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
+            addedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) } to updatedTaintVulnerabilities.map {
+                taintVulnerabilityMatcher.match(
+                    it
+                )
+            }
         } ?: return
-        getService(project, SonarLintToolWindow::class.java).updateTaintVulnerabilities(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
+        getService(project, SonarLintToolWindow::class.java).updateTaintVulnerabilities(
+            closedTaintVulnerabilityIds,
+            locallyMatchedAddedTaintVulnerabilities,
+            locallyMatchedUpdatedTaintVulnerabilities
+        )
     }
 
     private fun findProjects(projectKey: String?) = ProjectManager.getInstance().openProjects.filter { project ->

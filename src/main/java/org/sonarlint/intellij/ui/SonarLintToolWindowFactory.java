@@ -35,6 +35,7 @@ import javax.swing.JComponent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.ui.grip.AiSuggestionsMainPanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildTabName;
@@ -51,6 +52,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String REPORT_TAB_TITLE = "Report";
   public static final String TAINT_VULNERABILITIES_TAB_TITLE = "Taint Vulnerabilities";
   public static final String SECURITY_HOTSPOTS_TAB_TITLE = "Security Hotspots";
+  public static final String AI_SUGGESTIONS_TAB_TITLE = "AI Suggestions";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
@@ -62,6 +64,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       addTaintVulnerabilitiesTab(project, contentManager);
     }
+    addAiSuggestionsTab(project, contentManager);
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
     contentManager.addContentManagerListener(sonarLintToolWindow);
@@ -147,6 +150,18 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     securityHotspotsContent.setCloseable(false);
     contentManager.addDataProvider(hotspotsPanel);
     contentManager.addContent(securityHotspotsContent);
+  }
+
+  private static void addAiSuggestionsTab(Project project, @NotNull ContentManager contentManager) {
+    var aiSuggestionsPanel = new AiSuggestionsMainPanel(project);
+    var aiSuggestionsContent = contentManager.getFactory()
+      .createContent(
+        aiSuggestionsPanel,
+        AI_SUGGESTIONS_TAB_TITLE,
+        false);
+    aiSuggestionsContent.setCloseable(false);
+    contentManager.addDataProvider(aiSuggestionsPanel);
+    contentManager.addContent(aiSuggestionsContent);
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {

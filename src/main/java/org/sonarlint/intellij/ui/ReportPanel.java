@@ -253,7 +253,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   private void clearSelections(Tree tree, List<Tree> treesToClear) {
     if (!tree.isSelectionEmpty()) {
-      for(Tree treeItem : treesToClear){
+      for (Tree treeItem : treesToClear) {
         treeItem.clearSelection();
       }
     }
@@ -378,7 +378,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     oldTree = new IssueTree(project, model);
     manageInteraction(oldTree);
   }
-
 
   private void manageInteraction(Tree tree) {
     tree.addKeyListener(new KeyAdapter() {

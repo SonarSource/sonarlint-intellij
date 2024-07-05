@@ -40,6 +40,7 @@ import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedFindingDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
 import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
@@ -56,6 +57,7 @@ public abstract class LiveFinding implements Finding {
   private final String message;
   private final String ruleKey;
   private final boolean isOnNewCode;
+  private final TextRangeDto textRangeDto;
 
   private final FindingContext context;
   private final List<QuickFix> quickFixes;
@@ -73,6 +75,7 @@ public abstract class LiveFinding implements Finding {
 
   protected LiveFinding(Module module, RaisedFindingDto finding, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
     List<QuickFix> quickFixes) {
+    this.textRangeDto = issue.getTextRange();
     this.backendId = finding.getId();
     this.serverFindingKey = finding.getServerKey();
     this.module = module;
@@ -113,7 +116,11 @@ public abstract class LiveFinding implements Finding {
     return getBackendId();
   }
 
-  public Module getModule() {
+  public void setBackendId(UUID backendId) {
+    this.backendId = backendId;
+  }
+
+  public Module module() {
     return module;
   }
 
@@ -157,6 +164,10 @@ public abstract class LiveFinding implements Finding {
   @CheckForNull
   public TextRange getValidTextRange() {
     return toValidTextRange(range);
+  }
+
+  public TextRangeDto getTextRangeDto() {
+    return textRangeDto;
   }
 
   @CheckForNull

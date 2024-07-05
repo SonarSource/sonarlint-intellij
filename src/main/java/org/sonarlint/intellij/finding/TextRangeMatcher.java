@@ -42,6 +42,23 @@ public class TextRangeMatcher {
     this.project = project;
   }
 
+  public TextRangeDto match(VirtualFile file, RangeMarker textRange) throws NoMatchException {
+    ApplicationManager.getApplication().assertReadAccessAllowed();
+
+    var psiFile = toPsiFile(project, file);
+
+    var docManager = PsiDocumentManager.getInstance(project);
+    var doc = docManager.getDocument(psiFile);
+    if (doc == null) {
+      throw new NoMatchException("No document found for file: " + file.getName());
+    }
+
+    var lineStart = doc.getLineNumber(textRange.getStartOffset());
+    var lineEnd = doc.getLineNumber(textRange.getEndOffset());
+
+    return new TextRangeDto(lineStart, textRange.getStartOffset(), lineEnd, textRange.getEndOffset());
+  }
+
   /**
    * Tries to match an SQ issue to an IntelliJ file.
    * <b>Can only be called with getLive access</b>.

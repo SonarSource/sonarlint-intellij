@@ -19,13 +19,17 @@
  */
 package org.sonarlint.intellij.finding
 
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
+import java.util.UUID
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 
 interface Finding {
+
     fun getCleanCodeAttribute(): CleanCodeAttribute?
 
     fun getImpacts(): Map<SoftwareQuality, ImpactSeverity>
@@ -47,6 +51,15 @@ interface Finding {
     fun isValid(): Boolean
 
     fun isOnNewCode(): Boolean
+
     fun isResolved(): Boolean
+
+    fun getId(): UUID
+
+    fun module(): Module?
+
+    fun getTextRange(): TextRangeDto?
+
+    fun getMessage(): String
 
 }

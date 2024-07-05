@@ -159,7 +159,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     if (newFile) {
       var parent = getFilesParent();
       var idx = parent.insertFileNode(fNode, new FileNodeComparator());
-      var newIdx = new int[]{idx};
+      var newIdx = new int[] {idx};
       model.nodesWereInserted(parent, newIdx);
       model.nodeChanged(parent);
     } else {
@@ -236,7 +236,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   private static class FileNodeComparator implements Comparator<FileNode> {
-    @Override public int compare(FileNode o1, FileNode o2) {
+    @Override
+    public int compare(FileNode o1, FileNode o2) {
       int c = o1.file().getName().compareTo(o2.file().getName());
       if (c != 0) {
         return c;
@@ -247,7 +248,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   static class IssueComparator implements Comparator<LiveIssue> {
-    @Override public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
+    @Override
+    public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
       var isResolvedCompare = Comparator.comparing(LiveIssue::isResolved).compare(o1, o2);
       if (isResolvedCompare != 0) {
         return isResolvedCompare;

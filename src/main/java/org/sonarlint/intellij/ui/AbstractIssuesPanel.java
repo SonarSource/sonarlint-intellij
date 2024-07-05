@@ -68,8 +68,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   protected Tree oldTree;
   protected IssueTreeModelBuilder treeBuilder;
   protected IssueTreeModelBuilder oldTreeBuilder;
-  private ActionToolbar mainToolbar;
   protected FindingDetailsPanel findingDetailsPanel;
+  private ActionToolbar mainToolbar;
 
   protected AbstractIssuesPanel(Project project) {
     super(false, true);
@@ -301,7 +301,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     }
     var selectedIssueNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedIssueNodes.length > 0) {
-      updateOnSelect(selectedIssueNodes[0].issue());
+      var issue = selectedIssueNodes[0].issue();
+      updateOnSelect(issue);
     } else {
       clearSelection();
     }
@@ -313,7 +314,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     }
     var selectedIssueNodes = oldTree.getSelectedNodes(IssueNode.class, null);
     if (selectedIssueNodes.length > 0) {
-      updateOnSelect(selectedIssueNodes[0].issue());
+      var issue = selectedIssueNodes[0].issue();
+      updateOnSelect(issue);
     } else {
       clearSelection();
     }
@@ -330,7 +332,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   public <T extends Finding> void updateOnSelect(@Nullable LiveFinding issue, ShowFinding<T> showFinding) {
     if (issue != null) {
-      updateOnSelect(issue);
+      findingDetailsPanel.show(issue);
     } else {
       if (showFinding.getCodeSnippet() == null) {
         SonarLintProjectNotifications.Companion.get(project)
@@ -346,8 +348,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
           return;
         }
 
-        runOnUiThread(project, () ->
-          findingDetailsPanel.showServerOnlyIssue(showFinding.getModule(), showFinding.getFile(), showFinding.getRuleKey(), rangeMarker, showFinding.getFlows(),
+        runOnUiThread(project,
+          () -> findingDetailsPanel.showServerOnlyIssue(showFinding.getModule(), showFinding.getFile(), showFinding.getRuleKey(), rangeMarker, showFinding.getFlows(),
             showFinding.getFlowMessage()));
       });
     }

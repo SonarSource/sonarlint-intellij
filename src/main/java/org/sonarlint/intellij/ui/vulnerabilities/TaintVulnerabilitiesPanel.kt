@@ -71,7 +71,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.CardPanel
-import org.sonarlint.intellij.ui.CurrentFilePanel
+import org.sonarlint.intellij.ui.CurrentFilePanel.SONARLINT_TOOLWINDOW_ID
 import org.sonarlint.intellij.ui.SonarLintRulePanel
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -120,10 +120,17 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint Service", RestartBackendAction()),
             ERROR_CARD_ID
         )
-        cards.add(centeredLabel("The project is not bound to SonarCloud/SonarQube", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
+        cards.add(
+            centeredLabel("The project is not bound to SonarCloud/SonarQube", "Configure Binding", SonarConfigureProject()),
+            NO_BINDING_CARD_ID
+        )
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
-        cards.add(centeredLabel("No taint vulnerabilities shown due to the current filtering", "Show Resolved Taint Vulnerabilities",
-            SonarLintActions.getInstance().includeResolvedTaintVulnerabilitiesAction()), NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
+        cards.add(
+            centeredLabel(
+                "No taint vulnerabilities shown due to the current filtering", "Show Resolved Taint Vulnerabilities",
+                SonarLintActions.getInstance().includeResolvedTaintVulnerabilitiesAction()
+            ), NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID
+        )
         noVulnerabilitiesPanel = centeredLabel("", "", null)
         cards.add(noVulnerabilitiesPanel, NO_ISSUES_CARD_ID)
         rulePanel.minimumSize = Dimension(350, 200)
@@ -134,7 +141,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         treePanel.add(oldTree)
 
         val treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel)
-        cards.add(createSplitter(project, this, this, treeScrollPane, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
+        cards.add(
+            createSplitter(project, this, this, treeScrollPane, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
         )
 
@@ -146,13 +154,20 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         setContent(issuesPanel)
 
         val sonarLintActions = SonarLintActions.getInstance()
-        setupToolbar(listOf(
-            ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
-            RefreshTaintVulnerabilitiesAction(),
-            sonarLintActions.includeResolvedTaintVulnerabilitiesAction(),
-            sonarLintActions.configure(),
-            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK, AllIcons.Actions.Help)
-        ))
+        setupToolbar(
+            listOf(
+                ActionManager.getInstance().getAction("SonarLint.SetFocusNewCode"),
+                RefreshTaintVulnerabilitiesAction(),
+                sonarLintActions.includeResolvedTaintVulnerabilitiesAction(),
+                sonarLintActions.configure(),
+                OpenInBrowserAction(
+                    LEARN_MORE,
+                    "Learn more about taint vulnerabilities in SonarLint",
+                    TAINT_VULNERABILITIES_LINK,
+                    AllIcons.Actions.Help
+                )
+            )
+        )
         applyFocusOnNewCodeSettings()
     }
 
@@ -167,7 +182,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 ActionUtil.invokeAction(
                     action,
                     labelPanel,
-                    CurrentFilePanel.SONARLINT_TOOLWINDOW_ID,
+                    SONARLINT_TOOLWINDOW_ID,
                     null,
                     null
                 )
@@ -191,8 +206,14 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     private fun createDisclaimer(): StripePanel {
-        val stripePanel = StripePanel("This tab displays taint vulnerabilities detected by SonarCloud or SonarQube. SonarLint does not detect those issues locally.", Information)
-        stripePanel.addAction(LEARN_MORE, OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK))
+        val stripePanel = StripePanel(
+            "This tab displays taint vulnerabilities detected by SonarCloud or SonarQube. SonarLint does not detect those issues locally.",
+            Information
+        )
+        stripePanel.addAction(
+            LEARN_MORE,
+            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK)
+        )
         stripePanel.addAction("Dismiss", object : AbstractSonarAction() {
             override fun actionPerformed(e: AnActionEvent) {
                 stripePanel.isVisible = false
@@ -229,7 +250,11 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         updateTrees(taintVulnerabilities)
     }
 
-    fun update(closedTaintVulnerabilityIds: Set<UUID>, addedTaintVulnerabilities: List<LocalTaintVulnerability>, updatedTaintVulnerabilities: List<LocalTaintVulnerability>) {
+    fun update(
+        closedTaintVulnerabilityIds: Set<UUID>,
+        addedTaintVulnerabilities: List<LocalTaintVulnerability>,
+        updatedTaintVulnerabilities: List<LocalTaintVulnerability>,
+    ) {
         val cache = getService(project, TaintVulnerabilitiesCache::class.java)
         cache.update(closedTaintVulnerabilityIds, addedTaintVulnerabilities, updatedTaintVulnerabilities)
         updateTrees(cache.taintVulnerabilities)
@@ -248,17 +273,21 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             !getService(BackendService::class.java).isAlive() -> {
                 showCard(ERROR_CARD_ID)
             }
+
             !getSettingsFor(project).isBound -> {
                 showCard(NO_BINDING_CARD_ID)
             }
+
             !getService(project, ProjectBindingManager::class.java).isBindingValid -> {
                 showCard(INVALID_BINDING_CARD_ID)
             }
+
             taintVulnerabilityTreeUpdater.taintVulnerabilities.isEmpty() && oldTaintVulnerabilityTreeUpdater.taintVulnerabilities.isEmpty() -> {
                 val highlighting = getService(project, EditorDecorator::class.java)
                 showNoVulnerabilitiesLabel()
                 highlighting.removeHighlights()
             }
+
             else -> {
                 if (taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.isEmpty() && oldTaintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.isEmpty()) {
                     showCard(NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
@@ -269,7 +298,11 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         }
     }
 
-    private fun populateSubTree(tree: TaintVulnerabilityTree, updater: TaintVulnerabilityTreeUpdater, taintVulnerabilities: List<LocalTaintVulnerability>) {
+    private fun populateSubTree(
+        tree: TaintVulnerabilityTree,
+        updater: TaintVulnerabilityTreeUpdater,
+        taintVulnerabilities: List<LocalTaintVulnerability>,
+    ) {
         val expandedPaths = TreeUtil.collectExpandedPaths(tree)
         val selectionPath: TreePath? = tree.selectionPath
         // Temporarily remove the listener to avoid transient selection events while changing the model
@@ -333,7 +366,14 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 rulePanel.clear()
                 highlighting.removeHighlights()
             } else {
-                issue.module?.let { module -> rulePanel.setSelectedFinding(module, issue, issue.getRuleKey(), issue.getRuleDescriptionContextKey()) }
+                issue.module?.let { module ->
+                    rulePanel.setSelectedFinding(
+                        module,
+                        issue,
+                        issue.getRuleKey(),
+                        issue.getRuleDescriptionContextKey()
+                    )
+                }
                     ?: rulePanel.clear()
                 highlighting.highlight(issue)
             }
@@ -361,8 +401,10 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         runOnPooledThread(project) {
             if (showFinding.codeSnippet == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("taint vulnerability",
-                        "The taint vulnerability could not be detected by SonarLint in the current code.")
+                    .notifyUnableToOpenFinding(
+                        "taint vulnerability",
+                        "The taint vulnerability could not be detected by SonarLint in the current code."
+                    )
                 return@runOnPooledThread
             }
             val matcher = TextRangeMatcher(project)
@@ -371,7 +413,10 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             }
             if (rangeMarker == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("taint vulnerability", "The taint vulnerability could not be detected by SonarLint in the current code.")
+                    .notifyUnableToOpenFinding(
+                        "taint vulnerability",
+                        "The taint vulnerability could not be detected by SonarLint in the current code."
+                    )
                 return@runOnPooledThread
             }
 
@@ -388,8 +433,12 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         tree = TaintVulnerabilityTree(project, taintVulnerabilityTreeUpdater)
         oldTree = TaintVulnerabilityTree(project, oldTaintVulnerabilityTreeUpdater)
         treeListeners = mapOf(
-            tree to listOf(TreeSelectionListener { updateRulePanelContent(tree) }, TreeSelectionListener { taintTreeSelectionChanged(tree, oldTree) }),
-            oldTree to listOf(TreeSelectionListener { updateRulePanelContent(oldTree) }, TreeSelectionListener { taintTreeSelectionChanged(oldTree, tree) })
+            tree to listOf(
+                TreeSelectionListener { updateRulePanelContent(tree) },
+                TreeSelectionListener { taintTreeSelectionChanged(tree, oldTree) }),
+            oldTree to listOf(
+                TreeSelectionListener { updateRulePanelContent(oldTree) },
+                TreeSelectionListener { taintTreeSelectionChanged(oldTree, tree) })
         )
 
         listOf(tree, oldTree).forEach {

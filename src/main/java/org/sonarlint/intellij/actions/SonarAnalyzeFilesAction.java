@@ -30,7 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.swing.Icon;
+import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
