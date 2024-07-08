@@ -216,6 +216,13 @@ qa_task:
   env:
     CLION_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.clion]
     GOLAND_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.goland]
+    DATAGRIP_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.datagrip]
+    IDEA_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.idea]
+    PHPSTORM_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.phpstorm]
+    PYCHARM_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.pycharm]
+    RIDER_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.rider]
+    RUBYMINE_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.rubymine]
+    WEBSTORM_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.webstorm]
     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
     GITHUB_TOKEN: VAULT[development/github/token/licenses-ro token]
     DISPLAY: :10
@@ -227,6 +234,27 @@ qa_task:
   golandKey_file:
     path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/goland.key.b64
     variable_name: GOLAND_KEY
+  datagripKey_file:
+    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/datagrip.key.b64
+    variable_name: DATAGRIP_KEY
+  ideaKey_file:
+    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/idea.key.b64
+    variable_name: IDEA_KEY
+  phpstormKey_file:
+    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/phpstorm.key.b64
+    variable_name: PHPSTORM_KEY
+  pycharmKey_file:
+    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/pycharm.key.b64
+    variable_name: PYCHARM_KEY
+  riderKey_file:
+    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/rider.key.b64
+    variable_name: RIDER_KEY
+  rubymineKey_file:
+    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/rubymine.key.b64
+    variable_name: RUBYMINE_KEY
+  webstormKey_file:
+    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/webstorm.key.b64
+    variable_name: WEBSTORM_KEY
   matrix:
     - env:
         IDEA_VERSION: 'IC-2022.3.1'
@@ -307,6 +335,13 @@ qa_task:
     mkdir -p its/build/idea-sandbox/config-uiTest/
     base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/config-uiTest/clion.key
     base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/config-uiTest/goland.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/config-uiTest/datagrip.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > its/build/idea-sandbox/config-uiTest/idea.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > its/build/idea-sandbox/config-uiTest/phpstorm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > its/build/idea-sandbox/config-uiTest/pycharm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/config-uiTest/rider.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/config-uiTest/rubymine.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/config-uiTest/webstorm.key
     metacity --sm-disable --replace &
     sleep 10 # give metacity some time to start
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
