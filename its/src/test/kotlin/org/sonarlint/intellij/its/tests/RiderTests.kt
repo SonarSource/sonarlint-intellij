@@ -26,7 +26,7 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 
-@EnabledIf("Rider")
+@EnabledIf("isRider")
 class RiderTests : BaseUiTest() {
 
     @Test
