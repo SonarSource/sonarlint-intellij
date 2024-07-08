@@ -444,6 +444,18 @@ class ConnectedIdeaTests : BaseUiTest() {
             verifyTaintTabContainsMessages("The project is not bound to SonarCloud/SonarQube")
         }
 
+        @Test
+        fun should_analyze_swift() = uiTest {
+            openExistingProject("sample-swift")
+
+            openFile("file.swift")
+            verifyCurrentFileTabContainsMessages(
+                "Found 1 issue in 1 file",
+                "file.swift",
+                "Use \"try\" or \"try?\" here instead; \"try!\" disables error propagation."
+            )
+        }
+
     }
 
 }

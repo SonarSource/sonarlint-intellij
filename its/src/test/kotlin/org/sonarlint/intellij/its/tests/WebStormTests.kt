@@ -30,7 +30,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 class WebStormTests : BaseUiTest() {
 
     @Test
-    fun should_analyze_js_ts() = uiTest {
+    fun should_analyze_js_ts_css_html() = uiTest {
         openExistingProject("sample-js-ts")
 
         openFile("file.js")
@@ -45,6 +45,21 @@ class WebStormTests : BaseUiTest() {
             "Found 1 issue in 1 file",
             "file2.ts",
             "Unexpected var, use let or const instead."
+        )
+
+        openFile("file3.css")
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file3.css",
+            "Unexpected empty block"
+        )
+
+        openFile("file4.html")
+        verifyCurrentFileTabContainsMessages(
+            "Found 2 issues in 1 file",
+            "file4.html",
+            "\"tabIndex\" should only be declared on interactive elements.",
+            "Avoid using positive values for the \"tabIndex\" attribute."
         )
     }
 
