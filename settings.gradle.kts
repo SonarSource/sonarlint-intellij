@@ -15,6 +15,10 @@ dependencyResolutionManagement {
     }
 }
 
+plugins {
+    id("org.gradle.toolchains.foojay-resolver") version "0.8.0"
+}
+
 val isCiServer = System.getenv().containsKey("CIRRUS_CI")
 val isMasterBranch = System.getenv()["CIRRUS_BRANCH"] == "master"
 val buildCacheHost: String = System.getenv().getOrDefault("CIRRUS_HTTP_CACHE_HOST", "localhost:12321")
