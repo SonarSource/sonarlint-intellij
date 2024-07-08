@@ -67,8 +67,9 @@ intellij {
     if (!project.hasProperty("slPluginDirectory")) {
         plugins.set(listOf(rootProject))
     }
-    if (project.hasProperty("ijPlugin")) {
-        plugins.add(ijPlugin)
+    val ideaPlugin = System.getenv("IDEA_PLUGIN")
+    if (ideaPlugin != null) {
+        plugins.add(ideaPlugin)
     }
     instrumentCode.set(false)
 }
