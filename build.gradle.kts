@@ -132,6 +132,10 @@ intellij {
     pluginName.set("sonarlint-intellij")
     updateSinceUntilBuild.set(false)
     plugins.set(listOf("java", "Git4Idea"))
+    val ideaPlugin = System.getenv("IDEA_PLUGIN")
+    if (ideaPlugin != null) {
+        plugins.add(ideaPlugin)
+    }
 }
 
 val verifierVersions: String by project
