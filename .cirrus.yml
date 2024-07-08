@@ -214,8 +214,8 @@ qa_task:
     cpu: 6
     memory: 16G
   env:
-    CLION_KEY: VAULT[development/team/sonarlint/kv/data/clion.key data.key]
-    GOLAND_KEY: VAULT[development/team/sonarlint/kv/data/goland.key data.key]
+    CLION_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.clion]
+    GOLAND_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.goland]
     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
     GITHUB_TOKEN: VAULT[development/github/token/licenses-ro token]
     DISPLAY: :10
