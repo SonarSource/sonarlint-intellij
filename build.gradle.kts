@@ -161,11 +161,6 @@ tasks.runPluginVerifier {
 }
 
 tasks.test {
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
-        }
-    }
     useJUnitPlatform()
     systemProperty("sonarlint.telemetry.disabled", "true")
 }
