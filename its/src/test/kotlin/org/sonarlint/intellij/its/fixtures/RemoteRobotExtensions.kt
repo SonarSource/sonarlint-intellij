@@ -33,12 +33,6 @@ fun RemoteRobot.isPhpStorm() =
 fun RemoteRobot.isPyCharm() =
     callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('pycharm')")
 
-fun RemoteRobot.isRubyMine() =
-    callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('rubymine')")
-
-fun RemoteRobot.isWebStorm() =
-    callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('webstorm')")
-
 fun RemoteRobot.isRider() =
     callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('rider')")
 
@@ -53,3 +47,9 @@ fun RemoteRobot.isIdea() =
  */
 fun RemoteRobot.isGoPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('org.jetbrains.plugins.go'))")
 fun RemoteRobot.isSQLPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('com.intellij.database'))")
+fun RemoteRobot.isJavaScriptPlugin() =
+    callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('JavaScript'))")
+
+fun RemoteRobot.isRubyPlugin() =
+    callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('org.jetbrains.plugins.ruby'))")
+

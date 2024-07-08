@@ -34,12 +34,12 @@ import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
 import org.sonarlint.intellij.its.fixtures.isIdea
+import org.sonarlint.intellij.its.fixtures.isJavaScriptPlugin
 import org.sonarlint.intellij.its.fixtures.isPhpStorm
 import org.sonarlint.intellij.its.fixtures.isPyCharm
 import org.sonarlint.intellij.its.fixtures.isRider
-import org.sonarlint.intellij.its.fixtures.isRubyMine
+import org.sonarlint.intellij.its.fixtures.isRubyPlugin
 import org.sonarlint.intellij.its.fixtures.isSQLPlugin
-import org.sonarlint.intellij.its.fixtures.isWebStorm
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
@@ -77,10 +77,10 @@ open class BaseUiTest {
         fun isPyCharm() = remoteRobot.isPyCharm()
 
         @JvmStatic
-        fun isRubyMine() = remoteRobot.isRubyMine()
+        fun isRubyMine() = remoteRobot.isIdea() && remoteRobot.isRubyPlugin()
 
         @JvmStatic
-        fun isWebStorm() = remoteRobot.isWebStorm()
+        fun isWebStorm() = remoteRobot.isIdea() && remoteRobot.isJavaScriptPlugin()
 
         @JvmStatic
         fun isRider() = remoteRobot.isRider()

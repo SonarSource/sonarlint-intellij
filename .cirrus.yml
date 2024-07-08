@@ -275,28 +275,20 @@ qa_task:
         IDEA_VERSION: 'GO-2022.3.1'
         QA_CATEGORY: 'GoLand2022'
     - env:
-        IDEA_VERSION: 'GO-2022.3.1'
-        QA_CATEGORY: 'GoLand2022'
-    - env:
         IDEA_VERSION: 'IU-2022.3.1'
         QA_CATEGORY: 'IdeaUltimate2022'
     - env:
-        IDEA_VERSION: 'DG-2022.3.1'
-        QA_CATEGORY: 'DataGrip2022'
-    - env:
-        IDEA_VERSION: 'WS-2022.3.1'
-        QA_CATEGORY: 'WebStorm2022'
-    - env:
-        IDEA_VERSION: 'RM-2022.3.1'
+        IDEA_VERSION: 'IU-2022.3.1'
         QA_CATEGORY: 'RubyMine2022'
+        IDEA_PLUGIN: 'org.jetbrains.plugins.ruby'
     - env:
         IDEA_VERSION: 'RD-2022.3.1'
         QA_CATEGORY: 'Rider2022'
     - env:
-        IDEA_VERSION: 'PCC-2022.3.1'
+        IDEA_VERSION: 'PY-2022.3.1'
         QA_CATEGORY: 'PyCharmProfessional2022'
     - env:
-        IDEA_VERSION: 'PCP-2022.3.1'
+        IDEA_VERSION: 'PC-2022.3.1'
         QA_CATEGORY: 'PyCharmCommunity2022'
     - env:
         IDEA_VERSION: 'PS-2022.3.1'
@@ -344,7 +336,7 @@ qa_task:
     base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/config-uiTest/webstorm.key
     metacity --sm-disable --replace &
     sleep 10 # give metacity some time to start
-    gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
+    gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PijPlugin=${IDEA_PLUGIN} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
     .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500

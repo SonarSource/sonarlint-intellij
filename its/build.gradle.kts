@@ -58,6 +58,7 @@ tasks.downloadRobotServerPlugin {
 }
 
 val ijVersion: String by project
+val ijPlugin: String by project
 
 intellij {
     version.set(if (project.hasProperty("ijVersion")) ijVersion else rootProject.intellij.version.get())
@@ -65,6 +66,9 @@ intellij {
     updateSinceUntilBuild.set(false)
     if (!project.hasProperty("slPluginDirectory")) {
         plugins.set(listOf(rootProject))
+    }
+    if (project.hasProperty("ijPlugin")) {
+        plugins.add(ijPlugin)
     }
     instrumentCode.set(false)
 }
