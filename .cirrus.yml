@@ -334,11 +334,11 @@ qa_task:
     base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/config-uiTest/rider.key
     base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/config-uiTest/rubymine.key
     base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/config-uiTest/webstorm.key
-    echo its/build/idea-sandbox/config-uiTest/clion.key
-    echo its/build/idea-sandbox/config-uiTest/goland.key
-    echo its/build/idea-sandbox/config-uiTest/idea.key
-    echo its/build/idea-sandbox/config-uiTest/phpstorm.key
-    echo its/build/idea-sandbox/config-uiTest/rider.key
+    cat its/build/idea-sandbox/config-uiTest/clion.key
+    cat its/build/idea-sandbox/config-uiTest/goland.key
+    cat its/build/idea-sandbox/config-uiTest/idea.key
+    cat its/build/idea-sandbox/config-uiTest/phpstorm.key
+    cat its/build/idea-sandbox/config-uiTest/rider.key
     metacity --sm-disable --replace &
     sleep 10 # give metacity some time to start
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
