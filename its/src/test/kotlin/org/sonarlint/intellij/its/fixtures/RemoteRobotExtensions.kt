@@ -39,6 +39,16 @@ fun RemoteRobot.isRider() =
 fun RemoteRobot.isIdea() =
     callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
 
+fun RemoteRobot.isIdeaCommunity(): Boolean {
+    return callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
+        && callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('community')")
+}
+
+fun RemoteRobot.isIdeaUltimate(): Boolean {
+    return callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
+        && callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('ultimate')")
+}
+
 /**
  *  Check if the Go plugin is available, currently bundled in GoLand and as a plugin from the marketplace for IntelliJ
  *  IDEA Ultimate. The plugin was [open source](https://github.com/go-lang-plugin-org/go-lang-idea-plugin/tree/master)
