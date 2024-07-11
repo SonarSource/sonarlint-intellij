@@ -1,0 +1,6 @@
+<!-- FIXME we should update version to 3.8.1 -->
+<dependency>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-lang3</artifactId>
+  <version>3.6</version>
+</dependency>

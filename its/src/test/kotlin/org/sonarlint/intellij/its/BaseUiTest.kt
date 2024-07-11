@@ -84,10 +84,10 @@ open class BaseUiTest {
         fun isPyCharm() = remoteRobot.isPyCharm()
 
         @JvmStatic
-        fun isWebStorm() = remoteRobot.isIdea() && remoteRobot.isJavaScriptPlugin()
+        fun isRider() = remoteRobot.isRider()
 
         @JvmStatic
-        fun isRider() = remoteRobot.isRider()
+        fun isWebStorm() = remoteRobot.isIdea() && remoteRobot.isJavaScriptPlugin()
 
         /**
          *  This only checks for the GoLand IDE, if you want to check for the Go language support in general (via the

@@ -26,40 +26,64 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 
-@EnabledIf("isWebStorm")
-class WebStormTests : BaseUiTest() {
+
+@EnabledIf("isIdeaUltimate")
+class IdeaUltimateTests : BaseUiTest() {
 
     @Test
-    fun should_analyze_js_ts_css_html() = uiTest {
-        openExistingProject("sample-js-ts-css-html")
+    fun should_analyze_iac() = uiTest {
+        openExistingProject("sample-iac")
 
-        openFile("file.js")
+        openFile("file.yaml")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
-            "file.js",
-            "Unexpected comma in middle of array."
+            "file.yaml",
+            "Rename tag key \"anycompany:cost-center\" to match the regular expression \"^([A-Z][A-Za-z]*:)*([A-Z][A-Za-z]*)\$\"."
         )
 
-        openFile("file2.ts")
+        openFile("Dockerfile")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
-            "file2.ts",
-            "Unexpected var, use let or const instead."
+            "Dockerfile",
+            "Replace `from` with upper case format `FROM`."
         )
 
-        openFile("file3.css")
+        openFile("kubernetes.yaml")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
-            "file3.css",
-            "Unexpected empty block"
+            "kubernetes.yaml",
+            "Do not use wildcards when defining RBAC permissions."
         )
 
-        openFile("file4.html")
+        openFile("file.tf")
         verifyCurrentFileTabContainsMessages(
-            "Found 2 issues in 1 file",
-            "file4.html",
-            "\"tabIndex\" should only be declared on interactive elements.",
-            "Avoid using positive values for the \"tabIndex\" attribute."
+            "Found 1 issue in 1 file",
+            "file.tf",
+            "Rename tag key \"anycompany:cost-center\" to match the regular expression \"^([A-Z][A-Za-z]*:)*([A-Z][A-Za-z]*)\$\"."
+        )
+    }
+
+    @Test
+    fun should_analyze_kotlin() = uiTest {
+        openExistingProject("sample-kotlin")
+
+        openFile("file.kt")
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file.kt",
+            "Make this interface functional or replace it with a function type."
+        )
+    }
+
+    @Test
+    fun should_analyze_xml() = uiTest {
+        openExistingProject("sample-xml")
+
+        openFile("file.xml")
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file.xml",
+            "Take the required action to fix the issue indicated by this \"FIXME\" comment."
         )
     }
 
