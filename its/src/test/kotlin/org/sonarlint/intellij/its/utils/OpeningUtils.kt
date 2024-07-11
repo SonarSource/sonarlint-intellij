@@ -20,16 +20,18 @@
 package org.sonarlint.intellij.its.utils
 
 import com.intellij.remoterobot.utils.waitFor
+import java.awt.Point
+import java.io.File
+import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
+import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
+import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
-import java.awt.Point
-import java.io.File
-import java.time.Duration
 
 class OpeningUtils {
 
@@ -62,8 +64,14 @@ class OpeningUtils {
                     // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
                     openProjectButton().click(Point(10, 10))
                 }
-                openProjectFileBrowserDialog {
-                    selectProjectFile(projectName, isMaven)
+                if (remoteRobot.isRider()) {
+                    openSolutionBrowserDialog {
+                        selectProjectFile(projectName, isMaven)
+                    }
+                } else {
+                    openProjectFileBrowserDialog {
+                        selectProjectFile(projectName, isMaven)
+                    }
                 }
                 if (!remoteRobot.isCLion()) {
                     optionalStep {

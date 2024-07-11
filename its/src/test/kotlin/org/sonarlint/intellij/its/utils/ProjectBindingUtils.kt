@@ -28,6 +28,7 @@ import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.tests.ConnectedIdeaTests.Companion.MODULE_PROJECT_KEY
@@ -42,7 +43,11 @@ class ProjectBindingUtils {
                 idea {
                     dialog("Project Settings") {
                         checkBox("Bind project to SonarCloud / SonarQube").unselect()
-                        button("OK").click()
+                        if (isRider()) {
+                            button("Save").click()
+                        } else {
+                            button("OK").click()
+                        }
                     }
                 }
             }

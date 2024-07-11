@@ -19,38 +19,27 @@
  */
 package org.sonarlint.intellij.its.tests
 
-import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
-import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 
-@Tag("Standalone")
-@EnabledIf("isIdeaCommunity")
-class StandaloneIdeaTests : BaseUiTest() {
+@EnabledIf("isRider")
+class RiderTests : BaseUiTest() {
 
     @Test
-    fun should_exclude_rule() = uiTest {
-        openExistingProject("sample-java-issues")
-        openFile("src/main/java/foo/Foo.java", "Foo.java")
-        toggleRule("java:S2094", "Classes should not be empty")
-        verifyCurrentFileTabContainsMessages("No issues to display")
-        toggleRule("java:S2094", "Classes should not be empty")
-        verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-    }
+    fun should_analyze_csharp() = uiTest {
+        openExistingProject("sample-rider")
 
-    @Test
-    fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
-        openExistingProject("sample-java-issues")
-        excludeFile("src/main/java/foo/Foo.java")
-        openFile("src/main/java/foo/Foo.java", "Foo.java")
-        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
-        removeFileExclusion("src/main/java/foo/Foo.java")
+        openFile("file.cs")
+
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file.cs",
+            "Either remove or fill this block of code."
+        )
     }
 
 }
