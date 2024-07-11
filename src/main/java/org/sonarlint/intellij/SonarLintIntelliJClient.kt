@@ -27,7 +27,6 @@ import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -63,6 +62,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
+import org.sonarlint.intellij.analysis.OpenInIdeFindingCache
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -99,6 +99,7 @@ import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.sharing.ConfigurationSharing
 import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.trigger.TriggerType
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -151,7 +152,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private const val SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY = "SonarLint.AutoShareConfiguration"
     private const val AUTOSCAN_CONFIG_FILENAME = ".sonarcloud.properties"
     private const val SONARLINT_CONFIGURATION_FOLDER = ".sonarlint"
-    private var findingToShow: ShowFinding<*>? = null
     private val backendTaskProgressReporter = BackendTaskProgressReporter()
 
     override fun suggestBinding(suggestionsByConfigScopeId: Map<String, List<BindingSuggestionDto>>) {
@@ -346,9 +346,11 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
             return
         }
-        ApplicationManager.getApplication().invokeAndWait {
-            openFile(project, file, textRange.startLine)
+
+        runOnUiThread(project) {
+            FileEditorManager.getInstance(project).openFile(file, true)
         }
+
         val showFinding = ShowFinding(
             module,
             ruleKey,
@@ -360,15 +362,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             flowMessage,
             type
         )
+        getService(project, OpenInIdeFindingCache::class.java).finding = showFinding
+        getService(project, OpenInIdeFindingCache::class.java).analysisQueued = false
         if (getService(project, AnalysisReadinessCache::class.java).isReady) {
+            GlobalLogOutput.get().log("Analyzing is ready, queuing", ClientLogOutput.Level.INFO)
             getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(showFinding)
-        } else {
-            findingToShow = showFinding
         }
-    }
-
-    private fun openFile(project: Project, file: VirtualFile, line: Int) {
-        OpenFileDescriptor(project, file, line - 1, -1).navigate(true)
     }
 
     override fun assistCreatingConnection(
@@ -445,16 +444,18 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } else {
             val connection = getGlobalSettings().getServerConnectionByName(connectionId)
                 .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
-            val mode =
-                if (params.isFromSharedConfiguration) IMPORTED else AUTOMATIC
-            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
-            get(project).simpleNotification(
-                "Project successfully bound",
-                "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. " +
-                    "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint Settings.",
-                NotificationType.INFORMATION,
-                OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
-            )
+            val binding = getService(project, ProjectBindingManager::class.java).binding
+            if (binding == null || binding.projectKey != projectKey || binding.connectionName != connection.name) {
+                val mode = if (params.isFromSharedConfiguration) IMPORTED else AUTOMATIC
+                getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
+                get(project).simpleNotification(
+                    "Project successfully bound",
+                    "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. "
+                        + "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint Settings.",
+                    NotificationType.INFORMATION,
+                    OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
+                )
+            }
             val module = BackendService.findModule(configScopeId)
             getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh(module)
             AssistBindingResponse(BackendService.projectId(project))
@@ -564,9 +565,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 if (project == null || project.isDisposed) return@forEach
                 getService(project, AnalysisReadinessCache::class.java).isReady = areReadyForAnalysis
                 if (areReadyForAnalysis) {
-                    if (findingToShow != null) {
+                    val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
+                    if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
                         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
-                        findingToShow = null
                     }
 
                     if (ApplicationManager.getApplication().isUnitTestMode) {

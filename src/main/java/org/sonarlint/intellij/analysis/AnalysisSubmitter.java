@@ -53,6 +53,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.ProjectUtils.getAllFiles;
 
@@ -165,6 +166,7 @@ public final class AnalysisSubmitter {
   }
 
   public <T extends Finding> void analyzeFileAndTrySelectFinding(ShowFinding<T> showFinding) {
+    getService(project, OpenInIdeFindingCache.class).setAnalysisQueued(true);
     AnalysisCallback callback = new ShowFindingCallable<>(project, onTheFlyFindingsHolder, showFinding);
     var task = new Analysis(project, List.of(showFinding.getFile()), TriggerType.OPEN_FINDING, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, task::run);
