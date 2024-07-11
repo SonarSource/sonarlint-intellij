@@ -26,6 +26,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
@@ -99,7 +100,7 @@ import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.sharing.ConfigurationSharing
 import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThreadAndWait
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -347,7 +348,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             return
         }
 
-        runOnUiThread(project) {
+        runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
             FileEditorManager.getInstance(project).openFile(file, true)
         }
 
@@ -365,7 +366,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         getService(project, OpenInIdeFindingCache::class.java).finding = showFinding
         getService(project, OpenInIdeFindingCache::class.java).analysisQueued = false
         if (getService(project, AnalysisReadinessCache::class.java).isReady) {
-            GlobalLogOutput.get().log("Analyzing is ready, queuing", ClientLogOutput.Level.INFO)
             getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(showFinding)
         }
     }

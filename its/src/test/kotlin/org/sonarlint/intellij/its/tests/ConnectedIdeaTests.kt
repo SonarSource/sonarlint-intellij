@@ -341,9 +341,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         fun click_open_in_ide_issue_then_should_manually_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
             openExistingProject("sample-java-issues")
-
             triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main")
-
             createConnection(tokenValue)
             verifyIssueOpened()
         }
@@ -352,7 +350,6 @@ class ConnectedIdeaTests : BaseUiTest() {
         fun click_open_in_ide_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
             openExistingProject("sample-java-issues")
-
             triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main", tokenName, tokenValue)
             acceptNewAutomatedConnection()
             verifyIssueOpened()
