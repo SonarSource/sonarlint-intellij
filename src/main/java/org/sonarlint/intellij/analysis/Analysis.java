@@ -102,8 +102,16 @@ public class Analysis implements Cancelable {
       return Collections.emptyList();
     }
     if (!getService(project, AnalysisReadinessCache.class).isReady()) {
+      if (trigger == TriggerType.OPEN_FINDING) {
+        getService(project, OpenInIdeFindingCache.class).setAnalysisQueued(false);
+      }
       SonarLintConsole.get(project).info("Analysis skipped as the engine is not ready yet");
       return Collections.emptyList();
+    }
+
+    if (trigger == TriggerType.OPEN_FINDING) {
+      getService(project, OpenInIdeFindingCache.class).setFinding(null);
+      getService(project, OpenInIdeFindingCache.class).setAnalysisQueued(false);
     }
 
     var scope = AnalysisScope.defineFrom(project, files, trigger);
