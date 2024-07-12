@@ -31,8 +31,8 @@ import com.intellij.remoterobot.search.locators.Locator
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.waitFor
-import org.assertj.swing.timing.Pause
 import java.time.Duration
+import org.assertj.swing.timing.Pause
 
 inline fun <reified T : Fixture> ContainerFixture.findElement(locator: Locator): T {
     // the find has a 2s timeout and 2s interval by default, which sometimes allows only one search
@@ -53,6 +53,8 @@ fun ContainerFixture.jbTable() = findElement<JBTableFixture>(byXpath("//div[@cla
 fun ContainerFixture.editorComponent() = findElement<ComponentFixture>(byXpath("//div[@class='PsiAwareTextEditorComponent']"))
 
 fun CommonContainerFixture.jPasswordField() = textField(byXpath("//div[@class='JPasswordField']"))
+
+fun CommonContainerFixture.jBPasswordField() = textField(byXpath("//div[@class='JBPasswordField']"))
 
 fun ActionButtonFixture.clickWhenEnabled() {
   waitFor(Duration.ofSeconds(5)) {

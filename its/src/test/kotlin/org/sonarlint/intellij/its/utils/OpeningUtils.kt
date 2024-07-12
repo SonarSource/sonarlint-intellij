@@ -20,6 +20,9 @@
 package org.sonarlint.intellij.its.utils
 
 import com.intellij.remoterobot.utils.waitFor
+import java.awt.Point
+import java.io.File
+import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
@@ -27,9 +30,6 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
-import java.awt.Point
-import java.io.File
-import java.time.Duration
 
 class OpeningUtils {
 
@@ -55,8 +55,10 @@ class OpeningUtils {
             }
         }
 
-        fun openExistingProject(projectName: String, isMaven: Boolean = false) {
-            copyProjectFiles(projectName)
+        fun openExistingProject(projectName: String, isMaven: Boolean = false, copyProjectFiles: Boolean = true) {
+            if (copyProjectFiles) {
+                copyProjectFiles(projectName)
+            }
             with(remoteRobot) {
                 welcomeFrame {
                     // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
@@ -87,6 +89,19 @@ class OpeningUtils {
                     // corresponding system property has been introduced around middle of 2020
                     // removable at some point when raising minimal version
                     closeTipOfTheDay()
+                }
+            }
+        }
+
+        fun closeProject() {
+            with(remoteRobot) {
+                idea {
+                    actionMenu("File") {
+                        open()
+                        item("Close Project") {
+                            click()
+                        }
+                    }
                 }
             }
         }
