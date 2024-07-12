@@ -371,7 +371,6 @@ promote_task:
   env:
     ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
-    ARTIFACTS: org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip
   <<: *SETUP_GRADLE_CACHE
   promote_script: |
     source .cirrus/use-gradle-wrapper.sh
