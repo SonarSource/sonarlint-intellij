@@ -92,7 +92,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 
 // In order to run these test change the url triggerOpenHotspotRequest to some other port than 64120 depending on number of IntelliJ instances
-@EnabledIf("isIdea")
+@EnabledIf("isIdeaCommunity")
 class ConnectedIdeaTests : BaseUiTest() {
 
     companion object {
@@ -476,6 +476,18 @@ class ConnectedIdeaTests : BaseUiTest() {
             )
             enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false, "Orchestrator")
             verifyTaintTabContainsMessages("The project is not bound to SonarCloud/SonarQube")
+        }
+
+        @Test
+        fun should_analyze_swift() = uiTest {
+            openExistingProject("sample-swift")
+
+            openFile("file.swift")
+            verifyCurrentFileTabContainsMessages(
+                "Found 1 issue in 1 file",
+                "file.swift",
+                "Use \"try\" or \"try?\" here instead; \"try!\" disables error propagation."
+            )
         }
 
     }
