@@ -27,6 +27,28 @@ fun RemoteRobot.isCLion() = callJs<Boolean>("new String(com.intellij.openapi.app
 /** com.intellij.util.PlatformUtils.isGoIde() should not be used as it is marked as internal */
 fun RemoteRobot.isGoLand() = callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('goland')")
 
+fun RemoteRobot.isPhpStorm() =
+    callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('phpstorm')")
+
+fun RemoteRobot.isPyCharm() =
+    callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('pycharm')")
+
+fun RemoteRobot.isRider() =
+    callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('rider')")
+
+fun RemoteRobot.isIdea() =
+    callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
+
+fun RemoteRobot.isIdeaCommunity(): Boolean {
+    return callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
+        && callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('community')")
+}
+
+fun RemoteRobot.isIdeaUltimate(): Boolean {
+    return callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
+        && callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('ultimate')")
+}
+
 /**
  *  Check if the Go plugin is available, currently bundled in GoLand and as a plugin from the marketplace for IntelliJ
  *  IDEA Ultimate. The plugin was [open source](https://github.com/go-lang-plugin-org/go-lang-idea-plugin/tree/master)
@@ -35,3 +57,5 @@ fun RemoteRobot.isGoLand() = callJs<Boolean>("new String(com.intellij.openapi.ap
  */
 fun RemoteRobot.isGoPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('org.jetbrains.plugins.go'))")
 fun RemoteRobot.isSQLPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('com.intellij.database'))")
+fun RemoteRobot.isJavaScriptPlugin() =
+    callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('JavaScript'))")

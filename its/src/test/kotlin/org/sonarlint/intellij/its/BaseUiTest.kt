@@ -33,6 +33,13 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
+import org.sonarlint.intellij.its.fixtures.isIdea
+import org.sonarlint.intellij.its.fixtures.isIdeaCommunity
+import org.sonarlint.intellij.its.fixtures.isIdeaUltimate
+import org.sonarlint.intellij.its.fixtures.isJavaScriptPlugin
+import org.sonarlint.intellij.its.fixtures.isPhpStorm
+import org.sonarlint.intellij.its.fixtures.isPyCharm
+import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.isSQLPlugin
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
@@ -59,33 +66,45 @@ open class BaseUiTest {
         }
 
         @JvmStatic
-        fun isCLionOrGoLand(): Boolean {
-            return remoteRobot.isCLion() || remoteRobot.isGoLand()
-        }
+        fun isIdea() = remoteRobot.isIdea()
 
         @JvmStatic
-        fun isCLion(): Boolean {
-            return remoteRobot.isCLion()
-        }
+        fun isIdeaCommunity() = remoteRobot.isIdeaCommunity()
+
+        @JvmStatic
+        fun isIdeaUltimate() = remoteRobot.isIdeaUltimate()
+
+        @JvmStatic
+        fun isCLion() = remoteRobot.isCLion()
+
+        @JvmStatic
+        fun isPhpStorm() = remoteRobot.isPhpStorm()
+
+        @JvmStatic
+        fun isPyCharm() = remoteRobot.isPyCharm()
+
+        @JvmStatic
+        fun isWebStorm() = remoteRobot.isIdea() && remoteRobot.isJavaScriptPlugin()
+
+        @JvmStatic
+        fun isRider() = remoteRobot.isRider()
 
         /**
          *  This only checks for the GoLand IDE, if you want to check for the Go language support in general (via the
          *  Go plugin), use [BaseUiTest.isGoPlugin]!
          */
         @JvmStatic
-        fun isGoLand(): Boolean {
-            return remoteRobot.isGoLand()
-        }
+        fun isGoLand() = remoteRobot.isGoLand()
 
         /**
          *  This one checks for the Go language support in general (via the Go plugin), if you want to check for the
          *  GoLand IDE, use [BaseUiTest.isGoLand]!
          */
         @JvmStatic
-        fun isGoPlugin(): Boolean = remoteRobot.isGoPlugin()
+        fun isGoPlugin() = remoteRobot.isGoPlugin()
 
         @JvmStatic
-        fun isSQLPlugin(): Boolean = remoteRobot.isSQLPlugin()
+        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && remoteRobot.isIdeaCommunity()
 
         private fun closeAllDialogs() {
             remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {

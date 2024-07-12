@@ -41,6 +41,12 @@ fun RemoteRobot.openProjectFileBrowserDialog(function: FileBrowserDialogFixture.
   "Open File or Project",
 )).apply(function)
 
+fun RemoteRobot.openSolutionBrowserDialog(function: FileBrowserDialogFixture.() -> Unit = {}) = fileBrowserDialog(
+  arrayOf(
+    "Select Path",
+  )
+).apply(function)
+
 
 @FixtureName("File Browser Dialog")
 class FileBrowserDialogFixture(

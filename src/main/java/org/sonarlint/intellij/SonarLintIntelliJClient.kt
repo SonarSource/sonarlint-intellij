@@ -701,7 +701,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
         return filesInContentRoots.mapNotNull { file ->
             val forcedLanguage = forcedLanguages[file]?.let { fl -> Language.valueOf(fl.name) }
-            getRelativePathForAnalysis(module.project, file)?.let { relativePath ->
+            getRelativePathForAnalysis(module, file)?.let { relativePath ->
                 toClientFileDto(
                     module.project,
                     configScopeId,
