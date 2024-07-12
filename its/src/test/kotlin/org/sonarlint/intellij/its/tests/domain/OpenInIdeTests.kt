@@ -56,7 +56,6 @@ class OpenInIdeTests {
                     dialog("New Connection: Configuration completed") {
                         pressCreate()
                     }
-                    waitBackgroundTasksFinished()
                 }
             }
         }
@@ -68,7 +67,6 @@ class OpenInIdeTests {
                         jbTextFields()[1].text = "Orchestrator"
                         buttonContainsText("Connect to This SonarQube").click()
                     }
-                    waitBackgroundTasksFinished()
                 }
             }
         }
@@ -81,6 +79,11 @@ class OpenInIdeTests {
 
         fun verifyIssueOpened() {
             verifyEditorOpened("Bar.java")
+            with(remoteRobot) {
+                idea {
+                    waitBackgroundTasksFinished()
+                }
+            }
             verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
             verifyCurrentFileRuleDescriptionTabContains("Classes should not be empty")
         }
