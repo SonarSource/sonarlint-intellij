@@ -30,6 +30,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiManager
 import java.net.URI
+import java.time.Instant
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -113,9 +114,14 @@ class SuggestAiFixAction(
 
             val inlayQuickFixPanel = ApplicationManager.getApplication().computeInEDT {
                 if (editor != null) {
-                    InlayQuickFixPanel(
-                        project, editor, textRange.startLine, finding.getId(), vFile, null, 0, null, finding.getMessage()
+                    val inlay = InlayQuickFixPanel(project, editor, textRange.startLine, finding.getId(), vFile, null, 0, null)
+                    val snippetData = inlayHolder.getInlayData(finding.getId())?.inlaySnippets ?: mutableListOf()
+                    snippetData.add(InlaySnippetData(inlay, AiFindingState.INIT, 0, null))
+                    inlayHolder.addInlayData(
+                        finding.getId(),
+                        InlayData(snippetData, AiFindingState.INIT, Instant.now(), null, false, finding.getMessage())
                     )
+                    inlay
                 } else {
                     null
                 }
@@ -161,7 +167,7 @@ class SuggestAiFixAction(
                                         success.suggestedFix!!.diffs?.forEachIndexed { index, diffDto ->
                                             run {
                                                 ApplicationManager.getApplication().computeInEDT {
-                                                    InlayQuickFixPanel(
+                                                    val inlay = InlayQuickFixPanel(
                                                         project,
                                                         editor,
                                                         diffDto.beforeLineRangeInDocument.start,
@@ -169,9 +175,25 @@ class SuggestAiFixAction(
                                                         vFile,
                                                         success.correlationId,
                                                         index,
-                                                        success.suggestedFix!!.diffs.size,
-                                                        finding.getMessage()
-                                                    ).updatePanelWithData(
+                                                        success.suggestedFix!!.diffs.size
+                                                    )
+
+                                                    val snippetData =
+                                                        inlayHolder.getInlayData(finding.getId())?.inlaySnippets ?: mutableListOf()
+                                                    snippetData.add(InlaySnippetData(inlay, AiFindingState.INIT, 0, null))
+                                                    inlayHolder.addInlayData(
+                                                        finding.getId(),
+                                                        InlayData(
+                                                            snippetData,
+                                                            AiFindingState.INIT,
+                                                            Instant.now(),
+                                                            success.correlationId,
+                                                            false,
+                                                            finding.getMessage()
+                                                        )
+                                                    )
+
+                                                    inlay.updatePanelWithData(
                                                         psiFile,
                                                         diffDto.after,
                                                         diffDto.beforeLineRangeInDocument.start,

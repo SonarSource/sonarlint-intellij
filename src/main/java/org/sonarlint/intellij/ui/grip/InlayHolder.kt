@@ -26,6 +26,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import java.time.Instant
 import java.util.UUID
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -135,9 +136,24 @@ class InlayHolder(private val project: Project) {
                 inlaySnippet.inlayPanel.file,
                 inlaySnippet.inlayPanel.correlationId,
                 inlaySnippet.index,
-                inlaySnippet.total,
-                ruleMessage
+                inlaySnippet.total
             )
+
+
+            val snippetData = getInlayData(inlaySnippet.inlayPanel.issueId)?.inlaySnippets ?: mutableListOf()
+            snippetData.add(InlaySnippetData(newSnippet, AiFindingState.INIT, inlaySnippet.index, inlaySnippet.total))
+            addInlayData(
+                inlaySnippet.inlayPanel.issueId,
+                InlayData(
+                    snippetData,
+                    AiFindingState.INIT,
+                    Instant.now(),
+                    inlaySnippet.inlayPanel.correlationId,
+                    false,
+                    ruleMessage
+                )
+            )
+
             newSnippet.updatePanelWithData(
                 inlaySnippet.inlayPanel.psiFile!!,
                 inlaySnippet.inlayPanel.newCode!!,

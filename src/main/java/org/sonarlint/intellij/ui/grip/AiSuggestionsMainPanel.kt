@@ -199,6 +199,16 @@ class AiSuggestionsMainPanel(project: Project) : SimpleToolWindowPanel(false, tr
         switchCard()
     }
 
+    fun addFindings(findings: List<Finding>) {
+        selectedFinding = findings.first()
+        aiSuggestionsPanel.setSelectedFinding(findings.first())
+        val listModel = fixHistoryList.model as DefaultListModel
+        removeFinding(findings.first().getId())
+        findings.forEach { listModel.add(0, it) }
+        fixHistoryList.selectedIndex = 0
+        switchCard()
+    }
+
     fun addFinding(finding: Finding) {
         selectedFinding = finding
         aiSuggestionsPanel.setSelectedFinding(finding)
