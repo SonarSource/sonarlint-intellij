@@ -53,7 +53,6 @@ import java.awt.Cursor
 import java.awt.Font
 import java.awt.event.ComponentEvent
 import java.net.URI
-import java.time.Instant
 import java.util.UUID
 import javax.swing.JButton
 import javax.swing.SwingConstants
@@ -77,7 +76,6 @@ class InlayQuickFixPanel(
     val correlationId: UUID?,
     val index: Int,
     private val total: Int?,
-    ruleMessage: String,
 ) : RoundedPanelWithBackgroundColor(), Disposable {
 
     private val centerPanel = RoundedPanelWithBackgroundColor()
@@ -101,13 +99,6 @@ class InlayQuickFixPanel(
         val viewport = (editor as? EditorImpl)?.scrollPane?.viewport
         viewport?.dispatchEvent(ComponentEvent(viewport, ComponentEvent.COMPONENT_RESIZED))
 
-        val inlayHolder = getService(project, InlayHolder::class.java)
-        val snippetData = inlayHolder.getInlayData(issueId)?.inlaySnippets ?: mutableListOf()
-        snippetData.add(InlaySnippetData(this, AiFindingState.INIT, index, total))
-        inlayHolder.addInlayData(
-            issueId,
-            InlayData(snippetData, AiFindingState.INIT, Instant.now(), correlationId, false, ruleMessage)
-        )
         EditorUtil.disposeWithEditor(editor, this)
     }
 

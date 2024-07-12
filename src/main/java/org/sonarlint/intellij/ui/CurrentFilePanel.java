@@ -36,13 +36,17 @@ import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import javax.swing.AbstractAction;
+import javax.swing.JButton;
 import javax.swing.JScrollPane;
+import org.jdesktop.swingx.HorizontalLayout;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
@@ -53,6 +57,7 @@ import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.messages.StatusListener;
+import org.sonarlint.intellij.ui.grip.SuggestAiFixesAction;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarGotItTooltipsUtils;
 import org.sonarlint.intellij.util.SonarLintActions;
@@ -69,6 +74,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final JBPanelWithEmptyText issuesPanel;
   private final JScrollPane treeScrollPane;
+  private final JButton aiFixesButton;
   private final AnAction analyzeCurrentFileAction = SonarLintActions.getInstance().analyzeCurrentFileAction();
   private final AnAction restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction();
   private VirtualFile currentFile;
@@ -90,6 +96,22 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     var statusText = issuesPanel.getEmptyText();
     statusText.setText("No analysis done");
     issuesPanel.add(treeScrollPane, BorderLayout.CENTER);
+    aiFixesButton = new JButton("Suggest AI Fixes");
+    aiFixesButton.setAction(new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        var issues = currentIssues.stream().filter(f -> !f.isResolved()).toList();
+        if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)) {
+          var newIssues = issues.stream().filter(LiveFinding::isOnNewCode).toList();
+          SuggestAiFixesAction.Companion.suggestAiFixes(project, currentFile, newIssues);
+        } else {
+          SuggestAiFixesAction.Companion.suggestAiFixes(project, currentFile, issues);
+        }
+      }
+    });
+    var buttonPanel = new JBPanel<CurrentFilePanel>(new HorizontalLayout(5));
+    buttonPanel.add(aiFixesButton);
+    issuesPanel.add(buttonPanel, BorderLayout.SOUTH);
     disableEmptyDisplay(false);
 
     var mainPanel = new JBPanel<CurrentFilePanel>(new BorderLayout());

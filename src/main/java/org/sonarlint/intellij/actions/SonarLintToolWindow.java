@@ -382,6 +382,20 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
+  public void tryShowAiLoading(List<Finding> findings) {
+    openAiSuggestionsTab();
+    bringToFront();
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(SonarLintToolWindowFactory.AI_SUGGESTIONS_TAB_TITLE);
+      if (content != null) {
+        var aiSuggestionsPanel = (AiSuggestionsMainPanel) content.getComponent();
+        aiSuggestionsPanel.addFindings(findings);
+      }
+    }
+  }
+
   public void tryShowAiLoading(Finding finding) {
     openAiSuggestionsTab();
     bringToFront();

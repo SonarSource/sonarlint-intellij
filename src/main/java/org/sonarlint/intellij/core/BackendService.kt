@@ -119,9 +119,12 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.V
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidUpdateFileSystemParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.FeedbackRating
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.IssueToFixDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.ProvideFeedbackParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.SuggestFixParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.SuggestFixResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.SuggestFixesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.SuggestFixesResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.grip.SuggestionReviewStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedParams
@@ -1032,6 +1035,29 @@ class BackendService : Disposable {
                     issueMessage,
                     issueRange,
                     ruleKey
+                )
+            )
+        }
+    }
+
+    fun suggestFixes(
+        serviceUri: URI,
+        authenticationToken: String,
+        promptVersion: String,
+        module: Module,
+        fileUri: URI,
+        issueList: List<IssueToFixDto>,
+    ): CompletableFuture<SuggestFixesResponse> {
+        val configScopeId = moduleId(module)
+        return requestFromBackend {
+            it.gripService.suggestFixes(
+                SuggestFixesParams(
+                    serviceUri,
+                    authenticationToken,
+                    promptVersion,
+                    configScopeId,
+                    fileUri,
+                    issueList
                 )
             )
         }
