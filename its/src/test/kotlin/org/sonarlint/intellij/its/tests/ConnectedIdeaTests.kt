@@ -58,11 +58,14 @@ import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
+import org.sonarlint.intellij.its.tests.domain.SharedConfigurationTests.Companion.importConfiguration
+import org.sonarlint.intellij.its.tests.domain.SharedConfigurationTests.Companion.shareConfiguration
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.showResolvedIssues
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.closeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
@@ -113,6 +116,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         const val PROJECT_KEY = "sample-scala"
         const val MODULE_PROJECT_KEY = "sample-scala-mod"
         const val ISSUE_PROJECT_KEY = "sample-java-issues"
+        const val SHARED_CONNECTED_MODE_KEY = "shared-connected-mode"
         val SONARCLOUD_ISSUE_PROJECT_KEY = projectKey(ISSUE_PROJECT_KEY)
 
         private var firstHotspotKey: String? = null
@@ -283,6 +287,39 @@ class ConnectedIdeaTests : BaseUiTest() {
 
     }
 
+    @Tag("Suite1")
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class SharedConfigTests : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/shared-connected-mode-java-issue.xml"))
+            ORCHESTRATOR.server.provisionProject(SHARED_CONNECTED_MODE_KEY, "Shared Connected Mode")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                SHARED_CONNECTED_MODE_KEY,
+                "java",
+                "SonarLint IT ConnectedMode Java Issue"
+            )
+            // Build and analyze project to raise issue
+            executeBuildWithMaven("projects/shared-connected-mode/pom.xml", ORCHESTRATOR)
+            firstIssueKey = getFirstIssueKey(adminWsClient)
+        }
+
+        @Test
+        fun should_export_then_import_connected_mode_configuration() = uiTest {
+            openExistingProject("shared-connected-mode")
+            enableConnectedModeFromCurrentFilePanel(SHARED_CONNECTED_MODE_KEY, true, "Orchestrator")
+            shareConfiguration()
+            enableConnectedModeFromCurrentFilePanel(SHARED_CONNECTED_MODE_KEY, false, "Orchestrator")
+            clearConnections()
+            closeProject()
+            openExistingProject("shared-connected-mode", copyProjectFiles = false)
+            importConfiguration(tokenValue)
+        }
+
+    }
+
     @Tag("Suite2")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -374,7 +411,7 @@ class ConnectedIdeaTests : BaseUiTest() {
 
             enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "SonarCloud-IT")
         }
-
+ 
     }
 
     @Tag("Suite1")
