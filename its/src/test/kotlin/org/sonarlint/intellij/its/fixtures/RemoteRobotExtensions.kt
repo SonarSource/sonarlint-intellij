@@ -39,11 +39,6 @@ fun RemoteRobot.isRider() =
 fun RemoteRobot.isIdea() =
     callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
 
-fun RemoteRobot.isIdeaCommunity(): Boolean {
-    return callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
-        && callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('community')")
-}
-
 fun RemoteRobot.isIdeaUltimate(): Boolean {
     return callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
         && callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('ultimate')")

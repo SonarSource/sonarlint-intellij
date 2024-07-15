@@ -34,7 +34,6 @@ import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
 import org.sonarlint.intellij.its.fixtures.isIdea
-import org.sonarlint.intellij.its.fixtures.isIdeaCommunity
 import org.sonarlint.intellij.its.fixtures.isIdeaUltimate
 import org.sonarlint.intellij.its.fixtures.isJavaScriptPlugin
 import org.sonarlint.intellij.its.fixtures.isPhpStorm
@@ -66,10 +65,7 @@ open class BaseUiTest {
         }
 
         @JvmStatic
-        fun isIdea() = remoteRobot.isIdea()
-
-        @JvmStatic
-        fun isIdeaCommunity() = remoteRobot.isIdeaCommunity()
+        fun isIdeaCommunity() = remoteRobot.isIdea() && !remoteRobot.isIdeaUltimate()
 
         @JvmStatic
         fun isIdeaUltimate() = remoteRobot.isIdeaUltimate()
@@ -104,7 +100,7 @@ open class BaseUiTest {
         fun isGoPlugin() = remoteRobot.isGoPlugin()
 
         @JvmStatic
-        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && remoteRobot.isIdeaCommunity()
+        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIdeaCommunity()
 
         private fun closeAllDialogs() {
             remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
