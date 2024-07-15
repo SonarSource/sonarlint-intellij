@@ -209,12 +209,7 @@ class SuggestAiFixesAction(
                                     }
                                 } else {
                                     val error = result.suggestions.left
-
-                                    inlayHolder.getInlayData(findings[index].getId())?.inlaySnippets?.forEach { inlaySnippet ->
-                                        inlayHolder.updateStatusInlayPanel(
-                                            AiFindingState.FAILED, findings[index].getId(), inlaySnippet.inlayPanel
-                                        )
-                                    }
+                                    inlayHolder.updateAllFixesWhenFailureAndNoPanel(findings[index].getId())
                                     runOnUiThread(project) {
                                         getService(project, SonarLintToolWindow::class.java).tryShowAiResponseFailure(
                                             error.message, findings[index]
@@ -224,11 +219,7 @@ class SuggestAiFixesAction(
                             }
                         } catch (e: ProcessCanceledException) {
                             findings.forEach {
-                                inlayHolder.getInlayData(it.getId())?.inlaySnippets?.forEach { inlaySnippet ->
-                                    inlayHolder.updateStatusInlayPanel(
-                                        AiFindingState.FAILED, it.getId(), inlaySnippet.inlayPanel
-                                    )
-                                }
+                                inlayHolder.updateAllFixesWhenFailureAndNoPanel(it.getId())
                             }
                             e.message?.let { SonarLintConsole.get(project).debug(it) }
                             runOnUiThread(project) {
@@ -238,11 +229,7 @@ class SuggestAiFixesAction(
                             }
                         } catch (e: Exception) {
                             findings.forEach {
-                                inlayHolder.getInlayData(it.getId())?.inlaySnippets?.forEach { inlaySnippet ->
-                                    inlayHolder.updateStatusInlayPanel(
-                                        AiFindingState.FAILED, it.getId(), inlaySnippet.inlayPanel
-                                    )
-                                }
+                                inlayHolder.updateAllFixesWhenFailureAndNoPanel(it.getId())
                             }
                             SonarLintConsole.get(project).error("Fix issue", e)
                             runOnUiThread(project) {
