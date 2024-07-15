@@ -106,8 +106,14 @@ class OpeningUtils {
                 idea {
                     actionMenu("File") {
                         open()
-                        item("Close Project") {
-                            click()
+                        if (isRider()) {
+                            item("Close Solution") {
+                                click()
+                            }
+                        } else {
+                            item("Close Project") {
+                                click()
+                            }
                         }
                     }
                 }
