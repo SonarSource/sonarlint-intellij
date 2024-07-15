@@ -168,7 +168,7 @@ class SettingsUtils {
             }
         }
 
-        private fun optionalIdeaFrame(): IdeaFrame? {
+        fun optionalIdeaFrame(): IdeaFrame? {
             var ideaFrame: IdeaFrame? = null
             with(remoteRobot) {
                 optionalStep {

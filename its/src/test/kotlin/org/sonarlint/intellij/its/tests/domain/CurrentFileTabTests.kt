@@ -30,6 +30,7 @@ import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.optionalIdeaFrame
 
 class CurrentFileTabTests {
 
@@ -141,20 +142,18 @@ class CurrentFileTabTests {
         }
 
         fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String) {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarLint") {
-                        ensureOpen()
-                        tabTitleContains("Current File") { select() }
-                        content("CurrentFilePanel") {
-                            toolBarButton("Configure SonarLint").click()
-                        }
+            optionalIdeaFrame()?.apply {
+                toolWindow("SonarLint") {
+                    ensureOpen()
+                    tabTitleContains("Current File") { select() }
+                    content("CurrentFilePanel") {
+                        toolBarButton("Configure SonarLint").click()
                     }
-                    if (enabled) {
-                        projectKey?.let { enableConnectedMode(it, connectionName) }
-                    } else {
-                        disableConnectedMode()
-                    }
+                }
+                if (enabled) {
+                    projectKey?.let { enableConnectedMode(it, connectionName) }
+                } else {
+                    disableConnectedMode()
                 }
             }
         }
