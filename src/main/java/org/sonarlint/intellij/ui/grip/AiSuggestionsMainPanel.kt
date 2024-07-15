@@ -375,7 +375,7 @@ class AiSuggestionsMainPanel(project: Project) : SimpleToolWindowPanel(false, tr
             val inlayHolder = getService(project, InlayHolder::class.java)
             val inlays = inlayHolder.getInlayData(selectedFinding!!.getId())
 
-            inlays?.inlaySnippets?.forEach { inlay ->
+            inlays?.inlaySnippets?.sortedBy { it.inlayPanel.inlayLine }?.forEach { inlay ->
                 listModelLoc.addElement(inlay)
             }
         } else {

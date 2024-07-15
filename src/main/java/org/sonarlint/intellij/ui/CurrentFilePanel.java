@@ -76,6 +76,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private final JScrollPane treeScrollPane;
   private final AnAction analyzeCurrentFileAction = SonarLintActions.getInstance().analyzeCurrentFileAction();
   private final AnAction restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction();
+  private final JButton aiFixesButton = new JButton();
   private VirtualFile currentFile;
   private Collection<LiveIssue> currentIssues;
 
@@ -95,7 +96,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     var statusText = issuesPanel.getEmptyText();
     statusText.setText("No analysis done");
     issuesPanel.add(treeScrollPane, BorderLayout.CENTER);
-    var aiFixesButton = new JButton();
+    aiFixesButton.setVisible(false);
     aiFixesButton.setAction(new AbstractAction("Suggest AI Fixes") {
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -197,6 +198,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     }
     expandTree();
     updateIcon(file, this.currentIssues);
+    aiFixesButton.setVisible(!currentIssues.isEmpty());
   }
 
   private static void populateSubTree(Tree tree, IssueTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveIssue>> issues) {
