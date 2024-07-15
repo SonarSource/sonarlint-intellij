@@ -40,6 +40,7 @@ import javax.swing.ScrollPaneConstants
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 
 // Inspired from https://github.com/cursive-ide/component-inlay-example and com.intellij.util.ui.codereview.diff.EditorComponentInlaysManager
@@ -85,6 +86,7 @@ class EditorComponentInlaysManager(val editor: EditorImpl) : Disposable {
                 }
         } catch (e: IndexOutOfBoundsException) {
             val project = editor.project ?: return null
+            SonarLintConsole.get(project).error("Fix is invalid", e)
             get(project).simpleNotification(
                 null,
                 "Fix became invalid. Please refresh the AI suggestions.",

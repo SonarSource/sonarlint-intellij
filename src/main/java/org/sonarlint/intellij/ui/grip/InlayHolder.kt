@@ -136,7 +136,8 @@ class InlayHolder(private val project: Project) {
                 inlaySnippet.inlayPanel.file,
                 inlaySnippet.inlayPanel.correlationId,
                 inlaySnippet.index,
-                inlaySnippet.total
+                inlaySnippet.total,
+                inlaySnippet.inlayPanel.ruleKey
             )
 
 
