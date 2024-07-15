@@ -114,7 +114,17 @@ class SuggestAiFixAction(
 
             val inlayQuickFixPanel = ApplicationManager.getApplication().computeInEDT {
                 if (editor != null) {
-                    val inlay = InlayQuickFixPanel(project, editor, textRange.startLine, finding.getId(), vFile, null, 0, null)
+                    val inlay = InlayQuickFixPanel(
+                        project,
+                        editor,
+                        textRange.startLine,
+                        finding.getId(),
+                        vFile,
+                        null,
+                        0,
+                        null,
+                        finding.getRuleKey()
+                    )
                     val snippetData = inlayHolder.getInlayData(finding.getId())?.inlaySnippets ?: mutableListOf()
                     snippetData.add(InlaySnippetData(inlay, AiFindingState.INIT, 0, null))
                     inlayHolder.addInlayData(
@@ -175,7 +185,8 @@ class SuggestAiFixAction(
                                                         vFile,
                                                         success.correlationId,
                                                         index,
-                                                        success.suggestedFix!!.diffs.size
+                                                        success.suggestedFix!!.diffs.size,
+                                                        finding.getRuleKey()
                                                     )
 
                                                     val snippetData =

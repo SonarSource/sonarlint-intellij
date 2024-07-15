@@ -151,7 +151,8 @@ class SuggestAiFixesAction(
                                                             file,
                                                             success.correlationId,
                                                             indexDiff,
-                                                            success.suggestedFix!!.diffs.size
+                                                            success.suggestedFix!!.diffs.size,
+                                                            findings[index].getRuleKey()
                                                         )
 
                                                         val snippetData =

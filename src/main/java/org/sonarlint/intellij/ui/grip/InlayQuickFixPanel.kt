@@ -58,6 +58,7 @@ import javax.swing.JButton
 import javax.swing.SwingConstants
 import org.jdesktop.swingx.HorizontalLayout
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.BackendService
@@ -76,6 +77,7 @@ class InlayQuickFixPanel(
     val correlationId: UUID?,
     val index: Int,
     private val total: Int?,
+    val ruleKey: String,
 ) : RoundedPanelWithBackgroundColor(), Disposable {
 
     private val centerPanel = RoundedPanelWithBackgroundColor()
@@ -142,7 +144,7 @@ class InlayQuickFixPanel(
         centerPanel.add(loadingDecorator.component)
 
         val title = if (total != null) {
-            " (fix ${index + 1}/$total)"
+            " for $ruleKey (fix ${index + 1}/$total)"
         } else {
             ""
         }
@@ -258,6 +260,7 @@ class InlayQuickFixPanel(
 
             add(southPanel, BorderLayout.SOUTH)
         } catch (e: IndexOutOfBoundsException) {
+            SonarLintConsole.get(project).error("Fix is invalid", e)
             get(project).simpleNotification(
                 null,
                 "Fix became invalid. Please refresh the AI suggestions.",
