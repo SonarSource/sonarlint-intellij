@@ -30,11 +30,12 @@ import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.GotItTooltipFixture
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isBuildCommunity
+import org.sonarlint.intellij.its.fixtures.isBuildUltimate
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
 import org.sonarlint.intellij.its.fixtures.isIdea
-import org.sonarlint.intellij.its.fixtures.isIdeaUltimate
 import org.sonarlint.intellij.its.fixtures.isJavaScriptPlugin
 import org.sonarlint.intellij.its.fixtures.isPhpStorm
 import org.sonarlint.intellij.its.fixtures.isPyCharm
@@ -65,10 +66,10 @@ open class BaseUiTest {
         }
 
         @JvmStatic
-        fun isIdeaCommunity() = remoteRobot.isIdea() && !remoteRobot.isIdeaUltimate()
+        fun isIdeaCommunity() = remoteRobot.isIdea() && remoteRobot.isBuildCommunity()
 
         @JvmStatic
-        fun isIdeaUltimate() = remoteRobot.isIdeaUltimate()
+        fun isIdeaUltimate() = remoteRobot.isIdea() && remoteRobot.isBuildUltimate()
 
         @JvmStatic
         fun isCLion() = remoteRobot.isCLion()
