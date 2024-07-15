@@ -68,7 +68,7 @@ class InlayHolder(private val project: Project) {
         inlayPerIssueUuid[issueUuid]?.inlaySnippets?.remove(inlaySnippet)
     }
 
-    fun updateStatusInlayPanel(status: AiFindingState, issueUuid: UUID, inlayQuickFixPanel: InlayQuickFixPanel) {
+    fun updateStatusInlayPanel(status: AiFindingState, issueUuid: UUID, inlayQuickFixPanel: InlayQuickFixPanel?) {
         val inlayData = inlayPerIssueUuid[issueUuid]
         inlayData?.inlaySnippets?.filter { it.inlayPanel == inlayQuickFixPanel }?.forEach {
             it.status = status
@@ -124,6 +124,12 @@ class InlayHolder(private val project: Project) {
                 }
             )
         }
+    }
+
+    fun updateAllFixesWhenFailureAndNoPanel(issueUuid: UUID) {
+        val inlayData = inlayPerIssueUuid[issueUuid]
+        require(inlayData != null && inlayData.inlaySnippets.isEmpty()) { "Inlay snippets should be empty" }
+        inlayData.status = AiFindingState.FAILED
     }
 
     fun regenerateInlay(inlaySnippet: InlaySnippetData, editor: Editor, ruleMessage: String): InlayQuickFixPanel {

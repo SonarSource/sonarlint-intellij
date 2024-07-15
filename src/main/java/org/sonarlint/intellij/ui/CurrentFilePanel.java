@@ -74,7 +74,6 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final JBPanelWithEmptyText issuesPanel;
   private final JScrollPane treeScrollPane;
-  private final JButton aiFixesButton;
   private final AnAction analyzeCurrentFileAction = SonarLintActions.getInstance().analyzeCurrentFileAction();
   private final AnAction restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction();
   private VirtualFile currentFile;
@@ -96,8 +95,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     var statusText = issuesPanel.getEmptyText();
     statusText.setText("No analysis done");
     issuesPanel.add(treeScrollPane, BorderLayout.CENTER);
-    aiFixesButton = new JButton("Suggest AI Fixes");
-    aiFixesButton.setAction(new AbstractAction() {
+    var aiFixesButton = new JButton();
+    aiFixesButton.setAction(new AbstractAction("Suggest AI Fixes") {
       @Override
       public void actionPerformed(ActionEvent e) {
         var issues = currentIssues.stream().filter(f -> !f.isResolved()).toList();
