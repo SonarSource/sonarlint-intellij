@@ -75,7 +75,7 @@ class ExclusionUtils {
                     dialog("Project Settings") {
                         findText("File Exclusions").click()
                         findText(fileName).click()
-                        actionButton(ActionButtonFixture.byTooltipText("Remove")).click()
+                        actionButtons(ActionButtonFixture.byType())[1].clickWhenEnabled()
                         button("OK").click()
                     }
                 }

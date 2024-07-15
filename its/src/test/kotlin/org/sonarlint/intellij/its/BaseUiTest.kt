@@ -45,7 +45,7 @@ import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.resetFocusOnNewCode
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.goBackToWelcomeScreen
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.closeProject
 import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
 import org.sonarlint.intellij.its.utils.VisualTreeDumpOnFailure
@@ -211,13 +211,13 @@ open class BaseUiTest {
     fun quitProject() {
         closeAllGotItTooltips()
         closeAllDialogs()
-        goBackToWelcomeScreen()
     }
 
     @AfterEach
     fun disableConnectedMode() {
         resetFocusOnNewCode()
         enableConnectedModeFromCurrentFilePanel(null, false, "Orchestrator")
+        closeProject()
     }
 
 }

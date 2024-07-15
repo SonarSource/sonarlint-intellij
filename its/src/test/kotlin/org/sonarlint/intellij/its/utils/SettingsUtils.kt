@@ -168,17 +168,6 @@ class SettingsUtils {
             }
         }
 
-        fun goBackToWelcomeScreen() {
-            optionalIdeaFrame()?.apply {
-                actionMenu("File") {
-                    open()
-                    item("Close Project") {
-                        click()
-                    }
-                }
-            }
-        }
-
         private fun optionalIdeaFrame(): IdeaFrame? {
             var ideaFrame: IdeaFrame? = null
             with(remoteRobot) {
