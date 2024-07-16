@@ -24,8 +24,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
+import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
@@ -35,12 +37,23 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
-    fun should_exclude_rule() = uiTest {
+    fun should_exclude_rule_and_focus_on_new_code() = uiTest {
         openExistingProject("sample-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         toggleRule("java:S2094", "Classes should not be empty")
         verifyCurrentFileTabContainsMessages("No issues to display")
         toggleRule("java:S2094", "Classes should not be empty")
+        setFocusOnNewCode()
+        analyzeAndVerifyReportTabContainsMessages(
+            "Found 1 new issue in 1 file from last 30 days",
+            "No new Security Hotspots from last 30 days",
+            "No older issues",
+            "No older Security Hotspots"
+        )
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 new issue in 1 file from last 30 days",
+            "No older issues",
+        )
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
     }
 
