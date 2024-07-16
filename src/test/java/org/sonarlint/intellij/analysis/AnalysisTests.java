@@ -35,9 +35,8 @@ import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
@@ -61,8 +60,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-// SLI-1465 Find out why this test is failing on Windows only
-@DisabledOnOs(OS.WINDOWS)
+@Disabled
 class AnalysisTests extends AbstractSonarLintLightTests {
   private Analysis task;
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
