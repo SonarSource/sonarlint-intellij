@@ -28,6 +28,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -351,6 +352,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
+        @Order(4)
         fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
             openExistingProject("sample-java-issues")
 
@@ -376,6 +378,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
+        @Order(1)
         fun click_open_in_ide_issue_then_should_manually_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
             openExistingProject("sample-java-issues")
@@ -385,6 +388,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
+        @Order(2)
         fun click_open_in_ide_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
             openExistingProject("sample-java-issues")
@@ -394,6 +398,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
+        @Order(3)
         fun should_create_connection_with_sonarcloud_and_analyze_issue() = uiTest {
             addSonarCloudConnection(sonarCloudToken, "SonarCloud-IT")
 
