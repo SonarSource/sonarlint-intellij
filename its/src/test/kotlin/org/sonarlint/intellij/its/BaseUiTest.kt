@@ -101,7 +101,7 @@ open class BaseUiTest {
         fun isGoPlugin() = remoteRobot.isGoPlugin()
 
         @JvmStatic
-        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIdeaCommunity()
+        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIdeaUltimate()
 
         private fun closeAllDialogs() {
             remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
