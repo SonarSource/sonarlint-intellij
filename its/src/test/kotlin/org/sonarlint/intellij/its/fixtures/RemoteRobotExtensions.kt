@@ -39,15 +39,11 @@ fun RemoteRobot.isRider() =
 fun RemoteRobot.isIdea() =
     callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
 
-fun RemoteRobot.isIdeaCommunity(): Boolean {
-    return callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
-        && callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('community')")
-}
+fun RemoteRobot.isBuildUltimate() =
+    callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getBuild()).toLowerCase().includes('iu')")
 
-fun RemoteRobot.isIdeaUltimate(): Boolean {
-    return callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('idea')")
-        && callJs("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getFullApplicationName()).toLowerCase().includes('ultimate')")
-}
+fun RemoteRobot.isBuildCommunity() =
+    callJs<Boolean>("new String(com.intellij.openapi.application.ApplicationInfo.getInstance().getBuild()).toLowerCase().includes('ic')")
 
 /**
  *  Check if the Go plugin is available, currently bundled in GoLand and as a plugin from the marketplace for IntelliJ

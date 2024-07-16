@@ -23,6 +23,7 @@ import com.intellij.remoterobot.utils.waitFor
 import java.awt.Point
 import java.io.File
 import java.time.Duration
+import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
@@ -32,6 +33,7 @@ import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
+import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.optionalIdeaFrame
 
 class OpeningUtils {
 
@@ -102,10 +104,14 @@ class OpeningUtils {
         }
 
         fun closeProject() {
-            with(remoteRobot) {
-                idea {
-                    actionMenu("File") {
-                        open()
+            optionalIdeaFrame()?.apply {
+                actionMenu("File") {
+                    open()
+                    if (isRider()) {
+                        item("Close Solution") {
+                            click()
+                        }
+                    } else {
                         item("Close Project") {
                             click()
                         }

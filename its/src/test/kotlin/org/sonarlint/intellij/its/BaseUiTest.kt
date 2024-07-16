@@ -30,12 +30,12 @@ import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.GotItTooltipFixture
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isBuildCommunity
+import org.sonarlint.intellij.its.fixtures.isBuildUltimate
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
 import org.sonarlint.intellij.its.fixtures.isIdea
-import org.sonarlint.intellij.its.fixtures.isIdeaCommunity
-import org.sonarlint.intellij.its.fixtures.isIdeaUltimate
 import org.sonarlint.intellij.its.fixtures.isJavaScriptPlugin
 import org.sonarlint.intellij.its.fixtures.isPhpStorm
 import org.sonarlint.intellij.its.fixtures.isPyCharm
@@ -45,7 +45,7 @@ import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.resetFocusOnNewCode
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.goBackToWelcomeScreen
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.closeProject
 import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
 import org.sonarlint.intellij.its.utils.VisualTreeDumpOnFailure
@@ -66,13 +66,10 @@ open class BaseUiTest {
         }
 
         @JvmStatic
-        fun isIdea() = remoteRobot.isIdea()
+        fun isIdeaCommunity() = remoteRobot.isIdea() && remoteRobot.isBuildCommunity()
 
         @JvmStatic
-        fun isIdeaCommunity() = remoteRobot.isIdeaCommunity()
-
-        @JvmStatic
-        fun isIdeaUltimate() = remoteRobot.isIdeaUltimate()
+        fun isIdeaUltimate() = remoteRobot.isIdea() && remoteRobot.isBuildUltimate()
 
         @JvmStatic
         fun isCLion() = remoteRobot.isCLion()
@@ -104,7 +101,7 @@ open class BaseUiTest {
         fun isGoPlugin() = remoteRobot.isGoPlugin()
 
         @JvmStatic
-        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && remoteRobot.isIdeaCommunity()
+        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIdeaCommunity()
 
         private fun closeAllDialogs() {
             remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
@@ -214,13 +211,13 @@ open class BaseUiTest {
     fun quitProject() {
         closeAllGotItTooltips()
         closeAllDialogs()
-        goBackToWelcomeScreen()
     }
 
     @AfterEach
     fun disableConnectedMode() {
         resetFocusOnNewCode()
         enableConnectedModeFromCurrentFilePanel(null, false, "Orchestrator")
+        closeProject()
     }
 
 }

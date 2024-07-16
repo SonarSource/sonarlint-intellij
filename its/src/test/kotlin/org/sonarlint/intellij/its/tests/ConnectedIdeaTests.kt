@@ -106,6 +106,7 @@ class ConnectedIdeaTests : BaseUiTest() {
             .addBundledPluginToKeep("sonar-scala")
             .addBundledPluginToKeep("sonar-php")
             .addBundledPluginToKeep("sonar-python")
+            .addBundledPluginToKeep("sonar-swift")
             .build()
 
         private lateinit var adminWsClient: WsClient
@@ -481,6 +482,8 @@ class ConnectedIdeaTests : BaseUiTest() {
         @Test
         fun should_analyze_swift() = uiTest {
             openExistingProject("sample-swift")
+
+            enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator")
 
             openFile("file.swift")
             verifyCurrentFileTabContainsMessages(
