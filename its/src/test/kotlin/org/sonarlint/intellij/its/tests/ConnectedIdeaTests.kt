@@ -318,6 +318,7 @@ class ConnectedIdeaTests : BaseUiTest() {
             closeProject()
             openExistingProject("shared-connected-mode", copyProjectFiles = false)
             importConfiguration(tokenValue)
+            //TODO
         }
 
     }
