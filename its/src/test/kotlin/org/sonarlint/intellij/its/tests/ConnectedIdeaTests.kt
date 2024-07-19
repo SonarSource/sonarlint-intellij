@@ -47,9 +47,11 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.acceptNewAutomatedConnection
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.acceptNewSCAutomatedConnection
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenIssueRequest
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenSCIssueRequest
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyHotspotOpened
 import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyIssueOpened
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
@@ -79,6 +81,7 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.addSonarCloudCon
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_ORGANIZATION
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_STAGING_URL
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.analyzeSonarCloudWithMaven
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.associateSonarCloudProjectToQualityProfile
@@ -123,6 +126,7 @@ class ConnectedIdeaTests : BaseUiTest() {
 
         private var firstHotspotKey: String? = null
         private var firstIssueKey: String? = null
+        private var firstSCIssueKey: String? = null
         lateinit var tokenName: String
         lateinit var tokenValue: String
         lateinit var sonarCloudToken: String
@@ -144,6 +148,14 @@ class ConnectedIdeaTests : BaseUiTest() {
         private fun getFirstIssueKey(client: WsClient): String? {
             val searchRequest = SearchRequest()
             searchRequest.projects = listOf(ISSUE_PROJECT_KEY)
+            val searchResults = client.issues().search(searchRequest)
+            val issue = searchResults.issuesList[0]
+            return issue.key
+        }
+
+        private fun getFirstSCIssueKey(client: WsClient): String? {
+            val searchRequest = SearchRequest()
+            searchRequest.projects = listOf(SONARCLOUD_ISSUE_PROJECT_KEY)
             val searchResults = client.issues().search(searchRequest)
             val issue = searchResults.issuesList[0]
             return issue.key
@@ -348,11 +360,14 @@ class ConnectedIdeaTests : BaseUiTest() {
                 SONARCLOUD_ISSUE_PROJECT_KEY,
                 "SonarLint IT Java Issue"
             )
+
             analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sample-java-issues", sonarCloudToken)
+
+            firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
         }
 
         @Test
-        @Order(4)
+        @Order(5)
         fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
             openExistingProject("sample-java-issues")
 
@@ -378,6 +393,16 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
+        @Order(3)
+        fun click_open_in_ide_SC_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
+            clearConnections()
+            openExistingProject("sample-java-issues")
+            triggerOpenSCIssueRequest(SONARCLOUD_ISSUE_PROJECT_KEY, firstSCIssueKey, SONARCLOUD_STAGING_URL, "master", sonarCloudTokenName, sonarCloudToken, SONARCLOUD_ORGANIZATION)
+            acceptNewSCAutomatedConnection()
+            verifyIssueOpened()
+        }
+
+        @Test
         @Order(1)
         fun click_open_in_ide_issue_then_should_manually_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
@@ -398,7 +423,7 @@ class ConnectedIdeaTests : BaseUiTest() {
         }
 
         @Test
-        @Order(3)
+        @Order(4)
         fun should_create_connection_with_sonarcloud_and_analyze_issue() = uiTest {
             addSonarCloudConnection(sonarCloudToken, "SonarCloud-IT")
 

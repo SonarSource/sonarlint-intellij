@@ -32,7 +32,7 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
-
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.openInIde
 class OpenInIdeTests {
 
     companion object {
@@ -66,6 +66,17 @@ class OpenInIdeTests {
                     dialog("Trust This SonarQube Server?") {
                         jbTextFields()[1].text = "Orchestrator"
                         buttonContainsText("Connect to This SonarQube").click()
+                    }
+                }
+            }
+        }
+
+        fun acceptNewSCAutomatedConnection() {
+            with(remoteRobot) {
+                idea {
+                    dialog("Trust This SonarCloud Organization?") {
+                        jbTextFields()[1].text = "sonarlint-it"
+                        buttonContainsText("Connect to This SonarCloud Organization").click()
                     }
                 }
             }
@@ -109,6 +120,18 @@ class OpenInIdeTests {
         ) {
             URL("http://localhost:64120/sonarlint/api/issues/show?project=$projectKey&issue=$issueKey&server=$serverUrl&branch=$branch")
                 .readText()
+        }
+
+        fun triggerOpenSCIssueRequest(
+            projectKey: String,
+            issueKey: String?,
+            serverUrl: String,
+            branch: String,
+            tokenName: String,
+            tokenValue: String,
+            organizationKey: String
+        ) {
+            openInIde(projectKey, issueKey, serverUrl, branch, tokenName, tokenValue, organizationKey)
         }
 
         fun triggerOpenIssueRequest(

@@ -20,6 +20,11 @@
 package org.sonarlint.intellij.its.utils
 
 import com.intellij.remoterobot.utils.waitFor
+import java.io.File
+import java.io.IOException
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.Duration
 import org.apache.commons.exec.CommandLine
 import org.apache.commons.exec.DefaultExecutor
 import org.apache.commons.lang3.SystemUtils
@@ -30,11 +35,6 @@ import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.PostRequest
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
-import java.io.File
-import java.io.IOException
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.Duration
 
 class SonarCloudUtils {
 
@@ -102,6 +102,32 @@ class SonarCloudUtils {
             request.setParam("qualityProfile", qualityProfile)
             request.setParam("organization", SONARCLOUD_ORGANIZATION)
             adminWsClient.wsConnector().call(request)
+        }
+
+        fun openInIde(
+            project: String,
+            issue: String?,
+            server: String,
+            branch: String,
+            tokenName: String,
+            tokenValue: String,
+            organizationKey: String,
+        ) {
+            val httpConnector = HttpConnector.newBuilder()
+                .url("http://localhost:64120/sonarlint")
+                .build()
+            val wsClient = WsClientFactories.getDefault().newClient(httpConnector)
+
+            val request = GetRequest("api/issues/show")
+            request.setParam("project", project)
+            request.setParam("issue", issue)
+            request.setParam("server", server)
+            request.setParam("branch", branch)
+            request.setParam("tokenName", tokenName)
+            request.setParam("tokenValue", tokenValue)
+            request.setParam("organizationKey", organizationKey)
+            request.setHeader("Origin", SONARCLOUD_STAGING_URL)
+            wsClient.wsConnector().call(request)
         }
 
         @Throws(IOException::class)
