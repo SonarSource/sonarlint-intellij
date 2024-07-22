@@ -42,7 +42,7 @@ import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -95,14 +95,30 @@ public class AutoTriggerStatusPanel {
           switchCard(AUTO_TRIGGER_DISABLED);
           return;
         }
-        var localFileExclusions = getService(project, LocalFileExclusions.class);
-        var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> switchCard(FILE_DISABLED));
 
         if (PowerSaveMode.isEnabled()) {
           switchCard(POWER_SAVE_MODE_ENABLED);
-        }
-        if (!nonExcluded.isEmpty()) {
-          switchCard(AUTO_TRIGGER_ENABLED);
+        } else {
+          var localFileExclusions = getService(project, LocalFileExclusions.class);
+          var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> {
+          });
+
+          if (nonExcluded.isEmpty()) {
+            switchCard(FILE_DISABLED);
+          } else {
+            var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+            if (!nonExcluded.isEmpty() && module != null) {
+              var files = nonExcluded.get(module);
+              var excludedFilesFromServer = getService(BackendService.class).getExcludedFiles(module, files);
+              files.removeAll(excludedFilesFromServer);
+
+              if (files.isEmpty()) {
+                switchCard(FILE_DISABLED);
+                return;
+              }
+            }
+            switchCard(AUTO_TRIGGER_ENABLED);
+          }
         }
       });
     } else {
