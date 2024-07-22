@@ -22,7 +22,6 @@ package org.sonarlint.intellij.actions
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Editor
@@ -32,6 +31,7 @@ import com.intellij.openapi.ui.DoNotAskOption
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
+import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.REVIEW_ISSUE_GROUP
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -50,11 +50,10 @@ private const val SKIP_CONFIRM_REOPEN_DIALOG_PROPERTY = "SonarLint.reopenIssue.h
 
 class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAction("Reopen", "Reopen the issue", null), IntentionAction,
     PriorityAction, Iconable {
+
     companion object {
         private const val ERROR_TITLE = "<b>SonarLint - Unable to reopen the issue</b>"
         private const val CONTENT = "The issue was successfully reopened"
-
-        val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Mark Issue as Resolved")
 
         fun canBeReopened(project: Project, issue: Issue): Boolean {
             return serverConnection(project) != null && issue.isResolved()
@@ -81,17 +80,24 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         }
 
         private fun displayNotificationError(project: Project, content: String) {
-            return SonarLintProjectNotifications.get(project).displayErrorNotification(ERROR_TITLE, content, GROUP)
+            return SonarLintProjectNotifications.get(project).displayErrorNotification(
+                ERROR_TITLE, content, NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_ISSUE_GROUP)
+            )
         }
 
         private fun reopenFinding(project: Project, module: Module, issue: Issue, issueKey: String) {
             SonarLintUtils.getService(BackendService::class.java).reopenIssue(module, issueKey, issue is LocalTaintVulnerability)
                 .thenAcceptAsync {
                     updateUI(project, issue)
-                    SonarLintProjectNotifications.get(project).displaySuccessfulNotification(CONTENT, GROUP)
+                    SonarLintProjectNotifications.get(project).displaySuccessfulNotification(
+                        CONTENT, NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_ISSUE_GROUP)
+                    )
                 }.exceptionally { error ->
                     SonarLintConsole.get(project).error("Error while reopening the issue", error)
-                    SonarLintProjectNotifications.get(project).displayErrorNotification("Could not reopen the issue", GROUP)
+                    SonarLintProjectNotifications.get(project).displayErrorNotification(
+                        "Could not reopen the issue",
+                        NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_ISSUE_GROUP)
+                    )
                     null
                 }
         }
@@ -127,7 +133,11 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val issue = e.getData(DataKeys.ISSUE_DATA_KEY) ?: e.getData(DataKeys.TAINT_VULNERABILITY_DATA_KEY)
-        ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(ERROR_TITLE, "The issue could not be found", GROUP)
+        ?: return SonarLintProjectNotifications.get(project).displayErrorNotification(
+            ERROR_TITLE,
+            "The issue could not be found",
+            NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_ISSUE_GROUP)
+        )
 
         reopenIssueDialog(project, issue)
     }

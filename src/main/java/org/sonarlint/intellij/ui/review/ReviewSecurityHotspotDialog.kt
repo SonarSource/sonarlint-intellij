@@ -20,12 +20,14 @@
 package org.sonarlint.intellij.ui.review
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import java.awt.event.ActionEvent
 import javax.swing.JButton
+import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction.Companion.REVIEW_HOTSPOT_GROUP
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -33,7 +35,6 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.HOTSPOT_REVIEW_GROUP
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
@@ -50,6 +51,7 @@ class ReviewSecurityHotspotDialog(
 
     private val centerPanel: ReviewSecurityHotspotPanel
     private val changeStatusAction: DialogWrapperAction
+    private val hotspotReviewGroup = NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_HOTSPOT_GROUP)
 
     init {
         title = "Change Security Hotspot Status on $productName"
@@ -81,7 +83,8 @@ class ReviewSecurityHotspotDialog(
                     }
                     .exceptionally { error ->
                         SonarLintConsole.get(project).error("Error while changing the Security Hotspot status", error)
-                        SonarLintProjectNotifications.get(project).displayErrorNotification("Could not change the Security Hotspot status", HOTSPOT_REVIEW_GROUP)
+                        SonarLintProjectNotifications.get(project)
+                            .displayErrorNotification("Could not change the Security Hotspot status", hotspotReviewGroup)
                         closeDialog(project)
                         null
                     }
