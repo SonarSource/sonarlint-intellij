@@ -49,7 +49,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jps.model.java.JpsJavaSdkType;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
@@ -116,7 +115,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   }
 
   private static String getLanguageLevelOption(LanguageLevel level) {
-    return JpsJavaSdkType.complianceOption(level.toJavaVersion());
+    return level.toJavaVersion().feature < 5 ? ("1." + level.toJavaVersion().feature) : String.valueOf(level.toJavaVersion().feature);
   }
 
   private static void collectModuleClasspath(JavaModuleClasspath moduleClasspath, @Nullable final Module module, boolean topLevel, boolean testClasspathOnly) {
