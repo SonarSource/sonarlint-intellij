@@ -21,6 +21,7 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
+import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.editor.Editor
@@ -37,7 +38,6 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.HOTSPOT_REVIEW_GROUP
 import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
@@ -54,9 +54,12 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     companion object {
         val SECURITY_HOTSPOT_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
-        private const val errorTitle = "<b>SonarLint - Unable to review the Security Hotspot</b>"
-        private const val content = "The Security Hotspot status was successfully updated"
+        const val REVIEW_HOTSPOT_GROUP = "SonarLint: Security Hotspot Review"
+        private const val ERROR_TITLE = "<b>SonarLint - Unable to review the Security Hotspot</b>"
+        private const val CONTENT = "The Security Hotspot status was successfully updated"
     }
+
+    private val hotspotReviewGroup = NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_HOTSPOT_GROUP)
 
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
         return e.getData(SECURITY_HOTSPOT_KEY) != null && e.getData(SECURITY_HOTSPOT_KEY)?.getServerKey() != null
@@ -77,7 +80,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
         val project = e.project ?: return
         val securityHotspot = e.getData(SECURITY_HOTSPOT_KEY)
             ?: return SonarLintProjectNotifications.get(project)
-                .displayErrorNotification(errorTitle, "The Security Hotspot could not be found", HOTSPOT_REVIEW_GROUP)
+                .displayErrorNotification(ERROR_TITLE, "The Security Hotspot could not be found", hotspotReviewGroup)
         serverFindingKey = securityHotspot.getServerKey()
         status = securityHotspot.status
 
@@ -104,13 +107,13 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
         val newStatus = HotspotStatus.valueOf(currentStatus.name)
         runOnUiThread(project) {
             if (ReviewSecurityHotspotDialog(project, connection.productName, module, hotspotKey, response, newStatus).showAndGet()) {
-                SonarLintProjectNotifications.get(project).displaySuccessfulNotification(content, HOTSPOT_REVIEW_GROUP)
+                SonarLintProjectNotifications.get(project).displaySuccessfulNotification(CONTENT, hotspotReviewGroup)
             }
         }
     }
 
     private fun displayNotificationError(project: Project, content: String) {
-        return SonarLintProjectNotifications.get(project).displayErrorNotification(errorTitle, content, HOTSPOT_REVIEW_GROUP)
+        return SonarLintProjectNotifications.get(project).displayErrorNotification(ERROR_TITLE, content, hotspotReviewGroup)
     }
 
     private fun checkPermission(project: Project, connection: ServerConnection, hotspotKey: String): CheckStatusChangePermittedResponse? {
@@ -120,7 +123,7 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Error while retrieving the list of allowed statuses for Security Hotspots", e)
             SonarLintProjectNotifications.get(project)
-                .displayErrorNotification(errorTitle, "Could not check status change permission", HOTSPOT_REVIEW_GROUP)
+                .displayErrorNotification(ERROR_TITLE, "Could not check status change permission", hotspotReviewGroup)
             null
         }
     }
