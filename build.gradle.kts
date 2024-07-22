@@ -197,6 +197,7 @@ dependencies {
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
     implementation(libs.commons.langs3)
+    implementation(libs.commons.text)
     implementation(project(":common"))
     compileOnly(libs.findbugs.jsr305)
     runtimeOnly(project(":clion"))

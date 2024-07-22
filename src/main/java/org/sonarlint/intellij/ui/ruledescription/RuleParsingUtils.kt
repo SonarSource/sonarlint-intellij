@@ -32,7 +32,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
-import org.apache.commons.lang.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
@@ -109,7 +109,7 @@ class RuleParsingUtils {
         }
 
         private fun replaceSpaceCharacters(text: String): String {
-            return StringEscapeUtils.unescapeHtml(text)
+            return StringEscapeUtils.unescapeHtml4(text)
                 // &nbsp;
                 .replace("\u00a0","")
                 // &ensp;

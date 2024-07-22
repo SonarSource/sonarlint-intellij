@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit
 import javax.swing.JEditorPane
 import javax.swing.event.HyperlinkEvent
 import javax.swing.text.DefaultCaret
-import org.apache.commons.lang.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.UrlUtils.Companion.urlEncode
@@ -209,7 +209,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
     }
 
     private fun updateHeader(finding: Finding?, ruleKey: String, ruleDescription: EffectiveRuleDetailsDto) {
-        ruleNameLabel.text = StringEscapeUtils.escapeHtml(ruleDescription.name)
+        ruleNameLabel.text = StringEscapeUtils.escapeHtml4(ruleDescription.name)
         ruleNameLabel.setCopyable(true)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
         when (finding) {
