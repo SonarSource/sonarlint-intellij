@@ -49,7 +49,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -207,14 +207,14 @@ public class CurrentFileConnectedModePanel {
     var branchParagraph = "<p>Synchronized with the project's main branch</p>";
     if (branchName != null) {
       projectOverviewUrl += String.format("&branch=%s", UrlUtils.urlEncode(branchName));
-      branchParagraph = String.format("<p>Synchronized with branch '%s'</p>", escapeHtml(branchName));
+      branchParagraph = String.format("<p>Synchronized with branch '%s'</p>", escapeHtml4(branchName));
     }
     return String.format(
       "<h3>Connected to %s</h3>" +
         "<p>Bound to project '%s' on connection '%s'</p>" +
         "%s" +
         "<p><a href=\"%s\">Open Project Overview</a></p>",
-      serverConnection.getProductName(), escapeHtml(projectKey), escapeHtml(serverConnection.getName()), branchParagraph, projectOverviewUrl);
+      serverConnection.getProductName(), escapeHtml4(projectKey), escapeHtml4(serverConnection.getName()), branchParagraph, projectOverviewUrl);
   }
 
   private void switchCard(String cardName) {

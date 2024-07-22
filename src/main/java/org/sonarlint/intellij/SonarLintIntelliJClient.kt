@@ -55,7 +55,7 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.CancellationException
-import org.apache.commons.lang.StringEscapeUtils.escapeHtml
+import org.apache.commons.text.StringEscapeUtils
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
@@ -411,7 +411,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private fun setUpManualConnection(serverUrl: String): AssistCreatingConnectionResponse {
         val warningTitle = "Trust This SonarQube Server?"
         val message = """
-                        The server <b>${escapeHtml(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
+                        The server <b>${StringEscapeUtils.escapeHtml4(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
                         
                         If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
                     """.trimIndent()

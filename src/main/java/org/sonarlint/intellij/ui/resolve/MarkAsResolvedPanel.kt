@@ -28,7 +28,7 @@ import javax.swing.ButtonGroup
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 import kotlin.properties.Delegates
-import org.apache.commons.lang.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.options.OptionPanel
 import org.sonarlint.intellij.ui.options.addComponents
@@ -75,7 +75,7 @@ class MarkAsResolvedPanel(
                         rows = 3
                     })
             )
-            val link = StringEscapeUtils.escapeHtml(connection.links().formattingSyntaxDoc())
+            val link = StringEscapeUtils.escapeHtml4(connection.links().formattingSyntaxDoc())
             add(JBLabel("<a href=\"$link\">Formatting Help</a>:  *Bold*  ``Code``  * Bulleted point").apply { setCopyable(true) })
         }
     }
