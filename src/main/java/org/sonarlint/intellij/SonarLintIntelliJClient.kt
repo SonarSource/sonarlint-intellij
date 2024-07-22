@@ -42,6 +42,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
 import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.net.Authenticator
 import java.net.InetSocketAddress
 import java.net.Proxy
@@ -740,16 +741,21 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER) {
             fileContent = computeReadActionSafely(project) { getFileContent(file) }
         }
-        return ClientFileDto(
-            uri,
-            Paths.get(relativePath),
-            configScopeId,
-            computeReadActionSafely(project) { isTestSources(file, project) },
-            file.charset.name(),
-            Paths.get(file.path),
-            fileContent,
-            language
-        )
+        return try {
+            ClientFileDto(
+                uri,
+                Paths.get(relativePath),
+                configScopeId,
+                computeReadActionSafely(project) { isTestSources(file, project) },
+                file.charset.name(),
+                Paths.get(file.path),
+                fileContent,
+                language
+            )
+        } catch (e: IOException) {
+            GlobalLogOutput.get().logError("Error while computing ClientFileDto", e)
+            null
+        }
     }
 
     private fun listFilesInContentRoots(
