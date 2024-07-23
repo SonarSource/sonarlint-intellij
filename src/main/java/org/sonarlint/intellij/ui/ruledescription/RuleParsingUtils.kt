@@ -33,7 +33,7 @@ import java.util.regex.Pattern
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
 import org.apache.commons.text.StringEscapeUtils
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
 import org.sonarlint.intellij.ui.ruledescription.section.HtmlFragment

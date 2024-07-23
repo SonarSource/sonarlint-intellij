@@ -40,7 +40,7 @@ import java.awt.GridBagLayout
 import javax.swing.Box
 import javax.swing.JPanel
 import javax.swing.event.HyperlinkEvent
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.ShowLogAction
