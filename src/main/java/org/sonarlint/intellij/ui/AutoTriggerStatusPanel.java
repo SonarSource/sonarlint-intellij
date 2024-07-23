@@ -23,7 +23,9 @@ import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
@@ -31,7 +33,9 @@ import com.intellij.util.ui.JBUI;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JLabel;
@@ -106,24 +110,28 @@ public class AutoTriggerStatusPanel {
           if (nonExcluded.isEmpty()) {
             switchCard(FILE_DISABLED);
           } else {
-            var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
-            if (!nonExcluded.isEmpty() && module != null) {
-              var files = nonExcluded.get(module);
-              var excludedFilesFromServer = getService(BackendService.class).getExcludedFiles(module, files);
-              files.removeAll(excludedFilesFromServer);
-
-              if (files.isEmpty()) {
-                switchCard(FILE_DISABLED);
-                return;
-              }
-            }
-            switchCard(AUTO_TRIGGER_ENABLED);
+            handleExcludedFiles(selectedFile, nonExcluded);
           }
         }
       });
     } else {
       switchCard(AUTO_TRIGGER_ENABLED);
     }
+  }
+
+  private void handleExcludedFiles(VirtualFile selectedFile, Map<Module, Collection<VirtualFile>> nonExcluded) {
+    var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+    if (!nonExcluded.isEmpty() && module != null) {
+      var files = nonExcluded.get(module);
+      var excludedFilesFromServer = getService(BackendService.class).getExcludedFiles(module, files);
+      files.removeAll(excludedFilesFromServer);
+
+      if (files.isEmpty()) {
+        switchCard(FILE_DISABLED);
+        return;
+      }
+    }
+    switchCard(AUTO_TRIGGER_ENABLED);
   }
 
   private void createPanel() {
