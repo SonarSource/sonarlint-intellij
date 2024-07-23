@@ -21,7 +21,7 @@ package org.sonarlint.intellij.config.project;
 
 import java.util.Locale;
 import javax.annotation.CheckForNull;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import static org.sonarlint.intellij.config.project.ExclusionItem.Type.DIRECTORY;
 import static org.sonarlint.intellij.config.project.ExclusionItem.Type.FILE;

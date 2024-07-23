@@ -35,7 +35,7 @@ import java.util.function.UnaryOperator;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ExclusionTable {
   private final Supplier<ExclusionItem> onAdd;
