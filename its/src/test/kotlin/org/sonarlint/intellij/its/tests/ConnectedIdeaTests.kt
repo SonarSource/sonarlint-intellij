@@ -111,6 +111,7 @@ class ConnectedIdeaTests : BaseUiTest() {
             .addBundledPluginToKeep("sonar-python")
             .addBundledPluginToKeep("sonar-swift")
             .build()
+        //TODO
 
         private lateinit var adminWsClient: WsClient
         private lateinit var adminSonarCloudWsClient: WsClient
