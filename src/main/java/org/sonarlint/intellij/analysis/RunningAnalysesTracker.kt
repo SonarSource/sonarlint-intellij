@@ -33,12 +33,10 @@ class RunningAnalysesTracker {
     }
 
     fun finish(analysisState: AnalysisState) {
-        analysisState.close()
         analysisStateById.remove(analysisState.id)
     }
 
     fun finishAll() {
-        analysisStateById.values.forEach { it.close() }
         analysisStateById.clear()
     }
 
