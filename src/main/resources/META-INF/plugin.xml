@@ -64,6 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.8 - 11 new rules for Kubernetes. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.7 - Allow users to focus on new code without connected mode. Help users to generate a token when creating a new connection to SonarCloud. Support for more complex rules in Python and Java. Support for multiple project-level issues on C#. Support for C/C++ analysis from Linux ARM. Fix an issue in Rider that prevented file analysis. Fix an issue where files with special characters would not get analyzed. Avoid an issue in CLion when WSL is not supported. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.6.2 - Fix an issue on Windows preventing analysis from running in CLion. Fix an issue in Rider when no git repositories are found. Improve performance and avoid running unnecessary analysis.</li>
         <li>10.6.1 - Fix an issue preventing analysis from running when multiple projects are opened simultaneously.</li>
