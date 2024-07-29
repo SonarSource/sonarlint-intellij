@@ -37,12 +37,7 @@ object VirtualFileUtils {
             // Should follow RFC-8089
             if (file.isInLocalFileSystem) {
                 val path = if (file.path.startsWith("/")) "//${file.path}" else "///${file.path}"
-                URI(
-                    "${file.fileSystem.protocol}:$path"
-                        .replace(" ", "%20")
-                        .replace("[", "%5B")
-                        .replace("]", "%5D")
-                )
+                URI(file.fileSystem.protocol, null, path, null)
             } else {
                 null
             }
