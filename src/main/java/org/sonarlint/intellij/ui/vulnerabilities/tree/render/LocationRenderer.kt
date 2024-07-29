@@ -57,7 +57,7 @@ object LocationRenderer : NodeRenderer<FragmentLocation> {
                 val doc = rangeMarker.document
                 val line = doc.getLineNumber(rangeMarker.startOffset)
                 val offset = rangeMarker.startOffset - doc.getLineStartOffset(line)
-                String.format("(%d, %d) ", line + 1, offset)
+                "(%d, %d) ".format(line + 1, offset)
             }
         } ?: "(-, -) "
     }

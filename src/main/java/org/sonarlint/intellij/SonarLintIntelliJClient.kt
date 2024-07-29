@@ -172,12 +172,11 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 val mode = if (uniqueSuggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
 
                 ConfigurationSharing.showAutoSharedConfigurationNotification(
-                    project, String.format(
-                        """
+                    project, """
                     A Connected Mode configuration file is available to bind to project '%s' on %s '%s'.
                     The binding can also be manually configured later.
-                """.trimIndent(), projectKey, connectionKind, connectionName
-                    ), SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
+                """.trimIndent().format(projectKey, connectionKind, connectionName),
+                    SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
                     uniqueSuggestion,
                     mode
                 )

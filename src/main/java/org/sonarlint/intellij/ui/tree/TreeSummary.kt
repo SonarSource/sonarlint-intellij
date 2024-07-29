@@ -52,7 +52,14 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
             newOrOldOrNothing = if (holdsOldFindings) "older " else "new "
         }
 
-        return String.format(FORMAT, findingsCount, newOrOldOrNothing, pluralize(treeContentKind.displayName, findingsCount), filesCount, pluralize("file", filesCount), sinceText)
+        return FORMAT.format(
+            findingsCount,
+            newOrOldOrNothing,
+            pluralize(treeContentKind.displayName, findingsCount),
+            filesCount,
+            pluralize("file", filesCount),
+            sinceText
+        )
     }
 
     private fun computeEmptyText(newCodePeriod: String): String {
