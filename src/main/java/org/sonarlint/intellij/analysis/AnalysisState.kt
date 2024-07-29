@@ -46,10 +46,9 @@ class AnalysisState(
     private val filesToAnalyze: MutableCollection<VirtualFile>,
     private val module: Module,
     private val triggerType: TriggerType,
-) : AutoCloseable {
+) {
     private val modificationStampByFile = ConcurrentHashMap<VirtualFile, Long>()
     private val analysisDate: Instant = Instant.now()
-    private val findingStreamer = FindingStreamer(analysisCallback)
     private val liveIssues = mutableMapOf<VirtualFile, Collection<LiveIssue>>()
     private val liveHotspots = mutableMapOf<VirtualFile, Collection<LiveSecurityHotspot>>()
     private val shouldReceiveHotspot: Boolean
@@ -70,21 +69,19 @@ class AnalysisState(
     }
 
     fun addRawHotspots(hotspotsByFile: Map<URI, List<RaisedHotspotDto>>, isIntermediate: Boolean) {
-        if (isIntermediate) {
-            addRawStreamingHotspots(hotspotsByFile)
-        } else {
-            hasReceivedFinalHotspots = true
+        hasReceivedFinalHotspots = !isIntermediate
 
-            liveHotspots.putAll(hotspotsByFile.mapNotNull { (uri, rawHotspots) ->
-                val virtualFile = uriToVirtualFile(uri)
-                if (virtualFile != null) {
-                    val liveHotspots = convertRawHotspots(virtualFile, rawHotspots)
-                    virtualFile to liveHotspots
-                } else {
-                    null
-                }
-            })
+        liveHotspots.putAll(hotspotsByFile.mapNotNull { (uri, rawHotspots) ->
+            val virtualFile = uriToVirtualFile(uri)
+            if (virtualFile != null) {
+                val liveHotspots = convertRawHotspots(virtualFile, rawHotspots)
+                virtualFile to liveHotspots
+            } else {
+                null
+            }
+        })
 
+        if (isAnalysisFinished()) {
             analysisCallback.onSuccess(
                 AnalysisResult(
                     LiveFindings(liveIssues, liveHotspots),
@@ -93,25 +90,25 @@ class AnalysisState(
                     analysisDate
                 )
             )
+        } else {
+            analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
         }
     }
 
     fun addRawIssues(issuesByFile: Map<URI, List<RaisedIssueDto>>, isIntermediate: Boolean) {
-        if (isIntermediate) {
-            addRawStreamingIssues(issuesByFile)
-        } else {
-            hasReceivedFinalIssues = true
+        hasReceivedFinalIssues = !isIntermediate
 
-            liveIssues.putAll(issuesByFile.mapNotNull { (uri, rawIssues) ->
-                val virtualFile = uriToVirtualFile(uri)
-                if (virtualFile != null) {
-                    val liveIssues = convertRawIssues(virtualFile, rawIssues)
-                    virtualFile to liveIssues
-                } else {
-                    null
-                }
-            })
+        liveIssues.putAll(issuesByFile.mapNotNull { (uri, rawIssues) ->
+            val virtualFile = uriToVirtualFile(uri)
+            if (virtualFile != null) {
+                val liveIssues = convertRawIssues(virtualFile, rawIssues)
+                virtualFile to liveIssues
+            } else {
+                null
+            }
+        })
 
+        if (isAnalysisFinished()) {
             analysisCallback.onSuccess(
                 AnalysisResult(
                     LiveFindings(liveIssues, liveHotspots),
@@ -120,32 +117,8 @@ class AnalysisState(
                     analysisDate
                 )
             )
-        }
-    }
-
-    private fun addRawStreamingIssues(issuesByFileUri: Map<URI, List<RaisedIssueDto>>) {
-        issuesByFileUri.forEach { (fileUri, rawIssues) ->
-            val virtualFile = uriToVirtualFile(fileUri)
-            if (virtualFile == null) {
-                SonarLintConsole.get(module.project)
-                    .error("Cannot retrieve the file on which an issue has been raised. File URI is $fileUri")
-            } else {
-                val liveIssues = convertRawIssues(virtualFile, rawIssues)
-                findingStreamer.streamIssues(virtualFile, liveIssues)
-            }
-        }
-    }
-
-    private fun addRawStreamingHotspots(hotspotsByFileUri: Map<URI, List<RaisedHotspotDto>>) {
-        hotspotsByFileUri.forEach { (fileUri, rawHotspots) ->
-            val virtualFile = uriToVirtualFile(fileUri)
-            if (virtualFile == null) {
-                SonarLintConsole.get(module.project)
-                    .error("Cannot retrieve the file on which a Security Hotspot has been raised. File URI is $fileUri")
-            } else {
-                val liveHotspots = convertRawHotspots(virtualFile, rawHotspots)
-                findingStreamer.streamSecurityHotspots(virtualFile, liveHotspots)
-            }
+        } else {
+            analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
         }
     }
 
@@ -187,10 +160,6 @@ class AnalysisState(
 
     fun isAnalysisFinished(): Boolean {
         return hasReceivedFinalIssues && (!shouldReceiveHotspot || hasReceivedFinalHotspots)
-    }
-
-    override fun close() {
-        findingStreamer.close()
     }
 
 }
