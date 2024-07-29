@@ -39,6 +39,7 @@ import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiManager
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
 import java.io.ByteArrayInputStream
@@ -102,6 +103,7 @@ import org.sonarlint.intellij.sharing.ConfigurationSharing
 import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThreadAndWait
+import org.sonarlint.intellij.ui.inlay.InlayPanel
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -123,6 +125,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreat
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.event.DidReceiveServerHotspotEvent
+import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.HotspotDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.http.GetProxyPasswordAuthenticationResponse
@@ -319,6 +322,57 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun showIssue(configurationScopeId: String, issueDetails: IssueDetailsDto) {
         val findingType = if (issueDetails.isTaint) LocalTaintVulnerability::class.java else LiveIssue::class.java
         showFinding(configurationScopeId, issueDetails.ideFilePath, issueDetails.issueKey, issueDetails.ruleKey, issueDetails.textRange, issueDetails.codeSnippet, findingType, issueDetails.flows, issueDetails.message)
+    }
+
+    override fun showFixSuggestion(configurationScopeId: String, issueKey: String, branch: String, fixSuggestion: FixSuggestionDto) {
+        val project = BackendService.findModule(configurationScopeId)?.project ?: BackendService.findProject(configurationScopeId)
+        ?: throw IllegalStateException("Unable to find project with id '$configurationScopeId'")
+        if (!project.isDisposed) {
+            get(project).expireCurrentFindingNotificationIfNeeded()
+        }
+        val file = tryFindFile(project, fixSuggestion.fileEdit().path())
+        if (file == null) {
+            if (!project.isDisposed) {
+                get(project).simpleNotification(
+                    null,
+                    "Unable to open finding. Cannot find the file: ${fixSuggestion.fileEdit().path()}",
+                    NotificationType.WARNING
+                )
+            }
+            return
+        }
+
+        val module = findModuleForFile(file, project)
+        if (module == null) {
+            if (!project.isDisposed) {
+                get(project).simpleNotification(
+                    null,
+                    "Unable to open finding. Cannot find the module corresponding to file: ${fixSuggestion.fileEdit().path()}",
+                    NotificationType.WARNING
+                )
+            }
+            return
+        }
+
+        runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
+            val fileEditorManager = FileEditorManager.getInstance(project)
+            fileEditorManager.openFile(file, true)
+            val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runOnUiThreadAndWait
+            fixSuggestion.fileEdit().changes().forEachIndexed { index, change ->
+                fileEditorManager.selectedTextEditor?.let {
+                    InlayPanel(
+                        project,
+                        it,
+                        change.beforeLineRange().startLine,
+                        change.beforeLineRange().endLine,
+                        change.after(),
+                        psiFile,
+                        index + 1,
+                        fixSuggestion.fileEdit().changes().size
+                    )
+                }
+            }
+        }
     }
 
     private fun <T : Finding> showFinding(
