@@ -29,7 +29,7 @@ import java.awt.Rectangle
 import java.awt.geom.RoundRectangle2D
 import javax.swing.JPanel
 
-class RoundedPanelWithBackgroundColor(private val color: JBColor?, private val cornerAngle: Float = 20f) : JPanel() {
+open class RoundedPanelWithBackgroundColor(private val color: JBColor? = null, private val cornerAngle: Float = 20f) : JPanel() {
 
     init {
         isOpaque = false
@@ -51,9 +51,11 @@ class RoundedPanelWithBackgroundColor(private val color: JBColor?, private val c
         val g2 = g as Graphics2D
         val rect = Rectangle(size)
         JBInsets.removeFrom(rect, insets)
-        val rectangle2d = RoundRectangle2D.Float(rect.x.toFloat() + 0.5f, rect.y.toFloat() + 0.5f,
+        val rectangle2d = RoundRectangle2D.Float(
+            rect.x.toFloat() + 0.5f, rect.y.toFloat() + 0.5f,
             rect.width.toFloat() - 1f, rect.height.toFloat() - 1f,
-            cornerAngle, cornerAngle)
+            cornerAngle, cornerAngle
+        )
         g2.color = background
         g2.fill(rectangle2d)
     }
