@@ -22,6 +22,8 @@ package org.sonarlint.intellij.trigger;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.UnnamedConfigurable;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -39,11 +41,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
@@ -94,11 +99,21 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       if (analysisIdsByCallback == null) {
         return ReturnResult.CANCEL;
       }
-      var analysis = analysisIdsByCallback.getRight().stream().map(id -> getService(project, RunningAnalysesTracker.class).getById(id)).filter(Objects::nonNull).toList();
-      while (!analysis.isEmpty()) {
-        Thread.sleep(100);
-        analysis = analysisIdsByCallback.getRight().stream().map(id -> getService(project, RunningAnalysesTracker.class).getById(id)).filter(Objects::nonNull).toList();
-      }
+
+      new Task.Modal(project, "Waiting for SonarLint Analysis", true) {
+        public void run(@NotNull final ProgressIndicator progressIndicator) {
+          new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+              var analysis = analysisIdsByCallback.getRight().stream().map(id -> getService(project, RunningAnalysesTracker.class).getById(id)).filter(Objects::nonNull).toList();
+              if (analysis.isEmpty()) {
+                cancel();
+              }
+            }
+          }, 0, 100);
+        }
+      }.queue();
+
       if (!analysisIdsByCallback.getLeft().analysisSucceeded()) {
         return ReturnResult.CANCEL;
       }
