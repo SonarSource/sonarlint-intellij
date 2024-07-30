@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,9 +63,12 @@ import static org.mockito.Mockito.when;
 
 @Disabled
 class AnalysisTests extends AbstractSonarLintLightTests {
-  private Analysis task;
+
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
+  private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
+  private final UUID analysisId = UUID.randomUUID();
   private URI fileUri;
+  private Analysis task;
   @Mock
   private ProgressIndicator progress;
   @Mock
@@ -75,7 +79,6 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   private BackendService backendService;
   @Mock
   private AnalysisReadinessCache analysisReadinessCache;
-  private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
 
   @BeforeEach
   void prepare() {
@@ -127,7 +130,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
         var issue = SonarLintTestUtils.createIssue(1);
-        analysisState.addRawIssues(Map.of(fileUri, List.of(issue)), false);
+        analysisState.addRawIssues(analysisId, Map.of(fileUri, List.of(issue)), false);
         return analysisResults;
       });
 
@@ -166,7 +169,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
-        analysisState.addRawIssues(Map.of(fileUri, List.of(issue)), false);
+        analysisState.addRawIssues(analysisId, Map.of(fileUri, List.of(issue)), false);
         return analysisResults;
       });
 
@@ -186,7 +189,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         AnalysisState analysisState = invocation.getArgument(2);
-        analysisState.addRawIssues(Map.of(fileUri, List.of(issue)), false);
+        analysisState.addRawIssues(analysisId, Map.of(fileUri, List.of(issue)), false);
         return analysisResults;
       });
 

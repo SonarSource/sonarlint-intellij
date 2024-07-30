@@ -19,17 +19,18 @@
  */
 package org.sonarlint.intellij.callable
 
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import org.sonarlint.intellij.analysis.AnalysisCallback
 import org.sonarlint.intellij.analysis.AnalysisResult
 
 class CheckInCallable : AnalysisCallback {
 
-    private var result = mutableListOf<AnalysisResult>()
+    private var resultsPerAnalysis = mutableMapOf<UUID, AnalysisResult>()
     private val errored = AtomicBoolean(false)
 
     override fun onSuccess(analysisResult: AnalysisResult) {
-        result.add(analysisResult)
+        analysisResult.analysisId?.let { resultsPerAnalysis[it] = analysisResult }
     }
 
     override fun onError(e: Throwable) {
@@ -40,8 +41,8 @@ class CheckInCallable : AnalysisCallback {
         return !errored.get()
     }
 
-    fun getResult(): List<AnalysisResult> {
-        return result
+    fun getResults(): List<AnalysisResult> {
+        return resultsPerAnalysis.values.toList()
     }
 
 }

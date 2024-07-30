@@ -21,10 +21,12 @@ package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.vfs.VirtualFile
 import java.time.Instant
+import java.util.UUID
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.trigger.TriggerType
 
 data class AnalysisResult(
+    val analysisId: UUID?,
     val findings: LiveFindings,
     val analyzedFiles: MutableCollection<out VirtualFile>,
     val triggerType: TriggerType,
