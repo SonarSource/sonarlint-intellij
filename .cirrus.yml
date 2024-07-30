@@ -61,7 +61,7 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
 
 ec2_instance: &WINVM_DEFINITION
   experimental: true
-  image: base-windows-jdk17-v*
+  image: base-windows-jdk17-v20240704125406
   platform: windows
   region: eu-central-1
   subnet_id: ${CIRRUS_AWS_SUBNET}
