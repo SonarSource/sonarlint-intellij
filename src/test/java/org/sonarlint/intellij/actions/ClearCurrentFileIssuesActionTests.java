@@ -57,7 +57,7 @@ class ClearCurrentFileIssuesActionTests extends AbstractSonarLintLightTests {
     findingsHolder = SonarLintUtils.getService(getProject(), AnalysisSubmitter.class).getOnTheFlyFindingsHolder();
     findingsHolder.clearCurrentFile();
     FileEditorManager.getInstance(getProject()).openFile(file, true);
-    findingsHolder.updateOnAnalysisResult(new AnalysisResult(new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()), List.of(file), TriggerType.CURRENT_FILE_ACTION, Instant.now()));
+    findingsHolder.updateOnAnalysisResult(new AnalysisResult(null, new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()), List.of(file), TriggerType.CURRENT_FILE_ACTION, Instant.now()));
   }
 
   @Test

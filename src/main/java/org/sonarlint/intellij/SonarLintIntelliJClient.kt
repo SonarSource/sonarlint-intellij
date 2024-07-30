@@ -802,7 +802,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
 
         if (runningAnalysis != null) {
-            runningAnalysis.addRawIssues(issuesByFileUri, isIntermediatePublication)
+            runningAnalysis.addRawIssues(analysisId, issuesByFileUri, isIntermediatePublication)
             if (runningAnalysis.isAnalysisFinished()) {
                 getService(project, RunningAnalysesTracker::class.java).finish(runningAnalysis)
             }
@@ -823,7 +823,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
 
         if (runningAnalysis != null) {
-            runningAnalysis.addRawHotspots(issuesByFileUri, isIntermediatePublication)
+            runningAnalysis.addRawHotspots(analysisId, issuesByFileUri, isIntermediatePublication)
             if (runningAnalysis.isAnalysisFinished()) {
                 getService(project, RunningAnalysesTracker::class.java).finish(runningAnalysis)
             }

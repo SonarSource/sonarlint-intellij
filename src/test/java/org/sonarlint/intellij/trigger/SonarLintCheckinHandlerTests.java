@@ -77,8 +77,8 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
-    when(checkInCallable.getResult())
-      .thenReturn(List.of(new AnalysisResult(new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
+    when(checkInCallable.getResults())
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
     when(runningAnalysesTracker.getById(uuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(uuid)).thenReturn(null);
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
@@ -99,8 +99,8 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("java:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
-    when(checkInCallable.getResult())
-      .thenReturn(List.of(new AnalysisResult(new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
+    when(checkInCallable.getResults())
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
     when(runningAnalysesTracker.getById(uuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(uuid)).thenReturn(null);
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
@@ -131,8 +131,8 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("secrets:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
-    when(checkInCallable.getResult())
-      .thenReturn(List.of(new AnalysisResult(new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
+    when(checkInCallable.getResults())
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
     when(runningAnalysesTracker.getById(uuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(uuid)).thenReturn(null);
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))

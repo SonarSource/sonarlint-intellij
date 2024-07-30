@@ -102,7 +102,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       if (!analysisIdsByCallback.getLeft().analysisSucceeded()) {
         return ReturnResult.CANCEL;
       }
-      var results = analysisIdsByCallback.getLeft().getResult();
+      var results = analysisIdsByCallback.getLeft().getResults();
       return processResults(results);
     } catch (Exception e) {
       handleError(e, affectedFiles.size());
@@ -176,7 +176,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
             return merged;
           }));
       var allFilesAnalyzed = results.stream().flatMap(result -> result.getAnalyzedFiles().stream()).toList();
-      var result = new AnalysisResult(new LiveFindings(issuesPerFile, hotspotsPerFile), allFilesAnalyzed, results.get(0).getTriggerType(), results.get(0).getAnalysisDate());
+      var result = new AnalysisResult(null, new LiveFindings(issuesPerFile, hotspotsPerFile), allFilesAnalyzed, results.get(0).getTriggerType(), results.get(0).getAnalysisDate());
       showChangedFilesTab(result);
     }
     return choice;

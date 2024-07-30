@@ -68,7 +68,7 @@ class AnalysisState(
         }
     }
 
-    fun addRawHotspots(hotspotsByFile: Map<URI, List<RaisedHotspotDto>>, isIntermediate: Boolean) {
+    fun addRawHotspots(analysisId: UUID, hotspotsByFile: Map<URI, List<RaisedHotspotDto>>, isIntermediate: Boolean) {
         hasReceivedFinalHotspots = !isIntermediate
 
         liveHotspots.putAll(hotspotsByFile.mapNotNull { (uri, rawHotspots) ->
@@ -84,6 +84,7 @@ class AnalysisState(
         if (isAnalysisFinished()) {
             analysisCallback.onSuccess(
                 AnalysisResult(
+                    analysisId,
                     LiveFindings(liveIssues, liveHotspots),
                     filesToAnalyze,
                     triggerType,
@@ -95,7 +96,7 @@ class AnalysisState(
         }
     }
 
-    fun addRawIssues(issuesByFile: Map<URI, List<RaisedIssueDto>>, isIntermediate: Boolean) {
+    fun addRawIssues(analysisId: UUID, issuesByFile: Map<URI, List<RaisedIssueDto>>, isIntermediate: Boolean) {
         hasReceivedFinalIssues = !isIntermediate
 
         liveIssues.putAll(issuesByFile.mapNotNull { (uri, rawIssues) ->
@@ -111,6 +112,7 @@ class AnalysisState(
         if (isAnalysisFinished()) {
             analysisCallback.onSuccess(
                 AnalysisResult(
+                    analysisId,
                     LiveFindings(liveIssues, liveHotspots),
                     filesToAnalyze,
                     triggerType,
