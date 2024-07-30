@@ -145,6 +145,9 @@ validate_windows_task:
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
+  dump_jvm_infos_script: |
+    java --version
+    echo $JAVA_HOME
   # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
   build_script: |
     source cirrus-env QA
@@ -157,8 +160,8 @@ validate_windows_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
-    slack_notification_script: |
-      .cirrus/slack-notification.sh
+#    slack_notification_script: |
+#      .cirrus/slack-notification.sh
 
 plugin_verifier_task:
   #  name: "Run plugin verifier on all IDEs"
