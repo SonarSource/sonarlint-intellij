@@ -46,6 +46,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Compan
 // Inspired from https://github.com/cursive-ide/component-inlay-example and com.intellij.util.ui.codereview.diff.EditorComponentInlaysManager
 class InlayManager(val editor: EditorImpl) : Disposable {
 
+    var disposed = false
     private val managedInlays = mutableMapOf<ComponentWrapper, Disposable>()
     private val editorWidthWatcher = EditorTextWidthWatcher()
 
@@ -59,9 +60,9 @@ class InlayManager(val editor: EditorImpl) : Disposable {
     }
 
     @RequiresEdt
-    fun insertBefore(lineIndex: Int, component: InlayPanel): Disposable? {
+    fun insertBefore(lineIndex: Int, component: FixSuggestionInlayPanel): Disposable? {
         return try {
-            if (Disposer.isDisposed(this)) return null
+            if (disposed) return null
 
             val wrappedComponent = ComponentWrapper(component)
             val offset = editor.document.getLineEndOffset(lineIndex)
@@ -96,7 +97,7 @@ class InlayManager(val editor: EditorImpl) : Disposable {
         }
     }
 
-    private inner class ComponentWrapper(val component: InlayPanel) : JBScrollPane(component) {
+    private inner class ComponentWrapper(val component: FixSuggestionInlayPanel) : JBScrollPane(component) {
         init {
             isOpaque = false
             viewport.isOpaque = false
@@ -121,10 +122,10 @@ class InlayManager(val editor: EditorImpl) : Disposable {
 
     override fun dispose() {
         managedInlays.values.forEach(Disposer::dispose)
+        disposed = true
     }
 
     private inner class EditorTextWidthWatcher : ComponentAdapter() {
-
         var editorTextWidth: Int = 0
 
         private val maximumEditorTextWidth: Int
@@ -133,12 +134,10 @@ class InlayManager(val editor: EditorImpl) : Disposable {
         init {
             val metrics = editor.getFontMetrics(Font.PLAIN)
             val spaceWidth = FontLayoutService.getInstance().charWidth2D(metrics, ' '.code)
-            // -4 to create some space
             maximumEditorTextWidth = ceil(spaceWidth * (editor.settings.getRightMargin(editor.project)) - 4).toInt()
 
             val scrollbarFlip = editor.scrollPane.getClientProperty(JBScrollPane.Flip::class.java)
-            verticalScrollbarFlipped =
-                scrollbarFlip == JBScrollPane.Flip.HORIZONTAL || scrollbarFlip == JBScrollPane.Flip.BOTH
+            verticalScrollbarFlipped = scrollbarFlip == JBScrollPane.Flip.HORIZONTAL || scrollbarFlip == JBScrollPane.Flip.BOTH
         }
 
         override fun componentResized(e: ComponentEvent) = updateWidthForAllInlays()
@@ -180,7 +179,7 @@ class InlayManager(val editor: EditorImpl) : Disposable {
         fun from(editor: Editor): InlayManager {
             return synchronized(editor) {
                 var manager = editor.getUserData(INLAYS_KEY)
-                if (manager != null && Disposer.isDisposed(manager)) {
+                if (manager != null && manager.disposed) {
                     manager = null
                 }
                 if (manager == null) {
@@ -191,4 +190,5 @@ class InlayManager(val editor: EditorImpl) : Disposable {
             }
         }
     }
+
 }

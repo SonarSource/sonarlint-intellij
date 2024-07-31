@@ -87,6 +87,7 @@ import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesAndTrackParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeAutomaticAnalysisSettingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -342,7 +343,8 @@ class BackendService : Disposable {
                 null,
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
-                LanguageSpecificRequirements(nodeJsPath, omnisharpRequirementsDto)
+                LanguageSpecificRequirements(nodeJsPath, omnisharpRequirementsDto),
+                false
             )
         )
     }
@@ -907,7 +909,8 @@ class BackendService : Disposable {
                         it.getEncoding(module.project).toString(),
                         Paths.get(it.virtualFile.path),
                         computeReadActionSafely(module.project) { getFileContent(it.virtualFile) },
-                        forcedLanguage
+                        forcedLanguage,
+                        true
                     )
                 }
         }
@@ -937,6 +940,10 @@ class BackendService : Disposable {
                 )
             )
         }
+    }
+
+    fun changeAutomaticAnalysisSetting(analysisEnabled: Boolean) {
+        return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
     }
 
     fun isAlive(): Boolean {

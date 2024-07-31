@@ -41,10 +41,8 @@ import org.assertj.core.api.Assumptions
 import org.awaitility.Awaitility
 import org.jetbrains.annotations.NotNull
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache

@@ -17,21 +17,15 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.inlay
+package org.sonarlint.intellij.fix
 
-import java.time.Instant
-import java.util.UUID
-
-data class InlayData(
-    val inlaySnippets: MutableList<InlaySnippetData>,
-    val generatedDate: Instant,
-    val correlationId: UUID?,
-    var feedbackGiven: Boolean = false,
-    val ruleMessage: String,
-)
-
-data class InlaySnippetData(
-    var inlayPanel: InlayPanel,
-    val index: Int,
-    val total: Int?,
+data class FixSuggestionSnippet(
+    val currentCode: String,
+    val newCode: String,
+    val startLine: Int,
+    val endLine: Int,
+    val snippetIndex: Int,
+    val totalSnippets: Int,
+    val explanation: String,
+    val suggestionId: String,
 )

@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.telemetry;
 
 import java.util.concurrent.CompletableFuture;
+import org.jetbrains.annotations.Nullable;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionStatus;
 
 public interface SonarLintTelemetry {
   void optOut(boolean optOut);
@@ -41,4 +43,6 @@ public interface SonarLintTelemetry {
   void addedImportedBindings();
 
   void addedManualBindings();
+
+  void fixSuggestionResolved(String suggestionId, FixSuggestionStatus status, @Nullable Integer snippetIndex);
 }

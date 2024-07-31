@@ -25,6 +25,8 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionResolvedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.HelpAndFeedbackClickedParams
 
 class SonarLintTelemetryImpl : SonarLintTelemetry {
@@ -70,6 +72,10 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
 
     override fun addedManualBindings() {
         notifyTelemetry { it.addedManualBindings() }
+    }
+
+    override fun fixSuggestionResolved(suggestionId: String, status: FixSuggestionStatus, snippetIndex: Int?) {
+        notifyTelemetry { it.fixSuggestionResolved(FixSuggestionResolvedParams(suggestionId, status, snippetIndex)) }
     }
 
     companion object {
