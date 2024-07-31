@@ -56,7 +56,6 @@ allprojects {
     }
 
     repositories {
-        mavenLocal()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
                 credentials {

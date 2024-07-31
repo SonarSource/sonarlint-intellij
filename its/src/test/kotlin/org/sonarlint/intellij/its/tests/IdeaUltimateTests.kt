@@ -87,4 +87,39 @@ class IdeaUltimateTests : BaseUiTest() {
         )
     }
 
+    @EnabledIf("isWebStorm")
+    @Test
+    fun should_analyze_js_ts_css_html() = uiTest {
+        openExistingProject("sample-js-ts-css-html")
+
+        openFile("file.js")
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file.js",
+            "Unexpected comma in middle of array."
+        )
+
+        openFile("file2.ts")
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file2.ts",
+            "Unexpected var, use let or const instead."
+        )
+
+        openFile("file3.css")
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue in 1 file",
+            "file3.css",
+            "Unexpected empty block"
+        )
+
+        openFile("file4.html")
+        verifyCurrentFileTabContainsMessages(
+            "Found 2 issues in 1 file",
+            "file4.html",
+            "\"tabIndex\" should only be declared on interactive elements.",
+            "Avoid using positive values for the \"tabIndex\" attribute."
+        )
+    }
+
 }

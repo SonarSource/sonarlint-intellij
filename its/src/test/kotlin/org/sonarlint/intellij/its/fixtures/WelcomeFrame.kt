@@ -31,7 +31,7 @@ import com.intellij.remoterobot.stepsProcessing.step
 import java.time.Duration
 
 fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
-    find(WelcomeFrame::class.java, Duration.ofSeconds(5)).apply(function)
+    find(WelcomeFrame::class.java, byXpath("//div[@class='FlatWelcomeFrame']"), Duration.ofSeconds(7)).apply(function)
 }
 
 @FixtureName("Welcome Frame")

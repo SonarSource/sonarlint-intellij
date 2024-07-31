@@ -39,7 +39,6 @@ import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiManager
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
 import java.io.ByteArrayInputStream
@@ -92,6 +91,7 @@ import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
@@ -103,7 +103,6 @@ import org.sonarlint.intellij.sharing.ConfigurationSharing
 import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThreadAndWait
-import org.sonarlint.intellij.ui.inlay.InlayPanel
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -324,55 +323,23 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         showFinding(configurationScopeId, issueDetails.ideFilePath, issueDetails.issueKey, issueDetails.ruleKey, issueDetails.textRange, issueDetails.codeSnippet, findingType, issueDetails.flows, issueDetails.message)
     }
 
-    override fun showFixSuggestion(configurationScopeId: String, issueKey: String, branch: String, fixSuggestion: FixSuggestionDto) {
+    override fun showFixSuggestion(configurationScopeId: String, issueKey: String, fixSuggestion: FixSuggestionDto) {
         val project = BackendService.findModule(configurationScopeId)?.project ?: BackendService.findProject(configurationScopeId)
         ?: throw IllegalStateException("Unable to find project with id '$configurationScopeId'")
-        if (!project.isDisposed) {
-            get(project).expireCurrentFindingNotificationIfNeeded()
-        }
-        val file = tryFindFile(project, fixSuggestion.fileEdit().path())
+
+        val file = tryFindFile(project, fixSuggestion.fileEdit().idePath())
         if (file == null) {
             if (!project.isDisposed) {
                 get(project).simpleNotification(
                     null,
-                    "Unable to open finding. Cannot find the file: ${fixSuggestion.fileEdit().path()}",
+                    "Unable to open the fix suggestion. Cannot find the file: ${fixSuggestion.fileEdit().idePath()}",
                     NotificationType.WARNING
                 )
             }
             return
         }
 
-        val module = findModuleForFile(file, project)
-        if (module == null) {
-            if (!project.isDisposed) {
-                get(project).simpleNotification(
-                    null,
-                    "Unable to open finding. Cannot find the module corresponding to file: ${fixSuggestion.fileEdit().path()}",
-                    NotificationType.WARNING
-                )
-            }
-            return
-        }
-
-        runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
-            val fileEditorManager = FileEditorManager.getInstance(project)
-            fileEditorManager.openFile(file, true)
-            val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runOnUiThreadAndWait
-            fixSuggestion.fileEdit().changes().forEachIndexed { index, change ->
-                fileEditorManager.selectedTextEditor?.let {
-                    InlayPanel(
-                        project,
-                        it,
-                        change.beforeLineRange().startLine,
-                        change.beforeLineRange().endLine,
-                        change.after(),
-                        psiFile,
-                        index + 1,
-                        fixSuggestion.fileEdit().changes().size
-                    )
-                }
-            }
-        }
+        ShowFixSuggestion(project, file, fixSuggestion).show()
     }
 
     private fun <T : Finding> showFinding(
@@ -803,7 +770,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 file.charset.name(),
                 Paths.get(file.path),
                 fileContent,
-                language
+                language,
+                true
             )
         } catch (e: IOException) {
             GlobalLogOutput.get().logError("Error while computing ClientFileDto", e)

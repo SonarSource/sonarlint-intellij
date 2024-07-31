@@ -121,8 +121,8 @@ class OpeningUtils {
         }
 
         private fun copyProjectFiles(projectName: String) {
-            File("build/projects/$projectName").deleteRecursively()
-            File("projects/$projectName").copyRecursively(File("build/projects/$projectName"))
+            File("projects/$projectName-tmp").deleteRecursively()
+            File("projects/$projectName").copyRecursively(File("projects/$projectName-tmp"))
         }
     }
 
