@@ -68,7 +68,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
 
             var serverKey: String? = null
             if (issue is LiveIssue) {
-                serverKey = issue.getServerKey() ?: issue.id.toString()
+                serverKey = issue.getServerKey() ?: issue.getId().toString()
             } else if (issue is LocalTaintVulnerability) {
                 serverKey = issue.key()
             }

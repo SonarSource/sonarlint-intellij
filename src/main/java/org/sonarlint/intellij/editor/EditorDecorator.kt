@@ -78,7 +78,7 @@ class EditorDecorator(private val project: Project) {
         val highlights = finding.context()
             .map { createHighlights(it.flows()[0].locations) }
             .orElse(mutableListOf())
-        createHighlight(finding.range, finding.message)?.let(highlights::add)
+        createHighlight(finding.range, finding.getMessage())?.let(highlights::add)
         updateHighlights(highlights)
         finding.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
     }
