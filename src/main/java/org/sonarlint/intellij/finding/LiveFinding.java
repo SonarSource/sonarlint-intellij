@@ -75,7 +75,7 @@ public abstract class LiveFinding implements Finding {
 
   protected LiveFinding(Module module, RaisedFindingDto finding, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
     List<QuickFix> quickFixes) {
-    this.textRangeDto = issue.getTextRange();
+    this.textRangeDto = finding.getTextRange();
     this.backendId = finding.getId();
     this.serverFindingKey = finding.getServerKey();
     this.module = module;
@@ -114,10 +114,6 @@ public abstract class LiveFinding implements Finding {
 
   public UUID getId() {
     return getBackendId();
-  }
-
-  public void setBackendId(UUID backendId) {
-    this.backendId = backendId;
   }
 
   public Module module() {
