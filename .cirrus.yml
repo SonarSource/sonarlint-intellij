@@ -452,7 +452,7 @@ dogfood_task:
   #  alias: "update_dogfood_repo"
   depends_on:
     - promote
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH && $CIRRUS_BUILD_SOURCE != "cron"
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_BRANCH == "task/nq/GRIP-UI" && $CIRRUS_BUILD_SOURCE != "cron"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 1
