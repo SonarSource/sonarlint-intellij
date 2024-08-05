@@ -13,6 +13,9 @@ env:
 
 auto_cancellation: $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
 
+only_if_nightly: &ONLY_IF_NIGHTLY
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && $CIRRUS_CRON == "nightly"
+
 only_pr_and_maintained_branches_including_nightly: &ONLY_PR_AND_MAINTAINED_BRANCHES_INCLUDING_NIGHTLY
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
@@ -27,11 +30,42 @@ only_main_branches: &ONLY_MAIN_BRANCHES
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && ($CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*") && $CIRRUS_BUILD_SOURCE != "cron"
 
+orchestrator_monthly_cache_template: &ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
+  set_orchestrator_home_script: |
+    export THIS_MONTH=$(date '+%Y-%m')
+    echo "THIS_MONTH=${THIS_MONTH}" >> $CIRRUS_ENV
+    echo "ORCHESTRATOR_HOME=${CIRRUS_WORKING_DIR}/orchestrator/${THIS_MONTH}" >> $CIRRUS_ENV
+  mkdir_orchestrator_home_script: |
+    echo "Create dir ${ORCHESTRATOR_HOME} if needed"
+    mkdir -p ${ORCHESTRATOR_HOME}
+  orchestrator_cache:
+    folder: ${ORCHESTRATOR_HOME}
+    fingerprint_script: echo ${THIS_MONTH}
+
 eks_container: &CONTAINER_DEFINITION
   image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j17-g7-latest
   region: eu-central-1
   cluster_name: ${CIRRUS_CLUSTER_NAME}
   namespace: default
+
+eks_builder_container: &BUILDER_CONTAINER_DEFINITION
+  <<: *CONTAINER_DEFINITION
+  dockerfile: .cirrus/Dockerfile
+  docker_arguments:
+    CIRRUS_AWS_ACCOUNT: ${CIRRUS_AWS_ACCOUNT}
+    JDK_VERSION: ${JDK_VERSION}
+  builder_role: cirrus-builder
+  builder_image: docker-builder-v*
+  builder_instance_type: t3.small
+  builder_subnet_id: ${CIRRUS_AWS_SUBNET}
+
+ec2_instance: &WINVM_DEFINITION
+  experimental: true
+  image: base-windows-jdk17-v20240704125406
+  platform: windows
+  region: eu-central-1
+  subnet_id: ${CIRRUS_AWS_SUBNET}
+  type: c5.4xlarge
 
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
@@ -76,9 +110,77 @@ build_task:
     slack_notification_script: |
       .cirrus/slack-notification.sh
 
+validate_task:
+  #  name: "Run UTs and trigger SonarQube analysis"
+  depends_on:
+    - build
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  env:
+    JDK_VERSION: "17"
+  eks_container:
+    <<: *BUILDER_CONTAINER_DEFINITION
+    cpu: 7
+    memory: 12G
+  <<: *SETUP_GRADLE_CACHE
+  build_script: |
+    source cirrus-env QA
+    source .cirrus/use-gradle-wrapper.sh
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport
+  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  on_failure:
+    reports_artifacts:
+      path: "**/reports/**/*"
+    junit_artifacts:
+      path: "**/test-results/**/*.xml"
+      format: junit
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
+
+validate_windows_task:
+  #  name: "Run unit tests on Windows"
+  depends_on:
+    - build
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  env:
+    JDK_VERSION: "17"
+  ec2_instance:
+    <<: *WINVM_DEFINITION
+  <<: *SETUP_GRADLE_CACHE
+  # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
+  build_script: |
+    source cirrus-env QA
+    source .cirrus/use-gradle-wrapper.sh
+    ./gradlew :check
+  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  on_failure:
+    reports_artifacts:
+      path: "**/reports/**/*"
+    junit_artifacts:
+      path: "**/test-results/**/*.xml"
+      format: junit
+    slack_notification_script: |
+      .cirrus/slack-notification.sh
+
+inspect_orchestrator_cache_task:
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  depends_on: build
+  eks_container:
+    <<: *CONTAINER_DEFINITION
+    cpu: 1
+    memory: 2G
+  <<: *ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
+  inspect_cache_script: |
+    echo "Inspecting cache ${ORCHESTRATOR_HOME}..."
+    cd "${ORCHESTRATOR_HOME}"
+    ls -l
+    find .
+    echo "Inspecting cache done."
+
 promote_task:
   depends_on:
     - build
+    - validate
+    - validate_windows
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
     <<: *CONTAINER_DEFINITION
