@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.tests
+package org.sonarlint.intellij.its.tests.flavor
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
@@ -26,21 +26,19 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 
-
-/** Tests for Go language support (not limited to GoLand) */
-@EnabledIf("isGoPlugin")
-class GoPluginTests : BaseUiTest() {
+@EnabledIf("isRider")
+class RiderTests : BaseUiTest() {
 
     @Test
-    fun should_analyze_go() = uiTest {
-        openExistingProject("sample-go")
+    fun should_analyze_csharp() = uiTest {
+        openExistingProject("sample-rider")
 
-        openFile("file.go")
+        openFile("file.cs")
 
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
-            "file.go",
-            "Remove or correct this useless self-assignment."
+            "file.cs",
+            "Either remove or fill this block of code."
         )
     }
 

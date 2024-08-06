@@ -17,8 +17,9 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.tests
+package org.sonarlint.intellij.its.tests.flavor
 
+import java.time.Duration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
@@ -28,7 +29,6 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.optionalStep
-import java.time.Duration
 
 @EnabledIf("isCLion")
 class CLionTests : BaseUiTest() {
