@@ -66,4 +66,10 @@ class StandaloneIdeaTests : BaseUiTest() {
         removeFileExclusion("src/main/java/foo/Foo.java")
     }
 
+    @Test
+    fun chart() = uiTest {
+        openExistingProject("DuplicatedEnvsChart")
+        openFile("templates/memory_limit_pod2.yml", "memory_limit_pod2.yml")
+        verifyCurrentFileTabContainsMessages("Set automountServiceAccountToken to false for this specification of kind Pod.")
+    }
 }

@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-example
+spec:
+  containers:
+    - name: nginx1 
+      image: nginx:1.7.9
+      env:
+        # Compliant, only one variable
+        {{- .Values.envVariables1 | toYaml | nindent 8 }}
+
+    - name: nginx2
+      image: nginx:1.7.9
+      {{- if .Values.envVariables2 }}
+      env:
+        # Noncompliant@+2
+      {{- range .Values.envVariables2 }}
+        - name: {{ .name | quote }}
+          value: {{ .value | quote }}
+      {{- end }}
+      {{- end }}
+
+    - name: nginx3
+      image: nginx:1.7.9
+      env:
+      # Compliant, only one variable
+      {{- .Values.envVariables3 | toYaml | nindent 8 }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-example
+spec:
+  containers:
+    - name: nginx1
+      image: nginx:1.7.9
+      env:
+        - name: VAR1 # Compliant, this container has only one VAR1 variable
+          value: "value1"
+
+    - name: nginx2
+      image: nginx:1.7.9
+      env:
+        - name: VAR1 # Noncompliant
+          #     ^^^^
+          value: "value1"
+        - name: VAR1
+          #     ^^^^<
+          value: "value2"
+        - name: VAR1
+          #     ^^^^<
+          value: "value3"
