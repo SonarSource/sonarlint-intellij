@@ -20,15 +20,10 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.fixtures.ComponentFixture
-import com.intellij.remoterobot.utils.waitFor
-import java.time.Duration
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.fixtures.DialogFixture
-import org.sonarlint.intellij.its.fixtures.GotItTooltipFixture
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isBuildCommunity
 import org.sonarlint.intellij.its.fixtures.isBuildUltimate
@@ -43,8 +38,6 @@ import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.isSQLPlugin
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
-import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.closeProject
 import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
@@ -189,35 +182,11 @@ open class BaseUiTest {
         }
     }
 
-    private fun closeAllGotItTooltips() {
-        var tries = 5
-        var allGotItTooltips = remoteRobot.findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton())
-        while (allGotItTooltips.isNotEmpty() && tries > 0) {
-            allGotItTooltips.forEach {
-                waitFor(Duration.ofSeconds(1)) {
-                    it.isShowing
-                }
-                it.click()
-            }
-            allGotItTooltips = remoteRobot.findAll(ComponentFixture::class.java, GotItTooltipFixture.firstButton())
-            tries--
-        }
-        if (5 - tries > 0) {
-            println("Closed all Got It tooltips in ${5 - tries} tries")
-        }
-    }
-
-    @BeforeEach
-    fun quitProject() {
-        closeAllGotItTooltips()
-        closeAllDialogs()
-    }
-
     @AfterEach
-    fun disableConnectedMode() {
-        resetFocusOnNewCode()
-        enableConnectedModeFromCurrentFilePanel(null, false, "Orchestrator")
-        closeProject()
+    fun closeProjectAfterEach() {
+        optionalStep {
+            closeProject()
+        }
     }
 
 }

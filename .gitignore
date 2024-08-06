@@ -1,5 +1,6 @@
 src/main/resources/plugins/*.jar
 out
+its/projects/*-tmp/
 
 # ---- Sonar
 .sonar

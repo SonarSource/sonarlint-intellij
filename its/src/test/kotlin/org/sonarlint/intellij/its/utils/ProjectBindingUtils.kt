@@ -31,8 +31,8 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
-import org.sonarlint.intellij.its.tests.ConnectedIdeaTests.Companion.MODULE_PROJECT_KEY
-import org.sonarlint.intellij.its.tests.ConnectedIdeaTests.Companion.PROJECT_KEY
+import org.sonarlint.intellij.its.tests.ConfigurationTests.Companion.MODULE_PROJECT_KEY
+import org.sonarlint.intellij.its.tests.ConfigurationTests.Companion.PROJECT_KEY
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.sonarLintGlobalSettings
 
 class ProjectBindingUtils {
