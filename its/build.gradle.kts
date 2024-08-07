@@ -42,7 +42,7 @@ tasks.test {
         val tag = System.getenv("TEST_SUITE")
 
         if (tag != null && (tag.equals("OpenInIdeTests") || tag.equals("ConnectedAnalysisTests")
-                || tag.equals("ConfigurationTests") || tag.equals("Standalone"))
+                || tag.equals("ConfigurationTests") || tag.equals("Standalone") || tag.equals("StandaloneMediumTests") )
         ) {
             includeTags(tag)
         }
