@@ -9,7 +9,6 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 
-@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.intellij)
@@ -55,6 +54,8 @@ allprojects {
         plugin("com.github.hierynomus.license")
     }
 
+    configurations.archives.get().isCanBeResolved = true
+
     repositories {
         maven("https://repox.jfrog.io/repox/sonarsource") {
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
@@ -84,6 +85,7 @@ allprojects {
             jvmTarget = "17"
         }
     }
+
 
     tasks.cyclonedxBom {
         setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
@@ -161,11 +163,6 @@ tasks.runPluginVerifier {
 }
 
 tasks.test {
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
-        }
-    }
     useJUnitPlatform()
     systemProperty("sonarlint.telemetry.disabled", "true")
 }
