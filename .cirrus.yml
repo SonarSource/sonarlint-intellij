@@ -8,7 +8,7 @@ env:
   SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
   SONAR_TOKEN: VAULT[development/kv/data/next data.token]
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
-  GRADLE_VERSION: "7.6.4"
+  GRADLE_VERSION: "8.9"
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
 
 auto_cancellation: $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
@@ -43,7 +43,7 @@ orchestrator_monthly_cache_template: &ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
     fingerprint_script: echo ${THIS_MONTH}
 
 eks_container: &CONTAINER_DEFINITION
-  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-g7-latest
+  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j17-g7-latest
   region: eu-central-1
   cluster_name: ${CIRRUS_CLUSTER_NAME}
   namespace: default
