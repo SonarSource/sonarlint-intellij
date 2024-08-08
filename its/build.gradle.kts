@@ -41,9 +41,12 @@ tasks.test {
     useJUnitPlatform {
         val tag = System.getenv("TEST_SUITE")
 
+        println("Tag is: $tag")
+
         if (tag != null && (tag.equals("OpenInIdeTests") || tag.equals("ConnectedAnalysisTests")
-                || tag.equals("ConfigurationTests") || tag.equals("Standalone"))
+                || tag.equals("ConfigurationTests") || tag.equals("Standalone") || tag.equals("StandaloneMediumTests") )
         ) {
+            println("Included tag is: $tag")
             includeTags(tag)
         }
     }

@@ -120,6 +120,11 @@ validate_task:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 7
     memory: 12G
+  matrix:
+    - env:
+        TEST_SUITE: 'Others'
+    - env:
+        TEST_SUITE: 'StandaloneMediumTests'
   <<: *SETUP_GRADLE_CACHE
   build_script: |
     source cirrus-env QA
