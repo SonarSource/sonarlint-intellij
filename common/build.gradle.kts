@@ -1,9 +1,13 @@
 val intellijBuildVersion: String by project
 
 plugins {
+    id("org.jetbrains.intellij.platform.module")
     kotlin("jvm")
 }
 
-intellij {
-    version.set(intellijBuildVersion)
+dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity(intellijBuildVersion)
+        instrumentationTools()
+    }
 }

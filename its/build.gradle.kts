@@ -1,10 +1,11 @@
 plugins {
-    id("org.jetbrains.intellij")
+    id("org.jetbrains.intellij.platform")
     kotlin("jvm")
 }
 
 group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
+val intellijBuildVersion: String by project
 
 java {
     toolchain {
@@ -21,9 +22,22 @@ compileTestKotlin.kotlinOptions.jvmTarget = "17"
 repositories {
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 dependencies {
+    intellijPlatform {
+        if (project.hasProperty("ijVersion")) {
+            create(ijVersion)
+        } else {
+            intellijIdeaCommunity(intellijBuildVersion, useInstaller = false)
+        }
+        if (!project.hasProperty("slPluginDirectory")) {
+            localPlugin(project(":"))
+        }
+    }
     testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:4.2.0.542") {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
     }
@@ -37,17 +51,63 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
 }
 
-tasks.test {
-    useJUnitPlatform {
-        val tag = System.getenv("TEST_SUITE")
+tasks {
+    test {
+        useJUnitPlatform {
+            val tag = System.getenv("TEST_SUITE")
 
-        if (tag != null && (tag.equals("OpenInIdeTests") || tag.equals("ConnectedAnalysisTests")
-                || tag.equals("ConfigurationTests") || tag.equals("Standalone"))
-        ) {
-            includeTags(tag)
+            if (tag != null && (tag.equals("OpenInIdeTests") || tag.equals("ConnectedAnalysisTests")
+                    || tag.equals("ConfigurationTests") || tag.equals("Standalone"))
+            ) {
+                includeTags(tag)
+            }
+        }
+        testLogging.showStandardStreams = true
+    }
+
+    val runIdeDirectory: String by project
+
+    val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
+        task {
+            jvmArgumentProviders += CommandLineArgumentProvider {
+                listOf(
+                    "-Xmx1G",
+                    "-Drobot-server.port=8082",
+                    "-Dsonarlint.internal.sonarcloud.url=https://sc-staging.io",
+                    "-Dsonarlint.internal.sonarcloud.websocket.url=wss://events-api.sc-staging.io/",
+                    "-Dsonarlint.telemetry.disabled=true",
+                    "-Dsonarlint.logs.verbose=true",
+                    "-Didea.trust.all.projects=true",
+                    "-Dide.show.tips.on.startup.default.value=false",
+                    "-Djb.privacy.policy.text=<!--999.999-->",
+                    "-Djb.consents.confirmation.enabled=false",
+                    "-Deap.require.license=true"
+                )
+            }
+
+            if (project.hasProperty("runIdeDirectory")) {
+                jvmArgumentProviders += CommandLineArgumentProvider {
+                    listOf(
+                        "-DideDir=$runIdeDirectory"
+                    )
+                }
+            }
+
+            doFirst {
+                if (project.hasProperty("slPluginDirectory")) {
+                    copy {
+                        from(project.property("slPluginDirectory"))
+                        into(sandboxPluginsDirectory)
+                    }
+                }
+            }
+        }
+
+        plugins {
+            robotServerPlugin()
+            localPlugin(rootProject.dependencies.project(":"))
         }
     }
-    testLogging.showStandardStreams = true
 }
 
 license {
@@ -55,45 +115,14 @@ license {
     exclude("**.xml")
 }
 
-tasks.downloadRobotServerPlugin {
-    version.set(libs.versions.its.remote)
-}
-
 val ijVersion: String by project
 
-intellij {
-    version.set(if (project.hasProperty("ijVersion")) ijVersion else rootProject.intellij.version.get())
-    pluginName.set("sonarlint-intellij-its")
-    updateSinceUntilBuild.set(false)
-    if (!project.hasProperty("slPluginDirectory")) {
-        plugins.set(listOf(rootProject))
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "223.8214.6"
+        }
+        name = "sonarlint-intellij-its"
     }
     instrumentCode.set(false)
-}
-
-val runIdeDirectory: String by project
-
-tasks.runIdeForUiTests {
-    systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
-    systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.sc-staging.io/")
-    systemProperty("robot-server.port", "8082")
-    systemProperty("sonarlint.telemetry.disabled", "true")
-    systemProperty("sonarlint.logs.verbose", "true")
-    systemProperty("idea.trust.all.projects", "true")
-    systemProperty("ide.show.tips.on.startup.default.value", "false")
-    systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-    systemProperty("jb.consents.confirmation.enabled", "false")
-    systemProperty("eap.require.license", "true")
-    jvmArgs = listOf("-Xmx1G")
-    if (project.hasProperty("runIdeDirectory")) {
-        ideDir.set(File(runIdeDirectory))
-    }
-    doFirst {
-        if (project.hasProperty("slPluginDirectory")) {
-            copy {
-                from(project.property("slPluginDirectory"))
-                into(pluginsDir.get())
-            }
-        }
-    }
 }

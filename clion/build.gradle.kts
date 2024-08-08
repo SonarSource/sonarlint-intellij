@@ -1,11 +1,17 @@
 val clionBuildVersion: String by project
 
-intellij {
-    version.set(clionBuildVersion)
-    plugins.set(listOf("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang"))
+plugins {
+    id("org.jetbrains.intellij.platform.module")
 }
 
 dependencies {
+    intellijPlatform {
+        clion(clionBuildVersion)
+        bundledPlugin("com.intellij.clion")
+        bundledPlugin("com.intellij.cidr.base")
+        bundledPlugin("com.intellij.cidr.lang")
+        instrumentationTools()
+    }
     implementation(project(":common"))
     implementation(project(":clion-common"))
     testImplementation(libs.junit.api)

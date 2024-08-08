@@ -1,5 +1,5 @@
 rootProject.name = "sonarlint-intellij"
-include("its", "clion", "clion-resharper", "clion-common", "common", "git", "rider")
+include(":its", ":clion", ":clion-resharper", ":clion-common", ":common", ":git", ":rider")
 
 dependencyResolutionManagement {
     versionCatalogs {
@@ -27,8 +27,4 @@ buildCache {
         isEnabled = isCiServer
         isPush = isMasterBranch
     }
-}
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.8.0")
 }
