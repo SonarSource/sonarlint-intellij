@@ -1,14 +1,16 @@
 val intellijBuildVersion: String by project
 
 plugins {
+    id("org.jetbrains.intellij.platform.module")
     kotlin("jvm")
 }
 
-intellij {
-    version.set(intellijBuildVersion)
-    plugins.set(listOf("Git4Idea"))
-}
-
 dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity(intellijBuildVersion)
+        bundledPlugins(listOf("Git4Idea"))
+        instrumentationTools()
+    }
+
     implementation(project(":common"))
 }
