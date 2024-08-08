@@ -1,10 +1,15 @@
 val clionResharperBuildVersion: String by project
 
-intellij {
-    version.set(clionResharperBuildVersion)
+plugins {
+    id("org.jetbrains.intellij.platform.module")
 }
 
 dependencies {
+    intellijPlatform {
+        rider(clionResharperBuildVersion)
+        instrumentationTools()
+    }
+
     implementation(project(":common"))
     implementation(project(":clion-common"))
     testImplementation(libs.junit.api)

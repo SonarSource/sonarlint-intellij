@@ -10,6 +10,7 @@ its/projects/*-tmp/
 *.iml
 *.ipr
 .idea
+.intellijPlatform
 
 # ---- Eclipse
 .classpath
