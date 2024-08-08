@@ -35,6 +35,21 @@ class LiveFindings(
             securityHotspotsPerFile.filterKeys { files.contains(it) })
     }
 
+    fun merge(other: LiveFindings?): LiveFindings {
+        other ?: return this
+        val mergedIssuesPerFile = issuesPerFile.toMutableMap()
+        other.issuesPerFile.forEach { (file, issues) ->
+            mergedIssuesPerFile.merge(file, issues) { oldIssues, newIssues -> oldIssues + newIssues }
+        }
+
+        val mergedSecurityHotspotsPerFile = securityHotspotsPerFile.toMutableMap()
+        other.securityHotspotsPerFile.forEach { (file, hotspots) ->
+            mergedSecurityHotspotsPerFile.merge(file, hotspots) { oldHotspots, newHotspots -> oldHotspots + newHotspots }
+        }
+
+        return LiveFindings(mergedIssuesPerFile, mergedSecurityHotspotsPerFile)
+    }
+
     companion object {
         @JvmStatic
         fun none() : LiveFindings {
