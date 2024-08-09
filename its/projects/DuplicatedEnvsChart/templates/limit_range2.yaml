@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: limit-range-{{ .Values.automountServiceAccountToken }}
+  namespace: with-global-limit2
+spec:
+  limits:
+    - type: Container
+      default:
+        memory: 512Mi
+        cpu: 200m
+        ephemeral-storage: "2Gi"
+    - defaultRequest:
+        memory: 256Mi
+        cpu: 100m
+        ephemeral-storage: "1Gi"
+      type: Pod

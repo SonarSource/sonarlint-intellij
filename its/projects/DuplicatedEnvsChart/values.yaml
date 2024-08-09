@@ -1,0 +1,20 @@
+envVariables1:
+  - name: VAR1
+    value: "value1"
+
+envVariables2:
+  - name: VAR1
+    value: "value1"
+  - name: VAR1
+    value: "value2"
+
+envVariables3:
+  - name: VAR1
+    value: "value1"
+  - name: VAR1
+    value: "value2"
+  - name: VAR1
+    value: "value3"
+
+# issue when true
+automountServiceAccountToken: true

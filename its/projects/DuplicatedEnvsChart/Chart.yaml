@@ -1,0 +1,3 @@
+name: Duplicated Environment Variables Test Helm Chart
+version: 0.0.1
+apiVersion: v1
