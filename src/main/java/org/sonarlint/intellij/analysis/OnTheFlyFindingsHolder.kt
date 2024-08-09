@@ -58,17 +58,21 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         updateViewsWithNewFindings(intermediateResult.findings)
 
     private fun updateViewsWithNewFindings(findings: LiveFindings) {
-        with(findings.onlyFor(openFiles)) {
-            currentIssuesPerOpenFile.putAll(issuesPerFile)
-            currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
-        }
         runOnUiThread(project) {
             if (selectedFile == null) {
                 selectedFile = SonarLintUtils.getSelectedFile(project)
             }
+        }
+        // Temporary workaround as FileEditorManager.openFiles does not return open files on dev containers/SSH
+        val openedFiles = openFiles.ifEmpty { setOfNotNull(selectedFile) }
+        with(findings.onlyFor(openedFiles)) {
+            currentIssuesPerOpenFile.putAll(issuesPerFile)
+            currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
+        }
+        runOnUiThread(project) {
             updateCurrentFileTab()
             updateSecurityHotspots()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openFiles).filesInvolved)
+            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
         }
     }
 
