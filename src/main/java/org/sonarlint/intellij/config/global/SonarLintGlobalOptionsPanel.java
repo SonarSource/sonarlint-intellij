@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.components.JBCheckBox;
@@ -55,6 +56,9 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
   private JBTextField nodeJsPath;
+  private JBTextField gripUrl;
+  private JBTextField gripAuthToken;
+  private ComboBox<String> gripPromptVersion;
   private JBLabel nodeJsVersion;
   private JBCheckBox focusOnNewCode;
 
@@ -119,6 +123,31 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     optionsPanel.add(nodeJsVersion, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
+    var gripLabel = new JLabel("GRIP Service URL: ");
+    optionsPanel.add(gripLabel, new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
+    gripUrl = new JBTextField();
+    optionsPanel.add(gripUrl, new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
+    var gripTokenLabel = new JLabel("GRIP Auth Token: ");
+    optionsPanel.add(gripTokenLabel, new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
+    gripAuthToken = new JBTextField();
+    optionsPanel.add(gripAuthToken, new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
+    var gripPromptLabel = new JLabel("GRIP Prompt Version: ");
+    optionsPanel.add(gripPromptLabel, new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
+    gripPromptVersion = new ComboBox<>(new String[] {"openai.json-diff.20240619", "openai.generic.20240614"});
+    gripPromptVersion.setSelectedIndex(0);
+    optionsPanel.add(gripPromptVersion, new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
     return optionsPanel;
   }
 
@@ -127,7 +156,10 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     return model.isAutoTrigger() != autoTrigger.isSelected()
       || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText())
-      || model.isFocusOnNewCode() != focusOnNewCode.isSelected();
+      || model.isFocusOnNewCode() != focusOnNewCode.isSelected()
+      || !Objects.equals(model.getGripUrl(), gripUrl.getText())
+      || !Objects.equals(model.getGripAuthToken(), gripAuthToken.getText())
+      || !Objects.equals(model.getGripPromptVersion(), gripPromptVersion.getSelectedItem());
   }
 
   @Override
@@ -137,6 +169,9 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     nodeJsPath.setText(model.getNodejsPath());
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
     loadNodeJsSettings();
+    gripUrl.setText(model.getGripUrl());
+    gripAuthToken.setText(model.getGripAuthToken());
+    gripPromptVersion.setSelectedItem(model.getGripPromptVersion());
   }
 
   private void loadNodeJsSettings() {
@@ -157,6 +192,8 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
     settings.setNodejsPath(nodeJsPath.getText());
+    settings.setGripUrl(gripUrl.getText());
+    settings.setGripAuthToken(gripAuthToken.getText());
+    settings.setGripPromptVersion(Objects.requireNonNullElse((String) gripPromptVersion.getSelectedItem(), "openai.generic.20240614"));
   }
 }
-

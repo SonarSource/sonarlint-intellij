@@ -38,6 +38,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
 public class LiveSecurityHotspot extends LiveFinding {
   private final VulnerabilityProbability vulnerabilityProbability;
@@ -90,5 +91,10 @@ public class LiveSecurityHotspot extends LiveFinding {
   @Override
   public boolean isResolved() {
     return status.isResolved();
+  }
+
+  @Override
+  public TextRangeDto getTextRange() {
+    return getTextRangeDto();
   }
 }

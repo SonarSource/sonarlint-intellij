@@ -46,6 +46,9 @@ public final class SonarLintGlobalSettings {
 
   private boolean autoTrigger = true;
   private String nodejsPath = "";
+  private String gripUrl = "https://beta.sonar-grip-dev.io/";
+  private String gripAuthToken = "";
+  private String gripPromptVersion = "openai.json-diff.20240619";
 
   private List<ServerConnection> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
@@ -182,6 +185,30 @@ public final class SonarLintGlobalSettings {
 
   public void setNodejsPath(String nodejsPath) {
     this.nodejsPath = nodejsPath;
+  }
+
+  public String getGripUrl() {
+    return gripUrl;
+  }
+
+  public void setGripUrl(String gripUrl) {
+    this.gripUrl = gripUrl;
+  }
+
+  public String getGripAuthToken() {
+    return gripAuthToken;
+  }
+
+  public void setGripAuthToken(String gripAuthToken) {
+    this.gripAuthToken = gripAuthToken;
+  }
+
+  public String getGripPromptVersion() {
+    return gripPromptVersion;
+  }
+
+  public void setGripPromptVersion(String gripPromptVersion) {
+    this.gripPromptVersion = gripPromptVersion;
   }
 
   // Don't change annotation, used for backward compatibility
