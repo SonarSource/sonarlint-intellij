@@ -25,6 +25,7 @@ import com.sonar.orchestrator.locator.FileLocation
 import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -146,6 +147,7 @@ class ConfigurationTests : BaseUiTest() {
         }
     }
 
+    @Disabled("Flaky - excluded files from server are not always taken into account")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SampleScalaTests : BaseUiTest() {
