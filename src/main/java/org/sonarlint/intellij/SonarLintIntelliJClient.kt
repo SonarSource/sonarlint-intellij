@@ -28,6 +28,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -369,8 +370,15 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             return
         }
 
+        val descriptor = OpenFileDescriptor(
+            project, file,
+            textRange.startLine - 1, -1
+        )
+
         runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
-            FileEditorManager.getInstance(project).openFile(file, true)
+            FileEditorManager.getInstance(project).openTextEditor(
+                descriptor, true
+            )
         }
 
         val showFinding = ShowFinding(
