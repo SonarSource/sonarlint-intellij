@@ -23,6 +23,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
@@ -37,9 +38,10 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 class ShowFixSuggestion(private val project: Project, private val file: VirtualFile, private val fixSuggestion: FixSuggestionDto) {
 
     fun show() {
+        var hasNavegated = false
+
         runOnUiThread(project, ModalityState.defaultModalityState()) {
             val fileEditorManager = FileEditorManager.getInstance(project)
-            fileEditorManager.openFile(file, true)
             val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runOnUiThread
             val document = file.getDocument() ?: return@runOnUiThread
 
@@ -55,10 +57,23 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
             var successfullyOpened = true
 
             fixSuggestion.fileEdit().changes().forEachIndexed { index, change ->
-                fileEditorManager.selectedTextEditor?.let {
-                    val startLine = change.beforeLineRange().startLine
-                    val endLine = change.beforeLineRange().endLine
+                val startLine = change.beforeLineRange().startLine
+                val endLine = change.beforeLineRange().endLine
 
+                if(!hasNavegated) {
+                    val descriptor = OpenFileDescriptor(
+                        project, file,
+                        startLine - 1, -1
+                    )
+
+                    fileEditorManager.openTextEditor(
+                        descriptor, true
+                    )
+
+                    hasNavegated = true
+                }
+
+                fileEditorManager.selectedTextEditor?.let {
                     val doc = it.document
                     try {
                         val rangeMarker = doc.createRangeMarker(doc.getLineStartOffset(startLine - 1), doc.getLineEndOffset(endLine - 1))
