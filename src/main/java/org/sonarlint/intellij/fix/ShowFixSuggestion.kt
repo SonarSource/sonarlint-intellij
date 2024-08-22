@@ -32,13 +32,14 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.inlay.FixSuggestionInlayPanel
+import org.sonarlint.intellij.ui.inlay.InlayManager
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 
 class ShowFixSuggestion(private val project: Project, private val file: VirtualFile, private val fixSuggestion: FixSuggestionDto) {
 
     fun show() {
-        var hasNavegated = false
+        var hasNavigated = false
 
         runOnUiThread(project, ModalityState.defaultModalityState()) {
             val fileEditorManager = FileEditorManager.getInstance(project)
@@ -60,7 +61,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                 val startLine = change.beforeLineRange().startLine
                 val endLine = change.beforeLineRange().endLine
 
-                if(!hasNavegated) {
+                if (!hasNavigated) {
                     val descriptor = OpenFileDescriptor(
                         project, file,
                         startLine - 1, -1
@@ -70,7 +71,13 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                         descriptor, true
                     )
 
-                    hasNavegated = true
+                    hasNavigated = true
+
+                    fileEditorManager.selectedTextEditor?.let {
+                        val inlayManager = InlayManager.from(it)
+                        inlayManager.dispose()
+                    }
+
                 }
 
                 fileEditorManager.selectedTextEditor?.let {

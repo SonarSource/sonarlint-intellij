@@ -121,7 +121,8 @@ class InlayManager(val editor: EditorImpl) : Disposable {
     }
 
     override fun dispose() {
-        managedInlays.values.forEach(Disposer::dispose)
+        val inlayList = ArrayList(managedInlays.values)
+        inlayList.forEach(Disposer::dispose)
         disposed = true
     }
 
