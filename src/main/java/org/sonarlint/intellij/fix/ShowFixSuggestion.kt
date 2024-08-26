@@ -146,8 +146,8 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
             val lineStart = change.beforeLineRange().startLine
             val lineEnd = change.beforeLineRange().endLine
 
-            val lineStartOffset = document.getLineStartOffset(lineStart)
-            val lineEndOffset = document.getLineEndOffset(lineEnd)
+            val lineStartOffset = document.getLineStartOffset(lineStart - 1)
+            val lineEndOffset = document.getLineEndOffset(lineEnd - 1)
             val documentBeforeCode = document.getText(TextRange(lineStartOffset, lineEndOffset))
 
             return documentBeforeCode == change.before()
