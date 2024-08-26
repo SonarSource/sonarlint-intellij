@@ -64,6 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.9 - 7 new C++ 23 rules and C23 support.</li>
         <li>10.8.1 - Correctly display the current file analysis results on dev containers. Fix an issue where triggering a report analysis would disappear. Fix a problem where issues from another project would appear in the report.</li>
         <li>10.8 - Handle "Open in IDE" requests from SonarCloud. Detection of 34 new secrets. 11 new rules for Kubernetes. 20 new Java rules enabled on test code. Fix an issue in Rider where analysis would never finish. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.7 - Allow users to focus on new code without connected mode. Help users to generate a token when creating a new connection to SonarCloud. Support for more complex rules in Python and Java. Support for multiple project-level issues on C#. Support for C/C++ analysis from Linux ARM. Fix an issue in Rider that prevented file analysis. Fix an issue where files with special characters would not get analyzed. Avoid an issue in CLion when WSL is not supported. Bug fixes, fewer FPs and improvements for many languages.</li>
