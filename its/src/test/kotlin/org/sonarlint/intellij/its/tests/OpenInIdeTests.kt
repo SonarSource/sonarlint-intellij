@@ -233,6 +233,7 @@ class OpenInIdeTests : BaseUiTest() {
             firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
         }
 
+        @Disabled("Flaky test - Timeout while opening a file")
         @Test
         fun click_open_in_ide_SC_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
@@ -277,6 +278,7 @@ class OpenInIdeTests : BaseUiTest() {
             enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, false, "Orchestrator")
         }
 
+        @Disabled("Flaky test - Timeout while opening a file")
         @Test
         fun click_open_in_ide_issue_then_should_manually_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
@@ -287,7 +289,7 @@ class OpenInIdeTests : BaseUiTest() {
         }
 
         @Test
-        @Disabled
+        @Disabled("Flaky test - Timeout while opening a file")
         fun click_open_in_ide_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
             openExistingProject("sample-java-issues")
