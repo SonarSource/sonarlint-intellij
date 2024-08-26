@@ -60,9 +60,19 @@ tasks.downloadRobotServerPlugin {
 }
 
 val ijVersion: String by project
+val intellijBuildVersion: String by project
 
 intellij {
-    version.set(if (project.hasProperty("ijVersion")) ijVersion else rootProject.intellij.version.get())
+    if (project.hasProperty("ijVersion")) {
+        version.set(ijVersion)
+    } else {
+        if (rootProject.intellij.version.isPresent) {
+            version.set(rootProject.intellij.version.get())
+        } else {
+            localPath.set(rootProject.intellij.localPath.get())
+            localSourcesPath.set(rootProject.intellij.localSourcesPath.get())
+        }
+    }
     pluginName.set("sonarlint-intellij-its")
     updateSinceUntilBuild.set(false)
     if (!project.hasProperty("slPluginDirectory")) {

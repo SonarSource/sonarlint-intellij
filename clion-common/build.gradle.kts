@@ -1,11 +1,17 @@
 val clionResharperBuildVersion: String by project
+val resharperHome: String? = System.getenv("RESHARPER_HOME")
 
 plugins {
     kotlin("jvm")
 }
 
 intellij {
-    version.set(clionResharperBuildVersion)
+    if (resharperHome != null) {
+        localPath.set(resharperHome)
+        localSourcesPath.set(resharperHome)
+    } else {
+        version.set(clionResharperBuildVersion)
+    }
 }
 
 dependencies {
