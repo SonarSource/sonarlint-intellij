@@ -45,6 +45,8 @@ val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
 val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
     ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
+val ideaHome: String? = System.getenv("IDEA_HOME")
+
 allprojects {
     apply {
         plugin("idea")
@@ -130,10 +132,15 @@ subprojects {
 }
 
 intellij {
-    version.set(intellijBuildVersion)
     pluginName.set("sonarlint-intellij")
     updateSinceUntilBuild.set(false)
     plugins.set(listOf("java", "Git4Idea"))
+    if (ideaHome != null) {
+        localPath.set(ideaHome)
+        localSourcesPath.set(ideaHome)
+    } else {
+        version.set(intellijBuildVersion)
+    }
 }
 
 val verifierVersions: String by project

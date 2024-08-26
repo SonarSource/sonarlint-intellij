@@ -1,11 +1,17 @@
 val riderBuildVersion: String by project
+val riderHome: String? = System.getenv("RIDER_HOME")
 
 plugins {
     kotlin("jvm")
 }
 
 intellij {
-    version.set(riderBuildVersion)
+    if (riderHome != null) {
+        localPath.set(riderHome)
+        localSourcesPath.set(riderHome)
+    } else {
+        version.set(riderBuildVersion)
+    }
 }
 
 dependencies {

@@ -1,8 +1,14 @@
 val clionBuildVersion: String by project
+val clionHome: String? = System.getenv("CLION_HOME")
 
 intellij {
-    version.set(clionBuildVersion)
     plugins.set(listOf("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang"))
+    if (clionHome != null) {
+        localPath.set(clionHome)
+        localSourcesPath.set(clionHome)
+    } else {
+        version.set(clionBuildVersion)
+    }
 }
 
 dependencies {
