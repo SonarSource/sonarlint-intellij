@@ -39,8 +39,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 class ShowFixSuggestion(private val project: Project, private val file: VirtualFile, private val fixSuggestion: FixSuggestionDto) {
 
     fun show() {
-        var hasNavigated = false
-
         runOnUiThread(project, ModalityState.defaultModalityState()) {
             val fileEditorManager = FileEditorManager.getInstance(project)
             val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runOnUiThread
@@ -61,23 +59,15 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                 val startLine = change.beforeLineRange().startLine
                 val endLine = change.beforeLineRange().endLine
 
-                if (!hasNavigated) {
-                    val descriptor = OpenFileDescriptor(
-                        project, file,
-                        startLine - 1, -1
-                    )
+                if (index == 0) {
+                    val descriptor = OpenFileDescriptor(project, file, startLine - 1, -1)
 
-                    fileEditorManager.openTextEditor(
-                        descriptor, true
-                    )
-
-                    hasNavigated = true
+                    fileEditorManager.openTextEditor(descriptor, true)
 
                     fileEditorManager.selectedTextEditor?.let {
                         val inlayManager = InlayManager.from(it)
                         inlayManager.dispose()
                     }
-
                 }
 
                 fileEditorManager.selectedTextEditor?.let {
@@ -150,7 +140,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
             val lineEndOffset = document.getLineEndOffset(lineEnd - 1)
             val documentBeforeCode = document.getText(TextRange(lineStartOffset, lineEndOffset))
 
-            return documentBeforeCode == change.before()
+            return documentBeforeCode.trim() == change.before().trim()
         }
     }
 

@@ -103,7 +103,7 @@ import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.sharing.ConfigurationSharing
 import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThreadAndWait
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -370,12 +370,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             return
         }
 
-        val descriptor = OpenFileDescriptor(
-            project, file,
-            textRange.startLine - 1, -1
-        )
+        val descriptor = OpenFileDescriptor(project, file, textRange.startLine - 1, -1)
 
-        runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
+        runOnUiThread(project, ModalityState.defaultModalityState()) {
             FileEditorManager.getInstance(project).openTextEditor(
                 descriptor, true
             )
