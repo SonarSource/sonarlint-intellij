@@ -102,6 +102,13 @@ public class SonarLintUtils {
     return str;
   }
 
+  public static String withoutTrailingSlash(String str) {
+    if (str.endsWith("/")) {
+      return str.substring(0, str.length() - 1);
+    }
+    return str;
+  }
+
   /**
    * FileEditorManager#getSelectedFiles does not work as expected. In split editors, the order of the files does not change depending
    * on which one of the split editors is selected.

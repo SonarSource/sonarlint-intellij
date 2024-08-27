@@ -51,6 +51,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.withoutTrailingSlash;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
@@ -203,7 +204,7 @@ public class CurrentFileConnectedModePanel {
   }
 
   private static String buildTooltipHtml(ServerConnection serverConnection, String projectKey, @Nullable String branchName) {
-    var projectOverviewUrl = String.format("%s/dashboard?id=%s", serverConnection.getHostUrl(), UrlUtils.urlEncode(projectKey));
+    var projectOverviewUrl = String.format("%s/dashboard?id=%s", withoutTrailingSlash(serverConnection.getHostUrl()), UrlUtils.urlEncode(projectKey));
     var branchParagraph = "<p>Synchronized with the project's main branch</p>";
     if (branchName != null) {
       projectOverviewUrl += String.format("&branch=%s", UrlUtils.urlEncode(branchName));
