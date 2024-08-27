@@ -36,6 +36,7 @@ import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import java.util.concurrent.ConcurrentHashMap
 import javax.swing.ScrollPaneConstants
 import kotlin.math.ceil
 import kotlin.math.max
@@ -47,7 +48,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Compan
 class InlayManager(val editor: EditorImpl) : Disposable {
 
     var disposed = false
-    private val managedInlays = mutableMapOf<ComponentWrapper, Disposable>()
+    private val managedInlays = ConcurrentHashMap<ComponentWrapper, Disposable>()
     private val editorWidthWatcher = EditorTextWidthWatcher()
 
     init {
@@ -121,8 +122,7 @@ class InlayManager(val editor: EditorImpl) : Disposable {
     }
 
     override fun dispose() {
-        val inlayList = ArrayList(managedInlays.values)
-        inlayList.forEach(Disposer::dispose)
+        managedInlays.values.forEach(Disposer::dispose)
         disposed = true
     }
 
