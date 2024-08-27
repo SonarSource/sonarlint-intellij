@@ -49,6 +49,7 @@ import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.fields.ExpandableTextField;
+import com.intellij.util.ModalityUiUtil;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
@@ -288,11 +289,12 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
         allRulesStateByKey.putAll(ruleNodes);
 
-        UIUtil.invokeLaterIfNeeded(() -> {
-          applyRuleSelection();
-          updateModel();
-          panel.stopLoading();
-        });
+        ModalityUiUtil.invokeLaterIfNeeded(
+          ModalityState.stateForComponent(panel), () -> {
+            applyRuleSelection();
+            updateModel();
+            panel.stopLoading();
+          });
       })
       .exceptionally(error -> {
         GlobalLogOutput.get().log("Could not load rules: " + error.getMessage(), ClientLogOutput.Level.ERROR);
