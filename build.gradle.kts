@@ -224,7 +224,6 @@ dependencies {
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
     }
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
@@ -311,12 +310,18 @@ tasks {
         finalizedBy(buildPluginBlockmap)
     }
 
+    withType<Test> {
+        configure<JacocoTaskExtension> {
+            isIncludeNoLocationClasses = true
+            excludes = listOf("jdk.internal.*")
+        }
+    }
+
     jacocoTestReport {
         classDirectories.setFrom(files("build/instrumented/instrumentCode"))
         reports {
             xml.required.set(true)
         }
-        dependsOn(check)
     }
 }
 
