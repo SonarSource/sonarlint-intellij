@@ -116,7 +116,7 @@ allprojects {
             )
         )
         excludes(
-            listOf("**/*.jar", "**/*.png", "**/README", "**/proto/*.java")
+            listOf("**/*.jar", "**/*.png", "**/README")
         )
         strictCheck = true
     }
