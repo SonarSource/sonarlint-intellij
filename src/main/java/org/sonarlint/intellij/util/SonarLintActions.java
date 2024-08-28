@@ -40,6 +40,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
+import org.sonarlint.intellij.ui.grip.ClearAiSuggestionsAction;
 
 /**
  * Creates and keeps a single instance of actions used by SonarLint.
@@ -62,6 +63,7 @@ public final class SonarLintActions {
   private final IncludeResolvedFindingsAction<LocalTaintVulnerability> includeResolvedTaintVulnerabilitiesAction;
   private final AnAction analyzeCurrentFileAction;
   private final AnAction restartSonarLintAction;
+  private final AnAction clearAiSuggestionAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -113,6 +115,9 @@ public final class SonarLintActions {
       "Run SonarLint analysis on the current file",
       SonarLintIcons.PLAY);
     restartSonarLintAction = new RestartBackendAction();
+    clearAiSuggestionAction = new ClearAiSuggestionsAction("Clear AI Suggestions",
+      "Clear AI suggestions",
+      SonarLintIcons.CLEAN);
   }
 
   public static SonarLintActions getInstance() {
@@ -169,6 +174,10 @@ public final class SonarLintActions {
 
   public AnAction restartSonarLintAction() {
     return restartSonarLintAction;
+  }
+
+  public AnAction clearAiSuggestionAction() {
+    return clearAiSuggestionAction;
   }
 
 }

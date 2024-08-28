@@ -46,6 +46,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
+import org.sonarlint.intellij.ui.grip.SuggestAiFixIntentionAction;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
@@ -140,6 +141,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       });
     }
 
+    if (finding.getId() != null) {
+      intentionActions.add(new SuggestAiFixIntentionAction(finding));
+    }
+
     if (finding instanceof LiveSecurityHotspot hotspot) {
       intentionActions.add(new ReviewSecurityHotspotAction(finding.getServerKey(), hotspot.getStatus()));
     }
@@ -185,7 +190,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .create();
   }
 
-  static TextAttributesKey getTextAttrsKey(Project project, @Nullable ImpactSeverity impact, @Nullable IssueSeverity severity, boolean isOnNewCode) {
+  static TextAttributesKey getTextAttrsKey(Project project, @Nullable ImpactSeverity impact, @Nullable IssueSeverity severity,
+    boolean isOnNewCode) {
     if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) && !isOnNewCode) {
       return SonarLintTextAttributes.OLD_CODE;
     }

@@ -17,14 +17,20 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.notifications;
+package org.sonarlint.intellij.ui.grip
 
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
+import com.intellij.openapi.actionSystem.AnActionEvent
+import javax.swing.Icon
+import org.sonarlint.intellij.actions.AbstractSonarAction
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
-public class OpenGlobalSettingsAction extends OpenConfigurableAction {
+class ClearAiSuggestionsAction(text: String, description: String, icon: Icon) : AbstractSonarAction(text, description, icon) {
 
-  public OpenGlobalSettingsAction(Project project) {
-    super(project, "Open SonarLint Settings", new SonarLintGlobalConfigurable());
-  }
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+
+        getService(project, SonarLintToolWindow::class.java).clearAiSuggestionsTab()
+    }
+
 }

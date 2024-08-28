@@ -51,6 +51,7 @@ import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CLEAN_CODE_LINK
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.ui.grip.SuggestAiFixAction
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute
@@ -65,6 +66,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayout()) {
     companion object {
         private const val MARK_AS_RESOLVED = "Mark Issue as\u2026"
+        private const val SUGGEST_FIX = "Suggest a Fix"
         private const val REOPEN = "Reopen"
     }
 
@@ -79,6 +81,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     private val hotspotVulnerabilityValueLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
     private val changeStatusButton = JButton()
+    private val suggestFix = JButton()
     private val learnMore = HyperlinkLabel("Learn more")
     private val disposableFlag = Disposer.newCheckedDisposable()
 
@@ -99,6 +102,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         hotspotVulnerabilityValueLabel.text = ""
         hotspotVulnerabilityValueLabel.border = BorderFactory.createEmptyBorder()
         changeStatusButton.isVisible = false
+        suggestFix.isVisible = false
         wrappedPanel.removeAll()
         removeAll()
         repaint()
@@ -133,11 +137,26 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
                 }
             }
         }
+        suggestFix.isVisible = true
+        suggestFix.action = object : AbstractAction(SUGGEST_FIX) {
+            override fun actionPerformed(e: ActionEvent?) {
+                SuggestAiFixAction.suggestAiFix(project, issue)
+            }
+
+            override fun isEnabled(): Boolean {
+                return issue.getId() != null
+            }
+        }
     }
 
     fun updateForServerIssue(ruleDescription: EffectiveRuleDetailsDto, ruleKey: String) {
         clear()
-        updateServerCommonFields(ruleDescription.type, ruleDescription.cleanCodeAttribute?.let { CleanCodeAttribute.fromDto(it) }, ruleDescription.defaultImpacts, ruleKey)
+        updateServerCommonFields(
+            ruleDescription.type,
+            ruleDescription.cleanCodeAttribute?.let { CleanCodeAttribute.fromDto(it) },
+            ruleDescription.defaultImpacts,
+            ruleKey
+        )
         updateRuleSeverity(ruleDescription.severity)
     }
 
@@ -166,12 +185,19 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             }
             changeStatusButton.isVisible = securityHotspot.isValid()
         }
+        suggestFix.isVisible = true
+        suggestFix.action = object : AbstractAction(SUGGEST_FIX) {
+            override fun actionPerformed(e: ActionEvent?) {
+                SuggestAiFixAction.suggestAiFix(project, securityHotspot)
+            }
+        }
     }
 
     private fun updateServerCommonFields(type: RuleType, attribute: CleanCodeAttribute?, qualities: List<ImpactDto>, ruleKey: String) {
         val newCctEnabled = attribute != null && qualities.isNotEmpty()
         if (newCctEnabled) {
-            val attributeLabel = JBLabel("<html><b>" + cleanCapitalized(attribute!!.label) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
+            val attributeLabel =
+                JBLabel("<html><b>" + cleanCapitalized(attribute!!.label) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
             attributePanel.apply {
                 add(attributeLabel)
                 toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
@@ -200,10 +226,16 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         organizeHeader(newCctEnabled)
     }
 
-    private fun updateCommonFields(type: RuleType, attribute: CleanCodeAttribute?, qualities: Map<SoftwareQuality, ImpactSeverity>, ruleKey: String) {
+    private fun updateCommonFields(
+        type: RuleType,
+        attribute: CleanCodeAttribute?,
+        qualities: Map<SoftwareQuality, ImpactSeverity>,
+        ruleKey: String,
+    ) {
         val newCctEnabled = attribute != null && qualities.isNotEmpty()
         if (newCctEnabled) {
-            val attributeLabel = JBLabel("<html><b>" + cleanCapitalized(attribute!!.category.label) + " issue</b> | " + clean(attribute.label) + "<br></html>")
+            val attributeLabel =
+                JBLabel("<html><b>" + cleanCapitalized(attribute!!.category.label) + " issue</b> | " + clean(attribute.label) + "<br></html>")
             attributePanel.apply {
                 add(attributeLabel)
                 toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
@@ -260,6 +292,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         changeStatusPanel.apply { border = BorderFactory.createEmptyBorder(0, 15, 0, 0) }
 
         changeStatusPanel.add(changeStatusButton)
+        changeStatusPanel.add(suggestFix)
         wrappedPanel.add(changeStatusPanel)
         if (newCct) {
             wrappedPanel.add(learnMore)

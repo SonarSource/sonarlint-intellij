@@ -91,7 +91,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { it.getType() },
                 { it.userSeverity },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } }
@@ -118,7 +118,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
                 tuple("css:S4647", "Unexpected invalid hex color \"#3c\"", Pair(4, 80)),
@@ -135,7 +135,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
                 tuple("java:S1220", "Move this file to a named package.", null),
@@ -153,7 +153,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
                 tuple("javascript:S1481", "Remove the declaration of the unused 'x' variable.", Pair(219, 220))
@@ -169,7 +169,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
                 tuple("docker:S6476", "Replace `from` with upper case format `FROM`.", Pair(0, 4))
@@ -187,7 +187,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
                 tuple("cloudformation:S6295", "Make sure missing \"RetentionInDays\" property is intended here.", Pair(79, 98))
@@ -204,7 +204,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
                 tuple(
@@ -228,7 +228,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
                 tuple(
@@ -265,7 +265,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
                 tuple("python:S930", "Add 1 missing arguments; 'add' expects 2 positional arguments.", Pair(45, 48))
@@ -305,7 +305,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.getRuleKey() },
-                { it.message },
+                { it.getMessage() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
                 tuple("python:S930", "Remove 1 unexpected arguments; 'add' expects 1 positional arguments.", Pair(21, 24))
@@ -348,7 +348,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                 .extracting(
                     { it.file().name },
                     { it.getRuleKey() },
-                    { it.message },
+                    { it.getMessage() },
                     { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
                 .containsExactlyInAnyOrder(
                     tuple(
