@@ -33,8 +33,6 @@ dependencies {
     testImplementation(libs.junit.api)
     testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.engine)
-    // Needed for https://github.com/gradle/gradle/issues/22333
-    testRuntimeOnly(libs.junit.launcher)
 }
 
 tasks.test {
