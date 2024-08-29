@@ -6,7 +6,7 @@ plugins {
 }
 
 intellij {
-    if (riderHome != null) {
+    if (!riderHome.isNullOrBlank()) {
         localPath.set(riderHome)
         localSourcesPath.set(riderHome)
     } else {

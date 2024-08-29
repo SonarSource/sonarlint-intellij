@@ -2,7 +2,7 @@ val clionResharperBuildVersion: String by project
 val resharperHome: String? = System.getenv("RESHARPER_HOME")
 
 intellij {
-    if (resharperHome != null) {
+    if (!resharperHome.isNullOrBlank()) {
         localPath.set(resharperHome)
         localSourcesPath.set(resharperHome)
     } else {

@@ -6,7 +6,7 @@ plugins {
 }
 
 intellij {
-    if (ideaHome != null) {
+    if (!ideaHome.isNullOrBlank()) {
         localPath.set(ideaHome)
         localSourcesPath.set(ideaHome)
     } else {

@@ -135,7 +135,7 @@ intellij {
     pluginName.set("sonarlint-intellij")
     updateSinceUntilBuild.set(false)
     plugins.set(listOf("java", "Git4Idea"))
-    if (ideaHome != null) {
+    if (!ideaHome.isNullOrBlank()) {
         localPath.set(ideaHome)
         localSourcesPath.set(ideaHome)
     } else {

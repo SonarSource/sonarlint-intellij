@@ -3,7 +3,7 @@ val clionHome: String? = System.getenv("CLION_HOME")
 
 intellij {
     plugins.set(listOf("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang"))
-    if (clionHome != null) {
+    if (!clionHome.isNullOrBlank()) {
         localPath.set(clionHome)
         localSourcesPath.set(clionHome)
     } else {

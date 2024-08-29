@@ -10,6 +10,10 @@ env:
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
   GRADLE_VERSION: "8.9"
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
+  IDEA_HOME: "/opt/intellij"
+  RIDER_HOME: "/opt/rider"
+  RESHARPER_HOME: "/opt/resharper"
+  CLION_HOME: "/opt/clion"
 
 auto_cancellation: $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
 
@@ -58,11 +62,6 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
   builder_image: docker-builder-v*
   builder_instance_type: t3.small
   builder_subnet_id: ${CIRRUS_AWS_SUBNET}
-  env:
-    IDEA_HOME: /opt/intellij
-    RIDER_HOME: /opt/rider
-    RESHARPER_HOME: /opt/resharper
-    CLION_HOME: /opt/clion
 
 ec2_instance: &WINVM_DEFINITION
   experimental: true
@@ -148,6 +147,10 @@ validate_windows_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
     JDK_VERSION: "17"
+    IDEA_HOME: ""
+    RIDER_HOME: ""
+    RESHARPER_HOME: ""
+    CLION_HOME: ""
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
@@ -438,12 +441,13 @@ promote_task:
     - mend_scan
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
-    <<: *CONTAINER_DEFINITION
+    <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 3
     memory: 4G
   env:
     ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
+    JDK_VERSION: "17"
   <<: *SETUP_GRADLE_CACHE
   promote_script: |
     source .cirrus/use-gradle-wrapper.sh
