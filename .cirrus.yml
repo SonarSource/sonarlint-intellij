@@ -417,6 +417,10 @@ mend_scan_task:
     memory: 4G
   env:
     WS_APIKEY: VAULT[development/kv/data/mend data.apikey]
+    IDEA_HOME: ""
+    RIDER_HOME: ""
+    RESHARPER_HOME: ""
+    CLION_HOME: ""
   <<: *SETUP_GRADLE_CACHE
   mend_script: |
     source cirrus-env QA
@@ -441,13 +445,17 @@ promote_task:
     - mend_scan
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
-    <<: *BUILDER_CONTAINER_DEFINITION
+    <<: *CONTAINER_DEFINITION
     cpu: 3
     memory: 4G
   env:
     ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
     JDK_VERSION: "17"
+    IDEA_HOME: ""
+    RIDER_HOME: ""
+    RESHARPER_HOME: ""
+    CLION_HOME: ""
   <<: *SETUP_GRADLE_CACHE
   promote_script: |
     source .cirrus/use-gradle-wrapper.sh
