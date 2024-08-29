@@ -19,14 +19,14 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.utils.waitFor
+import com.intellij.remoterobot.fixtures.JListFixture
+import com.intellij.remoterobot.utils.keyboard
 import java.awt.Point
 import java.io.File
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isRider
@@ -46,14 +46,31 @@ class OpeningUtils {
                         const file = component.project.getBaseDir().findFileByRelativePath("$filePath");
                         if (file) {
                             const openDescriptor = new com.intellij.openapi.fileEditor.OpenFileDescriptor(component.project, file);
-                            com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() => openDescriptor.navigate(true));
+                            com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() => openDescriptor.navigateInEditor(component.project, true));
                         }
                         else {
                             throw "Cannot open file '" + $filePath +"': not found";
                         }
-        """, false
+        """, true
                     )
-                    waitFor(Duration.ofSeconds(10)) { editor(fileName).isShowing }
+                    waitBackgroundTasksFinished()
+                }
+            }
+        }
+
+        fun openFileViaMenu(fileName: String) {
+            with(remoteRobot) {
+                idea {
+                    actionMenu("Navigate") {
+                        open()
+                        item("File...") {
+                            click()
+                        }
+                        keyboard {
+                            enterText(fileName)
+                            enter()
+                        }
+                    }
                     waitBackgroundTasksFinished()
                 }
             }
@@ -82,6 +99,16 @@ class OpeningUtils {
                         // from 2020.3.4+
                         dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
                             button("Trust Project").click()
+                        }
+                    }
+                }
+                if (remoteRobot.isRider()) {
+                    optionalStep {
+                        dialog("Select a Solution to Open") {
+                            jList(JListFixture.byType()) {
+                                clickItemAtIndex(0)
+                                button("Open").click()
+                            }
                         }
                     }
                 }
