@@ -6,7 +6,7 @@ plugins {
 }
 
 intellij {
-    if (resharperHome != null) {
+    if (!resharperHome.isNullOrBlank()) {
         localPath.set(resharperHome)
         localSourcesPath.set(resharperHome)
     } else {
