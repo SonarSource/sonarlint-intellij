@@ -67,6 +67,7 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
 import org.sonarlint.intellij.analysis.OpenInIdeFindingCache
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
+import org.sonarlint.intellij.common.analysis.FilesContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -644,17 +645,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
         val listClientFiles = BackendService.findModule(configScopeId)?.let { module ->
-            val listModulesFiles = if (isRider()) {
-                val listFiles = listModuleFilesForRider(module, configScopeId)
-                computeRiderSharedConfiguration(module.project, configScopeId)?.let {
-                    listFiles.add(it)
-                }
-                listFiles
-            } else {
-                listModuleFiles(module, configScopeId)
-            }
-
-            listModulesFiles
+            listModuleFiles(module, configScopeId)
         } ?: findProject(configScopeId)?.let { project ->
             val listProjectFiles = listProjectFiles(project, configScopeId)
 
@@ -698,34 +689,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private fun listModuleFiles(module: Module, configScopeId: String): MutableList<ClientFileDto> {
         val filesInContentRoots = listFilesInContentRoots(module)
 
-        val forcedLanguages = collectContributedLanguages(module, filesInContentRoots)
-
-        return filesInContentRoots.mapNotNull { file ->
-            val forcedLanguage = forcedLanguages[file]?.let { fl -> Language.valueOf(fl.name) }
-            getRelativePathForAnalysis(module, file)?.let { relativePath ->
-                toClientFileDto(
-                    module.project,
-                    configScopeId,
-                    file,
-                    relativePath,
-                    forcedLanguage
-                )
-            }
-        }.toMutableList()
-    }
-
-    private fun listModuleFilesForRider(module: Module, configScopeId: String): MutableList<ClientFileDto> {
-        val filesInContentRoots = mutableSetOf<VirtualFile>()
-        module.project.guessProjectDir()?.children?.forEach { contentRoot ->
-            if (module.isDisposed) {
-                return@forEach
-            }
-            filesInContentRoots.addAll(visitAndAddFiles(contentRoot, module))
+        FilesContributor.EP_NAME.extensionList.forEach {
+            filesInContentRoots.addAll(it.listFiles(module))
         }
 
         val forcedLanguages = collectContributedLanguages(module, filesInContentRoots)
 
-        return filesInContentRoots.mapNotNull { file ->
+        val clientFiles = filesInContentRoots.mapNotNull { file ->
             val forcedLanguage = forcedLanguages[file]?.let { fl -> Language.valueOf(fl.name) }
             getRelativePathForAnalysis(module, file)?.let { relativePath ->
                 toClientFileDto(
@@ -737,6 +707,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 )
             }
         }.toMutableList()
+
+        if (isRider()) {
+            computeRiderSharedConfiguration(module.project, configScopeId)?.let {
+                clientFiles.add(it)
+            }
+        }
+
+        return clientFiles
     }
 
     private fun listProjectFiles(project: Project, configScopeId: String): MutableList<ClientFileDto> {
@@ -786,7 +764,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     private fun listFilesInContentRoots(
         module: Module,
-    ): Set<VirtualFile> {
+    ): MutableSet<VirtualFile> {
         val files = mutableListOf<VirtualFile>()
         ModuleRootManager.getInstance(module).contentRoots.forEach { contentRoot ->
             if (module.isDisposed) {
@@ -794,7 +772,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
             files.addAll(visitAndAddFiles(contentRoot, module))
         }
-        return files.toSet()
+        return files.toMutableSet()
     }
 
     // useful for Rider where the files to find are not located in content roots

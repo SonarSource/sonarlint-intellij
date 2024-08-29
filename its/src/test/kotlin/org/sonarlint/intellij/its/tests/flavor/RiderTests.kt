@@ -25,6 +25,7 @@ import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFileViaMenu
 
 @EnabledIf("isRider")
 class RiderTests : BaseUiTest() {
@@ -39,6 +40,29 @@ class RiderTests : BaseUiTest() {
             "Found 1 issue in 1 file",
             "file.cs",
             "Either remove or fill this block of code."
+        )
+    }
+
+    @Test
+    fun should_analyze_complex_csharp() = uiTest {
+        openExistingProject("sample-complex-rider")
+
+        openFile("folder1/file1.cs")
+
+        verifyCurrentFileTabContainsMessages(
+            "Found 2 issues in 1 file",
+            "file1.cs",
+            "Remove this empty class, write its code or make it an \"interface\".",
+            "Rename class 'file1' to match pascal case naming rules, consider using 'File1'."
+        )
+
+        openFileViaMenu("file2.cs")
+
+        verifyCurrentFileTabContainsMessages(
+            "Found 2 issues in 1 file",
+            "file2.cs",
+            "Remove this empty class, write its code or make it an \"interface\".",
+            "Rename class 'file2' to match pascal case naming rules, consider using 'File2'."
         )
     }
 

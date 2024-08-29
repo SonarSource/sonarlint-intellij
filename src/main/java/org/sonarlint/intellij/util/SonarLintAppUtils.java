@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.util;
 
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -28,7 +27,6 @@ import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
@@ -40,9 +38,8 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.FileUtils;
 
-import static com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyFilter;
 import static com.intellij.openapi.vfs.VirtualFileVisitor.NO_FOLLOW_SYMLINKS;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
@@ -168,7 +165,7 @@ public class SonarLintAppUtils {
     VfsUtilCore.visitChildrenRecursively(file, new VirtualFileVisitor<>(NO_FOLLOW_SYMLINKS) {
       @Override
       public boolean visitFile(VirtualFile file) {
-        if (!isFileValidForSonarLint(file, module.getProject())) {
+        if (!FileUtils.Companion.isFileValidForSonarLint(file, module.getProject())) {
           return false;
         }
         if (!file.isDirectory() && file.isValid()) {
@@ -178,19 +175,6 @@ public class SonarLintAppUtils {
       }
     });
     return filesToAdd;
-  }
-
-  public static boolean isFileValidForSonarLint(VirtualFile file, Project project) {
-    try {
-      var toSkip = computeReadActionSafely(project, () -> isGeneratedSourceByAnyFilter(file, project)
-        || ProjectFileIndex.getInstance(project).isExcluded(file)
-        || ProjectFileIndex.getInstance(project).isInLibrary(file)
-        || (!ApplicationManager.getApplication().isUnitTestMode() && FileUtilRt.isTooLarge(file.getLength())));
-      return Boolean.FALSE == toSkip;
-    } catch (Exception e) {
-      SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.getMessage());
-      return false;
-    }
   }
 
   @CheckForNull

@@ -116,7 +116,7 @@ class CurrentFileTabTests {
                         content("CurrentFilePanel") {
                             expectedMessages.forEach {
                                 // the synchronization can take a while to happen
-                                waitFor(duration = Duration.ofMinutes(1)) {
+                                waitFor(duration = Duration.ofSeconds(30)) {
                                     hasText(it)
                                 }
                             }
