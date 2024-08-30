@@ -21,10 +21,12 @@ package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.net.HttpConfigurable;
+import com.intellij.util.text.VersionComparatorUtil;
 import com.intellij.util.ui.SwingHelper;
 import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
@@ -37,6 +39,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -74,7 +77,17 @@ public class ServerStep extends AbstractWizardStepEx {
   private JEditorPane sonarCloudFree;
   private JEditorPane sonarQubeFree;
   private JEditorPane compareProducts;
+  private JTextArea proxyWarningText;
   private ErrorPainter errorPainter;
+
+  public static String getIntelliJVersion() {
+    ApplicationInfo appInfo = ApplicationInfo.getInstance();
+    return appInfo.getFullVersion();
+  }
+
+  public static boolean isVersionHigher(String currentVersion, String specificVersion) {
+    return VersionComparatorUtil.compare(currentVersion, specificVersion) >= 0;
+  }
 
   public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
     super("Server Details");
@@ -93,6 +106,17 @@ public class ServerStep extends AbstractWizardStepEx {
     nameField.getDocument().addDocumentListener(listener);
 
     nameField.setToolTipText("Name of this configuration (mandatory field)");
+
+    var version = getIntelliJVersion();
+
+    if(isVersionHigher(version, "2024.2")) {
+      proxyWarningText.setEnabled(true);
+      proxyWarningText.setText('⚠' + " Since IntelliJ IDEA 2024.2, the proxy settings are set automatically set by the IDE. Make sure" +
+        " your proxy settings are correct.");
+      proxyWarningText.setBackground(null);
+    } else {
+      proxyWarningText.setVisible(false);
+    }
 
     var sqMainText = "An <b>open-source, self-managed</b> tool that easily integrates into the developers' " +
       "CI/CD pipeline and DevOps platform to systematically help developers and organizations deliver Clean Code.";
