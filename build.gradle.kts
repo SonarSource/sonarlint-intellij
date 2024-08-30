@@ -88,7 +88,6 @@ allprojects {
         }
     }
 
-
     tasks.cyclonedxBom {
         setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
         inputs.files(configurations.runtimeClasspath, configurations.archives.get())
@@ -228,7 +227,6 @@ dependencies {
 }
 
 tasks {
-
     fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
         copy {
             from(project.configurations["sqplugins"])
