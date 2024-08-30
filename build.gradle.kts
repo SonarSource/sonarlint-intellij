@@ -316,7 +316,7 @@ tasks {
     }
 
     jacocoTestReport {
-        classDirectories.setFrom(files("build/instrumented/instrumentCode"))
+        classDirectories.setFrom(files("../build/instrumented/instrumentCode"))
         reports {
             xml.required.set(true)
         }
