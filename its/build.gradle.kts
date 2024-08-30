@@ -1,6 +1,7 @@
 plugins {
     id("org.jetbrains.intellij")
     kotlin("jvm")
+    jacoco
 }
 
 group = "org.sonarsource.sonarlint.intellij.its"
@@ -80,6 +81,22 @@ intellij {
 }
 
 val runIdeDirectory: String by project
+
+tasks {
+    withType<Test> {
+        configure<JacocoTaskExtension> {
+            isIncludeNoLocationClasses = true
+            excludes = listOf("jdk.internal.*")
+        }
+    }
+
+    jacocoTestReport {
+        classDirectories.setFrom(files("build/instrumented/instrumentCode"))
+        reports {
+            xml.required.set(true)
+        }
+    }
+}
 
 tasks.runIdeForUiTests {
     systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
