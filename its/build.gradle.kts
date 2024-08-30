@@ -91,7 +91,8 @@ tasks {
     }
 
     jacocoTestReport {
-        classDirectories.setFrom(files("build/instrumented/instrumentCode"))
+        executionData(runIdeForUiTests)
+        sourceSets(sourceSets.main.get())
         reports {
             xml.required.set(true)
         }
