@@ -77,7 +77,6 @@ intellij {
     if (!project.hasProperty("slPluginDirectory")) {
         plugins.set(listOf(rootProject))
     }
-    instrumentCode.set(false)
 }
 
 val runIdeDirectory: String by project
@@ -93,7 +92,7 @@ tasks {
     jacocoTestReport {
         executionData(runIdeForUiTests)
         sourceSets(sourceSets.main.get())
-        classDirectories.setFrom(files("../build/instrumented/instrumentCode"))
+        classDirectories.setFrom(files("build/instrumented/instrumentCode"))
         reports {
             xml.required.set(true)
         }
