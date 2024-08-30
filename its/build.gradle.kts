@@ -100,6 +100,8 @@ jacoco {
     applyTo(tasks.runIdeForUiTests.get())
 }
 
+
+
 tasks.runIdeForUiTests {
     systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
     systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.sc-staging.io/")
