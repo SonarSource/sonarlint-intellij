@@ -82,15 +82,8 @@ intellij {
 val runIdeDirectory: String by project
 
 tasks {
-    withType<Test> {
-        configure<JacocoTaskExtension> {
-            isIncludeNoLocationClasses = true
-            excludes = listOf("jdk.internal.*")
-        }
-    }
-
     jacocoTestReport {
-        executionData(runIdeForUiTests)
+        executionData(runIdeForUiTests.get())
         sourceSets(sourceSets.main.get())
         classDirectories.setFrom(instrumentCode)
         reports {
@@ -121,5 +114,9 @@ tasks.runIdeForUiTests {
                 into(pluginsDir.get())
             }
         }
+    }
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
     }
 }
