@@ -81,11 +81,6 @@ intellij {
 
 val runIdeDirectory: String by project
 
-tasks {
-    jacocoTestReport {
-    }
-}
-
 val uiTestsCoverageReport = tasks.register<JacocoReport>("uiTestsCoverageReport") {
     executionData(tasks.runIdeForUiTests.get())
     sourceSets(sourceSets.main.get())
@@ -93,6 +88,10 @@ val uiTestsCoverageReport = tasks.register<JacocoReport>("uiTestsCoverageReport"
     reports {
         xml.required.set(true)
     }
+}
+
+jacoco {
+    applyTo(tasks.runIdeForUiTests.get())
 }
 
 tasks.runIdeForUiTests {
