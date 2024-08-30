@@ -82,18 +82,16 @@ intellij {
 val runIdeDirectory: String by project
 
 tasks {
-    configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf("jdk.internal.*")
-    }
-
     jacocoTestReport {
-        executionData(runIdeForUiTests.get())
-        sourceSets(sourceSets.main.get())
-        classDirectories.setFrom(instrumentCode)
-        reports {
-            xml.required.set(true)
-        }
+    }
+}
+
+val uiTestsCoverageReport = tasks.register<JacocoReport>("uiTestsCoverageReport") {
+    executionData(tasks.runIdeForUiTests.get())
+    sourceSets(sourceSets.main.get())
+    classDirectories.setFrom(files("../build/instrumented/instrumentCode"))
+    reports {
+        xml.required.set(true)
     }
 }
 
@@ -120,4 +118,9 @@ tasks.runIdeForUiTests {
             }
         }
     }
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+    finalizedBy(uiTestsCoverageReport)
 }
