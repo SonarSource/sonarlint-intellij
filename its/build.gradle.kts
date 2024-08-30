@@ -47,6 +47,11 @@ tasks.test {
         }
     }
     testLogging.showStandardStreams = true
+    
+    // we need the coverage from Idea process, not from test task
+    configure<JacocoTaskExtension> {
+        isEnabled = false
+    }
 }
 
 license {
@@ -84,7 +89,7 @@ val runIdeDirectory: String by project
 val uiTestsCoverageReport = tasks.register<JacocoReport>("uiTestsCoverageReport") {
     executionData(tasks.runIdeForUiTests.get())
     sourceSets(sourceSets.main.get())
-    classDirectories.setFrom(files("../build/instrumented/instrumentCode"))
+
     reports {
         xml.required.set(true)
     }
