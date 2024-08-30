@@ -20,6 +20,11 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
+import com.intellij.remoterobot.fixtures.ContainerFixture
+import com.intellij.remoterobot.fixtures.JButtonFixture
+import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.steps.CommonSteps
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
@@ -101,6 +106,20 @@ open class BaseUiTest {
                 it.close()
             }
         }
+
+        private val steps = CommonSteps(remoteRobot)
+
+        @JvmStatic
+        @AfterAll
+        fun afterAll() {
+            steps.invokeAction("Exit")
+            remoteRobot.idea {
+                find<ContainerFixture>(byXpath("//div[@class='MyDialog']"))
+                    .find<JButtonFixture>(byXpath("//div[@text='Exit']"))
+                    .click()
+            }
+        }
+
     }
 
 
