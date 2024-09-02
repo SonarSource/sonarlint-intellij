@@ -16,26 +16,24 @@ sonar-cpp = "6.58.0.74356"
 
 sonarqube = "4.4.1.3373"
 
-kotlin-plugin = "1.9.23"
-intellij-plugin = "1.17.2"
+kotlin-plugin = "1.9.25"
+intellij-plugin = "1.17.4"
 license-plugin = "0.16.1"
 artifactory-plugin = "4.33.1"
-cyclonedx-plugin = "1.8.2"
+cyclonedx-plugin = "1.10.0"
 
-commons-lang3 = "3.14.0"
+commons-lang3 = "3.17.0"
 commons-text = "1.12.0"
 findbugs-jsr305 = "3.0.2"
-junit-bom = "5.9.2"
-okhttp3-mockwebserver = "4.12.0"
-mockito-kotlin = "5.2.1"
-awaitility = "4.2.0"
+junit-bom = "5.11.0"
+mockito-kotlin = "5.4.0"
+awaitility = "4.2.2"
 
-its-remote = "0.11.19"
+its-remote = "0.11.23"
 its-sonar-scala = "1.8.3.2219"
 its-sonar-ws = "8.5.1.38104"
 
 [libraries]
-sonarlint-java-client-legacy = { module = "org.sonarsource.sonarlint.core:sonarlint-java-client-legacy", version.ref = "sonarlint-core" }
 sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarlint-java-client-utils", version.ref = "sonarlint-core" }
 sonarlint-rpc-java-client = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-java-client", version.ref = "sonarlint-core" }
 sonarlint-rpc-impl = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-impl", version.ref = "sonarlint-core" }
@@ -59,7 +57,6 @@ commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "c
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
-okhttp3-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp3-mockwebserver" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 
