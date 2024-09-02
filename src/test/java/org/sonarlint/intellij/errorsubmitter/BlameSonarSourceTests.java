@@ -43,57 +43,63 @@ class BlameSonarSourceTests {
 
     @Test
     void truncateOnNewLineIfDescriptionTooLong() {
-        var url = underTest.getReportWithBodyUrl(StringUtil.repeat("1234567\n", 188));
-        assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH).isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarLint+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body=" + StringUtil.repeat("1234567%0A", 186) + "1234567");
+      var url = underTest.getReportWithBodyUrl(StringUtil.repeat("1234567\n", 388));
+      assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH)
+        .isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarLint+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body="
+          + StringUtil.repeat("1234567%0A", 386) + "1234567");
     }
 
     @Test
     void testAbbreviateStackTrace() {
-        var throwableText = "java.lang.Throwable: class com.intellij.openapi.roots.ProjectRootManager it is a service, use getService instead of getComponent\n" +
-                "\tat com.intellij.openapi.diagnostic.Logger.error(Logger.java:182)\n" +
-                "\tat com.intellij.serviceContainer.ComponentManagerImpl.getComponent(ComponentManagerImpl.kt:549)\n" +
-                "\tat org.sonarsource.sonarlint.core.container.module.SonarLintModuleFileSystem.files(SonarLintModuleFileSystem.java:39)\n" +
-                "\tat org.sonar.plugins.python.indexer.SonarLintPythonIndexer.getInputFiles(SonarLintPythonIndexer.java:82)\n" +
-                "\tat org.sonarlint.intellij.util.SonarLintUtils.get(SonarLintUtils.java:83)\n" +
-                "\tat org.sonarlint.intellij.actions.AbstractSonarAction.update(AbstractSonarAction.java:54)\n" +
-                "\tat com.intellij.openapi.actionSystem.ex.ActionUtil.lambda$performDumbAwareUpdate$0(ActionUtil.java:130)\n" +
-                "\tat com.intellij.openapi.actionSystem.impl.ActionUpdater.lambda$callAction$9(ActionUpdater.java:182)\n" +
-                "\tat com.intellij.openapi.progress.ProgressManager.lambda$runProcess$0(ProgressManager.java:57)\n" +
-                "\tat com.intellij.openapi.progress.impl.CoreProgressManager.lambda$runProcess$2(CoreProgressManager.java:183)\n" +
-                "\tat com.intellij.openapi.progress.ProgressManager.runProcess(ProgressManager.java:57)\n" +
-                "\tat com.intellij.openapi.actionSystem.impl.ActionUpdater.lambda$callAction$10(ActionUpdater.java:180)\n" +
-                "\tat com.intellij.openapi.actionSystem.impl.ActionUpdateEdtExecutor.lambda$computeOnEdt$0(ActionUpdateEdtExecutor.java:45)\n" +
-                "\tat com.intellij.openapi.application.TransactionGuardImpl$2.run(TransactionGuardImpl.java:199)\n" +
-                "\tat com.intellij.openapi.application.impl.ApplicationImpl.runIntendedWriteActionOnCurrentThread(ApplicationImpl.java:794)\n" +
-                "\tat com.intellij.openapi.application.impl.FlushQueue$FlushNow.run(FlushQueue.java:189)\n" +
-                "\tat java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:776)\n" +
-                "\tat java.desktop/java.awt.EventQueue$4.run(EventQueue.java:721)\n" +
-                "\tat java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:85)\n" +
-                "\tat java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:746)";
+      var throwableText = """
+        java.lang.Throwable: class com.intellij.openapi.roots.ProjectRootManager it is a service, use getService instead of getComponent
+        \tat com.intellij.openapi.diagnostic.Logger.error(Logger.java:182)
+        \tat com.intellij.serviceContainer.ComponentManagerImpl.getComponent(ComponentManagerImpl.kt:549)
+        \tat org.sonarsource.sonarlint.core.container.module.SonarLintModuleFileSystem.files(SonarLintModuleFileSystem.java:39)
+        \tat org.sonar.plugins.python.indexer.SonarLintPythonIndexer.getInputFiles(SonarLintPythonIndexer.java:82)
+        \tat org.sonarlint.intellij.util.SonarLintUtils.get(SonarLintUtils.java:83)
+        \tat org.sonarlint.intellij.actions.AbstractSonarAction.update(AbstractSonarAction.java:54)
+        \tat org.jetbrains.plugins.textmate.TextMateServiceImpl.readBundle(TextMateServiceImpl.java:237)
+        \tat com.intellij.openapi.actionSystem.ex.ActionUtil.lambda$performDumbAwareUpdate$0(ActionUtil.java:130)
+        \tat com.intellij.openapi.actionSystem.impl.ActionUpdater.lambda$callAction$9(ActionUpdater.java:182)
+        \tat com.intellij.openapi.progress.ProgressManager.lambda$runProcess$0(ProgressManager.java:57)
+        \tat com.intellij.openapi.progress.impl.CoreProgressManager.lambda$runProcess$2(CoreProgressManager.java:183)
+        \tat com.intellij.openapi.progress.ProgressManager.runProcess(ProgressManager.java:57)
+        \tat com.intellij.openapi.actionSystem.impl.ActionUpdater.lambda$callAction$10(ActionUpdater.java:180)
+        \tat com.intellij.openapi.actionSystem.impl.ActionUpdateEdtExecutor.lambda$computeOnEdt$0(ActionUpdateEdtExecutor.java:45)
+        \tat com.intellij.openapi.application.TransactionGuardImpl$2.run(TransactionGuardImpl.java:199)
+        \tat com.intellij.openapi.application.impl.ApplicationImpl.runIntendedWriteActionOnCurrentThread(ApplicationImpl.java:794)
+        \tat com.intellij.openapi.application.impl.FlushQueue$FlushNow.run(FlushQueue.java:189)
+        \tat java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:776)
+        \tat java.desktop/java.awt.EventQueue$4.run(EventQueue.java:721)
+        \tat java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:85)
+        \tat java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:746)""";
 
         var result = BlameSonarSource.abbreviate(throwableText);
 
-        assertThat(throwableText).hasSize(2036);
-        assertThat(result).hasSize(1813).isEqualTo("java.lang.Throwable: class c.ij.oa.roots.ProjectRootManager it is a service, use getService instead of getComponent\n" +
-                "\tat c.ij.oa.diagnostic.Logger.error(Logger.java:182)\n" +
-                "\tat c.ij.serviceContainer.ComponentManagerImpl.getComponent(ComponentManagerImpl.kt:549)\n" +
-                "\tat o.ss.sl.core.container.module.SonarLintModuleFileSystem.files(SonarLintModuleFileSystem.java:39)\n" +
-                "\tat o.s.pl.python.indexer.SonarLintPythonIndexer.getInputFiles(SonarLintPythonIndexer.java:82)\n" +
-                "\tat o.sl.ij.util.SonarLintUtils.get(SonarLintUtils.java:83)\n" +
-                "\tat o.sl.ij.actions.AbstractSonarAction.update(AbstractSonarAction.java:54)\n" +
-                "\tat c.ij.oa.actionSystem.ex.ActionUtil.lambda$performDumbAwareUpdate$0(ActionUtil.java:130)\n" +
-                "\tat c.ij.oa.actionSystem.impl.ActionUpdater.lambda$callAction$9(ActionUpdater.java:182)\n" +
-                "\tat c.ij.oa.progress.ProgressManager.lambda$runProcess$0(ProgressManager.java:57)\n" +
-                "\tat c.ij.oa.progress.impl.CoreProgressManager.lambda$runProcess$2(CoreProgressManager.java:183)\n" +
-                "\tat c.ij.oa.progress.ProgressManager.runProcess(ProgressManager.java:57)\n" +
-                "\tat c.ij.oa.actionSystem.impl.ActionUpdater.lambda$callAction$10(ActionUpdater.java:180)\n" +
-                "\tat c.ij.oa.actionSystem.impl.ActionUpdateEdtExecutor.lambda$computeOnEdt$0(ActionUpdateEdtExecutor.java:45)\n" +
-                "\tat c.ij.oa.application.TransactionGuardImpl$2.run(TransactionGuardImpl.java:199)\n" +
-                "\tat c.ij.oa.application.impl.ApplicationImpl.runIntendedWriteActionOnCurrentThread(ApplicationImpl.java:794)\n" +
-                "\tat c.ij.oa.application.impl.FlushQueue$FlushNow.run(FlushQueue.java:189)\n" +
-                "\tat java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:776)\n" +
-                "\tat java.desktop/java.awt.EventQueue$4.run(EventQueue.java:721)\n" +
-                "\tat java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:85)\n" +
-                "\tat java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:746)");
+        assertThat(throwableText).hasSize(2132);
+        assertThat(result).hasSize(1900).isEqualTo("""
+          java.lang.Throwable: class c.ij.oa.roots.ProjectRootManager it is a service, use getService instead of getComponent
+          \tat c.ij.oa.diagnostic.Logger.error(Logger.java:182)
+          \tat c.ij.serviceContainer.ComponentManagerImpl.getComponent(ComponentManagerImpl.kt:549)
+          \tat o.ss.sl.core.container.module.SonarLintModuleFileSystem.files(SonarLintModuleFileSystem.java:39)
+          \tat o.s.pl.python.indexer.SonarLintPythonIndexer.getInputFiles(SonarLintPythonIndexer.java:82)
+          \tat o.sl.ij.util.SonarLintUtils.get(SonarLintUtils.java:83)
+          \tat o.sl.ij.actions.AbstractSonarAction.update(AbstractSonarAction.java:54)
+          \tat o.jb.plugins.textmate.TextMateServiceImpl.readBundle(TextMateServiceImpl.java:237)
+          \tat c.ij.oa.actionSystem.ex.ActionUtil.lambda$performDumbAwareUpdate$0(ActionUtil.java:130)
+          \tat c.ij.oa.actionSystem.impl.ActionUpdater.lambda$callAction$9(ActionUpdater.java:182)
+          \tat c.ij.oa.progress.ProgressManager.lambda$runProcess$0(ProgressManager.java:57)
+          \tat c.ij.oa.progress.impl.CoreProgressManager.lambda$runProcess$2(CoreProgressManager.java:183)
+          \tat c.ij.oa.progress.ProgressManager.runProcess(ProgressManager.java:57)
+          \tat c.ij.oa.actionSystem.impl.ActionUpdater.lambda$callAction$10(ActionUpdater.java:180)
+          \tat c.ij.oa.actionSystem.impl.ActionUpdateEdtExecutor.lambda$computeOnEdt$0(ActionUpdateEdtExecutor.java:45)
+          \tat c.ij.oa.application.TransactionGuardImpl$2.run(TransactionGuardImpl.java:199)
+          \tat c.ij.oa.application.impl.ApplicationImpl.runIntendedWriteActionOnCurrentThread(ApplicationImpl.java:794)
+          \tat c.ij.oa.application.impl.FlushQueue$FlushNow.run(FlushQueue.java:189)
+          \tat java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:776)
+          \tat java.desktop/java.awt.EventQueue$4.run(EventQueue.java:721)
+          \tat java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:85)
+          \tat java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:746)""");
     }
 }

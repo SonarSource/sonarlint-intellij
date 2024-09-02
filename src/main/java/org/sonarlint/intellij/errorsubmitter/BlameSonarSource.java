@@ -41,7 +41,8 @@ import org.sonarlint.intellij.common.util.UrlUtils;
 
 // Inspired from https://github.com/openclover/clover/blob/master/clover-idea/src/com/atlassian/clover/idea/util/BlameClover.java
 public class BlameSonarSource extends ErrorReportSubmitter {
-  static final int MAX_URI_LENGTH = 2000;
+
+  static final int MAX_URI_LENGTH = 4000;
   private static final int BUG_FAULT_CATEGORY_ID = 6;
   private static final String INTELLIJ_TAG = "intellij";
   private static final String COMMUNITY_ROOT_URL = "https://community.sonarsource.com/";
@@ -59,6 +60,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
     aMap.put("org.sonarlint.intellij.", "o.sl.ij.");
     aMap.put("org.sonarsource.sonarlint.", "o.ss.sl.");
     aMap.put("org.sonar.plugins.", "o.s.pl.");
+    aMap.put("org.jetbrains.", "o.jb.");
     packageAbbreviation = Collections.unmodifiableMap(aMap);
   }
 
@@ -115,7 +117,6 @@ public class BlameSonarSource extends ErrorReportSubmitter {
         }
         return abbreviated;
       }).collect(Collectors.joining("\n"));
-
   }
 
   String getReportWithBodyUrl(String description) {
@@ -137,6 +138,6 @@ public class BlameSonarSource extends ErrorReportSubmitter {
     }
 
     return encoded;
-
   }
+
 }
