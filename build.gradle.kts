@@ -197,9 +197,9 @@ configurations {
 }
 
 dependencies {
-    implementation(libs.sonarlint.java.client.legacy)
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
+    implementation(libs.sonarlint.rpc.impl)
     implementation(libs.commons.langs3)
     implementation(libs.commons.text)
     implementation(project(":common"))
@@ -212,9 +212,6 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.okhttp3.mockwebserver) {
-        exclude(module = "junit")
-    }
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.awaitility)
     "sqplugins"(libs.bundles.sonar.analyzers)
@@ -228,7 +225,6 @@ dependencies {
 }
 
 tasks {
-
     fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
         copy {
             from(project.configurations["sqplugins"])
