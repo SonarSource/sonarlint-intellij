@@ -23,5 +23,6 @@
     <extensions defaultExtensionNs="org.sonarlint.idea">
         <analysisConfiguration implementation="org.sonarlint.intellij.rider.RiderAnalysisConfigurator"/>
         <filesContributor implementation="org.sonarlint.intellij.rider.RiderFilesContributor"/>
+        <vcsProvider implementation="org.sonarlint.intellij.rider.RiderSolutionGitRepoProvider"/>
     </extensions>
 </idea-plugin>
