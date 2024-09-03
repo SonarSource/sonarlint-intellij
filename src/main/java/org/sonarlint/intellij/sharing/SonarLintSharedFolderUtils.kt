@@ -28,21 +28,24 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
+import org.sonarlint.intellij.util.computeOnPooledThread
 
 class SonarLintSharedFolderUtils {
 
     companion object {
 
         fun findSharedFolder(project: Project): Path? {
-            var root = project.basePath?.let { Paths.get(it) }
-            var sonarlintFolder = root?.resolve(".sonarlint")
+            return computeOnPooledThread(project, "Find Shared Folder Task") {
+                var root = project.basePath?.let { Paths.get(it) }
+                var sonarlintFolder = root?.resolve(".sonarlint")
 
-            if (isRider() && (sonarlintFolder == null || !sonarlintFolder.exists())) {
-                root = findSharedFolderForRider(project)
-                sonarlintFolder = root?.resolve(".sonarlint")
+                if (isRider() && (sonarlintFolder == null || !sonarlintFolder.exists())) {
+                    root = findSharedFolderForRider(project)
+                    sonarlintFolder = root?.resolve(".sonarlint") ?: sonarlintFolder
+                }
+
+                sonarlintFolder
             }
-
-            return sonarlintFolder
         }
 
         private fun findSharedFolderForRider(project: Project): Path? {

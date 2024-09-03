@@ -12,9 +12,11 @@ intellij {
     } else {
         version.set(riderBuildVersion)
     }
+    plugins.set(listOf("Git4Idea"))
 }
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":git"))
     compileOnly(libs.findbugs.jsr305)
 }

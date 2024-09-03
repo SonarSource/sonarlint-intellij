@@ -113,6 +113,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.computeInEDT
+import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
@@ -622,8 +623,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     ): String? {
         val module = BackendService.findModule(configurationScopeId) ?: return null
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
-        val repositories = repositoriesEPs.mapNotNull { it.getRepoFor(module) }.toList()
-        if (repositories.isEmpty()) {
+        val repositories = computeOnPooledThread(module.project, "Match Sonar Project Branch Task") {
+            repositoriesEPs.mapNotNull { it.getRepoFor(module) }.toList()
+        }
+        if (repositories.isNullOrEmpty()) {
             return null
         }
         if (repositories.size > 1) {
