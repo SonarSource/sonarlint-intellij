@@ -474,7 +474,7 @@ dogfood_task:
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 1
-    memory: 1G
+    memory: 2G
   env:
     ARTIFACTORY_API_KEY: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     JDK_VERSION: "17"
