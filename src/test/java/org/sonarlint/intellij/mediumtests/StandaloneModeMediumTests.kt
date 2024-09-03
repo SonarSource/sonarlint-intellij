@@ -59,7 +59,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-
+@Disabled("Symbolic link check from SLCORE does not work with temp files")
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private val diamondQuickFix = "SonarLint: Replace with <>"
 
