@@ -880,4 +880,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } ?: throw ConfigScopeNotFoundException()
     }
 
+    override fun getFileExclusions(configurationScopeId: String): MutableSet<String> {
+        return super.getFileExclusions(configurationScopeId)
+    }
+
+    override fun getInferredAnalysisProperties(configurationScopeId: String, filesToAnalyze: MutableList<URI>): MutableMap<String, String> {
+        return super.getInferredAnalysisProperties(configurationScopeId, filesToAnalyze)
+    }
+
 }
