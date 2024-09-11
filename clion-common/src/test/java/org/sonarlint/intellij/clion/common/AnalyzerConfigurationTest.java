@@ -30,11 +30,11 @@ import static org.mockito.Mockito.when;
 class AnalyzerConfigurationTest {
   @Test
   void testPreprocessorDefines() {
-    OCCompilerSettings compilerSettings = mock(OCCompilerSettings.class);
+    var compilerSettings = mock(OCCompilerSettings.class);
     when(compilerSettings.getPreprocessorDefines()).thenReturn(List.of(
       "#define a b", "#define c d ", "   #define e f     ", " #define g h", " #define i j"));
 
-    String preprocessorDefines = AnalyzerConfiguration.getPreprocessorDefines(compilerSettings);
+    var preprocessorDefines = AnalyzerConfiguration.getPreprocessorDefines(compilerSettings);
     assertEquals("#define a b\n#define c d\n#define e f\n#define g h\n#define i j\n", preprocessorDefines);
   }
 }
