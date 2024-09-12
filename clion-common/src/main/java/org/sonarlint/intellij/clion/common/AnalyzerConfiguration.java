@@ -29,6 +29,7 @@ import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -176,9 +177,13 @@ public abstract class AnalyzerConfiguration {
       throw new IllegalStateException(e);
     }
     if (result instanceof List) {
-      return String.join("\n", (List<String>) result) + "\n";
-    } else if (result instanceof String) {
-      return result + "\n";
+      return ((List<String>) result).stream()
+        .map(String::trim)
+        .collect(Collectors.joining("\n")) + "\n";
+    } else if (result instanceof String resultString) {
+      return Arrays.stream(resultString.split("\n"))
+        .map(String::trim)
+        .collect(Collectors.joining("\n")) + "\n";
     } else {
       throw new IllegalStateException(result.toString());
     }
