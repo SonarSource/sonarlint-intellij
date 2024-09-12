@@ -187,9 +187,10 @@ public class CurrentFileConnectedModePanel {
   }
 
   private void updateBranchTooltip() {
-    runOnUiThread(project, () -> {
-      var projectBindingManager = getService(project, ProjectBindingManager.class);
-      projectBindingManager.tryGetServerConnection().ifPresent(serverConnection -> {
+    var projectBindingManager = getService(project, ProjectBindingManager.class);
+
+    projectBindingManager.tryGetServerConnection().ifPresent(serverConnection -> {
+      runOnUiThread(project, () -> {
         var selectedFile = SonarLintUtils.getSelectedFile(project);
         if (selectedFile != null) {
           runOnPooledThread(project, () -> {

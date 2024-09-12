@@ -36,7 +36,6 @@ import org.sonarlint.intellij.core.EnabledLanguages.extraEnabledLanguagesInConne
 import org.sonarlint.intellij.messages.AnalysisListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.ui.UiUtils
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
@@ -147,16 +146,12 @@ class PromotionProvider(private val project: Project) {
         val wasReportEverUsed = PropertiesComponent.getInstance().getBoolean(WAS_REPORT_EVER_USED, false)
 
         if (!wasReportEverUsed && firstAutoAnalysis.isBefore(Instant.now().minus(FULL_PROJECT_PROMOTION_DURATION))) {
-            UiUtils.runOnUiThread(project) {
-                showPromotion(notifications, "Detect issues in your whole project")
-            }
+            showPromotion(notifications, "Detect issues in your whole project")
         }
     }
 
     private fun processFasterProjectAnalysisPromotion(notifications: SonarLintProjectNotifications) {
-        UiUtils.runOnUiThread(project) {
-            showPromotion(notifications, "Speed up the project-wide analysis")
-        }
+        showPromotion(notifications, "Speed up the project-wide analysis")
     }
 
     private fun processCICDProjectAnalysisPromotion(notifications: SonarLintProjectNotifications) {
@@ -201,11 +196,13 @@ class PromotionProvider(private val project: Project) {
     }
 
     private fun showPromotion(notifications: SonarLintProjectNotifications, content: String) {
-        val lastModifiedDate: Instant? = getLastModifiedDate()
+        synchronized(this) {
+            val lastModifiedDate: Instant? = getLastModifiedDate()
 
-        if (shouldNotify(lastModifiedDate)) {
-            notifications.notifyLanguagePromotion(content)
-            PropertiesComponent.getInstance().setValue(LAST_PROMOTION_NOTIFICATION_DATE, Instant.now().toEpochMilli().toString())
+            if (shouldNotify(lastModifiedDate)) {
+                notifications.notifyLanguagePromotion(content)
+                PropertiesComponent.getInstance().setValue(LAST_PROMOTION_NOTIFICATION_DATE, Instant.now().toEpochMilli().toString())
+            }
         }
     }
 

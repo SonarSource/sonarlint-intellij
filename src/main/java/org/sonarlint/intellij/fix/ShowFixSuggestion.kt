@@ -28,6 +28,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -39,22 +40,22 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 class ShowFixSuggestion(private val project: Project, private val file: VirtualFile, private val fixSuggestion: FixSuggestionDto) {
 
     fun show() {
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        val psiFile = PsiManager.getInstance(project).findFile(file) ?: return
+        val document = computeReadActionSafely(project) { file.getDocument() } ?: return
+
+        if (!isWithinBounds(document)) {
+            get(project).simpleNotification(
+                null,
+                "Unable to open the fix suggestion, your file has probably changed",
+                NotificationType.WARNING
+            )
+            return
+        }
+
+        var successfullyOpened = true
+
         runOnUiThread(project, ModalityState.defaultModalityState()) {
-            val fileEditorManager = FileEditorManager.getInstance(project)
-            val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runOnUiThread
-            val document = file.getDocument() ?: return@runOnUiThread
-
-            if (!isWithinBounds(document)) {
-                get(project).simpleNotification(
-                    null,
-                    "Unable to open the fix suggestion, your file has probably changed",
-                    NotificationType.WARNING
-                )
-                return@runOnUiThread
-            }
-
-            var successfullyOpened = true
-
             fixSuggestion.fileEdit().changes().forEachIndexed { index, change ->
                 val startLine = change.beforeLineRange().startLine
                 val endLine = change.beforeLineRange().endLine
