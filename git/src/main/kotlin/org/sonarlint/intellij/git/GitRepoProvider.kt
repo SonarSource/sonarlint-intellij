@@ -20,19 +20,19 @@
 package org.sonarlint.intellij.git
 
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.ModuleRootManager
+import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryManager
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
 import org.sonarlint.intellij.common.vcs.VcsRepo
+import org.sonarlint.intellij.common.vcs.VcsRepoProvider
 
-class ModuleGitRepoProvider : ModuleVcsRepoProvider {
+class GitRepoProvider : VcsRepoProvider {
     override fun getRepoFor(module: Module): VcsRepo? {
         val repositoryManager = GitRepositoryManager.getInstance(module.project)
-        val moduleRepositories = ModuleRootManager.getInstance(module)
-            .contentRoots
-            .mapNotNull { root -> repositoryManager.getRepositoryForFile(root) }
-            .toSet()
+        val moduleRepositories = findRepoFor(repositoryManager, module)
         if (moduleRepositories.isEmpty()) {
             return null
         }
@@ -41,5 +41,28 @@ class ModuleGitRepoProvider : ModuleVcsRepoProvider {
             return null
         }
         return GitRepo(moduleRepositories.first(), module.project)
+    }
+
+    override fun getRepoFor(project: Project): VcsRepo? {
+        val repositoryManager = GitRepositoryManager.getInstance(project)
+        val moduleRepositories = project.modules.flatMap {
+            findRepoFor(repositoryManager, it)
+        }.toSet()
+        if (moduleRepositories.isEmpty()) {
+            return null
+        }
+        if (moduleRepositories.size > 1) {
+            SonarLintConsole.get(project)
+                .info("Several candidate Git repositories detected for project $project, cannot resolve branch")
+            return null
+        }
+        return GitRepo(moduleRepositories.first(), project)
+    }
+
+    private fun findRepoFor(repositoryManager: GitRepositoryManager, module: Module): Set<GitRepository> {
+        return ModuleRootManager.getInstance(module)
+            .contentRoots
+            .mapNotNull { root -> repositoryManager.getRepositoryForFile(root) }
+            .toSet()
     }
 }

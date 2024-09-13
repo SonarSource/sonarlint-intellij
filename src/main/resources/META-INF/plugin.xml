@@ -278,7 +278,7 @@
         <extensionPoint name="analysisConfiguration" interface="org.sonarlint.intellij.common.analysis.AnalysisConfigurator" dynamic="true"/>
         <extensionPoint name="fileExclusionContributor" interface="org.sonarlint.intellij.common.analysis.FileExclusionContributor" dynamic="true"/>
         <extensionPoint name="filesContributor" interface="org.sonarlint.intellij.common.analysis.FilesContributor" dynamic="true"/>
-        <extensionPoint name="vcsProvider" interface="org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider" dynamic="true"/>
+        <extensionPoint name="vcsProvider" interface="org.sonarlint.intellij.common.vcs.VcsRepoProvider" dynamic="true"/>
     </extensionPoints>
 
     <applicationListeners>

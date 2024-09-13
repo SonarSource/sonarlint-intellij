@@ -27,7 +27,7 @@ import java.nio.file.Paths
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
-import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
+import org.sonarlint.intellij.common.vcs.VcsRepoProvider
 import org.sonarlint.intellij.util.computeOnPooledThread
 
 class SonarLintSharedFolderUtils {
@@ -49,7 +49,7 @@ class SonarLintSharedFolderUtils {
         }
 
         private fun findSharedFolderForRider(project: Project): Path? {
-            val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
+            val repositoriesEPs = VcsRepoProvider.EP_NAME.extensionList
             // Only one solution can be opened at a time in Rider
             return project.modules.mapNotNull { module ->
                 val repositories = repositoriesEPs.mapNotNull {

@@ -72,7 +72,8 @@ import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadAct
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
-import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
+import org.sonarlint.intellij.common.vcs.VcsRepo
+import org.sonarlint.intellij.common.vcs.VcsRepoProvider
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
@@ -621,8 +622,19 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         allBranchesNames: Set<String>,
         cancelChecker: SonarLintCancelChecker,
     ): String? {
-        val module = BackendService.findModule(configurationScopeId) ?: return null
-        val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
+        val repositoriesEPs = VcsRepoProvider.EP_NAME.extensionList
+        val repositories = BackendService.findModule(configurationScopeId)?.let { module ->
+            matchSonarModule(module, repositoriesEPs)
+        } ?: run {
+            BackendService.findProject(configurationScopeId)?.let { project ->
+                matchSonarProject(project, repositoriesEPs)
+            }
+        } ?: return null
+        val repo = repositories.first()
+        return repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
+    }
+
+    private fun matchSonarModule(module: Module, repositoriesEPs: List<VcsRepoProvider>): List<VcsRepo>? {
         val repositories = computeOnPooledThread(module.project, "Match Sonar Project Branch Task") {
             repositoriesEPs.mapNotNull { it.getRepoFor(module) }.toList()
         }
@@ -630,10 +642,28 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             return null
         }
         if (repositories.size > 1) {
-            getService(module.project, SonarLintConsole::class.java).debug("Several candidate Vcs repositories detected for module $module, choosing first")
+            getService(
+                module.project,
+                SonarLintConsole::class.java
+            ).debug("Several candidate Vcs repositories detected for module $module, choosing first")
         }
-        val repo = repositories.first()
-        return repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
+        return repositories
+    }
+
+    private fun matchSonarProject(project: Project, repositoriesEPs: List<VcsRepoProvider>): List<VcsRepo>? {
+        val repositories = computeOnPooledThread(project, "Match Sonar Project Branch Task") {
+            repositoriesEPs.mapNotNull { it.getRepoFor(project) }.toList()
+        }
+        if (repositories.isNullOrEmpty()) {
+            return null
+        }
+        if (repositories.size > 1) {
+            getService(
+                project,
+                SonarLintConsole::class.java
+            ).debug("Several candidate Vcs repositories detected for project $project, choosing first")
+        }
+        return repositories
     }
 
     override fun didChangeMatchedSonarProjectBranch(configScopeId: String, newMatchedBranchName: String) {
