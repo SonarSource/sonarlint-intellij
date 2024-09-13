@@ -164,11 +164,17 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   public void setSelectedIssue(LiveIssue issue) {
     var issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()), node -> node instanceof IssueNode iNode && iNode.issue().equals(issue));
     if (issueNode == null) {
-      SonarLintConsole.get(project).error("Cannot select issue in the tree");
-      return;
+      issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) oldTree.getModel().getRoot()), node -> node instanceof IssueNode iNode && iNode.issue().equals(issue));
+      if (issueNode == null) {
+        SonarLintConsole.get(project).error("Cannot select issue in the tree");
+      } else {
+        oldTree.setSelectionPath(null);
+        oldTree.addSelectionPath(new TreePath(issueNode.getPath()));
+      }
+    } else {
+      tree.setSelectionPath(null);
+      tree.addSelectionPath(new TreePath(issueNode.getPath()));
     }
-    tree.setSelectionPath(null);
-    tree.addSelectionPath(new TreePath(issueNode.getPath()));
   }
 
   public void selectLocationsTab() {
