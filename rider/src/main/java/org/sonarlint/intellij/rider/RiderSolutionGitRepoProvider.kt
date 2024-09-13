@@ -34,7 +34,11 @@ import org.sonarlint.intellij.git.GitRepo
 
 class RiderSolutionGitRepoProvider : ModuleVcsRepoProvider {
     override fun getRepoFor(module: Module): VcsRepo? {
-        val repositoryManager = GitRepositoryManager.getInstance(module.project)
+        val repositoryManager = try {
+            GitRepositoryManager.getInstance(module.project)
+        } catch (e: NoClassDefFoundError) {
+            return null
+        }
 
         val moduleRepositories = mutableSetOf<GitRepository>()
         val visitor = object : ProjectModelEntityVisitor() {
