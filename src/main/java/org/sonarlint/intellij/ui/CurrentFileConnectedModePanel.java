@@ -189,19 +189,17 @@ public class CurrentFileConnectedModePanel {
   private void updateBranchTooltip() {
     var projectBindingManager = getService(project, ProjectBindingManager.class);
 
-    projectBindingManager.tryGetServerConnection().ifPresent(serverConnection -> {
-      runOnUiThread(project, () -> {
-        var selectedFile = SonarLintUtils.getSelectedFile(project);
-        if (selectedFile != null) {
-          runOnPooledThread(project, () -> {
-            var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
-            if (module != null) {
-              runOnUiThread(project, () -> connectedCard.updateTooltip(module, serverConnection));
-            }
-          });
-        }
-      });
-    });
+    projectBindingManager.tryGetServerConnection().ifPresent(serverConnection -> runOnUiThread(project, () -> {
+      var selectedFile = SonarLintUtils.getSelectedFile(project);
+      if (selectedFile != null) {
+        runOnPooledThread(project, () -> {
+          var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+          if (module != null) {
+            runOnUiThread(project, () -> connectedCard.updateTooltip(module, serverConnection));
+          }
+        });
+      }
+    }));
   }
 
   private static String buildTooltipHtml(ServerConnection serverConnection, String projectKey, @Nullable String branchName) {
