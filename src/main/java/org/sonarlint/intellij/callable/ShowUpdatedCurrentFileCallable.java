@@ -27,8 +27,6 @@ import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
-import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
-
 public class ShowUpdatedCurrentFileCallable implements AnalysisCallback {
   private final Project project;
   private final UpdateOnTheFlyFindingsCallable updateOnTheFlyFindingsCallable;
@@ -54,9 +52,7 @@ public class ShowUpdatedCurrentFileCallable implements AnalysisCallback {
   }
 
   private void showCurrentFileTab() {
-    runOnUiThread(project, () -> {
-      var toolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
-      toolWindow.openCurrentFileTab();
-    });
+    var toolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
+    toolWindow.openCurrentFileTab();
   }
 }

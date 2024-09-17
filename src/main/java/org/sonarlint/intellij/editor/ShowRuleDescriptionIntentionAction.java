@@ -33,8 +33,6 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.LiveFinding;
 
-import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
-
 public class ShowRuleDescriptionIntentionAction implements IntentionAction, PriorityAction, Iconable {
   private final LiveFinding liveFinding;
 
@@ -59,8 +57,7 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
 
   @Override
   public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
-    runOnUiThread(project, () -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
-      .showFindingDescription(liveFinding));
+    SonarLintUtils.getService(project, SonarLintToolWindow.class).showFindingDescription(liveFinding);
   }
 
   @Override

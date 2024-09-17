@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.ex.ActionUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -199,11 +200,12 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private void updateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues) {
     var toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARLINT_TOOLWINDOW_ID);
     if (toolWindow != null) {
-      doUpdateIcon(file, issues, toolWindow);
+      runOnUiThread(project, () -> doUpdateIcon(file, issues, toolWindow));
     }
   }
 
   private static void doUpdateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues, ToolWindow toolWindow) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
     boolean empty = file == null || issues.isEmpty();
     toolWindow.setIcon(empty ? SonarLintIcons.SONARLINT_TOOLWINDOW_EMPTY : SonarLintIcons.SONARLINT_TOOLWINDOW);
   }

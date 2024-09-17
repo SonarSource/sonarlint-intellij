@@ -50,6 +50,5 @@ class BindProjectAction(private val bindingSuggestion: BindingSuggestion, privat
                     SonarLintConsole.get(project)
                         .debug("Cannot bind project as suggested, connection $connectionId has been removed")
                 })
-
     }
 }

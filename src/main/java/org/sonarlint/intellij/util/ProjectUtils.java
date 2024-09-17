@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.project.ProjectUtil;
@@ -77,6 +78,7 @@ public class ProjectUtils {
   }
 
   public static PsiFile toPsiFile(Project project, VirtualFile file) throws TextRangeMatcher.NoMatchException {
+    ApplicationManager.getApplication().assertReadAccessAllowed();
     var psiManager = PsiManager.getInstance(project);
     var psiFile = psiManager.findFile(file);
     if (psiFile != null) {

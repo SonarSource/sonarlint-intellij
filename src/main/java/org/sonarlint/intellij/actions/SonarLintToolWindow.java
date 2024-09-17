@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -78,11 +79,9 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     project.getMessageBus().connect().subscribe(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC(), this);
   }
 
-  /**
-   * Must run in EDT
-   */
   public void openReportTab(AnalysisResult analysisResult) {
-    this.<ReportPanel>openTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.updateFindings(analysisResult));
+    runOnUiThread(project, ModalityState.stateForComponent(getToolWindow().getComponent()),
+      () -> this.<ReportPanel>openTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.updateFindings(analysisResult)));
   }
 
   public void clearReportTab() {
@@ -131,7 +130,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   private <T> ToolWindow updateTab(String displayName, Consumer<T> tabPanelConsumer) {
-    ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
@@ -156,16 +154,10 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  /**
-   * Must run in EDT
-   */
   public void openCurrentFileTab() {
-    openTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
+    runOnUiThread(project, ModalityState.stateForComponent(getToolWindow().getComponent()), () -> openTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE));
   }
 
-  /**
-   * Must run in EDT
-   */
   public void openTaintVulnerabilityTab() {
     ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();
@@ -469,6 +461,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   @Override
   public void bindingChanged() {
-    runOnUiThread(project, this::refreshViews);
+    refreshViews();
   }
 }

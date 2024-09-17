@@ -119,6 +119,7 @@ public class SonarLintUtils {
     if (project.isDisposed()) {
       return null;
     }
+    ApplicationManager.getApplication().assertIsDispatchThread();
     var editorManager = FileEditorManager.getInstance(project);
 
     var editor = editorManager.getSelectedTextEditor();

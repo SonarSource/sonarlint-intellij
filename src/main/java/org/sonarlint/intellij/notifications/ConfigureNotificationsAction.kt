@@ -33,20 +33,20 @@ class ConfigureNotificationsAction(private val connectionName: String, private v
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         WindowManager.getInstance().getFrame(e.project) ?: return
-        runOnUiThread(project) {
-            val connectionToEdit = Settings.getGlobalSettings().serverConnections.find { it.name == connectionName }
-            if (connectionToEdit != null) {
-                val wizard = ServerConnectionWizard.forNotificationsEdition(connectionToEdit)
+        val connectionToEdit = Settings.getGlobalSettings().serverConnections.find { it.name == connectionName }
+        if (connectionToEdit != null) {
+            val wizard = ServerConnectionWizard.forNotificationsEdition(connectionToEdit)
+            runOnUiThread(project) {
                 if (wizard.showAndGet()) {
                     val editedConnection = wizard.connection
                     val serverConnections = Settings.getGlobalSettings().serverConnections.toMutableList()
                     serverConnections[serverConnections.indexOf(connectionToEdit)] = editedConnection
                     Settings.getGlobalSettings().serverConnections = serverConnections
                 }
-            } else if (e.project != null) {
-                SonarLintConsole.get(e.project!!).error("Unable to find connection with name: $connectionName")
-                notification.expire()
             }
+        } else if (e.project != null) {
+            SonarLintConsole.get(e.project!!).error("Unable to find connection with name: $connectionName")
+            notification.expire()
         }
     }
 

@@ -25,7 +25,6 @@ import org.sonarlint.intellij.analysis.AnalysisCallback
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
 class ShowReportCallable(private val project: Project) : AnalysisCallback {
 
@@ -45,10 +44,8 @@ class ShowReportCallable(private val project: Project) : AnalysisCallback {
 
     private fun showReportTab() {
         results?.let {
-            runOnUiThread(project) {
-                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).openReportTab(it)
-                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-            }
+            SonarLintUtils.getService(project, SonarLintToolWindow::class.java).openReportTab(it)
+            SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
         }
     }
 

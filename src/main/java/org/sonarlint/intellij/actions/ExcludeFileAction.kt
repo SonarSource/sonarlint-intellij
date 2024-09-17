@@ -27,12 +27,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.project.ExclusionItem
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.runOnPooledThread
 
@@ -64,11 +63,8 @@ class ExcludeFileAction : AbstractSonarAction {
             if (newExclusions.isNotEmpty()) {
                 exclusions.addAll(newExclusions)
                 settings.fileExclusions = exclusions
-                SonarLintUtils.getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE)
-                runOnUiThread(project) {
-                    val projectListener = project.messageBus.syncPublisher(ProjectConfigurationListener.TOPIC)
-                    projectListener.changed(settings)
-                }
+                getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE)
+                project.messageBus.syncPublisher(ProjectConfigurationListener.TOPIC).changed(settings)
             }
         }
     }

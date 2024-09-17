@@ -52,7 +52,6 @@ import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
-import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Disposable {
@@ -242,9 +241,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
           return;
         }
 
-        runOnUiThread(project, () ->
-          findingDetailsPanel.showServerOnlyIssue(showFinding.getModule(), showFinding.getFile(), showFinding.getRuleKey(), rangeMarker, showFinding.getFlows(),
-            showFinding.getFlowMessage()));
+        findingDetailsPanel.showServerOnlyIssue(showFinding.getModule(), showFinding.getFile(), showFinding.getRuleKey(), rangeMarker, showFinding.getFlows(),
+          showFinding.getFlowMessage());
       });
     }
   }

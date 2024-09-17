@@ -26,7 +26,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBTabbedPane
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.Flow
 import org.sonarlint.intellij.finding.LiveFinding
@@ -75,7 +75,7 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
     fun show(liveFinding: LiveFinding) {
         rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.getRuleKey(), liveFinding.getRuleDescriptionContextKey())
         flowsTreeBuilder.populateForFinding(liveFinding)
-        SonarLintUtils.getService(project, EditorDecorator::class.java).highlightFinding(liveFinding)
+        getService(project, EditorDecorator::class.java).highlightFinding(liveFinding)
         flowsTree.emptyText.setText("Selected $findingKindText doesn't have flows")
         flowsTree.expandAll()
     }
@@ -83,7 +83,7 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
     fun showServerOnlyIssue(module: Module, file: VirtualFile, ruleKey: String, range: RangeMarker, flows: MutableList<Flow>, flowMessage: String) {
         rulePanel.setSelectedFinding(module, null, ruleKey, null)
         flowsTreeBuilder.populateForFinding(file, range, flowMessage, flows)
-        SonarLintUtils.getService(project, EditorDecorator::class.java).highlightRange(range)
+        getService(project, EditorDecorator::class.java).highlightRange(range)
         flowsTree.emptyText.setText("Selected $findingKindText doesn't have flows")
         flowsTree.expandAll()
     }

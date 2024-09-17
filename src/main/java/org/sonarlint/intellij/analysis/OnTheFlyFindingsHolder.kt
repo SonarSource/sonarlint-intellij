@@ -72,8 +72,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         runOnUiThread(project) {
             updateCurrentFileTab()
             updateSecurityHotspots()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
         }
+        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
     }
 
     fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>) {
@@ -90,8 +90,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
                 selectedFile = SonarLintUtils.getSelectedFile(project)
             }
             updateCurrentFileTab()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(issues.keys)
         }
+        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(issues.keys)
     }
 
     fun updateViewsWithNewSecurityHotspots(module: Module, raisedSecurityHotspots: Map<URI, List<RaisedHotspotDto>>) {
@@ -108,8 +108,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
                 selectedFile = SonarLintUtils.getSelectedFile(project)
             }
             updateSecurityHotspots()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(securityHotspots.keys)
         }
+        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(securityHotspots.keys)
     }
 
     override fun selectionChanged(event: FileEditorManagerEvent) {
