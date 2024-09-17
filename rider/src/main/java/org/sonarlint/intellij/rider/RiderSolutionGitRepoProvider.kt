@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.rider
 
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.project.Project
 import com.jetbrains.rider.projectView.workspace.ProjectModelEntity
 import com.jetbrains.rider.projectView.workspace.ProjectModelEntityVisitor
 import com.jetbrains.rider.projectView.workspace.getVirtualFileAsContentRoot
@@ -28,37 +29,13 @@ import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryManager
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLint
-import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
 import org.sonarlint.intellij.common.vcs.VcsRepo
+import org.sonarlint.intellij.common.vcs.VcsRepoProvider
 import org.sonarlint.intellij.git.GitRepo
 
-class RiderSolutionGitRepoProvider : ModuleVcsRepoProvider {
+class RiderSolutionGitRepoProvider : VcsRepoProvider {
     override fun getRepoFor(module: Module): VcsRepo? {
-        val repositoryManager = try {
-            GitRepositoryManager.getInstance(module.project)
-        } catch (e: NoClassDefFoundError) {
-            return null
-        }
-
-        val moduleRepositories = mutableSetOf<GitRepository>()
-        val visitor = object : ProjectModelEntityVisitor() {
-            override fun visitProjectFile(entity: ProjectModelEntity): Result {
-                if (module.isDisposed) {
-                    return Result.Stop
-                }
-
-                if (entity.isProjectFile()) {
-                    entity.getVirtualFileAsContentRoot()?.let {
-                        if (!it.isDirectory && it.isValid && isFileValidForSonarLint(it, module.project)) {
-                            repositoryManager.getRepositoryForFile(it)?.let { repo -> moduleRepositories.add(repo) }
-                        }
-                    }
-                }
-
-                return Result.Continue
-            }
-        }
-        visitor.visit(module.project)
+        val moduleRepositories = findRepoFor(module.project)
 
         if (moduleRepositories.isEmpty()) {
             return null
@@ -69,5 +46,49 @@ class RiderSolutionGitRepoProvider : ModuleVcsRepoProvider {
             return null
         }
         return GitRepo(moduleRepositories.first(), module.project)
+    }
+
+    override fun getRepoFor(project: Project): VcsRepo? {
+        val moduleRepositories = findRepoFor(project)
+
+        if (moduleRepositories.isEmpty()) {
+            return null
+        }
+        if (moduleRepositories.size > 1) {
+            SonarLintConsole.get(project)
+                .info("Several candidate Git repositories detected for project $project in Rider, cannot resolve branch")
+            return null
+        }
+        return GitRepo(moduleRepositories.first(), project)
+    }
+
+    private fun findRepoFor(project: Project): Set<GitRepository> {
+        val repositoryManager = try {
+            GitRepositoryManager.getInstance(project)
+        } catch (e: NoClassDefFoundError) {
+            return emptySet()
+        }
+
+        val moduleRepositories = mutableSetOf<GitRepository>()
+        val visitor = object : ProjectModelEntityVisitor() {
+            override fun visitProjectFile(entity: ProjectModelEntity): Result {
+                if (project.isDisposed) {
+                    return Result.Stop
+                }
+
+                if (entity.isProjectFile()) {
+                    entity.getVirtualFileAsContentRoot()?.let {
+                        if (!it.isDirectory && it.isValid && isFileValidForSonarLint(it, project)) {
+                            repositoryManager.getRepositoryForFile(it)?.let { repo -> moduleRepositories.add(repo) }
+                        }
+                    }
+                }
+
+                return Result.Continue
+            }
+        }
+        visitor.visit(project)
+
+        return moduleRepositories
     }
 }

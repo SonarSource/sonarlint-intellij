@@ -21,7 +21,7 @@
 -->
 <idea-plugin>
   <extensions defaultExtensionNs="org.sonarlint.idea">
-    <vcsProvider implementation="org.sonarlint.intellij.git.ModuleGitRepoProvider"/>
+    <vcsProvider implementation="org.sonarlint.intellij.git.GitRepoProvider"/>
   </extensions>
 
   <projectListeners>
