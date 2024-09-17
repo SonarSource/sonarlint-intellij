@@ -18,7 +18,7 @@ jobs:
         uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
-            operations/team/re/kv/data/github/github-jira-integration token | GITHUB_TOKEN;
+            development/github/token/{REPO_OWNER_NAME_DASH}-jira token | GITHUB_TOKEN;
             development/kv/data/jira user | JIRA_USER;
             development/kv/data/jira token | JIRA_TOKEN;
       - uses: sonarsource/gh-action-lt-backlog/RequestReview@v2
