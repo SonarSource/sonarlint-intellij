@@ -85,9 +85,14 @@ import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFileListParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesAndTrackParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFullProjectParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeOpenFilesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeVCSChangedFilesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeAutomaticAnalysisSettingParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -114,6 +119,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.G
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidCloseFileParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidOpenFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidUpdateFileSystemParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
@@ -344,7 +351,7 @@ class BackendService : Disposable {
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
                 LanguageSpecificRequirements(nodeJsPath, omnisharpRequirementsDto),
-                false
+                true
             )
         )
     }
@@ -942,8 +949,38 @@ class BackendService : Disposable {
         }
     }
 
+    fun didOpenFile(module: Module, fileUri: URI) {
+        val moduleId = moduleId(module)
+        return notifyBackend { it.fileService.didOpenFile(DidOpenFileParams(moduleId, fileUri)) }
+    }
+
+    fun didCloseFile(module: Module, fileUri: URI) {
+        val moduleId = moduleId(module)
+        return notifyBackend { it.fileService.didCloseFile(DidCloseFileParams(moduleId, fileUri)) }
+    }
+
     fun changeAutomaticAnalysisSetting(analysisEnabled: Boolean) {
         return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
+    }
+
+    fun forceFullProjectAnalysis(module: Module, hotspotOnly: Boolean): CompletableFuture<ForceAnalyzeResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.analysisService.analyzeFullProject(AnalyzeFullProjectParams(moduleId, hotspotOnly)) }
+    }
+
+    fun forceFilesListAnalysis(module: Module, files: List<URI>): CompletableFuture<ForceAnalyzeResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.analysisService.analyzeFileList(AnalyzeFileListParams(moduleId, files)) }
+    }
+
+    fun forceOpenFilesAnalysis(module: Module): CompletableFuture<ForceAnalyzeResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.analysisService.analyzeOpenFiles(AnalyzeOpenFilesParams(moduleId)) }
+    }
+
+    fun forceVCSChangedFiles(module: Module): CompletableFuture<ForceAnalyzeResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.analysisService.analyzeVCSChangedFiles(AnalyzeVCSChangedFilesParams(moduleId)) }
     }
 
     fun isAlive(): Boolean {

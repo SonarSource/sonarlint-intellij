@@ -34,7 +34,7 @@ public class BuildFinishedAnalysisTrigger implements BuildManagerListener {
       return;
     }
 
-    SonarLintUtils.getService(project, SonarLintConsole.class).debug("build finished");
+    SonarLintUtils.getService(project, SonarLintConsole.class).debug("Build finished");
     SonarLintUtils.getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
   }
 }
