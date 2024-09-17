@@ -89,15 +89,24 @@ class MarkAsResolvedAction(
             val serverKey = issue.getServerKey() ?: issue.getId().toString()
             val response = checkPermission(project, connection, serverKey) ?: return
 
-            runOnUiThread(project) {
-                val resolution = MarkAsResolvedDialog(
-                    project,
-                    connection,
-                    response,
-                ).chooseResolution() ?: return@runOnUiThread
-                if (confirm(project, connection.productName, resolution.newStatus)) {
-                    markAsResolved(project, module, issue, resolution, serverKey)
+            if (response.isPermitted) {
+                runOnUiThread(project) {
+                    val resolution = MarkAsResolvedDialog(
+                        project,
+                        connection,
+                        response,
+                    ).chooseResolution() ?: return@runOnUiThread
+                    if (confirm(project, connection.productName, resolution.newStatus)) {
+                        markAsResolved(project, module, issue, resolution, serverKey)
+                    }
                 }
+            } else {
+                SonarLintConsole.get(project).info("Could not resolve the issue, reason: ${response.notPermittedReason}")
+                SonarLintProjectNotifications.get(project)
+                    .displayErrorNotification(
+                        "Could not resolve the issue, reason: ${response.notPermittedReason}",
+                        NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_ISSUE_GROUP)
+                    )
             }
         }
 
