@@ -55,9 +55,6 @@ class MarkAsResolvedDialog(
             }
         }
         centerPanel = MarkAsResolvedPanel(connection, permissionCheckResponse.allowedStatuses) { changeStatusAction.isEnabled = permissionCheckResponse.isPermitted && it }
-        if (!permissionCheckResponse.isPermitted) {
-            setErrorText(permissionCheckResponse.notPermittedReason)
-        }
         init()
     }
 
