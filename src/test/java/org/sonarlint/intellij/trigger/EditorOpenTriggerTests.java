@@ -29,6 +29,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -55,7 +56,7 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
   void should_trigger() {
     editorTrigger.fileOpened(editorManager, file);
 
-    verify(analysisSubmitter).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
+    verify(analysisSubmitter, timeout(1000)).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
   }
 
   @Test
@@ -63,6 +64,6 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
     editorTrigger.fileClosed(editorManager, file);
     editorTrigger.selectionChanged(new FileEditorManagerEvent(editorManager, null, null, null, null));
 
-    verifyNoInteractions  (analysisSubmitter);
+    verifyNoInteractions(analysisSubmitter);
   }
 }

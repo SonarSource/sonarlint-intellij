@@ -26,11 +26,12 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class EditorOpenTrigger implements FileEditorManagerListener {
 
   @Override
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    getService(source.getProject(), AnalysisSubmitter.class).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
+    runOnPooledThread(source.getProject(), () -> getService(source.getProject(), AnalysisSubmitter.class).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN));
   }
 }

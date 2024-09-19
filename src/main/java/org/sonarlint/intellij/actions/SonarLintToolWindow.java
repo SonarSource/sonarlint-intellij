@@ -419,8 +419,10 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var content = getSecurityHotspotContent();
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      var count = hotspotsPanel.updateHotspots(currentSecurityHotspotsPerOpenFile);
-      content.setDisplayName(buildTabName(count, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+      runOnUiThread(project, () -> {
+        var count = hotspotsPanel.updateHotspots(currentSecurityHotspotsPerOpenFile);
+        content.setDisplayName(buildTabName(count, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+      });
     }
   }
 

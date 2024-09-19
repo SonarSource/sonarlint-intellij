@@ -27,11 +27,12 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -87,6 +88,6 @@ class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
 
     action.actionPerformed(event);
 
-    verify(analysisSubmitter).analyzeVcsChangedFiles();
+    verify(analysisSubmitter, timeout(1000)).analyzeVcsChangedFiles();
   }
 }

@@ -26,6 +26,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -46,7 +47,7 @@ class CompilationFinishedAnalysisTriggerTests extends AbstractSonarLintLightTest
   @Test
   void should_trigger_on_compilation() {
     trigger.compilationFinished(false, 0, 0, context);
-    verify(submitter).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
+    verify(submitter, timeout(1000)).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
   }
 
   @Test

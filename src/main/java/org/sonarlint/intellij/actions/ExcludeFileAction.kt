@@ -27,7 +27,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.project.ExclusionItem
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
@@ -63,7 +63,7 @@ class ExcludeFileAction : AbstractSonarAction {
             if (newExclusions.isNotEmpty()) {
                 exclusions.addAll(newExclusions)
                 settings.fileExclusions = exclusions
-                SonarLintUtils.getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE)
+                getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE)
                 val projectListener = project.messageBus.syncPublisher(ProjectConfigurationListener.TOPIC)
                 projectListener.changed(settings)
             }

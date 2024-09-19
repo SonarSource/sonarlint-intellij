@@ -30,6 +30,7 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -77,7 +78,7 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
     TestDialogManager.setTestDialog(TestDialog.OK);
     action.actionPerformed(event);
 
-    verify(analysisSubmitter).analyzeAllFiles();
+    verify(analysisSubmitter, timeout(1000)).analyzeAllFiles();
   }
 
 }

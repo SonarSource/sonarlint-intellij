@@ -40,6 +40,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private static final int SETTINGS_TAB_INDEX = 0;
@@ -98,11 +99,13 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     // Force reload of the node version and rules in case the nodejs path has been changed
     reset();
 
-    if (exclusionsModified || globalSettingsModified) {
-      analyzeOpenFiles(false);
-    } else if (rulesModified) {
-      analyzeOpenFiles(true);
-    }
+    runOnPooledThread(() -> {
+      if (exclusionsModified || globalSettingsModified) {
+        analyzeOpenFiles(false);
+      } else if (rulesModified) {
+        analyzeOpenFiles(true);
+      }
+    });
   }
 
   public static void analyzeOpenFiles(boolean unboundOnly) {

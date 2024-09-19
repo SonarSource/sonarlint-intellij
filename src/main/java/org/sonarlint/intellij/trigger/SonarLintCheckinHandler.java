@@ -95,7 +95,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
     // this will block EDT (modal)
     try {
-      var analysisIdsByCallback = SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+      var analysisIdsByCallback = getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
       if (analysisIdsByCallback == null) {
         return ReturnResult.CANCEL;
       }

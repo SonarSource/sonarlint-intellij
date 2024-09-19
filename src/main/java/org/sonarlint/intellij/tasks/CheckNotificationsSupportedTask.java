@@ -29,7 +29,6 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.BackendService;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 /**
  * Only useful for SonarQube, since we know notifications are available in SonarCloud
@@ -49,8 +48,7 @@ public class CheckNotificationsSupportedTask extends Task.Modal {
     indicator.setIndeterminate(false);
     try {
       indicator.setText("Checking support of notifications");
-      notificationsSupported = Boolean.TRUE.equals(computeOnPooledThread("Get Notification Supported", () ->
-        waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).checkSmartNotificationsSupported(connection)).isSuccess()));
+      notificationsSupported = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).checkSmartNotificationsSupported(connection)).isSuccess();
     } catch (ProcessCanceledException e) {
       if (myProject != null) {
         SonarLintConsole.get(myProject).error("Failed to check notifications", e);

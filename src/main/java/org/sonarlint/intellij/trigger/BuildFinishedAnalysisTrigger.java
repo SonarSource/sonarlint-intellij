@@ -24,7 +24,9 @@ import com.intellij.openapi.project.Project;
 import java.util.UUID;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class BuildFinishedAnalysisTrigger implements BuildManagerListener {
 
@@ -34,7 +36,9 @@ public class BuildFinishedAnalysisTrigger implements BuildManagerListener {
       return;
     }
 
-    SonarLintUtils.getService(project, SonarLintConsole.class).debug("build finished");
-    SonarLintUtils.getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
+    runOnPooledThread(project, () -> {
+      getService(project, SonarLintConsole.class).debug("build finished");
+      getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
+    });
   }
 }
