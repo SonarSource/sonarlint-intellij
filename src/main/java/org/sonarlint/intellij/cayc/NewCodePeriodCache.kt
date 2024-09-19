@@ -24,19 +24,22 @@ import com.intellij.openapi.project.Project
 import java.util.Locale
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.PROJECT)
 class NewCodePeriodCache(private val project: Project) {
     var periodAsString: String = "(unknown code period)"
 
     fun refreshAsync() {
-        getService(BackendService::class.java).getNewCodePeriodText(project)
-            .thenAccept { period ->
-                periodAsString = period.replaceFirstChar { char ->
-                    char.lowercase(
-                        Locale.getDefault()
-                    )
+        runOnPooledThread(project) {
+            getService(BackendService::class.java).getNewCodePeriodText(project)
+                .thenAccept { period ->
+                    periodAsString = period.replaceFirstChar { char ->
+                        char.lowercase(
+                            Locale.getDefault()
+                        )
+                    }
                 }
-            }
+        }
     }
 }

@@ -53,6 +53,7 @@ import org.sonarlint.intellij.finding.FindingType.ISSUE
 import org.sonarlint.intellij.finding.FindingType.SECURITY_HOTSPOT
 import org.sonarlint.intellij.finding.FindingType.TAINT_VULNERABILITY
 import org.sonarlint.intellij.util.HelpLabelUtils
+import org.sonarlint.intellij.util.runOnPooledThread
 
 
 class SonarLintDashboardPanel(private val editor: Editor) {
@@ -79,9 +80,11 @@ class SonarLintDashboardPanel(private val editor: Editor) {
     private val restartPanel: JPanel
 
     init {
-        editor.project?.let { refreshCheckbox() }
-        focusOnNewCodeCheckbox.addActionListener {
-            getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCodeCheckbox.isSelected)
+        editor.project?.let { project ->
+            refreshCheckbox()
+            focusOnNewCodeCheckbox.addActionListener {
+                runOnPooledThread(project) { getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCodeCheckbox.isSelected) }
+            }
         }
         focusOnNewCodeCheckbox.isOpaque = false
 

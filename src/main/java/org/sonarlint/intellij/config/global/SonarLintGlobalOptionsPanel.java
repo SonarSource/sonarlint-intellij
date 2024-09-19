@@ -48,6 +48,7 @@ import org.sonarlint.intellij.util.HelpLabelUtils;
 import static java.awt.GridBagConstraints.WEST;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.FOCUS_ON_NEW_CODE_LINK;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
@@ -136,19 +137,21 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     autoTrigger.setSelected(model.isAutoTrigger());
     nodeJsPath.setText(model.getNodejsPath());
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
-    loadNodeJsSettings();
+    runOnPooledThread(this::loadNodeJsSettings);
   }
 
   private void loadNodeJsSettings() {
-    getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
-      if (settings == null) {
-        this.nodeJsPath.getEmptyText().setText("Node.js not found");
-        this.nodeJsVersion.setText("N/A");
-      } else {
-        this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
-        this.nodeJsVersion.setText(settings.getVersion());
-      }
-    });
+    runOnPooledThread(() ->
+      getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
+        if (settings == null) {
+          this.nodeJsPath.getEmptyText().setText("Node.js not found");
+          this.nodeJsVersion.setText("N/A");
+        } else {
+          this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
+          this.nodeJsVersion.setText(settings.getVersion());
+        }
+      })
+    );
   }
 
   @Override

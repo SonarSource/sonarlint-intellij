@@ -24,7 +24,7 @@ import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.util.runOnPooledThread
 
 class SonarFocusOnNewCode : AbstractSonarToggleAction() {
 
@@ -32,7 +32,7 @@ class SonarFocusOnNewCode : AbstractSonarToggleAction() {
             ?: false
 
     override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
-        getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(isSelected)
+        e.project?.let { runOnPooledThread(it) { getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(isSelected) } }
     }
 
     override fun updatePresentation(project: Project, presentation: Presentation) {

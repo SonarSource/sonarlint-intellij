@@ -40,6 +40,8 @@ import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
 
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+
 public class FlowsTree extends Tree {
   private final Project project;
 
@@ -82,9 +84,11 @@ public class FlowsTree extends Tree {
   }
 
   public void expandAll() {
-    for (var i = 0; i < getRowCount(); i++) {
-      expandRow(i);
-    }
+    runOnUiThread(project, () -> {
+      for (var i = 0; i < getRowCount(); i++) {
+        expandRow(i);
+      }
+    });
   }
 
   private void highlightInEditor(DefaultMutableTreeNode node) {

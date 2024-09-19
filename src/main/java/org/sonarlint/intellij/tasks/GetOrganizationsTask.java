@@ -30,6 +30,7 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 /**
  * Only useful for SonarCloud
@@ -50,7 +51,8 @@ public class GetOrganizationsTask extends Task.Modal {
     indicator.setIndeterminate(false);
 
     try {
-      organizations = waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).listUserOrganizations(connection)).getUserOrganizations();
+      organizations = computeOnPooledThread("Get User Organizations",() ->
+        waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).listUserOrganizations(connection)).getUserOrganizations());
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
       exception = e;

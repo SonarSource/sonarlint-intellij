@@ -63,6 +63,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleDetailsDto
 
 
@@ -115,7 +116,9 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         clear()
 
         ApplicationManager.getApplication().messageBus.connect(parent)
-            .subscribe(LafManagerListener.TOPIC, LafManagerListener { updateUiComponents() })
+            .subscribe(
+                LafManagerListener.TOPIC,
+                LafManagerListener { runOnUiThread(project) { updateUiComponents() } })
     }
 
     private data class RuleDetailsLoaderState(val lastModule: Module?, val lastFindingRuleKey: String?, val lastContextKey: String?)
@@ -145,21 +148,23 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             startLoading()
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description\u2026", false) {
                 override fun run(progressIndicator: ProgressIndicator) {
-                    SonarLintUtils.getService(BackendService::class.java)
-                        .getActiveRuleDetails(module, ruleKey, ruleDescriptionContextKey)
-                        .orTimeout(30, TimeUnit.SECONDS)
-                        .handle { response, error ->
-                            stopLoading()
-                            ruleDetails = if (error != null) {
-                                SonarLintConsole.get(project).error("Cannot get rule description", error)
-                                null
-                            } else {
-                                response.details()
+                    runOnPooledThread(project) {
+                        SonarLintUtils.getService(BackendService::class.java)
+                            .getActiveRuleDetails(module, ruleKey, ruleDescriptionContextKey)
+                            .orTimeout(30, TimeUnit.SECONDS)
+                            .handle { response, error ->
+                                stopLoading()
+                                ruleDetails = if (error != null) {
+                                    SonarLintConsole.get(project).error("Cannot get rule description", error)
+                                    null
+                                } else {
+                                    response.details()
+                                }
+                                runOnUiThread(project) {
+                                    updateUiComponents()
+                                }
                             }
-                            runOnUiThread(project) {
-                                updateUiComponents()
-                            }
-                        }
+                    }
                 }
             })
         }
@@ -168,7 +173,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
 
     fun clear() {
         clearValues()
-        updateUiComponents()
+        runOnUiThread(project) { updateUiComponents() }
     }
 
     private fun clearValues() {

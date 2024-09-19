@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
@@ -100,6 +101,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
   public void updateModel(Map<VirtualFile, Collection<LiveSecurityHotspot>> map) {
     var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).toList();
+    ApplicationManager.getApplication().assertIsDispatchThread();
 
     nonFilteredNodes.clear();
     toRemove.forEach(this::removeFile);

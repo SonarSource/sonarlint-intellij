@@ -42,6 +42,7 @@ import org.sonarlint.intellij.tasks.FutureAwaitingTask
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
@@ -103,7 +104,10 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
             "No module could be found for this file"
         )
 
-        val response = checkPermission(project, connection, hotspotKey) ?: return
+        val response = computeOnPooledThread(project, "Checking permission to mark issue as resolved") {
+            checkPermission(project, connection, hotspotKey)
+        } ?: return
+
         val newStatus = HotspotStatus.valueOf(currentStatus.name)
         runOnUiThread(project) {
             if (ReviewSecurityHotspotDialog(project, connection.productName, module, hotspotKey, response, newStatus).showAndGet()) {

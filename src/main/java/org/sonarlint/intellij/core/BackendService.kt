@@ -179,44 +179,42 @@ class BackendService : Disposable {
         ApplicationManager.getApplication().messageBus.connect()
             .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
                 override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                    connectionsUpdated(newSettings.serverConnections)
-                    val changedConnections = newSettings.serverConnections.filter { connection ->
-                        val previousConnection = previousSettings.getServerConnectionByName(connection.name)
-                        previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                    runOnPooledThread {
+                        connectionsUpdated(newSettings.serverConnections)
+                        val changedConnections = newSettings.serverConnections.filter { connection ->
+                            val previousConnection = previousSettings.getServerConnectionByName(connection.name)
+                            previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
+                        }
+                        credentialsChanged(changedConnections)
                     }
-                    credentialsChanged(changedConnections)
                 }
 
                 override fun changed(serverList: List<ServerConnection>) {
-                    connectionsUpdated(serverList)
+                    runOnPooledThread { connectionsUpdated(serverList) }
                 }
             })
         ApplicationManager.getApplication().messageBus.connect()
             .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
                 override fun projectClosing(project: Project) {
-                    this@BackendService.projectClosed(project)
+                    runOnPooledThread { this@BackendService.projectClosed(project) }
                 }
             })
 
     }
 
     private fun <T> requestFromBackend(action: (SonarLintRpcServer) -> CompletableFuture<T>): CompletableFuture<T> {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return ensureBackendInitialized().thenComposeAsync(action)
     }
 
     private fun notifyBackend(action: (SonarLintRpcServer) -> Unit) {
+        ApplicationManager.getApplication().assertIsNonDispatchThread()
         ensureBackendInitialized().thenAcceptAsync(action)
     }
 
     private fun ensureBackendInitialized(): CompletableFuture<SonarLintRpcServer> {
         if (!initializationTriedOnce.getAndSet(true)) {
-            if (ApplicationManager.getApplication().isUnitTestMode) {
-                // workaround for tests as tasks are executed on UI thread
-                runOnPooledThread {
-                    ProgressManager.getInstance().run(createServiceStartingTask())
-                }
-            } else {
-                // this will run in a background task
+            runOnPooledThread {
                 ProgressManager.getInstance().run(createServiceStartingTask())
             }
         }
@@ -280,9 +278,7 @@ class BackendService : Disposable {
 
     private fun handleSloopExited() {
         ProjectManager.getInstance().openProjects.forEach { project ->
-            runOnUiThread(project) {
-                getService(project, SonarLintToolWindow::class.java).refreshViews()
-            }
+            getService(project, SonarLintToolWindow::class.java).refreshViews()
         }
         projectLessNotification(
             null,
@@ -505,7 +501,9 @@ class BackendService : Disposable {
                 )
             )
         }
-        refreshTaintVulnerabilities(project)
+        runOnPooledThread {
+            refreshTaintVulnerabilities(project)
+        }
     }
 
     internal fun projectClosed(project: Project) {
@@ -518,31 +516,32 @@ class BackendService : Disposable {
         ConfigurationScopeDto(projectId(project), null, true, project.name,
             BindingConfigurationDto(binding?.connectionName, binding?.projectKey, areBindingSuggestionsDisabledFor(project)))
 
-
     fun projectBound(project: Project, newBinding: ProjectBinding) {
-        notifyBackend {
-            it.configurationService.didUpdateBinding(
-                DidUpdateBindingParams(
-                    projectId(project), BindingConfigurationDto(
-                    newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project)
-                )
-                )
-            )
-        }
-        newBinding.moduleBindingsOverrides.forEach { (module, projectKey) ->
-            val moduleId = moduleId(module)
+        runOnPooledThread(project) {
             notifyBackend {
                 it.configurationService.didUpdateBinding(
                     DidUpdateBindingParams(
-                        moduleId, BindingConfigurationDto(
-                        // we don't want binding suggestions for modules
-                        newBinding.connectionName, projectKey, true
-                    )
+                        projectId(project), BindingConfigurationDto(
+                            newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project)
+                        )
                     )
                 )
             }
+            newBinding.moduleBindingsOverrides.forEach { (module, projectKey) ->
+                val moduleId = moduleId(module)
+                notifyBackend {
+                    it.configurationService.didUpdateBinding(
+                        DidUpdateBindingParams(
+                            moduleId, BindingConfigurationDto(
+                                // we don't want binding suggestions for modules
+                                newBinding.connectionName, projectKey, true
+                            )
+                        )
+                    )
+                }
+            }
+            refreshTaintVulnerabilities(project)
         }
-        refreshTaintVulnerabilities(project)
     }
 
     fun projectUnbound(project: Project) {
@@ -553,7 +552,9 @@ class BackendService : Disposable {
                 )
             )
         }
-        refreshTaintVulnerabilities(project)
+        runOnPooledThread {
+            refreshTaintVulnerabilities(project)
+        }
     }
 
     fun modulesAdded(project: Project, modules: List<Module>) {
@@ -773,20 +774,20 @@ class BackendService : Disposable {
     }
 
     fun restartBackendService() {
-        if (isAlive()) {
-            return
+        runOnPooledThread {
+            if (isAlive()) {
+                return@runOnPooledThread
+            }
+            initializationTriedOnce.set(false)
+            backendFuture = CompletableFuture()
+            sloop = null
+            ensureBackendInitialized().thenAcceptAsync { catchUpWithBackend(it) }
         }
-        initializationTriedOnce.set(false)
-        backendFuture = CompletableFuture()
-        sloop = null
-        ensureBackendInitialized().thenAcceptAsync { catchUpWithBackend(it) }
     }
 
     private fun catchUpWithBackend(rpcServer: SonarLintRpcServer) {
         ProjectManager.getInstance().openProjects.forEach { project ->
-            runOnUiThread(project) {
-                getService(project, SonarLintToolWindow::class.java).refreshViews()
-            }
+            getService(project, SonarLintToolWindow::class.java).refreshViews()
 
             val binding = getService(project, ProjectBindingManager::class.java).binding
             rpcServer.configurationService.didAddConfigurationScopes(

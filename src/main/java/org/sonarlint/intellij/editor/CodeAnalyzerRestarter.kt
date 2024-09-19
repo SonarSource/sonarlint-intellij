@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.editor
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -55,6 +56,7 @@ class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myPr
         if (!virtualFile.isValid) {
             return null
         }
+        ApplicationManager.getApplication().assertReadAccessAllowed()
         return PsiManager.getInstance(myProject).findFile(virtualFile)
     }
 }

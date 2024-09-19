@@ -22,6 +22,7 @@ package org.sonarlint.intellij.telemetry
 import java.util.concurrent.CompletableFuture
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams
@@ -80,7 +81,7 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
 
     companion object {
         private fun notifyTelemetry(action: (TelemetryRpcService) -> Unit) {
-            getService(BackendService::class.java).notifyTelemetry(action)
+            runOnPooledThread { getService(BackendService::class.java).notifyTelemetry(action) }
         }
     }
 }

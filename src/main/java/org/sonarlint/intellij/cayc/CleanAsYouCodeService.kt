@@ -28,6 +28,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.APP)
 class CleanAsYouCodeService {
@@ -46,11 +47,13 @@ class CleanAsYouCodeService {
     private fun refresh(settings: SonarLintGlobalSettings, isFocusOnNewCode: Boolean) {
         if (settings.isFocusOnNewCode != isFocusOnNewCode) {
             settings.isFocusOnNewCode = isFocusOnNewCode
-            getService(BackendService::class.java).triggerTelemetryForFocusOnNewCode()
-            ProjectManager.getInstance().openProjects.forEach { project ->
-                if (!project.isDisposed) {
-                    getService(project, SonarLintToolWindow::class.java).refreshViews()
-                    DaemonCodeAnalyzer.getInstance(project).restart()
+            runOnPooledThread {
+                getService(BackendService::class.java).triggerTelemetryForFocusOnNewCode()
+                ProjectManager.getInstance().openProjects.forEach { project ->
+                    if (!project.isDisposed) {
+                        getService(project, SonarLintToolWindow::class.java).refreshViews()
+                        DaemonCodeAnalyzer.getInstance(project).restart()
+                    }
                 }
             }
         }
