@@ -45,6 +45,7 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 /**
  * Coordinates creation of models and visual components from persisted settings.
@@ -96,11 +97,13 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       var projectSettings = getSettingsFor(project);
       boolean exclusionsModified = panel.areExclusionsModified(projectSettings);
       panel.save(project, projectSettings);
-      project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
+      runOnPooledThread(project, () -> {
+        project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
 
-      if (exclusionsModified) {
-        getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE);
-      }
+        if (exclusionsModified) {
+          getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE);
+        }
+      });
     }
   }
 

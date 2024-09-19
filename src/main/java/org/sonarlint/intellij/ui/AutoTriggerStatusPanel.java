@@ -30,23 +30,19 @@ import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.JBUI;
-import java.awt.CardLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import javax.swing.Box;
-import javax.swing.Icon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+
+import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import java.awt.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -72,8 +68,8 @@ public class AutoTriggerStatusPanel {
   public AutoTriggerStatusPanel(Project project) {
     this.project = project;
     createPanel();
-    switchCards();
-    CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
+    runOnUiThread(project, this::switchCards);
+    CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, () -> runOnUiThread(project, this::switchCards));
   }
 
   public JPanel getPanel() {

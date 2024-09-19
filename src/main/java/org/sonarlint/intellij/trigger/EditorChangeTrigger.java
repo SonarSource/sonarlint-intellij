@@ -36,11 +36,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.Cancelable;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @ThreadSafe
 @Service(Service.Level.PROJECT)
@@ -141,7 +142,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
             return;
           }
           files.forEach(eventMap::remove);
-          task = SonarLintUtils.getService(myProject, AnalysisSubmitter.class).autoAnalyzeFiles(openFilesToAnalyze, TriggerType.EDITOR_CHANGE);
+          task = getService(myProject, AnalysisSubmitter.class).autoAnalyzeFiles(openFilesToAnalyze, TriggerType.EDITOR_CHANGE);
         }
       }
     }
@@ -164,7 +165,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
           filesToTrigger.add(event.getKey());
         }
       }
-      triggerFiles(filesToTrigger);
+      runOnPooledThread(myProject, () -> triggerFiles(filesToTrigger));
     }
 
   }
