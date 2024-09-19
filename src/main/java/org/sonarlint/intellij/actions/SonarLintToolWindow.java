@@ -65,6 +65,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintToolWindow implements ContentManagerListener, ProjectBindingListener {
@@ -82,6 +83,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
    * Must run in EDT
    */
   public void openReportTab(AnalysisResult analysisResult) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
     this.<ReportPanel>openTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.updateFindings(analysisResult));
   }
 
@@ -124,13 +126,13 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   private <T> void openTab(String displayName, Consumer<T> tabPanelConsumer) {
-    var toolWindow = updateTab(displayName, tabPanelConsumer);
+    var toolWindow = updateTabAndGet(displayName, tabPanelConsumer);
     if (toolWindow != null) {
       toolWindow.show(() -> selectTab(toolWindow, displayName));
     }
   }
 
-  private <T> ToolWindow updateTab(String displayName, Consumer<T> tabPanelConsumer) {
+  private <T> ToolWindow updateTabAndGet(String displayName, Consumer<T> tabPanelConsumer) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
@@ -138,10 +140,24 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
       var content = contentManager.findContent(displayName);
       if (content != null) {
         var panel = (T) content.getComponent();
-        tabPanelConsumer.accept(panel);
+        runOnPooledThread(project, () -> tabPanelConsumer.accept(panel));
       }
     }
     return toolWindow;
+  }
+
+  private <T> void updateTab(String displayName, Consumer<T> tabPanelConsumer) {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      runOnUiThread(project, () -> {
+        var contentManager = toolWindow.getContentManager();
+        var content = contentManager.findContent(displayName);
+        if (content != null) {
+          var panel = (T) content.getComponent();
+          runOnPooledThread(project, () -> tabPanelConsumer.accept(panel));
+        }
+      });
+    }
   }
 
   public void filterCurrentFileTab(boolean isResolved) {
@@ -160,6 +176,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
    * Must run in EDT
    */
   public void openCurrentFileTab() {
+    ApplicationManager.getApplication().assertIsDispatchThread();
     openTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
   }
 
@@ -208,7 +225,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var hotspotContent = getSecurityHotspotContent();
     if (hotspotContent != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) hotspotContent.getComponent();
-      hotspotContent.setDisplayName(buildTabName(hotspotsPanel.refreshView(), SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+      runOnUiThread(project, () -> hotspotContent.setDisplayName(buildTabName(hotspotsPanel.refreshView(), SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE)));
     }
 
     var taintContent = getTaintVulnerabilitiesContent();
@@ -290,7 +307,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, @Nullable Collection<LiveIssue> issues) {
-    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.update(selectedFile, issues));
+    this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE,
+      panel -> runOnUiThread(project, () -> panel.update(selectedFile, issues)));
   }
 
   private void showIssue(LiveIssue liveIssue, Consumer<CurrentFilePanel> selectTab) {
@@ -469,6 +487,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   @Override
   public void bindingChanged() {
-    runOnUiThread(project, this::refreshViews);
+    runOnPooledThread(project, this::refreshViews);
   }
 }

@@ -26,7 +26,7 @@ import com.intellij.openapi.project.Project
 class UiUtils {
     companion object {
         @JvmStatic
-        fun runOnUiThread(runnable: Runnable, modality: ModalityState) {
+        fun runOnUiThread(modality: ModalityState, runnable: Runnable) {
             ApplicationManager.getApplication().invokeLater(runnable, modality)
         }
 

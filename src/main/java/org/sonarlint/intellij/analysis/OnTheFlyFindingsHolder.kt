@@ -72,8 +72,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         runOnUiThread(project) {
             updateCurrentFileTab()
             updateSecurityHotspots()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
         }
+        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
     }
 
     fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>) {

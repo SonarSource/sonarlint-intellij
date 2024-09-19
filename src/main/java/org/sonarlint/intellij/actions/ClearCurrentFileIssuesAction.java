@@ -64,6 +64,7 @@ public class ClearCurrentFileIssuesAction extends AbstractSonarAction {
   }
 
   public Collection<PsiFile> findFiles(Project project, VirtualFile[] files) {
+    ApplicationManager.getApplication().assertReadAccessAllowed();
     var psiManager = PsiManager.getInstance(project);
     var psiFiles = new ArrayList<PsiFile>(files.length);
 

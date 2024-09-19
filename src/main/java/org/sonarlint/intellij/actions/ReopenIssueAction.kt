@@ -45,6 +45,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarlint.intellij.util.DataKeys
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarlint.intellij.util.runOnPooledThread
 
 private const val SKIP_CONFIRM_REOPEN_DIALOG_PROPERTY = "SonarLint.reopenIssue.hideConfirmation"
 
@@ -75,7 +76,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
             serverKey ?: return displayNotificationError(project, "The issue key could not be found")
 
             if (confirm(project, connection.productName)) {
-                reopenFinding(project, module, issue, serverKey)
+                runOnPooledThread(project) { reopenFinding(project, module, issue, serverKey) }
             }
         }
 

@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.ex.ActionUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -203,7 +204,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     }
   }
 
-  private static void doUpdateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues, ToolWindow toolWindow) {
+  private void doUpdateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues, ToolWindow toolWindow) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
     boolean empty = file == null || issues.isEmpty();
     toolWindow.setIcon(empty ? SonarLintIcons.SONARLINT_TOOLWINDOW_EMPTY : SonarLintIcons.SONARLINT_TOOLWINDOW);
   }
@@ -222,7 +224,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
       return SonarLintUtils.getSelectedFile(project);
     }
-
+    
     return null;
   }
 
@@ -234,10 +236,10 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   public void refreshModel() {
     treeBuilder.refreshModel(project);
     oldTreeBuilder.refreshModel(project);
-    expandTree();
+    runOnUiThread(project, this::expandTree);
   }
 
   public void refreshView() {
-    update(currentFile, currentIssues);
+    runOnUiThread(project, () -> update(currentFile, currentIssues));
   }
 }
