@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -64,6 +65,7 @@ import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
   private static final Logger LOGGER = Logger.getInstance(SonarLintCheckinHandler.class);
@@ -240,7 +242,11 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab(AnalysisResult analysisResult) {
-    SonarLintUtils.getService(project, SonarLintToolWindow.class).openReportTab(analysisResult);
+    if (ApplicationManager.getApplication().isUnitTestMode()) {
+      getService(project, SonarLintToolWindow.class).openReportTab(analysisResult);
+    } else {
+      runOnUiThread(project, () -> getService(project, SonarLintToolWindow.class).openReportTab(analysisResult));
+    }
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent, UnnamedConfigurable {

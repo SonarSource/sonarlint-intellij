@@ -120,8 +120,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
         @JvmStatic
         @BeforeAll
         fun createSonarLintUser() {
-            Thread.sleep(120000)
-            
             adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
             val token = generateTokenNameAndValue(adminWsClient, "sonarlintUser")
             tokenName = token.first

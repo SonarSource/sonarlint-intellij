@@ -32,6 +32,7 @@ import org.sonarlint.intellij.ui.CurrentFileStatusPanel.subscribeToEventsThatAff
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpText
 import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpTextNotConnected
+import org.sonarlint.intellij.util.runOnPooledThread
 
 class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
     var panel: JPanel
@@ -69,11 +70,14 @@ class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
     }
 
     private fun switchCards() {
-        val projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager::class.java)
-        projectBindingManager.tryGetServerConnection().ifPresentOrElse({
-            switchCard(CONNECTED)
-        })  // No connection settings for project
-        { switchCard(NOT_CONNECTED) }
+        // Checking connected mode state may take time, so lets move from EDT to pooled thread
+        runOnPooledThread(project) {
+            val projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager::class.java)
+            projectBindingManager.tryGetServerConnection().ifPresentOrElse({
+                switchCard(CONNECTED)
+            })  // No connection settings for project
+            { switchCard(NOT_CONNECTED) }
+        }
     }
 
     private fun switchCard(cardName: String) {

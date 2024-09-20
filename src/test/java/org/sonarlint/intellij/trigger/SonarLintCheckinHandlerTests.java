@@ -47,6 +47,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -88,7 +89,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
-    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
     verifyNoInteractions(toolWindow);
   }
 
@@ -117,10 +118,10 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
     assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue");
     ArgumentCaptor<AnalysisResult> analysisResultCaptor = ArgumentCaptor.forClass(AnalysisResult.class);
-    verify(toolWindow).openReportTab(analysisResultCaptor.capture());
+    verify(toolWindow, timeout(1000)).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
     assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
-    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
 
   }
 
@@ -151,9 +152,9 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
       "\n" +
       "SonarLint analysis found 1 secret. Committed secrets may lead to unauthorized system access.");
     ArgumentCaptor<AnalysisResult> analysisResultCaptor = ArgumentCaptor.forClass(AnalysisResult.class);
-    verify(toolWindow).openReportTab(analysisResultCaptor.capture());
+    verify(toolWindow, timeout(1000)).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
     assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
-    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
   }
 }
