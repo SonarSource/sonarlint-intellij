@@ -291,7 +291,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private fun expandDefault() {
         if (taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.size < 30) {
-            TreeUtil.expand(tree, 2)
+            runOnPooledThread(project) { TreeUtil.expand(tree, 2) }
         } else {
             tree.expandRow(0)
         }
