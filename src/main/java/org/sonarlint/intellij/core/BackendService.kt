@@ -203,18 +203,22 @@ class BackendService : Disposable {
     }
 
     private fun <T> requestFromBackend(action: (SonarLintRpcServer) -> CompletableFuture<T>): CompletableFuture<T> {
-        ApplicationManager.getApplication().assertIsNonDispatchThread()
         return ensureBackendInitialized().thenComposeAsync(action)
     }
 
     private fun notifyBackend(action: (SonarLintRpcServer) -> Unit) {
-        ApplicationManager.getApplication().assertIsNonDispatchThread()
         ensureBackendInitialized().thenAcceptAsync(action)
     }
 
     private fun ensureBackendInitialized(): CompletableFuture<SonarLintRpcServer> {
         if (!initializationTriedOnce.getAndSet(true)) {
-            runOnPooledThread {
+            if (ApplicationManager.getApplication().isUnitTestMode) {
+                // workaround for tests as tasks are executed on UI thread
+                runOnPooledThread {
+                    ProgressManager.getInstance().run(createServiceStartingTask())
+                }
+            } else {
+                // this will run in a background task
                 ProgressManager.getInstance().run(createServiceStartingTask())
             }
         }
@@ -738,6 +742,7 @@ class BackendService : Disposable {
     }
 
     fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
+        println("In matrix")
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
@@ -745,6 +750,7 @@ class BackendService : Disposable {
         } else {
             ValidateConnectionParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
         }
+        println("Requesting matrix")
         return requestFromBackend { it.connectionService.validateConnection(params) }
     }
 
