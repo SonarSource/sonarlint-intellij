@@ -124,6 +124,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.Bindin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.NoBindingSuggestionFoundParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
@@ -575,10 +576,11 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
     }
 
-    override fun noBindingSuggestionFound(projectKey: String) {
+    override fun noBindingSuggestionFound(params: NoBindingSuggestionFoundParams) {
+        val serverType = if (params.isSonarCloud) "SonarCloud" else "SonarQube"
         projectLessNotification(
             "No matching open project found",
-            "IntelliJ cannot match SonarQube project '$projectKey' to any of the currently open projects. Please open your project and try again.",
+            "IntelliJ cannot match $serverType project '${params.projectKey}' to any of the currently open projects. Please open your project and try again.",
             NotificationType.WARNING,
             OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK)
         )
