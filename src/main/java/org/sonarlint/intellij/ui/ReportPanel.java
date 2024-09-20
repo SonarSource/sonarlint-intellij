@@ -96,7 +96,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private JBPanelWithEmptyText findingsPanel;
 
   public ReportPanel(Project project) {
-    super(false, true);
+    super(false, false);
     this.project = project;
     lastAnalysisPanel = new LastAnalysisPanel();
     whatsNewPanel = new ReportTabStatusPanel(project);
@@ -189,7 +189,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     treePanel.add(securityHotspotTree);
     treePanel.add(oldTree);
     treePanel.add(oldSecurityHotspotTree);
-    findingsTreePane = ScrollPaneFactory.createScrollPane(treePanel);
+    findingsTreePane = ScrollPaneFactory.createScrollPane(treePanel, true);
     findingsPanel.add(findingsTreePane, BorderLayout.CENTER);
     findingsPanel.add(lastAnalysisPanel, BorderLayout.SOUTH);
     whatsNewPanel.add(lastAnalysisPanel, BorderLayout.WEST);

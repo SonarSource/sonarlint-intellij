@@ -66,7 +66,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   protected FindingDetailsPanel findingDetailsPanel;
 
   protected AbstractIssuesPanel(Project project) {
-    super(false, true);
+    super(false, false);
     this.project = project;
 
     createIssuesTree();
