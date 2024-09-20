@@ -47,7 +47,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private ActionToolbar mainToolbar;
 
   public SonarLintLogPanel(ToolWindow toolWindow, Project project) {
-    super(false, true);
+    super(false, false);
     this.toolWindow = toolWindow;
     this.project = project;
 

@@ -133,7 +133,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         treePanel.add(tree)
         treePanel.add(oldTree)
 
-        val treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel)
+        val treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel, true)
         cards.add(createSplitter(project, this, this, treeScrollPane, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
         )

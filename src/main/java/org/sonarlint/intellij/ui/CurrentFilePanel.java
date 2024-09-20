@@ -85,7 +85,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     treePanel.add(tree);
     treePanel.add(oldTree);
 
-    treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel);
+    treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel, true);
 
     issuesPanel = new JBPanelWithEmptyText(new BorderLayout());
     var statusText = issuesPanel.getEmptyText();
