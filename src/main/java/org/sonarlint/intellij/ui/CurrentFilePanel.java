@@ -204,7 +204,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     }
   }
 
-  private void doUpdateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues, ToolWindow toolWindow) {
+  private static void doUpdateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues, ToolWindow toolWindow) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     boolean empty = file == null || issues.isEmpty();
     toolWindow.setIcon(empty ? SonarLintIcons.SONARLINT_TOOLWINDOW_EMPTY : SonarLintIcons.SONARLINT_TOOLWINDOW);

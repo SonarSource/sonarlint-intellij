@@ -742,7 +742,6 @@ class BackendService : Disposable {
     }
 
     fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
-        println("In matrix")
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
@@ -750,7 +749,6 @@ class BackendService : Disposable {
         } else {
             ValidateConnectionParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
         }
-        println("Requesting matrix")
         return requestFromBackend { it.connectionService.validateConnection(params) }
     }
 
