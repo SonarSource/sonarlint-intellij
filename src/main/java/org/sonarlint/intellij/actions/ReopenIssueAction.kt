@@ -37,12 +37,10 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
-import org.sonarlint.intellij.ui.UiUtils
 import org.sonarlint.intellij.util.DataKeys
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 
@@ -88,7 +86,6 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         private fun reopenFinding(project: Project, module: Module, issue: Issue, issueKey: String) {
             SonarLintUtils.getService(BackendService::class.java).reopenIssue(module, issueKey, issue is LocalTaintVulnerability)
                 .thenAcceptAsync {
-                    updateUI(project, issue)
                     SonarLintProjectNotifications.get(project).displaySuccessfulNotification(
                         CONTENT, NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_ISSUE_GROUP)
                     )
@@ -100,14 +97,6 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
                     )
                     null
                 }
-        }
-
-        private fun updateUI(project: Project, issue: Issue) {
-            UiUtils.runOnUiThread(project) {
-                issue.reopen()
-                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).reopenIssue(issue)
-                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-            }
         }
 
         private fun confirm(project: Project, productName: String): Boolean {
