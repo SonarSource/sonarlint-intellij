@@ -58,8 +58,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         updateViewsWithNewFindings(intermediateResult.findings)
 
     private fun updateViewsWithNewFindings(findings: LiveFindings) {
-        runOnUiThread(project) {
-            if (selectedFile == null) {
+        if (selectedFile == null) {
+            runOnUiThread(project) {
                 selectedFile = SonarLintUtils.getSelectedFile(project)
             }
         }
@@ -69,11 +69,9 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             currentIssuesPerOpenFile.putAll(issuesPerFile)
             currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
         }
-        runOnUiThread(project) {
-            updateCurrentFileTab()
-            updateSecurityHotspots()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
-        }
+        updateCurrentFileTab()
+        updateSecurityHotspots()
+        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
     }
 
     fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>) {
@@ -85,13 +83,13 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             virtualFile to liveIssues
         }.toMap()
         currentIssuesPerOpenFile.putAll(issues)
-        runOnUiThread(project) {
-            if (selectedFile == null) {
+        if (selectedFile == null) {
+            runOnUiThread(project) {
                 selectedFile = SonarLintUtils.getSelectedFile(project)
             }
-            updateCurrentFileTab()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(issues.keys)
         }
+        updateCurrentFileTab()
+        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(issues.keys)
     }
 
     fun updateViewsWithNewSecurityHotspots(module: Module, raisedSecurityHotspots: Map<URI, List<RaisedHotspotDto>>) {
@@ -103,13 +101,13 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             virtualFile to liveIssues
         }.toMap().filterKeys { openFiles.contains(it) }
         currentSecurityHotspotsPerOpenFile.putAll(securityHotspots)
-        runOnUiThread(project) {
-            if (selectedFile == null) {
+        if (selectedFile == null) {
+            runOnUiThread(project) {
                 selectedFile = SonarLintUtils.getSelectedFile(project)
             }
-            updateSecurityHotspots()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(securityHotspots.keys)
         }
+        updateSecurityHotspots()
+        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(securityHotspots.keys)
     }
 
     override fun selectionChanged(event: FileEditorManagerEvent) {

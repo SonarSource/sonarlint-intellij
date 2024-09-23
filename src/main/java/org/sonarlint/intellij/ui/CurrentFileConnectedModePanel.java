@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.IdeTooltipManager;
 import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -158,32 +157,32 @@ public class CurrentFileConnectedModePanel {
   }
 
   private void switchCards() {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-
-    var selectedFile = SonarLintUtils.getSelectedFile(project);
-    if (selectedFile != null) {
-      // Checking connected mode state may take time, so lets move from EDT to pooled thread
-      runOnPooledThread(project, () -> {
-        var projectBindingManager = getService(project, ProjectBindingManager.class);
-        projectBindingManager.tryGetServerConnection().ifPresentOrElse(serverConnection -> {
-          try {
-            var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
-            if (module == null) {
-              switchCard(EMPTY);
-            } else {
-              connectedCard.updateTooltip(module, serverConnection);
-              switchCard(CONNECTED);
+    runOnUiThread(project, () -> {
+      var selectedFile = SonarLintUtils.getSelectedFile(project);
+      if (selectedFile != null) {
+        // Checking connected mode state may take time, so lets move from EDT to pooled thread
+        runOnPooledThread(project, () -> {
+          var projectBindingManager = getService(project, ProjectBindingManager.class);
+          projectBindingManager.tryGetServerConnection().ifPresentOrElse(serverConnection -> {
+            try {
+              var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+              if (module == null) {
+                switchCard(EMPTY);
+              } else {
+                connectedCard.updateTooltip(module, serverConnection);
+                switchCard(CONNECTED);
+              }
+            } catch (IllegalStateException e) {
+              switchCard(ERROR);
             }
-          } catch (IllegalStateException e) {
-            switchCard(ERROR);
-          }
-        },
-          // No connection settings for project
-          () -> switchCard(NOT_CONNECTED));
-      });
-    } else {
-      switchCard(EMPTY);
-    }
+          },
+            // No connection settings for project
+            () -> switchCard(NOT_CONNECTED));
+        });
+      } else {
+        switchCard(EMPTY);
+      }
+    });
   }
 
   private void updateBranchTooltip() {

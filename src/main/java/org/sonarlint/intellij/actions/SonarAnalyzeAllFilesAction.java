@@ -37,6 +37,7 @@ import org.sonarlint.intellij.core.BackendService;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ProjectUtils.hasFiles;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   private static final String HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning";
@@ -70,7 +71,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
       return;
     }
 
-    SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeAllFiles();
+    runOnPooledThread(project, () -> SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeAllFiles());
   }
 
   static boolean userConfirmed(Project project) {

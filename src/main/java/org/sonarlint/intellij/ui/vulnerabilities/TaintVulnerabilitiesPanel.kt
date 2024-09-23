@@ -133,7 +133,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         treePanel.add(tree)
         treePanel.add(oldTree)
 
-        val treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel)
+        val treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel, true)
         cards.add(createSplitter(project, this, this, treeScrollPane, rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
         )
@@ -291,7 +291,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private fun expandDefault() {
         if (taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.size < 30) {
-            TreeUtil.expand(tree, 2)
+            runOnPooledThread(project) { TreeUtil.expand(tree, 2) }
         } else {
             tree.expandRow(0)
         }

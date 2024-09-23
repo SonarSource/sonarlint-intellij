@@ -34,8 +34,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 
-import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
-
 public class ShowLocationsIntentionAction implements IntentionAction, PriorityAction, Iconable {
   private final LiveFinding finding;
   private final FindingContext context;
@@ -60,7 +58,7 @@ public class ShowLocationsIntentionAction implements IntentionAction, PriorityAc
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(finding);
     var sonarLintToolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
-    runOnUiThread(project, () -> sonarLintToolWindow.showFindingLocations(finding));
+    sonarLintToolWindow.showFindingLocations(finding);
   }
 
   @Override public boolean startInWriteAction() {

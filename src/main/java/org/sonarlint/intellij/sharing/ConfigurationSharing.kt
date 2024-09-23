@@ -39,6 +39,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 
@@ -50,7 +51,7 @@ class ConfigurationSharing {
             if (project == null || project.isDisposed) return
 
             if (confirm(project)) {
-                createFile(project, modalityState)
+                runOnPooledThread(project) { createFile(project, modalityState) }
             }
         }
 

@@ -39,6 +39,7 @@ import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildTabName;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 /**
  * Factory of SonarLint tool window.
@@ -54,17 +55,19 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
-    var contentManager = toolWindow.getContentManager();
-    addCurrentFileTab(project, contentManager);
-    addReportTab(project, contentManager);
-    var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
-    addSecurityHotspotsTab(project, contentManager);
-    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-      addTaintVulnerabilitiesTab(project, contentManager);
-    }
-    addLogTab(project, toolWindow);
-    toolWindow.setType(ToolWindowType.DOCKED, null);
-    contentManager.addContentManagerListener(sonarLintToolWindow);
+    runOnUiThread(project, () -> {
+      var contentManager = toolWindow.getContentManager();
+      addCurrentFileTab(project, contentManager);
+      addReportTab(project, contentManager);
+      var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
+      addSecurityHotspotsTab(project, contentManager);
+      if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
+        addTaintVulnerabilitiesTab(project, contentManager);
+      }
+      addLogTab(project, toolWindow);
+      toolWindow.setType(ToolWindowType.DOCKED, null);
+      contentManager.addContentManagerListener(sonarLintToolWindow);
+    });
   }
 
   public static JBSplitter createSplitter(Project project, JComponent parentComponent, Disposable parentDisposable, JComponent c1, JComponent c2, String proportionProperty,

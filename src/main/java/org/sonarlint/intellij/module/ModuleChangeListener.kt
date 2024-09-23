@@ -26,15 +26,16 @@ import com.intellij.util.Function
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 
 class ModuleChangeListener(val project: Project) : ModuleListener {
 
     override fun modulesAdded(project: Project, modules: List<Module>) {
-        getService(BackendService::class.java).modulesAdded(project, modules)
+        runOnPooledThread(project) { getService(BackendService::class.java).modulesAdded(project, modules) }
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
-        getService(BackendService::class.java).moduleRemoved(module)
+        runOnPooledThread(project) { getService(BackendService::class.java).moduleRemoved(module) }
     }
 
     override fun modulesRenamed(project: Project, modules: MutableList<out Module>, oldNameProvider: Function<in Module, String>) {

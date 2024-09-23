@@ -46,6 +46,7 @@ import org.sonarlint.intellij.ui.resolve.MarkAsResolvedDialog
 import org.sonarlint.intellij.util.DataKeys.Companion.ISSUE_DATA_KEY
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse
@@ -86,7 +87,9 @@ class MarkAsResolvedAction(
                 project, "No module could be found for this file"
             )
             val serverKey = issue.getServerKey() ?: issue.getId().toString()
-            val response = checkPermission(project, connection, serverKey) ?: return
+            val response = computeOnPooledThread(project, "Checking permission to mark issue as resolved") {
+                checkPermission(project, connection, serverKey)
+            } ?: return
 
             if (response.isPermitted) {
                 runOnUiThread(project) {
@@ -96,7 +99,9 @@ class MarkAsResolvedAction(
                         response,
                     ).chooseResolution() ?: return@runOnUiThread
                     if (confirm(project, connection.productName, resolution.newStatus)) {
-                        markAsResolved(project, module, issue, resolution, serverKey)
+                        runOnPooledThread(project) {
+                            markAsResolved(project, module, issue, resolution, serverKey)
+                        }
                     }
                 }
             } else {

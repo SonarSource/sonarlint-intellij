@@ -65,13 +65,10 @@ public class SonarLintAppUtils {
   }
 
   public static List<VirtualFile> retainOpenFiles(Project project, List<VirtualFile> files) {
-    var openFiles = computeReadActionSafely(project, () -> {
-      if (!project.isOpen()) {
-        return Collections.<VirtualFile>emptyList();
-      }
-      return files.stream().filter(f -> FileEditorManager.getInstance(project).isFileOpen(f)).toList();
-    });
-    return openFiles != null ? openFiles : Collections.emptyList();
+    if (project.isDisposed() || !project.isOpen()) {
+      return Collections.emptyList();
+    }
+    return files.stream().filter(f -> FileEditorManager.getInstance(project).isFileOpen(f)).toList();
   }
 
   /**

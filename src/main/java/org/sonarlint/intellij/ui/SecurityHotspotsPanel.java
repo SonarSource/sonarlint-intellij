@@ -101,7 +101,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private FindingDetailsPanel findingDetailsPanel;
 
   public SecurityHotspotsPanel(Project project) {
-    super(false, true);
+    super(false, false);
     this.project = project;
     securityHotspotCount = 0;
     oldSecurityHotspotCount = 0;
@@ -124,7 +124,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     findingDetailsPanel.setMinimumSize(new Dimension(350, 200));
     var findingsPanel = new JPanel(new BorderLayout());
     findingsPanel.add(createSplitter(project, this, this,
-      ScrollPaneFactory.createScrollPane(treePanel), findingDetailsPanel, SPLIT_PROPORTION_PROPERTY, 0.5f));
+      ScrollPaneFactory.createScrollPane(treePanel, true), findingDetailsPanel, SPLIT_PROPORTION_PROPERTY, 0.5f));
 
     sonarConfigureProject = new SonarConfigureProject();
     notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);

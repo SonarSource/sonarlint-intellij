@@ -594,19 +594,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 if (project == null || project.isDisposed) return@forEach
                 getService(project, AnalysisReadinessCache::class.java).isReady = areReadyForAnalysis
                 if (areReadyForAnalysis) {
-                    val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
-                    if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
-                        getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
-                    }
-
-                    if (ApplicationManager.getApplication().isUnitTestMode) {
-                        runOnPooledThread(project) {
-                            getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFilesForModule(
-                                TriggerType.BINDING_UPDATE,
-                                module
-                            )
+                    runOnPooledThread(project) {
+                        val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
+                        if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
+                            getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
                         }
-                    } else {
+
                         getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFilesForModule(
                             TriggerType.BINDING_UPDATE,
                             module

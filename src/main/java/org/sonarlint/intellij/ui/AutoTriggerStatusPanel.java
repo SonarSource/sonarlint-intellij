@@ -72,8 +72,8 @@ public class AutoTriggerStatusPanel {
   public AutoTriggerStatusPanel(Project project) {
     this.project = project;
     createPanel();
-    switchCards();
-    CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
+    runOnUiThread(project, this::switchCards);
+    CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, () -> runOnUiThread(project, this::switchCards));
   }
 
   public JPanel getPanel() {

@@ -37,6 +37,7 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.core.BackendService;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarAnalyzeFilesAction extends AbstractSonarAction {
 
@@ -88,7 +89,7 @@ public class SonarAnalyzeFilesAction extends AbstractSonarAction {
       })
       .collect(Collectors.toSet());
 
-    getService(project, AnalysisSubmitter.class).analyzeFilesOnUserAction(fileSet, e);
+    runOnPooledThread(project, () -> getService(project, AnalysisSubmitter.class).analyzeFilesOnUserAction(fileSet, e));
   }
 
   private static class CollectFilesVisitor extends VirtualFileVisitor {

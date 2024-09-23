@@ -234,6 +234,7 @@ public class AuthStep extends AbstractWizardStepEx {
     ConnectionTestTask test = new ConnectionTestTask(tmpServer);
     var msg = "Failed to connect to the server. Please check the configuration.";
     ValidateConnectionResponse result;
+
     try {
       result = ProgressManager.getInstance().run(test);
     } catch (Exception e) {

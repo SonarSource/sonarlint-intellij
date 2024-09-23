@@ -49,6 +49,7 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.BASE_DOCS_URL;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
   private final JPanel panel;
@@ -234,10 +235,10 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
   @Override
   public void load(SonarLintTelemetry telemetry) {
     // we could show a loader while getting the value
-    telemetry.enabled().thenAccept(enabled -> {
+    runOnPooledThread(() -> telemetry.enabled().thenAccept(enabled -> {
       telemetryInitiallyEnabled = enabled;
-      runOnUiThread(() -> enableTelemetryCheckBox.setSelected(enabled), ModalityState.stateForComponent(getComponent()));
-    });
+      runOnUiThread(ModalityState.defaultModalityState(), () -> enableTelemetryCheckBox.setSelected(enabled));
+    }));
   }
 
   @Override

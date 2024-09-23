@@ -41,14 +41,12 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
 
     fun show() {
         val fileEditorManager = FileEditorManager.getInstance(project)
-        val psiFile = PsiManager.getInstance(project).findFile(file) ?: return
+        val psiFile = computeReadActionSafely(project) { PsiManager.getInstance(project).findFile(file) } ?: return
         val document = computeReadActionSafely(project) { file.getDocument() } ?: return
 
         if (!isWithinBounds(document)) {
             get(project).simpleNotification(
-                null,
-                "Unable to open the fix suggestion, your file has probably changed",
-                NotificationType.WARNING
+                null, "Unable to open the fix suggestion, your file has probably changed", NotificationType.WARNING
             )
             return
         }

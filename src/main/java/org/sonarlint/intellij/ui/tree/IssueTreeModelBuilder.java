@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
@@ -46,6 +47,7 @@ import org.sonarlint.intellij.ui.nodes.SummaryNode;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
+import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.HIGH;
 import static org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.LOW;
 import static org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.MEDIUM;
@@ -98,13 +100,13 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   public void clear() {
-    updateModel(Collections.emptyMap());
+    runOnUiThread(project, () -> updateModel(Collections.emptyMap()));
   }
 
   public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map) {
     latestIssues = map;
-
     var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).toList();
+    ApplicationManager.getApplication().assertIsDispatchThread();
 
     toRemove.forEach(this::removeFile);
 
@@ -129,7 +131,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   public void refreshModel(Project project) {
-    updateModel(latestIssues);
+    runOnUiThread(project, () -> updateModel(latestIssues));
     var fileList = new HashSet<>(latestIssues.keySet());
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
   }

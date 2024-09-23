@@ -158,8 +158,10 @@ public final class ProjectBindingManager {
 
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     if (previousBinding != null) {
-      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
-      getService(BackendService.class).projectUnbound(myProject);
+      runOnPooledThread(myProject, () -> {
+        myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
+        getService(BackendService.class).projectUnbound(myProject);
+      });
     }
   }
 
