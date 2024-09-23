@@ -51,7 +51,16 @@ public class LiveSecurityHotspot extends LiveFinding {
     List<QuickFix> quickFixes) {
     super(module, hotspot, virtualFile, range, context, quickFixes);
     this.vulnerabilityProbability = hotspot.getVulnerabilityProbability();
-    this.status = HotspotReviewStatus.TO_REVIEW;
+    this.status = mapStatus(hotspot.getStatus());
+  }
+
+  private static HotspotReviewStatus mapStatus(HotspotStatus status) {
+    return switch (status) {
+      case TO_REVIEW -> HotspotReviewStatus.TO_REVIEW;
+      case SAFE -> HotspotReviewStatus.SAFE;
+      case FIXED -> HotspotReviewStatus.FIXED;
+      case ACKNOWLEDGED -> HotspotReviewStatus.ACKNOWLEDGED;
+    };
   }
 
   public VulnerabilityProbability getVulnerabilityProbability() {
