@@ -29,6 +29,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -50,6 +51,7 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
     file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "class MyClass{}");
     editorManager = mock(FileEditorManager.class);
     when(editorManager.getProject()).thenReturn(getProject());
+    reset(analysisSubmitter);
   }
 
   @Test
