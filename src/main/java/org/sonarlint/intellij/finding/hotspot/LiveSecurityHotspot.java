@@ -54,7 +54,10 @@ public class LiveSecurityHotspot extends LiveFinding {
     this.status = mapStatus(hotspot.getStatus());
   }
 
-  private static HotspotReviewStatus mapStatus(HotspotStatus status) {
+  private static HotspotReviewStatus mapStatus(@Nullable HotspotStatus status) {
+    if (status == null) {
+      return HotspotReviewStatus.TO_REVIEW;
+    }
     return switch (status) {
       case TO_REVIEW -> HotspotReviewStatus.TO_REVIEW;
       case SAFE -> HotspotReviewStatus.SAFE;
