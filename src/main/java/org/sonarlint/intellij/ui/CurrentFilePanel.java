@@ -226,11 +226,6 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     return null;
   }
 
-  public void remove(LiveIssue issue) {
-    treeBuilder.remove(issue);
-    oldTreeBuilder.remove(issue);
-  }
-
   public void refreshModel() {
     treeBuilder.refreshModel(project);
     oldTreeBuilder.refreshModel(project);
