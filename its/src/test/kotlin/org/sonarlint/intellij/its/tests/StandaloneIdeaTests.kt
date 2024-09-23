@@ -70,6 +70,6 @@ class StandaloneIdeaTests : BaseUiTest() {
     fun chart() = uiTest {
         openExistingProject("DuplicatedEnvsChart")
         openFile("templates/memory_limit_pod2.yml", "memory_limit_pod2.yml")
-        verifyCurrentFileTabContainsMessages("Set automountServiceAccountToken to false for this specification of kind Pod.")
+        verifyCurrentFileTabContainsMessages("Bind this resource's automounted service account to RBAC or disable automounting.")
     }
 }
