@@ -295,7 +295,7 @@ class BackendService : Disposable {
     private fun initRpcServer(rpcServer: SonarLintRpcServer): CompletableFuture<Void> {
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
-            serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
+            serverConnections.filter { it.isSonarCloud && it.organizationKey != null }.map { toSonarCloudBackendConnection(it) }
         val sonarQubeConnections =
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         val nodejsPath = getGlobalSettings().nodejsPath
