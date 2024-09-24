@@ -64,7 +64,7 @@ class FileBrowserDialogFixture(
     val projectsDir = Paths.get("projects").toAbsolutePath()
     val projectBaseDir = projectsDir.resolve("$projectName-tmp")
     val button = button("OK")
-    waitFor { button.isEnabled() }
+    waitFor(Duration.ofSeconds(10)) { button.isEnabled() }
 
     // Select parent folder and refresh
     textField.text = projectsDir.normalize().toString()

@@ -22,8 +22,14 @@ package org.sonarlint.intellij.trigger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.fs.VirtualFileEvent;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -32,6 +38,12 @@ public class EditorOpenTrigger implements FileEditorManagerListener {
 
   @Override
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    runOnPooledThread(source.getProject(), () -> getService(source.getProject(), AnalysisSubmitter.class).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN));
+    runOnPooledThread(source.getProject(), () -> {
+      var module = SonarLintAppUtils.findModuleForFile(file, source.getProject());
+      if (module != null) {
+        getService(BackendService.class).updateFileSystem(Map.of(module, List.of(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))));
+      }
+      getService(source.getProject(), AnalysisSubmitter.class).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
+    });
   }
 }
