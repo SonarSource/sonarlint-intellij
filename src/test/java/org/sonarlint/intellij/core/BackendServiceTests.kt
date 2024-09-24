@@ -88,7 +88,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(sloop.rpcServer).thenReturn(backend)
         `when`(sloop.onExit()).thenReturn(CompletableFuture.completedFuture(null))
         val sloopLauncher = mock(SloopLauncher::class.java)
-        `when`(sloopLauncher.start(any(), any())).thenReturn(sloop)
+        `when`(sloopLauncher.start(any(), any(), any())).thenReturn(sloop)
         service = BackendService(sloopLauncher)
         ApplicationManager.getApplication().replaceService(BackendService::class.java, service, testRootDisposable)
     }
