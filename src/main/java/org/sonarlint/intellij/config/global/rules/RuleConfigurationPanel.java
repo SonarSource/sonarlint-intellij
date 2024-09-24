@@ -281,11 +281,11 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     runOnPooledThread(project, () -> getService(BackendService.class).getListAllStandaloneRulesDefinitions()
       .thenAcceptAsync(response -> {
         allRulesStateByKey.clear();
-          var ruleNodes = response.getRulesByKey().values().stream()
-            .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
-              loadRuleActivation(settings, ruleDefinitionDto),
-              loadNonDefaultRuleParams(settings, ruleDefinitionDto)))
-            .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
+        var ruleNodes = response.getRulesByKey().values().stream()
+          .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
+            loadRuleActivation(settings, ruleDefinitionDto),
+            loadNonDefaultRuleParams(settings, ruleDefinitionDto)))
+          .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
 
         allRulesStateByKey.putAll(ruleNodes);
 
