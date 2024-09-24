@@ -273,7 +273,11 @@ class BackendService : Disposable {
         sloopPath.toFile().walkTopDown().forEach { file ->
             getService(GlobalLogOutput::class.java).log(file.absolutePath, ClientLogOutput.Level.INFO)
         }
-        return sloopLauncher.start(sloopPath, Paths.get(jreHomePath))
+        return sloopLauncher.start(
+            sloopPath,
+            Paths.get(jreHomePath),
+            "-Xms384m -XX:+UseG1GC -XX:MaxHeapFreeRatio=20 -XX:MinHeapFreeRatio=10 -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=50 -XX:ParallelGCThreads=2"
+        )
     }
 
     private fun listenForProcessExit(sloopProcess: Sloop) {
@@ -344,7 +348,8 @@ class BackendService : Disposable {
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
                 LanguageSpecificRequirements(nodeJsPath, omnisharpRequirementsDto),
-                false
+                false,
+                null
             )
         )
     }
