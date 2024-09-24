@@ -2,17 +2,18 @@
 sonarlint-core = "10.5.0.78949"
 
 sonar-java = "8.1.0.36477"
-sonar-javascript = "10.14.0.26080"
+sonar-javascript = "10.15.0.27423"
 sonar-php = "3.37.0.12086"
 sonar-python = "4.21.0.16473"
 sonar-kotlin = "2.20.0.4382"
-sonar-slang = "1.15.0.4655"
+sonar-ruby = "1.17.0.110"
+sonar-go = "1.15.0.4655"
 sonar-html = "3.16.0.5274"
 sonar-xml = "2.10.0.4108"
 sonar-omnisharp = "1.24.0.100127"
 sonar-text = "2.15.0.3845"
-sonar-iac = "1.33.1.11833"
-sonar-cpp = "6.58.0.74356"
+sonar-iac = "1.36.0.12431"
+sonar-cpp = "6.59.0.75237"
 
 sonarqube = "4.4.1.3373"
 
@@ -44,12 +45,12 @@ sonar-javascript = { module = "org.sonarsource.javascript:sonar-javascript-plugi
 sonar-php = { module = "org.sonarsource.php:sonar-php-plugin", version.ref = "sonar-php" }
 sonar-python = { module = "org.sonarsource.python:sonar-python-plugin", version.ref = "sonar-python" }
 sonar-kotlin = { module = "org.sonarsource.kotlin:sonar-kotlin-plugin", version.ref = "sonar-kotlin" }
-sonar-ruby = { module = "org.sonarsource.slang:sonar-ruby-plugin", version.ref = "sonar-slang" }
+sonar-ruby = { module = "org.sonarsource.slang:sonar-ruby-plugin", version.ref = "sonar-ruby" }
 sonar-html = { module = "org.sonarsource.html:sonar-html-plugin", version.ref = "sonar-html" }
 sonar-xml = { module = "org.sonarsource.xml:sonar-xml-plugin", version.ref = "sonar-xml" }
 sonar-omnisharp = { module = "org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin", version.ref = "sonar-omnisharp" }
 sonar-text = { module = "org.sonarsource.text:sonar-text-plugin", version.ref = "sonar-text" }
-sonar-go = { module = "org.sonarsource.slang:sonar-go-plugin", version.ref = "sonar-slang" }
+sonar-go = { module = "org.sonarsource.slang:sonar-go-plugin", version.ref = "sonar-go" }
 sonar-iac = { module = "org.sonarsource.iac:sonar-iac-plugin", version.ref = "sonar-iac" }
 sonar-cfamily = { module = "com.sonarsource.cpp:sonar-cfamily-plugin", version.ref = "sonar-cpp" }
 
