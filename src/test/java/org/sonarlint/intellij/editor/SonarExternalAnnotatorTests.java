@@ -55,9 +55,9 @@ class SonarExternalAnnotatorTests extends AbstractSonarLintLightTests {
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, null, false)).isEqualTo(SonarLintTextAttributes.MEDIUM);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.MAJOR, false)).isEqualTo(SonarLintTextAttributes.MEDIUM);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.MINOR, false)).isEqualTo(SonarLintTextAttributes.LOW);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.BLOCKER, false)).isEqualTo(SonarLintTextAttributes.HIGH);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.BLOCKER, false)).isEqualTo(SonarLintTextAttributes.BLOCKER);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.CRITICAL, false)).isEqualTo(SonarLintTextAttributes.HIGH);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.INFO, false)).isEqualTo(SonarLintTextAttributes.LOW);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.INFO, false)).isEqualTo(SonarLintTextAttributes.INFO);
 
     Settings.getGlobalSettings().setFocusOnNewCode(true);
     connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey");
@@ -70,9 +70,9 @@ class SonarExternalAnnotatorTests extends AbstractSonarLintLightTests {
 
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.MAJOR, true)).isEqualTo(SonarLintTextAttributes.MEDIUM);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.MINOR, true)).isEqualTo(SonarLintTextAttributes.LOW);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.BLOCKER, true)).isEqualTo(SonarLintTextAttributes.HIGH);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.BLOCKER, true)).isEqualTo(SonarLintTextAttributes.BLOCKER);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.CRITICAL, true)).isEqualTo(SonarLintTextAttributes.HIGH);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.INFO, true)).isEqualTo(SonarLintTextAttributes.LOW);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), null, IssueSeverity.INFO, true)).isEqualTo(SonarLintTextAttributes.INFO);
   }
 
   @Test
@@ -83,6 +83,8 @@ class SonarExternalAnnotatorTests extends AbstractSonarLintLightTests {
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.HIGH, IssueSeverity.BLOCKER, false)).isEqualTo(SonarLintTextAttributes.HIGH);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.HIGH, IssueSeverity.CRITICAL, false)).isEqualTo(SonarLintTextAttributes.HIGH);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.LOW, IssueSeverity.INFO, false)).isEqualTo(SonarLintTextAttributes.LOW);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.BLOCKER, IssueSeverity.MAJOR, false)).isEqualTo(SonarLintTextAttributes.BLOCKER);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.INFO, IssueSeverity.MAJOR, false)).isEqualTo(SonarLintTextAttributes.INFO);
 
     Settings.getGlobalSettings().setFocusOnNewCode(true);
     connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey");
@@ -98,5 +100,7 @@ class SonarExternalAnnotatorTests extends AbstractSonarLintLightTests {
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.HIGH, IssueSeverity.BLOCKER, true)).isEqualTo(SonarLintTextAttributes.HIGH);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.HIGH, IssueSeverity.CRITICAL, true)).isEqualTo(SonarLintTextAttributes.HIGH);
     assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.LOW, IssueSeverity.INFO, true)).isEqualTo(SonarLintTextAttributes.LOW);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.BLOCKER, IssueSeverity.INFO, true)).isEqualTo(SonarLintTextAttributes.BLOCKER);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(getProject(), ImpactSeverity.INFO, IssueSeverity.INFO, true)).isEqualTo(SonarLintTextAttributes.INFO);
   }
 }

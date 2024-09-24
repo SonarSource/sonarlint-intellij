@@ -43,6 +43,8 @@ import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.SwingConstants
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByImpact
+import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.canBeMarkedAsResolved
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialogAsync
 import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.canBeReopened
@@ -211,7 +213,8 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             qualities.entries.forEach {
                 val cleanImpact = cleanCapitalized(it.value.label)
                 val cleanQuality = cleanCapitalized(it.key.label)
-                val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[it.value]).apply {
+                val qualityPanel =
+                    RoundedPanelWithBackgroundColor(backgroundColorsByImpact[it.value], borderColorsByImpact[it.value]).apply {
                     toolTipText = "Issues found for this rule will have a $cleanImpact impact on the $cleanQuality of your software."
                 }
                 qualityPanel.add(JBLabel(cleanCapitalized(it.key.toString())).apply {

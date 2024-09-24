@@ -45,7 +45,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity.BLOCKER;
 import static org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity.HIGH;
+import static org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity.INFO;
 import static org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity.LOW;
 import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.MAJOR;
 import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.MINOR;
@@ -117,12 +119,14 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     list.add(mockIssuePointer(100, "rule3", List.of(new ImpactDto(MAINTAINABILITY, LOW)), Instant.now().minusSeconds(20)));
     list.add(mockIssuePointer(50, "rule4", List.of(new ImpactDto(MAINTAINABILITY, LOW)), null));
     list.add(mockIssuePointer(100, "rule5", List.of(new ImpactDto(MAINTAINABILITY, HIGH)), null));
+    list.add(mockIssuePointer(100, "rule6", List.of(new ImpactDto(MAINTAINABILITY, INFO)), null));
+    list.add(mockIssuePointer(100, "rule7", List.of(new ImpactDto(MAINTAINABILITY, BLOCKER)), null));
 
     var sorted = new ArrayList<>(list);
     sorted.sort(new IssueTreeModelBuilder.IssueComparator());
 
     // criteria: creation date (most recent, nulls last), getImpact (highest first), rule alphabetically
-    assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3));
+    assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(6), list.get(0), list.get(4), list.get(3), list.get(5));
   }
 
   private void addFile(Map<VirtualFile, Collection<LiveIssue>> data, String fileName, int numIssues) {

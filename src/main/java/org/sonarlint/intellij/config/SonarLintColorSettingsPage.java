@@ -25,7 +25,6 @@ import com.intellij.openapi.fileTypes.SyntaxHighlighter;
 import com.intellij.openapi.options.colors.AttributesDescriptor;
 import com.intellij.openapi.options.colors.ColorDescriptor;
 import com.intellij.openapi.options.colors.ColorSettingsPage;
-import org.sonarlint.intellij.SonarLintIcons;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
@@ -33,12 +32,15 @@ import java.util.TreeMap;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.SonarLintIcons;
 
 public class SonarLintColorSettingsPage implements ColorSettingsPage {
   private static final AttributesDescriptor[] DESCRIPTORS = new AttributesDescriptor[] {
+    new AttributesDescriptor("Blocker issue", SonarLintTextAttributes.BLOCKER),
     new AttributesDescriptor("High impact issue", SonarLintTextAttributes.HIGH),
     new AttributesDescriptor("Medium impact issue", SonarLintTextAttributes.MEDIUM),
     new AttributesDescriptor("Low impact issue", SonarLintTextAttributes.LOW),
+    new AttributesDescriptor("Info issue", SonarLintTextAttributes.INFO),
     new AttributesDescriptor("Old issue", SonarLintTextAttributes.OLD_CODE),
     new AttributesDescriptor("Selected issue", SonarLintTextAttributes.SELECTED)
   };
@@ -49,17 +51,7 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
     }
   }
 
-  private static final Map<String, TextAttributesKey> ADDITIONAL_HIGHLIGHT_DESCRIPTORS;
-
-  static {
-    Arrays.sort(DESCRIPTORS, new DescriptorComparator());
-    // sort alphabetically by key
-    ADDITIONAL_HIGHLIGHT_DESCRIPTORS = new TreeMap<>();
-
-    for (AttributesDescriptor desc : DESCRIPTORS) {
-      ADDITIONAL_HIGHLIGHT_DESCRIPTORS.put(desc.getDisplayName(), desc.getKey());
-    }
-  }
+  private static final Map<String, TextAttributesKey> ADDITIONAL_HIGHLIGHT_DESCRIPTORS = new TreeMap<>();
 
   @Nullable @Override public Icon getIcon() {
     return SonarLintIcons.SONARLINT;
@@ -88,14 +80,25 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
   }
 
   @Nullable @Override public Map<String, TextAttributesKey> getAdditionalHighlightingTagToDescriptorMap() {
+    if (ADDITIONAL_HIGHLIGHT_DESCRIPTORS.isEmpty()) {
+      // sort alphabetically by key
+      Arrays.sort(DESCRIPTORS, new DescriptorComparator());
+      for (AttributesDescriptor desc : DESCRIPTORS) {
+        ADDITIONAL_HIGHLIGHT_DESCRIPTORS.put(desc.getDisplayName(), desc.getKey());
+      }
+    }
     return ADDITIONAL_HIGHLIGHT_DESCRIPTORS;
   }
 
-  @NotNull @Override public AttributesDescriptor[] getAttributeDescriptors() {
+  @NotNull
+  @Override
+  public AttributesDescriptor @NotNull [] getAttributeDescriptors() {
     return DESCRIPTORS;
   }
 
-  @NotNull @Override public ColorDescriptor[] getColorDescriptors() {
+  @NotNull
+  @Override
+  public ColorDescriptor @NotNull [] getColorDescriptors() {
     return ColorDescriptor.EMPTY_ARRAY;
   }
 

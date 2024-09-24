@@ -91,9 +91,11 @@ object SonarLintIcons {
     )
 
     private val IMPACT_ICONS = mapOf(
+        ImpactSeverity.BLOCKER to getIcon("/images/impact/blocker.svg"),
         ImpactSeverity.HIGH to getIcon("/images/impact/high.svg"),
         ImpactSeverity.MEDIUM to getIcon("/images/impact/medium.svg"),
-        ImpactSeverity.LOW to getIcon("/images/impact/low.svg")
+        ImpactSeverity.LOW to getIcon("/images/impact/low.svg"),
+        ImpactSeverity.INFO to getIcon("/images/impact/info.svg")
     )
 
     private val TYPE_ICONS = mapOf(
@@ -110,15 +112,27 @@ object SonarLintIcons {
     )
 
     val backgroundColorsByImpact = mapOf(
-        ImpactSeverity.HIGH to JBColor(Color(180, 35, 24, 20), Color(180, 35, 24, 60)),
-        ImpactSeverity.MEDIUM to JBColor(Color(174, 122, 41, 20), Color(174, 122, 41, 60)),
-        ImpactSeverity.LOW to JBColor(Color(49, 108, 146, 20), Color(49, 108, 146, 60))
+        ImpactSeverity.BLOCKER to JBColor(Color(254, 228, 226), Color(128, 27, 20, 20)),
+        ImpactSeverity.HIGH to JBColor(Color(254, 243, 242), Color(253, 162, 155, 20)),
+        ImpactSeverity.MEDIUM to JBColor(Color(255, 240, 235), Color(254, 150, 75, 20)),
+        ImpactSeverity.LOW to JBColor(Color(252, 245, 228), Color(250, 220, 121, 20)),
+        ImpactSeverity.INFO to JBColor(Color(245, 251, 255), Color(143, 202, 234, 20))
     )
 
     val fontColorsByImpact = mapOf(
-        ImpactSeverity.HIGH to JBColor(Color(128, 27, 20), Color.LIGHT_GRAY),
-        ImpactSeverity.MEDIUM to JBColor(Color(140, 94, 30), Color.LIGHT_GRAY),
-        ImpactSeverity.LOW to JBColor(Color(49, 108, 146), Color.LIGHT_GRAY)
+        ImpactSeverity.BLOCKER to JBColor(Color(128, 27, 20), Color(249, 112, 102)),
+        ImpactSeverity.HIGH to JBColor(Color(180, 35, 24), Color(253, 162, 155)),
+        ImpactSeverity.MEDIUM to JBColor(Color(147, 55, 13), Color(254, 150, 75)),
+        ImpactSeverity.LOW to JBColor(Color(140, 94, 30), Color(250, 220, 121)),
+        ImpactSeverity.INFO to JBColor(Color(49, 107, 146), Color(143, 202, 234))
+    )
+
+    val borderColorsByImpact = mapOf(
+        ImpactSeverity.BLOCKER to JBColor(Color(128, 27, 20), Color(249, 112, 102)),
+        ImpactSeverity.HIGH to JBColor(Color(217, 44, 32), Color(253, 162, 155)),
+        ImpactSeverity.MEDIUM to JBColor(Color(254, 150, 75), Color(254, 150, 75)),
+        ImpactSeverity.LOW to JBColor(Color(250, 220, 121), Color(250, 220, 121)),
+        ImpactSeverity.INFO to JBColor(Color(143, 202, 234), Color(143, 202, 234))
     )
 
     private fun getIcon(path: String): Icon {

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util
 
+import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.GraphicsUtil
 import com.intellij.util.ui.JBInsets
@@ -29,21 +30,22 @@ import java.awt.Rectangle
 import java.awt.geom.RoundRectangle2D
 import javax.swing.JPanel
 
-open class RoundedPanelWithBackgroundColor(private val color: JBColor? = null, private val cornerAngle: Float = 20f) : JPanel() {
+open class RoundedPanelWithBackgroundColor(
+    backgroundColor: JBColor? = null,
+    borderColor: JBColor? = null,
+    private val cornerAngle: Float = 20f
+) : JPanel() {
 
     init {
         isOpaque = false
         cursor = Cursor.getDefaultCursor()
-        updateColors()
-    }
-
-    override fun updateUI() {
         super.updateUI()
-        updateColors()
-    }
-
-    private fun updateColors() {
-        background = color
+        background = backgroundColor
+        borderColor?.let {
+            val customBorder = IdeBorderFactory.createRoundedBorder(cornerAngle.toInt(), 1)
+            customBorder.setColor(borderColor)
+            border = customBorder
+        }
     }
 
     override fun paintComponent(g: Graphics) {
