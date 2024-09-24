@@ -36,12 +36,15 @@ import java.util.UUID;
 import org.sonarlint.intellij.cayc.NewCodePeriodCache;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.fs.VirtualFileEvent;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.commons.api.progress.CanceledException;
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
 
 import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isRider;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThreadAndWait;
 
 public class Analysis implements Cancelable {
@@ -125,6 +128,7 @@ public class Analysis implements Cancelable {
       if (scope.isEmpty()) {
         return Collections.emptyList();
       }
+
       var summary = analyzePerModule(scope, indicator, trigger);
 
       indicator.setIndeterminate(false);
@@ -180,6 +184,12 @@ public class Analysis implements Cancelable {
       var module = entry.getKey();
       var analysisId = UUID.randomUUID();
       analysisIds.add(analysisId);
+
+      if (isRider()) {
+        var filesEvent = entry.getValue().stream().map(file -> new VirtualFileEvent(ModuleFileEvent.Type.CREATED, file)).toList();
+        getService(BackendService.class).updateFileSystem(Map.of(module, filesEvent));
+      }
+
       var analysisState = new AnalysisState(analysisId, callback, entry.getValue(), module, trigger);
       results.put(module, analyzer.analyzeModule(module, entry.getValue(), analysisState, indicator, scope.shouldFetchServerIssues()));
       checkCanceled(indicator);

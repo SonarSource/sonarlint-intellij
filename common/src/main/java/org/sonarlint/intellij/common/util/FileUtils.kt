@@ -33,7 +33,7 @@ class FileUtils {
     companion object {
         fun isFileValidForSonarLint(file: VirtualFile, project: Project): Boolean {
             try {
-                val toSkip = computeReadActionSafely(project) {
+                val toSkip = computeReadActionSafely(file, project) {
                     isGeneratedSourceByAnyFilter(file, project)
                         || ProjectFileIndex.getInstance(project).isExcluded(file)
                         || ProjectFileIndex.getInstance(project).isInLibrary(file)
