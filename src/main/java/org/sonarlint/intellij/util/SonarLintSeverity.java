@@ -32,9 +32,11 @@ import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
 public enum SonarLintSeverity {
+  BLOCKER(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WARNING),
   HIGH(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WARNING),
   MEDIUM(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WARNING),
   LOW(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WEAK_WARNING),
+  INFO(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WEAK_WARNING),
   OLD_CODE(CodeInsightColors.WEAK_WARNING_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WEAK_WARNING);
 
   private static final Map<String, SonarLintSeverity> cache = Stream.of(values()).collect(Collectors.toMap(Enum::toString, Function.identity()));
@@ -66,8 +68,10 @@ public enum SonarLintSeverity {
       return cache.get(impact.toString());
     }
     return switch (severity) {
-      case BLOCKER, CRITICAL -> cache.get(ImpactSeverity.HIGH.toString());
-      case MINOR, INFO -> cache.get(ImpactSeverity.LOW.toString());
+      case BLOCKER -> cache.get(ImpactSeverity.BLOCKER.toString());
+      case CRITICAL -> cache.get(ImpactSeverity.HIGH.toString());
+      case MINOR -> cache.get(ImpactSeverity.LOW.toString());
+      case INFO -> cache.get(ImpactSeverity.INFO.toString());
       default -> cache.get(ImpactSeverity.MEDIUM.toString());
     };
   }

@@ -192,16 +192,20 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     if (impact != null) {
       return switch (impact) {
+        case BLOCKER -> SonarLintTextAttributes.BLOCKER;
         case HIGH -> SonarLintTextAttributes.HIGH;
         case LOW -> SonarLintTextAttributes.LOW;
+        case INFO -> SonarLintTextAttributes.INFO;
         default -> SonarLintTextAttributes.MEDIUM;
       };
     }
 
     if (severity != null) {
       return switch (severity) {
-        case CRITICAL, BLOCKER -> SonarLintTextAttributes.HIGH;
-        case MINOR, INFO -> SonarLintTextAttributes.LOW;
+        case BLOCKER -> SonarLintTextAttributes.BLOCKER;
+        case CRITICAL -> SonarLintTextAttributes.HIGH;
+        case MINOR -> SonarLintTextAttributes.LOW;
+        case INFO -> SonarLintTextAttributes.INFO;
         default -> SonarLintTextAttributes.MEDIUM;
       };
     }

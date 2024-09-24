@@ -26,9 +26,11 @@ import org.sonarlint.intellij.util.SonarLintSeverity;
 import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
 
 public class SonarLintTextAttributes {
+  public static final TextAttributesKey BLOCKER;
   public static final TextAttributesKey HIGH;
   public static final TextAttributesKey MEDIUM;
   public static final TextAttributesKey LOW;
+  public static final TextAttributesKey INFO;
   public static final TextAttributesKey OLD_CODE;
   public static final TextAttributesKey SELECTED;
 
@@ -39,9 +41,11 @@ public class SonarLintTextAttributes {
     /*
      * Defaults should be consistent with SonarLintSeverity
      */
+    BLOCKER = createTextAttributesKey("SONARLINT_BLOCKER", SonarLintSeverity.BLOCKER.defaultTextAttributes());
     HIGH = createTextAttributesKey("SONARLINT_HIGH", SonarLintSeverity.HIGH.defaultTextAttributes());
     MEDIUM = createTextAttributesKey("SONARLINT_MEDIUM", SonarLintSeverity.MEDIUM.defaultTextAttributes());
     LOW = createTextAttributesKey("SONARLINT_LOW", SonarLintSeverity.LOW.defaultTextAttributes());
+    INFO = createTextAttributesKey("SONARLINT_INFO", SonarLintSeverity.INFO.defaultTextAttributes());
     OLD_CODE = createTextAttributesKey("SONARLINT_OLD_CODE", SonarLintSeverity.OLD_CODE.defaultTextAttributes());
     SELECTED = createTextAttributesKey("SONARLINT_SELECTED");
     DIFF_ADDITION = createTextAttributesKey("SONARLINT_DIFF_ADDITION", DiffColors.DIFF_INSERTED);

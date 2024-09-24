@@ -63,7 +63,7 @@ import static org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity.M
  */
 public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private static final List<IssueSeverity> SEVERITY_ORDER = List.of(BLOCKER, CRITICAL, MAJOR, MINOR, INFO);
-  private static final List<ImpactSeverity> IMPACT_ORDER = List.of(HIGH, MEDIUM, LOW);
+  private static final List<ImpactSeverity> IMPACT_ORDER = List.of(ImpactSeverity.BLOCKER, HIGH, MEDIUM, LOW, ImpactSeverity.INFO);
   private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
   private final FindingTreeIndex index;

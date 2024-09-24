@@ -22,6 +22,7 @@ package org.sonarlint.intellij
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
+import org.sonarlint.intellij.SonarLintIcons.impact
 import org.sonarlint.intellij.SonarLintIcons.severity
 import org.sonarlint.intellij.SonarLintIcons.toDisabled
 import org.sonarlint.intellij.SonarLintIcons.type
@@ -34,6 +35,13 @@ class SonarLintIconsTest {
     fun testSeverities() {
         for (value in IssueSeverity.values()) {
             assertThat(severity(value)).isNotNull
+        }
+    }
+
+    @Test
+    fun testImpacts() {
+        for (value in org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.values()) {
+            assertThat(impact(value)).isNotNull
         }
     }
 
