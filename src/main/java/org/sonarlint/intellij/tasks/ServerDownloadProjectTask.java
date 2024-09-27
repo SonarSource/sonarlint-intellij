@@ -31,6 +31,8 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWithoutCatching;
 
 public class ServerDownloadProjectTask extends Task.WithResult<Map<String, SonarProjectDto>, Exception> {
   private final ServerConnection server;
@@ -41,12 +43,14 @@ public class ServerDownloadProjectTask extends Task.WithResult<Map<String, Sonar
   }
 
   @Override
-  protected Map<String, SonarProjectDto> compute(@NotNull ProgressIndicator indicator) throws Exception {
+  protected Map<String, SonarProjectDto> compute(@NotNull ProgressIndicator indicator) {
     try {
-      return getService(BackendService.class)
-        .getAllProjects(server).get()
-        .getSonarProjects()
-        .stream().collect(Collectors.toMap(SonarProjectDto::getKey, p -> p));
+      return computeOnPooledThreadWithoutCatching(myProject, "Download Projects", () ->
+        waitForFuture(indicator, getService(BackendService.class)
+          .getAllProjects(server))
+          .getSonarProjects()
+          .stream().collect(Collectors.toMap(SonarProjectDto::getKey, p -> p)));
+
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to download list of projects", e);
       throw e;

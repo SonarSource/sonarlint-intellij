@@ -33,6 +33,8 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 public class FutureUtils {
 
   private static final long WAITING_FREQUENCY = 100;
+  public static final String TASK_EXPIRED = "task expired";
+  public static final String TASK_FAILED = "task failed";
 
   @Nullable
   public static <T> T waitForTask(Future<T> task, String taskName, Duration timeoutDuration) {
@@ -40,11 +42,28 @@ public class FutureUtils {
       return waitForFutureWithTimeout(task, timeoutDuration);
     } catch (TimeoutException ex) {
       task.cancel(true);
-      GlobalLogOutput.get().logError(taskName + " task expired", ex);
+      GlobalLogOutput.get().logError(taskName + " " + TASK_EXPIRED, ex);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
     } catch (Exception ex) {
-      GlobalLogOutput.get().logError(taskName + " task failed", ex);
+      GlobalLogOutput.get().logError(taskName + " " + TASK_FAILED, ex);
+    }
+    return null;
+  }
+
+  @Nullable
+  public static <T> T waitForTaskWithoutCatching(Future<T> task, String taskName, Duration timeoutDuration) throws TimeoutException, ExecutionException {
+    try {
+      return waitForFutureWithTimeout(task, timeoutDuration);
+    } catch (TimeoutException ex) {
+      task.cancel(true);
+      GlobalLogOutput.get().logError(taskName + " " + TASK_EXPIRED, ex);
+      throw ex;
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+    } catch (Exception ex) {
+      GlobalLogOutput.get().logError(taskName + " " + TASK_FAILED, ex);
+      throw ex;
     }
     return null;
   }
@@ -54,11 +73,11 @@ public class FutureUtils {
       waitForFutureWithTimeout(indicator, task, timeoutDuration);
     } catch (TimeoutException ex) {
       task.cancel(true);
-      SonarLintConsole.get(project).error(taskName + " task expired", ex);
+      SonarLintConsole.get(project).error(taskName + " " + TASK_EXPIRED, ex);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
     } catch (Exception ex) {
-      SonarLintConsole.get(project).error(taskName + " task failed", ex);
+      SonarLintConsole.get(project).error(taskName + " " + TASK_FAILED, ex);
     }
   }
 
