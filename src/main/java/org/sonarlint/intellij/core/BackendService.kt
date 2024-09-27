@@ -89,6 +89,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesAndTrackParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeAutomaticAnalysisSettingParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeClientNodeJsPathParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -892,6 +893,13 @@ class BackendService : Disposable {
         return requestFromBackend { it.analysisService.autoDetectedNodeJs }.thenApplyAsync { response ->
             response.details?.let { NodeJsSettings(it.path, it.version) }
         }
+    }
+
+    fun changeClientNodeJsPath(nodeJsPath: Path?): CompletableFuture<NodeJsSettings?> {
+        return requestFromBackend { it.analysisService.didChangeClientNodeJsPath(DidChangeClientNodeJsPathParams(nodeJsPath)) }
+            .thenApplyAsync { response ->
+                response.details?.let { NodeJsSettings(it.path, it.version) }
+            }
     }
 
     fun updateFileSystem(filesByModule: Map<Module, List<VirtualFileEvent>>) {

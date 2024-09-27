@@ -33,6 +33,7 @@ import com.intellij.util.ui.SwingHelper;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.nio.file.Paths;
 import java.util.Objects;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -51,7 +52,8 @@ import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intell
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
-    "this field blank to let SonarLint look for it using your PATH environment variable.";
+    "this field blank to let SonarLint look for it using your PATH environment variable." +
+    " Restarting your IDE is recommended.";
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
   private JBTextField nodeJsPath;
@@ -136,19 +138,31 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     autoTrigger.setSelected(model.isAutoTrigger());
     nodeJsPath.setText(model.getNodejsPath());
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
-    loadNodeJsSettings();
+    loadNodeJsSettings(model);
   }
 
-  private void loadNodeJsSettings() {
-    getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
-      if (settings == null) {
-        this.nodeJsPath.getEmptyText().setText("Node.js not found");
-        this.nodeJsVersion.setText("N/A");
-      } else {
-        this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
-        this.nodeJsVersion.setText(settings.getVersion());
-      }
-    });
+  private void loadNodeJsSettings(SonarLintGlobalSettings model) {
+    if (model.getNodejsPath() == null || model.getNodejsPath().isBlank()) {
+      getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
+        if (settings == null) {
+          this.nodeJsPath.getEmptyText().setText("Node.js not found");
+          this.nodeJsVersion.setText("N/A");
+        } else {
+          this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
+          this.nodeJsVersion.setText(settings.getVersion());
+        }
+      });
+    } else {
+      var forcedNodeJsPath = Paths.get(model.getNodejsPath());
+      getService(BackendService.class).changeClientNodeJsPath(forcedNodeJsPath).thenAccept(settings -> {
+        if (settings == null) {
+          this.nodeJsVersion.setText("N/A");
+        } else {
+          this.nodeJsPath.setText(settings.getPath().toString());
+          this.nodeJsVersion.setText(settings.getVersion());
+        }
+      });
+    }
   }
 
   @Override
