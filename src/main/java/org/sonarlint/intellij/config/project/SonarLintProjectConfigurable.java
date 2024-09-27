@@ -121,7 +121,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
           getService(project, ProjectBindingManager.class).getModuleOverrides());
       });
   }
-
+  //
   private static Promise<List<ServerConnection>> getServersFromApplicationConfigurable() {
     return DataManager.getInstance().getDataContextFromFocusAsync()
       .thenAsync(dataContext -> {
