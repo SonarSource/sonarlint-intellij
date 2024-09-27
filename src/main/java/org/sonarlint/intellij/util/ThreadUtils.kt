@@ -24,6 +24,7 @@ import com.intellij.openapi.project.Project
 import java.time.Duration
 import java.util.concurrent.Callable
 import org.sonarlint.intellij.util.FutureUtils.waitForTask
+import org.sonarlint.intellij.util.FutureUtils.waitForTaskWithoutCatching
 
 
 fun runOnPooledThread(runnable: Runnable) {
@@ -42,6 +43,16 @@ fun runOnPooledThread(project: Project, runnable: Runnable) {
 
 fun <T> computeOnPooledThread(project: Project, taskName: String, callable: Callable<T>): T? {
     return waitForTask(ApplicationManager.getApplication().executeOnPooledThread<T> {
+        if (!project.isDisposed) {
+            callable.call()
+        } else {
+            null
+        }
+    }, taskName, Duration.ofSeconds(30))
+}
+
+fun <T> computeOnPooledThreadWithoutCatching(project: Project, taskName: String, callable: Callable<T>): T? {
+    return waitForTaskWithoutCatching(ApplicationManager.getApplication().executeOnPooledThread<T> {
         if (!project.isDisposed) {
             callable.call()
         } else {
