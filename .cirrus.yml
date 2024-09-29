@@ -65,7 +65,7 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
 
 ec2_instance: &WINVM_DEFINITION
   experimental: true
-  image: base-windows-jdk17-v20240704125406
+  image: base-windows-jdk17-*
   platform: windows
   region: eu-central-1
   subnet_id: ${CIRRUS_AWS_SUBNET}
@@ -154,8 +154,12 @@ validate_windows_task:
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
+  dump_jvm_infos_script: |
+    java --version
+    echo $JAVA_HOME
   # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
   build_script: |
+    mkdir C:\Program Files\Microsoft\jdk-17.0.11.9-hotspot\Packages
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
     ./gradlew :check
@@ -166,8 +170,8 @@ validate_windows_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
-    slack_notification_script: |
-      .cirrus/slack-notification.sh
+#    slack_notification_script: |
+#      .cirrus/slack-notification.sh
 
 plugin_verifier_task:
   #  name: "Run plugin verifier on all IDEs"
