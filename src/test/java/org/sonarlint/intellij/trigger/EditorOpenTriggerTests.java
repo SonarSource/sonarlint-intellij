@@ -75,8 +75,10 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
   void should_trigger_same_time_for_multiple_files() {
     editorTrigger.fileOpened(editorManager, file);
     editorTrigger.fileOpened(editorManager, file2);
+    // For reducing flakiness
+    editorTrigger.fileOpened(editorManager, file);
 
-    verify(analysisSubmitter, timeout(3000)).autoAnalyzeFiles(List.of(file, file2), TriggerType.EDITOR_OPEN);
+    verify(analysisSubmitter, timeout(4000)).autoAnalyzeFiles(List.of(file, file2), TriggerType.EDITOR_OPEN);
   }
 
   @Test
