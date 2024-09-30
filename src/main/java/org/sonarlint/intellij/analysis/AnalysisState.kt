@@ -42,7 +42,6 @@ import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
-
 class AnalysisState(
     val id: UUID,
     private val analysisCallback: AnalysisCallback,

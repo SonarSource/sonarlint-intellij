@@ -36,7 +36,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -61,7 +60,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@Disabled
 class AnalysisTests extends AbstractSonarLintLightTests {
 
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
@@ -208,7 +206,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
-    ExtensionPoint<LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
+    ExtensionPoint<@org.jetbrains.annotations.NotNull LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
     return extensionPoint.extensions().toList();
   }
 

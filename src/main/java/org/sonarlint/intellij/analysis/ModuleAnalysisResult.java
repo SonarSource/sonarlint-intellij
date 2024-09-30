@@ -26,7 +26,7 @@ import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 
 import static java.util.stream.Collectors.toSet;
 
-class ModuleAnalysisResult {
+public class ModuleAnalysisResult {
 
   private final Set<VirtualFile> failedFiles;
 
