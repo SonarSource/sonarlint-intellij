@@ -43,8 +43,8 @@ class ConfigureNotificationsAction(private val connectionName: String, private v
                     serverConnections[serverConnections.indexOf(connectionToEdit)] = editedConnection
                     Settings.getGlobalSettings().serverConnections = serverConnections
                 }
-            } else if (e.project != null) {
-                SonarLintConsole.get(e.project!!).error("Unable to find connection with name: $connectionName")
+            } else {
+                SonarLintConsole.get(project).error("Unable to find connection with name: $connectionName")
                 notification.expire()
             }
         }

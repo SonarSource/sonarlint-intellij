@@ -61,6 +61,12 @@ fun <T> computeOnPooledThreadWithoutCatching(project: Project, taskName: String,
     }, taskName, Duration.ofSeconds(30))
 }
 
+fun <T> computeOnPooledThreadWithoutCatching(taskName: String, callable: Callable<T>): T? {
+    return waitForTaskWithoutCatching(ApplicationManager.getApplication().executeOnPooledThread<T> {
+        callable.call()
+    }, taskName, Duration.ofSeconds(30))
+}
+
 fun <T> computeOnPooledThread(taskName: String, callable: Callable<T>): T? {
     return waitForTask(ApplicationManager.getApplication().executeOnPooledThread<T> {
         callable.call()

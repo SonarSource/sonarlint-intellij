@@ -62,8 +62,8 @@ import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarlint.intellij.sharing.ConfigurationSharing;
+import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto;
 
 import static java.awt.GridBagConstraints.EAST;
@@ -162,7 +162,7 @@ public class SonarLintProjectBindPanel {
     try {
       return ProgressManager.getInstance().run(downloadTask);
     } catch (Exception e) {
-      var msg = "Failed to download list of projects. Please check the logs for more details.";
+      var msg = "Failed to download list of projects. Reason: " + e.getMessage();
       getService(project, SonarLintConsole.class).error(e.getMessage());
       Messages.showErrorDialog(rootPanel, msg, "Error Downloading Project List");
       return null;

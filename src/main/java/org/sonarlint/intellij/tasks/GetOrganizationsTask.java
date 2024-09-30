@@ -30,7 +30,7 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWithoutCatching;
 
 /**
  * Only useful for SonarCloud
@@ -41,20 +41,21 @@ public class GetOrganizationsTask extends Task.Modal {
   private List<OrganizationDto> organizations;
 
   public GetOrganizationsTask(ServerConnection connection) {
-    super(null, "Fetch organizations from SonarCloud", true);
+    super(null, "Fetch Organizations from SonarCloud", true);
     this.connection = connection;
   }
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to " + connection.getHostUrl() + "\u2026");
-    indicator.setIndeterminate(false);
-
+    indicator.setText("Searching organizations");
+    indicator.setIndeterminate(true);
     try {
-      organizations = computeOnPooledThread("Get User Organizations",() ->
-        waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).listUserOrganizations(connection)).getUserOrganizations());
+      organizations = computeOnPooledThreadWithoutCatching("Get User Organizations Task",
+        () -> waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).listUserOrganizations(connection)).getUserOrganizations());
     } catch (Exception e) {
-      SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
+      if (myProject != null) {
+        SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
+      }
       exception = e;
     }
   }

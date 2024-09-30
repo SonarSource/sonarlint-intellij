@@ -29,7 +29,7 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWithoutCatching;
 
 public class GetOrganizationTask extends Task.Modal {
   private final ServerConnection server;
@@ -46,15 +46,15 @@ public class GetOrganizationTask extends Task.Modal {
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to SonarCloud\u2026");
-    indicator.setIndeterminate(false);
-
+    indicator.setIndeterminate(true);
     try {
       indicator.setText("Searching organization");
-      organization = computeOnPooledThread("Get User Organizations", () ->
-        waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(server, organizationKey)).getOrganization());
+      organization = computeOnPooledThreadWithoutCatching("Get User Organization Task",
+        () -> waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(server, organizationKey)).getOrganization());
     } catch (Exception e) {
-      SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
+      if (myProject != null) {
+        SonarLintConsole.get(myProject).error("Failed to fetch organization", e);
+      }
       exception = e;
     }
   }
