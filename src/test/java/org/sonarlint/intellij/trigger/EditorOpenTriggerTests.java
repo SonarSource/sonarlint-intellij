@@ -23,6 +23,8 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -40,25 +42,41 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
 
   private EditorOpenTrigger editorTrigger;
   private VirtualFile file;
+  private VirtualFile file2;
   private FileEditorManager editorManager;
 
   @BeforeEach
   void start() {
-    editorTrigger = new EditorOpenTrigger();
+    editorTrigger = new EditorOpenTrigger(getProject());
     getGlobalSettings().setAutoTrigger(true);
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
 
     file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "class MyClass{}");
+    file2 = createAndOpenTestVirtualFile("MyClass2.java", Language.findLanguageByID("JAVA"), "class MyClass2{}");
     editorManager = mock(FileEditorManager.class);
     when(editorManager.getProject()).thenReturn(getProject());
     reset(analysisSubmitter);
+    editorTrigger.onProjectOpened();
+  }
+
+  @AfterEach
+  void cleanup() {
+    editorTrigger.dispose();
   }
 
   @Test
   void should_trigger() {
     editorTrigger.fileOpened(editorManager, file);
 
-    verify(analysisSubmitter, timeout(1000)).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
+    verify(analysisSubmitter, timeout(3000)).autoAnalyzeFiles(List.of(file), TriggerType.EDITOR_OPEN);
+  }
+
+  @Test
+  void should_trigger_same_time_for_multiple_files() {
+    editorTrigger.fileOpened(editorManager, file);
+    editorTrigger.fileOpened(editorManager, file2);
+
+    verify(analysisSubmitter, timeout(3000)).autoAnalyzeFiles(List.of(file, file2), TriggerType.EDITOR_OPEN);
   }
 
   @Test
