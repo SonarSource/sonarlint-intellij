@@ -31,8 +31,8 @@ class LiveFindings(
 
     fun onlyFor(files: Set<VirtualFile>): LiveFindings {
         return LiveFindings(
-            issuesPerFile.filterKeys { files.contains(it) },
-            securityHotspotsPerFile.filterKeys { files.contains(it) })
+            issuesPerFile.filterKeys { it in files },
+            securityHotspotsPerFile.filterKeys { it in files })
     }
 
     fun merge(other: LiveFindings?): LiveFindings {

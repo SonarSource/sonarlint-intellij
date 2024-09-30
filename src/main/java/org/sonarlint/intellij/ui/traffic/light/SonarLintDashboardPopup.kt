@@ -58,7 +58,7 @@ class SonarLintDashboardPopup(private val editor: Editor) {
 
             override fun mouseExited(event: MouseEvent) {
                 val point = event.point
-                if (!dashboard.panel.bounds.contains(point) || point.x == 0 || point.y == 0) {
+                if (point !in dashboard.panel.bounds || point.x == 0 || point.y == 0) {
                     insidePopup = false
                     if (canClose()) {
                         hidePopup()

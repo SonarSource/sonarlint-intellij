@@ -47,7 +47,7 @@ class ExcludeFileAction : AbstractSonarAction {
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
         val files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.asSequence() ?: return false
         val exclusions = Settings.getSettingsFor(project).fileExclusions.toSet()
-        return toExclusionPatterns(project, files).any { !exclusions.contains(it) }
+        return toExclusionPatterns(project, files).any { it !in exclusions }
     }
 
     override fun actionPerformed(e: AnActionEvent) {

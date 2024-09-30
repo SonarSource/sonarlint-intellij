@@ -568,7 +568,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
             val matchedFile = tryFindFile(project, filePath)
 
-            if (matchedFile != null && openFiles.contains(matchedFile)) {
+            if (matchedFile != null && matchedFile in openFiles) {
                 impactedFiles.add(matchedFile)
             }
 
@@ -821,7 +821,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     private fun findProjects(projectKey: String?) = ProjectManager.getInstance().openProjects.filter { project ->
-        getService(project, ProjectBindingManager::class.java).uniqueProjectKeys.contains(projectKey)
+        projectKey in getService(project, ProjectBindingManager::class.java).uniqueProjectKeys
     }.toSet()
 
     override fun raiseIssues(

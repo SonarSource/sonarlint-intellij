@@ -294,7 +294,7 @@ class AutomaticSharedConfigCreator(
     private fun findFirstUniqueConnectionName(connectionNames: Set<String>, newConnectionName: String): String {
         var suffix = 1
         var uniqueName = newConnectionName
-        while (connectionNames.contains(uniqueName)) {
+        while (uniqueName in connectionNames) {
             uniqueName = "$newConnectionName-$suffix"
             suffix++
         }

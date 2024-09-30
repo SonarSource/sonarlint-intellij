@@ -32,10 +32,10 @@ class TaintVulnerabilitiesCache(val project: Project) {
 
     fun update(taintVulnerabilityIdsToRemove: Set<UUID>, taintVulnerabilitiesToAdd: List<LocalTaintVulnerability>, taintVulnerabilitiesToUpdate: List<LocalTaintVulnerability>) {
         val currentTaintVulnerabilities = taintVulnerabilities.toMutableList()
-        currentTaintVulnerabilities.removeAll { taintVulnerabilityIdsToRemove.contains(it.getId()) }
+        currentTaintVulnerabilities.removeAll { it.getId() in taintVulnerabilityIdsToRemove }
         currentTaintVulnerabilities.addAll(taintVulnerabilitiesToAdd)
         val updatedTaintVulnerabilityKeys = taintVulnerabilitiesToUpdate.map { updatedTaint -> updatedTaint.getServerKey() }
-        currentTaintVulnerabilities.removeAll { updatedTaintVulnerabilityKeys.contains(it.getServerKey()) }
+        currentTaintVulnerabilities.removeAll { it.getServerKey() in updatedTaintVulnerabilityKeys }
         currentTaintVulnerabilities.addAll(taintVulnerabilitiesToUpdate)
         taintVulnerabilities = currentTaintVulnerabilities
     }
