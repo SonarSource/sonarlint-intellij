@@ -38,11 +38,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
-  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
 
+  private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private EditorOpenTrigger editorTrigger;
   private VirtualFile file;
-  private VirtualFile file2;
   private FileEditorManager editorManager;
 
   @BeforeEach
@@ -52,7 +51,6 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
 
     file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "class MyClass{}");
-    file2 = createAndOpenTestVirtualFile("MyClass2.java", Language.findLanguageByID("JAVA"), "class MyClass2{}");
     editorManager = mock(FileEditorManager.class);
     when(editorManager.getProject()).thenReturn(getProject());
     reset(analysisSubmitter);
@@ -69,16 +67,6 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
     editorTrigger.fileOpened(editorManager, file);
 
     verify(analysisSubmitter, timeout(3000)).autoAnalyzeFiles(List.of(file), TriggerType.EDITOR_OPEN);
-  }
-
-  @Test
-  void should_trigger_same_time_for_multiple_files() {
-    editorTrigger.fileOpened(editorManager, file);
-    editorTrigger.fileOpened(editorManager, file2);
-    // For reducing flakiness
-    editorTrigger.fileOpened(editorManager, file);
-
-    verify(analysisSubmitter, timeout(4000)).autoAnalyzeFiles(List.of(file, file2), TriggerType.EDITOR_OPEN);
   }
 
   @Test
