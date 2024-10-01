@@ -35,6 +35,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
@@ -918,7 +919,11 @@ class BackendService : Disposable {
                         computeReadActionSafely(module.project) { isTestSources(it.virtualFile, module.project) },
                         it.getEncoding(module.project).toString(),
                         Paths.get(it.virtualFile.path),
-                        computeReadActionSafely(module.project) { getFileContent(it.virtualFile) },
+                        if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else computeReadActionSafely(module.project) {
+                            getFileContent(
+                                it.virtualFile
+                            )
+                        },
                         forcedLanguage,
                         true
                     )

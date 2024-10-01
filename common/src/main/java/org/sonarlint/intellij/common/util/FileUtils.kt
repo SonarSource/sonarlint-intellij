@@ -21,6 +21,7 @@ package org.sonarlint.intellij.common.util
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyFilter
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.io.FileUtilRt
@@ -34,10 +35,13 @@ class FileUtils {
         fun isFileValidForSonarLint(file: VirtualFile, project: Project): Boolean {
             try {
                 val toSkip = computeReadActionSafely(file, project) {
-                    isGeneratedSourceByAnyFilter(file, project)
+                    project.isDisposed
+                        || (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
+                        || ProjectCoreUtil.isProjectOrWorkspaceFile(file)
                         || ProjectFileIndex.getInstance(project).isExcluded(file)
+                        || !ProjectFileIndex.getInstance(project).isInContent(file)
                         || ProjectFileIndex.getInstance(project).isInLibrary(file)
-                        || (!ApplicationManager.getApplication().isUnitTestMode && FileUtilRt.isTooLarge(file.length))
+                        || isGeneratedSourceByAnyFilter(file, project)
                 }
                 return false == toSkip
             } catch (e: Exception) {

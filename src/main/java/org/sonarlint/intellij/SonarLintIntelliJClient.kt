@@ -672,6 +672,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
+        val timeStart = System.currentTimeMillis()
         val listClientFiles = BackendService.findModule(configScopeId)?.let { module ->
             listModuleFiles(module, configScopeId)
         } ?: findProject(configScopeId)?.let { project ->
@@ -682,11 +683,15 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     listProjectFiles.add(it)
                 }
             }
-
+            
             listProjectFiles
         }
         ?: emptyList()
-
+        val timeEnd = System.currentTimeMillis()
+        GlobalLogOutput.get().log(
+            "Listed ${listClientFiles.size} files for $configScopeId in ${(timeEnd - timeStart)} ms",
+            ClientLogOutput.Level.DEBUG
+        )
         return listClientFiles
     }
 
@@ -798,7 +803,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             if (module.isDisposed) {
                 return@forEach
             }
-            files.addAll(visitAndAddFiles(contentRoot, module))
+            files.addAll(visitAndAddFiles(contentRoot, module.project))
         }
         return files.toMutableSet()
     }

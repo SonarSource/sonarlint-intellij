@@ -22,19 +22,13 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectCoreUtil;
-import com.intellij.openapi.vfs.VfsUtilCore;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileVisitor;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.Icon;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -80,9 +74,8 @@ public class SonarAnalyzeFilesAction extends AbstractSonarAction {
     var fileSet = Stream.of(files)
       .flatMap(f -> {
         if (f.isDirectory()) {
-          var visitor = new CollectFilesVisitor();
-          VfsUtilCore.visitChildrenRecursively(f, visitor);
-          return visitor.files.stream();
+          var listFiles = SonarLintAppUtils.visitAndAddFiles(f, project);
+          return listFiles.stream();
         } else {
           return Stream.of(f);
         }
@@ -92,20 +85,4 @@ public class SonarAnalyzeFilesAction extends AbstractSonarAction {
     runOnPooledThread(project, () -> getService(project, AnalysisSubmitter.class).analyzeFilesOnUserAction(fileSet, e));
   }
 
-  private static class CollectFilesVisitor extends VirtualFileVisitor {
-    private final Set<VirtualFile> files = new LinkedHashSet<>();
-
-    public CollectFilesVisitor() {
-      super(VirtualFileVisitor.NO_FOLLOW_SYMLINKS);
-    }
-
-    @Override
-    public boolean visitFile(@NotNull VirtualFile file) {
-      var projectFile = ProjectCoreUtil.isProjectOrWorkspaceFile(file, file.getFileType());
-      if (!file.isDirectory() && !file.getFileType().isBinary() && !projectFile) {
-        files.add(file);
-      }
-      return !projectFile && !".git".equals(file.getName());
-    }
-  }
 }

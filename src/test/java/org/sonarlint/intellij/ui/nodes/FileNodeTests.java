@@ -30,8 +30,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class FileNodeTests {
-  private VirtualFile file = mock(VirtualFile.class);
-  private FileNode node = new FileNode(file, false);
+  private final VirtualFile file = mock(VirtualFile.class);
+  private final FileNode node = new FileNode(file, false);
 
   @BeforeEach
   void setUp() {
