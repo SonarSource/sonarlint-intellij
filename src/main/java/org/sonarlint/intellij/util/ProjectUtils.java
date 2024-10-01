@@ -21,7 +21,6 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -34,9 +33,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.common.util.FileUtils;
 import org.sonarlint.intellij.finding.TextRangeMatcher;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
@@ -45,36 +43,19 @@ public class ProjectUtils {
 
   public static Collection<VirtualFile> getAllFiles(Project project) {
     var fileSet = new LinkedHashSet<VirtualFile>();
-    iterateFilesToAnalyze(project, vFile -> {
-      fileSet.add(vFile);
-      // Continue collecting other files
-      return true;
-    });
-    return fileSet;
-  }
-
-  public static boolean hasFiles(Project project) {
-    var result = new AtomicBoolean(false);
-    iterateFilesToAnalyze(project, vFile -> {
-      result.set(true);
-      // No need to iterate other files/folders
-      return false;
-    });
-    return result.get();
-  }
-
-  private static void iterateFilesToAnalyze(Project project, Predicate<VirtualFile> fileProcessor) {
     var fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
     fileIndex.iterateContent(vFile -> {
       if (project.isDisposed()) {
         return false;
       }
-      if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
-        return fileProcessor.test(vFile);
+      if (!vFile.isDirectory() && vFile.isValid() && FileUtils.Companion.isFileValidForSonarLint(vFile, project)) {
+        fileSet.add(vFile);
+        return true;
       }
       // Continue iteration
       return true;
     });
+    return fileSet;
   }
 
   public static PsiFile toPsiFile(Project project, VirtualFile file) throws TextRangeMatcher.NoMatchException {

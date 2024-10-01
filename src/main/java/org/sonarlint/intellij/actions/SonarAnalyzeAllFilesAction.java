@@ -36,7 +36,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.util.ProjectUtils.hasFiles;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
@@ -55,7 +54,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   @Override
   protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
     var backendIsAlive = getService(BackendService.class).isAlive();
-    return !status.isRunning() && hasFiles(project) && backendIsAlive;
+    return !status.isRunning() && backendIsAlive;
   }
 
   @Override

@@ -157,18 +157,18 @@ public class SonarLintAppUtils {
     return null;
   }
 
-  public static List<VirtualFile> visitAndAddFiles(VirtualFile file, Module module) {
+  public static List<VirtualFile> visitAndAddFiles(VirtualFile file, Project project) {
     var filesToAdd = new ArrayList<VirtualFile>();
     VfsUtilCore.visitChildrenRecursively(file, new VirtualFileVisitor<>(NO_FOLLOW_SYMLINKS) {
       @Override
       public boolean visitFile(VirtualFile file) {
-        if (!FileUtils.Companion.isFileValidForSonarLint(file, module.getProject())) {
+        if (!FileUtils.Companion.isFileValidForSonarLint(file, project)) {
           return false;
         }
         if (!file.isDirectory() && file.isValid()) {
           filesToAdd.add(file);
         }
-        return true;
+        return !".git".equals(file.getName());
       }
     });
     return filesToAdd;
