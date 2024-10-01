@@ -48,7 +48,6 @@ import javax.swing.event.DocumentListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -230,8 +229,8 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   private void checkConnection() throws CommitStepException {
-    ServerConnection tmpServer = model.createConnectionWithoutOrganization();
-    ConnectionTestTask test = new ConnectionTestTask(tmpServer);
+    var tmpServer = model.createConnectionWithoutOrganization();
+    var test = new ConnectionTestTask(tmpServer);
     var msg = "Failed to connect to the server. Please check the configuration.";
     ValidateConnectionResponse result;
 

@@ -19,13 +19,13 @@
  */
 package org.sonarlint.intellij.tasks
 
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
+import org.sonarlint.intellij.util.computeOnPooledThreadWithoutCatching
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
 
 class ConnectionTestTask(private val server: ServerConnection) :
@@ -36,10 +36,8 @@ class ConnectionTestTask(private val server: ServerConnection) :
     override fun compute(indicator: ProgressIndicator): ValidateConnectionResponse? {
         indicator.text = "Connecting to " + server.hostUrl + "\u2026"
         indicator.isIndeterminate = true
-        return try {
+        return computeOnPooledThreadWithoutCatching("Validate Connection Task") {
             waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(server))
-        } catch (e: ProcessCanceledException) {
-            null
         }
     }
 }

@@ -36,23 +36,27 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWit
 
 public class ServerDownloadProjectTask extends Task.WithResult<Map<String, SonarProjectDto>, Exception> {
   private final ServerConnection server;
+  private final Project project;
 
   public ServerDownloadProjectTask(Project project, ServerConnection server) {
     super(project, "Downloading Project List", true);
+    this.project = project;
     this.server = server;
   }
 
   @Override
   protected Map<String, SonarProjectDto> compute(@NotNull ProgressIndicator indicator) {
     try {
-      return computeOnPooledThreadWithoutCatching(myProject, "Download Projects", () ->
+      indicator.setIndeterminate(true);
+      indicator.setText("Downloading projects");
+      return computeOnPooledThreadWithoutCatching(project, "Download Projects Task",
+        () ->
         waitForFuture(indicator, getService(BackendService.class)
           .getAllProjects(server))
           .getSonarProjects()
           .stream().collect(Collectors.toMap(SonarProjectDto::getKey, p -> p)));
-
     } catch (Exception e) {
-      SonarLintConsole.get(myProject).error("Failed to download list of projects", e);
+      SonarLintConsole.get(project).error("Failed to download list of projects", e);
       throw e;
     }
   }
