@@ -190,7 +190,7 @@ public class Analysis implements Cancelable {
         getService(BackendService.class).updateFileSystem(Map.of(module, filesEvent));
       }
 
-      var analysisState = new AnalysisState(analysisId, callback, entry.getValue(), module, trigger);
+      var analysisState = new AnalysisState(analysisId, callback, entry.getValue(), module, trigger, indicator);
       results.put(module, analyzer.analyzeModule(module, entry.getValue(), analysisState, indicator, scope.shouldFetchServerIssues()));
       checkCanceled(indicator);
     }

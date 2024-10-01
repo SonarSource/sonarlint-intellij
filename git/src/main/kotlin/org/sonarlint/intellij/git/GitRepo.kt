@@ -33,7 +33,7 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
     override fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>): String? {
         return try {
             val currentBranch = repo.currentBranchName
-            if (currentBranch != null && allBranchNames.contains(currentBranch)) {
+            if (currentBranch != null && currentBranch in allBranchNames) {
                 return currentBranch
             }
             val head = repo.currentRevision ?: return null // Could be the case if no commit has been made in the repo
@@ -46,7 +46,7 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
                 branchesPerDistance.computeIfAbsent(distance) { HashSet() }.add(serverBranchName)
             }
             val bestCandidates = branchesPerDistance.minByOrNull { it.key }?.value ?: return null
-            if (bestCandidates.contains(mainBranchName)) {
+            if (mainBranchName in bestCandidates) {
                 // Favor the main branch when there are multiple candidates with the same distance
                 mainBranchName
             } else bestCandidates.first()

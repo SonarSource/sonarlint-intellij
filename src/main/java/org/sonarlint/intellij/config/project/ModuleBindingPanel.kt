@@ -240,8 +240,7 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
             val existingModuleNames = collectionListModel.items.map { it.module.name }
             val modulesToPickFrom =
                 ModuleManager.getInstance(project).modules.filter {
-                    !existingModuleNames.contains(it.name) &&
-                        getService(it, ModuleBindingManager::class.java).isBindingOverrideAllowed
+                    it.name !in existingModuleNames && getService(it, ModuleBindingManager::class.java).isBindingOverrideAllowed
                 }
             val dialog = if (ProjectAttachProcessor.canAttachToProject())
                 ChooseModulesDialog(modulesList, modulesToPickFrom.toMutableList(), "Select attached project", "Select the attached project for which you want to override the binding")

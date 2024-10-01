@@ -74,7 +74,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
   @Test
   void testNoUnresolvedIssues() {
     var uuid = UUID.randomUUID();
-    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN);
+    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
     var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
@@ -96,7 +96,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
   @Test
   void testIssues() {
     var uuid = UUID.randomUUID();
-    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN);
+    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("java:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
@@ -128,7 +128,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
   @Test
   void testSecretsIssues() {
     var uuid = UUID.randomUUID();
-    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN);
+    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("secrets:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);

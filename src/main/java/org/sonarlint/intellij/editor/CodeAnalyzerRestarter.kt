@@ -45,7 +45,7 @@ class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myPr
             val openFiles = fileEditorManager.openFiles
             runReadActionSafely(myProject) {
                 openFiles
-                    .filter { changedFiles.contains(it) }
+                    .filter { it in changedFiles }
                     .mapNotNull { getPsi(it) }
                     .forEach { codeAnalyzer.restart(it) }
             }

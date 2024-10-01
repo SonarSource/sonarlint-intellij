@@ -22,6 +22,7 @@ package org.sonarlint.intellij.analysis
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.vfs.VirtualFile
 import java.net.URI
 import java.time.Instant
@@ -35,10 +36,11 @@ import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.trigger.TriggerType
+import org.sonarlint.intellij.trigger.TriggerType.Companion.analysisSnapshot
+import org.sonarlint.intellij.trigger.TriggerType.Companion.nonAnalysisSnapshot
 import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
-
 
 class AnalysisState(
     val id: UUID,
@@ -46,6 +48,7 @@ class AnalysisState(
     private val filesToAnalyze: MutableCollection<VirtualFile>,
     private val module: Module,
     private val triggerType: TriggerType,
+    private val progress: ProgressIndicator?
 ) {
     private val modificationStampByFile = ConcurrentHashMap<VirtualFile, Long>()
     private val analysisDate: Instant = Instant.now()
@@ -66,6 +69,10 @@ class AnalysisState(
                 FileDocumentManager.getInstance().getDocument(file)
             }?.let { modificationStampByFile[file] = it.modificationStamp }
         }
+    }
+
+    fun cancel() {
+        progress?.cancel()
     }
 
     fun addRawHotspots(analysisId: UUID, hotspotsByFile: Map<URI, List<RaisedHotspotDto>>, isIntermediate: Boolean) {
@@ -162,6 +169,14 @@ class AnalysisState(
 
     fun isAnalysisFinished(): Boolean {
         return hasReceivedFinalIssues && (!shouldReceiveHotspot || hasReceivedFinalHotspots)
+    }
+
+    // Analysis are redundant if both are snapshots (report tab) or both are not snapshots, otherwise they should not cancel each other
+    // All the files of the redundant analysis should be contained in the new one, otherwise information might be lost
+    fun isRedundant(analysisState: AnalysisState): Boolean {
+        val bothSnapshot = triggerType in analysisSnapshot && analysisState.triggerType in analysisSnapshot
+        val bothNonSnapshot = triggerType in nonAnalysisSnapshot && analysisState.triggerType in nonAnalysisSnapshot
+        return (bothSnapshot || bothNonSnapshot) && analysisState.filesToAnalyze.containsAll(filesToAnalyze)
     }
 
 }

@@ -36,6 +36,8 @@ import org.sonarlint.intellij.core.EnabledLanguages.extraEnabledLanguagesInConne
 import org.sonarlint.intellij.messages.AnalysisListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.trigger.TriggerType
+import org.sonarlint.intellij.trigger.TriggerType.Companion.analysisSnapshot
+import org.sonarlint.intellij.trigger.TriggerType.Companion.nonAnalysisSnapshot
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
@@ -48,16 +50,6 @@ class PromotionProvider(private val project: Project) {
 
     private val languagesHavingAdvancedRules: Set<Language> = EnumSet.of(
         Language.JAVA, Language.PYTHON, Language.PHP, Language.JS, Language.TS, Language.CS
-    )
-
-    private val reportAnalysisTriggers: Set<TriggerType> = EnumSet.of(
-        TriggerType.RIGHT_CLICK, TriggerType.CHANGED_FILES, TriggerType.ALL
-    )
-
-    private val nonReportAnalysisTriggers: Set<TriggerType> = EnumSet.of(
-        TriggerType.EDITOR_OPEN, TriggerType.BINDING_UPDATE,
-        TriggerType.SERVER_SENT_EVENT, TriggerType.CONFIG_CHANGE,
-        TriggerType.EDITOR_CHANGE, TriggerType.COMPILATION, TriggerType.CURRENT_FILE_ACTION
     )
 
     fun subscribeToTriggeringEvents() {
@@ -93,11 +85,11 @@ class PromotionProvider(private val project: Project) {
         notifications: SonarLintProjectNotifications,
         files: Collection<VirtualFile>,
     ) {
-        if (nonReportAnalysisTriggers.contains(triggerType)) {
+        if (triggerType in nonAnalysisSnapshot) {
             processAutoAnalysisTriggers(wasAutoAnalyzed, notifications)
         }
 
-        if (reportAnalysisTriggers.contains(triggerType)) {
+        if (triggerType in analysisSnapshot) {
             processReportAnalysisTriggers(files, notifications)
         }
 

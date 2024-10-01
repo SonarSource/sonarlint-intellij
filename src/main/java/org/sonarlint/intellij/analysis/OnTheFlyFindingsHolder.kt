@@ -99,7 +99,7 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
                 RawIssueAdapter.toLiveSecurityHotspot(module, it, virtualFile, null)
             }
             virtualFile to liveIssues
-        }.toMap().filterKeys { openFiles.contains(it) }
+        }.toMap().filterKeys { it in openFiles }
         currentSecurityHotspotsPerOpenFile.putAll(securityHotspots)
         if (selectedFile == null) {
             runOnUiThread(project) {

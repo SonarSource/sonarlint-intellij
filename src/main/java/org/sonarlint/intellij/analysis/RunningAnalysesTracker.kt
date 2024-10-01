@@ -22,6 +22,7 @@ package org.sonarlint.intellij.analysis
 import com.intellij.openapi.components.Service
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 
 @Service(Service.Level.PROJECT)
 class RunningAnalysesTracker {
@@ -42,6 +43,22 @@ class RunningAnalysesTracker {
 
     fun getById(analysisId: UUID): AnalysisState? {
         return analysisStateById[analysisId]
+    }
+
+    fun cancel(analysisId: UUID) {
+        analysisStateById[analysisId]?.let {
+            it.cancel()
+            finish(it)
+        }
+    }
+
+    fun cancelSimilarAnalysis(analysisState: AnalysisState, console: SonarLintConsole) {
+        for (analysis in analysisStateById.values) {
+            if (analysis.isRedundant(analysisState)) {
+                console.info("Cancelling analysis ${analysis.id}")
+                analysis.cancel()
+            }
+        }
     }
 
     fun isAnalysisRunning(): Boolean {

@@ -37,7 +37,7 @@ fun convert(
     modificationStamp: Long?,
 ): QuickFix? {
     val virtualFileEdits = coreQuickFix.fileEdits().map { convert(it, modificationStamp) }
-    if (virtualFileEdits.contains(null)) {
+    if (null in virtualFileEdits) {
         SonarLintConsole.get(project).debug("Quick fix won't be proposed as it is invalid")
         return null
     }
@@ -61,7 +61,7 @@ private fun convert(fileEdit: FileEditDto, modificationStamp: Long?): VirtualFil
         return null
     }
     val virtualFileEdits = fileEdit.textEdits().map { convert(document, it) }
-    if (virtualFileEdits.contains(null)) {
+    if (null in virtualFileEdits) {
         return null
     }
     return VirtualFileEdit(virtualFile, virtualFileEdits.mapNotNull { it })
