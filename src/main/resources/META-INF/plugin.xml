@@ -64,6 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.11 - 1 new rule for PHP.</li>
         <li>10.10 - Improve SonarLint performance and optimize memory usage. Refactor thread management to avoid UI freezes. Avoid errors of type 'No file to analyze'. Support detection of Micronaut configuration issues. 6 new JS/TS rules. Introduce new INFO and BLOCKER severities. Improve UI feedback when lacking permission with SonarQube or SonarCloud. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.9 - Support analysis of Helm files. Improve analysis consistency on Rider. 7 new C++23 rules and C++23 support. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.8.1 - Correctly display the current file analysis results on dev containers. Fix an issue where triggering a report analysis would disappear. Fix a problem where issues from another project would appear in the report.</li>
