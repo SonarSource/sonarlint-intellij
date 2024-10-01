@@ -23,6 +23,8 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -36,15 +38,15 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
-  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
 
+  private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private EditorOpenTrigger editorTrigger;
   private VirtualFile file;
   private FileEditorManager editorManager;
 
   @BeforeEach
   void start() {
-    editorTrigger = new EditorOpenTrigger();
+    editorTrigger = new EditorOpenTrigger(getProject());
     getGlobalSettings().setAutoTrigger(true);
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
 
@@ -52,13 +54,19 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
     editorManager = mock(FileEditorManager.class);
     when(editorManager.getProject()).thenReturn(getProject());
     reset(analysisSubmitter);
+    editorTrigger.onProjectOpened();
+  }
+
+  @AfterEach
+  void cleanup() {
+    editorTrigger.dispose();
   }
 
   @Test
   void should_trigger() {
     editorTrigger.fileOpened(editorManager, file);
 
-    verify(analysisSubmitter, timeout(1000)).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
+    verify(analysisSubmitter, timeout(3000)).autoAnalyzeFiles(List.of(file), TriggerType.EDITOR_OPEN);
   }
 
   @Test
