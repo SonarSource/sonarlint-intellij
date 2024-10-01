@@ -51,7 +51,7 @@ public final class EditorOpenTrigger implements FileEditorManagerListener, Dispo
 
   public EditorOpenTrigger(Project project) {
     myProject = project;
-    watcher = new EventWatcher(myProject, "open", eventMap, TriggerType.EDITOR_OPEN);
+    watcher = new EventWatcher(myProject, "open", eventMap, TriggerType.EDITOR_OPEN, 1000);
   }
 
   public void onProjectOpened() {

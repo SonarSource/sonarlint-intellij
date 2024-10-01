@@ -33,15 +33,12 @@ class EventWatcher(
     private val project: Project,
     watcherName: String,
     private val eventMap: ConcurrentHashMap<VirtualFile, Long>,
-    private val triggerType: TriggerType
+    private val triggerType: TriggerType,
+    private val timer: Int
 ) : Thread() {
 
     private var stop: Boolean = false
     private var task: Cancelable? = null
-
-    companion object {
-        const val DEFAULT_TIMER_MS = 2000
-    }
 
     init {
         isDaemon = true
@@ -93,7 +90,7 @@ class EventWatcher(
             // don't trigger if file currently has errors?
             // filter files opened in the editor
             // use some heuristics based on analysis time or average pauses? Or make it configurable?
-            if (event.value + DEFAULT_TIMER_MS < now) {
+            if (event.value + timer < now) {
                 filesToTrigger.add(event.key)
             }
         }

@@ -48,7 +48,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
 
   public EditorChangeTrigger(Project project) {
     myProject = project;
-    watcher = new EventWatcher(myProject, "change", eventMap, TriggerType.EDITOR_CHANGE);
+    watcher = new EventWatcher(myProject, "change", eventMap, TriggerType.EDITOR_CHANGE, 2000);
   }
 
   public void onProjectOpened() {
