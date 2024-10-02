@@ -60,6 +60,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
 
@@ -161,7 +162,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       .flatMap(e -> e.getValue().stream())
       .filter(Predicate.not(LiveIssue::isResolved))
       .filter(issue -> !shouldFocusOnNewCode || issue.isOnNewCode())
-      .filter(i -> i.getUserSeverity() != null && i.getUserSeverity().name().equals(IssueSeverity.BLOCKER.name()))
+      .filter(i -> (i.getHighestImpact() != null && i.getHighestImpact().name().equals(ImpactSeverity.BLOCKER.name()))
+        || (i.getUserSeverity() != null && i.getUserSeverity().name().equals(IssueSeverity.BLOCKER.name())))
       .count();
 
     if (numIssues == 0) {
