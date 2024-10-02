@@ -852,7 +852,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun raiseHotspots(
         configurationScopeId: String,
-        issuesByFileUri: Map<URI, List<RaisedHotspotDto>>,
+        hotspotsByFileUri: Map<URI, List<RaisedHotspotDto>>,
         isIntermediatePublication: Boolean,
         analysisId: UUID?,
     ) {
@@ -861,13 +861,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
 
         if (runningAnalysis != null) {
-            runningAnalysis.addRawHotspots(analysisId, issuesByFileUri, isIntermediatePublication)
+            runningAnalysis.addRawHotspots(analysisId, hotspotsByFileUri, isIntermediatePublication)
             if (runningAnalysis.isAnalysisFinished()) {
                 getService(project, RunningAnalysesTracker::class.java).finish(runningAnalysis)
             }
         } else if (analysisId == null && module != null) {
             val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-            onTheFlyFindingsHolder.updateViewsWithNewSecurityHotspots(module, issuesByFileUri)
+            onTheFlyFindingsHolder.updateViewsWithNewSecurityHotspots(module, hotspotsByFileUri)
         }
     }
 
