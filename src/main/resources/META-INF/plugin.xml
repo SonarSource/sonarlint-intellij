@@ -35,9 +35,9 @@
             </p>
             <br/>
             <p>
-                When paired with <a href="https://www.sonarsource.com/products/sonarqube/">SonarQube</a> or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarCloud</a> in connected mode,
+                When paired with <a href="https://www.sonarsource.com/products/sonarqube/">SonarQube</a> or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarCloud</a> in Connected Mode,
                 SonarLint forms a powerful end-to-end code quality platform to enrich the CI/CD pipeline, ensuring any code edits or additions are clean.
-                In connected mode, your team can share common language rulesets, project analysis settings and <a href="https://www.sonarsource.com/products/sonarlint/features/connected-mode/">more</a>.
+                In Connected Mode, your team can share common language rulesets, project analysis settings and <a href="https://www.sonarsource.com/products/sonarlint/features/connected-mode/">more</a>.
             </p>
             <br/>
             <p>
@@ -69,25 +69,25 @@
         <li>10.9 - Support analysis of Helm files. Improve analysis consistency on Rider. 7 new C++23 rules and C++23 support. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.8.1 - Correctly display the current file analysis results on dev containers. Fix an issue where triggering a report analysis would disappear. Fix a problem where issues from another project would appear in the report.</li>
         <li>10.8 - Handle "Open in IDE" requests from SonarCloud. Detection of 34 new secrets. 11 new rules for Kubernetes. 20 new Java rules enabled on test code. Fix an issue in Rider where analysis would never finish. Bug fixes, fewer FPs and improvements for many languages.</li>
-        <li>10.7 - Allow users to focus on new code without connected mode. Help users to generate a token when creating a new connection to SonarCloud. Support for more complex rules in Python and Java. Support for multiple project-level issues on C#. Support for C/C++ analysis from Linux ARM. Fix an issue in Rider that prevented file analysis. Fix an issue where files with special characters would not get analyzed. Avoid an issue in CLion when WSL is not supported. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.7 - Allow users to focus on new code without Connected Mode. Help users to generate a token when creating a new connection to SonarCloud. Support for more complex rules in Python and Java. Support for multiple project-level issues on C#. Support for C/C++ analysis from Linux ARM. Fix an issue in Rider that prevented file analysis. Fix an issue where files with special characters would not get analyzed. Avoid an issue in CLion when WSL is not supported. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.6.2 - Fix an issue on Windows preventing analysis from running in CLion. Fix an issue in Rider when no git repositories are found. Improve performance and avoid running unnecessary analysis.</li>
         <li>10.6.1 - Fix an issue preventing analysis from running when multiple projects are opened simultaneously.</li>
-        <li>10.6 - Support of CLion Nova. Deprecate authentication with login/password. Improve the shared connected mode settings compatibility on C# projects with Visual Studio and VS Code. 5 new rules for Python. Support for Spring configuration files. Support of 21 Java rules on test sources. 7 new rules for C#. 1 new rule for ASP.NET. Bug fixes, fewer FPs and improvements for many languages.</li>
-        <li>10.5 - Allow users to share connected mode settings among contributors. Remove support for Node.js 16 (18 required). 21 new rules for Java and improved support for Spring. 14 new rules for Python. Support analysis of C++23. 1 new rule for token detection. 18 new rules for C#. 4 new accessibility rules for JS/TS. 6 new accessibility rules for HTML. Bug fixes, fewer FPs and improvements for many languages. Various bug fixes and performance improvements.</li>
+        <li>10.6 - Support of CLion Nova. Deprecate authentication with login/password. Improve the shared Connected Mode settings compatibility on C# projects with Visual Studio and VS Code. 5 new rules for Python. Support for Spring configuration files. Support of 21 Java rules on test sources. 7 new rules for C#. 1 new rule for ASP.NET. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.5 - Allow users to share Connected Mode settings among contributors. Remove support for Node.js 16 (18 required). 21 new rules for Java and improved support for Spring. 14 new rules for Python. Support analysis of C++23. 1 new rule for token detection. 18 new rules for C#. 4 new accessibility rules for JS/TS. 6 new accessibility rules for HTML. Bug fixes, fewer FPs and improvements for many languages. Various bug fixes and performance improvements.</li>
         <li>10.4.2 - Fix an issue where rule configuration is not loaded at startup. Stop the creation of configuration files at module level for storing module IDs. Improve performance during synchronization on large projects. Various bug fixes.</li>
         <li>10.4.1 - Fix various errors when starting the SonarLint service. Fix an error when using a proxy.</li>
         <li>10.4 - SonarLint now runs in a separate process. Support of Java 21 and 2 new Java rules. 17 new accessibility rules for HTML. 2 new C++ rules. 2 new quick fixes for Python. 1 new JS/TS rule. Various UI fixes and improvements. Bug fixes, fewer FPs and improvements for many languages.</li>
-        <li>10.3 - Allow detection of custom secrets in connected mode starting from SonarQube 10.4. Set up a connection in one click starting from SonarQube 10.4 when using the Open in IDE feature. Fix memory leaks and UI freezes. Support Jakarta namespace. 9 new C++ MISRA 2023 rules. Remove support for Node.js 14 and deprecate support for Node.js 16 and Node.js 17. Support TypeScript 5.3. 5 new rules for JavaScript. 8 new rules for Kubernetes. Bug fixes, fewer FPs and improvements for many languages.</li>
-        <li>10.2.1 - Fix an error when using Rider or CLion in connected mode with SonarCloud.</li>
+        <li>10.3 - Allow detection of custom secrets in Connected Mode starting from SonarQube 10.4. Set up a connection in one click starting from SonarQube 10.4 when using the Open in IDE feature. Fix memory leaks and UI freezes. Support Jakarta namespace. 9 new C++ MISRA 2023 rules. Remove support for Node.js 14 and deprecate support for Node.js 16 and Node.js 17. Support TypeScript 5.3. 5 new rules for JavaScript. 8 new rules for Kubernetes. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.2.1 - Fix an error when using Rider or CLion in Connected Mode with SonarCloud.</li>
         <li>10.2 - Support for Gradle Kotlin DSL and C# 12. 5 new Spring Boot rules. 1 new rule for Python. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.1.1 - Fix a potential deadlock and UI freeze.</li>
         <li>10.1 - 9 new Java rules related to Spring Boot, 1 new quick fix. 17 new accessibility rules for JSX. 6 new Kotlin rules. Support for Python 3.12 syntax, add 5 related rules, add 3 new Security Hotspots. 2 new C++ MISRA 2023 rules, support for Docker toolchain in CLion. Support for .NET 8 in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.0.1 - Fix an error when opening an issue from SonarQube. Fix potential UI-freeze.</li>
         <li>10.0 - Raise minimal supported version to 2022.3.1 and Java 17. Allow to reopen taint vulnerabilities. Handle "Open in IDE" requests from SonarQube. Synchronize issues and Security Hotspots in real-time from SonarCloud. 5 new rules for Python. 6 new rules for Java. 29 new rules for JavaScript. Bug fixes, fewer FPs and improvements for many languages.</li>
-        <li>9.1 - Lets users focus on new code in connected mode. Support of quick fixes preview. 1 new quick fix for JS/TS. 2 new C++ MISRA 2023 rules. Detection of 42 new secrets. 8 new rules and 3 new quick fixes for Python. 16 new rules for Docker. Support for Ruby 3.2.0. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>9.1 - Lets users focus on new code in Connected Mode. Support of quick fixes preview. 1 new quick fix for JS/TS. 2 new C++ MISRA 2023 rules. Detection of 42 new secrets. 8 new rules and 3 new quick fixes for Python. 16 new rules for Docker. Support for Ruby 3.2.0. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>9.0 - Support Clean Code attributes and software qualities. Allow the reopening of resolved issues and add ability to resolve issues not yet known by SonarQube (version 10.2+). Support of PHP 8.3. 9 new rules for Python. 15 new rules for JS/TS. Detection of 50 new patterns and 22 new types for secrets. Support of Bicep in Azure. 5 new rules for Azure Resource Manager templates. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.5.1 - Fix an error when creating or updating a connection to SonarCloud. Fix SSL issues related to our HTTP client. Fix an error when using a proxy.</li>
-        <li>8.5 - Support PL/SQL analysis in connected mode when 'Database Tools and SQL' plugin is enabled. 43 new MISRA rules for C++. 12 new rules for CloudFormation, Docker, Kubernetes and Terraform. 9 new rules and one quick fix for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>8.5 - Support PL/SQL analysis in Connected Mode when 'Database Tools and SQL' plugin is enabled. 43 new MISRA rules for C++. 12 new rules for CloudFormation, Docker, Kubernetes and Terraform. 9 new rules and one quick fix for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.4 - Allow marking issues existing on SonarQube/SonarCloud as resolved. Support near real-time synchronization of Security Hotspots with SonarQube. Support syntax highlighting in rule configuration. 5 new rules and 1 quick fix for JavaScript. 2 new rules for C++. 1 new rule for C# and support .NET 7 in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.3 - Allow changing status of Security Hotspots. Support Security Hotspots when connected to SonarCloud. Support analysis of Go not only in GoLand but also when using the Go plugin in IntelliJ IDEA Ultimate. 17 new rules for JavaScript. 6 new rules for PHP. 10 new rules, 1 new quick fix for Python. 9 new rules for Kotlin. 11 new rules for C# in Rider. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>8.2 - Support syntax highlighting and diff view for code examples. Add support for CloudFormation, Docker, Kubernetes and Terraform. 3 new rules for Java. 8 new rules for JavaScript. 2 new rules for C# in Rider. 9 new rules for Kotlin. 11 new rules, 3 new quick fixes for Python. Bug fixes, fewer FPs and improvements for many languages.</li>
@@ -99,17 +99,17 @@
         <li>7.2 - Help users to generate a token when creating a new connection. Add quick fixes in Rider for C#. 2 new rules, 4 new quick fixes for Python. 1 new rule for credentials detection for Java. Support analysis of JS in YAML files. New AWS CDK rules. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>7.1.1 - Fix security issue when opening a hotspot from SonarQube.</li>
         <li>7.1 - Support analysis of Kotlin 1.7.10. 8 new rules around unit tests for Python. Support analysis of PHP 8.2. Support analysis of TypeScript 4.8. Remove support for Node.JS 12 and deprecate support for Node.JS 14. Add 7 rules for React. Bug fixes, fewer FPs and improvements for many languages.</li>
-        <li>7.0 - Reworked connected mode storage. Auto-sync of issues with SonarQube 9.6+.</li>
-        <li>6.8 - Use embedded JS/TS/HTML/Kotlin/Ruby/XML analyzer even in connected mode. Introduce quick fixes for 7 Python rules. 15 new rules for Java (6 for regular expressions, 7 for AWS Cloud functions). 5 new rules for JS/TS. Add support for TypeScript 4.7. 3 new rules for C/C++. Add support for Ruby 3.1. New and improved C# rules. Support for C# 10. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>7.0 - Reworked Connected Mode storage. Auto-sync of issues with SonarQube 9.6+.</li>
+        <li>6.8 - Use embedded JS/TS/HTML/Kotlin/Ruby/XML analyzer even in Connected Mode. Introduce quick fixes for 7 Python rules. 15 new rules for Java (6 for regular expressions, 7 for AWS Cloud functions). 5 new rules for JS/TS. Add support for TypeScript 4.7. 3 new rules for C/C++. Add support for Ruby 3.1. New and improved C# rules. Support for C# 10. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>6.7 - Quick fixes for 3 C/C++ and 30 JS/TS rules. 17 new rules for Python (8 for regular expressions). Support for TypeScript 4.6. Activate JS rule S1172 by default. Activate C# rule S2222 by default. Remove legacy C/C++ rule keys. Bug fixes, fewer FPs and improvements for many languages.</li>
-        <li>6.6 - Synchronize issues and taint vulnerabilities from the appropriate branch in connected mode. Subscribe for server events to update active rules. Quick fixes for 15 C/C++ and 23 JS/TS rules. Support TypeScript 4.5. Drop support for Node 10. One more rule for C#. Performance improvements in Rider.</li>
+        <li>6.6 - Synchronize issues and taint vulnerabilities from the appropriate branch in Connected Mode. Subscribe for server events to update active rules. Quick fixes for 15 C/C++ and 23 JS/TS rules. Support TypeScript 4.5. Drop support for Node 10. One more rule for C#. Performance improvements in Rider.</li>
         <li>6.5.1 - Fix error message at startup.</li>
         <li>6.5 - Deprecation of Node.js &lt; 12.22 for JS/TS analyzes. Embed the XML analyzer. 5 new rules for Java. 9 new rules for PHP around regexes. Bug fixes, fewer FPs and improvements for many languages</li>
         <li>6.4.3 - Fewer false-negatives and false-positives for C/C++.</li>
         <li>6.4.2 - Fix potential UI-freeze when loading/unloading modules.</li>
-        <li>6.4.1 - Fix error in connected mode if custom plugin have markdown rule description.</li>
+        <li>6.4.1 - Fix error in Connected Mode if custom plugin have markdown rule description.</li>
         <li>6.4 - Automatically synchronize rules and settings from server. New JS/TS rules for tests. Support PHP 8.1. New rules for regexp in Python. Support Python 3.10. New rules for Kotlin. Support Kotlin 1.6. Support Ruby 3.0.3. 10 new rules for C++20 coroutines, quick fixes for 3 more C++ rules. Support .NET 6 in Rider. Many rules improvements.</li>
-        <li>6.3.1 - Fix connected mode in Rider.</li>
+        <li>6.3.1 - Fix Connected Mode in Rider.</li>
         <li>6.3 - Quick fixes for 43 C/C++ rules.</li>
         <li>6.2 - 9 new rules for regular expressions in PHP. 1 new vulnerability detection rule for Android. Fixes for HTTP protocol issues and UI improvements.</li>
         <li>6.1 - Allow binding individual modules or attached projects to SonarQube/SonarCloud. New rules for regular expressions in PHP, JS and TS. Wordpress misconfiguration rules in PHP. 7 new rules for C++20. Many rules improvements.</li>
@@ -118,7 +118,7 @@
         <li>5.2 - New Java 16 specific rules. Rules improvements for PHP. Performance improvement for Python analysis. Many bug fixes and small improvements.</li>
         <li>5.1 - Support TS 4.3 and Vue.js. MSVC support for CLion. Rules improvements for Java, Kotlin, C/C++ and JS/TS.</li>
         <li>5.0.1 - Fix exceptions in registration of application listeners and during analysis on older versions of the IntelliJ platform. Fix UI freezes.</li>
-        <li>5.0 - Improve precision of Python analyzes thanks to cross-module resolution of symbols. Drop support of SonarQube < 7.9 for connected mode. Fixed false-positives and false-negatives in C/C++ analysis. Bug fixes and improvements.</li>
+        <li>5.0 - Improve precision of Python analyzes thanks to cross-module resolution of symbols. Drop support of SonarQube < 7.9 for Connected Mode. Fixed false-positives and false-negatives in C/C++ analysis. Bug fixes and improvements.</li>
         <li>4.16 - 3 new rules for C++20. Improved JS/TS rules. Fixed false positive in HTML analysis. Improved PHP rules.</li>
         <li>4.15 - Support analysis of C/C++ in CLion. Support TypeScript 4.1 and 4.2. Rules improvements for Java and Python. Minimal supported version is 2019.3.</li>
         <li>4.14.2 - Fix exceptions thrown during analysis and work around an issue with latest EAP.</li>
@@ -127,7 +127,7 @@
         <li>4.13 - New or improved rules for access control or authentication in Java. Security rules for JS/TS. Support of PHP 8, improved rules. Updated Kotlin and Ruby analyzers, supporting latest language features and improved rules. Updated HTML analyzer with improved rules. Reworked server notifications. Review a Security Hotspot within its context.</li>
         <li>4.12 - Lots of new rules for Java (including test code), support analysis of Java 14. 20 new rules for PHP, including 13 related to unit tests. 2 new rules for JavaScript. 3 new rules for Python. Bug fixes and improvements.</li>
         <li>4.11 - Improve issues, flows and secondary locations navigation and highlighting. Show secondary location indexes in the editor. Add 'Show rule description' and 'Show data flow/issue locations' contextual actions. Relax search criteria in rule configuration filter. Show effective rule parameter in the rule description panel. Bug fixes and improvements.</li>
-        <li>4.10 - Fix duplicated annotations for PHP files. Display rule severity defined in the quality profile in connected mode. Fix analysis failure with JSP files. Bug fixes and improvements for JS files. 4 new rules (3 security related), bug fixes and improvements for PHP files.</li>
+        <li>4.10 - Fix duplicated annotations for PHP files. Display rule severity defined in the quality profile in Connected Mode. Fix analysis failure with JSP files. Bug fixes and improvements for JS files. 4 new rules (3 security related), bug fixes and improvements for PHP files.</li>
         <li>4.9 - Many new rules about JUnit and AssertJ for Java test files. 10 new rules for PHP. 22 new rules for Python and support of Typeshed packages. Preparatory changes for dynamic plugin installation.</li>
         <li>4.8 - Configure rule parameters in IDE settings. Performance improvement and fewer false positives for PHP. 4 new vulnerability detection rules for Python.</li>
         <li>4.7 - 2 new rules and performance improvements for Java. 2 new rules for Python.</li>
@@ -135,10 +135,10 @@
         <li>4.5.1 - Fix two regressions causing exception during analysis.</li>
         <li>4.5 - 3 new rules and engine improvements for Python. New engine for Java, with support for Java 13 preview features.</li>
         <li>4.4 - Ensure compatibility with JetBrains 2020.x release train. 22 new rules and engine improvements for Python. Support for PHP 7.4. New engine for JavaScript, 8 new rules.</li>
-        <li>4.3 - Supports SonarJS 6.x in connected mode. Updated issue type icons.</li>
-        <li>4.2 - Analyze HTML in Vue.js single file components. 8 new HTML rules. Support 'Ignore Issues on Files' and 'Ignore Issues in Blocks' in connected mode.</li>
-        <li>4.1.1 - Fix regression on quality profile in connected mode</li>
-        <li>4.1 - Enable analysis of HTML. Add support of XML in connected mode. 10 new Java rules.</li>
+        <li>4.3 - Supports SonarJS 6.x in Connected Mode. Updated issue type icons.</li>
+        <li>4.2 - Analyze HTML in Vue.js single file components. 8 new HTML rules. Support 'Ignore Issues on Files' and 'Ignore Issues in Blocks' in Connected Mode.</li>
+        <li>4.1.1 - Fix regression on quality profile in Connected Mode</li>
+        <li>4.1 - Enable analysis of HTML. Add support of XML in Connected Mode. 10 new Java rules.</li>
         <li>4.0.2 - Fix error on startup registering actions affecting all IDEs other than IntelliJ</li>
         <li>4.0.1 - Fix duplicated highlighting in WebStorm and connection to a server with more than 10k rules</li>
         <li>4.0 - Improved matching of issues with SonarQube</li>
@@ -164,7 +164,7 @@
         <li>2.4 - Hide issues that are resolved in SonarQube. Numerous bug fixes.</li>
         <li>2.3.2 - Fix configuration of automatic trigger of analysis</li>
         <li>2.3.1 - Bug fix for analysis configuration and performance improvements</li>
-        <li>2.3 - Support of exclusions in connected mode; Numerous bug fixes. Java 8 is now required to run SonarLint.</li>
+        <li>2.3 - Support of exclusions in Connected Mode; Numerous bug fixes. Java 8 is now required to run SonarLint.</li>
         <li>2.2 - Support of SonarQube LTS (4.5) and commercial plugins</li>
         <li>2.1.1 - Bug fix for PHPStorm</li>
         <li>2.1 - Various improvements and bug fixes</li>

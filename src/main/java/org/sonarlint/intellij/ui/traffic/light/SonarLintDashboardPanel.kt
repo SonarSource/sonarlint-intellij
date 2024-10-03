@@ -60,7 +60,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
 
     companion object {
         private const val NO_FINDINGS_TEXT = "No problems found, keep up the good work!"
-        private const val NO_CONNECTED_MODE_TITLE = "Connected mode is not active"
+        private const val NO_CONNECTED_MODE_TITLE = "Connected Mode is not active"
         private const val NO_BINDING_TITLE = "No binding found"
         private const val CHECKBOX_TITLE = "Focus on New Code"
     }

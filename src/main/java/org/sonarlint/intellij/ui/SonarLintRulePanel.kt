@@ -321,7 +321,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 border = null
                 SwingHelper.setHtml(
                     this, """<small>Parameter values can be set in <a href="$RULE_CONFIG_LINK_PREFIX${ruleDetails.key}">Rule Settings</a>. 
-            | In connected mode, server side configuration overrides local settings.</small>""".trimMargin(), UIUtil.getLabelForeground()
+            | In Connected Mode, server side configuration overrides local settings.</small>""".trimMargin(), UIUtil.getLabelForeground()
                 )
             }, constraints)
         }

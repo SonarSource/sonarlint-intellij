@@ -181,7 +181,7 @@ class ConfigurationTests : BaseUiTest() {
 
         @Test
         fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
-            // Scala should only be supported in connected mode
+            // Scala should only be supported in Connected Mode
             openExistingProject("sample-scala", true)
             verifyCurrentFileShowsCard("EmptyCard")
 

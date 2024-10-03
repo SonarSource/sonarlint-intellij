@@ -103,7 +103,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         private fun confirm(project: Project, productName: String): Boolean {
             return shouldSkipConfirmationDialogForReopening() || MessageDialogBuilder.okCancel(
                 "Confirm reopening the issue",
-                "Are you sure you want to reopen this issue? The status will be updated on $productName and synchronized with any contributor using SonarLint in connected mode"
+                "Are you sure you want to reopen this issue? The status will be updated on $productName and synchronized with any contributor using SonarLint in Connected Mode"
             ).yesText("Confirm").noText("Cancel").doNotAsk(DoNotShowAgain()).ask(project)
         }
 

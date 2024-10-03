@@ -70,7 +70,7 @@ class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
     }
 
     private fun switchCards() {
-        // Checking connected mode state may take time, so lets move from EDT to pooled thread
+        // Checking Connected Mode state may take time, so lets move from EDT to pooled thread
         runOnPooledThread(project) {
             val projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager::class.java)
             projectBindingManager.tryGetServerConnection().ifPresentOrElse({

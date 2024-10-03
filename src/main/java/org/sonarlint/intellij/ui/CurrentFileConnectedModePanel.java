@@ -160,7 +160,7 @@ public class CurrentFileConnectedModePanel {
     runOnUiThread(project, () -> {
       var selectedFile = SonarLintUtils.getSelectedFile(project);
       if (selectedFile != null) {
-        // Checking connected mode state may take time, so lets move from EDT to pooled thread
+        // Checking Connected Mode state may take time, so lets move from EDT to pooled thread
         runOnPooledThread(project, () -> {
           var projectBindingManager = getService(project, ProjectBindingManager.class);
           projectBindingManager.tryGetServerConnection().ifPresentOrElse(serverConnection -> {

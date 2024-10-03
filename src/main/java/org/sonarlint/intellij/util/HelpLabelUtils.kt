@@ -40,9 +40,9 @@ class HelpLabelUtils {
         @JvmStatic
         fun createCleanAsYouCode() =
             ContextHelpLabel.create(
-                "<html>Use connected mode to benefit from an<br>accurate new code definition based on your SonarQube or SonarCloud settings." +
+                "<html>Use Connected Mode to benefit from an<br>accurate new code definition based on your SonarQube or SonarCloud settings." +
                     "<br>" +
-                    "<br>Without connected mode, any code added or changed in the last 30 days is considered new code.</html>"
+                    "<br>Without Connected Mode, any code added or changed in the last 30 days is considered new code.</html>"
             )
 
         @JvmStatic
