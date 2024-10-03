@@ -46,6 +46,7 @@ import javax.annotation.Nullable;
 import javax.swing.JScrollPane;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
@@ -150,12 +151,18 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       return;
     }
     if (issues == null) {
-      statusText.setText("No analysis done on the current opened file");
       var templateText = analyzeCurrentFileAction.getTemplateText();
-      if (templateText != null) {
-        statusText.appendLine(templateText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-          ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+
+      if (getService(project, AnalysisReadinessCache.class).isReady()) {
+        statusText.setText("No analysis done on the current opened file");
+        if (templateText != null) {
+          statusText.appendLine(templateText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+            ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        }
+      } else {
+        statusText.setText("Waiting for SonarLint to be ready");
       }
+
       issues = Collections.emptyList();
     } else {
       statusText.setText("No issues to display");
