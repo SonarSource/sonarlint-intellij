@@ -31,32 +31,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.common.util.FileUtils;
 import org.sonarlint.intellij.finding.TextRangeMatcher;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis;
 
 public class ProjectUtils {
-
-  public static Collection<VirtualFile> getAllFiles(Project project) {
-    var fileSet = new LinkedHashSet<VirtualFile>();
-    var fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
-    fileIndex.iterateContent(vFile -> {
-      if (project.isDisposed()) {
-        return false;
-      }
-      if (!vFile.isDirectory() && vFile.isValid() && FileUtils.Companion.isFileValidForSonarLint(vFile, project)) {
-        fileSet.add(vFile);
-        return true;
-      }
-      // Continue iteration
-      return true;
-    });
-    return fileSet;
-  }
 
   public static PsiFile toPsiFile(Project project, VirtualFile file) throws TextRangeMatcher.NoMatchException {
     ApplicationManager.getApplication().assertReadAccessAllowed();
@@ -73,7 +55,7 @@ public class ProjectUtils {
       Map<VirtualFile, Path> relativePathPerFile = new HashMap<>();
 
       for (var file : files) {
-        var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file);
+        var relativePath = getRelativePathForAnalysis(project, file);
         if (relativePath != null) {
           relativePathPerFile.put(file, Paths.get(relativePath));
         }

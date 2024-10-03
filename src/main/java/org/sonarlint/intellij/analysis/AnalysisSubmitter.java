@@ -51,11 +51,11 @@ import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.tasks.TaskRunnerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
-import static org.sonarlint.intellij.util.ProjectUtils.getAllFiles;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllFilesForProject;
 
 @Service(Service.Level.PROJECT)
 public final class AnalysisSubmitter {
@@ -81,7 +81,7 @@ public final class AnalysisSubmitter {
   }
 
   public void analyzeAllFiles() {
-    var allFiles = getAllFiles(project);
+    var allFiles = visitAndAddAllFilesForProject(project);
     var callback = new ShowReportCallable(project);
     var analysis = new Analysis(project, allFiles, TriggerType.ALL, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
@@ -102,7 +102,7 @@ public final class AnalysisSubmitter {
 
     var openFiles = FileEditorManager.getInstance(project).getOpenFiles();
     var filesToAnalyze = Arrays.stream(openFiles)
-      .filter(file -> module.equals(SonarLintAppUtils.findModuleForFile(file, project)))
+      .filter(file -> module.equals(findModuleForFile(file, project)))
       .toList();
 
     if (!filesToAnalyze.isEmpty()) {

@@ -46,12 +46,12 @@ import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 import org.sonarlint.intellij.util.SonarLintActions;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.withoutTrailingSlash;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class CurrentFileConnectedModePanel {
@@ -165,7 +165,7 @@ public class CurrentFileConnectedModePanel {
           var projectBindingManager = getService(project, ProjectBindingManager.class);
           projectBindingManager.tryGetServerConnection().ifPresentOrElse(serverConnection -> {
             try {
-              var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+              var module = findModuleForFile(selectedFile, project);
               if (module == null) {
                 switchCard(EMPTY);
               } else {
@@ -191,7 +191,7 @@ public class CurrentFileConnectedModePanel {
       var selectedFile = SonarLintUtils.getSelectedFile(project);
       if (selectedFile != null) {
         runOnPooledThread(project, () -> {
-          var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+          var module = findModuleForFile(selectedFile, project);
           if (module != null) {
             runOnUiThread(project, () -> connectedCard.updateTooltip(module, serverConnection));
           }

@@ -33,12 +33,29 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 class FileUtils {
 
     companion object {
+        // To be used with iterateContent, because it already skips ignored and excluded files
         fun isFileValidForSonarLint(file: VirtualFile, project: Project): Boolean {
+            try {
+                val toSkip = computeReadActionSafely(file, project) {
+                    (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
+                        || FileElement.isArchive(file)
+                        || ProjectCoreUtil.isProjectOrWorkspaceFile(file)
+                        || isGeneratedSourceByAnyFilter(file, project)
+                }
+
+                return false == toSkip
+            } catch (e: Exception) {
+                SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.message)
+                return false
+            }
+        }
+
+        // To be used when using iterating over all children
+        fun isFileValidForSonarLintWithExtensiveChecks(file: VirtualFile, project: Project): Boolean {
             try {
                 val fileIndex = ProjectRootManager.getInstance(project).fileIndex
                 val toSkip = computeReadActionSafely(file, project) {
-                    project.isDisposed
-                        || (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
+                    (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
                         || FileElement.isArchive(file)
                         || !fileIndex.isInContent(file)
                         || fileIndex.isInLibrarySource(file)

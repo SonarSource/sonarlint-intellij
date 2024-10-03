@@ -32,7 +32,7 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.project.ExclusionItem
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.util.SonarLintAppUtils
+import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.runOnPooledThread
 
 class ExcludeFileAction : AbstractSonarAction {
@@ -77,7 +77,7 @@ class ExcludeFileAction : AbstractSonarAction {
     }
 
     private fun toExclusion(project: Project, virtualFile: VirtualFile): ExclusionItem? {
-        val relativeFilePath = SonarLintAppUtils.getRelativePathForAnalysis(project, virtualFile) ?: return null
+        val relativeFilePath = getRelativePathForAnalysis(project, virtualFile) ?: return null
         return if (virtualFile.isDirectory) {
             ExclusionItem(ExclusionItem.Type.DIRECTORY, relativeFilePath)
         } else {

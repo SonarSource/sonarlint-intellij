@@ -34,7 +34,7 @@ import org.sonarlint.intellij.common.util.FileUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.Alarm
-import org.sonarlint.intellij.util.SonarLintAppUtils
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 const val DEBOUNCE_DELAY_MS = 1000L
@@ -79,9 +79,9 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
         val filesToSendPerModule = HashMap<Module, MutableList<VirtualFileEvent>>()
 
         changedFiles
-            .filter { it.isValid && FileUtils.Companion.isFileValidForSonarLint(it, project) }
+            .filter { FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks(it, project) }
             .forEach { file ->
-                val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return@forEach
+                val module = findModuleForFile(file, project) ?: return@forEach
                 filesToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file))
             }
 

@@ -53,13 +53,12 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.util.ProjectUtils
+import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-@Disabled("Symbolic link check from SLCORE does not work with temp files")
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private val diamondQuickFix = "SonarLint: Replace with <>"
 
@@ -144,7 +143,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    @Disabled("Error: ENOENT: no such file or directory, scandir '/src'")
+    @Disabled("Provider \"temp\" not installed")
     fun should_analyze_js_in_yaml_file() {
         val fileToAnalyze = sendFileToBackend("src/lambda.yaml")
 
@@ -313,7 +312,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    @Disabled("Ignored file still analyzed")
+    @Disabled("Provider \"temp\" not installed")
     fun should_find_secrets_excluding_vcs_ignored_files() {
         sendFileToBackend("src/devenv.js")
         val fileToAnalyzeIgnored = sendFileToBackend("src/devenv_ignored.js")
@@ -492,7 +491,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         }
 
         val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-        val issues = ProjectUtils.getAllFiles(project).toList().map {
+        val issues = SonarLintAppUtils.visitAndAddAllFilesForProject(project).toList().map {
             onTheFlyFindingsHolder.getIssuesForFile(it)
         }.toList().flatten()
         return issues

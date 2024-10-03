@@ -34,7 +34,7 @@ import org.sonarlint.intellij.common.util.FileUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
-import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
+import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllChildren
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(private val executorService: ExecutorService) : VirtualFileSystemEventsHandler, Disposable {
@@ -70,7 +70,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
             val file = event.file ?: continue
             if (ProjectCoreUtil.isProjectOrWorkspaceFile(file)) continue
             val fileModule = findModule(file, openProjects) ?: continue
-            if (!FileUtils.Companion.isFileValidForSonarLint(file, fileModule.project)) continue
+            if (!FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks(file, fileModule.project)) continue
             val fileInvolved = if (event is VFileCopyEvent) event.findCreatedFile() else file
             fileInvolved ?: continue
             val type = eventTypeConverter(event) ?: continue
@@ -85,7 +85,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         fileModule: Module,
         type: ModuleFileEvent.Type,
     ): List<VirtualFileEvent> {
-        return visitAndAddFiles(file, fileModule.project).mapNotNull { VirtualFileEvent(type, it) }
+        return visitAndAddAllChildren(file, fileModule.project).mapNotNull { VirtualFileEvent(type, it) }
     }
 
     private fun findModule(file: VirtualFile?, openProjects: List<Project>): Module? {

@@ -28,7 +28,7 @@ import com.jetbrains.rider.projectView.workspace.isProjectFile
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryManager
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLint
+import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks
 import org.sonarlint.intellij.common.vcs.VcsRepo
 import org.sonarlint.intellij.common.vcs.VcsRepoProvider
 import org.sonarlint.intellij.git.GitRepo
@@ -78,7 +78,7 @@ class RiderSolutionGitRepoProvider : VcsRepoProvider {
 
                 if (entity.isProjectFile()) {
                     entity.getVirtualFileAsContentRoot()?.let {
-                        if (!it.isDirectory && it.isValid && isFileValidForSonarLint(it, project)) {
+                        if (!it.isDirectory && isFileValidForSonarLintWithExtensiveChecks(it, project)) {
                             repositoryManager.getRepositoryForFile(it)?.let { repo -> moduleRepositories.add(repo) }
                         }
                     }

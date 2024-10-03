@@ -77,7 +77,7 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarlint.intellij.util.SonarLintAppUtils
+import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.runOnPooledThread
@@ -917,7 +917,7 @@ class BackendService : Disposable {
 
             event.filter { it.type != ModuleFileEvent.Type.DELETED }
                 .mapNotNull {
-                    val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
+                    val relativePath = getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
                     val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
                     val uri = VirtualFileUtils.toURI(it.virtualFile)
                     ClientFileDto(

@@ -34,10 +34,10 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.fs.VirtualFileEvent;
 import org.sonarlint.intellij.messages.AnalysisListener;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @ThreadSafe
@@ -76,7 +76,7 @@ public final class EditorOpenTrigger implements FileEditorManagerListener, Dispo
   @Override
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
     runOnPooledThread(source.getProject(), () -> {
-      var module = SonarLintAppUtils.findModuleForFile(file, source.getProject());
+      var module = findModuleForFile(file, source.getProject());
       if (module != null) {
         getService(BackendService.class).updateFileSystem(Map.of(module, List.of(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))));
       }
