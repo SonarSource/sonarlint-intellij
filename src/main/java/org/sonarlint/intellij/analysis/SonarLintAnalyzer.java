@@ -40,13 +40,13 @@ import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.VirtualFileUtils;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintAnalyzer {
@@ -148,7 +148,7 @@ public final class SonarLintAnalyzer {
 
   @CheckForNull
   private static URI createClientInputFile(Module module, VirtualFile virtualFile) {
-    var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
+    var relativePath = getRelativePathForAnalysis(module, virtualFile);
     if (relativePath != null) {
       return createURI(virtualFile);
     }

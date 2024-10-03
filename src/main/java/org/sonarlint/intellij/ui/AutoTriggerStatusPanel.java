@@ -46,11 +46,11 @@ import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class AutoTriggerStatusPanel {
@@ -120,7 +120,7 @@ public class AutoTriggerStatusPanel {
   }
 
   private void handleExcludedFiles(VirtualFile selectedFile, Map<Module, Collection<VirtualFile>> nonExcluded) {
-    var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+    var module = findModuleForFile(selectedFile, project);
     if (!nonExcluded.isEmpty() && module != null) {
       var files = nonExcluded.get(module);
       var excludedFilesFromServer = getService(BackendService.class).getExcludedFiles(module, files);

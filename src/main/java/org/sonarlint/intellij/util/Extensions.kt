@@ -31,10 +31,11 @@ import com.intellij.psi.PsiDocumentManager
 import java.util.concurrent.atomic.AtomicReference
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 
 fun Project.getOpenFiles() = FileEditorManager.getInstance(this).openFiles.toList()
 
-fun Project.getRelativePathOf(file: VirtualFile) = SonarLintAppUtils.getRelativePathForAnalysis(this, file)
+fun Project.getRelativePathOf(file: VirtualFile) = getRelativePathForAnalysis(this, file)
 
 fun Project.findModuleOf(file: VirtualFile): Module? {
     return findModuleForFile(file, this)

@@ -20,14 +20,13 @@
 package org.sonarlint.intellij.rider
 
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rider.projectView.workspace.ProjectModelEntity
 import com.jetbrains.rider.projectView.workspace.ProjectModelEntityVisitor
 import com.jetbrains.rider.projectView.workspace.getVirtualFileAsContentRoot
 import com.jetbrains.rider.projectView.workspace.isProjectFile
 import org.sonarlint.intellij.common.analysis.FilesContributor
-import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLint
+import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks
 
 class RiderFilesContributor : FilesContributor {
 
@@ -36,11 +35,6 @@ class RiderFilesContributor : FilesContributor {
 
         // List files in Solution
         filesInContentRoots.addAll(listFilesInSolution(module))
-
-        // List files in project dir, sometimes not all files are found via the previous method
-        filesInContentRoots.addAll(
-            module.project.guessProjectDir()?.children?.filter { !it.isDirectory && it.isValid }?.toSet() ?: emptySet()
-        )
 
         return filesInContentRoots
     }
@@ -55,7 +49,7 @@ class RiderFilesContributor : FilesContributor {
 
                 if (entity.isProjectFile()) {
                     entity.getVirtualFileAsContentRoot()?.let {
-                        if (!it.isDirectory && it.isValid && isFileValidForSonarLint(it, module.project)) {
+                        if (!it.isDirectory && isFileValidForSonarLintWithExtensiveChecks(it, module.project)) {
                             filesInSolution.add(it)
                         }
                     }

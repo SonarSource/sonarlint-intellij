@@ -34,7 +34,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.modules
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.io.FileUtilRt
@@ -70,6 +69,7 @@ import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.common.analysis.FilesContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.common.vcs.VcsRepo
@@ -110,7 +110,7 @@ import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
-import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddFiles
+import org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllFilesForModule
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.computeInEDT
@@ -674,17 +674,19 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
         val timeStart = System.currentTimeMillis()
         val listClientFiles = BackendService.findModule(configScopeId)?.let { module ->
-            listModuleFiles(module, configScopeId)
+            computeOnPooledThread(module.project, "Listing All Module Files") { listModuleFiles(module, configScopeId) }
         } ?: findProject(configScopeId)?.let { project ->
-            val listProjectFiles = listProjectFiles(project, configScopeId)
+            computeOnPooledThread(project, "Listing All Project Files") {
+                val listProjectFiles = listProjectFiles(project, configScopeId)
 
-            if (isRider()) {
-                computeRiderSharedConfiguration(project, configScopeId)?.let {
-                    listProjectFiles.add(it)
+                if (isRider()) {
+                    computeRiderSharedConfiguration(project, configScopeId)?.let {
+                        listProjectFiles.add(it)
+                    }
                 }
+
+                listProjectFiles
             }
-            
-            listProjectFiles
         }
         ?: emptyList()
         val timeEnd = System.currentTimeMillis()
@@ -720,7 +722,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     private fun listModuleFiles(module: Module, configScopeId: String): MutableList<ClientFileDto> {
-        val filesInContentRoots = listFilesInContentRoots(module)
+        val filesInContentRoots = visitAndAddAllFilesForModule(module)
 
         FilesContributor.EP_NAME.extensionList.forEach {
             filesInContentRoots.addAll(it.listFiles(module))
@@ -764,6 +766,16 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }.toMutableList()
     }
 
+    // useful for Rider where the files to find are not located in content roots
+    private fun listFilesInProjectBaseDir(project: Project): Set<VirtualFile> {
+        return project.guessProjectDir()?.children?.filter {
+            !it.isDirectory && isFileValidForSonarLintWithExtensiveChecks(
+                it,
+                project
+            )
+        }?.toSet() ?: return emptySet()
+    }
+
     private fun toClientFileDto(
         project: Project,
         configScopeId: String,
@@ -793,24 +805,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             GlobalLogOutput.get().logError("Error while computing ClientFileDto", e)
             null
         }
-    }
-
-    private fun listFilesInContentRoots(
-        module: Module,
-    ): MutableSet<VirtualFile> {
-        val files = mutableListOf<VirtualFile>()
-        ModuleRootManager.getInstance(module).contentRoots.forEach { contentRoot ->
-            if (module.isDisposed) {
-                return@forEach
-            }
-            files.addAll(visitAndAddFiles(contentRoot, module.project))
-        }
-        return files.toMutableSet()
-    }
-
-    // useful for Rider where the files to find are not located in content roots
-    private fun listFilesInProjectBaseDir(project: Project): Set<VirtualFile> {
-        return project.guessProjectDir()?.children?.filter { !it.isDirectory && it.isValid }?.toSet() ?: return emptySet()
     }
 
     override fun didChangeTaintVulnerabilities(

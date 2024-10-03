@@ -33,9 +33,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.messages.AnalysisListener;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.guessProjectForFile;
 
 @ThreadSafe
 @Service(Service.Level.PROJECT)
@@ -78,7 +78,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
     if (file == null) {
       return;
     }
-    var project = SonarLintAppUtils.guessProjectForFile(file);
+    var project = guessProjectForFile(file);
 
     if (project == null || !project.equals(myProject)) {
       return;

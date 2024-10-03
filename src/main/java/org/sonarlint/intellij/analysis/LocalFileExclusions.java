@@ -47,12 +47,13 @@ import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.utils.ClientFileExclusions;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis;
 
 @Service(Service.Level.PROJECT)
 public final class LocalFileExclusions {
@@ -107,7 +108,7 @@ public final class LocalFileExclusions {
    * Checks if a file is excluded from analysis based on locally configured exclusions.
    */
   private ExcludeResult checkExclusionsFromSonarLintSettings(VirtualFile file, Module module) {
-    var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file);
+    var relativePath = getRelativePathForAnalysis(module, file);
     if (relativePath == null) {
       return ExcludeResult.excluded("Could not create a relative path");
     }
@@ -159,7 +160,7 @@ public final class LocalFileExclusions {
 
   private void checkExclusionsFileByFile(boolean forcedAnalysis, BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler,
     Map<Module, Collection<VirtualFile>> filesByModule, VirtualFile file) {
-    var module = SonarLintAppUtils.findModuleForFile(file, myProject);
+    var module = findModuleForFile(file, myProject);
     // Handle this case first, so that later we are guaranteed module is not null
     if (module == null) {
       excludedFileHandler.accept(file, ExcludeResult.excluded("file is not part of any module in IntelliJ's project structure"));

@@ -27,6 +27,7 @@ import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
@@ -157,17 +158,55 @@ public class SonarLintAppUtils {
     return null;
   }
 
-  public static List<VirtualFile> visitAndAddFiles(VirtualFile file, Project project) {
+  public static List<VirtualFile> visitAndAddAllFilesForModule(Module module) {
+    var filesToAdd = new ArrayList<VirtualFile>();
+    var moduleFileIndex = ModuleRootManager.getInstance(module).getFileIndex();
+    moduleFileIndex.iterateContent(vFile -> {
+      if (module.isDisposed()) {
+        return false;
+      }
+
+      if (!vFile.isDirectory() && FileUtils.Companion.isFileValidForSonarLint(vFile, module.getProject())) {
+        filesToAdd.add(vFile);
+        return true;
+      }
+
+      return true;
+    });
+    return filesToAdd;
+  }
+
+  public static List<VirtualFile> visitAndAddAllFilesForProject(Project project) {
+    var filesToAdd = new ArrayList<VirtualFile>();
+    var projectFileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+    projectFileIndex.iterateContent(vFile -> {
+      if (project.isDisposed()) {
+        return false;
+      }
+
+      if (!vFile.isDirectory() && FileUtils.Companion.isFileValidForSonarLint(vFile, project)) {
+        filesToAdd.add(vFile);
+        return true;
+      }
+
+      return true;
+    });
+    return filesToAdd;
+  }
+
+  public static List<VirtualFile> visitAndAddAllChildren(VirtualFile file, Project project) {
     var filesToAdd = new ArrayList<VirtualFile>();
     VfsUtilCore.visitChildrenRecursively(file, new VirtualFileVisitor<>(NO_FOLLOW_SYMLINKS) {
       @Override
       public boolean visitFile(VirtualFile file) {
-        if (!FileUtils.Companion.isFileValidForSonarLint(file, project)) {
+        if (!FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks(file, project)) {
           return false;
         }
-        if (!file.isDirectory() && file.isValid()) {
+
+        if (!file.isDirectory()) {
           filesToAdd.add(file);
         }
+
         return !".git".equals(file.getName());
       }
     });

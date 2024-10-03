@@ -28,9 +28,9 @@ import javax.swing.Icon;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllChildren;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarAnalyzeFilesAction extends AbstractSonarAction {
@@ -74,7 +74,7 @@ public class SonarAnalyzeFilesAction extends AbstractSonarAction {
     var fileSet = Stream.of(files)
       .flatMap(f -> {
         if (f.isDirectory()) {
-          var listFiles = SonarLintAppUtils.visitAndAddFiles(f, project);
+          var listFiles = visitAndAddAllChildren(f, project);
           return listFiles.stream();
         } else {
           return Stream.of(f);
