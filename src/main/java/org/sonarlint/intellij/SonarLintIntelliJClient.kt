@@ -629,6 +629,21 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
     }
 
+    override fun matchProjectBranch(
+        configurationScopeId: String, branchNameToMatch: String, cancelChecker: SonarLintCancelChecker
+    ): Boolean {
+        val repositoriesEPs = VcsRepoProvider.EP_NAME.extensionList
+        val repositories = BackendService.findModule(configurationScopeId)?.let { module ->
+            matchSonarModule(module, repositoriesEPs)
+        } ?: run {
+            BackendService.findProject(configurationScopeId)?.let { project ->
+                matchSonarProject(project, repositoriesEPs)
+            }
+        } ?: return false
+        val repo = repositories.first()
+        return repo.isBranchMatchingCurrentHead(branchNameToMatch)
+    }
+
     private fun matchSonarModule(module: Module, repositoriesEPs: List<VcsRepoProvider>): List<VcsRepo>? {
         val repositories = computeOnPooledThread(module.project, "Match Sonar Project Branch Task") {
             repositoriesEPs.mapNotNull { it.getRepoFor(module) }.toList()
