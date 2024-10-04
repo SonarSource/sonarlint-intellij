@@ -674,19 +674,17 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
         val timeStart = System.currentTimeMillis()
         val listClientFiles = BackendService.findModule(configScopeId)?.let { module ->
-            computeOnPooledThread(module.project, "Listing All Module Files") { listModuleFiles(module, configScopeId) }
+            listModuleFiles(module, configScopeId)
         } ?: findProject(configScopeId)?.let { project ->
-            computeOnPooledThread(project, "Listing All Project Files") {
-                val listProjectFiles = listProjectFiles(project, configScopeId)
+            val listProjectFiles = listProjectFiles(project, configScopeId)
 
-                if (isRider()) {
-                    computeRiderSharedConfiguration(project, configScopeId)?.let {
-                        listProjectFiles.add(it)
-                    }
+            if (isRider()) {
+                computeRiderSharedConfiguration(project, configScopeId)?.let {
+                    listProjectFiles.add(it)
                 }
-
-                listProjectFiles
             }
+
+            listProjectFiles
         }
         ?: emptyList()
         val timeEnd = System.currentTimeMillis()
@@ -790,17 +788,19 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             fileContent = computeReadActionSafely(project) { getFileContent(file) }
         }
         return try {
-            ClientFileDto(
-                uri,
-                Paths.get(relativePath),
-                configScopeId,
-                computeReadActionSafely(project) { isTestSources(file, project) },
-                file.charset.name(),
-                Paths.get(file.path),
-                fileContent,
-                language,
-                true
-            )
+            computeReadActionSafely(file, project) {
+                ClientFileDto(
+                    uri,
+                    Paths.get(relativePath),
+                    configScopeId,
+                    isTestSources(file, project),
+                    file.charset.name(),
+                    Paths.get(file.path),
+                    fileContent,
+                    language,
+                    true
+                )
+            }
         } catch (e: IOException) {
             GlobalLogOutput.get().logError("Error while computing ClientFileDto", e)
             null
