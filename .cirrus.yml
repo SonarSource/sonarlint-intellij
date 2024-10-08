@@ -8,6 +8,7 @@ env:
   SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
   SONAR_TOKEN: VAULT[development/kv/data/next data.token]
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
+  SLACK_CHANNEL: squad-ide-intellij-family-bots
   GRADLE_VERSION: "8.9"
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
   IDEA_HOME: "/opt/intellij"
@@ -112,7 +113,7 @@ build_task:
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     slack_notification_script: |
-      .cirrus/slack-notification.sh
+      source slack-failure-notification
 
 validate_task:
   #  name: "Run UTs and trigger SonarQube analysis"
@@ -138,7 +139,7 @@ validate_task:
       path: "**/test-results/**/*.xml"
       format: junit
     slack_notification_script: |
-      .cirrus/slack-notification.sh
+      source slack-failure-notification
 
 validate_windows_task:
   #  name: "Run unit tests on Windows"
@@ -167,7 +168,7 @@ validate_windows_task:
       path: "**/test-results/**/*.xml"
       format: junit
     slack_notification_script: |
-      .cirrus/slack-notification.sh
+      source slack-failure-notification
 
 plugin_verifier_task:
   #  name: "Run plugin verifier on all IDEs"
@@ -207,7 +208,7 @@ plugin_verifier_task:
     reports_artifacts:
       path: "**/reports/**/*"
     slack_notification_script: |
-      .cirrus/slack-notification.sh
+      source slack-failure-notification
 
 qa_task:
   #  name: "Run ITs"
@@ -390,7 +391,7 @@ qa_task:
       path: "**/test-results/**/*.xml"
       format: junit
     slack_notification_script: |
-      .cirrus/slack-notification.sh
+      source slack-failure-notification
 
 inspect_orchestrator_cache_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
@@ -434,7 +435,7 @@ mend_scan_task:
       path: "whitesource/**/*"
   on_failure:
     slack_notification_script: |
-      .cirrus/slack-notification.sh
+      source slack-failure-notification
 
 promote_task:
   depends_on:
@@ -463,7 +464,7 @@ promote_task:
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     slack_notification_script: |
-      .cirrus/slack-notification.sh
+      source slack-failure-notification
 
 dogfood_task:
   #  name: "Update internal dogfooding plugin repo"
@@ -487,4 +488,4 @@ dogfood_task:
       --url "${ARTIFACTORY_URL}" --access-token "${ARTIFACTORY_API_KEY}" --build-name "$CIRRUS_REPO_NAME" --build-number "$BUILD_NUMBER"
   on_failure:
     slack_notification_script: |
-      .cirrus/slack-notification.sh
+      source slack-failure-notification
