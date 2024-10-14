@@ -243,7 +243,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         }
     }
 
-    fun switchCard() {
+    private fun switchCard() {
         when {
             !getService(BackendService::class.java).isAlive() -> {
                 showCard(ERROR_CARD_ID)

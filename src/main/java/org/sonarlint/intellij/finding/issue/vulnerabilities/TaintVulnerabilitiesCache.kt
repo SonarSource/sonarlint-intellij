@@ -28,6 +28,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
 @Service(Service.Level.PROJECT)
 class TaintVulnerabilitiesCache(val project: Project) {
+    private var isResolvedState = false
     var taintVulnerabilities: List<LocalTaintVulnerability> = emptyList()
 
     fun update(taintVulnerabilityIdsToRemove: Set<UUID>, taintVulnerabilitiesToAdd: List<LocalTaintVulnerability>, taintVulnerabilitiesToUpdate: List<LocalTaintVulnerability>) {
@@ -53,8 +54,10 @@ class TaintVulnerabilitiesCache(val project: Project) {
         return taintVulnerabilities.filter { it.file() == file }
     }
 
-    fun getFocusAwareCount(): Int {
+    @JvmOverloads
+    fun getFocusAwareCount(isResolved: Boolean? = null): Int {
         val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
-        return taintVulnerabilities.count { !it.isResolved() && (!isFocusOnNewCode || it.isOnNewCode()) }
+        isResolved?.let { isResolvedState = it }
+        return taintVulnerabilities.count { (isResolvedState || !it.isResolved()) && (!isFocusOnNewCode || it.isOnNewCode()) }
     }
 }
