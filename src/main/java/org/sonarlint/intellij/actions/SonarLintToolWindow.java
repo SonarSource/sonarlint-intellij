@@ -168,6 +168,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     if (taintContent != null) {
       var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
       taintPanel.allowResolvedTaintVulnerabilities(isResolved);
+      taintContent.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(isResolved),
+        SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
   }
 
@@ -231,6 +233,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     if (taintContent != null) {
       var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
       taintPanel.applyFocusOnNewCodeSettings();
+      taintContent.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
+        SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
   }
 
