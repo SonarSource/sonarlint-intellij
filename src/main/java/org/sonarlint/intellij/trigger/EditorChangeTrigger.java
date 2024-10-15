@@ -26,13 +26,7 @@ import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
-import org.sonarlint.intellij.messages.AnalysisListener;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.guessProjectForFile;
@@ -41,26 +35,15 @@ import static org.sonarlint.intellij.util.SonarLintAppUtils.guessProjectForFile;
 @Service(Service.Level.PROJECT)
 public final class EditorChangeTrigger implements DocumentListener, Disposable {
 
-  // entries in this map mean that the file is "dirty"
-  private final ConcurrentHashMap<VirtualFile, Long> eventMap = new ConcurrentHashMap<>();
-  private final EventWatcher watcher;
+  private final EventScheduler scheduler;
   private final Project myProject;
 
   public EditorChangeTrigger(Project project) {
     myProject = project;
-    watcher = new EventWatcher(myProject, "change", eventMap, TriggerType.EDITOR_CHANGE, 2000);
+    scheduler = new EventScheduler(myProject, "change", TriggerType.EDITOR_CHANGE, 2000, false);
   }
 
   public void onProjectOpened() {
-    myProject.getMessageBus()
-      .connect()
-      .subscribe(AnalysisListener.TOPIC, new AnalysisListener.Adapter() {
-        @Override
-        public void started(Collection<VirtualFile> files, TriggerType trigger) {
-          removeFiles(files);
-        }
-      });
-    watcher.start();
     EditorFactory.getInstance().getEventMulticaster().addDocumentListener(this, this);
   }
 
@@ -84,24 +67,12 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
       return;
     }
 
-    eventMap.put(file, System.currentTimeMillis());
-  }
-
-  /**
-   * Marks a file as launched, resetting its state to unchanged
-   */
-  private void removeFiles(Collection<VirtualFile> files) {
-    files.forEach(eventMap::remove);
-  }
-
-  Map<VirtualFile, Long> getEvents() {
-    return Collections.unmodifiableMap(eventMap);
+    scheduler.notify(file);
   }
 
   @Override
   public void dispose() {
-    eventMap.clear();
-    watcher.stopWatcher();
+    scheduler.stopScheduler();
   }
 
 }
