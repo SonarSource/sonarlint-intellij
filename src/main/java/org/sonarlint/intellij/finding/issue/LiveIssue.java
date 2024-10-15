@@ -51,4 +51,14 @@ public class LiveIssue extends LiveFinding implements Issue {
     return type;
   }
 
+  @Override
+  public void resolve() {
+    setResolved(true);
+  }
+
+  @Override
+  public void reopen() {
+    setResolved(false);
+  }
+
 }

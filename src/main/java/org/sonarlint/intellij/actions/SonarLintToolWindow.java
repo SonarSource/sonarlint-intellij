@@ -44,6 +44,7 @@ import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.Finding;
+import org.sonarlint.intellij.finding.Issue;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
@@ -437,6 +438,33 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
       return securityHotspotPanel.getDisplayedNodesForFile(file).stream().map(LiveSecurityHotspotNode::getHotspot).toList();
     }
     return Collections.emptyList();
+  }
+
+  public void markAsResolved(Issue issue) {
+    if (issue instanceof LiveIssue liveIssue) {
+      this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
+      this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
+      this.<ReportPanel>updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));
+    } else {
+      var content = getTaintVulnerabilitiesContent();
+      if (content != null) {
+        ((TaintVulnerabilitiesPanel) content.getComponent()).remove((LocalTaintVulnerability) issue);
+        ((TaintVulnerabilitiesPanel) content.getComponent()).switchCard();
+      }
+    }
+  }
+
+  public void reopenIssue(Issue issue) {
+    if (issue instanceof LiveIssue liveIssue) {
+      this.<CurrentFilePanel>updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
+      this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
+    } else if (issue instanceof LocalTaintVulnerability taintVulnerability) {
+      var taintContent = getTaintVulnerabilitiesContent();
+      if (taintContent != null) {
+        var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
+        taintPanel.remove(taintVulnerability);
+      }
+    }
   }
 
   @Override
