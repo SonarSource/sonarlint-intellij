@@ -53,7 +53,7 @@ class SonarLintSeverityTests {
 
   @Test
   void testInfoSeverity() {
-    assertThat(SonarLintSeverity.LOW.highlightSeverity()).isEqualTo(HighlightSeverity.WEAK_WARNING);
+    assertThat(SonarLintSeverity.LOW.highlightSeverity()).isEqualTo(HighlightSeverity.WARNING);
     assertThat(SonarLintSeverity.LOW.highlightType()).isEqualTo(ProblemHighlightType.GENERIC_ERROR_OR_WARNING);
     assertThat(SonarLintSeverity.LOW.defaultTextAttributes()).isEqualTo(CodeInsightColors.WARNINGS_ATTRIBUTES);
   }
