@@ -166,6 +166,10 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     expandTree();
   }
 
+  public void remove(LiveIssue issue) {
+    treeBuilder.remove(issue);
+  }
+
   public void updateStatusForSecurityHotspot(String securityHotspotKey, HotspotStatus status) {
     var wasUpdated = securityHotspotTreeBuilder.updateStatusForHotspotWithFileNode(securityHotspotKey, status);
     if (wasUpdated) {

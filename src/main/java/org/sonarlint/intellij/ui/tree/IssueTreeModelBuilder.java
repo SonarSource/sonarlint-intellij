@@ -213,6 +213,19 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     return file.isValid();
   }
 
+  public void remove(LiveIssue issue) {
+    var fileNode = index.getFileNode(issue.file());
+    if (fileNode != null) {
+      fileNode.findChildren(child -> Objects.equals(issue.uid(), ((LiveIssue) child).uid()))
+        .ifPresent(issueNode -> {
+          model.removeNodeFromParent(issueNode);
+          if (!fileNode.hasChildren()) {
+            removeFileNode(fileNode);
+          }
+        });
+    }
+  }
+
   public Optional<LiveIssue> findIssueByKey(String issueKey) {
     var virtualFile = index.getAllFiles().stream().findFirst();
     if (virtualFile.isPresent()) {
