@@ -154,7 +154,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
         var content = contentManager.findContent(displayName);
         if (content != null) {
           var panel = (T) content.getComponent();
-          runOnPooledThread(project, () -> tabPanelConsumer.accept(panel));
+          tabPanelConsumer.accept(panel);
         }
       });
     }
