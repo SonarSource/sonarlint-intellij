@@ -25,15 +25,12 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.fs.VirtualFileEvent;
-import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -44,33 +41,18 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 @Service(Service.Level.PROJECT)
 public final class EditorOpenTrigger implements FileEditorManagerListener, Disposable {
 
-  // entries in this map mean that the file is "dirty"
-  private final ConcurrentHashMap<VirtualFile, Long> eventMap = new ConcurrentHashMap<>();
-  private final EventWatcher watcher;
+  private final EventScheduler scheduler;
   private final Project myProject;
 
   public EditorOpenTrigger(Project project) {
     myProject = project;
-    watcher = new EventWatcher(myProject, "open", eventMap, TriggerType.EDITOR_OPEN, 1000);
+    scheduler = new EventScheduler(myProject, "open", TriggerType.EDITOR_OPEN, 1000, true);
   }
 
   public void onProjectOpened() {
     myProject.getMessageBus()
       .connect()
-      .subscribe(AnalysisListener.TOPIC, new AnalysisListener.Adapter() {
-        @Override
-        public void started(Collection<VirtualFile> files, TriggerType trigger) {
-          removeFiles(files);
-        }
-      });
-    watcher.start();
-    myProject.getMessageBus()
-      .connect()
       .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
-  }
-
-  private void removeFiles(Collection<VirtualFile> files) {
-    files.forEach(eventMap::remove);
   }
 
   @Override
@@ -81,15 +63,14 @@ public final class EditorOpenTrigger implements FileEditorManagerListener, Dispo
         getService(BackendService.class).updateFileSystem(Map.of(module, List.of(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))));
       }
       if (source.getProject().equals(myProject)) {
-        eventMap.put(file, System.currentTimeMillis());
+        scheduler.notify(file);
       }
     });
   }
 
   @Override
   public void dispose() {
-    eventMap.clear();
-    watcher.stopWatcher();
+    scheduler.stopScheduler();
   }
 
 }

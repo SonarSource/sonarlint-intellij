@@ -27,23 +27,28 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.Analysis;
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
   private final AnalysisSubmitter submitter = mock(AnalysisSubmitter.class);
@@ -56,6 +61,8 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
     getGlobalSettings().setAutoTrigger(true);
     underTest = new EditorChangeTrigger(getProject());
     underTest.onProjectOpened();
+    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue());
+    clearInvocations(submitter);
   }
 
   @AfterEach
@@ -69,7 +76,6 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
 
     underTest.documentChanged(createEvent(file));
 
-    assertThat(underTest.getEvents()).hasSize(1);
     verify(submitter, timeout(3000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE);
     verifyNoMoreInteractions(submitter);
   }
@@ -82,34 +88,27 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
     underTest.documentChanged(createEvent(file1));
     underTest.documentChanged(createEvent(file2));
 
-    assertThat(underTest.getEvents()).hasSize(2);
     ArgumentCaptor<List<VirtualFile>> captor = ArgumentCaptor.forClass(List.class);
     verify(submitter, timeout(3000)).autoAnalyzeFiles(captor.capture(), eq(TriggerType.EDITOR_CHANGE));
     assertThat(captor.getValue()).containsExactlyInAnyOrder(file1, file2);
   }
 
   @Test
-  void should_cancel_previous_task() {
+  void should_trigger_in_interval() {
     var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
     var analysisTask = mock(Analysis.class);
     when(submitter.autoAnalyzeFiles(any(), any())).thenReturn(analysisTask);
-    when(analysisTask.isFinished()).thenReturn(false);
-
-    underTest.documentChanged(createEvent(file));
-    // Two rapid changes should only lead to a single trigger
-    underTest.documentChanged(createEvent(file));
-
-    assertThat(underTest.getEvents()).hasSize(1);
-    verify(submitter, timeout(3000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE);
-
-    // Schedule again
-    underTest.documentChanged(createEvent(file));
-
-    verify(analysisTask, timeout(3000)).cancel();
     when(analysisTask.isFinished()).thenReturn(true);
-    verify(submitter, timeout(1000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE);
 
+    // Should not trigger immediately
+    underTest.documentChanged(createEvent(file));
+    verifyNoInteractions(submitter);
+    underTest.documentChanged(createEvent(file));
+    verifyNoInteractions(submitter);
+
+    // Two rapid changes should only lead to a single trigger
+    verify(submitter, timeout(3000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE);
     verifyNoMoreInteractions(submitter);
   }
 
@@ -162,16 +161,6 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
   void nothing_to_do_before_doc_change() {
     underTest.beforeDocumentChange(null);
     verifyNoInteractions(submitter);
-  }
-
-  @Test
-  void clear_and_dispose() {
-    var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
-
-    underTest.documentChanged(createEvent(file));
-    underTest.dispose();
-
-    assertThat(underTest.getEvents()).isEmpty();
   }
 
   private DocumentEvent createEvent(VirtualFile file) {
