@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.concurrent.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.util.FileUtils;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.fs.VirtualFileEvent;
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
@@ -59,7 +60,7 @@ public final class EditorOpenTrigger implements FileEditorManagerListener, Dispo
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
     runOnPooledThread(source.getProject(), () -> {
       var module = findModuleForFile(file, source.getProject());
-      if (module != null) {
+      if (module != null && FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks(file, source.getProject())) {
         getService(BackendService.class).updateFileSystem(Map.of(module, List.of(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))));
       }
       if (source.getProject().equals(myProject)) {

@@ -915,27 +915,24 @@ class BackendService : Disposable {
 
             val contributedLanguages = collectContributedLanguages(module, virtualFiles)
 
-            event.filter { it.type != ModuleFileEvent.Type.DELETED }
-                .mapNotNull {
-                    val relativePath = getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
-                    val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
-                    val uri = VirtualFileUtils.toURI(it.virtualFile)
+            event.filter { it.type != ModuleFileEvent.Type.DELETED }.mapNotNull {
+                val relativePath = getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
+                val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
+                val uri = VirtualFileUtils.toURI(it.virtualFile)
+                computeReadActionSafely(it.virtualFile, module.project) {
                     ClientFileDto(
                         uri,
                         Paths.get(relativePath),
                         moduleId,
-                        computeReadActionSafely(module.project) { isTestSources(it.virtualFile, module.project) },
+                        isTestSources(it.virtualFile, module.project),
                         it.getEncoding(module.project).toString(),
                         Paths.get(it.virtualFile.path),
-                        if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else computeReadActionSafely(module.project) {
-                            getFileContent(
-                                it.virtualFile
-                            )
-                        },
+                        if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
                         forcedLanguage,
                         true
                     )
                 }
+            }
         }
         if (deletedFileUris.isNotEmpty() || events.isNotEmpty()) {
             notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }

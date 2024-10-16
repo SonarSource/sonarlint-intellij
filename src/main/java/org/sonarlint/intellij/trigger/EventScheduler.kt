@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
-import org.sonarlint.intellij.util.SonarLintAppUtils.retainOpenFiles
 
 class EventScheduler(
     private val project: Project,
@@ -50,16 +49,19 @@ class EventScheduler(
     }
 
     private fun trigger() {
-        if (Settings.getGlobalSettings().isAutoTrigger) {
-            val openFileToAnalyze = retainOpenFiles(project, filesToAnalyze.toList())
-            if (openFileToAnalyze.isNotEmpty()) {
-                getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(openFileToAnalyze, triggerType)
-                filesToAnalyze.clear()
-            }
+        if (filesToAnalyze.isNotEmpty()) {
+            getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(filesToAnalyze.toList(), triggerType)
         }
+        filesToAnalyze.clear()
     }
 
     fun notify(file: VirtualFile) {
+        if (!Settings.getGlobalSettings().isAutoTrigger) {
+            return
+        }
+
+        filesToAnalyze.add(file)
+
         // Remove the previously finished task
         if (scheduledTask?.isDone == true) {
             scheduledTask = null
@@ -75,8 +77,6 @@ class EventScheduler(
             scheduledTask?.cancel(false)
             scheduledTask = scheduler.schedule({ trigger() }, timer, TimeUnit.MILLISECONDS)
         }
-
-        filesToAnalyze.add(file)
     }
 
 }
