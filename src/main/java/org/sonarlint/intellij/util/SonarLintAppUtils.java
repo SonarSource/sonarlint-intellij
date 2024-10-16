@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.util;
 
 
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectLocator;
@@ -35,7 +34,6 @@ import com.intellij.util.PathUtil;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,13 +61,6 @@ public class SonarLintAppUtils {
   @CheckForNull
   public static Project guessProjectForFile(VirtualFile file) {
     return ProjectLocator.getInstance().guessProjectForFile(file);
-  }
-
-  public static List<VirtualFile> retainOpenFiles(Project project, List<VirtualFile> files) {
-    if (project.isDisposed() || !project.isOpen()) {
-      return Collections.emptyList();
-    }
-    return files.stream().filter(f -> FileEditorManager.getInstance(project).isFileOpen(f)).toList();
   }
 
   /**

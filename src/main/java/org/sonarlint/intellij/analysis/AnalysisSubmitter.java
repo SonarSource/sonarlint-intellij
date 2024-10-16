@@ -29,7 +29,6 @@ import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,10 +114,6 @@ public final class AnalysisSubmitter {
     if (openFiles.length > 0) {
       autoAnalyzeFiles(List.of(openFiles), triggerType);
     }
-  }
-
-  public void autoAnalyzeFile(VirtualFile file, TriggerType triggerType) {
-    autoAnalyzeFiles(Collections.singleton(file), triggerType);
   }
 
   @CheckForNull
