@@ -35,7 +35,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -61,8 +60,6 @@ import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -99,8 +96,6 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getProjectSettings().setBindingEnabled(false);
     getProjectSettings().setBindingSuggestionsEnabled(true);
     setProjectLevelExclusions(Collections.emptyList());
-    getModuleSettings().setIdePathPrefix("");
-    getModuleSettings().setSqPathPrefix("");
     getModuleSettings().clearBindingOverride();
     getService(BackendService.class).moduleUnbound(getModule());
     getService(BackendService.class).projectUnbound(getProject());
