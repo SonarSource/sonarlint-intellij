@@ -335,7 +335,6 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             } else {
                 issue.module?.let { module -> rulePanel.setSelectedFinding(module, issue, issue.getRuleKey(), issue.getRuleDescriptionContextKey()) }
                     ?: rulePanel.clear()
-                highlighting.highlight(issue)
             }
         }
     }

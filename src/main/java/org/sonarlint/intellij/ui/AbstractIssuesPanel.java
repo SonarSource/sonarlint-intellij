@@ -83,30 +83,6 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     findingDetailsPanel = new FindingDetailsPanel(project, this, FindingKind.ISSUE);
   }
 
-  private void issueTreeSelectionChanged() {
-    var selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
-    if (selectedNodes.length > 0) {
-      var issue = selectedNodes[0].issue();
-      findingDetailsPanel.show(issue);
-    } else {
-      findingDetailsPanel.clear();
-      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-      highlighting.removeHighlights();
-    }
-  }
-
-  private void oldIssueTreeSelectionChanged() {
-    var selectedNodes = oldTree.getSelectedNodes(IssueNode.class, null);
-    if (selectedNodes.length > 0) {
-      var issue = selectedNodes[0].issue();
-      findingDetailsPanel.show(issue);
-    } else {
-      findingDetailsPanel.clear();
-      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-      highlighting.removeHighlights();
-    }
-  }
-
   protected void setToolbar(Collection<AnAction> actions) {
     if (mainToolbar != null) {
       mainToolbar.setTargetComponent(null);
@@ -131,7 +107,6 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     treeBuilder = new IssueTreeModelBuilder(project);
     var model = treeBuilder.createModel(false);
     tree = new IssueTree(project, model);
-    tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
     tree.addKeyListener(new KeyAdapter() {
       @Override
       public void keyPressed(KeyEvent e) {
@@ -148,7 +123,6 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     oldTreeBuilder = new IssueTreeModelBuilder(project);
     var model = oldTreeBuilder.createModel(true);
     oldTree = new IssueTree(project, model);
-    oldTree.addTreeSelectionListener(e -> oldIssueTreeSelectionChanged());
     oldTree.addKeyListener(new KeyAdapter() {
       @Override
       public void keyPressed(KeyEvent e) {
