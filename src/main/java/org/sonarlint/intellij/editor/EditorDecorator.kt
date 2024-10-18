@@ -23,6 +23,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -51,22 +52,15 @@ class EditorDecorator(private val project: Project) {
     private var blinker: RangeBlinker? = null
 
     fun removeHighlights() {
-        runOnUiThread(project) {
-            currentHighlightedDoc.forEach {
-                clearSecondaryLocationNumbers(it)
-                UpdateHighlightersUtil.setHighlightersToEditor(
-                    project,
-                    it,
-                    0,
-                    it.textLength,
-                    emptyList(),
-                    null,
-                    HIGHLIGHT_GROUP_ID
-                )
-            }
-            currentHighlightedDoc.clear()
-            stopBlinking()
+        ApplicationManager.getApplication().assertIsDispatchThread()
+        currentHighlightedDoc.forEach {
+            clearSecondaryLocationNumbers(it)
+            UpdateHighlightersUtil.setHighlightersToEditor(
+                project, it, 0, it.textLength, emptyList(), null, HIGHLIGHT_GROUP_ID
+            )
         }
+        currentHighlightedDoc.clear()
+        stopBlinking()
     }
 
     private fun stopBlinking() {
@@ -123,12 +117,14 @@ class EditorDecorator(private val project: Project) {
     }
 
     private fun updateHighlights(highlights: List<Highlight>) {
-        removeHighlights()
-        highlights.groupBy({ it.document }, { it.highlightInfo })
-            .forEach { (doc, hs) ->
-                highlightInDocument(hs, doc)
-                blinkLocations(hs, doc)
-            }
+        runOnUiThread(project) {
+            removeHighlights()
+            highlights.groupBy({ it.document }, { it.highlightInfo })
+                .forEach { (doc, hs) ->
+                    highlightInDocument(hs, doc)
+                    blinkLocations(hs, doc)
+                }
+        }
     }
 
     private fun highlightInDocument(highlights: List<HighlightInfo?>, document: Document) {
@@ -152,8 +148,14 @@ class EditorDecorator(private val project: Project) {
             return
         }
         val marker = location.range!!
-        getEditors(marker.document)
-            .forEach { it.inlayModel.addInlineElement(marker.startOffset, SecondaryLocationIndexRenderer(location, index, selected)) }
+        runOnUiThread(project) {
+            getEditors(marker.document).forEach {
+                it.inlayModel.addInlineElement(
+                    marker.startOffset,
+                    SecondaryLocationIndexRenderer(location, index, selected)
+                )
+            }
+        }
     }
 
     private fun getEditors(document: Document): List<Editor> {
