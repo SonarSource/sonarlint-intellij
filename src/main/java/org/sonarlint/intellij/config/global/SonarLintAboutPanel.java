@@ -237,7 +237,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
     // we could show a loader while getting the value
     runOnPooledThread(() -> telemetry.enabled().thenAccept(enabled -> {
       telemetryInitiallyEnabled = enabled;
-      runOnUiThread(ModalityState.defaultModalityState(), () -> enableTelemetryCheckBox.setSelected(enabled));
+      runOnUiThread(ModalityState.stateForComponent(panel), () -> enableTelemetryCheckBox.setSelected(enabled));
     }));
   }
 
