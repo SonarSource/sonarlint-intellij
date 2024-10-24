@@ -269,7 +269,10 @@ class BackendService : Disposable {
         }
         getService(GlobalLogOutput::class.java).log("Starting the SonarLint service process...", ClientLogOutput.Level.INFO)
         val sloopLauncher = this.defaultSloopLauncher ?: SloopLauncher(SonarLintIntelliJClient)
-        val jreHomePath = System.getProperty("java.home")!!
+        val customJrePath = getPathProperty("sonarlint.jre.path")?.also {
+            getService(GlobalLogOutput::class.java).log("Custom JRE detected: $it", ClientLogOutput.Level.INFO)
+        }
+        val jreHomePath = customJrePath ?: getPathProperty("java.home")
         val sloopPath = getService(SonarLintPlugin::class.java).path.resolve("sloop")
         getService(GlobalLogOutput::class.java).log("Listing SonarLint service files:", ClientLogOutput.Level.INFO)
         sloopPath.toFile().walkTopDown().forEach { file ->
@@ -277,7 +280,7 @@ class BackendService : Disposable {
         }
         return sloopLauncher.start(
             sloopPath,
-            Paths.get(jreHomePath),
+            jreHomePath,
             "-Xms384m -XX:+UseG1GC -XX:MaxHeapFreeRatio=20 -XX:MinHeapFreeRatio=10 -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=50 -XX:ParallelGCThreads=2"
         )
     }
