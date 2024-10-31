@@ -208,7 +208,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     ) {
         clear()
         val attributeLabel =
-            JBLabel("<html><b>" + cleanCapitalized(cleanCodeAttribute.label) + " issue</b> | Not " + clean(cleanCodeAttribute.toString()) + "<br></html>")
+            JBLabel("<html><b>" + cleanCapitalized(cleanCodeAttribute.category.label) + " issue</b> | Not " + clean(cleanCodeAttribute.category.toString()) + "<br></html>")
         attributePanel.apply {
             add(attributeLabel)
             toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
