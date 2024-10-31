@@ -1,0 +1,29 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2024 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<svg height="16" width="16" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M10.081 1.895a2.848 2.848 0 0 0-2.08-.876 2.858 2.858 0 0 0-2.102.866 2.917 2.917 0 0 0-.886 2.121h5.974a2.917 2.917 0 0 0-.906-2.11z"
+      style="opacity:.8;fill:#F5B840;fill-opacity:1;stroke-width:.993057"/>
+    <path
+      d="M14.522 8.985h-1.533V5.6l1.294-1.175a.498.498 0 0 0 0-.707.488.488 0 0 0-.697 0l-1.424 1.285H3.848L2.374 3.668a.498.498 0 0 0-.667.736L2.972 5.55v3.436H1.498a.498.498 0 0 0 0 .996H3.03a5.178 5.178 0 0 0 1.046 2.31l-1.992 1.802a.498.498 0 1 0 .667.737l1.992-1.813a4.6 4.6 0 0 0 2.27 1.046V7.99a.996.996 0 0 1 .997-.996.936.936 0 0 1 .996.896v6.144a4.53 4.53 0 0 0 2.17-1.065l1.992 1.822a.508.508 0 0 0 .328.13.478.478 0 0 0 .369-.17.488.488 0 0 0 0-.697l-1.992-1.792a5.317 5.317 0 0 0 .996-2.28h1.633a.498.498 0 0 0 0-.996z"
+      style="opacity:.8;fill:#F5B840;fill-opacity:1;stroke-width:.993057"/>
+</svg>

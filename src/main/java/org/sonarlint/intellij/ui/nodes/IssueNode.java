@@ -88,24 +88,24 @@ public class IssueNode extends FindingNode {
       }
     } else {
       var severity = issue.getUserSeverity();
-      var severityText = "";
-      Icon severityIcon = null;
-      if (severity != null) {
-        severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
-        severityIcon = SonarLintIcons.severity(severity);
-      }
       var type = issue.getType();
-      var typeIcon = SonarLintIcons.type(type);
-      var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
+      Icon typeIcon = null;
+      var typeStr = "";
+      var severityText = "";
+      if (severity != null) {
+        typeIcon = SonarLintIcons.getIconForTypeAndSeverity(type, severity);
+        typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
+        severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
+      }
 
       if (issue.getServerKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();
         renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, severityIcon));
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon));
       } else {
         renderer.setIconToolTip(severityText + " " + typeStr);
         var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
-        setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon, severityIcon)));
+        setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon)));
       }
     }
 

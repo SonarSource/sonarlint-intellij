@@ -26,6 +26,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.DocumentUtil;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +42,6 @@ import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedFindingDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
-import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public abstract class LiveFinding implements Finding {
@@ -52,24 +52,21 @@ public abstract class LiveFinding implements Finding {
   private final Module module;
   private final RangeMarker range;
   private final VirtualFile virtualFile;
-  private final String textRangeHashString;
   private final String message;
   private final String ruleKey;
   private final boolean isOnNewCode;
-
   private final FindingContext context;
   private final List<QuickFix> quickFixes;
   private final String ruleDescriptionContextKey;
   private final CleanCodeAttribute cleanCodeAttribute;
   private final Map<SoftwareQuality, ImpactSeverity> impacts;
-  // tracked fields (mutable)
-  private IssueSeverity severity;
+  private final IssueSeverity severity;
+  private final SoftwareQuality highestQuality;
+  private final ImpactSeverity highestImpact;
 
   private Instant introductionDate;
   private String serverFindingKey;
   private boolean resolved;
-  private SoftwareQuality highestQuality = null;
-  private ImpactSeverity highestImpact = null;
 
   protected LiveFinding(Module module, RaisedFindingDto finding, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
     List<QuickFix> quickFixes) {
@@ -79,7 +76,6 @@ public abstract class LiveFinding implements Finding {
     this.range = range;
     this.message = finding.getPrimaryMessage();
     this.ruleKey = finding.getRuleKey();
-    this.severity = finding.getSeverity();
     this.virtualFile = virtualFile;
     this.uid = UID_GEN.getAndIncrement();
     this.context = context;
@@ -89,26 +85,25 @@ public abstract class LiveFinding implements Finding {
     this.isOnNewCode = finding.isOnNewCode();
     this.resolved = finding.isResolved();
 
-    this.cleanCodeAttribute = CleanCodeAttribute.fromDto(finding.getCleanCodeAttribute());
-    this.impacts = finding.getImpacts().stream().map(e -> Map.entry(SoftwareQuality.fromDto(e.getSoftwareQuality()), ImpactSeverity.fromDto(e.getImpactSeverity())))
-      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    var highestQualityImpact = getImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
-    this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
-    this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
-
-    if (range != null) {
-      var document = computeReadActionSafely(virtualFile, range::getDocument);
-      if (document != null) {
-        var lineContent = document.getText(new TextRange(range.getStartOffset(), range.getEndOffset()));
-        this.textRangeHashString = md5Hex(lineContent.replaceAll("[\\s]", ""));
-      } else {
-        this.textRangeHashString = null;
-      }
+    if (finding.getSeverityMode().isLeft()) {
+      this.severity = finding.getSeverityMode().getLeft().getSeverity();
+      this.cleanCodeAttribute = null;
+      this.impacts = Collections.emptyMap();
+      this.highestQuality = null;
+      this.highestImpact = null;
     } else {
-      this.textRangeHashString = null;
+      this.severity = null;
+      this.cleanCodeAttribute = CleanCodeAttribute.fromDto(finding.getSeverityMode().getRight().getCleanCodeAttribute());
+      this.impacts = finding.getSeverityMode().getRight().getImpacts().stream()
+        .map(e -> Map.entry(SoftwareQuality.fromDto(e.getSoftwareQuality()), ImpactSeverity.fromDto(e.getImpactSeverity())))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+      var highestQualityImpact = getImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
+      this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
+      this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
     }
   }
 
+  @NotNull
   public UUID getId() {
     return getBackendId();
   }
@@ -117,7 +112,6 @@ public abstract class LiveFinding implements Finding {
     return module;
   }
 
-  @CheckForNull
   public UUID getBackendId() {
     return backendId;
   }
@@ -133,10 +127,6 @@ public abstract class LiveFinding implements Finding {
 
   public String getMessage() {
     return message;
-  }
-
-  public String getTextRangeHashString() {
-    return textRangeHashString;
   }
 
   @NotNull
@@ -187,6 +177,7 @@ public abstract class LiveFinding implements Finding {
     return module.getProject();
   }
 
+  @Nullable
   public IssueSeverity getUserSeverity() {
     return severity;
   }
@@ -205,6 +196,7 @@ public abstract class LiveFinding implements Finding {
     return resolved;
   }
 
+  @Nullable
   @Override
   public CleanCodeAttribute getCleanCodeAttribute() {
     return this.cleanCodeAttribute;
@@ -237,7 +229,7 @@ public abstract class LiveFinding implements Finding {
     return quickFixes;
   }
 
-  @org.jetbrains.annotations.Nullable
+  @Nullable
   @Override
   public String getRuleDescriptionContextKey() {
     return ruleDescriptionContextKey;
@@ -247,11 +239,13 @@ public abstract class LiveFinding implements Finding {
     return isOnNewCode;
   }
 
+  @Nullable
   @Override
   public SoftwareQuality getHighestQuality() {
     return highestQuality;
   }
 
+  @Nullable
   @Override
   public ImpactSeverity getHighestImpact() {
     return highestImpact;

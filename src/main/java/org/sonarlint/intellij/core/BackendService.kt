@@ -136,12 +136,12 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SslConfigu
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.TelemetryClientConstantAttributesDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.AddIssueCommentParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ChangeIssueStatusParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetIssueDetailsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetIssueDetailsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ListAllStandaloneRulesDefinitionsResponse
@@ -623,16 +623,10 @@ class BackendService : Disposable {
         }
     }
 
-    fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetEffectiveRuleDetailsResponse> {
+    fun getIssueDetails(module: Module, issueId: UUID): CompletableFuture<GetIssueDetailsResponse> {
         val moduleId = moduleId(module)
         return requestFromBackend {
-            it.rulesService.getEffectiveRuleDetails(
-                GetEffectiveRuleDetailsParams(
-                    moduleId,
-                    ruleKey,
-                    contextKey
-                )
-            )
+            it.issueService.getIssueDetails(GetIssueDetailsParams(moduleId, issueId))
         }
     }
 

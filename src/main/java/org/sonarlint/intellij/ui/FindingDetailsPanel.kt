@@ -26,6 +26,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBTabbedPane
+import java.util.UUID
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.Flow
@@ -73,24 +74,32 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
     }
 
     fun show(liveFinding: LiveFinding) {
-        rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.getRuleKey(), liveFinding.getRuleDescriptionContextKey())
+        rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.getId())
         flowsTreeBuilder.populateForFinding(liveFinding)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightFinding(liveFinding)
-        flowsTree.emptyText.setText("Selected $findingKindText doesn't have flows")
+        flowsTree.emptyText.text = "Selected $findingKindText doesn't have flows"
         flowsTree.expandAll()
     }
 
-    fun showServerOnlyIssue(module: Module, file: VirtualFile, ruleKey: String, range: RangeMarker, flows: MutableList<Flow>, flowMessage: String) {
-        rulePanel.setSelectedFinding(module, null, ruleKey, null)
+    fun showServerOnlyIssue(
+        module: Module,
+        file: VirtualFile,
+        issueKey: String,
+        range: RangeMarker,
+        flows: MutableList<Flow>,
+        flowMessage: String
+    ) {
+        val issueId = UUID.fromString(issueKey)
+        rulePanel.setSelectedFinding(module, null, issueId)
         flowsTreeBuilder.populateForFinding(file, range, flowMessage, flows)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightRange(range)
-        flowsTree.emptyText.setText("Selected $findingKindText doesn't have flows")
+        flowsTree.emptyText.text = "Selected $findingKindText doesn't have flows"
         flowsTree.expandAll()
     }
 
     fun clear() {
         flowsTreeBuilder.clearFlows()
-        flowsTree.emptyText.setText("No $findingKindText selected")
+        flowsTree.emptyText.text = "No $findingKindText selected"
         rulePanel.clear()
     }
 

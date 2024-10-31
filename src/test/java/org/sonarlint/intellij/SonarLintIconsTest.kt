@@ -21,11 +21,11 @@ package org.sonarlint.intellij
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.SonarLintIcons.impact
 import org.sonarlint.intellij.SonarLintIcons.severity
 import org.sonarlint.intellij.SonarLintIcons.toDisabled
-import org.sonarlint.intellij.SonarLintIcons.type
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
@@ -47,8 +47,12 @@ class SonarLintIconsTest {
 
     @Test
     fun testTypes() {
-        for (value in RuleType.values()) {
-            assertThat(type(value)).isNotNull
+        for (type in RuleType.values()) {
+            for (severity in IssueSeverity.values()) {
+                if (type != RuleType.SECURITY_HOTSPOT) {
+                    assertThat(getIconForTypeAndSeverity(type, severity)).isNotNull
+                }
+            }
         }
         for (value in VulnerabilityProbability.values()) {
             assertThat(hotspotTypeWithProbability(value)).isNotNull

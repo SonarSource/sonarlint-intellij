@@ -26,8 +26,10 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.StandardModeDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -49,6 +51,7 @@ class IssueNodeTests {
     when(file.isValid()).thenReturn(true);
     var issue = mock(RaisedIssueDto.class);
     when(issue.getPrimaryMessage()).thenReturn(message);
+    when(issue.getSeverityMode()).thenReturn(Either.forLeft(new StandardModeDetails(IssueSeverity.MAJOR, RuleType.BUG)));
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getType()).thenReturn(RuleType.BUG);
     when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.COMPLETE);

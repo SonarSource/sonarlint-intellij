@@ -82,12 +82,42 @@ object SonarLintIcons {
     @JvmField
     val FOCUS = getIcon("/images/focus.svg")
 
+    private val BUG_ICONS = mapOf(
+        IssueSeverity.BLOCKER to getIcon("/images/bug/bugBlocker.svg"),
+        IssueSeverity.CRITICAL to getIcon("/images/bug/bugHigh.svg"),
+        IssueSeverity.MAJOR to getIcon("/images/bug/bugMedium.svg"),
+        IssueSeverity.MINOR to getIcon("/images/bug/bugLow.svg"),
+        IssueSeverity.INFO to getIcon("/images/bug/bugInfo.svg")
+    )
+
+    private val CODE_SMELL_ICONS = mapOf(
+        IssueSeverity.BLOCKER to getIcon("/images/codeSmell/codeSmellBlocker.svg"),
+        IssueSeverity.CRITICAL to getIcon("/images/codeSmell/codeSmellHigh.svg"),
+        IssueSeverity.MAJOR to getIcon("/images/codeSmell/codeSmellMedium.svg"),
+        IssueSeverity.MINOR to getIcon("/images/codeSmell/codeSmellLow.svg"),
+        IssueSeverity.INFO to getIcon("/images/codeSmell/codeSmellInfo.svg")
+    )
+
+    private val VULNERABILITY_ICONS = mapOf(
+        IssueSeverity.BLOCKER to getIcon("/images/vulnerability/vulnerabilityBlocker.svg"),
+        IssueSeverity.CRITICAL to getIcon("/images/vulnerability/vulnerabilityHigh.svg"),
+        IssueSeverity.MAJOR to getIcon("/images/vulnerability/vulnerabilityMedium.svg"),
+        IssueSeverity.MINOR to getIcon("/images/vulnerability/vulnerabilityLow.svg"),
+        IssueSeverity.INFO to getIcon("/images/vulnerability/vulnerabilityInfo.svg")
+    )
+
+    private val PROBABILITY_ICONS = mapOf(
+        VulnerabilityProbability.HIGH to getIcon("/images/hotspot/hotspotHigh.svg"),
+        VulnerabilityProbability.MEDIUM to getIcon("/images/hotspot/hotspotMedium.svg"),
+        VulnerabilityProbability.LOW to getIcon("/images/hotspot/hotspotLow.svg")
+    )
+
     private val SEVERITY_ICONS = mapOf(
-        IssueSeverity.BLOCKER to getIcon("/images/severity/blocker.svg"),
-        IssueSeverity.CRITICAL to getIcon("/images/severity/critical.svg"),
-        IssueSeverity.INFO to getIcon("/images/severity/info.svg"),
-        IssueSeverity.MAJOR to getIcon("/images/severity/major.svg"),
-        IssueSeverity.MINOR to getIcon("/images/severity/minor.svg")
+        IssueSeverity.BLOCKER to getIcon("/images/impact/blocker.svg"),
+        IssueSeverity.CRITICAL to getIcon("/images/impact/high.svg"),
+        IssueSeverity.MAJOR to getIcon("/images/impact/medium.svg"),
+        IssueSeverity.MINOR to getIcon("/images/impact/low.svg"),
+        IssueSeverity.INFO to getIcon("/images/impact/info.svg")
     )
 
     private val IMPACT_ICONS = mapOf(
@@ -98,17 +128,46 @@ object SonarLintIcons {
         ImpactSeverity.INFO to getIcon("/images/impact/info.svg")
     )
 
-    private val TYPE_ICONS = mapOf(
-        RuleType.BUG to getIcon("/images/type/bug.svg"),
-        RuleType.CODE_SMELL to getIcon("/images/type/codeSmell.svg"),
-        RuleType.VULNERABILITY to getIcon("/images/type/vulnerability.svg"),
-        RuleType.SECURITY_HOTSPOT to getIcon("/images/type/hotspot.svg")
+    val backgroundColorsByVulnerabilityProbability = mapOf(
+        VulnerabilityProbability.HIGH to JBColor(Color(254, 243, 242), Color(253, 162, 155, 20)),
+        VulnerabilityProbability.MEDIUM to JBColor(Color(255, 240, 235), Color(254, 150, 75, 20)),
+        VulnerabilityProbability.LOW to JBColor(Color(252, 245, 228), Color(250, 220, 121, 20))
     )
 
-    private val PROBABILITY_ICONS = mapOf(
-        VulnerabilityProbability.HIGH to getIcon("/images/type/hotspotHigh.svg"),
-        VulnerabilityProbability.MEDIUM to getIcon("/images/type/hotspotMedium.svg"),
-        VulnerabilityProbability.LOW to getIcon("/images/type/hotspotLow.svg")
+    val fontColorsByVulnerabilityProbability = mapOf(
+        VulnerabilityProbability.HIGH to JBColor(Color(180, 35, 24), Color(253, 162, 155)),
+        VulnerabilityProbability.MEDIUM to JBColor(Color(147, 55, 13), Color(254, 150, 75)),
+        VulnerabilityProbability.LOW to JBColor(Color(140, 94, 30), Color(250, 220, 121))
+    )
+
+    val borderColorsByVulnerabilityProbability = mapOf(
+        VulnerabilityProbability.HIGH to JBColor(Color(217, 44, 32), Color(253, 162, 155)),
+        VulnerabilityProbability.MEDIUM to JBColor(Color(254, 150, 75), Color(254, 150, 75)),
+        VulnerabilityProbability.LOW to JBColor(Color(250, 220, 121), Color(250, 220, 121))
+    )
+
+    val backgroundColorsBySeverity = mapOf(
+        IssueSeverity.BLOCKER to JBColor(Color(254, 228, 226), Color(128, 27, 20, 20)),
+        IssueSeverity.CRITICAL to JBColor(Color(254, 243, 242), Color(253, 162, 155, 20)),
+        IssueSeverity.MAJOR to JBColor(Color(255, 240, 235), Color(254, 150, 75, 20)),
+        IssueSeverity.MINOR to JBColor(Color(252, 245, 228), Color(250, 220, 121, 20)),
+        IssueSeverity.INFO to JBColor(Color(245, 251, 255), Color(143, 202, 234, 20))
+    )
+
+    val fontColorsBySeverity = mapOf(
+        IssueSeverity.BLOCKER to JBColor(Color(128, 27, 20), Color(249, 112, 102)),
+        IssueSeverity.CRITICAL to JBColor(Color(180, 35, 24), Color(253, 162, 155)),
+        IssueSeverity.MAJOR to JBColor(Color(147, 55, 13), Color(254, 150, 75)),
+        IssueSeverity.MINOR to JBColor(Color(140, 94, 30), Color(250, 220, 121)),
+        IssueSeverity.INFO to JBColor(Color(49, 107, 146), Color(143, 202, 234))
+    )
+
+    val borderColorsBySeverity = mapOf(
+        IssueSeverity.BLOCKER to JBColor(Color(128, 27, 20), Color(249, 112, 102)),
+        IssueSeverity.CRITICAL to JBColor(Color(217, 44, 32), Color(253, 162, 155)),
+        IssueSeverity.MAJOR to JBColor(Color(254, 150, 75), Color(254, 150, 75)),
+        IssueSeverity.MINOR to JBColor(Color(250, 220, 121), Color(250, 220, 121)),
+        IssueSeverity.INFO to JBColor(Color(143, 202, 234), Color(143, 202, 234))
     )
 
     val backgroundColorsByImpact = mapOf(
@@ -145,11 +204,6 @@ object SonarLintIcons {
     }
 
     @JvmStatic
-    fun type(type: RuleType): Icon {
-        return TYPE_ICONS[type]!!
-    }
-
-    @JvmStatic
     fun impact(impact: ImpactSeverity): Icon {
         return IMPACT_ICONS[impact]!!
     }
@@ -163,4 +217,15 @@ object SonarLintIcons {
     fun hotspotTypeWithProbability(vulnerabilityProbability: VulnerabilityProbability): Icon {
         return PROBABILITY_ICONS[vulnerabilityProbability]!!
     }
+
+    @JvmStatic
+    fun getIconForTypeAndSeverity(type: RuleType, severity: IssueSeverity): Icon {
+        return when (type) {
+            RuleType.BUG -> BUG_ICONS[severity]!!
+            RuleType.CODE_SMELL -> CODE_SMELL_ICONS[severity]!!
+            RuleType.VULNERABILITY -> VULNERABILITY_ICONS[severity]!!
+            RuleType.SECURITY_HOTSPOT -> throw UnsupportedOperationException("Security Hotspots do not support severity")
+        }
+    }
+
 }

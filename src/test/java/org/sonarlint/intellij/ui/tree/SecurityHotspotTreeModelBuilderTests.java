@@ -48,8 +48,10 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.StandardModeDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -251,6 +253,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     when(virtualFile.isValid()).thenReturn(true);
 
     var issue = mock(RaisedHotspotDto.class);
+    when(issue.getSeverityMode()).thenReturn(Either.forLeft(new StandardModeDetails(IssueSeverity.BLOCKER, RuleType.SECURITY_HOTSPOT)));
     when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getVulnerabilityProbability()).thenReturn(vulnerability);
