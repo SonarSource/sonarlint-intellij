@@ -446,7 +446,7 @@ class BackendService : Disposable {
 
     fun getAllProjects(server: ServerConnection): CompletableFuture<GetAllProjectsResponse> {
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: GetAllProjectsParams = if (server.isSonarCloud) {
             GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
         } else {
@@ -736,7 +736,7 @@ class BackendService : Disposable {
 
     fun checkSmartNotificationsSupported(server: ServerConnection): CompletableFuture<CheckSmartNotificationsSupportedResponse> {
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: CheckSmartNotificationsSupportedParams = if (server.isSonarCloud) {
             CheckSmartNotificationsSupportedParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
         } else {
@@ -747,7 +747,7 @@ class BackendService : Disposable {
 
     fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
             ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
         } else {
@@ -758,14 +758,14 @@ class BackendService : Disposable {
 
     fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params = ListUserOrganizationsParams(credentials)
         return requestFromBackend { it.connectionService.listUserOrganizations(params) }
     }
 
     fun getOrganization(server: ServerConnection, organizationKey: String): CompletableFuture<GetOrganizationResponse> {
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
+            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params = GetOrganizationParams(credentials, organizationKey)
         return requestFromBackend { it.connectionService.getOrganization(params) }
     }
