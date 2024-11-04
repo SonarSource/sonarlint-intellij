@@ -92,7 +92,7 @@ public class IssueNode extends FindingNode {
       Icon typeIcon = null;
       var typeStr = "";
       var severityText = "";
-      if (severity != null) {
+      if (severity != null && type != null) {
         typeIcon = SonarLintIcons.getIconForTypeAndSeverity(type, severity);
         typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
         severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));

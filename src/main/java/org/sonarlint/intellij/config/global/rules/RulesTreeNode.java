@@ -32,9 +32,7 @@ import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
@@ -114,7 +112,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       this.details = details;
       this.activated = activated;
       this.nonDefaultParams = new HashMap<>(nonDefaultParams);
-      var highestQualityImpact = details.getDefaultImpacts().stream().max(Comparator.comparing(ImpactDto::getImpactSeverity));
+      var highestQualityImpact = details.getSoftwareImpacts().stream().max(Comparator.comparing(ImpactDto::getImpactSeverity));
       this.highestQuality = highestQualityImpact.map(ImpactDto::getSoftwareQuality).orElse(null);
       this.highestImpact = highestQualityImpact.map(ImpactDto::getImpactSeverity).map(ImpactSeverity::fromDto).orElse(null);
     }
@@ -137,15 +135,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public List<ImpactDto> impacts() {
-      return details.getDefaultImpacts();
-    }
-
-    public IssueSeverity severity() {
-      return details.getSeverity();
-    }
-
-    public RuleType type() {
-      return details.getType();
+      return details.getSoftwareImpacts();
     }
 
     public Language language() {

@@ -136,8 +136,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SslConfigu
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.TelemetryClientConstantAttributesDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.AddIssueCommentParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ChangeIssueStatusParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetIssueDetailsParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetIssueDetailsResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetEffectiveIssueDetailsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetEffectiveIssueDetailsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
@@ -411,7 +411,7 @@ class BackendService : Disposable {
         return System.getProperty(propertyName)?.let {
             try {
                 Duration.ofMinutes(it.toLong())
-            } catch (e: NumberFormatException) {
+            } catch (_: NumberFormatException) {
                 try {
                     Duration.parse(it)
                 } catch (d: DateTimeParseException) {
@@ -445,8 +445,8 @@ class BackendService : Disposable {
     }
 
     fun getAllProjects(server: ServerConnection): CompletableFuture<GetAllProjectsResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params: GetAllProjectsParams = if (server.isSonarCloud) {
             GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
         } else {
@@ -623,10 +623,10 @@ class BackendService : Disposable {
         }
     }
 
-    fun getIssueDetails(module: Module, issueId: UUID): CompletableFuture<GetIssueDetailsResponse> {
+    fun getIssueDetails(module: Module, issueId: UUID): CompletableFuture<GetEffectiveIssueDetailsResponse> {
         val moduleId = moduleId(module)
         return requestFromBackend {
-            it.issueService.getIssueDetails(GetIssueDetailsParams(moduleId, issueId))
+            it.issueService.getEffectiveIssueDetails(GetEffectiveIssueDetailsParams(moduleId, issueId))
         }
     }
 
@@ -735,8 +735,8 @@ class BackendService : Disposable {
     }
 
     fun checkSmartNotificationsSupported(server: ServerConnection): CompletableFuture<CheckSmartNotificationsSupportedResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params: CheckSmartNotificationsSupportedParams = if (server.isSonarCloud) {
             CheckSmartNotificationsSupportedParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
         } else {
@@ -746,8 +746,8 @@ class BackendService : Disposable {
     }
 
     fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
             ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
         } else {
@@ -757,15 +757,15 @@ class BackendService : Disposable {
     }
 
     fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params = ListUserOrganizationsParams(credentials)
         return requestFromBackend { it.connectionService.listUserOrganizations(params) }
     }
 
     fun getOrganization(server: ServerConnection, organizationKey: String): CompletableFuture<GetOrganizationResponse> {
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params = GetOrganizationParams(credentials, organizationKey)
         return requestFromBackend { it.connectionService.getOrganization(params) }
     }
@@ -875,7 +875,7 @@ class BackendService : Disposable {
             }
                 .thenApplyAsync { response -> response.fileStatuses.filterValues { it.isExcluded }.keys.mapNotNull { filesByUri[it] } }
                 .join()
-        } catch (e: CancellationException) {
+        } catch (_: CancellationException) {
             SonarLintConsole.get(module.project).debug("The request to retrieve file exclusions has been canceled")
             emptyList()
         } catch (e: Exception) {
@@ -915,19 +915,20 @@ class BackendService : Disposable {
             event.filter { it.type != ModuleFileEvent.Type.DELETED }.mapNotNull {
                 val relativePath = getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
                 val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
-                val uri = VirtualFileUtils.toURI(it.virtualFile)
-                computeReadActionSafely(it.virtualFile, module.project) {
-                    ClientFileDto(
-                        uri,
-                        Paths.get(relativePath),
-                        moduleId,
-                        isTestSources(it.virtualFile, module.project),
-                        it.getEncoding(module.project).toString(),
-                        Paths.get(it.virtualFile.path),
-                        if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
-                        forcedLanguage,
-                        true
-                    )
+                VirtualFileUtils.toURI(it.virtualFile)?.let { uri ->
+                    computeReadActionSafely(it.virtualFile, module.project) {
+                        ClientFileDto(
+                            uri,
+                            Paths.get(relativePath),
+                            moduleId,
+                            isTestSources(it.virtualFile, module.project),
+                            it.getEncoding(module.project).toString(),
+                            Paths.get(it.virtualFile.path),
+                            if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
+                            forcedLanguage,
+                            true
+                        )
+                    }
                 }
             }
         }

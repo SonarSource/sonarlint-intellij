@@ -31,10 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttributeCategory;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,11 +53,8 @@ class RulesTreeTableModelTests {
 
   @BeforeEach
   void setUp() {
-    when(ruleDetails.getType()).thenReturn(RuleType.BUG);
-    when(ruleDetails.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(ruleDetails.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.CONVENTIONAL);
-    when(ruleDetails.getCleanCodeAttributeCategory()).thenReturn(CleanCodeAttributeCategory.CONSISTENT);
-    when(ruleDetails.getDefaultImpacts()).thenReturn(List.of(new ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.MEDIUM)));
+    when(ruleDetails.getSoftwareImpacts()).thenReturn(List.of(new ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.MEDIUM)));
     when(ruleDetails.getKey()).thenReturn("key");
     when(ruleDetails.isActiveByDefault()).thenReturn(false);
     root.add(lang);

@@ -262,11 +262,8 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             wrappedPanel.add(learnMore)
         }
         add(wrappedPanel, BorderLayout.CENTER)
-    }
-
-    fun showMessage(msg: String) {
-        clear()
-        // ruleTypeLabel.text = msg
+        revalidate()
+        repaint()
     }
 
     private fun cleanCapitalized(txt: String): String {

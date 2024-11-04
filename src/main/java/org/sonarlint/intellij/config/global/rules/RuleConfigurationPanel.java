@@ -46,6 +46,7 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBLoadingPanel;
 import com.intellij.ui.components.JBPanel;
+import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.fields.ExpandableTextField;
@@ -139,6 +140,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private RulesParamsSeparator rulesParamsSeparator;
   private String selectedRuleKey;
   private RuleHeaderPanel ruleHeaderPanel;
+  private JBPanelWithEmptyText rulePanel;
 
   public RuleConfigurationPanel() {
     createUIComponents();
@@ -357,8 +359,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     return actionToolbar;
   }
 
-  private JPanel createUIComponents() {
-    var rulePanel = new JBPanel<>(new BorderLayout());
+  private void createUIComponents() {
+    rulePanel = new JBPanelWithEmptyText(new BorderLayout());
+    rulePanel.withEmptyText(EMPTY_HTML);
     rulePanel.setBorder(JBUI.Borders.emptyLeft(5));
 
     ruleHeaderPanel = new RuleHeaderPanel(this);
@@ -429,15 +432,25 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     labelPanel.add(configureRuleLabel);
     labelPanel.add(ruleServerLabel);
     panel.add(labelPanel, BorderLayout.NORTH);
-    return panel;
   }
 
   private void initOptionsAndDescriptionPanel() {
     myParamsPanel.removeAll();
     ruleDescription.removeAll();
-    ruleHeaderPanel.showMessage(EMPTY_HTML);
+    setEmptyDisplay(EMPTY_HTML);
     myParamsPanel.validate();
     myParamsPanel.repaint();
+  }
+
+  private void setEmptyDisplay(String msg) {
+    rulePanel.withEmptyText(msg);
+    ruleHeaderPanel.setVisible(false);
+    ruleDescription.setVisible(false);
+  }
+
+  private void unsetEmptyDisplay() {
+    ruleHeaderPanel.setVisible(true);
+    ruleDescription.setVisible(true);
   }
 
   private JScrollPane initTreeScrollPane() {
@@ -494,9 +507,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       if (singleNode != null) {
         updateParamsAndDescriptionPanel(singleNode);
       } else {
-        ruleHeaderPanel.showMessage("Multiple rules are selected.");
+        setEmptyDisplay("Multiple rules are selected.");
         myParamsPanel.removeAll();
-
       }
     } else {
       initOptionsAndDescriptionPanel();
@@ -508,6 +520,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
     ruleHeaderPanel.updateForRuleConfiguration(singleNode.attribute(), singleNode.impacts(), singleNode.getKey());
+    unsetEmptyDisplay();
     var fileType = RuleLanguages.Companion.findFileTypeByRuleLanguage(singleNode.language());
 
     runOnPooledThread(project, () ->

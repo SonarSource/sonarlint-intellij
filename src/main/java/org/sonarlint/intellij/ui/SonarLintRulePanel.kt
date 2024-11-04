@@ -345,6 +345,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
     }
 
     private fun disableEmptyDisplay(state: Boolean) {
+        ruleNameLabel.isVisible = state
         topPanel.isVisible = state
         descriptionPanel.isVisible = state
         paramsPanel.isVisible = state

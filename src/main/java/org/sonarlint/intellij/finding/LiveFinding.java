@@ -27,18 +27,18 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.DocumentUtil;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedFindingDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
@@ -59,7 +59,7 @@ public abstract class LiveFinding implements Finding {
   private final List<QuickFix> quickFixes;
   private final String ruleDescriptionContextKey;
   private final CleanCodeAttribute cleanCodeAttribute;
-  private final Map<SoftwareQuality, ImpactSeverity> impacts;
+  private final List<ImpactDto> impacts;
   private final IssueSeverity severity;
   private final SoftwareQuality highestQuality;
   private final ImpactSeverity highestImpact;
@@ -88,18 +88,16 @@ public abstract class LiveFinding implements Finding {
     if (finding.getSeverityMode().isLeft()) {
       this.severity = finding.getSeverityMode().getLeft().getSeverity();
       this.cleanCodeAttribute = null;
-      this.impacts = Collections.emptyMap();
+      this.impacts = Collections.emptyList();
       this.highestQuality = null;
       this.highestImpact = null;
     } else {
       this.severity = null;
       this.cleanCodeAttribute = CleanCodeAttribute.fromDto(finding.getSeverityMode().getRight().getCleanCodeAttribute());
-      this.impacts = finding.getSeverityMode().getRight().getImpacts().stream()
-        .map(e -> Map.entry(SoftwareQuality.fromDto(e.getSoftwareQuality()), ImpactSeverity.fromDto(e.getImpactSeverity())))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-      var highestQualityImpact = getImpacts().entrySet().stream().max(Map.Entry.comparingByValue());
-      this.highestQuality = highestQualityImpact.map(Map.Entry::getKey).orElse(null);
-      this.highestImpact = highestQualityImpact.map(Map.Entry::getValue).orElse(null);
+      this.impacts = finding.getSeverityMode().getRight().getImpacts();
+      var highestQualityImpact = Collections.min(impacts, Comparator.comparing(ImpactDto::getImpactSeverity));
+      this.highestQuality = SoftwareQuality.fromDto(highestQualityImpact.getSoftwareQuality());
+      this.highestImpact = ImpactSeverity.fromDto(highestQualityImpact.getImpactSeverity());
     }
   }
 
@@ -204,7 +202,7 @@ public abstract class LiveFinding implements Finding {
 
   @NotNull
   @Override
-  public Map<SoftwareQuality, ImpactSeverity> getImpacts() {
+  public List<ImpactDto> getImpacts() {
     return this.impacts;
   }
 

@@ -59,7 +59,7 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
         val model = flowsTreeBuilder.createModel()
         flowsTree = FlowsTree(project, model)
         flowsTreeBuilder.clearFlows()
-        flowsTree.emptyText.setText("No $findingKindText selected")
+        flowsTree.emptyText.text = "No $findingKindText selected"
     }
 
     private fun createTabs(parentDisposable: Disposable) {

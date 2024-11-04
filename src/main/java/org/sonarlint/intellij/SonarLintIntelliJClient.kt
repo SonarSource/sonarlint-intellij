@@ -515,9 +515,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
         val connection = connectionOpt.get()
         return if (connection.token != null) {
-            Either.forLeft(TokenDto(connection.token))
+            Either.forLeft(TokenDto(connection.token!!))
         } else {
-            Either.forRight(UsernamePasswordDto(connection.login, connection.password))
+            Either.forRight(UsernamePasswordDto(connection.login!!, connection.password!!))
         }
     }
 
