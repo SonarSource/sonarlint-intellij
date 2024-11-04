@@ -47,7 +47,7 @@ orchestrator_monthly_cache_template: &ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
     folder: ${ORCHESTRATOR_HOME}
     fingerprint_script: echo ${THIS_MONTH}
 
-eks_container: &CONTAINER_DEFINITION
+container_definition: &CONTAINER_DEFINITION
   image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j17-g7-latest
   region: eu-central-1
   cluster_name: ${CIRRUS_CLUSTER_NAME}
@@ -64,12 +64,11 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
   builder_instance_type: t3.small
   builder_subnet_id: ${CIRRUS_AWS_SUBNET}
 
-ec2_instance: &WINVM_DEFINITION
+ec2_instance_definition: &WINVM_DEFINITION
   experimental: true
   image: base-windows-jdk17-v20240704125406
   platform: windows
   region: eu-central-1
-  subnet_id: ${CIRRUS_AWS_SUBNET}
   type: c5.4xlarge
 
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
