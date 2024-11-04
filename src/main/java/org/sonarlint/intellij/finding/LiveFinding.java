@@ -95,9 +95,15 @@ public abstract class LiveFinding implements Finding {
       this.severity = null;
       this.cleanCodeAttribute = CleanCodeAttribute.fromDto(finding.getSeverityMode().getRight().getCleanCodeAttribute());
       this.impacts = finding.getSeverityMode().getRight().getImpacts();
-      var highestQualityImpact = Collections.max(impacts, Comparator.comparing(ImpactDto::getImpactSeverity));
-      this.highestQuality = SoftwareQuality.fromDto(highestQualityImpact.getSoftwareQuality());
-      this.highestImpact = ImpactSeverity.fromDto(highestQualityImpact.getImpactSeverity());
+      // Is empty for Security Hotspots
+      if (!impacts.isEmpty()) {
+        var highestQualityImpact = Collections.max(impacts, Comparator.comparing(ImpactDto::getImpactSeverity));
+        this.highestQuality = SoftwareQuality.fromDto(highestQualityImpact.getSoftwareQuality());
+        this.highestImpact = ImpactSeverity.fromDto(highestQualityImpact.getImpactSeverity());
+      } else {
+        this.highestQuality = null;
+        this.highestImpact = null;
+      }
     }
   }
 
