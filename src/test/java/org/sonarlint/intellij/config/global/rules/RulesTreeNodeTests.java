@@ -20,12 +20,15 @@
 package org.sonarlint.intellij.config.global.rules;
 
 import java.util.HashMap;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,8 +41,9 @@ class RulesTreeNodeTests {
     when(details.getName()).thenReturn("name");
     when(details.getKey()).thenReturn("key");
     when(details.isActiveByDefault()).thenReturn(true);
-    when(details.getSeverity()).thenReturn(IssueSeverity.MAJOR);
-    when(details.getType()).thenReturn(RuleType.BUG);
+    when(details.getSoftwareImpacts())
+      .thenReturn(List.of(new ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.MEDIUM), new ImpactDto(SoftwareQuality.RELIABILITY, ImpactSeverity.BLOCKER)));
+    when(details.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.CONVENTIONAL);
     when(details.getLanguage()).thenReturn(Language.JAVA);
 
     var node = new RulesTreeNode.Rule(details, false, new HashMap<>());
@@ -48,8 +52,8 @@ class RulesTreeNodeTests {
     assertThat(node).hasToString("name");
     assertThat(node.getDefaultActivation()).isTrue();
     assertThat(node.isNonDefault()).isTrue();
-    assertThat(node.severity()).isEqualTo(IssueSeverity.MAJOR);
-    assertThat(node.type()).isEqualTo(RuleType.BUG);
+    assertThat(node.getHighestImpact()).isEqualTo(org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.BLOCKER);
+    assertThat(node.getHighestQuality()).isEqualTo(SoftwareQuality.RELIABILITY);
     assertThat(node.language()).isEqualTo(Language.JAVA);
   }
 

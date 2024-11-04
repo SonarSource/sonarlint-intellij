@@ -95,7 +95,7 @@ public abstract class LiveFinding implements Finding {
       this.severity = null;
       this.cleanCodeAttribute = CleanCodeAttribute.fromDto(finding.getSeverityMode().getRight().getCleanCodeAttribute());
       this.impacts = finding.getSeverityMode().getRight().getImpacts();
-      var highestQualityImpact = Collections.min(impacts, Comparator.comparing(ImpactDto::getImpactSeverity));
+      var highestQualityImpact = Collections.max(impacts, Comparator.comparing(ImpactDto::getImpactSeverity));
       this.highestQuality = SoftwareQuality.fromDto(highestQualityImpact.getSoftwareQuality());
       this.highestImpact = ImpactSeverity.fromDto(highestQualityImpact.getImpactSeverity());
     }
