@@ -177,13 +177,14 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       populateSubTree(tree, treeBuilder, Map.of(file, newIssues));
       populateSubTree(oldTree, oldTreeBuilder, Map.of(file, oldIssues));
       oldTree.setVisible(true);
+      updateIcon(file, newIssues);
     } else {
       populateSubTree(tree, treeBuilder, Map.of(file, this.currentIssues));
       populateSubTree(oldTree, oldTreeBuilder, Collections.emptyMap());
       oldTree.setVisible(false);
+      updateIcon(file, this.currentIssues);
     }
     expandTree();
-    updateIcon(file, this.currentIssues);
   }
 
   private static void populateSubTree(Tree tree, IssueTreeModelBuilder treeBuilder, Map<VirtualFile, Collection<LiveIssue>> issues) {
