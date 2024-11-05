@@ -55,8 +55,6 @@ import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
-import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
@@ -92,15 +90,21 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                 { it.getRuleKey() },
                 { it.message },
                 { it.getType() },
+                { it.getCleanCodeAttribute() },
                 { it.userSeverity },
+                { it.getHighestImpact() },
+                { it.getHighestQuality() },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } }
             )
             .containsExactly(
                 tuple(
                     "xml:S1778",
                     "Remove all characters located before \"<?xml\".",
-                    RuleType.BUG,
-                    IssueSeverity.CRITICAL,
+                    null,
+                    org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute.COMPLETE,
+                    null,
+                    org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.HIGH,
+                    org.sonarsource.sonarlint.core.client.utils.SoftwareQuality.RELIABILITY,
                     Pair(62, 67),
 
                     )

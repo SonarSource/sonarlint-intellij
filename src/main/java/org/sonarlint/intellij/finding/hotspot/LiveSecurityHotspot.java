@@ -24,17 +24,15 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
-import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
 import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
@@ -77,8 +75,8 @@ public class LiveSecurityHotspot extends LiveFinding {
 
   @NotNull
   @Override
-  public Map<SoftwareQuality, ImpactSeverity> getImpacts() {
-    return Collections.emptyMap();
+  public List<ImpactDto> getImpacts() {
+    return Collections.emptyList();
   }
 
   @NotNull

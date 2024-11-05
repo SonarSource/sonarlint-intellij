@@ -44,7 +44,11 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByImpact
+import org.sonarlint.intellij.SonarLintIcons.backgroundColorsBySeverity
+import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
+import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
+import org.sonarlint.intellij.SonarLintIcons.borderColorsByVulnerabilityProbability
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.canBeMarkedAsResolved
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialogAsync
 import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.canBeReopened
@@ -58,7 +62,7 @@ import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.EffectiveIssueDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
@@ -73,10 +77,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     private val wrappedPanel = JBPanel<JBPanel<*>>(WrapLayout(FlowLayout.LEFT))
     private val attributePanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
     private val qualityLabels = LinkedList<RoundedPanelWithBackgroundColor>()
-    private val ruleTypeIcon = JBLabel()
-    private val ruleTypeLabel = JBLabel()
-    private val ruleSeverityIcon = JBLabel()
-    private val ruleSeverityLabel = JBLabel()
+    private var severityLabel: RoundedPanelWithBackgroundColor? = null
     private val hotspotVulnerabilityLabel = JBLabel("Review priority: ")
     private val hotspotVulnerabilityValueLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
@@ -92,11 +93,8 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     fun clear() {
         attributePanel.removeAll()
         qualityLabels.clear()
-        ruleTypeIcon.icon = null
-        ruleTypeLabel.text = ""
+        severityLabel = null
         ruleKeyLabel.text = ""
-        ruleSeverityIcon.icon = null
-        ruleSeverityLabel.text = ""
         hotspotVulnerabilityLabel.isVisible = false
         hotspotVulnerabilityValueLabel.text = ""
         hotspotVulnerabilityValueLabel.border = BorderFactory.createEmptyBorder()
@@ -107,18 +105,15 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
     }
 
     fun updateForRuleConfiguration(
-        ruleKey: String, type: RuleType, severity: IssueSeverity,
-        attribute: CleanCodeAttribute?, qualities: List<ImpactDto>,
+        cleanCodeAttribute: CleanCodeAttribute,
+        impacts: List<ImpactDto>,
+        ruleKey: String
     ) {
-        clear()
-        updateServerCommonFields(type, attribute, qualities, ruleKey)
-        updateRuleSeverity(severity)
+        updateCommonFieldsInMQRMode(cleanCodeAttribute, impacts, ruleKey)
     }
 
-    fun updateForIssue(project: Project, type: RuleType, severity: IssueSeverity, issue: Issue) {
-        clear()
-        updateCommonFields(type, issue.getCleanCodeAttribute(), issue.getImpacts(), issue.getRuleKey())
-        updateRuleSeverity(severity)
+    fun updateForIssue(project: Project, issueDetails: EffectiveIssueDetailsDto, issue: Issue) {
+        updateCommonFields(issueDetails)
 
         if (canBeReopened(project, issue)) {
             changeStatusButton.isVisible = true
@@ -137,22 +132,25 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         }
     }
 
-    fun updateForServerIssue(ruleDescription: EffectiveRuleDetailsDto, ruleKey: String) {
-        clear()
-        updateServerCommonFields(ruleDescription.type, ruleDescription.cleanCodeAttribute?.let { CleanCodeAttribute.fromDto(it) }, ruleDescription.defaultImpacts, ruleKey)
-        updateRuleSeverity(ruleDescription.severity)
+    fun updateForServerIssue(issueDetails: EffectiveIssueDetailsDto) {
+        updateCommonFields(issueDetails)
     }
 
-    private fun updateRuleSeverity(severity: IssueSeverity) {
-        ruleSeverityIcon.icon = SonarLintIcons.severity(severity)
-        ruleSeverityLabel.text = cleanCapitalized(severity.toString())
-        ruleSeverityLabel.setCopyable(true)
-    }
-
-    fun updateForSecurityHotspot(project: Project, ruleKey: String, type: RuleType, securityHotspot: LiveSecurityHotspot) {
+    fun updateForSecurityHotspot(project: Project, ruleKey: String, securityHotspot: LiveSecurityHotspot) {
         clear()
-        updateCommonFields(type, securityHotspot.getCleanCodeAttribute(), securityHotspot.getImpacts(), ruleKey)
-        ruleTypeIcon.icon = SonarLintIcons.hotspotTypeWithProbability(securityHotspot.vulnerabilityProbability)
+        severityLabel =
+            RoundedPanelWithBackgroundColor(
+                backgroundColorsByVulnerabilityProbability[securityHotspot.vulnerabilityProbability],
+                borderColorsByVulnerabilityProbability[securityHotspot.vulnerabilityProbability]
+            ).apply {
+                add(JBLabel().apply { icon = SonarLintIcons.hotspotTypeWithProbability(securityHotspot.vulnerabilityProbability) })
+                add(JBLabel(cleanCapitalized(RuleType.SECURITY_HOTSPOT.toString())).apply {
+                    foreground = SonarLintIcons.fontColorsByVulnerabilityProbability[securityHotspot.vulnerabilityProbability]
+                })
+            }
+        ruleKeyLabel.text = ruleKey
+        ruleKeyLabel.setCopyable(true)
+        organizeHeader(false)
         hotspotVulnerabilityLabel.isVisible = true
         hotspotVulnerabilityValueLabel.apply {
             text = securityHotspot.vulnerabilityProbability.name
@@ -170,72 +168,73 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         }
     }
 
-    private fun updateServerCommonFields(type: RuleType, attribute: CleanCodeAttribute?, qualities: List<ImpactDto>, ruleKey: String) {
-        val newCctEnabled = attribute != null && qualities.isNotEmpty()
-        if (newCctEnabled) {
-            val attributeLabel = JBLabel("<html><b>" + cleanCapitalized(attribute!!.label) + " issue</b> | Not " + clean(attribute.toString()) + "<br></html>")
-            attributePanel.apply {
-                add(attributeLabel)
-                toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
-            }
-            qualities.forEach {
-                val impactSeverity = ImpactSeverity.fromDto(it.impactSeverity)
-                val cleanImpact = impactSeverity.label
-                val cleanQuality = SoftwareQuality.fromDto(it.softwareQuality).label
-                val qualityPanel = RoundedPanelWithBackgroundColor(SonarLintIcons.backgroundColorsByImpact[impactSeverity]).apply {
-                    toolTipText = "Issues found for this rule will have a $cleanImpact impact on the $cleanQuality of your software."
-                }
-                qualityPanel.add(JBLabel(cleanCapitalized(it.softwareQuality.toString())).apply {
-                    foreground = SonarLintIcons.fontColorsByImpact[impactSeverity]
-                })
-                qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(impactSeverity) })
-                qualityLabels.add(qualityPanel)
-            }
+    private fun updateCommonFields(issueDetails: EffectiveIssueDetailsDto) {
+        if (issueDetails.severityDetails.isLeft) {
+            val mqrMode = issueDetails.severityDetails.left
+            updateCommonFieldsInStandardMode(mqrMode.severity, mqrMode.type, issueDetails.ruleKey)
         } else {
-            ruleTypeIcon.icon = SonarLintIcons.type(type)
-            ruleTypeLabel.text = cleanCapitalized(type.toString())
-            ruleTypeLabel.setCopyable(true)
+            val standardMode = issueDetails.severityDetails.right
+            updateCommonFieldsInMQRMode(
+                CleanCodeAttribute.fromDto(standardMode.cleanCodeAttribute),
+                standardMode.impacts,
+                issueDetails.ruleKey
+            )
+        }
+    }
+
+    private fun updateCommonFieldsInStandardMode(
+        severity: IssueSeverity,
+        type: RuleType,
+        ruleKey: String
+    ) {
+        clear()
+        severityLabel = RoundedPanelWithBackgroundColor(backgroundColorsBySeverity[severity], borderColorsBySeverity[severity]).apply {
+            add(JBLabel().apply { icon = SonarLintIcons.getIconForTypeAndSeverity(type, severity) })
+            add(JBLabel(cleanCapitalized(type.toString())).apply {
+                foreground = SonarLintIcons.fontColorsBySeverity[severity]
+            })
+            add(JBLabel().apply { icon = SonarLintIcons.severity(severity) })
         }
         ruleKeyLabel.text = ruleKey
         ruleKeyLabel.setCopyable(true)
 
-        organizeHeader(newCctEnabled)
+        organizeHeader(false)
     }
 
-    private fun updateCommonFields(type: RuleType, attribute: CleanCodeAttribute?, qualities: Map<SoftwareQuality, ImpactSeverity>, ruleKey: String) {
-        val newCctEnabled = attribute != null && qualities.isNotEmpty()
-        if (newCctEnabled) {
-            val attributeLabel = JBLabel("<html><b>" + cleanCapitalized(attribute!!.category.label) + " issue</b> | " + clean(attribute.label) + "<br></html>")
-            attributePanel.apply {
-                add(attributeLabel)
-                toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
-            }
-            qualities.entries.forEach {
-                val cleanImpact = cleanCapitalized(it.value.label)
-                val cleanQuality = cleanCapitalized(it.key.label)
-                val qualityPanel =
-                    RoundedPanelWithBackgroundColor(backgroundColorsByImpact[it.value], borderColorsByImpact[it.value]).apply {
+    private fun updateCommonFieldsInMQRMode(
+        cleanCodeAttribute: CleanCodeAttribute,
+        impacts: List<ImpactDto>,
+        ruleKey: String
+    ) {
+        clear()
+        val attributeLabel =
+            JBLabel("<html><b>" + cleanCapitalized(cleanCodeAttribute.category.label) + " issue</b> | " + cleanCodeAttribute.label + "<br></html>")
+        attributePanel.apply {
+            add(attributeLabel)
+            toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
+        }
+        impacts.forEach {
+            val impactSeverity = ImpactSeverity.fromDto(it.impactSeverity)
+            val cleanImpact = impactSeverity.label
+            val cleanQuality = SoftwareQuality.fromDto(it.softwareQuality).label
+            val qualityPanel =
+                RoundedPanelWithBackgroundColor(backgroundColorsByImpact[impactSeverity], borderColorsByImpact[impactSeverity]).apply {
                     toolTipText = "Issues found for this rule will have a $cleanImpact impact on the $cleanQuality of your software."
                 }
-                qualityPanel.add(JBLabel(cleanCapitalized(it.key.toString())).apply {
-                    foreground = SonarLintIcons.fontColorsByImpact[it.value]
-                })
-                qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(it.value) })
-                qualityLabels.add(qualityPanel)
-            }
-        } else {
-            ruleTypeIcon.icon = SonarLintIcons.type(type)
-            ruleTypeLabel.text = cleanCapitalized(type.toString())
-            ruleTypeLabel.setCopyable(true)
+            qualityPanel.add(JBLabel(cleanCapitalized(it.softwareQuality.toString())).apply {
+                foreground = SonarLintIcons.fontColorsByImpact[impactSeverity]
+            })
+            qualityPanel.add(JBLabel().apply { icon = SonarLintIcons.impact(impactSeverity) })
+            qualityLabels.add(qualityPanel)
         }
         ruleKeyLabel.text = ruleKey
         ruleKeyLabel.setCopyable(true)
 
-        organizeHeader(newCctEnabled)
+        organizeHeader(true)
     }
 
-    private fun organizeHeader(newCct: Boolean) {
-        if (newCct) {
+    private fun organizeHeader(isMQRMode: Boolean) {
+        if (isMQRMode) {
             wrappedPanel.add(attributePanel.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 15) })
             qualityLabels.forEach { wrappedPanel.add(it) }
 
@@ -243,12 +242,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
                 SonarGotItTooltipsUtils.showCleanCodeToolTip(wrappedPanel, parent)
             }
         } else {
-            wrappedPanel.add(ruleTypeIcon)
-            wrappedPanel.add(ruleTypeLabel.apply {
-                border = JBUI.Borders.emptyRight(0)
-            })
-            wrappedPanel.add(ruleSeverityIcon)
-            wrappedPanel.add(ruleSeverityLabel)
+            wrappedPanel.add(severityLabel)
             wrappedPanel.add(hotspotVulnerabilityLabel)
             wrappedPanel.add(hotspotVulnerabilityValueLabel.apply {
                 font = JBFont.label().asBold()
@@ -264,15 +258,12 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
 
         changeStatusPanel.add(changeStatusButton)
         wrappedPanel.add(changeStatusPanel)
-        if (newCct) {
+        if (isMQRMode) {
             wrappedPanel.add(learnMore)
         }
         add(wrappedPanel, BorderLayout.CENTER)
-    }
-
-    fun showMessage(msg: String) {
-        clear()
-        ruleTypeLabel.text = msg
+        revalidate()
+        repaint()
     }
 
     private fun cleanCapitalized(txt: String): String {

@@ -25,8 +25,10 @@ import java.awt.GraphicsEnvironment;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.StandardModeDetails;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -50,6 +52,7 @@ public class SonarLintTestUtils {
     var issue = mock(RaisedIssueDto.class);
     when(issue.getRuleKey()).thenReturn(Integer.toString(id));
     when(issue.getPrimaryMessage()).thenReturn("issue " + id);
+    when(issue.getSeverityMode()).thenReturn(Either.forLeft(new StandardModeDetails(IssueSeverity.MAJOR, RuleType.BUG)));
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getType()).thenReturn(RuleType.BUG);
     when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.COMPLETE);

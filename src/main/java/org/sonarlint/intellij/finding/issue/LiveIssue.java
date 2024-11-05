@@ -23,8 +23,8 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.List;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.Issue;
 import org.sonarlint.intellij.finding.LiveFinding;
@@ -34,6 +34,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 public class LiveIssue extends LiveFinding implements Issue {
 
+  @Nullable
   private final RuleType type;
 
   public LiveIssue(Module module, RaisedIssueDto issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
@@ -42,10 +43,14 @@ public class LiveIssue extends LiveFinding implements Issue {
 
   public LiveIssue(Module module, RaisedIssueDto issue, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
     super(module, issue, virtualFile, range, context, quickFixes);
-    this.type = issue.getType();
+    if (issue.getSeverityMode().isLeft()) {
+      this.type = issue.getSeverityMode().getLeft().getType();
+    } else {
+      this.type = null;
+    }
   }
 
-  @NotNull
+  @CheckForNull
   @Override
   public RuleType getType() {
     return type;

@@ -217,7 +217,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
         }
 
         runOnUiThread(project,
-          () -> findingDetailsPanel.showServerOnlyIssue(showFinding.getModule(), showFinding.getFile(), showFinding.getRuleKey(), rangeMarker, showFinding.getFlows(),
+          () -> findingDetailsPanel.showServerOnlyIssue(showFinding.getModule(), showFinding.getFile(), showFinding.getFindingKey(), rangeMarker, showFinding.getFlows(),
             showFinding.getFlowMessage()));
       });
     }

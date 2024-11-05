@@ -159,7 +159,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private fun centeredLabel(textLabel: String, actionText: String?, action: AnAction?): JBPanelWithEmptyText {
         val labelPanel = JBPanelWithEmptyText(HorizontalLayout(5))
         val text = labelPanel.emptyText
-        text.setText(textLabel)
+        text.text = textLabel
         if (action != null && actionText != null) {
             text.appendLine(
                 actionText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES
@@ -333,7 +333,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 rulePanel.clear()
                 highlighting.removeHighlights()
             } else {
-                issue.module?.let { module -> rulePanel.setSelectedFinding(module, issue, issue.getRuleKey(), issue.getRuleDescriptionContextKey()) }
+                issue.module?.let { module -> rulePanel.setSelectedFinding(module, issue, issue.getId()) }
                     ?: rulePanel.clear()
             }
         }
@@ -375,8 +375,9 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             }
 
             findModuleForFile(showFinding.file, project)?.let {
+                val taintId = UUID.fromString(showFinding.findingKey)
                 runOnUiThread(project) {
-                    rulePanel.setSelectedFinding(it, null, showFinding.ruleKey, null)
+                    rulePanel.setSelectedFinding(it, null, taintId)
                     getService(project, EditorDecorator::class.java).highlightRange(rangeMarker)
                 }
             }

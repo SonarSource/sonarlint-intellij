@@ -41,7 +41,7 @@ object VirtualFileUtils {
             } else {
                 null
             }
-        } catch (e: URISyntaxException) {
+        } catch (_: URISyntaxException) {
             getService(GlobalLogOutput::class.java).log("Could not transform ${file.url} to URI", ClientLogOutput.Level.DEBUG)
             null
         }

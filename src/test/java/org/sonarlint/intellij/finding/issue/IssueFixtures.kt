@@ -31,8 +31,10 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.QuickFixDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.TextEditDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.MQRModeDetails
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
@@ -48,12 +50,21 @@ fun aLiveIssue(
     return liveIssue
 }
 
-fun aRawIssue(textRange: TextRangeDto?) =
-    RaisedIssueDto(
+fun aRawIssue(textRange: TextRangeDto?): RaisedIssueDto {
+    return RaisedIssueDto(
         UUID.randomUUID(),
         "serverKey",
         "rule:key",
         "message",
+        Either.forRight(
+            MQRModeDetails(
+                CleanCodeAttribute.COMPLETE, listOf(
+                    ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH),
+                    ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH),
+                    ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH)
+                )
+            )
+        ),
         IssueSeverity.INFO,
         RuleType.BUG,
         CleanCodeAttribute.COMPLETE,
@@ -70,6 +81,7 @@ fun aRawIssue(textRange: TextRangeDto?) =
         mutableListOf<QuickFixDto>(),
         null
     )
+}
 
 private fun toTextRange(rangeMarker: RangeMarker?): TextRangeDto? {
     return rangeMarker?.let {

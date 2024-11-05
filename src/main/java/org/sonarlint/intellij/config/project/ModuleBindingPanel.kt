@@ -108,7 +108,7 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
         projectKeyTextField.emptyText.text = "Input project key or search one"
         val projectKeyLabel = JLabel("Project key:")
         projectKeyLabel.labelFor = projectKeyTextField
-        val insets = JBUI.insets(2, 0, 0, 0)
+        val insets = JBUI.insetsTop(2)
         moduleBindingDetailsPanel.add(
             projectKeyLabel, GridBagConstraints(
             0, 0, 1, 1, 0.0, 0.0,
