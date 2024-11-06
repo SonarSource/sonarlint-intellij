@@ -64,8 +64,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.13 - 2 new quick fixes for C++. Support for WindRiver GNU C++ compiler for arm. Bug fixes, fewer FPs and improvements for many languages.</li>
-        <li>10.12 - Support of Java 22 analysis. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.12 - Support of Java 22 analysis. Automatically analyze opened files on remote environments. 2 new quick fixes for C++. Support for WindRiver GNU C++ compiler for arm. Improve analysis triggering performance. Many fixes on various graphical elements. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.11.1 - Allow to open AI fix suggestions coming from SonarQube or SonarCloud. Avoid a rare issue when VFS is closed.</li>
         <li>10.11 - Optimize the triggering of analysis and automatically cancel redundant ones. Avoid an error related to the .gitignore file. Fix an issue where a custom Node.js path would not be considered. Optimize SonarLint initialization performance and reduce the file system cache usage. Improve error feedback with Connected Mode. 1 new PHP rule. 7 new Python rules related to PyTorch. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.10 - Improve SonarLint performance and optimize memory usage. Refactor thread management to avoid UI freezes. Avoid errors of type 'No file to analyze'. Support detection of Micronaut configuration issues. 6 new JS/TS rules. Introduce new INFO and BLOCKER severities. Improve UI feedback when lacking permission with SonarQube or SonarCloud. Bug fixes, fewer FPs and improvements for many languages.</li>
