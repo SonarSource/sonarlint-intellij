@@ -50,7 +50,7 @@ public class NotificationsStep extends AbstractWizardStepEx {
   @Override
   public void _init() {
     final boolean isSc = model.getServerType() == WizardModel.ServerType.SONARCLOUD;
-    final String sqOrSc = isSc ? "SonarCloud" : "SonarQube";
+    final String sqOrSc = isSc ? "SonarQube Cloud" : "SonarQube Server";
     notificationsCheckBox.setText("Receive notifications from " + sqOrSc);
     notificationsCheckBox.setSelected(!model.isNotificationsDisabled());
     final String docUrl = isSc ? "https://docs.sonarcloud.io/advanced-setup/sonarlint-smart-notifications/" :

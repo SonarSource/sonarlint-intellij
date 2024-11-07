@@ -102,10 +102,10 @@ public class ServerStep extends AbstractWizardStepEx {
       "and extends the CI/CD workflow to systematically help developers and organizations deliver Clean Code.";
     sonarCloudDescription.setText(cloudMainText);
 
-    initEditorPane(sonarCloudFree, "<a href=\"" + SONARCLOUD_PRODUCT_PAGE.getUrl() + "\">SonarCloud</a> is entirely free for open source projects",
+    initEditorPane(sonarCloudFree, "<a href=\"" + SONARCLOUD_PRODUCT_PAGE.getUrl() + "\">SonarQube Cloud</a> is entirely free for open source projects",
       SONARCLOUD_PRODUCT_PAGE);
 
-    initEditorPane(sonarQubeFree, "SonarQube offers a free <a href=\"" + SONARQUBE_EDITIONS_DOWNLOADS.getUrl() + "\">Community Edition</a>",
+    initEditorPane(sonarQubeFree, "SonarQube Server offers a free <a href=\"" + SONARQUBE_EDITIONS_DOWNLOADS.getUrl() + "\">Community Edition</a>",
       SONARQUBE_EDITIONS_DOWNLOADS);
 
     initEditorPane(compareProducts, "Discover which option is the best for your team <a href=\"" + COMPARE_SERVER_PRODUCTS.getUrl() + "\">here</a>",
