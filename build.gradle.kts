@@ -34,7 +34,6 @@ buildscript {
 group = "org.sonarsource.sonarlint.intellij"
 description = "SonarLint for IntelliJ IDEA"
 
-val sonarlintCoreVersion: String by project
 val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
 
