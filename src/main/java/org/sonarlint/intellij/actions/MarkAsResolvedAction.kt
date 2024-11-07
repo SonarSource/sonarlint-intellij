@@ -194,7 +194,7 @@ class MarkAsResolvedAction(
         private fun confirm(project: Project, productName: String, issueStatus: IssueResolutionStatus): Boolean {
             return shouldSkipConfirmationDialog() || MessageDialogBuilder.okCancel(
                 "Confirm marking issue as resolved",
-                "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be updated on $productName and synchronized with any contributor using SonarLint in connected mode"
+                "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be updated on $productName and synchronized with any contributor using SonarQube for IntelliJ in Connected Mode"
             ).yesText("Confirm").noText("Cancel").doNotAsk(DoNotShowAgain()).ask(project)
         }
 
@@ -250,10 +250,10 @@ class MarkAsResolvedAction(
 
     override fun startInWriteAction() = false
 
-    override fun getText() = "SonarLint: Mark issue as\u2026"
+    override fun getText() = "SonarQube for IntelliJ: Mark issue as\u2026"
 
     override fun getFamilyName(): String {
-        return "SonarLint mark issue as\u2026"
+        return "SonarQube for IntelliJ mark issue as\u2026"
     }
 
     override fun isVisible(e: AnActionEvent): Boolean {

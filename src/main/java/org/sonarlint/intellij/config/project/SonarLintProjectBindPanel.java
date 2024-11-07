@@ -218,12 +218,12 @@ public class SonarLintProjectBindPanel {
   private void createBindPanel() {
     bindPanel = new JPanel(new GridBagLayout());
 
-    var bindContext = new JBLabel("<html>Complete your Connected Mode setup by binding your local project to your SonarCloud or SonarQube project " +
+    var bindContext = new JBLabel("<html>Complete your Connected Mode setup by binding your local project to your SonarQube (Server, Cloud) project " +
       "to benefit from the same rules and settings that are used to inspect the project on the server.</html>");
     bindContext.setFontColor(UIUtil.FontColor.BRIGHTER);
 
     boolean pluralizeProject = ProjectAttachProcessor.canAttachToProject() && ModuleManager.getInstance(project).getModules().length > 1;
-    bindEnable = new JBCheckBox("Bind project" + (pluralizeProject ? "s" : "") + " to SonarCloud / SonarQube", true);
+    bindEnable = new JBCheckBox("Bind project" + (pluralizeProject ? "s" : "") + " to SonarQube (Server, Cloud)", true);
     bindEnable.addItemListener(new BindItemListener());
 
     configureConnectionButton = new JButton();
@@ -253,7 +253,7 @@ public class SonarLintProjectBindPanel {
 
     projectKeyLabel = new JLabel("Project key:");
     projectKeyTextField = new JBTextField();
-    projectKeyTextField.getEmptyText().setText("Input SonarCloud/SonarQube project key or search one");
+    projectKeyTextField.getEmptyText().setText("Input SonarQube (Server, Cloud) project key or search one");
 
     searchProjectButton = new JButton();
     searchProjectButton.setAction(new AbstractAction() {

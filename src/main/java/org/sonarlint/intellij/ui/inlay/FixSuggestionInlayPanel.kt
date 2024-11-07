@@ -145,7 +145,7 @@ class FixSuggestionInlayPanel(
             border = JBUI.Borders.empty(5)
             add(
                 JBLabel(
-                    "SonarLint Fix Suggestion (fix ${suggestion.snippetIndex}/${suggestion.totalSnippets})",
+                    "SonarQube for IntelliJ Fix Suggestion (fix ${suggestion.snippetIndex}/${suggestion.totalSnippets})",
                     SonarLintIcons.SONARLINT, SwingConstants.LEFT
                 ), BorderLayout.WEST
             )

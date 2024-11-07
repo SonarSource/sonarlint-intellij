@@ -113,10 +113,10 @@ public final class LocalFileExclusions {
       return ExcludeResult.excluded("Could not create a relative path");
     }
     if (globalExclusions.test(relativePath)) {
-      return ExcludeResult.excluded("file matches exclusions defined in the SonarLint Global Settings");
+      return ExcludeResult.excluded("file matches exclusions defined in the SonarQube for IntelliJ Global Settings");
     }
     if (projectExclusions.test(relativePath)) {
-      return ExcludeResult.excluded("file matches exclusions defined in the SonarLint Project Settings");
+      return ExcludeResult.excluded("file matches exclusions defined in the SonarQube for IntelliJ Project Settings");
     }
 
     return ExcludeResult.notExcluded();

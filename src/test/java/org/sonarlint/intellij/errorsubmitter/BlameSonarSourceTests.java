@@ -33,20 +33,22 @@ class BlameSonarSourceTests {
     @Test
     void testShortDescription() {
         var url = underTest.getReportWithBodyUrl("a");
-        assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH).isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarLint+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body=a");
+        assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH)
+          .isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarQube+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body=a");
     }
 
     @Test
     void emptyBodyIfSingleLineTooLong() {
         var url = underTest.getReportWithBodyUrl(StringUtil.repeat("a", 5000));
-        assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH).isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarLint+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body=");
+        assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH)
+          .isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarQube+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body=");
     }
 
     @Test
     void truncateOnNewLineIfDescriptionTooLong() {
       var url = underTest.getReportWithBodyUrl(StringUtil.repeat("1234567\n", 400));
       assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH)
-        .isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarLint+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body="
+        .isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarQube+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body="
           + StringUtil.repeat("1234567%0A", 391) + "1234567");
     }
 

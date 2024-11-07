@@ -36,7 +36,7 @@ class SecurityHotspotTabTests {
         fun openSecurityHotspotReviewDialogFromList(securityHotspotMessage: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
@@ -53,7 +53,7 @@ class SecurityHotspotTabTests {
         fun changeSecurityHotspotStatusAndPressChange(status: String) {
             with(remoteRobot) {
                 idea {
-                    dialog("Change Security Hotspot Status on SonarQube") {
+                    dialog("Change Security Hotspot Status on SonarQube Server") {
                         content(status) {
                             click()
                         }
@@ -67,7 +67,7 @@ class SecurityHotspotTabTests {
             with(remoteRobot) {
                 idea {
                     notification("The Security Hotspot status was successfully updated")
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         content("SecurityHotspotsPanel") {
                             hasText("No Security Hotspots shown due to the current filtering")
                         }
@@ -79,7 +79,7 @@ class SecurityHotspotTabTests {
         fun verifySecurityHotspotTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
@@ -93,7 +93,7 @@ class SecurityHotspotTabTests {
         fun verifySecurityHotspotTreeContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
@@ -107,11 +107,11 @@ class SecurityHotspotTabTests {
         fun enableConnectedModeFromSecurityHotspotPanel(projectKey: String, enabled: Boolean, connectionName: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
-                            toolBarButton("Configure SonarLint").click()
+                            toolBarButton("Configure SonarQube for IntelliJ").click()
                         }
                     }
                     if (enabled) {
@@ -126,7 +126,7 @@ class SecurityHotspotTabTests {
         fun verifySecurityHotspotRuleDescriptionTabContains(expectedMessage: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         content("SecurityHotspotsPanel") {
                             waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {

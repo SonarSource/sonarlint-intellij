@@ -45,7 +45,7 @@ public class AnalysisRequirementNotifications {
     final var title = "<b>SonarQube for IntelliJ failed to analyze " + languageLabel + " code</b>";
     if (reason == DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_JRE) {
       var content = String.format(
-        "SonarLint requires Java runtime version %s or later to analyze %s code. Current version is %s.",
+        "SonarQube for IntelliJ requires Java runtime version %s or later to analyze %s code. Current version is %s.",
         minVersion, languageLabel, currentVersion);
       createNotificationOnce(project, title, content,
         new OpenLinkAction("https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run" +

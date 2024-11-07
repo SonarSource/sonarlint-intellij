@@ -116,7 +116,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
-    assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue");
+    assertThat(messages).containsExactly("SonarQube for IntelliJ analysis on 1 file found 1 issue");
     ArgumentCaptor<AnalysisResult> analysisResultCaptor = ArgumentCaptor.forClass(AnalysisResult.class);
     verify(toolWindow, timeout(1000)).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
@@ -148,9 +148,10 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
-    assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue\n" +
-      "\n" +
-      "SonarLint analysis found 1 secret. Committed secrets may lead to unauthorized system access.");
+    assertThat(messages).containsExactly("""
+      SonarQube for IntelliJ analysis on 1 file found 1 issue
+
+      SonarQube for IntelliJ analysis found 1 secret. Committed secrets may lead to unauthorized system access.""");
     ArgumentCaptor<AnalysisResult> analysisResultCaptor = ArgumentCaptor.forClass(AnalysisResult.class);
     verify(toolWindow, timeout(1000)).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();

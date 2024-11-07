@@ -196,7 +196,7 @@ class EditorDecorator(private val project: Project) {
             .severity(HighlightSeverity.ERROR)
             .textAttributes(SonarLintTextAttributes.SELECTED)
         if (!message.isNullOrEmpty() && "..." != message) {
-            builder.descriptionAndTooltip("SonarLint: $message")
+            builder.descriptionAndTooltip("SonarQube for IntelliJ: $message")
         }
         return builder.create()?.let { hl -> computeReadActionSafely { Highlight(location.document, hl) } }
     }

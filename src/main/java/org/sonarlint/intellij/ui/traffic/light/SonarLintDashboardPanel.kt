@@ -204,7 +204,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
         val gc = GridBag().nextLine()
 
         val constrains = gc.next()
-        val noAccessLabel = HyperlinkLabel("Restart SonarLint Service").apply {
+        val noAccessLabel = HyperlinkLabel("Restart SonarQube for IntelliJ Service").apply {
             addHyperlinkListener(object : HyperlinkAdapter() {
                 override fun hyperlinkActivated(e: HyperlinkEvent) {
                     getService(BackendService::class.java).restartBackendService()

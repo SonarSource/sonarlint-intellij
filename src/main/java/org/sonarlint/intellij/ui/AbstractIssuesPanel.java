@@ -56,7 +56,7 @@ import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Disposable {
-  private static final String ID = "SonarLint";
+  private static final String ID = "SonarQube for IntelliJ";
   protected final Project project;
   protected Tree tree;
   protected Tree oldTree;

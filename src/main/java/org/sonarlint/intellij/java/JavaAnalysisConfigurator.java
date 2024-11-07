@@ -210,7 +210,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static void processJdkOrderEntry(final Module module, JavaModuleClasspath moduleClasspath, Sdk jdk) {
     var jdkHomePath = jdk.getHomePath();
     if (moduleClasspath.getJdkHome() != null) {
-      SonarLintConsole.get(module.getProject()).info("Multiple Jdk configured for module: " + module.getName());
+      SonarLintConsole.get(module.getProject()).info("Multiple JDK configured for module: " + module.getName());
     } else {
       moduleClasspath.setJdkHome(jdkHomePath);
     }

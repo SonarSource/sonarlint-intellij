@@ -65,7 +65,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
   private JComponent createSonarLintPanel() {
     var sonarlintIcon = new JBLabel(SonarLintIcons.SONARLINT_32);
     var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    var title = new JBLabel("<html><b>SonarLint " + plugin.getVersion() + "</b></html>");
+    var title = new JBLabel("<html><b>SonarQube for IntelliJ " + plugin.getVersion() + "</b></html>");
     var linkLabel = new HyperlinkLabel("Documentation");
     linkLabel.addHyperlinkListener(e -> BrowserUtil.browse(BASE_DOCS_URL));
     var copyrightLabel = new JBLabel("<html>&copy; " + LocalDate.now().getYear() + " SonarSource</html>");
@@ -192,12 +192,12 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
     });
 
     // info
-    var info = new JBLabel("<html>By sharing anonymous SonarLint usage statistics, you help us understand how SonarLint is used so "
+    var info = new JBLabel("<html>By sharing anonymous SonarQube for IntelliJ usage statistics, you help us understand how SonarQube for IntelliJ is used so "
       + "we can improve the plugin to work even better for you. We don't collect source code, IP addresses, or any personally identifying "
       + "information. And we don't share the data with anyone else.</html>");
 
     // checkbox
-    enableTelemetryCheckBox = new JCheckBox("Share anonymous SonarLint statistics");
+    enableTelemetryCheckBox = new JCheckBox("Share anonymous SonarQube for IntelliJ statistics");
     enableTelemetryCheckBox.setFocusable(false);
     var tickOptions = new JPanel(new VerticalFlowLayout());
     tickOptions.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
