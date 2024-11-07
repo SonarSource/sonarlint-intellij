@@ -60,7 +60,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     rootPropertiesPane = new JPanel(new BorderLayout());
     rootPropertiesPane.add(propsPanel.create(), BorderLayout.CENTER);
 
-    tabs.insertTab("Bind to SonarCloud / SonarQube", null, rootBindPane, "Configure the binding to SonarCloud or a SonarQube server", 0);
+    tabs.insertTab("Bind to SonarQube (Server, Cloud)", null, rootBindPane, "Configure the binding to SonarCloud or a SonarQube server", 0);
     tabs.insertTab("File Exclusions", null, exclusionsPanel.getComponent(), "Configure which files to exclude from analysis", 1);
     tabs.insertTab("Analysis Properties", null, rootPropertiesPane, "Configure analysis properties", 2);
 
