@@ -21,40 +21,37 @@
 -->
 <idea-plugin url="https://docs.sonarsource.com/sonarlint/intellij/" require-restart="true">
     <id>org.sonarlint.idea</id>
-    <name>SonarLint</name>
+    <name>SonarQube for IDE</name>
     <version>${project.version}</version>
     <vendor url="https://www.sonarsource.com">SonarSource</vendor>
 
     <description><![CDATA[
         <html>
             <p>
-                SonarLint by <a href="https://www.sonarsource.com/">Sonar</a> is a free IDE extension to find and fix coding issues in real-time, flagging issues as you code, just like a spell-checker.
+                SonarQube for IntelliJ by <a href="https://www.sonarsource.com/">Sonar</a> is a free IDE extension to find and fix coding issues in real-time, flagging issues as you code, just like a spell-checker.
                 More than a linter, it also delivers rich contextual guidance to help developers understand why there is an issue,
                 assess the risk and educate them on how to fix it. This helps improve their skills, enhance their productivity,
                 and take ownership of their code, taking linting to a different level.
             </p>
             <br/>
             <p>
-                When paired with <a href="https://www.sonarsource.com/products/sonarqube/">SonarQube</a> or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarCloud</a> in connected mode,
-                SonarLint forms a powerful end-to-end code quality platform to enrich the CI/CD pipeline, ensuring any code edits or additions are clean.
-                In connected mode, your team can share common language rulesets, project analysis settings and <a href="https://www.sonarsource.com/products/sonarlint/features/connected-mode/">more</a>.
+                When paired with <a href="https://www.sonarsource.com/products/sonarqube/">SonarQube Server</a> or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarQube Cloud</a> in Connected Mode,
+                SonarQube for IntelliJ forms a powerful end-to-end code quality platform to enrich the CI/CD pipeline, ensuring any code edits or additions are clean.
+                In Connected Mode, your team can share common language rulesets, project analysis settings and <a href="https://www.sonarsource.com/products/sonarlint/features/connected-mode/">more</a>.
             </p>
             <br/>
             <p>
-                SonarLint is a powerful open-source tool for developers of all experience and skill levels, empowering them
+                SonarQube for IntelliJ is a powerful open-source tool for developers of all experience and skill levels, empowering them
                 to deliver Clean Code - code fit for development and production. An essential linting tool for every developer.
             </p>
             <br/>
             <p>
-                SonarLint integrates with most JetBrains IDEs including
-                IntelliJ IDEA, CLion, GoLand, WebStorm, PHPStorm, PyCharm, Rider, Android Studio & RubyMine. Supported languages include
+                SonarQube for IntelliJ integrates with most JetBrains IDEs including
+                IntelliJ IDEA, CLion, GoLand, WebStorm, PHPStorm, PyCharm, Rider, Aqua, AppCode, Android Studio & RubyMine. Supported languages include
                 C, C++, Java, Go, JavaScript, TypeScript, Python, C#, Kotlin, Ruby, HTML, CSS, PHP & PL/SQL.
                 The full list of supported languages and rules is available in <a href="https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/rules/">our docs</a>.
             </p>
             <br/>
-            <p>
-                Beginning in version 7.5, SonarLint can detect <a href="https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/security-hotspots/">Security Hotspots</a> when in Connected Mode with SonarQube 9.7+, or SonarCloud.
-            </p>
             <br/>
             <p>
                 Get started by checking the <a href="https://docs.sonarsource.com/sonarlint/intellij/getting-started/requirements/">Requirements</a> and <a href="https://docs.sonarsource.com/sonarlint/intellij/getting-started/installation/">Installation</a> pages.
