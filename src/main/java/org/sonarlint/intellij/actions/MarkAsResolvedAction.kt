@@ -63,8 +63,8 @@ class MarkAsResolvedAction(
     ), IntentionAction, PriorityAction, Iconable {
 
     companion object {
-        const val REVIEW_ISSUE_GROUP = "SonarLint: Mark Issue as Resolved"
-        private const val ERROR_TITLE = "<b>SonarLint - Unable to mark the issue as resolved</b>"
+        const val REVIEW_ISSUE_GROUP = "SonarQube for IntelliJ: Mark Issue as Resolved"
+        private const val ERROR_TITLE = "<b>SonarQube for IntelliJ - Unable to mark the issue as resolved</b>"
         private const val CONTENT = "The issue was successfully marked as resolved"
 
         fun canBeMarkedAsResolved(project: Project, issue: Issue): Boolean {

@@ -168,11 +168,11 @@ class AutomaticSharedConfigCreator(
                 .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
 
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
-            val connectionTypeMessage = if (isSQ) "SonarQube server" else "SonarCloud organization"
+            val connectionTypeMessage = if (isSQ) "SonarQube Server" else "SonarQube Cloud organization"
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of $connectionTypeMessage '${connection.name}'. " +
-                    "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint settings.",
+                    "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarQube for IntelliJ settings.",
                 NotificationType.INFORMATION,
                 OpenInBrowserAction("Learn more", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
             )

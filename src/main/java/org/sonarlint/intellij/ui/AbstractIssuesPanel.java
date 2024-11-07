@@ -204,7 +204,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     } else {
       if (showFinding.getCodeSnippet() == null) {
         SonarLintProjectNotifications.Companion.get(project)
-          .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarLint in the current code.");
+          .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarQube for IntelliJ in the current code.");
         return;
       }
       runOnPooledThread(project, () -> {
@@ -212,7 +212,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
         var rangeMarker = computeReadActionSafely(project, () -> matcher.matchWithCode(showFinding.getFile(), showFinding.getTextRange(), showFinding.getCodeSnippet()));
         if (rangeMarker == null) {
           SonarLintProjectNotifications.Companion.get(project)
-            .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarLint in the current code.");
+            .notifyUnableToOpenFinding("issue", "The issue could not be detected by SonarQube for IntelliJ in the current code.");
           return;
         }
 

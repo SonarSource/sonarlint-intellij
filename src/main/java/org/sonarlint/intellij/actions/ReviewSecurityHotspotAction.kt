@@ -55,8 +55,8 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     companion object {
         val SECURITY_HOTSPOT_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
-        const val REVIEW_HOTSPOT_GROUP = "SonarLint: Security Hotspot Review"
-        private const val ERROR_TITLE = "<b>SonarLint - Unable to review the Security Hotspot</b>"
+        const val REVIEW_HOTSPOT_GROUP = "SonarQube for IntelliJ: Security Hotspot Review"
+        private const val ERROR_TITLE = "<b>SonarQube for IntelliJ - Unable to review the Security Hotspot</b>"
         private const val CONTENT = "The Security Hotspot status was successfully updated"
     }
 

@@ -53,7 +53,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
     PriorityAction, Iconable {
 
     companion object {
-        private const val ERROR_TITLE = "<b>SonarLint - Unable to reopen the issue</b>"
+        private const val ERROR_TITLE = "<b>SonarQube for IntelliJ - Unable to reopen the issue</b>"
         private const val CONTENT = "The issue was successfully reopened"
 
         fun canBeReopened(project: Project, issue: Issue): Boolean {

@@ -251,27 +251,27 @@
 
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
 
-        <notificationGroup id="SonarLint: In Context Promotions"
+        <notificationGroup id="SonarQube for IntelliJ: In Context Promotions"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint: Server Binding Errors"
+        <notificationGroup id="SonarQube for IntelliJ: Server Binding Errors"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint: Analyzer Requirement"
+        <notificationGroup id="SonarQube for IntelliJ: Analyzer Requirement"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint: Secrets detection"
+        <notificationGroup id="SonarQube for IntelliJ: Secrets detection"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint: Taint vulnerabilities"
+        <notificationGroup id="SonarQube for IntelliJ: Taint vulnerabilities"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint: Open in IDE"
+        <notificationGroup id="SonarQube for IntelliJ: Open in IDE"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint"
+        <notificationGroup id="SonarQube for IntelliJ"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint: Server Notifications"
+        <notificationGroup id="SonarQube for IntelliJ: Server Notifications"
                            displayType="STICKY_BALLOON"/>
-        <notificationGroup id="SonarLint: Binding Suggestions"
+        <notificationGroup id="SonarQube for IntelliJ: Binding Suggestions"
                            displayType="STICKY_BALLOON"/>
-        <notificationGroup id="SonarLint: Security Hotspot Review"
+        <notificationGroup id="SonarQube for IntelliJ: Security Hotspot Review"
                            displayType="BALLOON"/>
-        <notificationGroup id="SonarLint: Mark Issue as Resolved"
+        <notificationGroup id="SonarQube for IntelliJ: Mark Issue as Resolved"
                            displayType="BALLOON"/>
         <pluginRepositoryAuthProvider implementation="org.sonarlint.intellij.dogfood.DogfoodPluginRepositoryAuthProvider"/>
     </extensions>

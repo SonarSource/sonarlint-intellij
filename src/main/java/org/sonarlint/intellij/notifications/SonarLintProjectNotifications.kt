@@ -57,15 +57,15 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.Show
 class SonarLintProjectNotifications(private val myProject: Project) {
 
     companion object {
-        private const val TITLE_SONARLINT_INVALID_BINDING = "<b>SonarLint - Invalid binding</b>"
-        private const val TITLE_SONARLINT_SUGGESTIONS = "<b>SonarLint suggestions</b>"
+        private const val TITLE_SONARLINT_INVALID_BINDING = "<b>SonarQube for IntelliJ - Invalid binding</b>"
+        private const val TITLE_SONARLINT_SUGGESTIONS = "<b>SonarQube for IntelliJ suggestions</b>"
 
         fun get(project: Project): SonarLintProjectNotifications {
             return SonarLintUtils.getService(project, SonarLintProjectNotifications::class.java)
         }
 
         fun projectLessNotification(title: String?, message: String, type: NotificationType, action: AnAction? = null): Notification {
-            return NotificationGroupManager.getInstance().getNotificationGroup("SonarLint").createNotification(
+            return NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ").createNotification(
                 title ?: "",
                 message,
                 type
@@ -78,15 +78,22 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
-    private val inContextPromotionGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: In Context Promotions")
-    private val bindingProblemGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Server Binding Errors")
-    private val serverNotificationsGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Server Notifications")
-    private val bindingSuggestionGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Binding Suggestions")
-    private val openInIdeGroup: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Open in IDE")
-    private val secretDetectionGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Secrets detection")
-    private val taintGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Taint vulnerabilities")
-    private val analyzerRequirementGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Analyzer Requirement")
-    private val sonarlintGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint")
+    private val inContextPromotionGroup =
+        NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ: In Context Promotions")
+    private val bindingProblemGroup =
+        NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ: Server Binding Errors")
+    private val serverNotificationsGroup =
+        NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ: Server Notifications")
+    private val bindingSuggestionGroup =
+        NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ: Binding Suggestions")
+    private val openInIdeGroup: NotificationGroup =
+        NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ: Open in IDE")
+    private val secretDetectionGroup =
+        NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ: Secrets detection")
+    private val taintGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ: Taint vulnerabilities")
+    private val analyzerRequirementGroup =
+        NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ: Analyzer Requirement")
+    private val sonarlintGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IntelliJ")
 
     private var storageErrorNotificationShown = AtomicBoolean(false)
     private var lastBindingSuggestion: Notification? = null
@@ -118,8 +125,8 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             content,
             NotificationType.INFORMATION
         ).apply {
-            addAction(OpenTrackedLinkAction("Try SonarCloud for free", LinkTelemetry.SONARCLOUD_SIGNUP_PAGE))
-            addAction(OpenTrackedLinkAction("Download SonarQube", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS))
+            addAction(OpenTrackedLinkAction("Try SonarQube Cloud for free", LinkTelemetry.SONARCLOUD_SIGNUP_PAGE))
+            addAction(OpenTrackedLinkAction("Download SonarQube Server", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS))
             addAction(OpenInBrowserAction("Learn more", null, CONNECTED_MODE_BENEFITS_LINK))
             addAction(DontAskAgainAction())
             icon = SonarLintIcons.SONARLINT
@@ -138,7 +145,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             )
         } else {
             notifyBindingSuggestions(
-                "Bind this project to SonarCloud or SonarQube?",
+                "Bind this project to SonarQube (Server, Cloud)?",
                 if (suggestedBindings.isEmpty()) OpenProjectSettingsAction(
                     myProject,
                     "Configure binding"
@@ -167,7 +174,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
     fun notifyUnableToOpenFinding(type: String, message: String, vararg mainActions: AnAction) {
         expireCurrentFindingNotificationIfNeeded()
         currentOpenFindingNotification = openInIdeGroup.createNotification(
-            "<b>SonarLint - Unable to open $type</b>",
+            "<b>SonarQube for IntelliJ - Unable to open $type</b>",
             message,
             NotificationType.INFORMATION
         ).apply {
@@ -198,7 +205,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
         val isSonarCloud = connection.map { obj: ServerConnection -> obj.isSonarCloud }.orElse(false)
 
-        val label = if (isSonarCloud) "SonarCloud" else "SonarQube"
+        val label = if (isSonarCloud) "SonarQube Cloud" else "SonarQube Server"
         serverNotificationsGroup.createNotification(
             "<b>$label Notification</b>",
             smartNotificationParams.text,
@@ -256,10 +263,10 @@ class SonarLintProjectNotifications(private val myProject: Project) {
 
     fun sendNotification() {
         secretDetectionGroup.createNotification(
-            "SonarLint: secret(s) detected",
-            "SonarLint detected some secrets in one of the open files. " +
+            "SonarQube for IntelliJ: secret(s) detected",
+            "SonarQube for IntelliJ detected some secrets in one of the open files. " +
                 "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +
-                "Please refer to the SonarLint tool window for more information.",
+                "Please refer to the SonarQube for IntelliJ tool window for more information.",
             NotificationType.WARNING
         ).apply {
             icon = SonarLintIcons.SONARLINT
