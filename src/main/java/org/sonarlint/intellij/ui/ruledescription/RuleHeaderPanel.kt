@@ -58,7 +58,6 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CLEA
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
-import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality
@@ -237,10 +236,6 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         if (isMQRMode) {
             wrappedPanel.add(attributePanel.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 15) })
             qualityLabels.forEach { wrappedPanel.add(it) }
-
-            if (!disposableFlag.isDisposed) {
-                SonarGotItTooltipsUtils.showCleanCodeToolTip(wrappedPanel, parent)
-            }
         } else {
             wrappedPanel.add(severityLabel)
             wrappedPanel.add(hotspotVulnerabilityLabel)

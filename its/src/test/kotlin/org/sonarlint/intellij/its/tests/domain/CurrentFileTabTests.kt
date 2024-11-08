@@ -23,7 +23,6 @@ import com.intellij.remoterobot.utils.waitFor
 import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
-import org.sonarlint.intellij.its.fixtures.closeAllGotItTooltips
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
@@ -96,7 +95,6 @@ class CurrentFileTabTests {
                 idea {
                     toolWindow("SonarLint") {
                         ensureOpen()
-                        closeAllGotItTooltips()
                         tabTitleContains("Current File") { select() }
                         findText(issueMessage).rightClick()
                     }
@@ -132,7 +130,6 @@ class CurrentFileTabTests {
                     toolWindow("SonarLint") {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
-                        closeAllGotItTooltips()
                         content("CurrentFilePanel") {
                             findText(issueMessage).click()
                         }
