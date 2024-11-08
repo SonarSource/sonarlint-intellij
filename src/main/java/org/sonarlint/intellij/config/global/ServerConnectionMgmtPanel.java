@@ -82,7 +82,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     var app = ApplicationManager.getApplication();
     connectionChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     connectionList = new JBList<>();
-    connectionList.getEmptyText().appendLine("Add a connection to SonarCloud or SonarQube");
+    connectionList.getEmptyText().appendLine("Add a connection to SonarQube (Server, Cloud)");
     connectionList.addMouseListener(new MouseAdapter() {
       @Override
       public void mouseClicked(MouseEvent evt) {
@@ -141,19 +141,19 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   private static JPanel initConnectionTitle() {
     var titlePanel = new JPanel(new HorizontalLayout(5));
-    var connectionLabel = new JBLabel("Connections to");
+    var connectionLabel = new JBLabel("Connections to SonarQube (");
     connectionLabel.setFont(connectionLabel.getFont().deriveFont(Font.BOLD, 16f));
-    var sonarCloudIcon = new JBLabel(SonarLintIcons.ICON_SONARCLOUD_16);
-    var sonarCloudLabel = new JBLabel("SonarCloud or");
-    sonarCloudLabel.setFont(sonarCloudLabel.getFont().deriveFont(Font.BOLD, 16f));
-    var sonarQubeIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_16);
-    var sonarQubeLabel = new JBLabel("SonarQube");
+    var sonarQubeIcon = new JBLabel(SonarLintIcons.ICON_SONARCLOUD_16);
+    var sonarQubeLabel = new JBLabel("Server, ");
     sonarQubeLabel.setFont(sonarQubeLabel.getFont().deriveFont(Font.BOLD, 16f));
+    var sonarCloudIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_16);
+    var sonarCloudLabel = new JBLabel("Cloud)");
+    sonarCloudLabel.setFont(sonarQubeLabel.getFont().deriveFont(Font.BOLD, 16f));
     titlePanel.add(connectionLabel);
-    titlePanel.add(sonarCloudIcon);
-    titlePanel.add(sonarCloudLabel);
     titlePanel.add(sonarQubeIcon);
     titlePanel.add(sonarQubeLabel);
+    titlePanel.add(sonarCloudIcon);
+    titlePanel.add(sonarCloudLabel);
     return titlePanel;
   }
 
@@ -168,7 +168,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     connectedModeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
     initHtmlPane(connectedModeLabel);
     SwingHelper.setHtml(connectedModeLabel, "<a href=\"" + CONNECTED_MODE_DOCS.getUrl() + "\">Connected Mode</a> " +
-        "links SonarLint to SonarCloud or SonarQube to apply the same Clean Code standards as your team. " +
+      "links SonarQube for IntelliJ to SonarQube (Server, Cloud) to apply the same Clean Code standards as your team. " +
         "Analyze more languages, detect more issues, receive notifications about the quality gate status, and more. " +
         "Quality Profiles and file exclusion settings defined on the server are shared between all connected users.",
       JBUI.CurrentTheme.ContextHelp.FOREGROUND);

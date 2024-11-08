@@ -44,11 +44,11 @@ public class ShowLocationsIntentionAction implements IntentionAction, PriorityAc
   }
 
   @Nls @NotNull @Override public String getText() {
-    return "SonarLint: Show " + (context.hasUniqueFlow() ? "issue locations" : "data flows");
+    return "SonarQube for IntelliJ: Show " + (context.hasUniqueFlow() ? "issue locations" : "data flows");
   }
 
   @Nls @NotNull @Override public String getFamilyName() {
-    return "SonarLint locations";
+    return "SonarQube for IntelliJ locations";
   }
 
   @Override public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {

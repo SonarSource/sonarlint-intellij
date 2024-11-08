@@ -61,7 +61,7 @@ class ShowFindingCallable<T: Finding>(private val project: Project, onTheFlyFind
                 LiveIssue::class.java -> showIssue(toolWindow)
                 LocalTaintVulnerability::class.java -> showTaintVulnerability(toolWindow)
                 else -> SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("The finding could not be detected by SonarLint in the current code")
+                    .notifyUnableToOpenFinding("The finding could not be detected by SonarQube for IntelliJ in the current code")
             }
         }
     }
@@ -73,14 +73,14 @@ class ShowFindingCallable<T: Finding>(private val project: Project, onTheFlyFind
         val found = getService(project, SonarLintToolWindow::class.java).doesSecurityHotspotExist(showFinding.findingKey)
         if (!found) {
             SonarLintProjectNotifications.get(project)
-                .notifyUnableToOpenFinding("The Security Hotspot could not be detected by SonarLint in the current code")
+                .notifyUnableToOpenFinding("The Security Hotspot could not be detected by SonarQube for IntelliJ in the current code")
         } else {
             val selected =
                 getService(project, SonarLintToolWindow::class.java).trySelectSecurityHotspot(showFinding.findingKey)
             if (!selected) {
                 SonarLintProjectNotifications.get(project)
                     .notifyUnableToOpenFinding(
-                        "The Security Hotspot could not be opened by SonarLint due to the applied filters",
+                        "The Security Hotspot could not be opened by SonarQube for IntelliJ due to the applied filters",
                         ClearSecurityHotspotsFiltersAction(showFinding.findingKey)
                     )
             }

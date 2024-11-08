@@ -27,7 +27,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ex.ToolWindowEx;
 import javax.swing.Box;
 import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
@@ -39,7 +38,7 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class SonarLintLogPanel extends SimpleToolWindowPanel {
-  private static final String ID = "SonarLint";
+  private static final String ID = "SonarQube for IntelliJ";
 
   private final ToolWindow toolWindow;
   private final Project project;
@@ -82,7 +81,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     var group = new DefaultActionGroup();
     group.add(new ToolWindowLogAnalysisAction());
     group.add(new ToolWindowVerboseModeAction());
-    ((ToolWindowEx) toolWindow).setAdditionalGearActions(group);
+    toolWindow.setAdditionalGearActions(group);
   }
 
   private void addConsole() {

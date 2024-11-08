@@ -34,7 +34,7 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
 
   private final Project project;
 
-  public static final String HELP_TEXT = "SonarLint analyzes in real-time the active file only, and reports any issues found in this view. ";
+  public static final String HELP_TEXT = "SonarQube for IntelliJ analyzes in real-time the active file only, and reports any issues found in this view. ";
 
   CurrentFileStatusPanel(Project project) {
     super(new BorderLayout());

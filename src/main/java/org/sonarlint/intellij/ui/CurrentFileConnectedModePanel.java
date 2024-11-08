@@ -109,7 +109,7 @@ public class CurrentFileConnectedModePanel {
       super(SonarLintIcons.NOT_CONNECTED);
       var notConnectedTooltip = new TooltipWithClickableLinks.ForBrowser(this,
         "<h3>Not Connected</h3>" +
-          "<p>Click to synchronize your project with SonarCloud or SonarQube.</p>" +
+          "<p>Click to synchronize your project with SonarQube (Server, Cloud).</p>" +
           "<p><a href=\"" + SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK + "\">Learn More</a></p>");
       IdeTooltipManager.getInstance().setCustomTooltip(this, notConnectedTooltip);
     }
@@ -120,7 +120,7 @@ public class CurrentFileConnectedModePanel {
       super(SonarLintIcons.CONNECTION_ERROR);
       var errorTooltip = new TooltipWithClickableLinks(this,
         "<h3>Connected Mode Error</h3>" +
-          "<p>There was an issue, please check for additional details in the SonarLint Log.</p>" +
+          "<p>There was an issue, please check for additional details in the SonarQube for IntelliJ Log.</p>" +
           "<p><a href=\"#\">Open Log</a></p>",
         new HyperlinkAdapter() {
           @Override

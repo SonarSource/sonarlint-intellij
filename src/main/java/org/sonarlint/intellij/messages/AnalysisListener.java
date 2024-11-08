@@ -28,7 +28,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
  * Notifies about analysis tasks starting. It will be called for any analysis task, regardless of the trigger, if it is background or not, etc.
  */
 public interface AnalysisListener {
-  Topic<AnalysisListener> TOPIC = Topic.create("SonarLint analysis start", AnalysisListener.class);
+  Topic<AnalysisListener> TOPIC = Topic.create("SonarQube for IntelliJ Analysis Start", AnalysisListener.class);
 
   void started(Collection<VirtualFile> files, TriggerType trigger);
 

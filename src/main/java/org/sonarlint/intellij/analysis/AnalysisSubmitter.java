@@ -58,7 +58,7 @@ import static org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllFilesF
 
 @Service(Service.Level.PROJECT)
 public final class AnalysisSubmitter {
-  public static final String ANALYSIS_TASK_TITLE = "SonarLint Analysis";
+  public static final String ANALYSIS_TASK_TITLE = "SonarQube for IntelliJ Analysis";
   private final Project project;
   private final OnTheFlyFindingsHolder onTheFlyFindingsHolder;
   private Cancelable currentManualAnalysis;

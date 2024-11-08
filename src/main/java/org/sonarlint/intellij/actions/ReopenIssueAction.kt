@@ -53,7 +53,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
     PriorityAction, Iconable {
 
     companion object {
-        private const val ERROR_TITLE = "<b>SonarLint - Unable to reopen the issue</b>"
+        private const val ERROR_TITLE = "<b>SonarQube for IntelliJ - Unable to reopen the issue</b>"
         private const val CONTENT = "The issue was successfully reopened"
 
         fun canBeReopened(project: Project, issue: Issue): Boolean {
@@ -114,7 +114,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         private fun confirm(project: Project, productName: String): Boolean {
             return shouldSkipConfirmationDialogForReopening() || MessageDialogBuilder.okCancel(
                 "Confirm reopening the issue",
-                "Are you sure you want to reopen this issue? The status will be updated on $productName and synchronized with any contributor using SonarLint in connected mode"
+                "Are you sure you want to reopen this issue? The status will be updated on $productName and synchronized with any contributor using SonarQube for IntelliJ in Connected Mode"
             ).yesText("Confirm").noText("Cancel").doNotAsk(DoNotShowAgain()).ask(project)
         }
 
@@ -164,10 +164,10 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
 
     override fun startInWriteAction() = false
 
-    override fun getText() = "SonarLint: Reopen issue"
+    override fun getText() = "SonarQube for IntelliJ: Reopen issue"
 
     override fun getFamilyName(): String {
-        return "SonarLint reopen issue"
+        return "SonarQube for IntelliJ reopen issue"
     }
 
     override fun isVisible(e: AnActionEvent): Boolean {
@@ -177,7 +177,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
     }
 
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
-        return issue?.let { canBeReopened(project, it) } ?: false
+        return issue?.let { canBeReopened(project, it) } == true
     }
 
     override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {

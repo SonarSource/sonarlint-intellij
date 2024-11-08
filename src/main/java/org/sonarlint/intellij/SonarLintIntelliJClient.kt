@@ -193,10 +193,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<String, String, String> {
         return if (uniqueSuggestion.connectionSuggestion.isRight) {
-            Triple("SonarCloud organization", uniqueSuggestion.connectionSuggestion.right.projectKey,
+            Triple(
+                "SonarQube Cloud organization", uniqueSuggestion.connectionSuggestion.right.projectKey,
                 uniqueSuggestion.connectionSuggestion.right.organization)
         } else {
-            Triple("SonarQube server", uniqueSuggestion.connectionSuggestion.left.projectKey,
+            Triple(
+                "SonarQube Server", uniqueSuggestion.connectionSuggestion.left.projectKey,
                 uniqueSuggestion.connectionSuggestion.left.serverUrl)
         }
     }
@@ -415,13 +417,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             if (isSQ) {
                 setUpManualConnection(serverOrOrg)
             } else {
-                throw CancellationException("SonarLint cannot assist with manual connection to SonarCloud organization")
+                throw CancellationException("SonarQube for IntelliJ cannot assist with manual connection to SonarQube Cloud organization")
             }
         }
 
         projectLessNotification(
             "",
-            "You have successfully established a connection to the ${if (isSQ) "SonarQube server" else "SonarCloud organization"}",
+            "You have successfully established a connection to the ${if (isSQ) "SonarQube Server" else "SonarQube Cloud organization"}",
             NotificationType.INFORMATION
         )
 
@@ -440,7 +442,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private fun setUpManualConnection(serverUrl: String): AssistCreatingConnectionResponse {
         val warningTitle = "Trust This SonarQube Server?"
         val message = """
-                        The server <b>${StringEscapeUtils.escapeHtml4(serverUrl)}</b> is attempting to set up a connection with SonarLint. Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous.
+                        The server <b>${StringEscapeUtils.escapeHtml4(serverUrl)}</b> is attempting to set up a connection with SonarQube for IntelliJ. Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server is potentially dangerous.
                         
                         If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
                     """.trimIndent()
@@ -480,8 +482,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
                 get(project).simpleNotification(
                     "Project successfully bound",
-                    "Local project bound to project '$projectKey' of SonarQube server '${connection.name}'. "
-                        + "You can now enjoy all capabilities of SonarLint Connected Mode. The binding of this project can be updated in the SonarLint Settings.",
+                    "Local project bound to project '$projectKey' of SonarQube Server '${connection.name}'. "
+                        + "You can now enjoy all capabilities of SonarQube for IntelliJ Connected Mode. The binding of this project can be updated in the SonarQube for IntelliJ Settings.",
                     NotificationType.INFORMATION,
                     OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
                 )
@@ -577,10 +579,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun noBindingSuggestionFound(params: NoBindingSuggestionFoundParams) {
-        val serverType = if (params.isSonarCloud) "SonarCloud" else "SonarQube"
+        val serverType = if (params.isSonarCloud) "SonarQube Cloud" else "SonarQube Server"
         projectLessNotification(
             "No matching open project found",
-            "IntelliJ cannot match $serverType project '${params.projectKey}' to any of the currently open projects. Please open your project and try again.",
+            "SonarQube for IntelliJ cannot match $serverType project '${params.projectKey}' to any of the currently open projects. Please open your project and try again.",
             NotificationType.WARNING,
             OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK)
         )
@@ -655,7 +657,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             getService(
                 module.project,
                 SonarLintConsole::class.java
-            ).debug("Several candidate Vcs repositories detected for module $module, choosing first")
+            ).debug("Several candidate VCS repositories detected for module $module, choosing first")
         }
         return repositories
     }
@@ -671,7 +673,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             getService(
                 project,
                 SonarLintConsole::class.java
-            ).debug("Several candidate Vcs repositories detected for project $project, choosing first")
+            ).debug("Several candidate VCS repositories detected for project $project, choosing first")
         }
         return repositories
     }

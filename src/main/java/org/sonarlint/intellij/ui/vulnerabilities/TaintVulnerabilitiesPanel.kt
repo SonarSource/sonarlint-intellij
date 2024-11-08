@@ -117,10 +117,13 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     init {
         val globalSettings = getGlobalSettings()
         cards.add(
-            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarLint Service", RestartBackendAction()),
+            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarQube for IntelliJ Service", RestartBackendAction()),
             ERROR_CARD_ID
         )
-        cards.add(centeredLabel("The project is not bound to SonarCloud/SonarQube", "Configure Binding", SonarConfigureProject()), NO_BINDING_CARD_ID)
+        cards.add(
+            centeredLabel("The project is not bound to SonarQube (Server, Cloud)", "Configure Binding", SonarConfigureProject()),
+            NO_BINDING_CARD_ID
+        )
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
         cards.add(centeredLabel("No taint vulnerabilities shown due to the current filtering", "Show Resolved Taint Vulnerabilities",
             SonarLintActions.getInstance().includeResolvedTaintVulnerabilitiesAction()), NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
@@ -151,7 +154,12 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             RefreshTaintVulnerabilitiesAction(),
             sonarLintActions.includeResolvedTaintVulnerabilitiesAction(),
             sonarLintActions.configure(),
-            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK, AllIcons.Actions.Help)
+            OpenInBrowserAction(
+                LEARN_MORE,
+                "Learn more about taint vulnerabilities in SonarQube for IntelliJ",
+                TAINT_VULNERABILITIES_LINK,
+                AllIcons.Actions.Help
+            )
         ))
         applyFocusOnNewCodeSettings()
     }
@@ -191,8 +199,14 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     private fun createDisclaimer(): StripePanel {
-        val stripePanel = StripePanel("This tab displays taint vulnerabilities detected by SonarCloud or SonarQube. SonarLint does not detect those issues locally.", Information)
-        stripePanel.addAction(LEARN_MORE, OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarLint", TAINT_VULNERABILITIES_LINK))
+        val stripePanel = StripePanel(
+            "This tab displays taint vulnerabilities detected by SonarQube (Server, Cloud). SonarQube for IntelliJ does not detect those issues locally.",
+            Information
+        )
+        stripePanel.addAction(
+            LEARN_MORE,
+            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarQube for IntelliJ", TAINT_VULNERABILITIES_LINK)
+        )
         stripePanel.addAction("Dismiss", object : AbstractSonarAction() {
             override fun actionPerformed(e: AnActionEvent) {
                 stripePanel.isVisible = false
@@ -360,7 +374,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         runOnPooledThread(project) {
             if (showFinding.codeSnippet == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarLint in the current code")
+                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarQube for IntelliJ in the current code")
                 return@runOnPooledThread
             }
             val matcher = TextRangeMatcher(project)
@@ -369,7 +383,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             }
             if (rangeMarker == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarLint in the current code")
+                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarQube for IntelliJ in the current code")
                 return@runOnPooledThread
             }
 
