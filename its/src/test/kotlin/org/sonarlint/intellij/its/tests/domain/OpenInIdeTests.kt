@@ -65,7 +65,7 @@ class OpenInIdeTests {
                 idea {
                     dialog("Trust This SonarQube Server?") {
                         jbTextFields()[1].text = "Orchestrator"
-                        buttonContainsText("Connect to This SonarQube").click()
+                        buttonContainsText("Connect to This SonarQube Server").click()
                     }
                 }
             }
@@ -74,9 +74,9 @@ class OpenInIdeTests {
         fun acceptNewSCAutomatedConnection() {
             with(remoteRobot) {
                 idea {
-                    dialog("Trust This SonarCloud Organization?") {
+                    dialog("Trust This SonarQube Cloud Organization?") {
                         jbTextFields()[1].text = "sonarlint-it"
-                        buttonContainsText("Connect to This SonarCloud Organization").click()
+                        buttonContainsText("Connect to This SonarQube Cloud Organization").click()
                     }
                 }
             }

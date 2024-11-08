@@ -42,7 +42,7 @@ class ProjectBindingUtils {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
-                        checkBox("Bind project to SonarCloud / SonarQube").unselect()
+                        checkBox("Bind project to SonarQube (Server, Cloud)").unselect()
                         if (isRider()) {
                             button("Save").click()
                         } else {
@@ -57,7 +57,7 @@ class ProjectBindingUtils {
             with(remoteRobot) {
                 idea {
                     dialog("Project Settings") {
-                        checkBox("Bind project to SonarCloud / SonarQube").select()
+                        checkBox("Bind project to SonarQube (Server, Cloud)").select()
                         comboBox("Connection:").click()
                         remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
                             waitFor(Duration.ofSeconds(5)) { hasText(connectionName) }
@@ -75,9 +75,9 @@ class ProjectBindingUtils {
         fun bindProjectAndModuleInFileSettings() {
             sonarLintGlobalSettings {
                 tree {
-                    clickPath("Tools", "SonarLint", "Project Settings")
+                    clickPath("Tools", "SonarQube for IntelliJ", "Project Settings")
                 }
-                checkBox("Bind project to SonarCloud / SonarQube").select()
+                checkBox("Bind project to SonarQube (Server, Cloud)").select()
                 pressOk()
                 errorMessage("Connection should not be empty")
 
@@ -100,7 +100,7 @@ class ProjectBindingUtils {
                 pressOk()
                 errorMessage("Project key for module 'sample-scala-module' should not be empty")
                 buttons(JButtonFixture.byText("Search in list\u2026"))[1].click()
-                dialog("Select SonarQube Project To Bind") {
+                dialog("Select SonarQube Server Project To Bind") {
                     jList {
                         clickItem(MODULE_PROJECT_KEY, false)
                     }

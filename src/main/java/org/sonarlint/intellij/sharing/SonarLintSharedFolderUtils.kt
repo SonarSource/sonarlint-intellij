@@ -62,7 +62,7 @@ class SonarLintSharedFolderUtils {
                     getService(
                         module.project,
                         SonarLintConsole::class.java
-                    ).debug("Several candidate Vcs repositories detected for module $module, choosing first")
+                    ).debug("Several candidate VCS repositories detected for module $module, choosing first")
                 }
                 repositories.first()
             }.toSet().firstOrNull()?.getGitDir()

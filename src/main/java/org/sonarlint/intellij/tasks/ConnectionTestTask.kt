@@ -30,7 +30,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.V
 
 class ConnectionTestTask(private val server: ServerConnection) :
     Task.WithResult<ValidateConnectionResponse?, Exception>(
-        null, "Test Connection to " + if (server.isSonarCloud) "SonarCloud" else "SonarQube", true
+        null, "Test Connection to " + if (server.isSonarCloud) "SonarQube Cloud" else "SonarQube Server", true
     ) {
 
     override fun compute(indicator: ProgressIndicator): ValidateConnectionResponse? {

@@ -56,7 +56,7 @@ public class ProjectExclusionsPanel implements ConfigurationPanel<SonarLintProje
         + "\">override</a> your locally defined exclusions.";
       editorPane2.setVisible(false);
     } else {
-      message = "When a project is connected to SonarQube or SonarCloud, exclusions defined in the server's General Settings " +
+      message = "When a project is connected to SonarQube (Server, Cloud), exclusions defined in the server's General Settings " +
         "<a href=\"" + SonarLintDocumentation.Intellij.FILE_EXCLUSION_LINK + "\">override</a> your locally defined exclusions.";
       editorPane2.setVisible(true);
     }

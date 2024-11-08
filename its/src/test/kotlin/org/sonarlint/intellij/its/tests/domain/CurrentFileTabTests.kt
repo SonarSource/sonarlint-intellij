@@ -38,7 +38,7 @@ class CurrentFileTabTests {
         fun verifyCurrentFileShowsCard(expectedClass: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         assertThat(findCard(expectedClass)).isNotNull
                     }
@@ -47,11 +47,11 @@ class CurrentFileTabTests {
         }
 
         fun changeStatusOnSonarQubeAndPressChange(status: String) {
-            changeStatusAndPressChange("Mark Issue as Resolved on SonarQube", status)
+            changeStatusAndPressChange("Mark Issue as Resolved on SonarQube Server", status)
         }
 
         fun changeStatusOnSonarCloudAndPressChange(status: String) {
-            changeStatusAndPressChange("Mark Issue as Resolved on SonarCloud", status)
+            changeStatusAndPressChange("Mark Issue as Resolved on SonarQube Cloud", status)
         }
 
         private fun changeStatusAndPressChange(windowTitle: String, status: String) {
@@ -82,7 +82,7 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     notification("The issue was successfully marked as resolved")
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         content("CurrentFilePanel") {
                             hasText("No issues found in the current opened file")
                         }
@@ -94,7 +94,7 @@ class CurrentFileTabTests {
         fun openIssueReviewDialogFromList(issueMessage: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         closeAllGotItTooltips()
                         tabTitleContains("Current File") { select() }
@@ -110,7 +110,7 @@ class CurrentFileTabTests {
         fun verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
@@ -129,7 +129,7 @@ class CurrentFileTabTests {
         fun clickCurrentFileIssue(issueMessage: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
                         closeAllGotItTooltips()
@@ -143,11 +143,11 @@ class CurrentFileTabTests {
 
         fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String) {
             optionalIdeaFrame()?.apply {
-                toolWindow("SonarLint") {
+                toolWindow("SonarQube for IntelliJ") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
-                        toolBarButton("Configure SonarLint").click()
+                        toolBarButton("Configure SonarQube for IntelliJ").click()
                     }
                 }
                 if (enabled) {
@@ -161,7 +161,7 @@ class CurrentFileTabTests {
         fun verifyCurrentFileRuleDescriptionTabContains(expectedMessage: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         content("CurrentFilePanel") {
                             waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {

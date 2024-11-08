@@ -67,7 +67,7 @@ import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class CurrentFilePanel extends AbstractIssuesPanel {
 
-  public static final String SONARLINT_TOOLWINDOW_ID = "SonarLint";
+  public static final String SONARLINT_TOOLWINDOW_ID = "SonarQube for IntelliJ";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final JBPanelWithEmptyText issuesPanel;
   private final JScrollPane treeScrollPane;
@@ -136,7 +136,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     var backendIsAlive = getService(BackendService.class).isAlive();
     if (!backendIsAlive) {
       statusText.setText(SONARLINT_ERROR_MSG);
-      statusText.appendLine("Restart SonarLint Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+      statusText.appendLine("Restart SonarQube for IntelliJ Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
         ignore -> ActionUtil.invokeAction(restartSonarLintAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
       disableEmptyDisplay(false);
       populateSubTree(tree, treeBuilder, Map.of());
@@ -160,7 +160,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
             ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
         }
       } else {
-        statusText.setText("Waiting for SonarLint to be ready");
+        statusText.setText("Waiting for SonarQube for IntelliJ to be ready");
       }
 
       issues = Collections.emptyList();

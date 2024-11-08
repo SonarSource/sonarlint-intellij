@@ -39,8 +39,8 @@ tasks.test {
     useJUnitPlatform {
         val tag = System.getenv("TEST_SUITE")
 
-        if (tag != null && (tag.equals("OpenInIdeTests") || tag.equals("ConnectedAnalysisTests")
-                || tag.equals("ConfigurationTests") || tag.equals("Standalone"))
+        if (tag != null && (tag == "OpenInIdeTests" || tag == "ConnectedAnalysisTests"
+                || tag == "ConfigurationTests" || tag == "Standalone")
         ) {
             includeTags(tag)
         }
@@ -58,7 +58,6 @@ tasks.downloadRobotServerPlugin {
 }
 
 val ijVersion: String by project
-val intellijBuildVersion: String by project
 
 intellij {
     if (project.hasProperty("ijVersion")) {

@@ -64,11 +64,11 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
     private val proxyButton = JButton("Proxy")
 
     init {
-        title = if (isSQ) "Trust This SonarQube Server?" else "Trust This SonarCloud Organization?"
+        title = if (isSQ) "Trust This SonarQube Server?" else "Trust This SonarQube Cloud Organization?"
         val connectionNames = Settings.getGlobalSettings().serverNames
         connectionNameField.text = findFirstUniqueConnectionName(connectionNames, serverOrOrg)
 
-        val buttonTextAction = if (isSQ) "Connect to This SonarQube Server" else "Connect to This SonarCloud Organization"
+        val buttonTextAction = if (isSQ) "Connect to This SonarQube Server" else "Connect to This SonarQube Cloud Organization"
 
         createConnectionAction = object : DialogWrapperAction(buttonTextAction) {
             init {
@@ -116,7 +116,8 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         )
 
         connectedModeDescriptionLabel.text =
-            "Connecting SonarLint to ${if (isSQ) "SonarQube" else "SonarCloud"} will enable issues " + "to be opened directly in your IDE and enable other <a href=\"$CONNECTED_MODE_BENEFITS_LINK\">features and benefits</a>."
+            "Connecting SonarQube for IntelliJ to ${if (isSQ) "SonarQube Server" else "SonarQube Cloud"} will enable issues " +
+                "to be opened directly in your IDE and enable other <a href=\"$CONNECTED_MODE_BENEFITS_LINK\">features and benefits</a>."
         connectedModeDescriptionLabel.addHyperlinkListener(object : HyperlinkAdapter() {
             override fun hyperlinkActivated(e: HyperlinkEvent) {
                 BrowserUtil.browse(e.url)
@@ -147,9 +148,10 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         val warningPanel = JBPanel<JBPanel<*>>(BorderLayout())
         redWarningIcon.icon = AllIcons.Ide.FatalError
         warningLabel.text = if (isSQ) {
-            "Always ensure that your Server URL matches your SonarQube instance. " + "Letting SonarLint connect to an untrusted SonarQube server is potentially dangerous."
+            "Always ensure that your Server URL matches your SonarQube Server instance. " +
+                "Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server is potentially dangerous."
         } else {
-            "Ensure that the organization matches your SonarCloud organization."
+            "Ensure that the organization matches your SonarQube Cloud organization."
         }
         warningPanel.add(redWarningIcon, BorderLayout.WEST)
         warningPanel.add(warningLabel, BorderLayout.CENTER)
@@ -173,7 +175,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         )
 
         tokenLabel.text =
-            "A token will be automatically generated to allow access to your <u>${if (isSQ) "SonarQube instance" else "SonarCloud organization"}</u>."
+            "A token will be automatically generated to allow access to your <u>${if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"}</u>."
         centerPanel.add(
             tokenLabel, GridBagConstraints(
                 1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0

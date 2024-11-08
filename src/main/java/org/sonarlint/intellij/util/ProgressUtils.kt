@@ -40,11 +40,11 @@ object ProgressUtils {
             }
             try {
                 return future.get(100, TimeUnit.MILLISECONDS)
-            } catch (t: TimeoutException) {
+            } catch (_: TimeoutException) {
                 continue
-            } catch (e: InterruptedException) {
+            } catch (_: InterruptedException) {
                 throw ProcessCanceledException()
-            } catch (e: CancellationException) {
+            } catch (_: CancellationException) {
                 throw ProcessCanceledException()
             } catch (e: ExecutionException) {
                 throw e.cause ?: e

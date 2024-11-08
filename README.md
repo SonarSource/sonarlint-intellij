@@ -1,11 +1,13 @@
-SonarLint IntelliJ Plugin
+SonarQube for IntelliJ Plugin
 =========================
 
 [![Build Status](https://api.cirrus-ci.com/github/SonarSource/sonarlint-intellij.svg?branch=master)](https://cirrus-ci.com/github/SonarSource/sonarlint-intellij)
 [![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
 
-SonarLint is an IDE extension that supports you in writing [Clean Code](https://www.sonarsource.com/solutions/clean-code/), by detecting and helping you fix quality issues as you type. See documentation details for [Clean Code](https://docs.sonarsource.com/sonarlint/intellij/concepts/clean-code/).
-Like a spell checker, SonarLint squiggles flaws so they can be fixed before committing code.
+SonarQube for IntelliJ is an IDE extension that supports you in writing [Clean Code](https://www.sonarsource.com/solutions/clean-code/), by
+detecting and helping you fix quality issues as you type. See documentation details
+for [Clean Code](https://docs.sonarsource.com/sonarlint/intellij/concepts/clean-code/).
+Like a spell checker, SonarQube for IntelliJ squiggles flaws so they can be fixed before committing code.
 
 Useful links
 ------------
@@ -18,14 +20,18 @@ Useful links
 How to install
 --------------
 
-You can install SonarLint from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly available in the IDE preferences.
+You can install SonarQube for IntelliJ from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly
+available in the IDE preferences.
 
 Full up-to-date details are available on the [Requirements](https://docs.sonarsource.com/sonarlint/intellij/getting-started/requirements/) and [Installation](https://docs.sonarsource.com/sonarlint/intellij/getting-started/installation/) pages.
 
 Questions and Feedback?
 --------------------------
 
-For SonarLint support questions ("How do I?", "I got this error, why?", ...), please first read the [FAQ](https://community.sonarsource.com/t/frequently-asked-questions/7204) to learn how to get your logs, and then head to the [SonarSource forum](https://community.sonarsource.com/c/help/sl). Before creating a new topic, please check if your question has already been answered because there is a chance that someone has already had the same issue.
+For SonarQube for IntelliJ support questions ("How do I?", "I got this error, why?", ...), please first read
+the [FAQ](https://community.sonarsource.com/t/frequently-asked-questions/7204) to learn how to get your logs, and then head to
+the [Sonar forum](https://community.sonarsource.com/c/help/sl). Before creating a new topic, please check if your question has already been
+answered because there is a chance that someone has already had the same issue.
 
 Be aware that this forum is a community, and the standard pleasantries are expected (_Hello, Thank you, I appreciate the reply, etc._). If you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing by, but the Teams and Community Managers know that your questions are important. :-)
 
@@ -61,7 +67,7 @@ How to run UI tests
 
     ./gradlew :its:runIdeForUiTests &
 
-The above will start an IDE instance with the SonarLint plugin. Wait for the UI robot server to start, then run the ITs:
+The above will start an IDE instance with the SonarQube for IntelliJ plugin. Wait for the UI robot server to start, then run the ITs:
 
     ./gradlew :its:check
 
@@ -85,7 +91,8 @@ How to debug UI tests
 
 If you want to debug what happens on the test side, you can simply launch the test in debug mode from the IDE.
 
-If you want to debug what happens in the SonarLint plugin, you can open the project in IntelliJ, and run the `its:runIdeForUiTests` task in debug mode (for example from the Gradle panel on the right).
+If you want to debug what happens in the SonarQube for IntelliJ plugin, you can open the project in IntelliJ, and run the
+`its:runIdeForUiTests` task in debug mode (for example from the Gradle panel on the right).
 
 
 How to debug SLOOP

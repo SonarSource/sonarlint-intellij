@@ -65,7 +65,7 @@ class AnalysisScope {
   }
 
   private int modulesCount() {
-    return filesByModule.keySet().size();
+    return filesByModule.size();
   }
 
   public String getDescription() {

@@ -64,7 +64,7 @@ class PLSQLTest : BaseUiTest() {
     private fun verifyIssueTreeContainsMessages() {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarLint") {
+                toolWindow("SonarQube for IntelliJ") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
                     // the synchronization can take a while to happen

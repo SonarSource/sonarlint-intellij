@@ -24,7 +24,7 @@
   <name>SonarLint-ITs</name>
   <version>1.0</version>
   <vendor url="https://sonarsource.com">SonarSource</vendor>
-  <description>Fake Plugin To Run SonarLint UI tests with multiple flavors</description>
+  <description>Fake Plugin To Run SonarQube for IntelliJ UI tests with multiple flavors</description>
 
   <idea-version since-build="223.8214.6"/>
 

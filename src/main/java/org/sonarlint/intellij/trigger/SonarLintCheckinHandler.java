@@ -84,7 +84,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   @Override
   @Nullable
   public RefreshableOnComponent getBeforeCheckinConfigurationPanel() {
-    this.checkBox = new NonFocusableCheckBox("Perform SonarLint analysis");
+    this.checkBox = new NonFocusableCheckBox("Perform SonarQube for IntelliJ analysis");
     return new MyRefreshableOnComponent(checkBox);
   }
 
@@ -103,7 +103,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         return ReturnResult.CANCEL;
       }
 
-      new Task.Modal(project, "Waiting for SonarLint Analysis", true) {
+      new Task.Modal(project, "Waiting for SonarQube for IntelliJ Analysis", true) {
         public void run(@NotNull final ProgressIndicator progressIndicator) {
           new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -129,7 +129,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void handleError(Exception e, int numFiles) {
-    var msg = "SonarLint - Error analysing " + numFiles + " changed file(s).";
+    var msg = "SonarQube for IntelliJ - Error analysing " + numFiles + " changed file(s).";
     if (e.getMessage() != null) {
       msg = msg + ": " + e.getMessage();
     }
@@ -211,15 +211,15 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       warningAboutLeakedSecrets = String.format("""
         
 
-        SonarLint analysis found %d %s. Committed secrets may lead to unauthorized system access.""", numSecretsIssues, secretWord);
+        SonarQube for IntelliJ analysis found %d %s. Committed secrets may lead to unauthorized system access.""", numSecretsIssues, secretWord);
     }
     var message = new StringBuilder();
     if (numBlockerIssues > 0) {
       var blocker = SonarLintUtils.pluralize("issue", numBlockerIssues);
-      message.append(String.format("SonarLint analysis on %d %s found %d %s (including %d blocker %s)", filesAnalyzed, files,
+      message.append(String.format("SonarQube for IntelliJ analysis on %d %s found %d %s (including %d blocker %s)", filesAnalyzed, files,
         numIssues, issues, numBlockerIssues, blocker));
     } else {
-      message.append(String.format("SonarLint analysis on %d %s found %d %s", filesAnalyzed, files, numIssues, issues));
+      message.append(String.format("SonarQube for IntelliJ analysis on %d %s found %d %s", filesAnalyzed, files, numIssues, issues));
     }
     message.append(warningAboutLeakedSecrets);
     return message.toString();
@@ -228,7 +228,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   private ReturnResult showYesNoCancel(String resultStr) {
     final var answer = Messages.showYesNoCancelDialog(project,
       resultStr,
-      "SonarLint Analysis Results",
+      "SonarQube for IntelliJ Analysis Results",
       "&Review Issues",
       "C&ontinue",
       "Cancel",
@@ -264,7 +264,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       panel.add(checkBox);
       var dumb = DumbService.isDumb(project);
       checkBox.setEnabled(!dumb);
-      checkBox.setToolTipText(dumb ? "SonarLint analysis is impossible until indices are up-to-date" : "");
+      checkBox.setToolTipText(dumb ? "SonarQube for IntelliJ analysis is impossible until indices are up-to-date" : "");
       return panel;
     }
 
