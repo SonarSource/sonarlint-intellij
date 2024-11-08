@@ -232,7 +232,7 @@ qa_task:
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
     echo "Prepare env and start IDE ${IDEA_VERSION}"
-    gradle properties
+    gradle properties 2>&1
     gradle properties | grep 'version:'
     gradle properties | grep 'version:' | tr --delete "[:space:]"
     gradle properties | grep 'version:' | tr --delete "[:space:]" | cut --delimiter=":" --fields=2
