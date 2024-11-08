@@ -232,6 +232,7 @@ qa_task:
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
     echo "Prepare env and start IDE ${IDEA_VERSION}"
+    gradle properties | grep 'version:' | tr --delete "[:space:]" | cut --delimiter=":" --fields=2
     source set_gradle_build_version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
     mkdir -p its/build/idea-sandbox/config-uiTest/
