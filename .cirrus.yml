@@ -214,10 +214,8 @@ qa_task:
     - build
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   <<: *ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
-  eks_container:
-    <<: *BUILDER_CONTAINER_DEFINITION
-    cpu: 6
-    memory: 16G
+  ec2_instance:
+    <<: *WINVM_DEFINITION
   env:
     CLION_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.clion]
     GOLAND_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.goland]
@@ -233,108 +231,11 @@ qa_task:
     DISPLAY: :10
     JDK_VERSION: "17"
     SONARCLOUD_IT_PASSWORD: VAULT[development/team/sonarlint/kv/data/sonarcloud-it data.password]
-  clionKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/clion.key.b64
-    variable_name: CLION_KEY
-  golandKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/goland.key.b64
-    variable_name: GOLAND_KEY
-  datagripKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/datagrip.key.b64
-    variable_name: DATAGRIP_KEY
-  ideaKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/idea.key.b64
-    variable_name: IDEA_KEY
-  phpstormKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/phpstorm.key.b64
-    variable_name: PHPSTORM_KEY
-  pycharmKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/pycharm.key.b64
-    variable_name: PYCHARM_KEY
-  riderKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/rider.key.b64
-    variable_name: RIDER_KEY
-  rubymineKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/rubymine.key.b64
-    variable_name: RUBYMINE_KEY
-  webstormKey_file:
-    path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/webstorm.key.b64
-    variable_name: WEBSTORM_KEY
   matrix:
     - env:
         IDEA_VERSION: 'IC-2022.3.1'
         QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'OpenInIdeTests'
-    - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'ConnectedAnalysisTests'
-    - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'ConfigurationTests'
-    - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
         TEST_SUITE: 'Standalone'
-    - env:
-        IDEA_VERSION: 'IC-2024.1.4'
-        QA_CATEGORY: 'Idea2024'
-        TEST_SUITE: 'OpenInIdeTests'
-    - env:
-        IDEA_VERSION: 'IC-2024.1.4'
-        QA_CATEGORY: 'Idea2024'
-        TEST_SUITE: 'ConnectedAnalysisTests'
-    - env:
-        IDEA_VERSION: 'IC-2024.1.4'
-        QA_CATEGORY: 'Idea2024'
-        TEST_SUITE: 'ConfigurationTests'
-    - env:
-        IDEA_VERSION: 'IC-2024.1.4'
-        QA_CATEGORY: 'Idea2024'
-        TEST_SUITE: 'Standalone'
-    - env:
-        IDEA_VERSION: 'IU-2022.3.1'
-        QA_CATEGORY: 'IdeaUltimate2022'
-    - env:
-        IDEA_VERSION: 'IU-2024.1.4'
-        QA_CATEGORY: 'IdeaUltimate2024'
-    - env:
-        IDEA_VERSION: 'PY-2022.3.1'
-        QA_CATEGORY: 'PyCharmProfessional2022'
-    - env:
-        IDEA_VERSION: 'PY-2024.1.4'
-        QA_CATEGORY: 'PyCharmProfessional2024'
-    - env:
-        IDEA_VERSION: 'PC-2022.3.1'
-        QA_CATEGORY: 'PyCharmCommunity2022'
-    - env:
-        IDEA_VERSION: 'PC-2024.1.4'
-        QA_CATEGORY: 'PyCharmCommunity2024'
-    - env:
-        IDEA_VERSION: 'RD-2022.3.1'
-        QA_CATEGORY: 'Rider2022'
-    - env:
-        IDEA_VERSION: 'RD-2024.1.4'
-        QA_CATEGORY: 'Rider2024'
-    - env:
-        IDEA_VERSION: 'PS-2022.3.1'
-        QA_CATEGORY: 'PhpStorm2022'
-    - env:
-        IDEA_VERSION: 'PS-2024.1.4'
-        QA_CATEGORY: 'PhpStorm2024'
-    - env:
-        IDEA_VERSION: 'GO-2022.3.1'
-        QA_CATEGORY: 'GoLand2022'
-    - env:
-        IDEA_VERSION: 'GO-2024.1.4'
-        QA_CATEGORY: 'GoLand2024'
-    - env:
-        IDEA_VERSION: 'CL-2022.3.1'
-        QA_CATEGORY: 'CLion2022'
-    - env:
-        IDEA_VERSION: 'CL-2024.1.4'
-        QA_CATEGORY: 'CLion2024'
   <<: *SETUP_GRADLE_CACHE
   xvfb_background_script: |
     /etc/init.d/xvfb start
@@ -346,15 +247,6 @@ qa_task:
     source set_gradle_build_version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
     mkdir -p its/build/idea-sandbox/config-uiTest/
-    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/config-uiTest/clion.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/config-uiTest/goland.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/config-uiTest/datagrip.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > its/build/idea-sandbox/config-uiTest/idea.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > its/build/idea-sandbox/config-uiTest/phpstorm.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > its/build/idea-sandbox/config-uiTest/pycharm.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/config-uiTest/rider.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/config-uiTest/rubymine.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/config-uiTest/webstorm.key
     metacity --sm-disable --replace &
     sleep 10 # give metacity some time to start
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
