@@ -103,7 +103,7 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
   }
 
   @NotNull @Override public String getDisplayName() {
-    return "SonarLint";
+    return "SonarQube for IntelliJ";
   }
 
 }

@@ -26,7 +26,7 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ToolWindowVerboseModeAction extends AbstractSonarToggleAction {
   public ToolWindowVerboseModeAction() {
-    super("Verbose output", "Enable verbose output for SonarLint analysis",
+    super("Verbose output", "Enable verbose output for SonarQube for IntelliJ analysis",
       AllIcons.Actions.StartDebugger);
   }
 

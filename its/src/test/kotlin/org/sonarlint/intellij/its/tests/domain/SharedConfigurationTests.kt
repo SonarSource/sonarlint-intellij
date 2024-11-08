@@ -47,7 +47,7 @@ class SharedConfigurationTests {
                     notificationByActionName("Use configuration").click()
                     dialog("Connect to This SonarQube Server?") {
                         jBPasswordField().text = token
-                        buttonContainsText("Connect to This SonarQube").click()
+                        buttonContainsText("Connect to This SonarQube Server").click()
                     }
                 }
             }

@@ -25,6 +25,6 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 class OpenGlobalSettingsAction extends OpenConfigurableAction {
 
   OpenGlobalSettingsAction(Project project) {
-    super(project, "Open SonarLint Settings", new SonarLintGlobalConfigurable());
+    super(project, "Open SonarQube for IntelliJ Settings", new SonarLintGlobalConfigurable());
   }
 }

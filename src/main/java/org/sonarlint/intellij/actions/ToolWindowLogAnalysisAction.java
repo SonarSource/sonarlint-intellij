@@ -25,7 +25,7 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ToolWindowLogAnalysisAction extends AbstractSonarToggleAction {
   public ToolWindowLogAnalysisAction() {
-    super("Analysis logs", "Enable logging of SonarLint analysis", null);
+    super("Analysis logs", "Enable logging of SonarQube for IntelliJ analysis", null);
   }
 
   @Override

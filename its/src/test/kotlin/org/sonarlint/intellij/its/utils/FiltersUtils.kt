@@ -38,7 +38,7 @@ class FiltersUtils {
 
         fun setFocusOnNewCode(focusOnNewCode: Boolean) {
             optionalIdeaFrame()?.apply {
-                toolWindow("SonarLint") {
+                toolWindow("SonarQube for IntelliJ") {
                     ensureOpen()
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
@@ -56,7 +56,7 @@ class FiltersUtils {
         fun showResolvedIssues() {
             with(BaseUiTest.remoteRobot) {
                 idea {
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {

@@ -24,6 +24,6 @@ import com.intellij.openapi.components.State;
 public class SonarLintGlobalSettingsPresentableName extends State.NameGetter {
   @Override
   public String get() {
-    return "SonarLint settings";
+    return "SonarQube for IntelliJ settings";
   }
 }
