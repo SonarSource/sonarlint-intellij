@@ -1,0 +1,23 @@
+SonarLint for IntelliJ uses third-party libraries or other resources
+that may be distributed under licenses different than the SonarLint for
+IntelliJ software.
+
+The attached notices are provided for information only.
+
+License notice for Sonar C# Enterprise Plugin
+---------------------------------------------
+
+Copyright (C) 2012-2024 SonarSource SA
+
+All rights reserved.
+
+mailto:info AT sonarsource DOT com
+
+This software includes the sonar-csharp-enterprise-plugin, a proprietary plugin
+owned by SonarSource SA. This plugin is embedded within this software and is
+only licensed for use as an integrated part of this application.
+
+Users of this software are granted a non-transferable, non-sublicensable,
+limited license to use the aforementioned plugins solely as part of this
+application. Any use, reproduction, distribution, or modification of the plugin
+outside the scope of this application is strictly prohibited.
