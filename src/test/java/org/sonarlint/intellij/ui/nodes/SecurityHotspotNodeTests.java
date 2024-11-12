@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
@@ -52,9 +51,6 @@ class SecurityHotspotNodeTests {
     when(issue.getPrimaryMessage()).thenReturn("rule");
     when(issue.getVulnerabilityProbability()).thenReturn(VulnerabilityProbability.HIGH);
     when(issue.getSeverityMode()).thenReturn(Either.forLeft(new StandardModeDetails(IssueSeverity.BLOCKER, RuleType.BUG)));
-    when(issue.getType()).thenReturn(RuleType.BUG);
-    when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
-    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.COMPLETE);
     return new LiveSecurityHotspot(null, issue, file, Collections.emptyList());
   }
 }
