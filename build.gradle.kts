@@ -216,6 +216,7 @@ dependencies {
     "sqplugins"(libs.bundles.sonar.analyzers)
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"(libs.sonar.cfamily)
+        "sqplugins"(libs.sonar.dotnet.enterprise)
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
@@ -228,6 +229,17 @@ tasks {
         copy {
             from(project.configurations["sqplugins"])
             into(file("$destinationDir/${pluginName.get()}/plugins"))
+        }
+    }
+
+    fun renameCsharpPlugins(destinationDir: File, pluginName: Property<String>) {
+        val pluginsDir = File("$destinationDir/${pluginName.get()}/plugins")
+        pluginsDir.listFiles()?.forEach { file ->
+            if (file.name.matches(Regex("sonar-csharp-enterprise-plugin-.*\\.jar"))) {
+                file.renameTo(File(pluginsDir, "sonar-csharp-enterprise-plugin.jar"))
+            } else if (file.name.matches(Regex("sonar-csharp-plugin-.*\\.jar"))) {
+                file.renameTo(File(pluginsDir, "sonar-csharp-plugin.jar"))
+            }
         }
     }
 
@@ -252,6 +264,7 @@ tasks {
     prepareSandbox {
         doLast {
             copyPlugins(destinationDir, pluginName)
+            renameCsharpPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
             copySloop(destinationDir, pluginName)
         }

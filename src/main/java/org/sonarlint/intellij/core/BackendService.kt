@@ -312,13 +312,8 @@ class BackendService : Disposable {
             getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
         val telemetryEnabled = !System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()
         val nodeJsPath = if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
-        val omnisharpRequirementsDto = OmnisharpRequirementsDto(
-            getService(SonarLintPlugin::class.java).path.resolve("omnisharp/mono"),
-            getService(SonarLintPlugin::class.java).path.resolve("omnisharp/net6"),
-            getService(SonarLintPlugin::class.java).path.resolve("omnisharp/net472")
-        )
         val workDir = Paths.get(PathManager.getTempPath()).resolve("sonarlint")
-
+        val omnisharpRequirementsDto = generateOmnisharpDto()
         return rpcServer.initialize(
             InitializeParams(
                 ClientConstantInfoDto(
@@ -356,6 +351,17 @@ class BackendService : Disposable {
                 false,
                 null
             )
+        )
+    }
+
+    private fun generateOmnisharpDto(): OmnisharpRequirementsDto {
+        val pluginPath = getService(SonarLintPlugin::class.java).path
+        return OmnisharpRequirementsDto(
+            pluginPath.resolve("omnisharp/mono"),
+            pluginPath.resolve("omnisharp/net6"),
+            pluginPath.resolve("omnisharp/net472"),
+            pluginPath.resolve("plugins/sonar-csharp-plugin.jar"),
+            pluginPath.resolve("plugins/sonar-csharp-enterprise-plugin.jar"),
         )
     }
 

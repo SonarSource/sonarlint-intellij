@@ -57,7 +57,6 @@ object EnabledLanguages {
     )
     private val EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE = listOf(
         EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
-        EmbeddedPlugin(Language.CS, "CSharp", "sonarlint-omnisharp-plugin-*.jar"),
         EmbeddedPlugin(Language.HTML, "HTML", "sonar-html-plugin-*.jar"),
         EmbeddedPlugin(Language.JS, "JavaScript/TypeScript", "sonar-javascript-plugin-*.jar"),
         EmbeddedPlugin(Language.KOTLIN, "Kotlin", "sonar-kotlin-plugin-*.jar"),
@@ -70,14 +69,16 @@ object EnabledLanguages {
 
     @JvmStatic
     fun getEmbeddedPluginsForConnectedMode(): Map<String, Path> {
-        return EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.mapNotNull {
-            val path = findEmbeddedPlugin(getPluginsDir(), it)
-            if (path != null) {
-                it.pluginKey to path
-            } else {
-                null
+        val embeddedPlugins = mutableMapOf<String, Path>()
+        EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.forEach {
+            findEmbeddedPlugin(getPluginsDir(), it)?.let { path ->
+                embeddedPlugins.put(it.pluginKey, path)
             }
-        }.toMap()
+        }
+        findEmbeddedPlugin(getPluginsDir(), "sonarlint-omnisharp-plugin-*.jar", "OmniSharp")?.let {
+            embeddedPlugins.put("omnisharp", it)
+        }
+        return embeddedPlugins
     }
 
     @JvmStatic
@@ -140,8 +141,12 @@ object EnabledLanguages {
     }
 
     private fun findEmbeddedPlugin(pluginsDir: Path, embeddedPlugin: EmbeddedPlugin): Path? {
+        return findEmbeddedPlugin(pluginsDir, embeddedPlugin.jarFilePattern, embeddedPlugin.name)
+    }
+
+    private fun findEmbeddedPlugin(pluginsDir: Path, jarFilePattern: String, pluginName: String): Path? {
         return try {
-            val pluginsPaths = findFilesInDir(pluginsDir, embeddedPlugin.jarFilePattern, "Found " + embeddedPlugin.name + " plugin: ")
+            val pluginsPaths = findFilesInDir(pluginsDir, jarFilePattern, "Found " + pluginName + " plugin: ")
             check(pluginsPaths.size <= 1) { "Multiple plugins found" }
             if (pluginsPaths.size == 1) pluginsPaths.first() else null
         } catch (e: Exception) {
