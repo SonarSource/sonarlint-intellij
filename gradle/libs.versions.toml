@@ -1,5 +1,5 @@
 [versions]
-sonarlint-core = "10.9.0.79478"
+sonarlint-core = "10.10.0.79500"
 
 sonar-java = "8.5.0.37199"
 sonar-javascript = "10.16.0.27621"
@@ -10,10 +10,11 @@ sonar-ruby = "1.17.1.134"
 sonar-go = "1.17.1.145"
 sonar-html = "3.16.0.5274"
 sonar-xml = "2.11.0.5671"
-sonar-omnisharp = "1.24.0.100127"
+sonar-omnisharp = "1.25.0.100205"
 sonar-text = "2.16.0.4008"
 sonar-iac = "1.37.0.12742"
 sonar-cpp = "6.60.0.76379"
+sonar-dotnet = "10.2.0.103721"
 
 sonarqube = "4.4.1.3373"
 
@@ -53,6 +54,8 @@ sonar-text = { module = "org.sonarsource.text:sonar-text-plugin", version.ref = 
 sonar-go = { module = "org.sonarsource.slang:sonar-go-plugin", version.ref = "sonar-go" }
 sonar-iac = { module = "org.sonarsource.iac:sonar-iac-plugin", version.ref = "sonar-iac" }
 sonar-cfamily = { module = "com.sonarsource.cpp:sonar-cfamily-plugin", version.ref = "sonar-cpp" }
+sonar-dotnet = { module = "org.sonarsource.dotnet:sonar-csharp-plugin", version.ref = "sonar-dotnet" }
+sonar-dotnet-enterprise = { module = "com.sonarsource.dotnet:sonar-csharp-enterprise-plugin", version.ref = "sonar-dotnet" }
 
 commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
@@ -67,8 +70,8 @@ its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.r
 its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "its-remote" }
 
 [bundles]
-# Does not include cfamily
-sonar-analyzers = ["sonar-java", "sonar-java-symbolic-execution", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac"]
+# Does not include cfamily and dotnet-enterprise
+sonar-analyzers = ["sonar-java", "sonar-java-symbolic-execution", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac", "sonar-dotnet"]
 its-remote = ["its-remote-robot", "its-remote-fixtures"]
 
 [plugins]
