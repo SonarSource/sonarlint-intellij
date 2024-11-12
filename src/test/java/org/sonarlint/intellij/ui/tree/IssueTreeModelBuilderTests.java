@@ -153,9 +153,6 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var issue = mock(RaisedIssueDto.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getSeverityMode()).thenReturn(Either.forLeft(new StandardModeDetails(severity, RuleType.BUG)));
-    when(issue.getSeverity()).thenReturn(severity);
-    when(issue.getType()).thenReturn(RuleType.BUG);
-    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.COMPLETE);
 
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
@@ -172,10 +169,6 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
     var issue = mock(RaisedIssueDto.class);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getSeverityMode()).thenReturn(Either.forRight(new MQRModeDetails(CleanCodeAttribute.CONVENTIONAL, impacts)));
-    when(issue.getType()).thenReturn(RuleType.BUG);
-    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.CONVENTIONAL);
-    when(issue.getImpacts()).thenReturn(impacts);
-    when(issue.getSeverity()).thenReturn(IssueSeverity.BLOCKER);
 
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);

@@ -24,7 +24,6 @@ import com.intellij.openapi.project.Project;
 import java.awt.GraphicsEnvironment;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
@@ -53,9 +52,6 @@ public class SonarLintTestUtils {
     when(issue.getRuleKey()).thenReturn(Integer.toString(id));
     when(issue.getPrimaryMessage()).thenReturn("issue " + id);
     when(issue.getSeverityMode()).thenReturn(Either.forLeft(new StandardModeDetails(IssueSeverity.MAJOR, RuleType.BUG)));
-    when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
-    when(issue.getType()).thenReturn(RuleType.BUG);
-    when(issue.getCleanCodeAttribute()).thenReturn(CleanCodeAttribute.COMPLETE);
     return issue;
   }
 }
