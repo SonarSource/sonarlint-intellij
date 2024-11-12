@@ -20,12 +20,16 @@
 package org.sonarlint.intellij.util
 
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.encoding.EncodingProjectManager
+import io.ktor.utils.io.charsets.name
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
@@ -75,4 +79,11 @@ object VirtualFileUtils {
         }
         return virtualFile.contentsToByteArray().toString(virtualFile.charset)
     }
+
+    fun getEncoding(virtualFile: VirtualFile, project: Project): String {
+        val encodingProjectManager = EncodingProjectManager.getInstance(project)
+        val encoding = encodingProjectManager.getEncoding(virtualFile, true)
+        return encoding?.name ?: Charset.defaultCharset().name
+    }
+
 }
