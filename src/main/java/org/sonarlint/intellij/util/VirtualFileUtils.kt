@@ -81,6 +81,9 @@ object VirtualFileUtils {
     }
 
     fun getEncoding(virtualFile: VirtualFile, project: Project): String {
+        if (virtualFile.isCharsetSet) {
+            return virtualFile.charset.name
+        }
         val encodingProjectManager = EncodingProjectManager.getInstance(project)
         val encoding = encodingProjectManager.getEncoding(virtualFile, true)
         return encoding?.name ?: Charset.defaultCharset().name
