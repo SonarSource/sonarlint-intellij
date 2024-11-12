@@ -39,6 +39,7 @@ import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
+import io.sentry.Sentry
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
@@ -278,6 +279,14 @@ class BackendService : Disposable {
         sloopPath.toFile().walkTopDown().forEach { file ->
             getService(GlobalLogOutput::class.java).log(file.absolutePath, ClientLogOutput.Level.INFO)
         }
+
+        try {
+            throw RuntimeException("Big boom");
+        } catch (ex: Exception) {
+            Sentry.init("https://ad1c1fe3cb2b12fc2d191ecd25f89866@o1316750.ingest.us.sentry.io/4508201175089152");
+            Sentry.captureException(ex);
+        }
+
         return sloopLauncher.start(
             sloopPath,
             jreHomePath,

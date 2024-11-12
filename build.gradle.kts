@@ -20,6 +20,7 @@ plugins {
     idea
     signing
     alias(libs.plugins.cyclonedx)
+    id("io.sentry.jvm.gradle") version "4.13.0"
 }
 
 buildscript {
