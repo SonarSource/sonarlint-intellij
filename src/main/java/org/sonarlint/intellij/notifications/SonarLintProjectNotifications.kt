@@ -268,19 +268,6 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
-    fun showTaintNotification(message: String, action: AnAction) {
-        taintGroup.createNotification(
-            "Taint vulnerabilities",
-            message,
-            NotificationType.ERROR
-        ).apply {
-            icon = SonarLintIcons.SONARLINT
-            isImportant = true
-            addAction(action)
-            notify(myProject)
-        }
-    }
-
     fun createNotificationOnce(title: String, content: String, vararg actions: NotificationAction) {
         analyzerRequirementGroup.createNotification(
             title,
