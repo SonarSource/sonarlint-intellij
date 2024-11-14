@@ -37,6 +37,14 @@ object SonarLintDocumentation {
         const val FILE_EXCLUSION_LINK = "$BASE_DOCS_URL/using-sonarlint/file-exclusions"
     }
 
+    object SonarQube {
+        const val SMART_NOTIFICATIONS = "https://docs.sonarqube.org/latest/user-guide/sonarlint-connected-mode/"
+    }
+
+    object SonarCloud {
+        const val SMART_NOTIFICATIONS = "https://docs.sonarsource.com/sonarcloud/improving/sonarlint/#smart-notifications/"
+    }
+
     object Marketing {
         private const val BASE_MARKETING_URL = "https://www.sonarsource.com"
         const val COMPARE_SERVER_PRODUCTS_LINK = "$BASE_MARKETING_URL/open-source-editions"
