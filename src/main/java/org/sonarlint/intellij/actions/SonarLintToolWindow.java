@@ -54,6 +54,8 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
+import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
@@ -382,7 +384,15 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
       var content = contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
       if (content != null) {
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
-        var issue = currentFilePanel.doesIssueExist(showFinding.getFindingKey());
+        var issue = currentFilePanel.doesIssueExistFiltered(showFinding.getFindingKey());
+
+        if (issue == null && currentFilePanel.doesIssueExist(showFinding.getFindingKey())) {
+          getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
+            "The issue could not be opened by SonarLint due to the applied filters",
+            new IncludeResolvedIssueAction()
+          );
+        }
+
         currentFilePanel.trySelectFilteredIssue(issue, showFinding);
       }
     }

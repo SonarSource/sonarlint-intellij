@@ -62,9 +62,13 @@ import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.EffectiveIssueDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.MQRModeDetails
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
+import org.sonarsource.sonarlint.core.rpc.protocol.common.StandardModeDetails
 
 
 class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayout()) {
@@ -111,8 +115,8 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         updateCommonFieldsInMQRMode(cleanCodeAttribute, impacts, ruleKey)
     }
 
-    fun updateForIssue(project: Project, issueDetails: EffectiveIssueDetailsDto, issue: Issue) {
-        updateCommonFields(issueDetails)
+    fun updateForIssue(project: Project, severityDetails: Either<StandardModeDetails, MQRModeDetails>, ruleKey: String, issue: Issue) {
+        updateCommonFields(severityDetails, ruleKey)
 
         if (canBeReopened(project, issue)) {
             changeStatusButton.isVisible = true
@@ -131,8 +135,12 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         }
     }
 
+    fun updateForServerIssue(ruleDetails: EffectiveRuleDetailsDto) {
+        updateCommonFields(ruleDetails.severityDetails, ruleDetails.key)
+    }
+
     fun updateForServerIssue(issueDetails: EffectiveIssueDetailsDto) {
-        updateCommonFields(issueDetails)
+        updateCommonFields(issueDetails.severityDetails, issueDetails.ruleKey)
     }
 
     fun updateForSecurityHotspot(project: Project, ruleKey: String, securityHotspot: LiveSecurityHotspot) {
@@ -167,16 +175,16 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
         }
     }
 
-    private fun updateCommonFields(issueDetails: EffectiveIssueDetailsDto) {
-        if (issueDetails.severityDetails.isLeft) {
-            val mqrMode = issueDetails.severityDetails.left
-            updateCommonFieldsInStandardMode(mqrMode.severity, mqrMode.type, issueDetails.ruleKey)
+    private fun updateCommonFields(severityDetails: Either<StandardModeDetails, MQRModeDetails>, ruleKey: String) {
+        if (severityDetails.isLeft) {
+            val mqrMode = severityDetails.left
+            updateCommonFieldsInStandardMode(mqrMode.severity, mqrMode.type, ruleKey)
         } else {
-            val standardMode = issueDetails.severityDetails.right
+            val standardMode = severityDetails.right
             updateCommonFieldsInMQRMode(
                 CleanCodeAttribute.fromDto(standardMode.cleanCodeAttribute),
                 standardMode.impacts,
-                issueDetails.ruleKey
+                ruleKey
             )
         }
     }

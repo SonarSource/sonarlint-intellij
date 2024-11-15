@@ -237,6 +237,21 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     return Optional.empty();
   }
 
+  public boolean doesIssueExists(String issueKey) {
+    var virtualFile = index.getAllFiles().stream().findFirst();
+    if (virtualFile.isPresent()) {
+      var foundIssue = latestIssues.get(virtualFile.get()).stream().filter(issue -> {
+        if (issue.getServerKey() != null) {
+          return issue.getServerKey().equals(issueKey);
+        }
+        return false;
+      }).findFirst();
+
+      return foundIssue.isPresent();
+    }
+    return false;
+  }
+
   private static class FileNodeComparator implements Comparator<FileNode> {
     @Override public int compare(FileNode o1, FileNode o2) {
       int c = o1.file().getName().compareTo(o2.file().getName());
