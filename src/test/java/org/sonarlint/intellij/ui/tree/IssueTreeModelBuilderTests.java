@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.junit.jupiter.api.BeforeEach;
@@ -130,6 +132,40 @@ class IssueTreeModelBuilderTests extends AbstractSonarLintLightTests {
 
     // criteria: creation date (most recent, nulls last), getImpact (highest first), rule alphabetically
     assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(6), list.get(0), list.get(4), list.get(3), list.get(5));
+  }
+
+  @Test
+  void testDoesIssueExists_noVirtualFile() {
+    assertThat(treeBuilder.doesIssueExists("issueKey")).isFalse();
+  }
+
+  @Test
+  void testDoesIssueExist_withMatchingIssueKey() throws Exception {
+    VirtualFile file = mock(VirtualFile.class);
+    when(file.isValid()).thenReturn(true);
+
+    LiveIssue issue1 = mock(LiveIssue.class);
+    LiveIssue issue2 = mock(LiveIssue.class);
+    when(issue1.getServerKey()).thenReturn("issueKey1");
+    when(issue2.getServerKey()).thenReturn("issueKey2");
+
+    Map<VirtualFile, Collection<LiveIssue>> latestIssues = new HashMap<>();
+    latestIssues.put(file, List.of(issue1, issue2));
+
+    FindingTreeIndex index = mock(FindingTreeIndex.class);
+    when(index.getAllFiles()).thenReturn(Set.of(file));
+
+    IssueTreeModelBuilder treeBuilderMock = new IssueTreeModelBuilder(getProject());
+
+    Field indexField = IssueTreeModelBuilder.class.getDeclaredField("index");
+    indexField.setAccessible(true);
+    indexField.set(treeBuilderMock, index);
+
+    Field latestIssuesField = IssueTreeModelBuilder.class.getDeclaredField("latestIssues");
+    latestIssuesField.setAccessible(true);
+    latestIssuesField.set(treeBuilderMock, latestIssues);
+
+    assertThat(treeBuilderMock.doesIssueExists("issueKey2")).isTrue();
   }
 
   private void addFile(Map<VirtualFile, Collection<LiveIssue>> data, String fileName, int numIssues) {
