@@ -66,6 +66,8 @@ import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.EffectiveIssueDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleParamDto
 
 
 private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
@@ -81,7 +83,9 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
     private val securityHotspotHeaderMessage = JEditorPane()
     private val ruleDetailsLoader = RuleDetailsLoader()
     private var finding: Finding? = null
+    private var ruleKey: String? = null
     private var issueDetails: EffectiveIssueDetailsDto? = null
+    private var ruleDetails: EffectiveRuleDetailsDto? = null
 
     init {
         mainPanel.add(topPanel.apply {
@@ -121,7 +125,11 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 LafManagerListener { runOnUiThread(project) { updateUiComponents() } })
     }
 
-    private data class RuleDetailsLoaderState(val lastModule: Module?, val lastIssueId: UUID?)
+    private data class RuleDetailsLoaderState(
+        val lastModule: Module?,
+        val lastIssueId: UUID?,
+        val ruleKey: String?
+    )
 
     /**
      * To avoid useless calls to the backend/server, we cache parameters that may produce different rule details.
@@ -129,14 +137,15 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
      */
     inner class RuleDetailsLoader {
 
-        private var state = RuleDetailsLoaderState(null, null)
+        private var state = RuleDetailsLoaderState(null, null, null)
 
         fun clearState() {
-            state = RuleDetailsLoaderState(null, null)
+            state = RuleDetailsLoaderState(null, null, null)
         }
 
-        fun updateActiveRuleDetailsIfNeeded(module: Module, issueId: UUID) {
-            val newState = RuleDetailsLoaderState(module, issueId)
+        fun updateActiveRuleDetailsIfNeeded(module: Module, ruleKey: String) {
+            issueDetails = null
+            val newState = RuleDetailsLoaderState(module, null, ruleKey)
             if (state == newState) {
                 // Still force a refresh of the UI, as some other fields of the finding may be different
                 runOnUiThread(project) {
@@ -150,7 +159,42 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 override fun run(progressIndicator: ProgressIndicator) {
                     runOnPooledThread(project) {
                         SonarLintUtils.getService(BackendService::class.java)
-                            .getIssueDetails(module, issueId)
+                            .getEffectiveRuleDetails(module, ruleKey, null)
+                            .orTimeout(30, TimeUnit.SECONDS)
+                            .handle { response, error ->
+                                stopLoading()
+                                ruleDetails = if (error != null) {
+                                    SonarLintConsole.get(project).error("Cannot get rule description", error)
+                                    null
+                                } else {
+                                    response.details()
+                                }
+                                runOnUiThread(project) {
+                                    updateUiComponents()
+                                }
+                            }
+                    }
+                }
+            })
+        }
+
+        fun updateActiveIssueDetailsIfNeeded(module: Module, issueId: UUID) {
+            ruleDetails = null
+            val newState = RuleDetailsLoaderState(module, issueId, null)
+            if (state == newState) {
+                // Still force a refresh of the UI, as some other fields of the finding may be different
+                runOnUiThread(project) {
+                    updateUiComponents()
+                }
+                return
+            }
+            state = newState
+            startLoading()
+            ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description\u2026", false) {
+                override fun run(progressIndicator: ProgressIndicator) {
+                    runOnPooledThread(project) {
+                        SonarLintUtils.getService(BackendService::class.java)
+                            .getEffectiveIssueDetails(module, issueId)
                             .orTimeout(30, TimeUnit.SECONDS)
                             .handle { response, error ->
                                 stopLoading()
@@ -168,7 +212,6 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 }
             })
         }
-
     }
 
     fun clear() {
@@ -178,19 +221,28 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
 
     private fun clearValues() {
         finding = null
+        ruleKey = null
         issueDetails = null
+        ruleDetails = null
         ruleDetailsLoader.clearState()
+    }
+
+    fun setSelectedFinding(module: Module, ruleKey: String) {
+        this.ruleKey = ruleKey
+        ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, ruleKey)
     }
 
     fun setSelectedFinding(module: Module, finding: Finding?, findingId: UUID) {
         this.finding = finding
-        ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, findingId)
+        ruleDetailsLoader.updateActiveIssueDetailsIfNeeded(module, findingId)
     }
 
     private fun updateUiComponents() {
         ApplicationManager.getApplication().assertIsDispatchThread()
         val finding = this.finding
+        val ruleKey = this.ruleKey
         val issueDetails = this.issueDetails
+        val ruleDetails = this.ruleDetails
         if (issueDetails != null && finding != null) {
             disableEmptyDisplay(true)
             updateHeader(finding, issueDetails)
@@ -201,6 +253,16 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 { withSections -> descriptionPanel.addSections(withSections, fileType) }
             )
             updateParams(issueDetails)
+        } else if (ruleKey != null && ruleDetails != null) {
+            disableEmptyDisplay(true)
+            updateHeader(ruleDetails)
+            descriptionPanel.removeAll()
+            val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language)
+            ruleDetails.description.map(
+                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
+                { withSections -> descriptionPanel.addSections(withSections, fileType) }
+            )
+            updateParams(ruleDetails)
         } else {
             val errorLoadingRuleDetails = finding != null
             descriptionPanel.removeAll()
@@ -208,6 +270,13 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             disableEmptyDisplay(false)
             mainPanel.withEmptyText(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
         }
+    }
+
+    private fun updateHeader(ruleDetails: EffectiveRuleDetailsDto) {
+        ruleNameLabel.text = StringEscapeUtils.escapeHtml4(ruleDetails.name)
+        ruleNameLabel.setCopyable(true)
+        securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
+        headerPanel.updateForServerIssue(ruleDetails)
     }
 
     private fun updateHeader(finding: Finding?, issueDetails: EffectiveIssueDetailsDto) {
@@ -246,7 +315,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 headerPanel.updateForSecurityHotspot(project, issueDetails.ruleKey, finding)
             }
 
-            else -> headerPanel.updateForIssue(project, issueDetails, finding as Issue)
+            else -> headerPanel.updateForIssue(project, issueDetails.severityDetails, issueDetails.ruleKey, finding as Issue)
         }
     }
 
@@ -271,23 +340,31 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
 
     private fun updateParams(issueDetails: EffectiveIssueDetailsDto) {
         if (issueDetails.params.isNotEmpty()) {
-            populateParamPanel(issueDetails)
+            populateParamPanel(issueDetails.ruleKey, issueDetails.params)
         } else {
             paramsPanel.isVisible = false
         }
     }
 
-    private fun populateParamPanel(issueDetails: EffectiveIssueDetailsDto) {
+    private fun updateParams(ruleDetails: EffectiveRuleDetailsDto) {
+        if (ruleDetails.params.isNotEmpty()) {
+            populateParamPanel(ruleDetails.key, ruleDetails.params)
+        } else {
+            paramsPanel.isVisible = false
+        }
+    }
+
+    private fun populateParamPanel(ruleKey: String, params: Collection<EffectiveRuleParamDto>) {
         paramsPanel.isVisible = true
         paramsPanel.apply {
             removeAll()
             val constraints = GridBagConstraints()
             constraints.anchor = GridBagConstraints.BASELINE_LEADING
             constraints.gridy = 0
-            for (param in issueDetails.params) {
+            for (param in params) {
                 val paramDefaultValue = param.defaultValue
                 val defaultValue = paramDefaultValue ?: "(none)"
-                val currentValue = Settings.getGlobalSettings().getRuleParamValue(issueDetails.ruleKey, param.name).orElse(defaultValue)
+                val currentValue = Settings.getGlobalSettings().getRuleParamValue(ruleKey, param.name).orElse(defaultValue)
                 constraints.gridx = 0
                 constraints.fill = GridBagConstraints.HORIZONTAL
                 constraints.insets.right = UIUtil.DEFAULT_HGAP
@@ -319,7 +396,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 border = null
                 SwingHelper.setHtml(
                     this,
-                    """<small>Parameter values can be set in <a href="$RULE_CONFIG_LINK_PREFIX${issueDetails.ruleKey}">Rule Settings</a>. 
+                    """<small>Parameter values can be set in <a href="$RULE_CONFIG_LINK_PREFIX$ruleKey">Rule Settings</a>. 
             | In connected mode, server side configuration overrides local settings.</small>""".trimMargin(), UIUtil.getLabelForeground()
                 )
             }, constraints)

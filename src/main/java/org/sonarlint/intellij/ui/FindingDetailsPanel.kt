@@ -26,7 +26,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBTabbedPane
-import java.util.UUID
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.Flow
@@ -84,13 +83,12 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
     fun showServerOnlyIssue(
         module: Module,
         file: VirtualFile,
-        issueKey: String,
+        ruleKey: String,
         range: RangeMarker,
         flows: MutableList<Flow>,
         flowMessage: String
     ) {
-        val issueId = UUID.fromString(issueKey)
-        rulePanel.setSelectedFinding(module, null, issueId)
+        rulePanel.setSelectedFinding(module, ruleKey)
         flowsTreeBuilder.populateForFinding(file, range, flowMessage, flows)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightRange(range)
         flowsTree.emptyText.text = "Selected $findingKindText doesn't have flows"

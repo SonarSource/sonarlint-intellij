@@ -360,8 +360,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         runOnPooledThread(project) {
             if (showFinding.codeSnippet == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("taint vulnerability",
-                        "The taint vulnerability could not be detected by SonarLint in the current code.")
+                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarLint in the current code")
                 return@runOnPooledThread
             }
             val matcher = TextRangeMatcher(project)
@@ -370,7 +369,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             }
             if (rangeMarker == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("taint vulnerability", "The taint vulnerability could not be detected by SonarLint in the current code.")
+                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarLint in the current code")
                 return@runOnPooledThread
             }
 

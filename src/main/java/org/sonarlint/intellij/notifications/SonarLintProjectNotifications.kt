@@ -164,10 +164,10 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
-    fun notifyUnableToOpenFinding(type: String, message: String, vararg mainActions: AnAction) {
+    fun notifyUnableToOpenFinding(message: String, vararg mainActions: AnAction) {
         expireCurrentFindingNotificationIfNeeded()
         currentOpenFindingNotification = openInIdeGroup.createNotification(
-            "<b>SonarLint - Unable to open $type</b>",
+            "",
             message,
             NotificationType.INFORMATION
         ).apply {

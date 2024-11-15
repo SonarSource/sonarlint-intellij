@@ -94,13 +94,12 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_notify_unable_to_open_finding() {
-        val type = "issue"
         val message = "message"
 
-        sonarLintProjectNotifications.notifyUnableToOpenFinding(type, message)
+        sonarLintProjectNotifications.notifyUnableToOpenFinding(message)
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarLint - Unable to open $type</b>")
+        Assertions.assertThat(notifications[0].title).isBlank()
         Assertions.assertThat(notifications[0].content).isEqualTo(message)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
         Assertions.assertThat(notifications[0].isExpired).isEqualTo(false)
@@ -110,9 +109,8 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_expire_current_finding_notification() {
-        val type = "issue"
         val message = "message"
-        sonarLintProjectNotifications.notifyUnableToOpenFinding(type, message)
+        sonarLintProjectNotifications.notifyUnableToOpenFinding(message)
 
         sonarLintProjectNotifications.expireCurrentFindingNotificationIfNeeded()
 

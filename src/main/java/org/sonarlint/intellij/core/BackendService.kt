@@ -142,6 +142,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssuePara
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ListAllStandaloneRulesDefinitionsResponse
@@ -629,7 +631,14 @@ class BackendService : Disposable {
         }
     }
 
-    fun getIssueDetails(module: Module, issueId: UUID): CompletableFuture<GetEffectiveIssueDetailsResponse> {
+    fun getEffectiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetEffectiveRuleDetailsResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend {
+            it.rulesService.getEffectiveRuleDetails(GetEffectiveRuleDetailsParams(moduleId, ruleKey, contextKey))
+        }
+    }
+
+    fun getEffectiveIssueDetails(module: Module, issueId: UUID): CompletableFuture<GetEffectiveIssueDetailsResponse> {
         val moduleId = moduleId(module)
         return requestFromBackend {
             it.issueService.getEffectiveIssueDetails(GetEffectiveIssueDetailsParams(moduleId, issueId))

@@ -76,6 +76,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetEffectiveIss
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.IssueRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RulesRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityTrackingRpcService
 
@@ -85,6 +87,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     private lateinit var backend: SonarLintRpcServer
     private lateinit var backendConnectionService: ConnectionRpcService
     private lateinit var backendConfigurationService: ConfigurationRpcService
+    private lateinit var backendRuleService: RulesRpcService
     private lateinit var backendIssueService: IssueRpcService
     private lateinit var backendBindingService: BindingRpcService
     private lateinit var backendHotspotService: HotspotRpcService
@@ -104,6 +107,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
         backendConnectionService = mock(ConnectionRpcService::class.java)
         backendConfigurationService = mock(ConfigurationRpcService::class.java)
+        backendRuleService = mock(RulesRpcService::class.java)
         backendIssueService = mock(IssueRpcService::class.java)
         backendBindingService = mock(BindingRpcService::class.java)
         backendHotspotService = mock(HotspotRpcService::class.java)
@@ -112,6 +116,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(taintService.listAll(any())).thenReturn(CompletableFuture.completedFuture(ListAllResponse(emptyList())))
         `when`(backend.connectionService).thenReturn(backendConnectionService)
         `when`(backend.configurationService).thenReturn(backendConfigurationService)
+        `when`(backend.rulesService).thenReturn(backendRuleService)
         `when`(backend.issueService).thenReturn(backendIssueService)
         `when`(backend.bindingService).thenReturn(backendBindingService)
         `when`(backend.hotspotService).thenReturn(backendHotspotService)
@@ -398,10 +403,24 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     }
 
     @Test
-    fun test_get_issue_details() {
+    fun test_get_effective_rule_details() {
+        val ruleKey = "key"
+
+        service.getEffectiveRuleDetails(module, ruleKey, null)
+
+        val paramsCaptor = argumentCaptor<GetEffectiveRuleDetailsParams>()
+        verify(backendRuleService, timeout(500)).getEffectiveRuleDetails(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue).extracting(
+            "configurationScopeId",
+            "ruleKey"
+        ).containsExactly(moduleBackendId(module), ruleKey)
+    }
+
+    @Test
+    fun test_get_effective_issue_details() {
         val issueId = UUID.randomUUID()
 
-        service.getIssueDetails(module, issueId)
+        service.getEffectiveIssueDetails(module, issueId)
 
         val paramsCaptor = argumentCaptor<GetEffectiveIssueDetailsParams>()
         verify(backendIssueService, timeout(500)).getEffectiveIssueDetails(paramsCaptor.capture())
