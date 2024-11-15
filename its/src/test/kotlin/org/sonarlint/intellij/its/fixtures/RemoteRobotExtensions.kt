@@ -55,3 +55,25 @@ fun RemoteRobot.isGoPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginM
 fun RemoteRobot.isSQLPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('com.intellij.database'))")
 fun RemoteRobot.isJavaScriptPlugin() =
     callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('JavaScript'))")
+
+private fun RemoteRobot.majorVersion() =
+    callJs<String>("com.intellij.openapi.application.ApplicationInfo.getInstance().getMajorVersion()")
+
+private fun RemoteRobot.minorVersion() =
+    callJs<String>("com.intellij.openapi.application.ApplicationInfo.getInstance().getMinorVersion()")
+
+fun RemoteRobot.isModernUI(): Boolean {
+    val version = "${this.majorVersion()}.${this.minorVersion()}"
+    val referenceVersion = "2024.2"
+    val versionParts = version.split(".").map { it.toInt() }
+    val referenceParts = referenceVersion.split(".").map { it.toInt() }
+
+    for (i in versionParts.indices) {
+        if (i >= referenceParts.size || versionParts[i] > referenceParts[i]) {
+            return true
+        } else if (versionParts[i] < referenceParts[i]) {
+            return false
+        }
+    }
+    return versionParts.size > referenceParts.size
+}
