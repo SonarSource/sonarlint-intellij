@@ -31,30 +31,31 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 object SonarLintIcons {
 
     @JvmField
-    val ICON_SONARQUBE = getIcon("/images/SonarQube.png")
+    val ICON_SONARQUBE_SERVER = getIcon("/images/sonarqube_server.png")
     @JvmField
-    val ICON_SONARCLOUD = getIcon("/images/SonarCloud.png")
+    val ICON_SONARQUBE_CLOUD = getIcon("/images/sonarqube_cloud.png")
     @JvmField
-    val ICON_SONARQUBE_16 = getIcon("/images/onde-sonar-16.png")
+    val ICON_SONARQUBE_SERVER_16 = getIcon("/images/sonarqube_server_16px.svg")
     @JvmField
-    val ICON_SONARCLOUD_16 = getIcon("/images/sonarcloud-16.png")
+    val ICON_SONARQUBE_CLOUD_16 = getIcon("/images/sonarqube_cloud_16px.svg")
     @JvmField
-    val SONARLINT_TOOLWINDOW = getIcon("/images/sonarlintToolWindow.svg")
+    val SONARQUBE_FOR_INTELLIJ_13PX = getIcon("/images/sonarqube_for_intellij_13px.svg")
     @JvmField
-    val SONARLINT_ACTION = getIcon("/images/sonarlintAction.svg")
+    val SONARQUBE_FOR_INTELLIJ_RED_13PX = getIcon("/images/sonarqube_for_intellij_red_13px.svg")
     @JvmField
-    val SONARLINT_ACTION_12PX = getIcon("/images/sonarlintAction_12px.svg")
+    val SONARQUBE_FOR_INTELLIJ_GREEN_13PX = getIcon("/images/sonarqube_for_intellij_green_13px.svg")
     @JvmField
-    val SONARLINT_ACTION_GREEN_12PX = getIcon("/images/sonarlintAction_green_12px.svg")
+    val SONARQUBE_FOR_INTELLIJ_ORANGE_13PX = getIcon("/images/sonarqube_for_intellij_orange_13px.svg")
 
     @JvmField
-    val SONARLINT_ACTION_ORANGE_12PX = getIcon("/images/sonarlintAction_orange_12px.svg")
+    val SONARQUBE_FOR_INTELLIJ_TOOLWINDOW = getIcon("/images/sonarqube_for_intellij_toolwindow.svg")
+
     @JvmField
-    val SONARLINT_TOOLWINDOW_EMPTY = getIcon("/images/sonarlintToolWindowEmpty.svg")
+    val SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW = getIcon("/images/sonarqube_for_intellij_empty_toolwindow.svg")
     @JvmField
-    val SONARLINT = getIcon("/images/sonarlint.png")
+    val SONARQUBE_FOR_INTELLIJ = getIcon("/images/sonarqube_for_intellij.svg")
     @JvmField
-    val SONARLINT_32 = getIcon("/images/sonarlint@2x.png")
+    val SONARQUBE_FOR_INTELLIJ_32PX = getIcon("/images/sonarqube_for_intellij_32px.svg")
     @JvmField
     val PLAY = getIcon("/images/execute.png")
     @JvmField

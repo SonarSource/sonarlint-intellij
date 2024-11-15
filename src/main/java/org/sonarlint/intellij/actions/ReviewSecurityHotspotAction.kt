@@ -134,9 +134,9 @@ class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, 
 
     override fun startInWriteAction() = false
 
-    override fun getText() = "SonarQube for IntelliJ: Change Security Hotspot status"
+    override fun getText() = "SonarQube: Change Security Hotspot status"
 
-    override fun getFamilyName() = "SonarQube for IntelliJ review"
+    override fun getFamilyName() = "SonarQube review"
 
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = serverFindingKey != null
 

@@ -63,7 +63,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
   }
 
   private JComponent createSonarLintPanel() {
-    var sonarlintIcon = new JBLabel(SonarLintIcons.SONARLINT_32);
+    var sonarlintIcon = new JBLabel(SonarLintIcons.SONARQUBE_FOR_INTELLIJ_32PX);
     var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
     var title = new JBLabel("<html><b>SonarQube for IntelliJ " + plugin.getVersion() + "</b></html>");
     var linkLabel = new HyperlinkLabel("Documentation");

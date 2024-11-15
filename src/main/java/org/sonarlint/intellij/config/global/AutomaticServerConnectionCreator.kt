@@ -64,11 +64,11 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
     private val proxyButton = JButton("Proxy")
 
     init {
-        title = if (isSQ) "Trust This SonarQube Server?" else "Trust This SonarQube Cloud Organization?"
+        title = if (isSQ) "Trust This SonarQube Server Instance?" else "Trust This SonarQube Cloud Organization?"
         val connectionNames = Settings.getGlobalSettings().serverNames
         connectionNameField.text = findFirstUniqueConnectionName(connectionNames, serverOrOrg)
 
-        val buttonTextAction = if (isSQ) "Connect to This SonarQube Server" else "Connect to This SonarQube Cloud Organization"
+        val buttonTextAction = if (isSQ) "Connect to This SonarQube Server Instance" else "Connect to This SonarQube Cloud Organization"
 
         createConnectionAction = object : DialogWrapperAction(buttonTextAction) {
             init {
@@ -149,7 +149,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         redWarningIcon.icon = AllIcons.Ide.FatalError
         warningLabel.text = if (isSQ) {
             "Always ensure that your Server URL matches your SonarQube Server instance. " +
-                "Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server is potentially dangerous."
+                "Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server instance is potentially dangerous."
         } else {
             "Ensure that the organization matches your SonarQube Cloud organization."
         }

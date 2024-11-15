@@ -198,7 +198,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 uniqueSuggestion.connectionSuggestion.right.organization)
         } else {
             Triple(
-                "SonarQube Server", uniqueSuggestion.connectionSuggestion.left.projectKey,
+                "SonarQube Server instance", uniqueSuggestion.connectionSuggestion.left.projectKey,
                 uniqueSuggestion.connectionSuggestion.left.serverUrl)
         }
     }
@@ -423,7 +423,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
         projectLessNotification(
             "",
-            "You have successfully established a connection to the ${if (isSQ) "SonarQube Server" else "SonarQube Cloud organization"}",
+            "You have successfully established a connection to the ${if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"}",
             NotificationType.INFORMATION
         )
 
@@ -440,13 +440,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     private fun setUpManualConnection(serverUrl: String): AssistCreatingConnectionResponse {
-        val warningTitle = "Trust This SonarQube Server?"
+        val warningTitle = "Trust This SonarQube Server Instance?"
         val message = """
-                        The server <b>${StringEscapeUtils.escapeHtml4(serverUrl)}</b> is attempting to set up a connection with SonarQube for IntelliJ. Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server is potentially dangerous.
+                        The server <b>${StringEscapeUtils.escapeHtml4(serverUrl)}</b> is attempting to set up a connection with SonarQube for IntelliJ. Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server instance is potentially dangerous.
                         
                         If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
                     """.trimIndent()
-        val connectButtonText = "Connect to This SonarQube Server"
+        val connectButtonText = "Connect to This SonarQube Server Instance"
         val dontTrustButtonText = "I Don't Trust This Server"
 
         val choice = ApplicationManager.getApplication().computeInEDT {
@@ -482,7 +482,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
                 get(project).simpleNotification(
                     "Project successfully bound",
-                    "Local project bound to project '$projectKey' of SonarQube Server '${connection.name}'. "
+                    "Local project bound to project '$projectKey' of SonarQube Server instance '${connection.name}'. "
                         + "You can now enjoy all capabilities of SonarQube for IntelliJ Connected Mode. The binding of this project can be updated in the SonarQube for IntelliJ Settings.",
                     NotificationType.INFORMATION,
                     OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
