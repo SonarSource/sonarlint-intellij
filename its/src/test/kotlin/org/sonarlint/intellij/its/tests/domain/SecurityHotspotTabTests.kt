@@ -25,7 +25,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isModernUI
 import org.sonarlint.intellij.its.fixtures.notification
+import org.sonarlint.intellij.its.fixtures.tool.window.leftToolWindow
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
@@ -36,8 +38,13 @@ class SecurityHotspotTabTests {
         fun openSecurityHotspotReviewDialogFromList(securityHotspotMessage: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarLint") {
+                            ensureOpen()
+                        }
+                    }
+                    toolWindow("SonarLint") {
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
                             findText(securityHotspotMessage).rightClick()
@@ -79,8 +86,13 @@ class SecurityHotspotTabTests {
         fun verifySecurityHotspotTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarLint") {
+                            ensureOpen()
+                        }
+                    }
+                    toolWindow("SonarLint") {
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
@@ -93,8 +105,13 @@ class SecurityHotspotTabTests {
         fun verifySecurityHotspotTreeContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarLint") {
+                            ensureOpen()
+                        }
+                    }
+                    toolWindow("SonarLint") {
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
@@ -107,8 +124,13 @@ class SecurityHotspotTabTests {
         fun enableConnectedModeFromSecurityHotspotPanel(projectKey: String, enabled: Boolean, connectionName: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarLint") {
+                            ensureOpen()
+                        }
+                    }
+                    toolWindow("SonarLint") {
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
                             toolBarButton("Configure SonarQube for IDE").click()
@@ -126,8 +148,13 @@ class SecurityHotspotTabTests {
         fun verifySecurityHotspotRuleDescriptionTabContains(expectedMessage: String) {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarLint") {
+                            ensureOpen()
+                        }
+                    }
+                    toolWindow("SonarLint") {
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         content("SecurityHotspotsPanel") {
                             waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
                                 hasText(expectedMessage)

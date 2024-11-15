@@ -27,7 +27,9 @@ import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isModernUI
 import org.sonarlint.intellij.its.fixtures.jbTextFieldsWithBrowseButton
+import org.sonarlint.intellij.its.fixtures.tool.window.leftToolWindow
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 
 class ExclusionUtils {
@@ -47,8 +49,13 @@ class ExclusionUtils {
         private fun openExclusionsTab() {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarLint") {
+                            ensureOpen()
+                        }
+                    }
+                    toolWindow("SonarLint") {
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
                             toolBarButton("Configure SonarQube for IDE").click()

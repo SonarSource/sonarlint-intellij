@@ -28,14 +28,24 @@ import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import org.sonarlint.intellij.its.fixtures.findElement
-import org.sonarlint.intellij.its.fixtures.stripeButton
 import java.time.Duration
+import org.sonarlint.intellij.its.fixtures.findElement
+import org.sonarlint.intellij.its.fixtures.isModernUI
+import org.sonarlint.intellij.its.fixtures.stripeButton
 
 fun ContainerFixture.toolWindow(
   title: String,
   function: ToolWindowFixture.() -> Unit = {}): ToolWindowFixture = step("Search for tool window with title $title") {
   val toolWindowPane = find<ToolWindowFixture>(Duration.ofSeconds(5))
+  toolWindowPane.title = title
+  toolWindowPane.apply(function)
+}
+
+fun ContainerFixture.leftToolWindow(
+  title: String,
+  function: ToolWindowFixture.() -> Unit = {}
+): ToolWindowFixture = step("Search for tool window with title $title") {
+  val toolWindowPane = find<ToolWindowFixture>(byXpath("//div[@class='ToolWindowLeftToolbar']"), Duration.ofSeconds(5))
   toolWindowPane.title = title
   toolWindowPane.apply(function)
 }
@@ -50,7 +60,15 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
     findElement<TabTitleFixture>(byXpath("tab with title $title", "//div[@class='ContentTabLabel' and @text='$title']")).apply(function)
 
   fun tabTitleContains(text: String, function: TabTitleFixture.() -> Unit = {}): TabTitleFixture {
-    return findElement<TabTitleFixture>(byXpath("tab with title $text", "//div[@class='ContentTabLabel' and contains(@text, '$text')]")).apply(function)
+    return if (remoteRobot.isModernUI()) {
+      findElement<TabTitleFixture>(byXpath("tab with title $text", "//div[@text='$text']")).apply(
+        function
+      )
+    } else {
+      findElement<TabTitleFixture>(byXpath("tab with title $text", "//div[@class='ContentTabLabel' and contains(@text, '$text')]")).apply(
+        function
+      )
+    }
   }
 
   fun content(classType: String, function: TabContentFixture.() -> Unit = {}) =
@@ -60,7 +78,12 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
     findElement<ComponentFixture>(byXpath("card with type $classType", "//div[@class='$classType']"))
 
   fun ensureOpen() {
-    stripeButton(title).open()
+    if (remoteRobot.isModernUI()) {
+      val button = findElement<ComponentFixture>(byXpath("//div[@tooltiptext='SonarLint']"))
+      if (button.callJs<Boolean>("component.isSelected()").not()) button.click()
+    } else {
+      stripeButton(title).open()
+    }
   }
 
 }
