@@ -13,9 +13,10 @@ Useful links
 ------------
 
 - [Documentation](https://docs.sonarsource.com/sonarlint/intellij/)
-  - A full list of supported programming languages and links to the static code analysis rules associated with each language are available on the [Rules page](https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/rules/).
+    - A full list of supported programming languages and links to the static code analysis rules associated with each language are available
+      on the [Rules page](https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/rules/).
 - [Community](https://community.sonarsource.com/c/help/sl)
-  - Report an issue, ask for some help, or suggest new features.
+    - Report an issue, ask for some help, or suggest new features.
 
 How to install
 --------------
@@ -23,7 +24,8 @@ How to install
 You can install SonarQube for IntelliJ from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly
 available in the IDE preferences.
 
-Full up-to-date details are available on the [Requirements](https://docs.sonarsource.com/sonarlint/intellij/getting-started/requirements/) and [Installation](https://docs.sonarsource.com/sonarlint/intellij/getting-started/installation/) pages.
+Full up-to-date details are available on the [Requirements](https://docs.sonarsource.com/sonarlint/intellij/getting-started/requirements/)
+and [Installation](https://docs.sonarsource.com/sonarlint/intellij/getting-started/installation/) pages.
 
 Questions and Feedback?
 --------------------------
@@ -33,18 +35,27 @@ the [FAQ](https://community.sonarsource.com/t/frequently-asked-questions/7204) t
 the [Sonar forum](https://community.sonarsource.com/c/help/sl). Before creating a new topic, please check if your question has already been
 answered because there is a chance that someone has already had the same issue.
 
-Be aware that this forum is a community, and the standard pleasantries are expected (_Hello, Thank you, I appreciate the reply, etc._). If you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing by, but the Teams and Community Managers know that your questions are important. :-)
+Be aware that this forum is a community, and the standard pleasantries are expected (_Hello, Thank you, I appreciate the reply, etc._). If
+you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing
+by, but the Teams and Community Managers know that your questions are important. :-)
 
 Contributing
 ------------
 
-If you would like to see a new feature, check out the [PM for a Day](https://community.sonarsource.com/c/sl/pm-for-a-day-sl/41) page! There we provide a forum to discuss your needs and offer you a chance to engage the Product Manager and development teams directly. Feel free to add to an ongoing discussion or create a new thread if you have something new to bring up.
+If you would like to see a new feature, check out the [PM for a Day](https://community.sonarsource.com/c/sl/pm-for-a-day-sl/41) page! There
+we provide a forum to discuss your needs and offer you a chance to engage the Product Manager and development teams directly. Feel free to
+add to an ongoing discussion or create a new thread if you have something new to bring up.
 
-Please be aware that we are not actively looking for feature contributions. The truth is that it's extremely difficult for someone outside SonarSource to comply with our roadmap and expectations. Therefore, we typically only accept minor cosmetic changes and typo fixes.
+Please be aware that we are not actively looking for feature contributions. The truth is that it's extremely difficult for someone outside
+SonarSource to comply with our roadmap and expectations. Therefore, we typically only accept minor cosmetic changes and typo fixes.
 
-With that in mind, if you would like to submit a code contribution, please create a pull request for this repository. Please explain your motives to contribute the change, describe what problem you are trying to fix, and tell us what improvement you are trying to make. The SonarLint Team will review the PR and discuss internally how it aligns with the [roadmap](https://www.sonarsource.com/products/sonarlint/roadmap/).
+With that in mind, if you would like to submit a code contribution, please create a pull request for this repository. Please explain your
+motives to contribute the change, describe what problem you are trying to fix, and tell us what improvement you are trying to make. The
+SonarLint Team will review the PR and discuss internally how it aligns with
+the [roadmap](https://www.sonarsource.com/products/sonarlint/roadmap/).
 
-Make sure that you follow our [code style](https://github.com/SonarSource/sonar-developer-toolset#code-style-configuration-for-intellij) and that all tests are passing.
+Make sure that you follow our [code style](https://github.com/SonarSource/sonar-developer-toolset#code-style-configuration-for-intellij) and
+that all tests are passing.
 
 How to build
 ------------
@@ -99,6 +110,7 @@ How to debug SLOOP
 ------------------
 
 If you want to debug SLOOP:
+
 * open the Run configuration you are using to launch the IDE (`runIde` or `its:runIdeForUiTests`)
 * Add an environment variable: `SONARLINT_JVM_OPTS` with the value `-agentlib:jdwp=transport=dt_socket,address=8080,server=y,suspend=n`
 * Run the task
@@ -127,10 +139,17 @@ To run against a specific IDE, the `runIdeDirectory` property can be used as suc
 Keep in mind that the `clean` task will wipe out the content of `build/idea-sandbox`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
 
-Whenever you change the dependency version, the previous versions are not deleted from the sandbox, and the JVM might not load the version that you expect.
+Whenever you change the dependency version, the previous versions are not deleted from the sandbox, and the JVM might not load the version
+that you expect.
 As the `clean` task may be inconvenient, an easier workaround is to delete the jars in the sandbox, for example with:
 
     find build/idea-sandbox/ -name '*.jar' -delete
+
+Build Images
+------------
+
+The image used to build the plugin is defined in the
+`https://github.com/SonarSource/sonarlint-ci-images/blob/master/.cirrus/sonarlint_intellij_ami_tasks.star` pipeline.
 
 License
 -------

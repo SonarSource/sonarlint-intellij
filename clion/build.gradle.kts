@@ -4,9 +4,11 @@ val clionHome: String? = System.getenv("CLION_HOME")
 intellij {
     plugins.set(listOf("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang"))
     if (!clionHome.isNullOrBlank()) {
+        println("Using local installation of IntelliJ IDEA: $clionHome")
         localPath.set(clionHome)
         localSourcesPath.set(clionHome)
     } else {
+        println("No local installation of IntelliJ IDEA found, using version $clionBuildVersion")
         version.set(clionBuildVersion)
     }
 }

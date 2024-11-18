@@ -7,9 +7,11 @@ plugins {
 
 intellij {
     if (!riderHome.isNullOrBlank()) {
+        println("Using local installation of IntelliJ IDEA: $riderHome")
         localPath.set(riderHome)
         localSourcesPath.set(riderHome)
     } else {
+        println("No local installation of IntelliJ IDEA found, using version $riderBuildVersion")
         version.set(riderBuildVersion)
     }
     plugins.set(listOf("Git4Idea"))

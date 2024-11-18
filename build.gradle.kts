@@ -135,9 +135,11 @@ intellij {
     updateSinceUntilBuild.set(false)
     plugins.set(listOf("java", "Git4Idea"))
     if (!ideaHome.isNullOrBlank()) {
+        println("Using local installation of IntelliJ IDEA: $ideaHome")
         localPath.set(ideaHome)
         localSourcesPath.set(ideaHome)
     } else {
+        println("No local installation of IntelliJ IDEA found, using version $intellijBuildVersion")
         version.set(intellijBuildVersion)
     }
 }
