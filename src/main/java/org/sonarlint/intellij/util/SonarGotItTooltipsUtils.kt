@@ -35,7 +35,7 @@ object SonarGotItTooltipsUtils {
     fun showTrafficLightToolTip(component: JComponent, parent: Disposable) {
         // we pick a random project service that is disposable
         with(GotItTooltip(TRAFFIC_LIGHT_TOOLTIP_ID, TRAFFIC_LIGHT_TOOLTIP_TEXT, parent)) {
-            withIcon(SonarLintIcons.SONARLINT)
+            withIcon(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
             withPosition(Balloon.Position.above)
             show(component) { it, _ -> Point(-5, it.height / 2) }
         }

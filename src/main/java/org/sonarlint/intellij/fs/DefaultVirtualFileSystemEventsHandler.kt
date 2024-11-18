@@ -51,6 +51,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         events: List<VFileEvent>,
         eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?,
     ) {
+        
         val openProjects = ProjectManager.getInstance().openProjects.filter { !it.isDisposed }.toList()
         val filesByModule = fileEventsByModules(events, openProjects, eventTypeConverter)
         val allFilesByModule = filesByModule.entries.associate { it.key to it.value.toList() }

@@ -83,7 +83,7 @@ public class IssueNode extends FindingNode {
         setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
       } else {
         renderer.setIconToolTip(impactText + " impact on " + qualityText);
-        var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
+        var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + gap;
         setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, impactIcon)));
       }
     } else {
@@ -104,7 +104,7 @@ public class IssueNode extends FindingNode {
         setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon));
       } else {
         renderer.setIconToolTip(severityText + " " + typeStr);
-        var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_16.getIconWidth() + gap;
+        var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + gap;
         setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon)));
       }
     }

@@ -173,9 +173,9 @@ class SonarLintDashboardPanel(private val editor: Editor) {
             connectionHelp.isVisible = false
             connectionIcon.isVisible = true
             if (serverConnection.isSonarCloud) {
-                connectionIcon.icon = SonarLintIcons.ICON_SONARCLOUD_16
+                connectionIcon.icon = SonarLintIcons.ICON_SONARQUBE_CLOUD_16
             } else {
-                connectionIcon.icon = SonarLintIcons.ICON_SONARQUBE_16
+                connectionIcon.icon = SonarLintIcons.ICON_SONARQUBE_SERVER_16
             }
             settings.projectKey?.let { projectKey ->
                 bindingLabel.isVisible = true

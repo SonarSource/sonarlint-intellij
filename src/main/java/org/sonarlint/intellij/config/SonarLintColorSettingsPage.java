@@ -54,7 +54,7 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
   private static final Map<String, TextAttributesKey> ADDITIONAL_HIGHLIGHT_DESCRIPTORS = new TreeMap<>();
 
   @Nullable @Override public Icon getIcon() {
-    return SonarLintIcons.SONARLINT;
+    return SonarLintIcons.SONARQUBE_FOR_INTELLIJ;
   }
 
   @NotNull @Override public SyntaxHighlighter getHighlighter() {

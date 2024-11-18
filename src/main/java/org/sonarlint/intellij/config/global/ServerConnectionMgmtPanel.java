@@ -127,9 +127,9 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       @Override
       protected void customizeCellRenderer(JList list, ServerConnection server, int index, boolean selected, boolean hasFocus) {
         if (server.isSonarCloud()) {
-          setIcon(SonarLintIcons.ICON_SONARCLOUD_16);
+          setIcon(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
         } else {
-          setIcon(SonarLintIcons.ICON_SONARQUBE_16);
+          setIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
         }
         append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
         if (!server.isSonarCloud()) {
@@ -143,10 +143,10 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     var titlePanel = new JPanel(new HorizontalLayout(5));
     var connectionLabel = new JBLabel("Connections to SonarQube (");
     connectionLabel.setFont(connectionLabel.getFont().deriveFont(Font.BOLD, 16f));
-    var sonarQubeIcon = new JBLabel(SonarLintIcons.ICON_SONARCLOUD_16);
+    var sonarQubeIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
     var sonarQubeLabel = new JBLabel("Server, ");
     sonarQubeLabel.setFont(sonarQubeLabel.getFont().deriveFont(Font.BOLD, 16f));
-    var sonarCloudIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_16);
+    var sonarCloudIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
     var sonarCloudLabel = new JBLabel("Cloud)");
     sonarCloudLabel.setFont(sonarQubeLabel.getFont().deriveFont(Font.BOLD, 16f));
     titlePanel.add(connectionLabel);

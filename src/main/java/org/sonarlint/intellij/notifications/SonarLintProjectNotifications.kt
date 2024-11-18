@@ -71,7 +71,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
                 type
             ).apply {
                 isImportant = type != NotificationType.INFORMATION
-                icon = SonarLintIcons.SONARLINT
+                icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
                 action?.let { addAction(it) }
                 notify(null)
             }
@@ -112,7 +112,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             "Project binding is invalid and has been removed, the connection has probably been deleted previously.",
             NotificationType.WARNING
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             addAction(OpenProjectSettingsAction(myProject))
             isImportant = true
             notify(myProject)
@@ -129,7 +129,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             addAction(OpenTrackedLinkAction("Download SonarQube Server", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS))
             addAction(OpenInBrowserAction("Learn more", null, CONNECTED_MODE_BENEFITS_LINK))
             addAction(DontAskAgainAction())
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             notify(myProject)
         }
     }
@@ -166,7 +166,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             addAction(DisableBindingSuggestionsAction())
             collapseDirection = Notification.CollapseActionsDirection.KEEP_LEFTMOST
             isImportant = true
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             notify(myProject)
         }
     }
@@ -180,7 +180,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         ).apply {
             Arrays.stream(mainActions).forEach { action: AnAction -> addAction(action) }
             isImportant = true
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             notify(myProject)
         }
     }
@@ -212,9 +212,9 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             NotificationType.INFORMATION
         ).apply {
             icon = if (isSonarCloud) {
-                SonarLintIcons.ICON_SONARCLOUD_16
+                SonarLintIcons.ICON_SONARQUBE_CLOUD_16
             } else {
-                SonarLintIcons.ICON_SONARQUBE_16
+                SonarLintIcons.ICON_SONARQUBE_SERVER_16
             }
             isImportant = true
             addAction(OpenInServerAction(label, smartNotificationParams.link, smartNotificationParams.category))
@@ -229,7 +229,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             content,
             NotificationType.INFORMATION
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             isImportant = true
             notify(myProject)
         }
@@ -243,7 +243,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         group.createNotification(
             title, content, NotificationType.ERROR
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             isImportant = true
             addAction(ShowLogAction())
             notify(myProject)
@@ -254,7 +254,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         group.createNotification(
             "", content, NotificationType.WARNING
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             isImportant = true
             addAction(ShowLogAction())
             notify(myProject)
@@ -269,7 +269,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
                 "Please refer to the SonarQube for IntelliJ tool window for more information.",
             NotificationType.WARNING
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             setImportant(true)
             notify(myProject)
         }
@@ -281,7 +281,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             content,
             NotificationType.WARNING
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             setImportant(true)
             Stream.of(*actions).forEach(this::addAction)
             notify(myProject)
@@ -294,7 +294,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             message,
             NotificationType.WARNING
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             action?.let { addAction(it) }
             addAction(DontShowAgainAction(doNotShowAgainId))
             notify(myProject)
@@ -308,7 +308,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             message,
             NotificationType.WARNING
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             addAction(ShareConfigurationAction("Share configuration"))
             addAction(DontShowAgainAction(doNotShowAgainId))
             notify(myProject)
@@ -322,7 +322,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             message,
             NotificationType.INFORMATION
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             action?.let { addAction(it) }
             addAction(DontShowAgainAction(doNotShowAgainId))
             notify(myProject)
@@ -335,7 +335,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             message,
             type
         ).apply {
-            icon = SonarLintIcons.SONARLINT
+            icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
             Stream.of(*actions).forEach(this::addAction)
             notify(myProject)
         }

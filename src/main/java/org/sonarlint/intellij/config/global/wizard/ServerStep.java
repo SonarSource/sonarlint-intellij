@@ -30,7 +30,6 @@ import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -150,19 +149,19 @@ public class ServerStep extends AbstractWizardStepEx {
   }
 
   private void load(boolean editing) {
-    Icon sqIcon = SonarLintIcons.ICON_SONARQUBE;
-    Icon clIcon = SonarLintIcons.ICON_SONARCLOUD;
+    var sqsIcon = SonarLintIcons.ICON_SONARQUBE_SERVER;
+    var sqcIcon = SonarLintIcons.ICON_SONARQUBE_CLOUD;
 
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
       radioSonarCloud.setSelected(true);
       if (editing) {
-        sqIcon = SonarLintIcons.toDisabled(sqIcon);
+        sqsIcon = SonarLintIcons.toDisabled(sqsIcon);
       }
     } else {
       radioSonarQube.setSelected(true);
       urlText.setText(model.getServerUrl());
       if (editing) {
-        clIcon = SonarLintIcons.toDisabled(clIcon);
+        sqcIcon = SonarLintIcons.toDisabled(sqcIcon);
       }
     }
 
@@ -174,8 +173,8 @@ public class ServerStep extends AbstractWizardStepEx {
       radioSonarCloud.setEnabled(false);
     }
 
-    sonarqubeIcon.setIcon(sqIcon);
-    sonarcloudIcon.setIcon(clIcon);
+    sonarqubeIcon.setIcon(sqsIcon);
+    sonarcloudIcon.setIcon(sqcIcon);
   }
 
   private void selectionChanged() {
@@ -269,8 +268,8 @@ public class ServerStep extends AbstractWizardStepEx {
   }
 
   private void createUIComponents() {
-    sonarcloudIcon = new JLabel(SonarLintIcons.ICON_SONARCLOUD);
-    sonarqubeIcon = new JLabel(SonarLintIcons.ICON_SONARQUBE);
+    sonarcloudIcon = new JLabel(SonarLintIcons.ICON_SONARQUBE_CLOUD);
+    sonarqubeIcon = new JLabel(SonarLintIcons.ICON_SONARQUBE_SERVER);
     sonarcloudText = SwingHelper.createHtmlViewer(false, null, null, null);
     sonarqubeText = SwingHelper.createHtmlViewer(false, null, null, null);
     sonarQubeDescription = SwingHelper.createHtmlViewer(false, null, null, null);

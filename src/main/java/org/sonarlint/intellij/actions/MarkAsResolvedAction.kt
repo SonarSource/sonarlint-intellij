@@ -250,10 +250,10 @@ class MarkAsResolvedAction(
 
     override fun startInWriteAction() = false
 
-    override fun getText() = "SonarQube for IntelliJ: Mark issue as\u2026"
+    override fun getText() = "SonarQube: Mark issue as\u2026"
 
     override fun getFamilyName(): String {
-        return "SonarQube for IntelliJ mark issue as\u2026"
+        return "SonarQube mark issue as\u2026"
     }
 
     override fun isVisible(e: AnActionEvent): Boolean {

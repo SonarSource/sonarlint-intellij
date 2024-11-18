@@ -1,0 +1,33 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2024 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<svg width="14" height="13" viewBox="0 0 14 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_38_32)">
+<path d="M1.38892 5.86141C1.97814 6.2901 1.91001 7.27907 2.62645 7.27907C3.44532 7.27907 3.54012 5.68652 4.29862 5.68652C5.13715 5.68652 5.05589 7.30091 5.96359 7.27907C6.74895 7.26017 6.76697 5.68652 7.61043 5.68652C8.4539 5.68652 8.39298 7.29887 9.30072 7.27907C10.1881 7.2597 10.0741 5.68652 10.9222 5.68652C11.7294 5.68652 11.6565 6.7219 12.1743 7.11569" stroke="#DB5C5C" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.32373 10.6666C5.19121 12.2757 8.20084 12.3758 10.2684 10.6667" stroke="#DB5C5C" stroke-linecap="round"/>
+<path d="M10.2683 2.328C8.40084 0.71885 5.3912 0.618807 3.32364 2.32788" stroke="#DB5C5C" stroke-linecap="round"/>
+</g>
+<defs>
+<clipPath id="clip0_38_32">
+<rect width="13" height="13" fill="white" transform="translate(0.290039)"/>
+</clipPath>
+</defs>
+</svg>
