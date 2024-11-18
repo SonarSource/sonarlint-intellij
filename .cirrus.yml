@@ -65,11 +65,10 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
   builder_subnet_id: ${CIRRUS_AWS_SUBNET}
 
 ec2_instance_definition: &WINVM_DEFINITION
-  experimental: true
-  image: base-windows-jdk17-v20240704125406
-  platform: windows
   region: eu-central-1
   type: c5.4xlarge
+  image: sonarlint-intellij-v*
+  platform: windows
 
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
@@ -147,10 +146,10 @@ validate_windows_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
     JDK_VERSION: "17"
-    IDEA_HOME: ""
-    RIDER_HOME: ""
-    RESHARPER_HOME: ""
-    CLION_HOME: ""
+    IDEA_HOME: "/C/Program Files/intellij"
+    RIDER_HOME: "/C/Program Files/rider"
+    RESHARPER_HOME: "/C/Program Files/resharper"
+    CLION_HOME: "/C/Program Files/clion"
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
@@ -158,6 +157,8 @@ validate_windows_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
+    # Workaround microsoft-openjdk install issue
+    mkdir "/C/Program Files/Microsoft/jdk-17.0.12.7-hotspot/Packages"
     ./gradlew :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
