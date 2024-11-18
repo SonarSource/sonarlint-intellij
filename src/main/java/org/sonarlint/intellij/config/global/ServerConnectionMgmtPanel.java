@@ -143,10 +143,10 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     var titlePanel = new JPanel(new HorizontalLayout(5));
     var connectionLabel = new JBLabel("Connections to SonarQube (");
     connectionLabel.setFont(connectionLabel.getFont().deriveFont(Font.BOLD, 16f));
-    var sonarQubeIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
+    var sonarQubeIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
     var sonarQubeLabel = new JBLabel("Server, ");
     sonarQubeLabel.setFont(sonarQubeLabel.getFont().deriveFont(Font.BOLD, 16f));
-    var sonarCloudIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
+    var sonarCloudIcon = new JBLabel(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
     var sonarCloudLabel = new JBLabel("Cloud)");
     sonarCloudLabel.setFont(sonarQubeLabel.getFont().deriveFont(Font.BOLD, 16f));
     titlePanel.add(connectionLabel);
