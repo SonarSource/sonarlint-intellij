@@ -375,9 +375,9 @@ public class SonarLintProjectBindPanel {
       append(value.getName(), attrs, true);
       setToolTipText("Bind project using this connection");
       if (value.isSonarCloud()) {
-        setIcon(SonarLintIcons.ICON_SONARCLOUD_16);
+        setIcon(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
       } else {
-        setIcon(SonarLintIcons.ICON_SONARQUBE_16);
+        setIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
       }
     }
   }

@@ -98,11 +98,11 @@ class AutomaticSharedConfigCreator(
     private val tokenGenerationButton = JButton("Generate Token")
 
     init {
-        title = if (isSQ) "Connect to This SonarQube Server?" else "Connect to SonarQube Cloud?"
+        title = if (isSQ) "Connect to This SonarQube Server Instance?" else "Connect to SonarQube Cloud?"
         val connectionNames = getGlobalSettings().serverNames
         connectionNameField.text = findFirstUniqueConnectionName(connectionNames, orgOrServerUrl)
 
-        val connectionActionName = if (isSQ) "Connect to This SonarQube Server" else "Connect to SonarQube Cloud"
+        val connectionActionName = if (isSQ) "Connect to This SonarQube Server Instance" else "Connect to SonarQube Cloud"
         createConnectionAction = object : DialogWrapperAction(connectionActionName) {
             init {
                 putValue(DEFAULT_ACTION, true)
@@ -168,7 +168,7 @@ class AutomaticSharedConfigCreator(
                 .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
 
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
-            val connectionTypeMessage = if (isSQ) "SonarQube Server" else "SonarQube Cloud organization"
+            val connectionTypeMessage = if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of $connectionTypeMessage '${connection.name}'. " +
@@ -230,7 +230,7 @@ class AutomaticSharedConfigCreator(
         if (isSQ) {
             redWarningIcon.icon = AllIcons.Ide.FatalError
             warningLabel.text = "Always ensure that your Server URL matches your SonarQube Server instance. " +
-                "Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server is potentially dangerous."
+                "Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server instance is potentially dangerous."
             val warningPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
                 add(redWarningIcon, BorderLayout.WEST)
                 add(warningLabel, BorderLayout.CENTER)

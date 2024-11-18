@@ -164,10 +164,10 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
 
     override fun startInWriteAction() = false
 
-    override fun getText() = "SonarQube for IntelliJ: Reopen issue"
+    override fun getText() = "SonarQube: Reopen issue"
 
     override fun getFamilyName(): String {
-        return "SonarQube for IntelliJ reopen issue"
+        return "SonarQube reopen issue"
     }
 
     override fun isVisible(e: AnActionEvent): Boolean {

@@ -46,11 +46,11 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
   }
 
   @Nls @NotNull @Override public String getText() {
-    return "SonarQube for IntelliJ: Disable rule '" + ruleKey + "'";
+    return "SonarQube: Disable rule '" + ruleKey + "'";
   }
 
   @Nls @NotNull @Override public String getFamilyName() {
-    return "SonarQube for IntelliJ disable rule";
+    return "SonarQube disable rule";
   }
 
   @Override public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {

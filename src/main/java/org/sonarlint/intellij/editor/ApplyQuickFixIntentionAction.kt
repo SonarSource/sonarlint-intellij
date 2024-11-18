@@ -36,8 +36,8 @@ import org.sonarlint.intellij.finding.RangeMarkerEdit
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 
 class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKey: String, private val invokedInPreview: Boolean) : IntentionAction, PriorityAction, Iconable {
-    override fun getText() = "SonarQube for IntelliJ: " + fix.message
-    override fun getFamilyName() = "SonarQube for IntelliJ quick fix"
+    override fun getText() = "SonarQube: " + fix.message
+    override fun getFamilyName() = "SonarQube quick fix"
     override fun startInWriteAction() = true
     override fun getIcon(flags: Int) = AllIcons.Actions.IntentionBulb
     override fun getPriority() = PriorityAction.Priority.TOP

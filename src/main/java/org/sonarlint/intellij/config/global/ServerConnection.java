@@ -143,7 +143,7 @@ public class ServerConnection {
   }
 
   public Icon getProductIcon() {
-    return isSonarCloud() ? SonarLintIcons.ICON_SONARCLOUD_16 : SonarLintIcons.ICON_SONARQUBE_16;
+    return isSonarCloud() ? SonarLintIcons.ICON_SONARQUBE_CLOUD_16 : SonarLintIcons.ICON_SONARQUBE_SERVER_16;
   }
 
   public boolean enableProxy() {

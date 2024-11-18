@@ -61,14 +61,29 @@ class SonarLintIconsTest {
 
     @Test
     fun testIcons() {
-        assertThat(SonarLintIcons.CLEAN).isNotNull
-        assertThat(SonarLintIcons.ICON_SONARQUBE_16).isNotNull
-        assertThat(SonarLintIcons.INFO).isNotNull
+        assertThat(SonarLintIcons.ICON_SONARQUBE_SERVER).isNotNull
+        assertThat(SonarLintIcons.ICON_SONARQUBE_CLOUD).isNotNull
+        assertThat(SonarLintIcons.ICON_SONARQUBE_SERVER_16).isNotNull
+        assertThat(SonarLintIcons.ICON_SONARQUBE_CLOUD_16).isNotNull
+        assertThat(SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX).isNotNull
+        assertThat(SonarLintIcons.SONARQUBE_FOR_INTELLIJ_RED_13PX).isNotNull
+        assertThat(SonarLintIcons.SONARQUBE_FOR_INTELLIJ_GREEN_13PX).isNotNull
+        assertThat(SonarLintIcons.SONARQUBE_FOR_INTELLIJ_ORANGE_13PX).isNotNull
+        assertThat(SonarLintIcons.SONARQUBE_FOR_INTELLIJ).isNotNull
+        assertThat(SonarLintIcons.SONARQUBE_FOR_INTELLIJ_32PX).isNotNull
         assertThat(SonarLintIcons.PLAY).isNotNull
-        assertThat(SonarLintIcons.SONARLINT).isNotNull
-        assertThat(SonarLintIcons.SUSPEND).isNotNull
+        assertThat(SonarLintIcons.CLEAN).isNotNull
         assertThat(SonarLintIcons.TOOLS).isNotNull
+        assertThat(SonarLintIcons.SUSPEND).isNotNull
+        assertThat(SonarLintIcons.INFO).isNotNull
         assertThat(SonarLintIcons.WARN).isNotNull
+        assertThat(SonarLintIcons.SCM).isNotNull
+        assertThat(SonarLintIcons.PROJECT).isNotNull
+        assertThat(SonarLintIcons.NOT_CONNECTED).isNotNull
+        assertThat(SonarLintIcons.CONNECTED).isNotNull
+        assertThat(SonarLintIcons.CONNECTION_ERROR).isNotNull
+        assertThat(SonarLintIcons.RESOLVED).isNotNull
+        assertThat(SonarLintIcons.FOCUS).isNotNull
     }
 
     @Test

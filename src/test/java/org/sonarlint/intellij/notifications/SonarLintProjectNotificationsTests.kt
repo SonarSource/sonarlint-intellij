@@ -70,11 +70,11 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         sonarLintProjectNotifications.notifyProjectBindingInvalidAndUnbound()
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarLint - Invalid binding</b>")
+        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube for IntelliJ - Invalid binding</b>")
         Assertions.assertThat(notifications[0].content)
             .isEqualTo("Project binding is invalid and has been removed, the connection has probably been deleted previously.")
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.WARNING)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(1)
     }
 
@@ -85,10 +85,10 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         sonarLintProjectNotifications.notifyLanguagePromotion(content)
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarLint suggestions</b>")
+        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube for IntelliJ suggestions</b>")
         Assertions.assertThat(notifications[0].content).isEqualTo(content)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(4)
     }
 
@@ -103,7 +103,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].content).isEqualTo(message)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
         Assertions.assertThat(notifications[0].isExpired).isEqualTo(false)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions).isEmpty()
     }
 
@@ -134,10 +134,10 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         sonarLintProjectNotifications.handle(param)
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube Notification</b>")
+        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube Server Notification</b>")
         Assertions.assertThat(notifications[0].content).isEqualTo("text")
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.ICON_SONARQUBE_16)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.ICON_SONARQUBE_SERVER_16)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(2)
     }
 
@@ -157,10 +157,10 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         sonarLintProjectNotifications.handle(param)
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarCloud Notification</b>")
+        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube Cloud Notification</b>")
         Assertions.assertThat(notifications[0].content).isEqualTo("text")
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.ICON_SONARCLOUD_16)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.ICON_SONARQUBE_CLOUD_16)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(2)
     }
 
@@ -175,7 +175,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].title).isBlank()
         Assertions.assertThat(notifications[0].content).isEqualTo(content)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions).isEmpty()
     }
 
@@ -191,7 +191,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].title).isEqualTo(title)
         Assertions.assertThat(notifications[0].content).isEqualTo(content)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.ERROR)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(1)
     }
 
@@ -206,7 +206,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].title).isBlank()
         Assertions.assertThat(notifications[0].content).isEqualTo(content)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.WARNING)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(1)
     }
 
@@ -215,14 +215,14 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         sonarLintProjectNotifications.sendNotification()
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("SonarLint: secret(s) detected")
+        Assertions.assertThat(notifications[0].title).isEqualTo("SonarQube for IntelliJ: secret(s) detected")
         Assertions.assertThat(notifications[0].content).isEqualTo(
-            "SonarLint detected some secrets in one of the open files. " +
+            "SonarQube for IntelliJ detected some secrets in one of the open files. " +
                 "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +
-                "Please refer to the SonarLint tool window for more information."
+                "Please refer to the SonarQube for IntelliJ tool window for more information."
         )
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.WARNING)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions).isEmpty()
     }
 
@@ -237,7 +237,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].title).isBlank()
         Assertions.assertThat(notifications[0].content).isEqualTo(message)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.WARNING)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(1)
     }
 
@@ -253,7 +253,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].title).isEqualTo(title)
         Assertions.assertThat(notifications[0].content).isEqualTo(message)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.WARNING)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(2)
     }
 
@@ -269,7 +269,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].title).isEqualTo(title)
         Assertions.assertThat(notifications[0].content).isEqualTo(message)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(1)
     }
 
@@ -285,7 +285,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].title).isEqualTo(title)
         Assertions.assertThat(notifications[0].content).isEqualTo(message)
         Assertions.assertThat(notifications[0].type).isEqualTo(type)
-        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARLINT)
+        Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions).isEmpty()
     }
 
