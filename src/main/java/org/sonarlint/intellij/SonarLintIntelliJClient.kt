@@ -809,7 +809,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     Paths.get(relativePath),
                     configScopeId,
                     isTestSources(file, project),
-                    file.charset.name(),
+                    VirtualFileUtils.getEncoding(file, project),
                     Paths.get(file.path),
                     fileContent,
                     language,

@@ -937,7 +937,7 @@ class BackendService : Disposable {
                             Paths.get(relativePath),
                             moduleId,
                             isTestSources(it.virtualFile, module.project),
-                            it.getEncoding(module.project).toString(),
+                            VirtualFileUtils.getEncoding(it.virtualFile, module.project),
                             Paths.get(it.virtualFile.path),
                             if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
                             forcedLanguage,
