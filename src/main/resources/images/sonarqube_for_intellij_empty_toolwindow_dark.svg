@@ -20,18 +20,18 @@
 
 -->
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g clip-path="url(#clip0_65_75)">
-<mask id="mask0_65_75" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="16" height="16">
+<g clip-path="url(#clip0_65_51)">
+<mask id="mask0_65_51" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="16" height="16">
 <path d="M16 0H0V16H16V0Z" fill="white"/>
 </mask>
-<g mask="url(#mask0_65_75)">
-<path d="M1.35254 7.21415C2.07773 7.74177 1.99388 8.95896 2.87565 8.95896C3.88349 8.95896 4.00017 6.9989 4.93371 6.9989C5.96575 6.9989 5.86573 8.98584 6.9829 8.95896C7.9495 8.9357 7.97168 6.9989 9.00978 6.9989C10.0479 6.9989 9.97292 8.98333 11.0901 8.95896C12.1823 8.93512 12.042 6.9989 13.0858 6.9989C14.0793 6.9989 13.9896 8.27322 14.6269 8.75788" stroke="#6C707E" stroke-width="1.23077" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M3.73389 13.1282C6.03232 15.1086 9.73648 15.2318 12.2812 13.1283" stroke="#6C707E" stroke-width="1.23077" stroke-linecap="round"/>
-<path d="M12.2809 2.86528C9.9825 0.884792 6.27833 0.761662 3.73364 2.86514" stroke="#6C707E" stroke-width="1.23077" stroke-linecap="round"/>
+<g mask="url(#mask0_65_51)">
+<path d="M1.35254 7.21415C2.07773 7.74177 1.99388 8.95896 2.87565 8.95896C3.88349 8.95896 4.00017 6.9989 4.93371 6.9989C5.96575 6.9989 5.86573 8.98584 6.9829 8.95896C7.9495 8.9357 7.97168 6.9989 9.00978 6.9989C10.0479 6.9989 9.97292 8.98333 11.0901 8.95896C12.1823 8.93512 12.042 6.9989 13.0858 6.9989C14.0793 6.9989 13.9896 8.27322 14.6269 8.75788" stroke="#CED0D6" stroke-width="1.23077" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.73389 13.1282C6.03232 15.1086 9.73648 15.2318 12.2812 13.1283" stroke="#CED0D6" stroke-width="1.23077" stroke-linecap="round"/>
+<path d="M12.2809 2.86528C9.9825 0.884792 6.27833 0.761662 3.73364 2.86514" stroke="#CED0D6" stroke-width="1.23077" stroke-linecap="round"/>
 </g>
 </g>
 <defs>
-<clipPath id="clip0_65_75">
+<clipPath id="clip0_65_51">
 <rect width="16" height="16" fill="white"/>
 </clipPath>
 </defs>

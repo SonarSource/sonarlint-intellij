@@ -1,0 +1,38 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2024 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_65_59)">
+<mask id="mask0_65_59" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
+<path d="M20 0H0V20H20V0Z" fill="white"/>
+</mask>
+<g mask="url(#mask0_65_59)">
+<path d="M1.69067 9.01747C2.59717 9.677 2.49235 11.1985 3.59457 11.1985C4.85437 11.1985 5.00021 8.74841 6.16714 8.74841C7.45718 8.74841 7.33217 11.2321 8.72863 11.1985C9.93687 11.1694 9.9646 8.74841 11.2622 8.74841C12.5599 8.74841 12.4662 11.229 13.8627 11.1985C15.2279 11.1687 15.0525 8.74841 16.3573 8.74841C17.5991 8.74841 17.487 10.3413 18.2836 10.9471" stroke="#CED0D6" stroke-width="1.53846" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4.66724 16.4102C7.54028 18.8857 12.1705 19.0397 15.3513 16.4103" stroke="#CED0D6" stroke-width="1.53846" stroke-linecap="round"/>
+<path d="M15.3513 3.58151C12.4783 1.1059 7.8481 0.951986 4.66724 3.58133" stroke="#CED0D6" stroke-width="1.53846" stroke-linecap="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_65_59">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>
