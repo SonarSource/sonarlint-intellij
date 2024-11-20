@@ -170,6 +170,34 @@ validate_windows_task:
     slack_notification_script: |
       source slack-failure-notification
 
+validate_windows_with_download_task:
+  #  name: "Run unit tests on Windows"
+  depends_on:
+    - build
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  env:
+    JDK_VERSION: "17"
+  ec2_instance:
+    <<: *WINVM_DEFINITION
+  <<: *SETUP_GRADLE_CACHE
+  # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
+  build_script: |
+    unset IDEA_HOME RIDER_HOME RESHARPER_HOME CLION_HOME
+    source cirrus-env QA
+    source .cirrus/use-gradle-wrapper.sh
+    # Workaround microsoft-openjdk install issue
+    mkdir "/C/Program Files/Microsoft/jdk-17.0.12.7-hotspot/Packages"
+    ./gradlew :check
+  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  on_failure:
+    reports_artifacts:
+      path: "**/reports/**/*"
+    junit_artifacts:
+      path: "**/test-results/**/*.xml"
+      format: junit
+    slack_notification_script: |
+      source slack-failure-notification
+
 plugin_verifier_task:
   #  name: "Run plugin verifier on all IDEs"
   depends_on:
