@@ -201,7 +201,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="SonarQube for IntelliJ" anchor="bottom"
-                    icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX"
+                    icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW"
                     factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
         <applicationConfigurable groupId="tools" id="sonarlint" displayName="SonarQube for IntelliJ"
                                  instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
