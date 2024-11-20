@@ -157,7 +157,7 @@ validate_windows_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    ./gradlew :check
+    gradle :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     reports_artifacts:
@@ -200,7 +200,7 @@ plugin_verifier_task:
     source .cirrus/use-gradle-wrapper.sh
     VERSIONS=$(curl -s -L https://jb.gg/intellij-platform-builds-list | jq '.[] | "\(.code) \(.releases[].version)"' | grep -Ew "${ALLOWED_IDE}" | grep "${IDEA_VERSION}" | tr -d '"' | awk '{k=$1} $2>a[k]{a[k]=$2} END{for (i in a) print i, a[i]}' | sort -u | sed 's/ /-/' | paste -s -d',')
     echo ${VERSIONS}
-    ./gradlew :runPluginVerifier -PverifierVersions=${VERSIONS}
+    gradle :runPluginVerifier -PverifierVersions=${VERSIONS}
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     reports_artifacts:
@@ -221,6 +221,10 @@ qa_task:
     DISPLAY: :10
     JDK_VERSION: "17"
     SONARCLOUD_IT_PASSWORD: VAULT[development/team/sonarlint/kv/data/sonarcloud-it data.password]
+    IDEA_HOME: "/C/Program Files/intellij"
+    RIDER_HOME: "/C/Program Files/rider"
+    RESHARPER_HOME: "/C/Program Files/resharper"
+    CLION_HOME: "/C/Program Files/clion"
   matrix:
     - env:
         IDEA_VERSION: 'IC-2022.3.1'
@@ -232,17 +236,16 @@ qa_task:
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
     echo "Prepare env and start IDE ${IDEA_VERSION}"
-    gradle properties 2>&1
-    gradle properties | grep 'version:'
-    gradle properties | grep 'version:' | tr --delete "[:space:]"
-    gradle properties | grep 'version:' | tr --delete "[:space:]" | cut --delimiter=":" --fields=2
     source set_gradle_build_version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
     mkdir -p its/build/idea-sandbox/config-uiTest/
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
-    .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500
+    sleep 600s
+    curl --connect-timeout 1 --insecure -s -o /dev/null http://127.0.0.1:8082
+    # TODO write windows version of wait-for-endpoint.sh
+    # .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
