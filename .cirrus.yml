@@ -157,8 +157,6 @@ validate_windows_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    # Workaround microsoft-openjdk install issue
-    mkdir "/C/Program Files/Microsoft/jdk-17.0.12.7-hotspot/Packages"
     ./gradlew :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
