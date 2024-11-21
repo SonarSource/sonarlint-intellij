@@ -145,12 +145,6 @@ As the `clean` task may be inconvenient, an easier workaround is to delete the j
 
     find build/idea-sandbox/ -name '*.jar' -delete
 
-Build Images
-------------
-
-The image used to build the plugin is defined in the
-`https://github.com/SonarSource/sonarlint-ci-images/blob/master/.cirrus/sonarlint_intellij_ami_tasks.star` pipeline.
-
 License
 -------
 

@@ -7,11 +7,11 @@ plugins {
 
 intellij {
     if (!resharperHome.isNullOrBlank()) {
-        println("Using local installation of IntelliJ IDEA: $resharperHome")
+        println("Using local installation of CLion: $resharperHome")
         localPath.set(resharperHome)
         localSourcesPath.set(resharperHome)
     } else {
-        println("No local installation of IntelliJ IDEA found, using version $clionResharperBuildVersion")
+        println("No local installation of CLion found, using version $clionResharperBuildVersion")
         version.set(clionResharperBuildVersion)
     }
 }
