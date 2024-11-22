@@ -245,7 +245,7 @@ qa_task:
     sleep 600s
     curl --connect-timeout 1 --insecure -s -o /dev/null http://127.0.0.1:8082
     # TODO write windows version of wait-for-endpoint.sh
-    # .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500
+    # .cirrus/wait-for-endpoint.sh http://127.0.0.1:8081 -t 500
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
