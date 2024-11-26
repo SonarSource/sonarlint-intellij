@@ -75,7 +75,7 @@ class ProjectBindingUtils {
         fun bindProjectAndModuleInFileSettings() {
             sonarLintGlobalSettings {
                 tree {
-                    clickPath("Tools", "SonarQube for IntelliJ", "Project Settings")
+                    clickPath("Tools", "SonarQube for IDE", "Project Settings")
                 }
                 checkBox("Bind project to SonarQube (Server, Cloud)").select()
                 pressOk()

@@ -116,7 +116,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         )
 
         connectedModeDescriptionLabel.text =
-            "Connecting SonarQube for IntelliJ to ${if (isSQ) "SonarQube Server" else "SonarQube Cloud"} will enable issues " +
+            "Connecting SonarQube for IDE to ${if (isSQ) "SonarQube Server" else "SonarQube Cloud"} will enable issues " +
                 "to be opened directly in your IDE and enable other <a href=\"$CONNECTED_MODE_BENEFITS_LINK\">features and benefits</a>."
         connectedModeDescriptionLabel.addHyperlinkListener(object : HyperlinkAdapter() {
             override fun hyperlinkActivated(e: HyperlinkEvent) {
@@ -149,7 +149,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         redWarningIcon.icon = AllIcons.Ide.FatalError
         warningLabel.text = if (isSQ) {
             "Always ensure that your Server URL matches your SonarQube Server instance. " +
-                "Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server instance is potentially dangerous."
+                "Letting SonarQube for IDE connect to an untrusted SonarQube Server instance is potentially dangerous."
         } else {
             "Ensure that the organization matches your SonarQube Cloud organization."
         }

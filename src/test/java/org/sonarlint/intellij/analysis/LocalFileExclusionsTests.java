@@ -93,7 +93,7 @@ class LocalFileExclusionsTests extends AbstractSonarLintLightTests {
     setProjectLevelExclusions(List.of("GLOB:foo.php"));
 
     var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), false, excludeReasons::put);
-    assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarQube for IntelliJ Project Settings");
+    assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarQube for IDE Project Settings");
   }
 
   @Test
@@ -113,7 +113,7 @@ class LocalFileExclusionsTests extends AbstractSonarLintLightTests {
     triggerFileExclusions("foo.php");
 
     var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), false, excludeReasons::put);
-    assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarQube for IntelliJ Global Settings");
+    assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarQube for IDE Global Settings");
   }
 
   @Test

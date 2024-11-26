@@ -56,7 +56,7 @@ import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Disposable {
-  private static final String ID = "SonarQube for IntelliJ";
+  private static final String ID = "SonarQube for IDE";
   protected final Project project;
   protected Tree tree;
   protected Tree oldTree;
@@ -204,7 +204,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     } else {
       if (showFinding.getCodeSnippet() == null) {
         SonarLintProjectNotifications.Companion.get(project)
-          .notifyUnableToOpenFinding("The issue could not be detected by SonarQube for IntelliJ in the current code");
+          .notifyUnableToOpenFinding("The issue could not be detected by SonarQube for IDE in the current code");
         return;
       }
       runOnPooledThread(project, () -> {
@@ -212,7 +212,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
         var rangeMarker = computeReadActionSafely(project, () -> matcher.matchWithCode(showFinding.getFile(), showFinding.getTextRange(), showFinding.getCodeSnippet()));
         if (rangeMarker == null) {
           SonarLintProjectNotifications.Companion.get(project)
-            .notifyUnableToOpenFinding("The issue could not be detected by SonarQube for IntelliJ in the current code");
+            .notifyUnableToOpenFinding("The issue could not be detected by SonarQube for IDE in the current code");
           return;
         }
 

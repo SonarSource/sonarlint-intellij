@@ -36,7 +36,7 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 public class DisableRuleAction extends AbstractSonarAction {
 
   public DisableRuleAction() {
-    super("Disable Rule", "Disable the SonarQube for IntelliJ rule that activated this rule", AllIcons.Actions.Cancel);
+    super("Disable Rule", "Disable the SonarQube for IDE rule that activated this rule", AllIcons.Actions.Cancel);
   }
 
   @Override

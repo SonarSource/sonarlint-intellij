@@ -38,7 +38,7 @@ class SonarLintColorSettingsPageTests {
   void testGetters() {
     assertThat(colorSettingsPage).isNotNull();
     assertThat(colorSettingsPage.getColorDescriptors()).isEmpty();
-    assertThat(colorSettingsPage.getDisplayName()).isEqualTo("SonarQube for IntelliJ");
+    assertThat(colorSettingsPage.getDisplayName()).isEqualTo("SonarQube for IDE");
     assertThat(colorSettingsPage.getHighlighter()).isInstanceOf(PlainSyntaxHighlighter.class);
   }
 

@@ -58,7 +58,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   @Nls
   @Override
   public String getDisplayName() {
-    return "SonarQube for IntelliJ";
+    return "SonarQube for IDE";
   }
 
   @Nullable
@@ -167,10 +167,10 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
       rootPanel = new JPanel(new BorderLayout());
       tabs = new JBTabbedPane();
-      tabs.insertTab("Settings", null, settingsPanel, "Configure SonarQube for IntelliJ for all projects", SETTINGS_TAB_INDEX);
+      tabs.insertTab("Settings", null, settingsPanel, "Configure SonarQube for IDE for all projects", SETTINGS_TAB_INDEX);
       tabs.insertTab("File Exclusions", null, exclusions.getComponent(), "Configure which files should be excluded from analysis", FILE_EXCLUSIONS_TAB_INDEX);
       tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not bound to SonarQube (Server, Cloud)", RULES_TAB_INDEX);
-      tabs.insertTab("About", null, about.getComponent(), "About SonarQube for IntelliJ", ABOUT_TAB_INDEX);
+      tabs.insertTab("About", null, about.getComponent(), "About SonarQube for IDE", ABOUT_TAB_INDEX);
       rootPanel.add(tabs, BorderLayout.CENTER);
     }
 

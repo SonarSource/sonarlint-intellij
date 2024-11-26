@@ -42,10 +42,10 @@ public class AnalysisRequirementNotifications {
   public static void notifyOnceForSkippedPlugins(Project project, org.sonarsource.sonarlint.core.rpc.protocol.common.Language language,
     DidSkipLoadingPluginParams.SkipReason reason, String minVersion, @Nullable String currentVersion) {
     var languageLabel = Language.valueOf(language.name()).getLabel();
-    final var title = "<b>SonarQube for IntelliJ failed to analyze " + languageLabel + " code</b>";
+    final var title = "<b>SonarQube for IDE failed to analyze " + languageLabel + " code</b>";
     if (reason == DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_JRE) {
       var content = String.format(
-        "SonarQube for IntelliJ requires Java runtime version %s or later to analyze %s code. Current version is %s.",
+        "SonarQube for IDE requires Java runtime version %s or later to analyze %s code. Current version is %s.",
         minVersion, languageLabel, currentVersion);
       createNotificationOnce(project, title, content,
         new OpenLinkAction("https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run" +
@@ -53,11 +53,11 @@ public class AnalysisRequirementNotifications {
           "How to change the IDE-running JDK?"));
     } else if (reason == DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_NODE_JS) {
       var content = new StringBuilder(
-        String.format("SonarQube for IntelliJ requires Node.js runtime version %s or later to analyze %s code.", minVersion, languageLabel));
+        String.format("SonarQube for IDE requires Node.js runtime version %s or later to analyze %s code.", minVersion, languageLabel));
       if (currentVersion != null) {
         content.append(String.format(" Current version is %s.", currentVersion));
       }
-      content.append("<br>Please configure the Node.js path in the SonarQube for IntelliJ settings.");
+      content.append("<br>Please configure the Node.js path in the SonarQube for IDE settings.");
       createNotificationOnce(project, title, content.toString(), new OpenGlobalSettingsAction(project));
     }
   }

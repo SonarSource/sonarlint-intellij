@@ -417,7 +417,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             if (isSQ) {
                 setUpManualConnection(serverOrOrg)
             } else {
-                throw CancellationException("SonarQube for IntelliJ cannot assist with manual connection to SonarQube Cloud organization")
+                throw CancellationException("SonarQube for IDE cannot assist with manual connection to SonarQube Cloud organization")
             }
         }
 
@@ -442,7 +442,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private fun setUpManualConnection(serverUrl: String): AssistCreatingConnectionResponse {
         val warningTitle = "Trust This SonarQube Server Instance?"
         val message = """
-                        The server <b>${StringEscapeUtils.escapeHtml4(serverUrl)}</b> is attempting to set up a connection with SonarQube for IntelliJ. Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server instance is potentially dangerous.
+                        The server <b>${StringEscapeUtils.escapeHtml4(serverUrl)}</b> is attempting to set up a connection with SonarQube for IDE. Letting SonarQube for IDE connect to an untrusted SonarQube Server instance is potentially dangerous.
                         
                         If you don’t trust this server, we recommend canceling this action and <a href="$CONNECTED_MODE_SETUP_LINK">manually setting up Connected Mode<icon src="AllIcons.Ide.External_link_arrow" href="$CONNECTED_MODE_SETUP_LINK"></a>.
                     """.trimIndent()
@@ -483,7 +483,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 get(project).simpleNotification(
                     "Project successfully bound",
                     "Local project bound to project '$projectKey' of SonarQube Server instance '${connection.name}'. "
-                        + "You can now enjoy all capabilities of SonarQube for IntelliJ Connected Mode. The binding of this project can be updated in the SonarQube for IntelliJ Settings.",
+                        + "You can now enjoy all capabilities of SonarQube for IDE Connected Mode. The binding of this project can be updated in the SonarQube for IDE Settings.",
                     NotificationType.INFORMATION,
                     OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
                 )
@@ -582,7 +582,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val serverType = if (params.isSonarCloud) "SonarQube Cloud" else "SonarQube Server"
         projectLessNotification(
             "No matching open project found",
-            "SonarQube for IntelliJ cannot match $serverType project '${params.projectKey}' to any of the currently open projects. Please open your project and try again.",
+            "SonarQube for IDE cannot match $serverType project '${params.projectKey}' to any of the currently open projects. Please open your project and try again.",
             NotificationType.WARNING,
             OpenInBrowserAction("Open Troubleshooting Documentation", null, TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK)
         )

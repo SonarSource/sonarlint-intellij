@@ -120,7 +120,7 @@ public class CurrentFileConnectedModePanel {
       super(SonarLintIcons.CONNECTION_ERROR);
       var errorTooltip = new TooltipWithClickableLinks(this,
         "<h3>Connected Mode Error</h3>" +
-          "<p>There was an issue, please check for additional details in the SonarQube for IntelliJ Log.</p>" +
+          "<p>There was an issue, please check for additional details in the SonarQube for IDE Log.</p>" +
           "<p><a href=\"#\">Open Log</a></p>",
         new HyperlinkAdapter() {
           @Override

@@ -63,8 +63,8 @@ class MarkAsResolvedAction(
     ), IntentionAction, PriorityAction, Iconable {
 
     companion object {
-        const val REVIEW_ISSUE_GROUP = "SonarQube for IntelliJ: Mark Issue as Resolved"
-        private const val ERROR_TITLE = "<b>SonarQube for IntelliJ - Unable to mark the issue as resolved</b>"
+        const val REVIEW_ISSUE_GROUP = "SonarQube for IDE: Mark Issue as Resolved"
+        private const val ERROR_TITLE = "<b>SonarQube for IDE - Unable to mark the issue as resolved</b>"
         private const val CONTENT = "The issue was successfully marked as resolved"
 
         fun canBeMarkedAsResolved(project: Project, issue: Issue): Boolean {
@@ -194,7 +194,7 @@ class MarkAsResolvedAction(
         private fun confirm(project: Project, productName: String, issueStatus: IssueResolutionStatus): Boolean {
             return shouldSkipConfirmationDialog() || MessageDialogBuilder.okCancel(
                 "Confirm marking issue as resolved",
-                "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be updated on $productName and synchronized with any contributor using SonarQube for IntelliJ in Connected Mode"
+                "Are you sure you want to mark this issue as \"${issueStatus.title}\"? The status will be updated on $productName and synchronized with any contributor using SonarQube for IDE in Connected Mode"
             ).yesText("Confirm").noText("Cancel").doNotAsk(DoNotShowAgain()).ask(project)
         }
 

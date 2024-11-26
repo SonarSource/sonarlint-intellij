@@ -25,7 +25,7 @@ import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 class OpenProjectSettingsAction extends OpenConfigurableAction {
 
   OpenProjectSettingsAction(Project project) {
-    this(project, "Open SonarQube for IntelliJ Project Configuration");
+    this(project, "Open SonarQube for IDE Project Configuration");
   }
 
   OpenProjectSettingsAction(Project project, String text) {

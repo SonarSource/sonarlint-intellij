@@ -70,7 +70,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         sonarLintProjectNotifications.notifyProjectBindingInvalidAndUnbound()
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube for IntelliJ - Invalid binding</b>")
+        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube for IDE - Invalid binding</b>")
         Assertions.assertThat(notifications[0].content)
             .isEqualTo("Project binding is invalid and has been removed, the connection has probably been deleted previously.")
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.WARNING)
@@ -85,7 +85,7 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         sonarLintProjectNotifications.notifyLanguagePromotion(content)
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube for IntelliJ suggestions</b>")
+        Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube for IDE suggestions</b>")
         Assertions.assertThat(notifications[0].content).isEqualTo(content)
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
         Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
@@ -215,11 +215,11 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         sonarLintProjectNotifications.sendNotification()
 
         Assertions.assertThat(notifications).hasSize(1)
-        Assertions.assertThat(notifications[0].title).isEqualTo("SonarQube for IntelliJ: secret(s) detected")
+        Assertions.assertThat(notifications[0].title).isEqualTo("SonarQube for IDE: secret(s) detected")
         Assertions.assertThat(notifications[0].content).isEqualTo(
-            "SonarQube for IntelliJ detected some secrets in one of the open files. " +
+            "SonarQube for IDE detected some secrets in one of the open files. " +
                 "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +
-                "Please refer to the SonarQube for IntelliJ tool window for more information."
+                "Please refer to the SonarQube for IDE tool window for more information."
         )
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.WARNING)
         Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)

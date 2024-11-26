@@ -28,7 +28,7 @@ class HelpLabelUtils {
         fun createHelpTextNotConnected(helpText: String) =
                 ContextHelpLabel.createWithLink(null,
                         helpText +
-                            "SonarQube Cloud complements SonarQube for IntelliJ by detecting more across the whole project.",
+                            "SonarQube Cloud complements SonarQube for IDE by detecting more across the whole project.",
                     "Try SonarQube Cloud for free", true
                 ) {
                     LinkTelemetry.SONARCLOUD_SIGNUP_PAGE.browseWithTelemetry()
@@ -49,7 +49,7 @@ class HelpLabelUtils {
         @JvmStatic
         fun createConnectedMode() =
             ContextHelpLabel.createWithLink(null,
-                "Connected Mode links SonarQube for IntelliJ with SonarQube (Server, Cloud) to analyze more languages, detect more issues, and receive notifications about the quality gate status.",
+                "Connected Mode links SonarQube for IDE with SonarQube (Server, Cloud) to analyze more languages, detect more issues, and receive notifications about the quality gate status.",
                 "Learn more about Connected Mode", true) {
                 LinkTelemetry.CONNECTED_MODE_DOCS.browseWithTelemetry()
             }
