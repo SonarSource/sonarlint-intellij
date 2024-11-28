@@ -46,6 +46,7 @@ tasks.test {
         }
     }
     testLogging.showStandardStreams = true
+    useJUnitPlatform()
 }
 
 license {
