@@ -925,36 +925,45 @@ class BackendService : Disposable {
             .flatMap { it.filter { event -> event.type == ModuleFileEvent.Type.DELETED } }
             .mapNotNull { VirtualFileUtils.toURI(it.virtualFile) }
 
-        val events = filesByModule.entries.flatMap { (module, event) ->
+        val addedFiles = filesByModule.entries.flatMap { (module, events) ->
+            gatherClientFiles(module, ModuleFileEvent.Type.CREATED, events)
+        }
+
+        val changedFiles = filesByModule.entries.flatMap { (module, events) ->
+            gatherClientFiles(module, ModuleFileEvent.Type.MODIFIED, events)
+        }
+
+        if (addedFiles.isNotEmpty() || changedFiles.isNotEmpty() || deletedFileUris.isNotEmpty()) {
+            notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(addedFiles, changedFiles, deletedFileUris)) }
+        }
+    }
+
+    private fun gatherClientFiles(
+        module: Module,
+        type: ModuleFileEvent.Type,
+        events: List<VirtualFileEvent>
+    ): List<ClientFileDto> {
+        val virtualFiles = events.filter { it.type == type }.map { it.virtualFile }.toList()
+        val contributedLanguages = collectContributedLanguages(module, virtualFiles)
+        return events.filter { it.type == type }.mapNotNull {
+            val relativePath = getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
             val moduleId = moduleId(module)
-
-            val virtualFiles: List<VirtualFile> = event.filter { it.type != ModuleFileEvent.Type.DELETED }
-                .map { it.virtualFile }.toList()
-
-            val contributedLanguages = collectContributedLanguages(module, virtualFiles)
-
-            event.filter { it.type != ModuleFileEvent.Type.DELETED }.mapNotNull {
-                val relativePath = getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
-                val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
-                VirtualFileUtils.toURI(it.virtualFile)?.let { uri ->
-                    computeReadActionSafely(it.virtualFile, module.project) {
-                        ClientFileDto(
-                            uri,
-                            Paths.get(relativePath),
-                            moduleId,
-                            isTestSources(it.virtualFile, module.project),
-                            VirtualFileUtils.getEncoding(it.virtualFile, module.project),
-                            Paths.get(it.virtualFile.path),
-                            if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
-                            forcedLanguage,
-                            true
-                        )
-                    }
+            val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
+            VirtualFileUtils.toURI(it.virtualFile)?.let { uri ->
+                computeReadActionSafely(it.virtualFile, module.project) {
+                    ClientFileDto(
+                        uri,
+                        Paths.get(relativePath),
+                        moduleId,
+                        isTestSources(it.virtualFile, module.project),
+                        VirtualFileUtils.getEncoding(it.virtualFile, module.project),
+                        Paths.get(it.virtualFile.path),
+                        if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
+                        forcedLanguage,
+                        true
+                    )
                 }
             }
-        }
-        if (deletedFileUris.isNotEmpty() || events.isNotEmpty()) {
-            notifyBackend { it.fileService.didUpdateFileSystem(DidUpdateFileSystemParams(deletedFileUris, events)) }
         }
     }
 
