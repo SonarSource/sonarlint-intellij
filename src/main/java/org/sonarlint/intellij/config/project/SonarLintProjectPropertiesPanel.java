@@ -49,7 +49,7 @@ public class SonarLintProjectPropertiesPanel {
     tableModel = new PropertiesTableModel();
     // Unfortunately TableModel's listener does not work properly, it doesn't receive events related to changed cells.
     final var table = new JBTable(tableModel);
-    table.getEmptyText().setText("No SonarQube for IntelliJ properties configured for this project");
+    table.getEmptyText().setText("No SonarQube for IDE properties configured for this project");
 
     var tablePanel = ToolbarDecorator.createDecorator(table)
       .disableUpAction()

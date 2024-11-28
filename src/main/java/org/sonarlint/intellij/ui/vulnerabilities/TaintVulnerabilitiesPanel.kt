@@ -117,7 +117,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     init {
         val globalSettings = getGlobalSettings()
         cards.add(
-            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarQube for IntelliJ Service", RestartBackendAction()),
+            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarQube for IDE Service", RestartBackendAction()),
             ERROR_CARD_ID
         )
         cards.add(
@@ -156,7 +156,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             sonarLintActions.configure(),
             OpenInBrowserAction(
                 LEARN_MORE,
-                "Learn more about taint vulnerabilities in SonarQube for IntelliJ",
+                "Learn more about taint vulnerabilities in SonarQube for IDE",
                 TAINT_VULNERABILITIES_LINK,
                 AllIcons.Actions.Help
             )
@@ -200,12 +200,12 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private fun createDisclaimer(): StripePanel {
         val stripePanel = StripePanel(
-            "This tab displays taint vulnerabilities detected by SonarQube (Server, Cloud). SonarQube for IntelliJ does not detect those issues locally.",
+            "This tab displays taint vulnerabilities detected by SonarQube (Server, Cloud). SonarQube for IDE does not detect those issues locally.",
             Information
         )
         stripePanel.addAction(
             LEARN_MORE,
-            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarQube for IntelliJ", TAINT_VULNERABILITIES_LINK)
+            OpenInBrowserAction(LEARN_MORE, "Learn more about taint vulnerabilities in SonarQube for IDE", TAINT_VULNERABILITIES_LINK)
         )
         stripePanel.addAction("Dismiss", object : AbstractSonarAction() {
             override fun actionPerformed(e: AnActionEvent) {
@@ -374,7 +374,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         runOnPooledThread(project) {
             if (showFinding.codeSnippet == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarQube for IntelliJ in the current code")
+                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarQube for IDE in the current code")
                 return@runOnPooledThread
             }
             val matcher = TextRangeMatcher(project)
@@ -383,7 +383,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             }
             if (rangeMarker == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarQube for IntelliJ in the current code")
+                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarQube for IDE in the current code")
                 return@runOnPooledThread
             }
 

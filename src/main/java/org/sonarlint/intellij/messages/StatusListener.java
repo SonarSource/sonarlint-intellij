@@ -24,7 +24,7 @@ import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 @FunctionalInterface
 public interface StatusListener {
-  Topic<StatusListener> SONARLINT_STATUS_TOPIC = Topic.create("SonarQube for IntelliJ analyzer status", StatusListener.class);
+  Topic<StatusListener> SONARLINT_STATUS_TOPIC = Topic.create("SonarQube for IDE analyzer status", StatusListener.class);
 
   /**
    * Called when the status of the user-initiated analysis changes.

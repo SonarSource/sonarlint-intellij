@@ -128,7 +128,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
     sonarConfigureProject = new SonarConfigureProject();
     notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
-    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarQube for IntelliJ Service", new RestartBackendAction()), SONARLINT_ERROR_CARD_ID);
+    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarQube for IDE Service", new RestartBackendAction()), SONARLINT_ERROR_CARD_ID);
     cardPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
     cardPanel.add(centeredLabel("No Security Hotspots shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
@@ -145,7 +145,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     actionGroup.add(sonarLintActions.filterSecurityHotspots());
     actionGroup.add(sonarLintActions.includeResolvedHotspotAction());
     actionGroup.add(sonarLintActions.configure());
-    actionGroup.add(new OpenInBrowserAction("Learn More", "Learn more about Security Hotspots in SonarQube for IntelliJ", SECURITY_HOTSPOTS_LINK, AllIcons.Actions.Help));
+    actionGroup.add(new OpenInBrowserAction("Learn More", "Learn more about Security Hotspots in SonarQube for IDE", SECURITY_HOTSPOTS_LINK, AllIcons.Actions.Help));
     return actionGroup;
   }
 

@@ -101,7 +101,7 @@ public class Analysis implements Cancelable {
     console.debug("Trigger: " + trigger);
     console.debug(String.format("[%s] %d file(s) submitted", trigger, files.size()));
     if (!getService(BackendService.class).isAlive()) {
-      console.info("Analysis skipped as SonarQube for IntelliJ is not alive");
+      console.info("Analysis skipped as SonarQube for IDE is not alive");
       return Collections.emptyList();
     }
     if (!getService(project, AnalysisReadinessCache.class).isReady()) {
@@ -150,13 +150,13 @@ public class Analysis implements Cancelable {
   private void handleError(Throwable e, ProgressIndicator indicator) {
     // if cancelled, ignore any errors since they were most likely caused by the interrupt
     if (!isCancelled(indicator)) {
-      var message = "Error running SonarQube for IntelliJ analysis";
+      var message = "Error running SonarQube for IDE analysis";
       var console = SonarLintConsole.get(project);
       console.error(message, e);
 
       if (indicator.isShowing()) {
-        var dialogMsg = "SonarQube for IntelliJ analysis failed: " + e.getMessage();
-        runOnUiThreadAndWait(project, indicator.getModalityState(), () -> Messages.showErrorDialog(dialogMsg, "Error Running SonarQube for IntelliJ Analysis"));
+        var dialogMsg = "SonarQube for IDE analysis failed: " + e.getMessage();
+        runOnUiThreadAndWait(project, indicator.getModalityState(), () -> Messages.showErrorDialog(dialogMsg, "Error Running SonarQube for IDE Analysis"));
       }
 
       callback.onError(e);
@@ -175,7 +175,7 @@ public class Analysis implements Cancelable {
 
   private Summary analyzePerModule(AnalysisScope scope, ProgressIndicator indicator, TriggerType trigger) {
     indicator.setIndeterminate(true);
-    indicator.setText("Running SonarQube for IntelliJ Analysis for " + scope.getDescription());
+    indicator.setText("Running SonarQube for IDE Analysis for " + scope.getDescription());
 
     var analyzer = getService(project, SonarLintAnalyzer.class);
     var results = new LinkedHashMap<Module, ModuleAnalysisResult>();

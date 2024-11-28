@@ -85,7 +85,7 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(getProject(), Language.JAVA, DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_JRE,
       "11", "1.8");
     assertThat(notifications).hasSize(1);
-    assertThat(notifications.get(0).getContent()).isEqualTo("SonarQube for IntelliJ requires Java runtime version 11 or later to analyze Java code. Current version is 1.8.");
+    assertThat(notifications.get(0).getContent()).isEqualTo("SonarQube for IDE requires Java runtime version 11 or later to analyze Java code. Current version is 1.8.");
   }
 
   @Test
@@ -94,9 +94,9 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
       "8.0", "7.2");
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo(
-      "SonarQube for IntelliJ requires Node.js runtime version 8.0 or later to analyze JavaScript code. Current version is 7.2.<br>Please configure the Node.js path in the SonarQube for IntelliJ settings.");
+      "SonarQube for IDE requires Node.js runtime version 8.0 or later to analyze JavaScript code. Current version is 7.2.<br>Please configure the Node.js path in the SonarQube for IDE settings.");
     assertThat(notifications.get(0).getActions()).hasSize(1);
-    assertThat(notifications.get(0).getActions().get(0).getTemplatePresentation().getText()).isEqualTo("Open SonarQube for IntelliJ Settings");
+    assertThat(notifications.get(0).getActions().get(0).getTemplatePresentation().getText()).isEqualTo("Open SonarQube for IDE Settings");
   }
 
 }

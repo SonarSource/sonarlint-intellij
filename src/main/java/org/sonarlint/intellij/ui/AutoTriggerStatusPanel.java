@@ -60,7 +60,7 @@ public class AutoTriggerStatusPanel {
   private static final String POWER_SAVE_MODE_ENABLED = "POWER_SAVE_MODE_ENABLED";
   private static final String AUTO_TRIGGER_DISABLED = "AUTO_TRIGGER_DISABLED";
 
-  private static final String TOOLTIP = "Some files are not automatically analyzed. Check the SonarQube for IntelliJ debug logs for details.";
+  private static final String TOOLTIP = "Some files are not automatically analyzed. Check the SonarQube for IDE debug logs for details.";
 
   private static final String POWER_SAVE_MODE_TOOLTIP = "Disable power save mode for automatic analysis";
 

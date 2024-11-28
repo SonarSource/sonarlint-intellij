@@ -51,9 +51,9 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.FOCUS_ON_NEW_CODE_LINK;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
-  private static final String NODE_JS_TOOLTIP = "SonarQube for IntelliJ requires Node.js to analyze some languages. " +
+  private static final String NODE_JS_TOOLTIP = "SonarQube for IDE requires Node.js to analyze some languages. " +
     "You can provide an explicit path for the node executable here or leave " +
-    "this field blank to let SonarQube for IntelliJ look for it using your PATH environment variable." +
+    "this field blank to let SonarQube for IDE look for it using your PATH environment variable." +
     " Restarting your IDE is recommended.";
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
@@ -114,7 +114,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     var nodeJsPathWithBrowse = new TextFieldWithBrowseButton(nodeJsPath);
     nodeJsPathWithBrowse.setToolTipText(NODE_JS_TOOLTIP);
     var fileChooser = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
-    nodeJsPathWithBrowse.addBrowseFolderListener("Select Node.js Binary", "Select Node.js binary to be used by SonarQube for IntelliJ", null, fileChooser);
+    nodeJsPathWithBrowse.addBrowseFolderListener("Select Node.js Binary", "Select Node.js binary to be used by SonarQube for IDE", null, fileChooser);
     optionsPanel.add(nodeJsPathWithBrowse, new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 

@@ -47,11 +47,11 @@ class ExclusionUtils {
         private fun openExclusionsTab() {
             with(remoteRobot) {
                 idea {
-                    toolWindow("SonarQube for IntelliJ") {
+                    toolWindow("SonarQube for IDE") {
                         ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
-                            toolBarButton("Configure SonarQube for IntelliJ").click()
+                            toolBarButton("Configure SonarQube for IDE").click()
                         }
                         selectExclusionTab()
                     }
@@ -88,7 +88,7 @@ class ExclusionUtils {
                     dialog("Project Settings") {
                         findText("File Exclusions").click()
                         actionButtons(ActionButtonFixture.byType())[0].clickWhenEnabled()
-                        dialog("Add SonarQube for IntelliJ File Exclusion") {
+                        dialog("Add SonarQube for IDE File Exclusion") {
                             jbTextFieldsWithBrowseButton()[0].click()
                             keyboard { enterText(fileName) }
                             waitFor(Duration.ofSeconds(1)) {

@@ -172,7 +172,7 @@ class AutomaticSharedConfigCreator(
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
                 "Local project bound to project '$projectKey' of $connectionTypeMessage '${connection.name}'. " +
-                    "You can now enjoy all capabilities of SonarQube for IntelliJ Connected Mode. The binding of this project can be updated in the SonarQube for IntelliJ settings.",
+                    "You can now enjoy all capabilities of SonarQube for IDE Connected Mode. The binding of this project can be updated in the SonarQube for IDE settings.",
                 NotificationType.INFORMATION,
                 OpenInBrowserAction("Learn more", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
             )
@@ -193,7 +193,7 @@ class AutomaticSharedConfigCreator(
 
         val sqOrScMessage = if (isSQ) "SonarQube Server" else "SonarQube Cloud"
         connectedModeDescriptionLabel.text =
-            "Connect SonarQube for IntelliJ with $sqOrScMessage to apply the same Clean Code standards as your team, analyze more languages, " +
+            "Connect SonarQube for IDE with $sqOrScMessage to apply the same Clean Code standards as your team, analyze more languages, " +
                 "detect more issues, and receive notifications about the quality gate status."
         connectedModeDescriptionLabel.addHyperlinkListener(object : HyperlinkAdapter() {
             override fun hyperlinkActivated(e: HyperlinkEvent) {
@@ -230,7 +230,7 @@ class AutomaticSharedConfigCreator(
         if (isSQ) {
             redWarningIcon.icon = AllIcons.Ide.FatalError
             warningLabel.text = "Always ensure that your Server URL matches your SonarQube Server instance. " +
-                "Letting SonarQube for IntelliJ connect to an untrusted SonarQube Server instance is potentially dangerous."
+                "Letting SonarQube for IDE connect to an untrusted SonarQube Server instance is potentially dangerous."
             val warningPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
                 add(redWarningIcon, BorderLayout.WEST)
                 add(warningLabel, BorderLayout.CENTER)

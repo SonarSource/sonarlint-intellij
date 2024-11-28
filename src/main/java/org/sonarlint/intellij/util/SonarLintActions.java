@@ -83,16 +83,16 @@ public final class SonarLintActions {
       "Clear analysis results",
       SonarLintIcons.CLEAN);
     clearIssuesAction = new ClearCurrentFileIssuesAction("Clear SonarLint Issues",
-      "Clear SonarQube for IntelliJ issues",
+      "Clear SonarQube for IDE issues",
       SonarLintIcons.CLEAN);
     cleanConsoleAction = new SonarCleanConsoleAction("Clear SonarLint Console",
-      "Clear SonarQube for IntelliJ console",
+      "Clear SonarQube for IDE console",
       SonarLintIcons.CLEAN);
     analyzeAllFilesAction = new SonarAnalyzeAllFilesAction("Analyze All Project Files",
-      "Run a SonarQube for IntelliJ analysis on all project files",
+      "Run a SonarQube for IDE analysis on all project files",
       SonarLintIcons.PROJECT);
     analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
-      "Run a SonarQube for IntelliJ analysis on VCS changed files",
+      "Run a SonarQube for IDE analysis on VCS changed files",
       SonarLintIcons.SCM);
     filterAction = new FilterSecurityHotspotActionGroup("Filter Security Hotspots",
       "Filter Security Hotspots",
@@ -110,7 +110,7 @@ public final class SonarLintActions {
       SonarLintIcons.RESOLVED,
       LocalTaintVulnerability.class);
     analyzeCurrentFileAction = new SonarAnalyzeFilesAction("Analyze Current File",
-      "Run SonarQube for IntelliJ analysis on the current file",
+      "Run SonarQube for IDE analysis on the current file",
       SonarLintIcons.PLAY);
     restartSonarLintAction = new RestartBackendAction();
   }

@@ -410,11 +410,11 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
     var introLabel = new JEditorPane();
     initHtmlPane(introLabel);
-    SwingHelper.setHtml(introLabel, "Configure rules used for SonarQube for IntelliJ analysis for projects not in Connected Mode.",
+    SwingHelper.setHtml(introLabel, "Configure rules used for SonarQube for IDE analysis for projects not in Connected Mode.",
       UIUtil.getLabelForeground());
     var configureRuleLabel = new JEditorPane();
     initHtmlPane(configureRuleLabel);
-    SwingHelper.setHtml(configureRuleLabel, "Connecting your project to SonarQube (Server, Cloud) syncs SonarQube for IntelliJ with the " +
+    SwingHelper.setHtml(configureRuleLabel, "Connecting your project to SonarQube (Server, Cloud) syncs SonarQube for IDE with the " +
       "Quality Profile standards defined on the server, allowing you to share the same rules configuration with your team.",
       JBUI.CurrentTheme.ContextHelp.FOREGROUND);
     var ruleServerLabel = new JEditorPane();

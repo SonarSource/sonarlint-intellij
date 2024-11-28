@@ -111,9 +111,9 @@ open class BaseUiTest {
             closeAllDialogs()
             optionalStep {
                 sonarlintLogPanel {
-                    println("SonarQube for IntelliJ log outputs:")
+                    println("SonarQube for IDE log outputs:")
                     println(console().text)
-                    toolBarButton("Clear SonarQube for IntelliJ Console").click()
+                    toolBarButton("Clear SonarQube for IDE Console").click()
                 }
             }
             if (remoteRobot.isCLion()) {
@@ -157,7 +157,7 @@ open class BaseUiTest {
     private fun sonarlintLogPanel(function: TabContentFixture.() -> Unit = {}) {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarQube for IntelliJ") {
+                toolWindow("SonarQube for IDE") {
                     ensureOpen()
                     tabTitleContains("Log") { select() }
                     content("SonarLintLogPanel") {

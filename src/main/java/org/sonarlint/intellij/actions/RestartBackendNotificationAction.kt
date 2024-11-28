@@ -25,7 +25,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
 
-class RestartBackendNotificationAction : NotificationAction("Restart SonarQube for IntelliJ Service") {
+class RestartBackendNotificationAction : NotificationAction("Restart SonarQube for IDE Service") {
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         notification.expire()

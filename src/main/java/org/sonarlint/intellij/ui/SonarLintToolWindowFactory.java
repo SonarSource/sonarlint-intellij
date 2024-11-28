@@ -46,7 +46,7 @@ import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
  * Nothing can be injected as it runs in the root pico container.
  */
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
-  public static final String TOOL_WINDOW_ID = "SonarQube for IntelliJ";
+  public static final String TOOL_WINDOW_ID = "SonarQube for IDE";
   public static final String LOG_TAB_TITLE = "Log";
   public static final String CURRENT_FILE_TAB_TITLE = "Current File";
   public static final String REPORT_TAB_TITLE = "Report";

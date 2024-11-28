@@ -31,7 +31,7 @@ class ReportTabTests {
             with(remoteRobot) {
                 idea {
                     analyzeFile()
-                    toolWindow("SonarQube for IntelliJ") {
+                    toolWindow("SonarQube for IDE") {
                         ensureOpen()
                         content("ReportPanel") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }

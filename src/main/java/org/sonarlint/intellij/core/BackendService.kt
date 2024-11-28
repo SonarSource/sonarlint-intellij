@@ -230,7 +230,7 @@ class BackendService : Disposable {
     }
 
     private fun createServiceStartingTask(): Task.Backgroundable {
-        return object : Task.Backgroundable(null, "Starting SonarQube for IntelliJ service\u2026", false, ALWAYS_BACKGROUND) {
+        return object : Task.Backgroundable(null, "Starting SonarQube for IDE service\u2026", false, ALWAYS_BACKGROUND) {
             override fun run(indicator: ProgressIndicator) {
                 try {
                     val sloop = startSloopProcess()
@@ -238,26 +238,26 @@ class BackendService : Disposable {
                     getService(GlobalLogOutput::class.java).log("Migrating the storage...", ClientLogOutput.Level.INFO)
                     migrateStoragePath()
                     getService(GlobalLogOutput::class.java).log(
-                        "Listening for SonarQube for IntelliJ service exit...",
+                        "Listening for SonarQube for IDE service exit...",
                         ClientLogOutput.Level.INFO
                     )
                     listenForProcessExit(sloop)
                     getService(GlobalLogOutput::class.java).log(
-                        "Initializing the SonarQube for IntelliJ service...",
+                        "Initializing the SonarQube for IDE service...",
                         ClientLogOutput.Level.INFO
                     )
                     initRpcServer(sloop.rpcServer).get(1, TimeUnit.MINUTES)
-                    getService(GlobalLogOutput::class.java).log("SonarQube for IntelliJ service initialized...", ClientLogOutput.Level.INFO)
+                    getService(GlobalLogOutput::class.java).log("SonarQube for IDE service initialized...", ClientLogOutput.Level.INFO)
                     backendFuture.complete(sloop.rpcServer)
                 } catch (t: TimeoutException) {
                     GlobalLogOutput.get().log(
-                        "The 'Starting SonarQube for IntelliJ service...' task timed out, please capture thread dumps of the 'SonarLintServerCli' process and report the problem to the SonarQube for IntelliJ maintainers",
+                        "The 'Starting SonarQube for IDE service...' task timed out, please capture thread dumps of the 'SonarLintServerCli' process and report the problem to the SonarQube for IDE maintainers",
                         ClientLogOutput.Level.ERROR
                     )
                     handleSloopExited()
                     backendFuture.cancel(true)
                 } catch (t: Throwable) {
-                    GlobalLogOutput.get().logError("Cannot start the SonarQube for IntelliJ service", t)
+                    GlobalLogOutput.get().logError("Cannot start the SonarQube for IDE service", t)
                     handleSloopExited()
                     backendFuture.cancel(true)
                 }
@@ -275,14 +275,14 @@ class BackendService : Disposable {
                 false
             } else true
         }
-        getService(GlobalLogOutput::class.java).log("Starting the SonarQube for IntelliJ service process...", ClientLogOutput.Level.INFO)
+        getService(GlobalLogOutput::class.java).log("Starting the SonarQube for IDE service process...", ClientLogOutput.Level.INFO)
         val sloopLauncher = this.defaultSloopLauncher ?: SloopLauncher(SonarLintIntelliJClient)
         val customJrePath = getPathProperty("sonarlint.jre.path")?.also {
             getService(GlobalLogOutput::class.java).log("Custom JRE detected: $it", ClientLogOutput.Level.INFO)
         }
         val jreHomePath = customJrePath ?: getPathProperty("java.home")
         val sloopPath = getService(SonarLintPlugin::class.java).path.resolve("sloop")
-        getService(GlobalLogOutput::class.java).log("Listing SonarQube for IntelliJ service files:", ClientLogOutput.Level.INFO)
+        getService(GlobalLogOutput::class.java).log("Listing SonarQube for IDE service files:", ClientLogOutput.Level.INFO)
         sloopPath.toFile().walkTopDown().forEach { file ->
             getService(GlobalLogOutput::class.java).log(file.absolutePath, ClientLogOutput.Level.INFO)
         }
@@ -326,7 +326,7 @@ class BackendService : Disposable {
             InitializeParams(
                 ClientConstantInfoDto(
                     ApplicationInfo.getInstance().versionName,
-                    "SonarQube for IntelliJ " + getService(SonarLintPlugin::class.java).version
+                    "SonarQube for IDE " + getService(SonarLintPlugin::class.java).version
                 ),
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),

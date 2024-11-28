@@ -89,7 +89,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
     body.append("* Java: ").append(System.getProperty("java.vendor")).append(" ").append(System.getProperty("java.version")).append("\n");
     body.append("* OS: ").append(System.getProperty("os.name")).append(" ").append(System.getProperty("os.arch")).append("\n");
     body.append("* IDE: ").append(ApplicationInfo.getInstance().getFullApplicationName()).append("\n");
-    body.append("* SonarQube for IntelliJ: ").append(SonarLintUtils.getService(SonarLintPlugin.class).getVersion()).append("\n");
+    body.append("* SonarQube for IDE: ").append(SonarLintUtils.getService(SonarLintPlugin.class).getVersion()).append("\n");
     body.append("\n");
     if (additionalInfo != null) {
       body.append(additionalInfo);
