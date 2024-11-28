@@ -40,11 +40,11 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         assertThat(findCard(expectedClass)).isNotNull
                     }
@@ -101,11 +101,11 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         findText(issueMessage).rightClick()
@@ -121,11 +121,11 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
@@ -145,7 +145,7 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }

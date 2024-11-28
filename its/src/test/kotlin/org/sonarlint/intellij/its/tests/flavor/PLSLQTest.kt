@@ -67,11 +67,11 @@ class PLSQLTest : BaseUiTest() {
         with(remoteRobot) {
             idea {
                 if (remoteRobot.isModernUI()) {
-                    leftToolWindow("SonarLint") {
+                    leftToolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                     }
                 }
-                toolWindow("SonarLint") {
+                toolWindow("SonarQube for IntelliJ") {
                     if (remoteRobot.isModernUI().not()) ensureOpen()
                     tabTitleContains("Current File") { select() }
                     // the synchronization can take a while to happen
