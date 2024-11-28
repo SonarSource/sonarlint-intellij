@@ -79,7 +79,7 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
 
   fun ensureOpen() {
     if (remoteRobot.isModernUI()) {
-      val button = findElement<ComponentFixture>(byXpath("//div[@tooltiptext='SonarLint']"))
+      val button = findElement<ComponentFixture>(byXpath("//div[@tooltiptext='SonarQube for IntelliJ']"))
       if (button.callJs<Boolean>("component.isSelected()").not()) button.click()
     } else {
       stripeButton(title).open()
