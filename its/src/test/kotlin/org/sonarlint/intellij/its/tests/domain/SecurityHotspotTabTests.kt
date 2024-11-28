@@ -39,11 +39,11 @@ class SecurityHotspotTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
@@ -87,11 +87,11 @@ class SecurityHotspotTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
@@ -106,11 +106,11 @@ class SecurityHotspotTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
@@ -125,11 +125,11 @@ class SecurityHotspotTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotsPanel") {
@@ -149,7 +149,7 @@ class SecurityHotspotTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }

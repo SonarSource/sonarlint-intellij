@@ -34,11 +34,11 @@ class ReportTabTests {
                 idea {
                     analyzeFile()
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IntelliJ") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IntelliJ") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         content("ReportPanel") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }

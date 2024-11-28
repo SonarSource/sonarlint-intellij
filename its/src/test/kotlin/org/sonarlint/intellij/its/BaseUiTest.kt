@@ -160,11 +160,11 @@ open class BaseUiTest {
         with(remoteRobot) {
             idea {
                 if (remoteRobot.isModernUI()) {
-                    leftToolWindow("SonarLint") {
+                    leftToolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                     }
                 }
-                toolWindow("SonarLint") {
+                toolWindow("SonarQube for IntelliJ") {
                     if (remoteRobot.isModernUI().not()) ensureOpen()
                     tabTitleContains("Log") { select() }
                     content("SonarLintLogPanel") {
@@ -179,7 +179,7 @@ open class BaseUiTest {
         with(remoteRobot) {
             idea {
                 if (remoteRobot.isModernUI()) {
-                    leftToolWindow("SonarLint") {
+                    leftToolWindow("SonarQube for IntelliJ") {
                         ensureOpen()
                     }
                 }
