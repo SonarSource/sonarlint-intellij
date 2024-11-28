@@ -86,7 +86,7 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
             }
 
         if (filesToSendPerModule.isNotEmpty()) {
-            getService(BackendService::class.java).updateFileSystem(filesToSendPerModule)
+            getService(BackendService::class.java).updateFileSystem(filesToSendPerModule, true)
         }
     }
 

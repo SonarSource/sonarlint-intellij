@@ -61,7 +61,7 @@ public final class EditorOpenTrigger implements FileEditorManagerListener, Dispo
     runOnPooledThread(source.getProject(), () -> {
       var module = findModuleForFile(file, source.getProject());
       if (module != null && FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks(file, source.getProject())) {
-        getService(BackendService.class).updateFileSystem(Map.of(module, List.of(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))));
+        getService(BackendService.class).updateFileSystem(Map.of(module, List.of(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))), true);
       }
       if (source.getProject().equals(myProject)) {
         scheduler.notify(file);

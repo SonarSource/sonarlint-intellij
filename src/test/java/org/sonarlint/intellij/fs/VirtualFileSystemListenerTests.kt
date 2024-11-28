@@ -29,6 +29,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import com.intellij.testFramework.replaceService
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterEach
@@ -36,7 +37,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.mock
@@ -46,7 +46,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
-import java.util.concurrent.TimeUnit
 
 private const val FILE_NAME = "main.py"
 
@@ -79,7 +78,8 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.before(listOf(vFileEvent))
 
         val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
-        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+        val secondParamsCaptor = argumentCaptor<Boolean>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture(), secondParamsCaptor.capture())
 
         assertThat(paramsCaptor.allValues).hasSize(1)
         assertThat(paramsCaptor.firstValue.values).hasSize(1)
@@ -87,6 +87,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
             assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.DELETED)
             assertThat(it[0].virtualFile).isEqualTo(file)
         }
+        assertThat(secondParamsCaptor.firstValue).isFalse()
     }
 
     @Test
@@ -106,7 +107,8 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.after(listOf(vFileEvent))
 
         val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
-        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+        val secondParamsCaptor = argumentCaptor<Boolean>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture(), secondParamsCaptor.capture())
 
         assertThat(paramsCaptor.allValues).hasSize(1)
         assertThat(paramsCaptor.firstValue.values).hasSize(1)
@@ -114,6 +116,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
             assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.MODIFIED)
             assertThat(it[0].virtualFile).isEqualTo(file)
         }
+        assertThat(secondParamsCaptor.firstValue).isFalse()
     }
 
     @Test
@@ -124,7 +127,8 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.after(listOf(vFileEvent))
 
         val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
-        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+        val secondParamsCaptor = argumentCaptor<Boolean>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture(), secondParamsCaptor.capture())
 
         assertThat(paramsCaptor.allValues).hasSize(1)
         assertThat(paramsCaptor.firstValue.values).hasSize(1)
@@ -132,6 +136,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
             assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.CREATED)
             assertThat(it[0].virtualFile).isEqualTo(file)
         }
+        assertThat(secondParamsCaptor.firstValue).isFalse()
     }
 
     @Test
@@ -143,7 +148,8 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.after(listOf(vFileEvent))
 
         val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
-        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+        val secondParamsCaptor = argumentCaptor<Boolean>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture(), secondParamsCaptor.capture())
 
         assertThat(paramsCaptor.allValues).hasSize(1)
         assertThat(paramsCaptor.firstValue.values).hasSize(1)
@@ -152,6 +158,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
             assertThat(it[0].virtualFile).isEqualTo(copiedFile)
             assertThat(it[0].virtualFile.name).isEqualTo("$FILE_NAME.cp.py")
         }
+        assertThat(secondParamsCaptor.firstValue).isFalse()
     }
 
     @Test
@@ -162,7 +169,8 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.before(listOf(vFileEvent))
 
         val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
-        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+        val secondParamsCaptor = argumentCaptor<Boolean>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture(), secondParamsCaptor.capture())
 
         assertThat(paramsCaptor.allValues).hasSize(1)
         assertThat(paramsCaptor.firstValue.values).hasSize(1)
@@ -170,6 +178,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
             assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.DELETED)
             assertThat(it[0].virtualFile).isEqualTo(file)
         }
+        assertThat(secondParamsCaptor.firstValue).isFalse()
     }
 
     @Test
@@ -180,7 +189,8 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.after(listOf(vFileEvent))
 
         val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
-        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+        val secondParamsCaptor = argumentCaptor<Boolean>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture(), secondParamsCaptor.capture())
 
         assertThat(paramsCaptor.allValues).hasSize(1)
         assertThat(paramsCaptor.firstValue.values).hasSize(1)
@@ -188,6 +198,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
             assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.CREATED)
             assertThat(it[0].virtualFile).isEqualTo(file)
         }
+        assertThat(secondParamsCaptor.firstValue).isFalse()
     }
 
     @Test
@@ -222,7 +233,8 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.before(listOf(vFileEvent))
 
         val paramsCaptor = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
-        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture())
+        val secondParamsCaptor = argumentCaptor<Boolean>()
+        verify(backendService, timeout(3000)).updateFileSystem(paramsCaptor.capture(), secondParamsCaptor.capture())
 
         assertThat(paramsCaptor.allValues).hasSize(1)
         assertThat(paramsCaptor.firstValue.values).hasSize(1)
@@ -230,6 +242,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
             assertThat(it[0].type).isEqualTo(ModuleFileEvent.Type.DELETED)
             assertThat(it[0].virtualFile).isEqualTo(childFile)
         }
+        assertThat(secondParamsCaptor.firstValue).isFalse()
     }
 
     private var projectBindingManager: ProjectBindingManager = mock()

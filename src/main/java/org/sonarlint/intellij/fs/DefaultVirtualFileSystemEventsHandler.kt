@@ -56,7 +56,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         val filesByModule = fileEventsByModules(events, openProjects, eventTypeConverter)
         val allFilesByModule = filesByModule.entries.associate { it.key to it.value.toList() }
         if (allFilesByModule.isNotEmpty()) {
-            getService(BackendService::class.java).updateFileSystem(allFilesByModule)
+            getService(BackendService::class.java).updateFileSystem(allFilesByModule, false)
         }
     }
 

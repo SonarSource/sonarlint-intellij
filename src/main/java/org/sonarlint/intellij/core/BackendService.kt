@@ -920,17 +920,18 @@ class BackendService : Disposable {
             }
     }
 
-    fun updateFileSystem(filesByModule: Map<Module, List<VirtualFileEvent>>) {
+    // Only include file content when modifying or opening a file
+    fun updateFileSystem(filesByModule: Map<Module, List<VirtualFileEvent>>, includeFileContent: Boolean) {
         val deletedFileUris = filesByModule.values
             .flatMap { it.filter { event -> event.type == ModuleFileEvent.Type.DELETED } }
             .mapNotNull { VirtualFileUtils.toURI(it.virtualFile) }
 
         val addedFiles = filesByModule.entries.flatMap { (module, events) ->
-            gatherClientFiles(module, ModuleFileEvent.Type.CREATED, events)
+            gatherClientFiles(module, ModuleFileEvent.Type.CREATED, events, includeFileContent)
         }
 
         val changedFiles = filesByModule.entries.flatMap { (module, events) ->
-            gatherClientFiles(module, ModuleFileEvent.Type.MODIFIED, events)
+            gatherClientFiles(module, ModuleFileEvent.Type.MODIFIED, events, includeFileContent)
         }
 
         if (addedFiles.isNotEmpty() || changedFiles.isNotEmpty() || deletedFileUris.isNotEmpty()) {
@@ -941,7 +942,8 @@ class BackendService : Disposable {
     private fun gatherClientFiles(
         module: Module,
         type: ModuleFileEvent.Type,
-        events: List<VirtualFileEvent>
+        events: List<VirtualFileEvent>,
+        shouldIncludeContent: Boolean
     ): List<ClientFileDto> {
         val virtualFiles = events.filter { it.type == type }.map { it.virtualFile }.toList()
         val contributedLanguages = collectContributedLanguages(module, virtualFiles)
@@ -958,7 +960,7 @@ class BackendService : Disposable {
                         isTestSources(it.virtualFile, module.project),
                         VirtualFileUtils.getEncoding(it.virtualFile, module.project),
                         Paths.get(it.virtualFile.path),
-                        if (FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
+                        if (!shouldIncludeContent || FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
                         forcedLanguage,
                         true
                     )

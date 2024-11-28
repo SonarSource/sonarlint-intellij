@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -111,8 +113,8 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   @Test
   void testTask() {
     task.run(progress);
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
-      any(ProgressIndicator.class), any(Boolean.class));
+    Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
+      any(ProgressIndicator.class), any(Boolean.class)));
 
     assertThat(getExternalAnnotators())
       .extracting("implementationClass")
@@ -135,8 +137,8 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     clearInvocations(sonarLintAnalyzer);
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
-      any(ProgressIndicator.class), any(Boolean.class));
+    Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
+      any(ProgressIndicator.class), any(Boolean.class)));
   }
 
   @Test
@@ -174,8 +176,8 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     clearInvocations(sonarLintAnalyzer);
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
-      any(ProgressIndicator.class), any(Boolean.class));
+    Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class),
+      any(ProgressIndicator.class), any(Boolean.class)));
   }
 
   @Test
@@ -194,7 +196,8 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     clearInvocations(sonarLintAnalyzer);
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class));
+    Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(
+      () -> verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)));
   }
 
   @Test
@@ -202,7 +205,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     task.cancel();
     task.run(progress);
 
-    verify(sonarLintConsole).info("Analysis canceled");
+    Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> verify(sonarLintConsole).info("Analysis canceled"));
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
