@@ -275,6 +275,7 @@ tasks {
     prepareTestingSandbox {
         doLast {
             copyPlugins(destinationDir, pluginName)
+            renameCsharpPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
             copySloop(destinationDir, pluginName)
         }

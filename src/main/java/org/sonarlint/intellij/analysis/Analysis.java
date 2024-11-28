@@ -187,7 +187,7 @@ public class Analysis implements Cancelable {
 
       if (isRider()) {
         var filesEvent = entry.getValue().stream().map(file -> new VirtualFileEvent(ModuleFileEvent.Type.CREATED, file)).toList();
-        getService(BackendService.class).updateFileSystem(Map.of(module, filesEvent));
+        getService(BackendService.class).updateFileSystem(Map.of(module, filesEvent), true);
       }
 
       var analysisState = new AnalysisState(analysisId, callback, entry.getValue(), module, trigger, indicator);

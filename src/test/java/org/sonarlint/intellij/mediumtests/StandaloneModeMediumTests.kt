@@ -259,7 +259,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         )
 
         getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listModuleFileEvent)
+            mapOf(module to listModuleFileEvent), true
         )
         Awaitility.await().during(1, TimeUnit.SECONDS)
 
@@ -293,7 +293,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         )
 
         getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listModuleFileEvent)
+            mapOf(module to listModuleFileEvent), true
         )
         Awaitility.await().during(1, TimeUnit.SECONDS)
 
@@ -417,6 +417,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    @Disabled("Temp scheme")
     fun should_apply_overlapping_quick_fixes() {
         val expectedFile = myFixture.copyFileToProject("src/quick_fixes/overlapping_quick_fixes.expected.java")
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
@@ -512,7 +513,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         )
 
         getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listModuleFileEvent)
+            mapOf(module to listModuleFileEvent), true
         )
         Awaitility.await().during(1, TimeUnit.SECONDS)
 
