@@ -43,6 +43,14 @@ class ActionMenuFixture(
   }
 
   fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-    return findElement<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
+    return if (remoteRobot.isModernUI()) {
+      findElement<ActionMenuItemFixture>(byXpath("//div[@text='$label']")).apply(
+        function
+      )
+    } else {
+      findElement<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(
+        function
+      )
+    }
   }
 }
