@@ -52,7 +52,7 @@ class IdeaUltimateTests : BaseUiTest() {
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "kubernetes.yaml",
-            "Do not use wildcards when defining RBAC permissions."
+            "Replace this wildcard with a clear list of allowed resources."
         )
 
         openFile("file.tf")
