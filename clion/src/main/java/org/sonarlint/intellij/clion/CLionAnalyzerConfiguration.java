@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.clion;
 
 import com.intellij.execution.ExecutionException;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
@@ -65,13 +66,19 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
       return new ConfigurationResult(ocFile + " not in project sources");
     }
     OCResolveConfiguration configuration = null;
-    OCLanguageKind languageKind;
+    OCLanguageKind languageKind = null;
     var languageAndConfiguration = ocFile.getParsedLanguageAndConfiguration();
     if (languageAndConfiguration != null) {
       configuration = languageAndConfiguration.getConfiguration();
       languageKind = languageAndConfiguration.getLanguageKind();
     } else {
-      languageKind = ocFile.getKind();
+      if (!DumbService.isDumb(project)) {
+        try {
+          languageKind = ocFile.getKind();
+        } catch (Exception e) {
+          SonarLintConsole.get(project).error("Could not retrieve language kind", e);
+        }
+      }
     }
     if (configuration == null) {
       configuration = getConfiguration(project, file);
@@ -108,12 +115,12 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
   }
 
   @Nullable
-  static ForcedLanguage getSonarLanguage(OCLanguageKind languageKind) {
-    if (languageKind.equals(CLanguageKind.C)) {
+  static ForcedLanguage getSonarLanguage(@Nullable OCLanguageKind languageKind) {
+    if (CLanguageKind.C.equals(languageKind)) {
       return ForcedLanguage.C;
-    } else if (languageKind.equals(CLanguageKind.CPP)) {
+    } else if (CLanguageKind.CPP.equals(languageKind)) {
       return ForcedLanguage.CPP;
-    } else if (languageKind.equals(CLanguageKind.OBJ_C)) {
+    } else if (CLanguageKind.OBJ_C.equals(languageKind)) {
       return ForcedLanguage.OBJC;
     } else {
       return null;
