@@ -5,8 +5,6 @@ env:
   ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
   ARTIFACTORY_PRIVATE_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
   ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
-  SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
-  SONAR_TOKEN: VAULT[development/kv/data/next data.token]
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
   SLACK_CHANNEL: squad-ide-intellij-family-bots
   GRADLE_VERSION: "8.9"
@@ -95,6 +93,8 @@ build_task:
     cpu: 9
     memory: 12G
   env:
+    SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
+    SONAR_TOKEN: VAULT[development/kv/data/next data.token]
     JDK_VERSION: "17"
     ARTIFACTORY_DEPLOY_REPO: sonarsource-public-qa
     ARTIFACTORY_DEPLOY_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer
@@ -119,6 +119,8 @@ validate_task:
     - build
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
+    SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
+    SONAR_TOKEN: VAULT[development/kv/data/next data.token]
     JDK_VERSION: "17"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
