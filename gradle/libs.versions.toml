@@ -14,7 +14,7 @@ sonar-omnisharp = "1.25.0.100205"
 sonar-text = "2.19.0.4883"
 sonar-iac = "1.39.0.13718"
 sonar-cpp = "6.61.0.77816"
-sonar-dotnet = "10.2.0.103721"
+sonar-dotnet = "10.3.0.106239"
 
 sonarqube = "4.4.1.3373"
 
