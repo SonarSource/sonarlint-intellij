@@ -1,6 +1,7 @@
 plugins {
     id("org.jetbrains.intellij")
     kotlin("jvm")
+    jacoco
 }
 
 group = "org.sonarsource.sonarlint.intellij.its"
@@ -46,6 +47,11 @@ tasks.test {
         }
     }
     testLogging.showStandardStreams = true
+
+    // we need the coverage from Idea process, not from test task
+    configure<JacocoTaskExtension> {
+        isEnabled = false
+    }
 }
 
 license {
@@ -75,10 +81,25 @@ intellij {
     if (!project.hasProperty("slPluginDirectory")) {
         plugins.set(listOf(rootProject))
     }
-    instrumentCode.set(false)
 }
 
 val runIdeDirectory: String by project
+
+val uiTestsCoverageReport = tasks.register<JacocoReport>("uiTestsCoverageReport") {
+    executionData(tasks.runIdeForUiTests.get())
+    sourceSets(sourceSets.main.get())
+    classDirectories.setFrom(files("../build/instrumented/instrumentCode"))
+
+    reports {
+        xml.required.set(true)
+    }
+}
+
+jacoco {
+    applyTo(tasks.runIdeForUiTests.get())
+}
+
+
 
 tasks.runIdeForUiTests {
     systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
@@ -103,4 +124,9 @@ tasks.runIdeForUiTests {
             }
         }
     }
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+    finalizedBy(uiTestsCoverageReport)
 }
