@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JScrollPane;
@@ -209,13 +210,14 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private void updateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues) {
     var toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARLINT_TOOLWINDOW_ID);
     if (toolWindow != null) {
-      doUpdateIcon(file, issues, toolWindow);
+      var isEmpty = issues.stream().filter(i -> !i.isResolved()).collect(Collectors.toSet()).isEmpty();
+      doUpdateIcon(file, isEmpty, toolWindow);
     }
   }
 
-  private static void doUpdateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues, ToolWindow toolWindow) {
+  private static void doUpdateIcon(@Nullable VirtualFile file, boolean isEmpty, ToolWindow toolWindow) {
     ApplicationManager.getApplication().assertIsDispatchThread();
-    boolean empty = file == null || issues.isEmpty();
+    boolean empty = file == null || isEmpty;
     toolWindow.setIcon(empty ? SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW : SonarLintIcons.SONARQUBE_FOR_INTELLIJ_TOOLWINDOW);
   }
 

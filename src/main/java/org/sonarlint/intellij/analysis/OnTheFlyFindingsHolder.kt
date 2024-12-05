@@ -120,6 +120,9 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         currentSecurityHotspotsPerOpenFile.remove(file)
         // update only Security Hotspots, issues will be updated in reaction to selectionChanged
         updateSecurityHotspots()
+        if (currentIssuesPerOpenFile.isEmpty()) {
+            updateCurrentFileTab()
+        }
     }
 
     private fun updateSecurityHotspots() {
