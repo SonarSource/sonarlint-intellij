@@ -28,7 +28,7 @@
     <description><![CDATA[
         <html>
             <p>
-                SonarQube for IDE by <a href="https://www.sonarsource.com/">Sonar</a> is a free IDE extension to find and fix coding issues in real-time, flagging issues as you code, just like a spell-checker.
+                SonarQube for IDE (formerly SonarLint) by <a href="https://www.sonarsource.com/">Sonar</a> is a free IDE extension to find and fix coding issues in real-time, flagging issues as you code, just like a spell-checker.
                 More than a linter, it also delivers rich contextual guidance to help developers understand why there is an issue,
                 assess the risk and educate them on how to fix it. This helps improve their skills, enhance their productivity,
                 and take ownership of their code, taking linting to a different level.
