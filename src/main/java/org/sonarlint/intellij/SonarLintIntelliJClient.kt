@@ -628,7 +628,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
         } ?: return null
         val repo = repositories.first()
-        return repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
+        return computeOnPooledThread("Electing best matching branch") {
+            repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
+        }
     }
 
     override fun matchProjectBranch(
@@ -743,7 +745,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             filesInContentRoots.addAll(it.listFiles(module))
         }
 
-        val forcedLanguages = collectContributedLanguages(module, filesInContentRoots)
+        val forcedLanguages = collectContributedLanguages(module, filesInContentRoots).toMap()
 
         val clientFiles = filesInContentRoots.mapNotNull { file ->
             val forcedLanguage = forcedLanguages[file]?.let { fl -> Language.valueOf(fl.name) }
