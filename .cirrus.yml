@@ -244,7 +244,6 @@ qa_task:
     # echo ${CIRRUS_WORKING_DIR}
     # echo ls ${CIRRUS_WORKING_DIR}/staged-plugin
     mkdir -p its/build/idea-sandbox/config-uiTest/
-    powershell -command "Get-Process | Select-Object Id, ProcessName, MainWindowTitle | Where-Object { $_.MainWindowTitle -ne '' }"
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
@@ -255,6 +254,7 @@ qa_task:
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
+    # powershell -ExecutionPolicy Bypass -File ".cirrus/foreground.ps1"
     gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
