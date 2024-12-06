@@ -234,7 +234,6 @@ qa_task:
   prepare_background_script: |
     set -euo pipefail
     source cirrus-env QA
-    powershell -Command "Get-Process | Select-Object Id, ProcessName, MainWindowTitle | Where-Object { \$_.MainWindowTitle -ne '' }"
     source .cirrus/use-gradle-wrapper.sh
     echo "Prepare env and start IDE ${IDEA_VERSION}"
     echo "Prepare env and start IDE ${IDEA_VERSION}"
@@ -255,37 +254,7 @@ qa_task:
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
-    powershell -Command "Get-Process | Select-Object Id, ProcessName, MainWindowTitle | Where-Object { $_.MainWindowTitle -ne '' }"
-    powershell -Command @'
-      Add-Type @"
-      using System;
-      using System.Runtime.InteropServices;
-
-      public class User32 {
-          [DllImport("user32.dll")]
-          public static extern IntPtr GetForegroundWindow();
-
-          [DllImport("user32.dll", SetLastError = true)]
-          public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
-
-          public static string GetActiveWindowTitle() {
-              IntPtr handle = GetForegroundWindow();
-              System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
-              if (GetWindowText(handle, sb, sb.Capacity) > 0) {
-                  return sb.ToString();
-              }
-              return null;
-          }
-      }
-      "@
-
-      $activeWindow = [User32]::GetActiveWindowTitle()
-      if ($activeWindow) {
-          Write-Output "The active window is: $activeWindow"
-      } else {
-          Write-Output "No active window found."
-    '@
-    
+    powershell -ExecutionPolicy Bypass -File ".cirrus/foreground.ps1"
     gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
