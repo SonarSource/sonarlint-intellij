@@ -19,6 +19,9 @@
  */
 package org.sonarlint.intellij.its.tests
 
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.nio.file.Paths
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
@@ -38,6 +41,7 @@ class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
     fun should_exclude_rule_and_focus_on_new_code() = uiTest {
+        executePS()
         openExistingProject("sample-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         toggleRule("java:S2094", "Classes should not be empty")
@@ -59,6 +63,7 @@ class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
     fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
+        executePS()
         openExistingProject("sample-java-issues")
         excludeFile("src/main/java/foo/Foo.java")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
@@ -68,8 +73,37 @@ class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
     fun chart() = uiTest {
+        executePS()
         openExistingProject("DuplicatedEnvsChart")
         openFile("templates/memory_limit_pod2.yml", "memory_limit_pod2.yml")
         verifyCurrentFileTabContainsMessages("Bind this resource's automounted service account to RBAC or disable automounting.")
+    }
+
+    fun executePS() {
+        try {
+            // Specify the PowerShell script to execute, located in the same directory as this Java file
+            val scriptPath = Paths.get(System.getProperty("user.dir"), "src", "test", "kotlin", "org", "sonarlint", "intellij", "its", "tests", "foreground.ps1").toString()
+            //val scriptPath = Paths.get(System.getProperty("user.dir"), "foreground.ps1").toString()
+
+            // Create a ProcessBuilder to execute the PowerShell script
+            val processBuilder = ProcessBuilder("powershell.exe", "-File", scriptPath)
+            processBuilder.redirectErrorStream(true)
+
+            // Start the process
+            val process = processBuilder.start()
+
+            // Read the output from the PowerShell script
+            val reader = BufferedReader(InputStreamReader(process.inputStream))
+            var line: String?
+            while ((reader.readLine().also { line = it }) != null) {
+                println(line)
+            }
+
+            // Wait for the process to complete and get the exit value
+            val exitCode = process.waitFor()
+            println("Exited with code: $exitCode")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
