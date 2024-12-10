@@ -19,6 +19,9 @@
  */
 package org.sonarlint.intellij.its.tests
 
+import java.awt.Robot
+import java.awt.event.KeyEvent
+import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
@@ -38,6 +41,14 @@ class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
     fun should_exclude_rule_and_focus_on_new_code() = uiTest {
+        val robot = Robot()
+        robot.keyPress(KeyEvent.VK_ENTER)
+        robot.keyRelease(KeyEvent.VK_ENTER)
+        robot.keyPress(KeyEvent.VK_ENTER)
+        robot.keyRelease(KeyEvent.VK_ENTER)
+        robot.keyPress(KeyEvent.VK_ENTER)
+        robot.keyRelease(KeyEvent.VK_ENTER)
+        TimeUnit.SECONDS.sleep(1)
         openExistingProject("sample-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         toggleRule("java:S2094", "Classes should not be empty")

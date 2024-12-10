@@ -236,16 +236,21 @@ qa_task:
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
     echo "Prepare env and start IDE ${IDEA_VERSION}"
+    echo "Prepare env and start IDE ${IDEA_VERSION}"
     source set_gradle_build_version
+    #echo "Prepare env and start IDE ${IDEA_VERSION}"
+    #echo gradle --version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
+    # echo ${CIRRUS_WORKING_DIR}
+    # echo ls ${CIRRUS_WORKING_DIR}/staged-plugin
     mkdir -p its/build/idea-sandbox/config-uiTest/
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
-    sleep 600s
+    sleep 400s
     curl --connect-timeout 1 --insecure -s -o /dev/null http://127.0.0.1:8082
     # TODO write windows version of wait-for-endpoint.sh
-    # .cirrus/wait-for-endpoint.sh http://127.0.0.1:8083 -t 500
+    # .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 10
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
