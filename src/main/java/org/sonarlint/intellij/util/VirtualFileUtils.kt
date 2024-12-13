@@ -71,13 +71,34 @@ object VirtualFileUtils {
 
     fun getFileContent(virtualFile: VirtualFile): String {
         val fileDocumentManager = FileDocumentManager.getInstance()
-        if (fileDocumentManager.isFileModified(virtualFile)) {
-            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
+        if (virtualFile.extension == "ipynb" || fileDocumentManager.isFileModified(virtualFile)) {
+            val document = fileDocumentManager.getDocument(virtualFile)
             if (document != null) {
-                return document.text
+                return if (virtualFile.extension == "ipynb") {
+                    removeMarkdownCells(document.text)
+                } else {
+                    document.text
+                }
             }
         }
         return virtualFile.contentsToByteArray().toString(virtualFile.charset)
+    }
+
+    fun removeMarkdownCells(fileContent: String): String {
+        var isMarkdown = false
+        val result = StringBuilder()
+        for (line in fileContent.lines()) {
+            if (line.startsWith("#%% md")) {
+                isMarkdown = true
+            } else if (line.startsWith("#%%")) {
+                isMarkdown = false
+            }
+
+            if (!isMarkdown) {
+                result.appendLine(line)
+            }
+        }
+        return result.toString().trimEnd()
     }
 
     fun getEncoding(virtualFile: VirtualFile, project: Project): String {

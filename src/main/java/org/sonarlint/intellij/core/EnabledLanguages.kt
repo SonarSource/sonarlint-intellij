@@ -54,6 +54,7 @@ object EnabledLanguages {
         Language.DOCKER,
         Language.KUBERNETES,
         Language.TERRAFORM,
+        Language.IPYTHON
     )
     private val EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE = listOf(
         EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),

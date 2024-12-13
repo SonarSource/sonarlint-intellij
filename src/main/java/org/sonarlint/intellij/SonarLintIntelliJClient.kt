@@ -803,7 +803,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (!file.isValid || FileUtilRt.isTooLarge(file.length)) return null
         val uri = VirtualFileUtils.toURI(file) ?: return null
         var fileContent: String? = null
-        if (file.name == SONAR_SCANNER_CONFIG_FILENAME || file.name == AUTOSCAN_CONFIG_FILENAME || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER) {
+        if (file.name == SONAR_SCANNER_CONFIG_FILENAME
+            || file.name == AUTOSCAN_CONFIG_FILENAME
+            || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER
+            // Notebooks require special parsing, we should always send the content
+            || file.extension == "ipynb"
+        ) {
             fileContent = computeReadActionSafely(project) { getFileContent(file) }
         }
         return try {
