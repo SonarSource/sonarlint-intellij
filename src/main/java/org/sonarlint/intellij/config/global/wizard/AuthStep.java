@@ -78,7 +78,10 @@ public class AuthStep extends AbstractWizardStepEx {
 
     var comboBoxModel = new DefaultComboBoxModel<String>();
     comboBoxModel.addElement(TOKEN_ITEM);
-    comboBoxModel.addElement(LOGIN_ITEM);
+    if (model.getLogin() != null) {
+      authComboBox.setEnabled(false);
+      comboBoxModel.addElement(LOGIN_ITEM);
+    }
     authComboBox.setModel(comboBoxModel);
     authComboBox.addItemListener(e -> {
       if (ItemEvent.SELECTED == e.getStateChange()) {
@@ -116,10 +119,11 @@ public class AuthStep extends AbstractWizardStepEx {
       authComboBox.setSelectedItem(TOKEN_ITEM);
       authComboBox.setEnabled(false);
     } else {
-      authComboBox.setEnabled(true);
       if (model.getLogin() != null) {
+        authComboBox.setEnabled(true);
         authComboBox.setSelectedItem(LOGIN_ITEM);
       } else {
+        authComboBox.setEnabled(false);
         authComboBox.setSelectedItem(TOKEN_ITEM);
       }
     }
