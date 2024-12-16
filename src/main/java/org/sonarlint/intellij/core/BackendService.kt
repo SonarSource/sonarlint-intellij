@@ -960,7 +960,12 @@ class BackendService : Disposable {
                         isTestSources(it.virtualFile, module.project),
                         VirtualFileUtils.getEncoding(it.virtualFile, module.project),
                         Paths.get(it.virtualFile.path),
-                        if (!shouldIncludeContent || FileUtilRt.isTooLarge(it.virtualFile.length)) null else getFileContent(it.virtualFile),
+                        // Notebooks require special parsing, we should always send the content
+                        if ((shouldIncludeContent || "ipynb" == it.virtualFile.extension)
+                            && !FileUtilRt.isTooLarge(it.virtualFile.length)
+                        ) getFileContent(it.virtualFile) else {
+                            null
+                        },
                         forcedLanguage,
                         true
                     )

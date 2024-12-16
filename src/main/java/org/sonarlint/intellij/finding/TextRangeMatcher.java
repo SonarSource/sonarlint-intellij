@@ -50,14 +50,6 @@ public class TextRangeMatcher {
     return match(toPsiFile(project, file), textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
-  public RangeMarker match(VirtualFile file, TextRangeDto textRange) throws NoMatchException {
-    return match(toPsiFile(project, file), textRange);
-  }
-
-  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.commons.api.TextRange textRange) throws NoMatchException {
-    return match(toPsiFile(project, file), textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
-  }
-
   public RangeMarker matchWithCode(VirtualFile file, TextRangeDto textRange, String codeSnippet) throws NoMatchException {
     var psiFile = toPsiFile(project, file);
     var docManager = PsiDocumentManager.getInstance(project);
@@ -74,10 +66,6 @@ public class TextRangeMatcher {
   }
 
   public RangeMarker match(PsiFile file, TextRangeDto textRange) throws NoMatchException {
-    return match(file, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
-  }
-
-  public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.commons.api.TextRange textRange) throws NoMatchException {
     return match(file, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
@@ -98,6 +86,14 @@ public class TextRangeMatcher {
 
   private static TextRange getIssueTextRange(PsiFile file, Document doc, @Nullable Integer startLine, @Nullable Integer startLineOffset, @Nullable Integer endLine,
     @Nullable Integer endLineOffset) throws NoMatchException {
+    if (startLine != null && endLine != null && startLineOffset != null && endLineOffset != null && "ipynb".equals(file.getVirtualFile().getExtension())) {
+      var newTextRange = computeTextRangeForNotebook(doc.getText(), startLine, startLineOffset, endLine, endLineOffset);
+      startLine = newTextRange.getStartLine();
+      startLineOffset = newTextRange.getStartLineOffset();
+      endLine = newTextRange.getEndLine();
+      endLineOffset = newTextRange.getEndLineOffset();
+    }
+
     if (startLine == null || endLine == null) {
       throw new NoMatchException("Start line and end line should not be null");
     }
@@ -120,6 +116,28 @@ public class TextRangeMatcher {
       throw new NoMatchException("Invalid text range  (start: " + rangeStart + ", end: " + rangeEnd);
     }
     return new TextRange(rangeStart, rangeEnd);
+  }
+
+  public static TextRangeDto computeTextRangeForNotebook(String fileContent, int prevStartLine,
+    int prevStartLineOffset, int prevEndLine, int prevEndLineOffset) {
+    var isMarkdown = false;
+    var startLine = prevStartLine;
+    var endLine = prevEndLine;
+    var lineNumber = 0;
+    for (var line : fileContent.lines().toList()) {
+      if (line.startsWith("#%% md")) {
+        isMarkdown = true;
+      } else if (line.startsWith("#%%")) {
+        isMarkdown = false;
+      }
+
+      if (isMarkdown && startLine > lineNumber) {
+        startLine++;
+        endLine++;
+      }
+      lineNumber++;
+    }
+    return new TextRangeDto(startLine, prevStartLineOffset, endLine, prevEndLineOffset);
   }
 
   private static int findEndLineOffset(Document doc, int ijLine, @Nullable Integer endOffset) {

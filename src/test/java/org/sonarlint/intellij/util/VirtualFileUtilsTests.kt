@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
+import org.sonarlint.intellij.util.VirtualFileUtils.removeMarkdownCells
 
 class VirtualFileUtilsTests : AbstractSonarLintHeavyTests() {
 
@@ -94,6 +95,27 @@ class VirtualFileUtilsTests : AbstractSonarLintHeavyTests() {
         `when`(fileSystem.protocol).thenReturn("file")
         `when`(virtualFile.fileSystem).thenReturn(fileSystem)
         return virtualFile
+    }
+
+    @Test
+    fun should_remove_markdown_cells_from_notebook() {
+        val fileContent = """
+            #%%
+            t = 1
+            #%% md
+            test message
+            #%%
+            t = 2""".trimIndent()
+
+        val result = removeMarkdownCells(fileContent)
+
+        assertThat(result).isEqualTo(
+            """
+            #%%
+            t = 1
+            #%%
+            t = 2""".trimIndent()
+        )
     }
 
 }
