@@ -40,7 +40,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
 
   public EditorChangeTrigger(Project project) {
     myProject = project;
-    scheduler = new EventScheduler(myProject, "change", TriggerType.EDITOR_CHANGE, 2000, false);
+    scheduler = new EventScheduler(myProject, "change", TriggerType.EDITOR_CHANGE, 1000, false);
   }
 
   public void onProjectOpened() {
