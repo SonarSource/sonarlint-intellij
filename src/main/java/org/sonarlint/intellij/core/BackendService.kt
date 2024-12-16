@@ -129,6 +129,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.ClientCons
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.FeatureFlagsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.HttpConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.InitializeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.JsTsRequirementsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.LanguageSpecificRequirements
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.OmnisharpRequirementsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SonarCloudAlternativeEnvironmentDto
@@ -320,6 +321,8 @@ class BackendService : Disposable {
             getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
         val telemetryEnabled = !System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()
         val nodeJsPath = if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
+        val eslintBridgePath = generateEslintBridgePath()
+        val jsTsRequirements = JsTsRequirementsDto(nodeJsPath, eslintBridgePath)
         val workDir = Paths.get(PathManager.getTempPath()).resolve("sonarlint")
         val omnisharpRequirementsDto = generateOmnisharpDto()
         return rpcServer.initialize(
@@ -355,7 +358,8 @@ class BackendService : Disposable {
                 null,
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
-                LanguageSpecificRequirements(nodeJsPath, omnisharpRequirementsDto),
+
+                LanguageSpecificRequirements(jsTsRequirements, omnisharpRequirementsDto),
                 false,
                 null
             )
@@ -371,6 +375,11 @@ class BackendService : Disposable {
             pluginPath.resolve("plugins/sonar-csharp-plugin.jar"),
             pluginPath.resolve("plugins/sonar-csharp-enterprise-plugin.jar"),
         )
+    }
+
+    private fun generateEslintBridgePath(): Path {
+        val pluginPath = getService(SonarLintPlugin::class.java).path
+        return pluginPath.resolve("plugins/eslint-bridge")
     }
 
     private fun generateFeatureFlagsDto(

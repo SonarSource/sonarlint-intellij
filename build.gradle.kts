@@ -4,9 +4,15 @@ import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.EnumSet
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 
 plugins {
@@ -263,12 +269,57 @@ tasks {
         }
     }
 
+    fun unzipEslintBridgeBundle(destinationDir: File, pluginName: Property<String>) {
+        val pluginsDir = File("$destinationDir/${pluginName.get()}/plugins")
+        val jarPath = pluginsDir.listFiles()?.find {
+            it.name.startsWith("sonar-javascript-plugin-") && it.name.endsWith(".jar")
+        } ?: throw GradleException("sonar-javascript-plugin-* JAR not found in $destinationDir")
+
+        val zipFile = ZipFile(jarPath)
+        val entry = zipFile.entries().asSequence().find { it.name.matches(Regex("sonarjs-.*\\.tgz")) }
+            ?: throw GradleException("eslint bridge server bundle not found in JAR $jarPath")
+
+
+        val outputFolderPath = Paths.get("$pluginsDir/eslint-bridge")
+        val outputFilePath = outputFolderPath.resolve(entry.name)
+
+        if (!Files.exists(outputFolderPath)) {
+            Files.createDirectory(outputFolderPath)
+        }
+
+        zipFile.getInputStream(entry).use { input ->
+            FileOutputStream(outputFilePath.toFile()).use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        GzipCompressorInputStream(FileInputStream(outputFilePath.toFile())).use { gzipInput ->
+            TarArchiveInputStream(gzipInput).use { tarInput ->
+                var tarEntry: TarArchiveEntry?
+                while (tarInput.nextEntry.also { tarEntry = it } != null) {
+                    val outputFile = outputFolderPath.resolve(tarEntry!!.name).toFile()
+                    if (tarEntry!!.isDirectory) {
+                        outputFile.mkdirs()
+                    } else {
+                        outputFile.parentFile.mkdirs()
+                        FileOutputStream(outputFile).use { output ->
+                            tarInput.copyTo(output)
+                        }
+                    }
+                }
+            }
+        }
+
+        Files.delete(outputFilePath)
+    }
+
     prepareSandbox {
         doLast {
             copyPlugins(destinationDir, pluginName)
             renameCsharpPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
             copySloop(destinationDir, pluginName)
+            unzipEslintBridgeBundle(destinationDir, pluginName)
         }
     }
 
@@ -278,6 +329,7 @@ tasks {
             renameCsharpPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
             copySloop(destinationDir, pluginName)
+            unzipEslintBridgeBundle(destinationDir, pluginName)
         }
     }
 
