@@ -34,6 +34,8 @@ class TextRangeMatcherTest {
             test message
             #%%
             t = 2
+            #%% raw
+            raw
         """.trimIndent()
 
         val result = computeTextRangeForNotebook(fileContent, 3, 0, 3, 4)

@@ -196,6 +196,7 @@
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.cidr.lang</depends>
     <depends optional="true" config-file="plugin-clion-resharper.xml">org.jetbrains.plugins.clion.radler</depends>
     <depends optional="true" config-file="plugin-rider.xml">com.intellij.modules.rider</depends>
+    <depends optional="true" config-file="plugin-jupyter.xml">intellij.jupyter</depends>
 
     <projectListeners>
         <listener class="org.sonarlint.intellij.module.ModuleChangeListener" topic="com.intellij.openapi.project.ModuleListener"/>

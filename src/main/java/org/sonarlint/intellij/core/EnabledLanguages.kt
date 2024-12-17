@@ -31,6 +31,7 @@ import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
+private const val JUPYTER_PLUGIN_ID = "intellij.jupyter"
 private const val DATABASE_PLUGIN_ID = "com.intellij.database"
 private const val JAVA_MODULE_ID = "com.intellij.modules.java"
 private const val GO_PLUGIN_ID = "org.jetbrains.plugins.go"
@@ -54,7 +55,6 @@ object EnabledLanguages {
         Language.DOCKER,
         Language.KUBERNETES,
         Language.TERRAFORM,
-        Language.IPYTHON
     )
     private val EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE = listOf(
         EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
@@ -102,6 +102,9 @@ object EnabledLanguages {
                     }
                     if (isIdeModuleEnabled(GO_PLUGIN_ID)) {
                         enabledLanguages.add(Language.GO)
+                    }
+                    if (isIdeModuleEnabled(JUPYTER_PLUGIN_ID)) {
+                        enabledLanguages.add(Language.IPYTHON)
                     }
                     enabledLanguages
                 }
