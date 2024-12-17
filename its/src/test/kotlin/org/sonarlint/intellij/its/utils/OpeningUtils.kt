@@ -24,6 +24,9 @@ import com.intellij.remoterobot.utils.keyboard
 import java.awt.Point
 import java.io.File
 import java.time.Duration
+import javax.imageio.ImageIO
+import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.BaseUiTest.Companion
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -84,6 +87,12 @@ class OpeningUtils {
                 welcomeFrame {
                     // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
                     openProjectButton().click(Point(10, 10))
+                    BaseUiTest.remoteRobot.getScreenshot()
+                    val screenshot = BaseUiTest.remoteRobot.getScreenshot()
+                    val cirrusWorkingDir = System.getenv("CIRRUS_WORKING_DIR")
+                    val ideaVersion = System.getenv("IDEA_VERSION")
+                    val outputFile = File("$cirrusWorkingDir/image4_$ideaVersion.jpg")
+                    ImageIO.write(screenshot, "png", outputFile)
                 }
                 if (remoteRobot.isRider()) {
                     openSolutionBrowserDialog {
