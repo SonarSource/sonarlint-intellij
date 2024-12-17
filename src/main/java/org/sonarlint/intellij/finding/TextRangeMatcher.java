@@ -125,7 +125,7 @@ public class TextRangeMatcher {
     var endLine = prevEndLine;
     var lineNumber = 0;
     for (var line : fileContent.lines().toList()) {
-      if (line.startsWith("#%% md")) {
+      if (line.startsWith("#%% md") || line.startsWith("#%% raw")) {
         isMarkdown = true;
       } else if (line.startsWith("#%%")) {
         isMarkdown = false;

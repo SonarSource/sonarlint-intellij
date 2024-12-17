@@ -88,7 +88,7 @@ object VirtualFileUtils {
         var isMarkdown = false
         val result = StringBuilder()
         for (line in fileContent.lines()) {
-            if (line.startsWith("#%% md")) {
+            if (line.startsWith("#%% md") || line.startsWith("#%% raw")) {
                 isMarkdown = true
             } else if (line.startsWith("#%%")) {
                 isMarkdown = false

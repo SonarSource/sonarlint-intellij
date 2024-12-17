@@ -105,7 +105,9 @@ class VirtualFileUtilsTests : AbstractSonarLintHeavyTests() {
             #%% md
             test message
             #%%
-            t = 2""".trimIndent()
+            t = 2
+            #%% raw
+            raw""".trimIndent()
 
         val result = removeMarkdownCells(fileContent)
 
