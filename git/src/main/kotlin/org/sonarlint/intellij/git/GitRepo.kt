@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.git
 
-import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
-import git4idea.GitRevisionNumber
 import git4idea.commands.Git
 import git4idea.commands.GitCommand
 import git4idea.commands.GitLineHandler
@@ -76,14 +74,15 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
     }
 
     private fun distance(project: Project, repository: GitRepository, from: String, to: String): Int? {
-        val revisionNumber = ProgressManager.getInstance().runProcessWithProgressSynchronously<GitRevisionNumber, Exception>(
-            { GitHistoryUtils.getMergeBase(project, repository.root, from, to) },
-            "SonarQube: Computing branch information",
-            true,
-            repository.project
-        )
-        val aheadCount = getNumberOfCommitsBetween(repository, from, revisionNumber.asString()) ?: return null
-        val behindCount = getNumberOfCommitsBetween(repository, to, revisionNumber.asString()) ?: return null
+        val mergeBase = try {
+            GitHistoryUtils.getMergeBase(project, repository.root, from, to) ?: return null
+        } catch (e: IllegalStateException) {
+            // SLI-1381: "There is no ProgressIndicator or Job in this thread" should simply be a loud error
+            SonarLintConsole.get(project).debug("Couldn't compute the git distance, reason: ${e.message}")
+            return null
+        }
+        val aheadCount = getNumberOfCommitsBetween(repository, from, mergeBase.asString()) ?: return null
+        val behindCount = getNumberOfCommitsBetween(repository, to, mergeBase.asString()) ?: return null
         return aheadCount + behindCount
     }
 
@@ -92,20 +91,13 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
         from: String,
         to: String,
     ): Int? {
-        return ProgressManager.getInstance().runProcessWithProgressSynchronously<Int?, Exception>(
-            {
-                val handler = GitLineHandler(repository.project, repository.root, GitCommand.REV_LIST)
-                handler.addParameters("--count", "$from..$to")
-                handler.setSilent(true)
-                try {
-                    Integer.parseInt(Git.getInstance().runCommand(handler).getOutputOrThrow().trim())
-                } catch (e: Exception) {
-                    throw Exception("Cannot get number of commits between '$from' and '$to'", e)
-                }
-            },
-            "SonarQube: Computing branch information",
-            true,
-            repository.project
-        )
+        val handler = GitLineHandler(repository.project, repository.root, GitCommand.REV_LIST)
+        handler.addParameters("--count", "$from..$to")
+        handler.setSilent(true)
+        return try {
+            Integer.parseInt(Git.getInstance().runCommand(handler).getOutputOrThrow().trim())
+        } catch (e: Exception) {
+            throw Exception("Cannot get number of commits between '$from' and '$to'", e)
+        }
     }
 }
