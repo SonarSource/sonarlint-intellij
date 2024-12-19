@@ -61,6 +61,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.14.1 - Fix unwanted loading bar appearance for computing branch information. Fix connection issue for SonarQube Server versions 10.0 - 10.4.</li>
         <li>10.14 - Support analysis of Jupyter Notebook files. Increase JS/TS analysis speed and fix an issue where many temporary files would be created. Drop support for username/password authentication.</li>
         <li>10.13.1 - Include a transparent and dark version of the plugin icon. Fix a noisy log error about a missing ProgressIndicator. Improve the tool window icon behavior to reflect the current number of issues in the file.</li>
         <li>10.13 - SonarLint becomes SonarQube for IDE. Support for Standard and MQR mode. Fix an issue where the disk space used would grow indefinitely. Avoid an issue where the file system cache would run out of memory. Multiple performance improvements to the JS/TS analyzer. 7 new C++ rules and 1 new Security Hotspot C++ rule. Improve the tolerance to syntax errors when parsing Java switch expressions. Detection of secrets in PHP and C#. Support of Python 3.13. Deprecate the usage of Node.js 18 for JS/TS analysis. 1 new rule for Java. Support of more Java rules on test code. Bug fixes, fewer FPs and improvements for many languages.</li>
