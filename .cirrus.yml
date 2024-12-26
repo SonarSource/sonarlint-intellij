@@ -235,7 +235,7 @@ qa_task:
     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
     GITHUB_TOKEN: VAULT[development/github/token/licenses-ro token]
     DISPLAY: :10
-    JDK_VERSION: "21"
+    JDK_VERSION: "17"
     SONARCLOUD_IT_PASSWORD: VAULT[development/team/sonarlint/kv/data/sonarcloud-it data.password]
   clionKey_file:
     path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/clion.key.b64
