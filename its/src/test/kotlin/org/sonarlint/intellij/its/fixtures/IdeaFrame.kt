@@ -105,12 +105,12 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     println("Check background tasks - done")
   }
 
-    fun modernActionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
-        return find<ActionMenuFixture>(byXpath("menu $label", "//div[@tooltiptext='Main Menu']")).apply(function)
-    }
-
     fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
-        return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
+        return if (remoteRobot.isModernUI()) {
+            find<ActionMenuFixture>(byXpath("menu $label", "//div[@tooltiptext='Main Menu']")).apply(function)
+        } else {
+            findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
+        }
     }
 
     fun IdeaFrame.analyzeFile() {
