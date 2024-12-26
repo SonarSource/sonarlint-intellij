@@ -8,15 +8,15 @@ description = "ITs for SonarLint IntelliJ"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
 val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileKotlin.kotlinOptions.jvmTarget = "21"
+compileKotlin.kotlinOptions.jvmTarget = "17"
 
 val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileTestKotlin.kotlinOptions.jvmTarget = "21"
+compileTestKotlin.kotlinOptions.jvmTarget = "17"
 
 repositories {
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
