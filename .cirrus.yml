@@ -236,6 +236,7 @@ qa_task:
     GITHUB_TOKEN: VAULT[development/github/token/licenses-ro token]
     DISPLAY: :10
     JDK_VERSION: "17"
+    JAVA_HOME: "/opt/java/jdk17"
     SONARCLOUD_IT_PASSWORD: VAULT[development/team/sonarlint/kv/data/sonarcloud-it data.password]
   clionKey_file:
     path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/clion.key.b64
