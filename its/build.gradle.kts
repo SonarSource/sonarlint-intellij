@@ -48,6 +48,9 @@ tasks.test {
         }
     }
     testLogging.showStandardStreams = true
+    System.getenv("SONAR_JAVA_PATH")?.let {
+        executable = it
+    }
 }
 
 license {
