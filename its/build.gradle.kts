@@ -86,6 +86,9 @@ intellij {
 val runIdeDirectory: String by project
 
 tasks.runIdeForUiTests {
+    System.getenv("SONAR_JAVA_PATH")?.let {
+        executable = it
+    }
     systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
     systemProperty("sonarlint.internal.sonarcloud.api.url", "https://api.sc-staging.io/")
     systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.sc-staging.io/")
