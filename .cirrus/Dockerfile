@@ -13,16 +13,6 @@ RUN wget https://download.oracle.com/java/17/archive/jdk-17.0.12_linux-x64_bin.t
 
 ENV JAVA_HOME=/opt/java/jdk17
 
-# Download and install JDK 17
-RUN apt-get update && \
-    apt-get install -y wget && \
-    wget https://download.java.net/java/GA/jdk17/0d483a095b4e4c4b9bde5b8b1e1b1e1b/17/GPL/openjdk-17_linux-x64_bin.tar.gz && \
-    mkdir -p /opt/java/openjdk && \
-    tar -xzf openjdk-17_linux-x64_bin.tar.gz -C /opt/java/openjdk --strip-components=1 && \
-    rm openjdk-17_linux-x64_bin.tar.gz
-
-ENV JAVA_HOME=/opt/java/openjdk
-
 RUN apt-get update && apt-get install -y metacity xvfb xauth ffmpeg \
     nodejs=${NODE_VERSION}.* \
     build-essential \
