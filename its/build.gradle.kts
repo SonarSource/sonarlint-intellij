@@ -33,6 +33,7 @@ dependencies {
     testImplementation(libs.junit.api)
     testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly(libs.junit4)
 }
 
 tasks.test {

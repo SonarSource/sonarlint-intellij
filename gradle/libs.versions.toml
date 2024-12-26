@@ -27,7 +27,8 @@ cyclonedx-plugin = "1.10.0"
 commons-lang3 = "3.17.0"
 commons-text = "1.13.0"
 findbugs-jsr305 = "3.0.2"
-junit = "5.11.3"
+junit-bom = "5.11.3"
+junit4 = "4.13.2"
 mockito-kotlin = "5.4.0"
 awaitility = "4.3.0"
 
@@ -60,9 +61,8 @@ sonar-dotnet-enterprise = { module = "com.sonarsource.dotnet:sonar-csharp-enterp
 commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
-junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
-junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
-junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 
