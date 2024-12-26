@@ -40,11 +40,11 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarQube for IntelliJ") {
+                        leftToolWindow("SonarQube for IDE") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarQube for IntelliJ") {
+                    toolWindow("SonarQube for IDE") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         assertThat(findCard(expectedClass)).isNotNull
                     }
@@ -101,11 +101,11 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarQube for IntelliJ") {
+                        leftToolWindow("SonarQube for IDE") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarQube for IntelliJ") {
+                    toolWindow("SonarQube for IDE") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         findText(issueMessage).rightClick()
@@ -121,11 +121,11 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarQube for IntelliJ") {
+                        leftToolWindow("SonarQube for IDE") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarQube for IntelliJ") {
+                    toolWindow("SonarQube for IDE") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
@@ -145,11 +145,11 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarQube for IntelliJ") {
+                        leftToolWindow("SonarQube for IDE") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IDE") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
@@ -163,11 +163,11 @@ class CurrentFileTabTests {
         fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String) {
             optionalIdeaFrame()?.apply {
                 if (remoteRobot.isModernUI()) {
-                    leftToolWindow("SonarLint") {
+                    leftToolWindow("SonarQube for IDE") {
                         ensureOpen()
                     }
                 }
-                toolWindow("SonarLint") {
+                toolWindow("SonarQube for IDE") {
                     if (remoteRobot.isModernUI().not()) ensureOpen()
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
@@ -186,11 +186,11 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarLint") {
+                        leftToolWindow("SonarQube for IDE") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IDE") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         content("CurrentFilePanel") {
                             waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {

@@ -50,11 +50,11 @@ class ExclusionUtils {
             with(remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarQube for IntelliJ") {
+                        leftToolWindow("SonarQube for IDE") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarQube for IntelliJ") {
+                    toolWindow("SonarQube for IDE") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {

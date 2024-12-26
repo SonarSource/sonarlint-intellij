@@ -41,11 +41,11 @@ class FiltersUtils {
         fun setFocusOnNewCode(focusOnNewCode: Boolean) {
             optionalIdeaFrame()?.apply {
                 if (remoteRobot.isModernUI()) {
-                    leftToolWindow("SonarQube for IntelliJ") {
+                    leftToolWindow("SonarQube for IDE") {
                         ensureOpen()
                     }
                 }
-                toolWindow("SonarQube for IntelliJ") {
+                toolWindow("SonarQube for IDE") {
                     if (remoteRobot.isModernUI().not()) ensureOpen()
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
@@ -64,11 +64,11 @@ class FiltersUtils {
             with(BaseUiTest.remoteRobot) {
                 idea {
                     if (remoteRobot.isModernUI()) {
-                        leftToolWindow("SonarQube for IntelliJ") {
+                        leftToolWindow("SonarQube for IDE") {
                             ensureOpen()
                         }
                     }
-                    toolWindow("SonarLint") {
+                    toolWindow("SonarQube for IDE") {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
