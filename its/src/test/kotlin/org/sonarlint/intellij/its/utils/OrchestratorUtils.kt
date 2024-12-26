@@ -40,6 +40,7 @@ class OrchestratorUtils {
 
         fun defaultBuilderEnv(): OrchestratorExtensionBuilder {
             return OrchestratorExtension.builderEnv()
+                .setOrchestratorProperty("orchestrator.configUrl", "src/test/resources/orchestrator.properties")
                 .defaultForceAuthentication()
                 .useDefaultAdminCredentialsForBuilds(true)
                 .setSonarVersion(SONAR_VERSION)
