@@ -39,6 +39,9 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform {
+        System.getenv("SONAR_JAVA_PATH")?.let {
+            executable = it
+        }
         val tag = System.getenv("TEST_SUITE")
 
         if (tag != null && (tag == "OpenInIdeTests" || tag == "ConnectedAnalysisTests"
