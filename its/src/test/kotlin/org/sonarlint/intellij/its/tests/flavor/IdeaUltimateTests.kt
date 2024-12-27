@@ -45,7 +45,7 @@ class IdeaUltimateTests : BaseUiTest() {
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "Dockerfile",
-            "Replace `from` with upper case format `FROM`."
+            "Replace \"from\" with upper case format \"FROM\"."
         )
 
         openFile("kubernetes.yaml")

@@ -175,7 +175,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                 { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
-                tuple("docker:S6476", "Replace `from` with upper case format `FROM`.", Pair(0, 4))
+                tuple("docker:S6476", "Replace \"from\" with upper case format \"FROM\".", Pair(0, 4))
             )
 
         assertThat(highlightInfos).hasSize(1)
