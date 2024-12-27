@@ -74,13 +74,7 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
     }
 
     private fun distance(project: Project, repository: GitRepository, from: String, to: String): Int? {
-        val mergeBase = try {
-            GitHistoryUtils.getMergeBase(project, repository.root, from, to) ?: return null
-        } catch (e: IllegalStateException) {
-            // SLI-1381: "There is no ProgressIndicator or Job in this thread" should simply be a loud error
-            SonarLintConsole.get(project).debug("Couldn't compute the git distance, reason: ${e.message}")
-            return null
-        }
+        val mergeBase = GitHistoryUtils.getMergeBase(project, repository.root, from, to) ?: return null
         val aheadCount = getNumberOfCommitsBetween(repository, from, mergeBase.asString()) ?: return null
         val behindCount = getNumberOfCommitsBetween(repository, to, mergeBase.asString()) ?: return null
         return aheadCount + behindCount
