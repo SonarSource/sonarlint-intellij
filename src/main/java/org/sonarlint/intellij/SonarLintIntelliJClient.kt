@@ -30,6 +30,10 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.progress.PerformInBackgroundOption
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
@@ -55,6 +59,7 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
 import org.apache.commons.text.StringEscapeUtils
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
@@ -628,7 +633,22 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
         } ?: return null
         val repo = repositories.first()
-        return repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
+
+        val project = BackendService.findModule(configurationScopeId)?.project
+            ?: BackendService.findProject(configurationScopeId) ?: return null
+        val resultFuture = CompletableFuture<String>()
+        ProgressManager.getInstance().run(object : Task.Backgroundable(
+            project,
+            "Matching project branch…",
+            true,
+            PerformInBackgroundOption.ALWAYS_BACKGROUND
+        ) {
+            override fun run(indicator: ProgressIndicator) {
+                val result = repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
+                resultFuture.complete(result)
+            }
+        })
+        return computeOnPooledThread(project, "Waiting for branch matching result") { resultFuture.get() }
     }
 
     override fun matchProjectBranch(
