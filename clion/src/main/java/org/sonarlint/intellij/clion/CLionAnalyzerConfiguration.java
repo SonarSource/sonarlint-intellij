@@ -30,6 +30,7 @@ import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
+import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
@@ -58,6 +59,9 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
    * Inspired from ShowCompilerInfoForFile and ClangTidyAnnotator
    */
   public ConfigurationResult getConfigurationAction(VirtualFile file) {
+    if (!DumbService.isDumb(project)) {
+      return new ConfigurationResult("could not get configuration, project is not yet initialized");
+    }
     var psiFile = PsiManager.getInstance(project).findFile(file);
     if (!(psiFile instanceof OCPsiFile ocFile)) {
       return new ConfigurationResult(psiFile + " not an OCPsiFile");
@@ -72,12 +76,10 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
       configuration = languageAndConfiguration.getConfiguration();
       languageKind = languageAndConfiguration.getLanguageKind();
     } else {
-      if (!DumbService.isDumb(project)) {
-        try {
-          languageKind = ocFile.getKind();
-        } catch (Exception e) {
-          SonarLintConsole.get(project).error("Could not retrieve language kind", e);
-        }
+      try {
+        languageKind = ocFile.getKind();
+      } catch (Exception e) {
+        SonarLintConsole.get(project).error("Could not retrieve language kind", e);
       }
     }
     if (configuration == null) {
@@ -86,7 +88,12 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     if (configuration == null) {
       return ConfigurationResult.skip("configuration not found");
     }
-    var compilerSettings = configuration.getCompilerSettings(ocFile.getKind(), file);
+    OCCompilerSettings compilerSettings;
+    try {
+      compilerSettings = configuration.getCompilerSettings(ocFile.getKind(), file);
+    } catch (Exception e) {
+      return ConfigurationResult.skip("compiler settings not found");
+    }
     var compilerKind = compilerSettings.getCompilerKind();
     if (compilerKind == null) {
       return ConfigurationResult.skip("compiler kind not found");
