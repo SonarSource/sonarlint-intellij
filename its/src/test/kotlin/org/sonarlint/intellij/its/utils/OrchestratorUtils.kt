@@ -25,7 +25,6 @@ import com.sonar.orchestrator.container.Server
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.junit5.OrchestratorExtensionBuilder
 import java.io.File
-import java.nio.file.Paths
 import org.sonarlint.intellij.its.utils.ItUtils.SONAR_VERSION
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
@@ -40,9 +39,9 @@ class OrchestratorUtils {
         private const val SONARLINT_PWD = "sonarlintpwd"
 
         fun defaultBuilderEnv(): OrchestratorExtensionBuilder {
-            val properties = Paths.get("src/test/resources/orchestrator.properties").toAbsolutePath()
+            val properties = System.getProperty("orchestrator.configUrl")
             return OrchestratorExtension.builderEnv()
-                .setOrchestratorProperty("orchestrator.configUrl", properties.toString())
+                .setOrchestratorProperty("orchestrator.configUrl", properties)
                 .defaultForceAuthentication()
                 .useDefaultAdminCredentialsForBuilds(true)
                 .setSonarVersion(SONAR_VERSION)

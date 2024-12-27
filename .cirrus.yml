@@ -372,7 +372,7 @@ qa_task:
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
-    gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin
+    gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin -Dorchestrator.configUrl=file:///$CIRRUS_WORKING_DIR/its/orchestrator.properties
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     stop_recording_script: |
