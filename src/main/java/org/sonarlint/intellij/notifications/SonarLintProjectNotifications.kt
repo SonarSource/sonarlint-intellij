@@ -125,7 +125,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             content,
             NotificationType.INFORMATION
         ).apply {
-            addAction(OpenTrackedLinkAction("Try SonarQube Cloud for free", LinkTelemetry.SONARCLOUD_SIGNUP_PAGE))
+            addAction(OpenTrackedLinkAction("Try SonarQube Cloud for free", LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE))
             addAction(OpenTrackedLinkAction("Download SonarQube Server", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS))
             addAction(OpenInBrowserAction("Learn more", null, CONNECTED_MODE_BENEFITS_LINK))
             addAction(DontAskAgainAction())

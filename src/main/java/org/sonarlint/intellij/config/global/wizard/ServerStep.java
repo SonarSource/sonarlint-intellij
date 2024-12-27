@@ -48,9 +48,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
-import static org.sonarlint.intellij.telemetry.LinkTelemetry.COMPARE_SERVER_PRODUCTS;
-import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_PRODUCT_PAGE;
-import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS;
+import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE;
 
 public class ServerStep extends AbstractWizardStepEx {
   private static final int NAME_MAX_LENGTH = 50;
@@ -70,8 +68,6 @@ public class ServerStep extends AbstractWizardStepEx {
   private JButton proxyButton;
   private JEditorPane sonarQubeDescription;
   private JEditorPane sonarCloudDescription;
-  private JEditorPane sonarCloudFree;
-  private JEditorPane sonarQubeFree;
   private JEditorPane compareProducts;
   private ErrorPainter errorPainter;
 
@@ -101,14 +97,8 @@ public class ServerStep extends AbstractWizardStepEx {
       "and extends the CI/CD workflow to systematically help developers and organizations deliver Clean Code.";
     sonarCloudDescription.setText(cloudMainText);
 
-    initEditorPane(sonarCloudFree, "<a href=\"" + SONARCLOUD_PRODUCT_PAGE.getUrl() + "\">SonarQube Cloud</a> is entirely free for open source projects",
-      SONARCLOUD_PRODUCT_PAGE);
-
-    initEditorPane(sonarQubeFree, "SonarQube Server offers a free <a href=\"" + SONARQUBE_EDITIONS_DOWNLOADS.getUrl() + "\">Community Build</a>",
-      SONARQUBE_EDITIONS_DOWNLOADS);
-
-    initEditorPane(compareProducts, "Discover which option is the best for your team <a href=\"" + COMPARE_SERVER_PRODUCTS.getUrl() + "\">here</a>",
-      COMPARE_SERVER_PRODUCTS);
+    initEditorPane(compareProducts, "Explore SonarQube Cloud with our <a href=\"" + SONARCLOUD_FREE_SIGNUP_PAGE.getUrl() + "\">free tier</a>",
+      SONARCLOUD_FREE_SIGNUP_PAGE);
 
     if (!editing) {
       sonarqubeIcon.addMouseListener(new MouseInputAdapter() {
@@ -274,8 +264,6 @@ public class ServerStep extends AbstractWizardStepEx {
     sonarqubeText = SwingHelper.createHtmlViewer(false, null, null, null);
     sonarQubeDescription = SwingHelper.createHtmlViewer(false, null, null, null);
     sonarCloudDescription = SwingHelper.createHtmlViewer(false, null, null, null);
-    sonarCloudFree = SwingHelper.createHtmlViewer(false, null, null, null);
-    sonarQubeFree = SwingHelper.createHtmlViewer(false, null, null, null);
     compareProducts = SwingHelper.createHtmlViewer(false, null, null, null);
 
     var text = new JBTextField();

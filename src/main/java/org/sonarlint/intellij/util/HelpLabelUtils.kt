@@ -31,7 +31,7 @@ class HelpLabelUtils {
                             "SonarQube Cloud complements SonarQube for IDE by detecting more across the whole project.",
                     "Try SonarQube Cloud for free", true
                 ) {
-                    LinkTelemetry.SONARCLOUD_SIGNUP_PAGE.browseWithTelemetry()
+                    LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE.browseWithTelemetry()
                 }
 
         @JvmStatic

@@ -25,15 +25,13 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK
 
 enum class LinkTelemetry(
-    val linkId: String,
+    private val linkId: String,
     val url: String
 ) {
 
-    SONARCLOUD_SIGNUP_PAGE("sonarCloudSignUpPage", SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_SIGNUP_LINK),
+    SONARCLOUD_FREE_SIGNUP_PAGE("sonarqubeCloudFreeSignUp", SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_SIGNUP_LINK),
     CONNECTED_MODE_DOCS("connectedModeDocs", SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK),
-    COMPARE_SERVER_PRODUCTS("compareServerProducts", SonarLintDocumentation.Marketing.COMPARE_SERVER_PRODUCTS_LINK),
     SONARQUBE_EDITIONS_DOWNLOADS("sonarQubeEditionsDownloads", SonarLintDocumentation.Marketing.SONARQUBE_EDITIONS_DOWNLOADS_LINK),
-    SONARCLOUD_PRODUCT_PAGE("sonarCloudProductPage", SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_LINK),
     RULE_SELECTION_PAGE("rulesSelectionDocs", RULE_SECTION_LINK);
 
     fun browseWithTelemetry() {
