@@ -61,7 +61,6 @@ class SonarLintDocumentationTests {
 
         SonarLintDocumentation.SonarCloud.SMART_NOTIFICATIONS,
 
-        SonarLintDocumentation.Marketing.COMPARE_SERVER_PRODUCTS_LINK,
         SonarLintDocumentation.Marketing.SONARQUBE_EDITIONS_DOWNLOADS_LINK,
         SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_LINK,
         SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_SIGNUP_LINK,
