@@ -25,7 +25,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isModernUI
 import org.sonarlint.intellij.its.fixtures.notification
+import org.sonarlint.intellij.its.fixtures.tool.window.leftToolWindow
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
@@ -37,8 +39,13 @@ class CurrentFileTabTests {
         fun verifyCurrentFileShowsCard(expectedClass: String) {
             with(remoteRobot) {
                 idea {
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarQube for IDE") {
+                            ensureOpen()
+                        }
+                    }
                     toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         assertThat(findCard(expectedClass)).isNotNull
                     }
                 }
@@ -93,8 +100,13 @@ class CurrentFileTabTests {
         fun openIssueReviewDialogFromList(issueMessage: String) {
             with(remoteRobot) {
                 idea {
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarQube for IDE") {
+                            ensureOpen()
+                        }
+                    }
                     toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         findText(issueMessage).rightClick()
                     }
@@ -108,8 +120,13 @@ class CurrentFileTabTests {
         fun verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarQube for IDE") {
+                            ensureOpen()
+                        }
+                    }
                     toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
                             expectedMessages.forEach {
@@ -127,8 +144,13 @@ class CurrentFileTabTests {
         fun clickCurrentFileIssue(issueMessage: String) {
             with(remoteRobot) {
                 idea {
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarQube for IDE") {
+                            ensureOpen()
+                        }
+                    }
                     toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
                             findText(issueMessage).click()
@@ -140,8 +162,13 @@ class CurrentFileTabTests {
 
         fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String) {
             optionalIdeaFrame()?.apply {
+                if (remoteRobot.isModernUI()) {
+                    leftToolWindow("SonarQube for IDE") {
+                        ensureOpen()
+                    }
+                }
                 toolWindow("SonarQube for IDE") {
-                    ensureOpen()
+                    if (remoteRobot.isModernUI().not()) ensureOpen()
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
                         toolBarButton("Configure SonarQube for IDE").click()
@@ -158,8 +185,13 @@ class CurrentFileTabTests {
         fun verifyCurrentFileRuleDescriptionTabContains(expectedMessage: String) {
             with(remoteRobot) {
                 idea {
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarQube for IDE") {
+                            ensureOpen()
+                        }
+                    }
                     toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         content("CurrentFilePanel") {
                             waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
                                 hasText(expectedMessage)

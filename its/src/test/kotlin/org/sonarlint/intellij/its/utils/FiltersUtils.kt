@@ -22,6 +22,8 @@ package org.sonarlint.intellij.its.utils
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isModernUI
+import org.sonarlint.intellij.its.fixtures.tool.window.leftToolWindow
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.optionalIdeaFrame
 
@@ -38,8 +40,13 @@ class FiltersUtils {
 
         fun setFocusOnNewCode(focusOnNewCode: Boolean) {
             optionalIdeaFrame()?.apply {
+                if (remoteRobot.isModernUI()) {
+                    leftToolWindow("SonarQube for IDE") {
+                        ensureOpen()
+                    }
+                }
                 toolWindow("SonarQube for IDE") {
-                    ensureOpen()
+                    if (remoteRobot.isModernUI().not()) ensureOpen()
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
                         val toolBarButton = focusOnNewCodeButton()
@@ -56,8 +63,13 @@ class FiltersUtils {
         fun showResolvedIssues() {
             with(BaseUiTest.remoteRobot) {
                 idea {
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarQube for IDE") {
+                            ensureOpen()
+                        }
+                    }
                     toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
                             resolvedIssuesButton().click()

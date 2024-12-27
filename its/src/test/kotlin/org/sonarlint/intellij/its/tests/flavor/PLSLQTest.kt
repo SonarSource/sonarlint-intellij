@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isModernUI
+import org.sonarlint.intellij.its.fixtures.tool.window.leftToolWindow
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
@@ -64,8 +66,13 @@ class PLSQLTest : BaseUiTest() {
     private fun verifyIssueTreeContainsMessages() {
         with(remoteRobot) {
             idea {
+                if (remoteRobot.isModernUI()) {
+                    leftToolWindow("SonarQube for IDE") {
+                        ensureOpen()
+                    }
+                }
                 toolWindow("SonarQube for IDE") {
-                    ensureOpen()
+                    if (remoteRobot.isModernUI().not()) ensureOpen()
                     tabTitleContains("Current File") { select() }
                     // the synchronization can take a while to happen
                     waitFor(duration = Duration.ofMinutes(1)) {
