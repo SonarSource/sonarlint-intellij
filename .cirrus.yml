@@ -186,7 +186,7 @@ plugin_verifier_task:
     - env:
         IDEA_VERSION: '2022.3.1'
     - env:
-        IDEA_VERSION: '2024.1.4'
+        IDEA_VERSION: '2024.3.1'
     - env:
         # It automatically retrieves the latest version available for the given year (likely to be the EAP)
         IDEA_VERSION: '2024'
