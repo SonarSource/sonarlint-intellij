@@ -33,8 +33,17 @@ object SonarLintDocumentation {
         const val CONNECTED_MODE_BENEFITS_LINK = "$CONNECTED_MODE_LINK/#benefits"
         const val SHARING_CONNECTED_MODE_CONFIGURATION_LINK = "$CONNECTED_MODE_SETUP_LINK/#reuse-the-binding-configuration"
         const val TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK = "$BASE_DOCS_URL/troubleshooting/#troubleshooting-connected-mode-setup"
+        const val TROUBLESHOOTING_LINK = "$BASE_DOCS_URL/troubleshooting"
         const val RULE_SECTION_LINK = "$BASE_DOCS_URL/using/rules/#rule-selection"
+        const val USING_RULES_LINK = "$BASE_DOCS_URL/using/rules"
         const val FILE_EXCLUSION_LINK = "$BASE_DOCS_URL/using/file-exclusions"
+        const val AI_FIX_SUGGESTIONS_LINK = "$BASE_DOCS_URL/using/investigating-issues/#ai-generated-fix-suggestions"
+        const val INVESTIGATING_ISSUES_LINK = "$BASE_DOCS_URL/using/investigating-issues"
+        const val OPEN_IN_IDE_LINK = "$BASE_DOCS_URL/using/investigating-issues/#opening-issues-in-the-ide"
+    }
+
+    object Community {
+        const val COMMUNITY_LINK = "https://community.sonarsource.com/c/sl/fault/6"
     }
 
     object SonarQube {

@@ -209,6 +209,10 @@
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="Welcome to SonarQube for IDE"
+                    anchor="left"
+                    icon="org.sonarlint.intellij.SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON"
+                    factoryClass="org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindowFactory"/>
         <toolWindow id="SonarQube for IDE" anchor="bottom"
                     icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW"
                     factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
@@ -260,6 +264,7 @@
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
 
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
+        <postStartupActivity implementation="org.sonarlint.intellij.OpenWelcomePageOnceOneProjectOpened"/>
 
         <notificationGroup id="SonarQube for IDE: In Context Promotions"
                            displayType="BALLOON"/>
