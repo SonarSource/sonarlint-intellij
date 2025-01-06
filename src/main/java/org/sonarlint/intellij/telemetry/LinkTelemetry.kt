@@ -22,7 +22,14 @@ package org.sonarlint.intellij.telemetry
 import com.intellij.ide.BrowserUtil
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Community.COMMUNITY_LINK
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.AI_FIX_SUGGESTIONS_LINK
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.BASE_DOCS_URL
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.INVESTIGATING_ISSUES_LINK
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.OPEN_IN_IDE_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROUBLESHOOTING_LINK
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.USING_RULES_LINK
 
 enum class LinkTelemetry(
     private val linkId: String,
@@ -32,7 +39,14 @@ enum class LinkTelemetry(
     SONARCLOUD_FREE_SIGNUP_PAGE("sonarqubeCloudFreeSignUp", SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_SIGNUP_LINK),
     CONNECTED_MODE_DOCS("connectedModeDocs", SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK),
     SONARQUBE_EDITIONS_DOWNLOADS("sonarQubeEditionsDownloads", SonarLintDocumentation.Marketing.SONARQUBE_EDITIONS_DOWNLOADS_LINK),
-    RULE_SELECTION_PAGE("rulesSelectionDocs", RULE_SECTION_LINK);
+    RULE_SELECTION_PAGE("rulesSelectionDocs", RULE_SECTION_LINK),
+    USING_RULES_PAGE("usingRulesDocs", USING_RULES_LINK),
+    INVESTIGATING_ISSUES_PAGE("investigatingIssuesDocs", INVESTIGATING_ISSUES_LINK),
+    OPEN_IN_IDE_PAGE("openInIdeDocs", OPEN_IN_IDE_LINK),
+    TROUBLESHOOTING_PAGE("troubleshootingPage", TROUBLESHOOTING_LINK),
+    AI_FIX_SUGGESTIONS_PAGE("aiFixSuggestionsDocs", AI_FIX_SUGGESTIONS_LINK),
+    COMMUNITY_PAGE("communityReportPage", COMMUNITY_LINK),
+    BASE_DOCS_PAGE("baseDocs", BASE_DOCS_URL);
 
     fun browseWithTelemetry() {
         SonarLintUtils.getService(SonarLintTelemetry::class.java).helpAndFeedbackLinkClicked(linkId)
