@@ -35,6 +35,7 @@ object SonarLintDocumentation {
         const val TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK = "$BASE_DOCS_URL/troubleshooting/#troubleshooting-connected-mode-setup"
         const val RULE_SECTION_LINK = "$BASE_DOCS_URL/using-sonarlint/rules/#rule-selection"
         const val FILE_EXCLUSION_LINK = "$BASE_DOCS_URL/using-sonarlint/file-exclusions"
+        const val AI_FIX_SUGGESTIONS_LINK = "$BASE_DOCS_URL/using-sonarlint/investigating-issues/#ai-generated-fix-suggestions"
     }
 
     object SonarQube {
