@@ -163,7 +163,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     var reachOutToUsBackButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
     reachOutToUsBackButtonPanel.add(reachOutToUsBackButton);
 
-    createReachOutToUsPageLayout(reachOutToUsStepLabel, project, reachOutToUsLAbel, reachOutToUsPane, reachOutToUsBackButtonPanel, reachOutToUsPage,
+    createReachOutToUsPageLayout(reachOutToUsStepLabel, project, reachOutToUsLAbel, reachOutToUsPane, reachOutToUsBackButtonPanel,
+      reachOutToUsPage,
       reachOutToUsImageLabel);
 
     mainPanel.add(welcomePage, "Page 1");
@@ -213,99 +214,100 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     });
   }
 
-  private static void createWelcomePageLayout(JLabel stepLabel, JLabel titleLabel, JScrollPane scrollPane1, JPanel nextButtonPanel1,
-    JPanel page1, JLabel imageLabel1) {
+  private static void createWelcomePageLayout(JLabel stepLabel, JLabel titleLabel, JScrollPane welcomePageScrollPane,
+    JPanel welcomePageNextButtonPanel, JPanel welcomePagePanel, JLabel welcomePageImageLabel) {
     var gbc = new GridBagConstraints();
 
-    var page1CenterPanel = createCenterPanel(stepLabel, titleLabel, scrollPane1, gbc);
+    var centerPanel = createCenterPanel(stepLabel, titleLabel, welcomePageScrollPane, gbc);
 
     gbc.gridy = 3;
     gbc.anchor = GridBagConstraints.SOUTHEAST;
     gbc.fill = GridBagConstraints.NONE;
     gbc.weightx = 0;
     gbc.weighty = 0;
-    page1CenterPanel.add(nextButtonPanel1, gbc);
+    centerPanel.add(welcomePageNextButtonPanel, gbc);
 
-    page1.add(imageLabel1, BorderLayout.NORTH);
-    page1.add(page1CenterPanel, BorderLayout.CENTER);
+    welcomePagePanel.add(welcomePageImageLabel, BorderLayout.NORTH);
+    welcomePagePanel.add(centerPanel, BorderLayout.CENTER);
   }
 
-  private static void createLearnAsYouCodePageLayout(JLabel stepLabel, JLabel page2Label, JScrollPane scrollPane2,
-    JPanel backButtonPanel2, JPanel nextButtonPanel2,
-    JPanel page2, JLabel imageLabel2) {
-    var gbc2 = new GridBagConstraints();
+  private static void createLearnAsYouCodePageLayout(JLabel stepLabel, JLabel label, JScrollPane pane,
+    JPanel backButtonPanel, JPanel nextButtonPanel,
+    JPanel page, JLabel imageLabel) {
+    var gbc = new GridBagConstraints();
 
-    var page2CenterPanel = createCenterPanel(stepLabel, page2Label, scrollPane2, gbc2);
+    var centerPanel = createCenterPanel(stepLabel, label, pane, gbc);
 
-    gbc2.gridy = 3;
-    gbc2.anchor = GridBagConstraints.SOUTHWEST;
-    gbc2.fill = GridBagConstraints.NONE;
-    gbc2.weightx = 0;
-    gbc2.weighty = 0;
-    page2CenterPanel.add(backButtonPanel2, gbc2);
+    gbc.gridy = 3;
+    gbc.anchor = GridBagConstraints.SOUTHWEST;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.weightx = 0;
+    gbc.weighty = 0;
+    centerPanel.add(backButtonPanel, gbc);
 
-    gbc2.gridy = 3;
-    gbc2.anchor = GridBagConstraints.SOUTHEAST;
-    gbc2.fill = GridBagConstraints.NONE;
-    gbc2.weightx = 0;
-    gbc2.weighty = 0;
-    page2CenterPanel.add(nextButtonPanel2, gbc2);
+    gbc.gridy = 3;
+    gbc.anchor = GridBagConstraints.SOUTHEAST;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.weightx = 0;
+    gbc.weighty = 0;
+    centerPanel.add(nextButtonPanel, gbc);
 
-    page2.add(imageLabel2, BorderLayout.NORTH);
-    page2.add(page2CenterPanel, BorderLayout.CENTER);
+    page.add(imageLabel, BorderLayout.NORTH);
+    page.add(centerPanel, BorderLayout.CENTER);
   }
 
-  private static void createConnectWithYourTeamLayout(JLabel stepLabel, JLabel page3Label, JScrollPane scrollPane3,
-    JPanel backButtonPanel3, JPanel nextButtonPanel3,
-    JPanel page3, JLabel imageLabel3) {
+  private static void createConnectWithYourTeamLayout(JLabel stepLabel, JLabel connectWithYourTeamLabel,
+    JScrollPane connectWithYourTeamPane,
+    JPanel connectWithYourTeamBackButtonPanel, JPanel connectWithYourTeamNextButtonPanel,
+    JPanel page, JLabel imageLabel) {
     var gbc3 = new GridBagConstraints();
 
-    var page3CenterPanel = createCenterPanel(stepLabel, page3Label, scrollPane3, gbc3);
+    var page3CenterPanel = createCenterPanel(stepLabel, connectWithYourTeamLabel, connectWithYourTeamPane, gbc3);
 
     gbc3.gridy = 3;
     gbc3.anchor = GridBagConstraints.SOUTHEAST;
     gbc3.fill = GridBagConstraints.NONE;
     gbc3.weightx = 0;
     gbc3.weighty = 0;
-    page3CenterPanel.add(nextButtonPanel3, gbc3);
+    page3CenterPanel.add(connectWithYourTeamNextButtonPanel, gbc3);
 
     gbc3.gridy = 3;
     gbc3.anchor = GridBagConstraints.SOUTHWEST;
     gbc3.fill = GridBagConstraints.NONE;
     gbc3.weightx = 0;
     gbc3.weighty = 0;
-    page3CenterPanel.add(backButtonPanel3, gbc3);
+    page3CenterPanel.add(connectWithYourTeamBackButtonPanel, gbc3);
 
-    page3.add(imageLabel3, BorderLayout.NORTH);
-    page3.add(page3CenterPanel, BorderLayout.CENTER);
+    page.add(imageLabel, BorderLayout.NORTH);
+    page.add(page3CenterPanel, BorderLayout.CENTER);
   }
 
-  private static void createReachOutToUsPageLayout(JLabel stepLabel, Project project, JLabel page4Label, JScrollPane scrollPane4,
-    JPanel backButtonPanel4, JPanel page4, JLabel imageLabel4) {
-    var gbc4 = new GridBagConstraints();
+  private static void createReachOutToUsPageLayout(JLabel stepLabel, Project project, JLabel pageLabel, JScrollPane scrollPane,
+    JPanel backButtonPanel, JPanel panel, JLabel imageLabel) {
+    var gbc = new GridBagConstraints();
 
-    var page4CenterPanel = createCenterPanel(stepLabel, page4Label, scrollPane4, gbc4);
+    var page4CenterPanel = createCenterPanel(stepLabel, pageLabel, scrollPane, gbc);
 
     var closeButton = new JButton("Close");
     var closeButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
     closeButtonPanel.add(closeButton);
 
-    gbc4.gridy = 3;
-    gbc4.anchor = GridBagConstraints.SOUTHWEST;
-    gbc4.fill = GridBagConstraints.NONE;
-    gbc4.weightx = 0;
-    gbc4.weighty = 0;
-    page4CenterPanel.add(backButtonPanel4, gbc4);
+    gbc.gridy = 3;
+    gbc.anchor = GridBagConstraints.SOUTHWEST;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.weightx = 0;
+    gbc.weighty = 0;
+    page4CenterPanel.add(backButtonPanel, gbc);
 
-    gbc4.gridy = 3;
-    gbc4.anchor = GridBagConstraints.SOUTHEAST;
-    gbc4.fill = GridBagConstraints.NONE;
-    gbc4.weightx = 0;
-    gbc4.weighty = 0;
-    page4CenterPanel.add(closeButtonPanel, gbc4);
+    gbc.gridy = 3;
+    gbc.anchor = GridBagConstraints.SOUTHEAST;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.weightx = 0;
+    gbc.weighty = 0;
+    page4CenterPanel.add(closeButtonPanel, gbc);
 
-    page4.add(imageLabel4, BorderLayout.NORTH);
-    page4.add(page4CenterPanel, BorderLayout.CENTER);
+    panel.add(imageLabel, BorderLayout.NORTH);
+    panel.add(page4CenterPanel, BorderLayout.CENTER);
 
     closeButton.addActionListener(e -> {
       var toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Welcome to SonarQube for IDE");
@@ -315,17 +317,17 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     });
   }
 
-  private static @NotNull JEditorPane createReachOutToUsPageText(Font descriptionPane1Font, Project project) {
-    var descriptionPane4 = new JEditorPane(EDITOR_PANE_TYPE, "<html><body style=\"font-family: " + descriptionPane1Font.getFamily() +
-      "; font-size: " + descriptionPane1Font.getSize() + "pt; padding: 5px;\">" +
+  private static @NotNull JEditorPane createReachOutToUsPageText(Font font, Project project) {
+    var descriptionPane = new JEditorPane(EDITOR_PANE_TYPE, "<html><body style=\"font-family: " + font.getFamily() +
+      "; font-size: " + font.getSize() + "pt; padding: 5px;\">" +
       "You suspect any issue with " + SONARQUBE_FOR_IDE + "? Check the <a href=\"#logView\">log view</a>.<br>" +
       "Share the verbose logs with us via <a href=\"#communityForum\">Community forum</a> in case of problem. We will be happy to help " +
       "you debug.<br><br>" +
       "Learn more about " + SONARQUBE_FOR_IDE + " through <a href=\"#docs\">our docs</a>.</body></html>");
 
-    descriptionPane4.setEditable(false);
-    descriptionPane4.setOpaque(false);
-    descriptionPane4.addHyperlinkListener(new HyperlinkAdapter() {
+    descriptionPane.setEditable(false);
+    descriptionPane.setOpaque(false);
+    descriptionPane.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       public void hyperlinkActivated(HyperlinkEvent e) {
         if ("#logView".equals(e.getDescription())) {
@@ -347,22 +349,22 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
       }
     });
 
-    return descriptionPane4;
+    return descriptionPane;
   }
 
-  private static @NotNull JEditorPane createLearnAsYouCodePageText(Font descriptionPane1Font, Project project) {
-    var descriptionPane2 = new JEditorPane(EDITOR_PANE_TYPE, "<html><body style=\"font-family: " + descriptionPane1Font.getFamily() +
-      "; font-size: " + descriptionPane1Font.getSize() + "pt; padding: 5px;\">" +
+  private static @NotNull JEditorPane createLearnAsYouCodePageText(Font font, Project project) {
+    var descriptionPane = new JEditorPane(EDITOR_PANE_TYPE, "<html><body style=\"font-family: " + font.getFamily() +
+      "; font-size: " + font.getSize() + "pt; padding: 5px;\">" +
       "Check the <a href=\"#currentFile\">Current File</a> view: When " + SONARQUBE_FOR_IDE + " found something, click on the issue to " +
       "get the rule " +
       "description and an example of compliant code.<br><br>" +
       "Some rules offer quick fixes when you hover over the issue location.<br><br>" +
       "Finally you can disable rules in the <a href=\"#settings\">settings</a>.</body></html>");
 
-    descriptionPane2.setEditable(false);
-    descriptionPane2.setOpaque(false);
+    descriptionPane.setEditable(false);
+    descriptionPane.setOpaque(false);
 
-    descriptionPane2.addHyperlinkListener(new HyperlinkAdapter() {
+    descriptionPane.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
         if ("#currentFile".equals(e.getDescription())) {
@@ -381,12 +383,12 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
         }
       }
     });
-    return descriptionPane2;
+    return descriptionPane;
   }
 
-  private static @NotNull JEditorPane createWelcomePageText(Font descriptionPane1Font, Project project) {
-    var descriptionPane1 = new JEditorPane(EDITOR_PANE_TYPE, "<html><body style=\"font-family: " + descriptionPane1Font.getFamily() +
-      "; font-size: " + descriptionPane1Font.getSize() + "pt; padding: 5px;\">" +
+  private static @NotNull JEditorPane createWelcomePageText(Font font, Project project) {
+    var descriptionPane = new JEditorPane(EDITOR_PANE_TYPE, "<html><body style=\"font-family: " + font.getFamily() +
+      "; font-size: " + font.getSize() + "pt; padding: 5px;\">" +
       SONARQUBE_FOR_IDE + " supports the analysis of 15+ languages including Python, Java, Javascript, IaC domains along with secrets " +
       "detection. " +
       "<a href=\"" + RULE_SECTION_LINK + "\">Learn more</a>.<br><br>" +
@@ -394,10 +396,10 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
       ".<br><br>" +
       "Open a file and start your clean code journey.</body></html>");
 
-    descriptionPane1.setEditable(false);
-    descriptionPane1.setOpaque(false);
+    descriptionPane.setEditable(false);
+    descriptionPane.setOpaque(false);
 
-    descriptionPane1.addHyperlinkListener(new HyperlinkAdapter() {
+    descriptionPane.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
         if ("#reportView".equals(e.getDescription())) {
@@ -416,12 +418,12 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
         }
       }
     });
-    return descriptionPane1;
+    return descriptionPane;
   }
 
-  private static @NotNull JEditorPane createConnectWithYourTeamPageText(Font descriptionPane1Font, Project project) {
-    var descriptionPane3 = new JEditorPane(EDITOR_PANE_TYPE, "<html><body style=\"font-family: " + descriptionPane1Font.getFamily() +
-      "; font-size: " + descriptionPane1Font.getSize() + "pt; padding: 5px;\">" +
+  private static @NotNull JEditorPane createConnectWithYourTeamPageText(Font font, Project project) {
+    var descriptionPane = new JEditorPane(EDITOR_PANE_TYPE, "<html><body style=\"font-family: " + font.getFamily() +
+      "; font-size: " + font.getSize() + "pt; padding: 5px;\">" +
       "Apply the same set of rules as your team by using " + SONARQUBE_FOR_IDE + " in Connected Mode with SonarQube Cloud or SonarQube " +
       "Server" +
       ".<br><br>" +
@@ -429,10 +431,10 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
       "issues and <a href=\"#aiFixSuggestions\">AI fix suggestions</a> from SonarQube Server or Cloud in the IDE.<br><br>" +
       "Already using SonarQube Cloud or Server? <a href=\"#setupConnection\">Set up a connection</a>.</body></html>");
 
-    descriptionPane3.setEditable(false);
-    descriptionPane3.setOpaque(false);
+    descriptionPane.setEditable(false);
+    descriptionPane.setOpaque(false);
 
-    descriptionPane3.addHyperlinkListener(new HyperlinkAdapter() {
+    descriptionPane.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
         if ("#setupConnection".equals(e.getDescription())) {
@@ -454,33 +456,33 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
         }
       }
     });
-    return descriptionPane3;
+    return descriptionPane;
   }
 
-  private static @NotNull JPanel createCenterPanel(JLabel stepLabel, JLabel page4Label, JScrollPane scrollPane, GridBagConstraints gbc) {
-    var page4CenterPanel = new JPanel(new GridBagLayout());
-    page4Label.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 0));
+  private static @NotNull JPanel createCenterPanel(JLabel stepLabel, JLabel pageLabel, JScrollPane scrollPane, GridBagConstraints gbc) {
+    var centerPanel = new JPanel(new GridBagLayout());
+    pageLabel.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 0));
     stepLabel.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 0));
 
     gbc.gridx = 0;
     gbc.gridy = 0;
     gbc.anchor = GridBagConstraints.WEST;
     gbc.fill = GridBagConstraints.NONE;
-    page4CenterPanel.add(stepLabel, gbc);
+    centerPanel.add(stepLabel, gbc);
 
     gbc.gridx = 0;
     gbc.gridy = 1;
     gbc.anchor = GridBagConstraints.WEST;
     gbc.fill = GridBagConstraints.NONE;
-    page4CenterPanel.add(page4Label, gbc);
+    centerPanel.add(pageLabel, gbc);
 
     gbc.gridy = 2;
     gbc.fill = GridBagConstraints.BOTH;
     gbc.weightx = 1.0;
     gbc.weighty = 1.0;
-    page4CenterPanel.add(scrollPane, gbc);
+    centerPanel.add(scrollPane, gbc);
 
-    return page4CenterPanel;
+    return centerPanel;
   }
 }
 
