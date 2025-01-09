@@ -163,7 +163,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     var reachOutToUsBackButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
     reachOutToUsBackButtonPanel.add(reachOutToUsBackButton);
 
-    createPage4Layout(reachOutToUsStepLabel, project, reachOutToUsLAbel, reachOutToUsPane, reachOutToUsBackButtonPanel, reachOutToUsPage,
+    createReachOutToUsPageLayout(reachOutToUsStepLabel, project, reachOutToUsLAbel, reachOutToUsPane, reachOutToUsBackButtonPanel, reachOutToUsPage,
       reachOutToUsImageLabel);
 
     mainPanel.add(welcomePage, "Page 1");
@@ -280,7 +280,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     page3.add(page3CenterPanel, BorderLayout.CENTER);
   }
 
-  private static void createPage4Layout(JLabel stepLabel, Project project, JLabel page4Label, JScrollPane scrollPane4,
+  private static void createReachOutToUsPageLayout(JLabel stepLabel, Project project, JLabel page4Label, JScrollPane scrollPane4,
     JPanel backButtonPanel4, JPanel page4, JLabel imageLabel4) {
     var gbc4 = new GridBagConstraints();
 
