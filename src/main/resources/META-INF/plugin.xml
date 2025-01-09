@@ -205,7 +205,7 @@
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Welcome to SonarQube for IDE" anchor="left" factoryClass="org.sonarlint.intellij.ui.MyPluginToolWindowFactory"/>
+        <toolWindow id="Welcome to SonarQube for IDE" anchor="left" factoryClass="org.sonarlint.intellij.ui.SonarLintWalkthroughToolWindow"/>
         <toolWindow id="SonarQube for IDE" anchor="bottom"
                     icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW"
                     factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
