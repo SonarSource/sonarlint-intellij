@@ -172,7 +172,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     mainPanel.add(connectWithYourTeamPage, PAGE_3);
     mainPanel.add(reachOutToUsPage, "Page 4");
 
-    addButtons(welcomePageNextButton, mainPanel, learnAsYouCodePageBackButton, learnAsYouCodePageNextButton,
+    addButtonActionListeners(welcomePageNextButton, mainPanel, learnAsYouCodePageBackButton, learnAsYouCodePageNextButton,
       connectWithYourTeamBackButton, connectWithYourTeamNextButton, reachOutToUsBackButton);
 
     var contentFactory = ContentFactory.getInstance();
@@ -180,7 +180,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     toolWindow.getContentManager().addContent(content);
   }
 
-  private static void addButtons(JButton welcomePageNextButton, JPanel mainPanel, JButton learnAsYouCodePageBackButton,
+  private static void addButtonActionListeners(JButton welcomePageNextButton, JPanel mainPanel, JButton learnAsYouCodePageBackButton,
     JButton learnAsYouCodePageNextButton, JButton connectWithYourTeamBackButton, JButton connectWithYourTeamNextButton,
     JButton reachOutToUsBackButton) {
     welcomePageNextButton.addActionListener(e -> {
@@ -220,15 +220,21 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
 
     var centerPanel = createCenterPanel(stepLabel, titleLabel, welcomePageScrollPane, gbc);
 
-    gbc.gridy = 3;
     gbc.anchor = GridBagConstraints.SOUTHEAST;
-    gbc.fill = GridBagConstraints.NONE;
-    gbc.weightx = 0;
-    gbc.weighty = 0;
+
+    provideCommonButtonConstraints(gbc);
+
     centerPanel.add(welcomePageNextButtonPanel, gbc);
 
     welcomePagePanel.add(welcomePageImageLabel, BorderLayout.NORTH);
     welcomePagePanel.add(centerPanel, BorderLayout.CENTER);
+  }
+
+  private static void provideCommonButtonConstraints(GridBagConstraints gbc) {
+    gbc.gridy = 3;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.weightx = 0;
+    gbc.weighty = 0;
   }
 
   private static void createLearnAsYouCodePageLayout(JLabel stepLabel, JLabel label, JScrollPane pane,
@@ -238,18 +244,14 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
 
     var centerPanel = createCenterPanel(stepLabel, label, pane, gbc);
 
-    gbc.gridy = 3;
     gbc.anchor = GridBagConstraints.SOUTHWEST;
-    gbc.fill = GridBagConstraints.NONE;
-    gbc.weightx = 0;
-    gbc.weighty = 0;
+
+    provideCommonButtonConstraints(gbc);
+
     centerPanel.add(backButtonPanel, gbc);
 
-    gbc.gridy = 3;
     gbc.anchor = GridBagConstraints.SOUTHEAST;
-    gbc.fill = GridBagConstraints.NONE;
-    gbc.weightx = 0;
-    gbc.weighty = 0;
+
     centerPanel.add(nextButtonPanel, gbc);
 
     page.add(imageLabel, BorderLayout.NORTH);
@@ -260,23 +262,19 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     JScrollPane connectWithYourTeamPane,
     JPanel connectWithYourTeamBackButtonPanel, JPanel connectWithYourTeamNextButtonPanel,
     JPanel page, JLabel imageLabel) {
-    var gbc3 = new GridBagConstraints();
+    var gbc = new GridBagConstraints();
 
-    var page3CenterPanel = createCenterPanel(stepLabel, connectWithYourTeamLabel, connectWithYourTeamPane, gbc3);
+    var page3CenterPanel = createCenterPanel(stepLabel, connectWithYourTeamLabel, connectWithYourTeamPane, gbc);
 
-    gbc3.gridy = 3;
-    gbc3.anchor = GridBagConstraints.SOUTHEAST;
-    gbc3.fill = GridBagConstraints.NONE;
-    gbc3.weightx = 0;
-    gbc3.weighty = 0;
-    page3CenterPanel.add(connectWithYourTeamNextButtonPanel, gbc3);
+    gbc.anchor = GridBagConstraints.SOUTHEAST;
 
-    gbc3.gridy = 3;
-    gbc3.anchor = GridBagConstraints.SOUTHWEST;
-    gbc3.fill = GridBagConstraints.NONE;
-    gbc3.weightx = 0;
-    gbc3.weighty = 0;
-    page3CenterPanel.add(connectWithYourTeamBackButtonPanel, gbc3);
+    provideCommonButtonConstraints(gbc);
+
+    page3CenterPanel.add(connectWithYourTeamNextButtonPanel, gbc);
+
+    gbc.anchor = GridBagConstraints.SOUTHWEST;
+
+    page3CenterPanel.add(connectWithYourTeamBackButtonPanel, gbc);
 
     page.add(imageLabel, BorderLayout.NORTH);
     page.add(page3CenterPanel, BorderLayout.CENTER);
@@ -292,18 +290,14 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     var closeButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
     closeButtonPanel.add(closeButton);
 
-    gbc.gridy = 3;
     gbc.anchor = GridBagConstraints.SOUTHWEST;
-    gbc.fill = GridBagConstraints.NONE;
-    gbc.weightx = 0;
-    gbc.weighty = 0;
+
+    provideCommonButtonConstraints(gbc);
+
     page4CenterPanel.add(backButtonPanel, gbc);
 
-    gbc.gridy = 3;
     gbc.anchor = GridBagConstraints.SOUTHEAST;
-    gbc.fill = GridBagConstraints.NONE;
-    gbc.weightx = 0;
-    gbc.weighty = 0;
+
     page4CenterPanel.add(closeButtonPanel, gbc);
 
     panel.add(imageLabel, BorderLayout.NORTH);
