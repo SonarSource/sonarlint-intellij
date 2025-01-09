@@ -50,9 +50,9 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 
-import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.BASE_DOCS_URL;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.AI_FIX_SUGGESTIONS_PAGE;
+import static org.sonarlint.intellij.telemetry.LinkTelemetry.BASE_DOCS_PAGE;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.RULE_SELECTION_PAGE;
 
 public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAware {
@@ -97,7 +97,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     var welcomePageNextButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
     welcomePageNextButtonPanel.add(welcomePageNextButton);
 
-    createWelcomePageLayout(welcomeStepLabel, titleLabel, welcomePageScrollPane, welcomePageNextButtonPanel, welcomePage, welcomeImageLabel);
+    createWelcomePageLayout(welcomeStepLabel, titleLabel, welcomePageScrollPane, welcomePageNextButtonPanel, welcomePage,
+      welcomeImageLabel);
 
     var learnAsYouCodeStepLabel = new JLabel("Step 2/4", SwingConstants.LEFT);
     learnAsYouCodeStepLabel.setFont(new Font(FONT, Font.PLAIN, 14));
@@ -143,7 +144,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     connectWithYourTeamNextButtonPanel.add(connectWithYourTeamNextButton);
 
     createConnectWithYourTeamLayout(connectWithYourTeamStepLabel, connectWithYourTeamLabel,
-      connectWithYourTeamScrollPane, connectWithYourTeamBackButtonPanel, connectWithYourTeamNextButtonPanel, connectWithYourTeamPage, connectWithYourTeamImageLabel);
+      connectWithYourTeamScrollPane, connectWithYourTeamBackButtonPanel, connectWithYourTeamNextButtonPanel, connectWithYourTeamPage,
+      connectWithYourTeamImageLabel);
 
     var reachOutToUsStepLabel = new JLabel("Step 4/4", SwingConstants.LEFT);
     reachOutToUsStepLabel.setFont(new Font(FONT, Font.PLAIN, 14));
@@ -161,7 +163,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     var reachOutToUsBackButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
     reachOutToUsBackButtonPanel.add(reachOutToUsBackButton);
 
-    createPage4Layout(reachOutToUsStepLabel, project, reachOutToUsLAbel, reachOutToUsPane, reachOutToUsBackButtonPanel, reachOutToUsPage, reachOutToUsImageLabel);
+    createPage4Layout(reachOutToUsStepLabel, project, reachOutToUsLAbel, reachOutToUsPane, reachOutToUsBackButtonPanel, reachOutToUsPage,
+      reachOutToUsImageLabel);
 
     mainPanel.add(welcomePage, "Page 1");
     mainPanel.add(learnAsYouCodePage, PAGE_2);
@@ -177,7 +180,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
   }
 
   private static void addButtons(JButton welcomePageNextButton, JPanel mainPanel, JButton learnAsYouCodePageBackButton,
-    JButton learnAsYouCodePageNextButton, JButton connectWithYourTeamBackButton, JButton connectWithYourTeamNextButton, JButton reachOutToUsBackButton) {
+    JButton learnAsYouCodePageNextButton, JButton connectWithYourTeamBackButton, JButton connectWithYourTeamNextButton,
+    JButton reachOutToUsBackButton) {
     welcomePageNextButton.addActionListener(e -> {
       var cl = (CardLayout) (mainPanel.getLayout());
       cl.show(mainPanel, PAGE_2);
@@ -226,7 +230,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     page1.add(page1CenterPanel, BorderLayout.CENTER);
   }
 
-  private static void createLearnAsYouCodePageLayout(JLabel stepLabel, JLabel page2Label, JScrollPane scrollPane2, JPanel backButtonPanel2, JPanel nextButtonPanel2,
+  private static void createLearnAsYouCodePageLayout(JLabel stepLabel, JLabel page2Label, JScrollPane scrollPane2,
+    JPanel backButtonPanel2, JPanel nextButtonPanel2,
     JPanel page2, JLabel imageLabel2) {
     var gbc2 = new GridBagConstraints();
 
@@ -250,7 +255,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     page2.add(page2CenterPanel, BorderLayout.CENTER);
   }
 
-  private static void createConnectWithYourTeamLayout(JLabel stepLabel, JLabel page3Label, JScrollPane scrollPane3, JPanel backButtonPanel3, JPanel nextButtonPanel3,
+  private static void createConnectWithYourTeamLayout(JLabel stepLabel, JLabel page3Label, JScrollPane scrollPane3,
+    JPanel backButtonPanel3, JPanel nextButtonPanel3,
     JPanel page3, JLabel imageLabel3) {
     var gbc3 = new GridBagConstraints();
 
@@ -274,7 +280,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
     page3.add(page3CenterPanel, BorderLayout.CENTER);
   }
 
-  private static void createPage4Layout(JLabel stepLabel, Project project, JLabel page4Label, JScrollPane scrollPane4, JPanel backButtonPanel4, JPanel page4, JLabel imageLabel4) {
+  private static void createPage4Layout(JLabel stepLabel, Project project, JLabel page4Label, JScrollPane scrollPane4,
+    JPanel backButtonPanel4, JPanel page4, JLabel imageLabel4) {
     var gbc4 = new GridBagConstraints();
 
     var page4CenterPanel = createCenterPanel(stepLabel, page4Label, scrollPane4, gbc4);
@@ -314,7 +321,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
       "You suspect any issue with " + SONARQUBE_FOR_IDE + "? Check the <a href=\"#logView\">log view</a>.<br>" +
       "Share the verbose logs with us via <a href=\"#communityForum\">Community forum</a> in case of problem. We will be happy to help " +
       "you debug.<br><br>" +
-      "Learn more about " + SONARQUBE_FOR_IDE + " through <a href=\"#aiFixSuggestions\">our docs</a>.</body></html>");
+      "Learn more about " + SONARQUBE_FOR_IDE + " through <a href=\"#docs\">our docs</a>.</body></html>");
 
     descriptionPane4.setEditable(false);
     descriptionPane4.setOpaque(false);
@@ -334,8 +341,8 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
           }
         } else if ("#communityForum".equals(e.getDescription())) {
           BrowserUtil.browse("https://community.sonarsource.com/c/sl/fault/6");
-        } else if ("#aiFixSuggestions".equals(e.getDescription())) {
-          BrowserUtil.browse(BASE_DOCS_URL);
+        } else if ("#docs".equals(e.getDescription())) {
+          BASE_DOCS_PAGE.browseWithTelemetry();
         }
       }
     });
