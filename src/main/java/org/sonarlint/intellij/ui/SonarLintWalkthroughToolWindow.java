@@ -63,12 +63,14 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
   protected static final String FONT = "Arial";
   protected static final String EDITOR_PANE_TYPE = "text/html";
   protected static final String PREVIOUS = "Previous";
+  protected static final int width = 300;
+  protected static final int height = 200;
 
   @Override
   public void createToolWindowContent(Project project, ToolWindow toolWindow) {
     var font = UIUtil.getLabelFont();
     var mainPanel = new JPanel(new CardLayout());
-    mainPanel.setPreferredSize(new Dimension(70, 100));
+    mainPanel.setPreferredSize(new Dimension(width, height));
 
     var welcomePage = new JPanel(new BorderLayout());
     var learnAsYouCodePage = new JPanel(new BorderLayout());
@@ -90,7 +92,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
 
     var welcomePageScrollPane = new JScrollPane(welcomePageText);
     welcomePageScrollPane.setBorder(null);
-    welcomePageScrollPane.setPreferredSize(new Dimension(70, 100));
+    welcomePageScrollPane.setPreferredSize(new Dimension(width, height));
 
     var welcomePageNextButton = new JButton("Next: Learn as you code");
 
@@ -110,7 +112,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
 
     var learnAsYouCodeScrollPane = new JScrollPane(learnAsYouCodeText);
     learnAsYouCodeScrollPane.setBorder(null);
-    learnAsYouCodeScrollPane.setPreferredSize(new Dimension(70, 100));
+    learnAsYouCodeScrollPane.setPreferredSize(new Dimension(width, height));
 
     var learnAsYouCodePageBackButton = new JButton(PREVIOUS);
     var learnAsYouCodePageNextButton = new JButton("Next: Connect with your team");
@@ -133,7 +135,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
 
     var connectWithYourTeamScrollPane = new JScrollPane(connectWithYourTeamDescription);
     connectWithYourTeamScrollPane.setBorder(null);
-    connectWithYourTeamScrollPane.setPreferredSize(new Dimension(70, 100));
+    connectWithYourTeamScrollPane.setPreferredSize(new Dimension(width, height));
     var connectWithYourTeamBackButton = new JButton(PREVIOUS);
     var connectWithYourTeamNextButton = new JButton("Next: Reach out to us");
 
@@ -157,7 +159,7 @@ public class SonarLintWalkthroughToolWindow implements ToolWindowFactory, DumbAw
 
     var reachOutToUsPane = new JScrollPane(reachOutToUsDescription);
     reachOutToUsPane.setBorder(null);
-    reachOutToUsPane.setPreferredSize(new Dimension(70, 100));
+    reachOutToUsPane.setPreferredSize(new Dimension(width, 100));
     var reachOutToUsBackButton = new JButton(PREVIOUS);
 
     var reachOutToUsBackButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));

@@ -261,6 +261,7 @@
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
 
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
+        <postStartupActivity implementation="org.sonarlint.intellij.OpenWelcomePageOnceOneProjectOpened"/>
 
         <notificationGroup id="SonarQube for IDE: In Context Promotions"
                            displayType="BALLOON"/>
