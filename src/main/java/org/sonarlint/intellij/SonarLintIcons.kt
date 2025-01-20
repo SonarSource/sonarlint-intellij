@@ -82,6 +82,8 @@ object SonarLintIcons {
     val RESOLVED = getIcon("/images/resolved.svg")
     @JvmField
     val FOCUS = getIcon("/images/focus.svg")
+    @JvmField
+    val WALKTHROUGH_ICON = getIcon("/images/sonarqube-for-ide-mark.png")
 
     private val BUG_ICONS = mapOf(
         IssueSeverity.BLOCKER to getIcon("/images/bug/bugBlocker.svg"),

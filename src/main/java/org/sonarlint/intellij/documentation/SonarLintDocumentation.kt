@@ -38,6 +38,10 @@ object SonarLintDocumentation {
         const val AI_FIX_SUGGESTIONS_LINK = "$BASE_DOCS_URL/using-sonarlint/investigating-issues/#ai-generated-fix-suggestions"
     }
 
+    object Community {
+        const val COMMUNITY_LINK = "https://community.sonarsource.com/c/sl/fault/6"
+    }
+
     object SonarQube {
         const val SMART_NOTIFICATIONS = "https://docs.sonarqube.org/latest/user-guide/sonarlint-connected-mode/"
     }
