@@ -3,7 +3,7 @@ sonarlint-core = "10.12.1.79852"
 
 sonar-java = "8.9.0.37768"
 sonar-javascript = "10.20.0.29356"
-sonar-php = "3.41.0.12692"
+sonar-php = "3.42.0.12795"
 sonar-python = "4.25.0.19056"
 sonar-kotlin = "2.22.0.5972"
 sonar-ruby = "1.18.0.234"
