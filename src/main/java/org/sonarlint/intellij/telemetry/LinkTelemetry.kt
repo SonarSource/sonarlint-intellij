@@ -22,6 +22,7 @@ package org.sonarlint.intellij.telemetry
 import com.intellij.ide.BrowserUtil
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
+import org.sonarlint.intellij.documentation.SonarLintDocumentation.Community.COMMUNITY_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.AI_FIX_SUGGESTIONS_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.BASE_DOCS_URL
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK
@@ -36,6 +37,7 @@ enum class LinkTelemetry(
     SONARQUBE_EDITIONS_DOWNLOADS("sonarQubeEditionsDownloads", SonarLintDocumentation.Marketing.SONARQUBE_EDITIONS_DOWNLOADS_LINK),
     RULE_SELECTION_PAGE("rulesSelectionDocs", RULE_SECTION_LINK),
     AI_FIX_SUGGESTIONS_PAGE("aiFixSuggestionsDocs", AI_FIX_SUGGESTIONS_LINK),
+    COMMUNITY_PAGE("communityReportPage", COMMUNITY_LINK),
     BASE_DOCS_PAGE("baseDocs", BASE_DOCS_URL);
 
     fun browseWithTelemetry() {

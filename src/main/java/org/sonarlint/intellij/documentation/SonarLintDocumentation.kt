@@ -37,6 +37,10 @@ object SonarLintDocumentation {
         const val FILE_EXCLUSION_LINK = "$BASE_DOCS_URL/using/file-exclusions"
     }
 
+    object Community {
+        const val COMMUNITY_LINK = "https://community.sonarsource.com/c/sl/fault/6"
+    }
+
     object SonarQube {
         const val SMART_NOTIFICATIONS = "https://docs.sonarsource.com/sonarqube-server/latest/user-guide/connected-mode/#smart-notifications"
     }
