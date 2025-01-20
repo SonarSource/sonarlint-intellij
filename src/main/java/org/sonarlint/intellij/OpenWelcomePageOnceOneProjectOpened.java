@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class OpenWelcomePageOnceOneProjectOpened implements StartupActivity {
 
+  public static final String HAS_WALKTHROUGH_RUN_ONCE = "hasWalkthroughRunOnce";
+
   @Override
   public void runActivity(@NotNull Project project) {
     if (ApplicationManager.getApplication().isUnitTestMode()) {
@@ -35,10 +37,9 @@ public class OpenWelcomePageOnceOneProjectOpened implements StartupActivity {
     }
 
     var properties = PropertiesComponent.getInstance();
-    var hasWalkthroughRunOnce = "hasWalkthroughRunOnce";
 
-    if (!properties.getBoolean(hasWalkthroughRunOnce, false)) {
-      properties.setValue(hasWalkthroughRunOnce, true);
+    if (!properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false)) {
+      properties.setValue(HAS_WALKTHROUGH_RUN_ONCE, true);
       openWelcomePage(project);
     }
   }
