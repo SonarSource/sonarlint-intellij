@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.clion;
 
 import com.intellij.execution.ExecutionException;
-import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
@@ -30,6 +29,7 @@ import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
+import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
@@ -40,7 +40,7 @@ import org.sonarlint.intellij.clion.common.AnalyzerConfiguration;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
-import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafelyInSmartMode;
 
 public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
   private final Project project;
@@ -50,7 +50,8 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
   }
 
   public ConfigurationResult getConfiguration(VirtualFile file) {
-    var configuration = computeReadActionSafely(file, project, () -> getConfigurationAction(file));
+
+    var configuration = computeReadActionSafelyInSmartMode(file, project, () -> getConfigurationAction(file));
     return configuration != null ? configuration : ConfigurationResult.skip("The file is invalid or the project is being closed");
   }
 
@@ -72,12 +73,10 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
       configuration = languageAndConfiguration.getConfiguration();
       languageKind = languageAndConfiguration.getLanguageKind();
     } else {
-      if (!DumbService.isDumb(project)) {
-        try {
-          languageKind = ocFile.getKind();
-        } catch (Exception e) {
-          SonarLintConsole.get(project).error("Could not retrieve language kind", e);
-        }
+      try {
+        languageKind = ocFile.getKind();
+      } catch (Exception e) {
+        SonarLintConsole.get(project).error("Could not retrieve language kind", e);
       }
     }
     if (configuration == null) {
@@ -86,7 +85,12 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     if (configuration == null) {
       return ConfigurationResult.skip("configuration not found");
     }
-    var compilerSettings = configuration.getCompilerSettings(ocFile.getKind(), file);
+    OCCompilerSettings compilerSettings;
+    try {
+      compilerSettings = configuration.getCompilerSettings(ocFile.getKind(), file);
+    } catch (Exception e) {
+      return ConfigurationResult.skip("compiler settings not found");
+    }
     var compilerKind = compilerSettings.getCompilerKind();
     if (compilerKind == null) {
       return ConfigurationResult.skip("compiler kind not found");
