@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.clion;
 
 import com.intellij.execution.ExecutionException;
-import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
@@ -41,7 +40,7 @@ import org.sonarlint.intellij.clion.common.AnalyzerConfiguration;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
-import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafelyInSmartMode;
 
 public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
   private final Project project;
@@ -51,7 +50,8 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
   }
 
   public ConfigurationResult getConfiguration(VirtualFile file) {
-    var configuration = computeReadActionSafely(file, project, () -> getConfigurationAction(file));
+
+    var configuration = computeReadActionSafelyInSmartMode(file, project, () -> getConfigurationAction(file));
     return configuration != null ? configuration : ConfigurationResult.skip("The file is invalid or the project is being closed");
   }
 
@@ -59,9 +59,6 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
    * Inspired from ShowCompilerInfoForFile and ClangTidyAnnotator
    */
   public ConfigurationResult getConfigurationAction(VirtualFile file) {
-    if (!DumbService.isDumb(project)) {
-      return new ConfigurationResult("could not get configuration, project is not yet initialized");
-    }
     var psiFile = PsiManager.getInstance(project).findFile(file);
     if (!(psiFile instanceof OCPsiFile ocFile)) {
       return new ConfigurationResult(psiFile + " not an OCPsiFile");

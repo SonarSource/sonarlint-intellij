@@ -21,7 +21,9 @@ package org.sonarlint.intellij.common.ui
 
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.ThrowableComputable
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -77,6 +79,18 @@ class ReadActionUtils {
                 return ReadAction.compute<T, Exception> {
                     if (project.isDisposed || !virtualFile.isValid) null else action.compute()
                 }
+            }
+            return null
+        }
+
+        @JvmStatic
+        fun <T> computeReadActionSafelyInSmartMode(
+            virtualFile: VirtualFile,
+            project: Project,
+            action: Computable<T>
+        ): T? {
+            if (!project.isDisposed && virtualFile.isValid) {
+                return DumbService.getInstance(project).runReadActionInSmartMode(action)
             }
             return null
         }
