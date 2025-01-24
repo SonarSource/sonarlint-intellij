@@ -62,7 +62,7 @@ public class DisableRuleAction extends AbstractSonarAction {
     var issue = e.getData(ISSUE_DATA_KEY);
     if (issue != null) {
       disableRule(issue.getRuleKey());
-      runOnPooledThread(project, () -> getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE));
+      runOnPooledThread(project, () -> getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.BINDING_UPDATE));
     }
   }
 

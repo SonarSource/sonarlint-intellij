@@ -62,7 +62,7 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
     var rulesByKey = getGlobalSettings().getRulesByKey();
     runOnPooledThread(project, () -> {
       getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey);
-      getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE);
+      getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.BINDING_UPDATE);
     });
   }
 

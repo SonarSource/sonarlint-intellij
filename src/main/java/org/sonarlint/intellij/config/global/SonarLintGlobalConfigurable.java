@@ -113,7 +113,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
     for (var project : openProjects) {
       if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
-        getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE);
+        getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.CONFIG_CHANGE);
       }
     }
   }

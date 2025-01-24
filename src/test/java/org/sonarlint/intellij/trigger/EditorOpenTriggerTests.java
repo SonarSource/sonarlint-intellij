@@ -63,10 +63,10 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void should_trigger() {
+  void should_not_trigger() {
     editorTrigger.fileOpened(editorManager, file);
 
-    verify(analysisSubmitter, timeout(3000)).autoAnalyzeFiles(List.of(file), TriggerType.EDITOR_OPEN);
+    verifyNoInteractions(analysisSubmitter);
   }
 
   @Test

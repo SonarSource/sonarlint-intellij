@@ -93,14 +93,14 @@ public final class AnalysisSubmitter {
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
-  public void autoAnalyzeOpenFilesForModule(TriggerType triggerType, @Nullable Module module) {
+  public void autoAnalyzeSelectedFilesForModule(TriggerType triggerType, @Nullable Module module) {
     if (module == null) {
-      autoAnalyzeOpenFiles(triggerType);
+      autoAnalyzeSelectedFiles(triggerType);
       return;
     }
 
-    var openFiles = FileEditorManager.getInstance(project).getOpenFiles();
-    var filesToAnalyze = Arrays.stream(openFiles)
+    var selectedFiles = FileEditorManager.getInstance(project).getSelectedFiles();
+    var filesToAnalyze = Arrays.stream(selectedFiles)
       .filter(file -> module.equals(findModuleForFile(file, project)))
       .toList();
 
@@ -109,10 +109,11 @@ public final class AnalysisSubmitter {
     }
   }
 
-  public void autoAnalyzeOpenFiles(TriggerType triggerType) {
-    var openFiles = FileEditorManager.getInstance(project).getOpenFiles();
-    if (openFiles.length > 0) {
-      autoAnalyzeFiles(List.of(openFiles), triggerType);
+  public void autoAnalyzeSelectedFiles(TriggerType triggerType) {
+    var selectedFiles = FileEditorManager.getInstance(project).getSelectedFiles();
+
+    if (selectedFiles.length > 0) {
+      autoAnalyzeFiles(List.of(selectedFiles), triggerType);
     }
   }
 
@@ -122,6 +123,9 @@ public final class AnalysisSubmitter {
       return null;
     }
     var callback = new UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder);
+    if (triggerType != TriggerType.SELECTION_CHANGED) {
+      onTheFlyFindingsHolder.clearNonDirtyAnalyzedFiles();
+    }
     return analyzeInBackground(files, triggerType, callback);
   }
 

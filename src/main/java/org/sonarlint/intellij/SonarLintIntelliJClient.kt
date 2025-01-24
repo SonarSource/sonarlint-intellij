@@ -609,7 +609,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                             getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
                         }
 
-                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFilesForModule(
+                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFilesForModule(
                             TriggerType.BINDING_UPDATE,
                             module
                         )

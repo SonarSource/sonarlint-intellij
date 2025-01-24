@@ -22,6 +22,7 @@ package org.sonarlint.intellij.trigger
 enum class TriggerType(private val displayName: String, private val shouldUpdateServerIssues: Boolean) {
 
     EDITOR_OPEN("Editor open", true),
+    SELECTION_CHANGED("Selection changed", true),
     CURRENT_FILE_ACTION("Current file action", true),
     RIGHT_CLICK("Right click", true),
     ALL("All files", false),
@@ -40,7 +41,7 @@ enum class TriggerType(private val displayName: String, private val shouldUpdate
 
         // Non snapshot do not include CHECK_IN analysis and OPEN_FINDING analysis, as they are specific cases
         val nonAnalysisSnapshot =
-            listOf(EDITOR_OPEN, CURRENT_FILE_ACTION, COMPILATION, EDITOR_CHANGE, CONFIG_CHANGE, BINDING_UPDATE, SERVER_SENT_EVENT)
+            listOf(EDITOR_OPEN, CURRENT_FILE_ACTION, COMPILATION, EDITOR_CHANGE, CONFIG_CHANGE, BINDING_UPDATE, SERVER_SENT_EVENT, SELECTION_CHANGED)
     }
 
     fun getName() = displayName
