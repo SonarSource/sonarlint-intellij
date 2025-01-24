@@ -44,7 +44,7 @@ class BuildFinishedAnalysisTriggerTests extends AbstractSonarLintLightTests {
   @Test
   void should_trigger_automake() {
     trigger.buildFinished(getProject(), UUID.randomUUID(), true);
-    verify(submitter, timeout(1000)).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
+    verify(submitter, timeout(1000)).autoAnalyzeSelectedFiles(TriggerType.COMPILATION);
   }
 
   @Test

@@ -73,6 +73,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
   @Test
   void should_trigger() {
     var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    clearInvocations(submitter);
 
     underTest.documentChanged(createEvent(file));
 
@@ -96,6 +97,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
   @Test
   void should_trigger_in_interval() {
     var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    clearInvocations(submitter);
 
     var analysisTask = mock(Analysis.class);
     when(submitter.autoAnalyzeFiles(any(), any())).thenReturn(analysisTask);
@@ -115,6 +117,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
   @Test
   void dont_trigger_if_auto_disabled() {
     var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    clearInvocations(submitter);
     getGlobalSettings().setAutoTrigger(false);
 
     underTest.documentChanged(createEvent(file));
@@ -137,6 +140,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
   @Test
   void dont_trigger_if_project_is_closed() {
     var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    clearInvocations(submitter);
 
     underTest.documentChanged(createEvent(file));
 
@@ -146,6 +150,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
   @Test
   void dont_trigger_if_no_vfile() {
     var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    clearInvocations(submitter);
 
     var doc = mock(Document.class);
     var event = createEvent(file);
