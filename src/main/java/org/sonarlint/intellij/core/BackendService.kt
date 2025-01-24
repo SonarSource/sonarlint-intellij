@@ -404,7 +404,8 @@ class BackendService : Disposable {
             enableDataflowBugDetection,
             shouldManageFullSynchronization,
             enableTelemetry,
-            canOpenFixSuggestion
+            canOpenFixSuggestion,
+            false
         )
 
     private fun getHttpConfiguration(): HttpConfigurationDto {
