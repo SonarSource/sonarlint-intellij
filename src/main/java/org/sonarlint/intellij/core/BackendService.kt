@@ -344,7 +344,8 @@ class BackendService : Disposable {
                     enableDataflowBugDetection = true,
                     shouldManageFullSynchronization = true,
                     enableTelemetry = telemetryEnabled,
-                    canOpenFixSuggestion = true
+                    canOpenFixSuggestion = true,
+                    enableMonitoring = false
                 ),
                 getLocalStoragePath(),
                 workDir,
@@ -393,6 +394,7 @@ class BackendService : Disposable {
         shouldManageFullSynchronization: Boolean,
         enableTelemetry: Boolean,
         canOpenFixSuggestion: Boolean,
+        enableMonitoring: Boolean
     ) =
         FeatureFlagsDto(
             shouldManageSmartNotifications,
@@ -404,7 +406,8 @@ class BackendService : Disposable {
             enableDataflowBugDetection,
             shouldManageFullSynchronization,
             enableTelemetry,
-            canOpenFixSuggestion
+            canOpenFixSuggestion,
+            enableMonitoring
         )
 
     private fun getHttpConfiguration(): HttpConfigurationDto {
