@@ -352,7 +352,7 @@ class AutomaticSharedConfigCreator(
         try {
             val progressResult = ProgressRunner<HelpGenerateUserTokenResponse> { pi: ProgressIndicator ->
                 computeOnPooledThread<HelpGenerateUserTokenResponse>("Generate User Token Task") {
-                    val future = getService(BackendService::class.java).helpGenerateUserToken(serverUrl, !isSQ)
+                    val future = getService(BackendService::class.java).helpGenerateUserToken(serverUrl)
                     waitForFuture(pi, future)
                 }
             }
