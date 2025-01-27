@@ -114,13 +114,14 @@ object EnabledLanguages {
     @JvmStatic
     val extraEnabledLanguagesInConnectedMode: Set<Language>
         get() {
+            val extraEnabledLanguages = EnumSet.of(Language.ANSIBLE)
+
             return when {
                 isIdeModuleEnabled(RIDER_MODULE_ID) -> {
-                    EnumSet.noneOf(Language::class.java)
+                    extraEnabledLanguages
                 }
 
                 else -> {
-                    val extraEnabledLanguages = EnumSet.noneOf(Language::class.java)
                     if (isIdeModuleEnabled(DATABASE_PLUGIN_ID)) {
                         extraEnabledLanguages.add(Language.PLSQL)
                     }
@@ -128,6 +129,7 @@ object EnabledLanguages {
                         // all other IDEs
                         extraEnabledLanguages.addAll(EnumSet.of(Language.SCALA, Language.SWIFT))
                     }
+
                     extraEnabledLanguages
                 }
             }

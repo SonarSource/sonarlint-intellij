@@ -32,6 +32,7 @@ private val typescriptFileTypesByPriority = arrayOf("TypeScript", "JavaScript")
 
 enum class RuleLanguages(private val language: Language, private vararg val fileTypesByPriorityOrder: String) {
 
+    ANSIBLE(Language.ANSIBLE, "YAML"),
     C(Language.C, *cFamilyLanguagesFileTypesByPriority),
     // for now most code examples are written in YAML for CloudFormation
     CLOUD_FORMATION(Language.CLOUDFORMATION, "YAML"),
