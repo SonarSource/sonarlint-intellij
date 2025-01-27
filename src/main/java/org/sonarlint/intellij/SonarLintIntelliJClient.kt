@@ -567,22 +567,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return TelemetryClientLiveAttributesResponse(emptyMap())
     }
 
-    override fun didReceiveServerHotspotEvent(params: DidReceiveServerHotspotEvent) {
-        findProjects(params.sonarProjectKey).forEach { project ->
-            val openFiles = FileEditorManager.getInstance(project).openFiles
-            val filePath = params.ideFilePath
-            val impactedFiles = ArrayList<VirtualFile>()
-
-            val matchedFile = tryFindFile(project, filePath)
-
-            if (matchedFile != null && matchedFile in openFiles) {
-                impactedFiles.add(matchedFile)
-            }
-
-            getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(impactedFiles, TriggerType.SERVER_SENT_EVENT)
-        }
-    }
-
     override fun noBindingSuggestionFound(params: NoBindingSuggestionFoundParams) {
         val serverType = if (params.isSonarCloud) "SonarQube Cloud" else "SonarQube Server"
         projectLessNotification(

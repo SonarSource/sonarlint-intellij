@@ -19,75 +19,11 @@
  */
 package org.sonarlint.intellij.finding.issue
 
-import com.intellij.openapi.editor.RangeMarker
-import com.intellij.openapi.module.Module
-import com.intellij.psi.PsiFile
 import java.net.URI
-import java.util.UUID
-import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.FileEditDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.QuickFixDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.TextEditDto
-import org.sonarsource.sonarlint.core.rpc.protocol.common.CleanCodeAttribute
-import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
-import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity
-import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
-import org.sonarsource.sonarlint.core.rpc.protocol.common.MQRModeDetails
-import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
-import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
-
-fun aLiveIssue(
-    module: Module,
-    file: PsiFile,
-    rangeMarker: RangeMarker? = file.virtualFile.getDocument()!!.createRangeMarker(0, 1),
-    coreIssue: RaisedIssueDto = aRawIssue(toTextRange(rangeMarker)),
-): LiveIssue {
-    val liveIssue = LiveIssue(module, coreIssue, file.virtualFile, rangeMarker, null, emptyList())
-    liveIssue.setServerFindingKey("serverIssueKey")
-    return liveIssue
-}
-
-fun aRawIssue(textRange: TextRangeDto?): RaisedIssueDto {
-    return RaisedIssueDto(
-        UUID.randomUUID(),
-        "serverKey",
-        "rule:key",
-        "message",
-        Either.forRight(
-            MQRModeDetails(
-                CleanCodeAttribute.COMPLETE, listOf(
-                    ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH),
-                    ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH),
-                    ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH)
-                )
-            )
-        ),
-        IssueSeverity.INFO,
-        RuleType.BUG,
-        CleanCodeAttribute.COMPLETE,
-        listOf(
-            ImpactDto(SoftwareQuality.MAINTAINABILITY, ImpactSeverity.HIGH),
-            ImpactDto(SoftwareQuality.RELIABILITY, ImpactSeverity.MEDIUM),
-            ImpactDto(SoftwareQuality.SECURITY, ImpactSeverity.LOW)
-        ),
-        java.time.Instant.now(),
-        false,
-        false,
-        textRange,
-        emptyList(),
-        mutableListOf<QuickFixDto>(),
-        null
-    )
-}
-
-private fun toTextRange(rangeMarker: RangeMarker?): TextRangeDto? {
-    return rangeMarker?.let {
-        TextRangeDto(1, 2, 3, 4)
-    }
-}
 
 fun aQuickFix(message: String, fileEdits: List<FileEditDto>) = QuickFixDto(fileEdits, message)
 

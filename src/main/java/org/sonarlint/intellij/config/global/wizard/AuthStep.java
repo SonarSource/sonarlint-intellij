@@ -274,7 +274,7 @@ public class AuthStep extends AbstractWizardStepEx {
     Disposer.register(this, progressWindow);
     try {
       ProgressResult<HelpGenerateUserTokenResponse> progressResult = new ProgressRunner<>(pi -> computeOnPooledThread("Generate User Token Task", () -> {
-        var future = SonarLintUtils.getService(BackendService.class).helpGenerateUserToken(serverUrl, model.getServerType() == WizardModel.ServerType.SONARCLOUD);
+        var future = SonarLintUtils.getService(BackendService.class).helpGenerateUserToken(serverUrl);
         return ProgressUtils.waitForFuture(pi, future);
       }))
         .sync()

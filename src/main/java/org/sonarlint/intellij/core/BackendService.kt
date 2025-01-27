@@ -685,8 +685,8 @@ class BackendService : Disposable {
         notifyBackend { it.rulesService.updateStandaloneRulesConfiguration(UpdateStandaloneRulesConfigurationParams(nonDefaultRpcRulesConfigurationByKey)) }
     }
 
-    fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {
-        return requestFromBackend { it.connectionService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl, isSonarCloud)) }
+    fun helpGenerateUserToken(serverUrl: String): CompletableFuture<HelpGenerateUserTokenResponse> {
+        return requestFromBackend { it.connectionService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl)) }
     }
 
     fun openHotspotInBrowser(module: Module, hotspotKey: String) {
