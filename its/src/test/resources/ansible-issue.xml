@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<profile>
+  <name>SonarLint IT Ansible Issue</name>
+  <language>ansible</language>
+  <rules>
+    <!-- Remove this commented out code -->
+    <rule>
+      <repositoryKey>ansible</repositoryKey>
+      <key>S6596</key>
+      <priority>MAJOR</priority>
+    </rule>
+  </rules>
+</profile>

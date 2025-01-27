@@ -1,0 +1,80 @@
+- name: Create a Pod
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: example
+      spec:
+        hostNetwork: true # Noncompliant {{Make sure it is safe to use host operating system namespaces here.}}
+#                    ^^^^
+- name: Create a Pod
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: example-2
+      spec:
+        hostPID: true     # Noncompliant {{Make sure it is safe to use host operating system namespaces here.}}
+#                ^^^^
+        hostIPC: true     # Noncompliant {{Make sure it is safe to use host operating system namespaces here.}}
+#                ^^^^
+        hostNetwork: true # Noncompliant
+#                    ^^^^
+- name: Create a Pod
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: example-3
+      spec:
+        hostPID: true     # Noncompliant {{Make sure it is safe to use host operating system namespaces here.}}
+        hostIPC: false
+        hostNetwork: false
+- name: Create a Pod
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: example-4
+      spec:
+        hostPID: false
+        hostIPC: false
+        hostNetwork: false
+---
+- name: Create a Deployment
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: s6431-explicitlynoncompliant-network
+      spec:
+        replicas: 3
+        selector:
+          matchLabels:
+            app: web
+        template:
+          metadata:
+            labels:
+              app: web
+          spec:
+            containers:
+              - name: web
+                image: nginx
+                ports:
+                  - name: web
+                    containerPort: 80
+                    protocol: TCP
+            hostNetwork: true # Noncompliant {{Make sure it is safe to use host operating system namespaces here.}}
+#                        ^^^^
+            hostPID: false
+            hostIPC: false
