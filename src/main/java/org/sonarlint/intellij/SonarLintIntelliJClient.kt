@@ -60,6 +60,7 @@ import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeoutException
 import org.apache.commons.text.StringEscapeUtils
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
@@ -159,6 +160,10 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
+
+private const val INTERRUPTED_MESSAGE = "Interrupted while waiting for Sonar project branch matching result"
+
+private const val TIMEOUT_MESSAGE = "Timeout while waiting for Sonar project branch matching result"
 
 object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
@@ -628,11 +633,27 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             PerformInBackgroundOption.ALWAYS_BACKGROUND
         ) {
             override fun run(indicator: ProgressIndicator) {
-                val result = repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
-                resultFuture.complete(result)
+                try {
+                    val result = repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
+                    resultFuture.complete(result)
+                } catch (e: InterruptedException) {
+                    getService(project, SonarLintConsole::class.java).error(INTERRUPTED_MESSAGE, e)
+                } catch (e: TimeoutException) {
+                    getService(project, SonarLintConsole::class.java).error(TIMEOUT_MESSAGE, e)
+                }
             }
         })
-        return computeOnPooledThread(project, "Waiting for branch matching result") { resultFuture.get() }
+        return computeOnPooledThread(project, "Waiting for branch matching result") {
+            try {
+                resultFuture.get()
+            } catch (e: InterruptedException) {
+                getService(project, SonarLintConsole::class.java).error(INTERRUPTED_MESSAGE, e)
+                null
+            } catch (e: TimeoutException) {
+                getService(project, SonarLintConsole::class.java).error(TIMEOUT_MESSAGE, e)
+                null
+            }
+        }
     }
 
     override fun matchProjectBranch(
