@@ -42,14 +42,13 @@ class SonarCloudUtils {
 
         const val SONARCLOUD_STAGING_URL = "https://sc-staging.io"
         const val SONARCLOUD_ORGANIZATION = "sonarlint-it"
-        private const val SONARCLOUD_USER = "sonarlint-it"
 
         fun newAdminSonarCloudWsClientWithUser(scUrl: String): WsClient {
-            val sonarCloudPassword = System.getenv("SONARCLOUD_IT_PASSWORD")
+            val sonarCloudToken = System.getenv("SONARCLOUD_IT_TOKEN")
             return WsClientFactories.getDefault().newClient(
                 HttpConnector.newBuilder()
                     .url(scUrl)
-                    .credentials(SONARCLOUD_USER, sonarCloudPassword)
+                    .token(sonarCloudToken)
                     .build()
             )
         }
