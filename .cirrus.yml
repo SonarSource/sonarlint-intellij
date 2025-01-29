@@ -369,7 +369,7 @@ qa_task:
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
-    gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin
+    gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin sonar
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     stop_recording_script: |
@@ -382,6 +382,8 @@ qa_task:
       path: "${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4"
     log_artifacts:
       path: "its/build/idea-sandbox/system/log"
+    reportss_artifacts:
+      path: "**/reports/**/*"
   on_failure:
     xvfb_log_artifacts:
       path: "${CIRRUS_WORKING_DIR}/Xvfb.out"
