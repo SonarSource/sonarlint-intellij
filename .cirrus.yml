@@ -387,8 +387,6 @@ qa_task:
   on_failure:
     xvfb_log_artifacts:
       path: "${CIRRUS_WORKING_DIR}/Xvfb.out"
-    reports_artifacts:
-      path: "**/reports/**/*"
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
