@@ -382,7 +382,7 @@ qa_task:
       path: "${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4"
     log_artifacts:
       path: "its/build/idea-sandbox/system/log"
-    reportss_artifacts:
+    reports_artifacts:
       path: "**/reports/**/*"
   on_failure:
     xvfb_log_artifacts:

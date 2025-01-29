@@ -21,10 +21,6 @@ package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.steps.CommonSteps
-import com.intellij.remoterobot.utils.keyboard
-import java.awt.event.KeyEvent.VK_ALT
-import java.awt.event.KeyEvent.VK_F4
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
@@ -108,17 +104,6 @@ open class BaseUiTest {
         }
 
         private val steps = CommonSteps(remoteRobot)
-
-        @JvmStatic
-        @AfterAll
-        fun afterAll() {
-            steps.invokeAction("Exit")
-            remoteRobot.idea {
-                keyboard {
-                    hotKey(VK_ALT, VK_F4)
-                }
-            }
-        }
     }
 
 
