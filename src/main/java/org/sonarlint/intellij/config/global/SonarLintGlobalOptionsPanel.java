@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.components.JBCheckBox;
@@ -35,6 +36,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Objects;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -43,6 +45,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
+import org.sonarlint.intellij.common.util.NodeJsProvider;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.HelpLabelUtils;
@@ -154,15 +157,30 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
 
   private void loadNodeJsSettings(SonarLintGlobalSettings model) {
     if (model.getNodejsPath() == null || model.getNodejsPath().isBlank()) {
-      getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
-        if (settings == null) {
-          this.nodeJsPath.getEmptyText().setText("Node.js not found");
-          this.nodeJsVersion.setText("N/A");
-        } else {
-          this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
-          this.nodeJsVersion.setText(settings.getVersion());
-        }
-      });
+      var optProject = Arrays.stream(ProjectManager.getInstance().getOpenProjects()).findFirst();
+      if (optProject.isPresent()) {
+        var optNodeJs = NodeJsProvider.EP_NAME.getExtensionList().stream().map(e ->
+          e.getNodeJsPathFor(optProject.get())
+        ).findFirst();
+        optNodeJs.ifPresent(path -> getService(BackendService.class).changeClientNodeJsPath(path).thenAccept(settings -> {
+          if (settings == null) {
+            this.nodeJsVersion.setText("N/A");
+          } else {
+            this.nodeJsPath.setText(settings.getPath().toString());
+            this.nodeJsVersion.setText(settings.getVersion());
+          }
+        }));
+      } else {
+        getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
+          if (settings == null) {
+            this.nodeJsPath.getEmptyText().setText("Node.js not found");
+            this.nodeJsVersion.setText("N/A");
+          } else {
+            this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
+            this.nodeJsVersion.setText(settings.getVersion());
+          }
+        });
+      }
     } else {
       var forcedNodeJsPath = Paths.get(model.getNodejsPath());
       getService(BackendService.class).changeClientNodeJsPath(forcedNodeJsPath).thenAccept(settings -> {
