@@ -179,6 +179,7 @@ tasks.runPluginVerifier {
 tasks.test {
     useJUnitPlatform()
     systemProperty("sonarlint.telemetry.disabled", "true")
+    doNotTrackState("Tests should always run")
 }
 
 val runIdeDirectory: String by project
