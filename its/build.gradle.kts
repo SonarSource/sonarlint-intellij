@@ -85,21 +85,9 @@ intellij {
 
 val runIdeDirectory: String by project
 
-val uiTestsCoverageReport = tasks.register<JacocoReport>("uiTestsCoverageReport") {
-    executionData(tasks.runIdeForUiTests.get())
-    sourceSets(sourceSets.main.get())
-    classDirectories.setFrom(files("../build/instrumented/instrumentCode"))
-
-    reports {
-        xml.required.set(true)
-    }
-}
-
 jacoco {
     applyTo(tasks.runIdeForUiTests.get())
 }
-
-
 
 tasks.runIdeForUiTests {
     systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
@@ -128,5 +116,14 @@ tasks.runIdeForUiTests {
         isIncludeNoLocationClasses = true
         excludes = listOf("jdk.internal.*")
     }
-    finalizedBy(uiTestsCoverageReport)
+}
+
+tasks {
+    jacocoTestReport {
+        classDirectories.setFrom(files("../build/instrumented/instrumentCode"))
+
+        reports {
+            xml.required.set(true)
+        }
+    }
 }
