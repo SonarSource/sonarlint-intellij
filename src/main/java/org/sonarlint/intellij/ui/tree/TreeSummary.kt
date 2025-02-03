@@ -29,6 +29,16 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
     var text: String = emptyText
         private set
 
+    fun refresh(filesCount: Int, findingsCount: Int, areThereFilteredIssues: Boolean) {
+        val newCodePeriod = getService(project, NewCodePeriodCache::class.java).periodAsString
+        emptyText = if(areThereFilteredIssues) {
+            computeEmptyTextForFiltered(newCodePeriod)
+        } else {
+            computeEmptyText(newCodePeriod)
+        }
+        text = computeText(filesCount, findingsCount, newCodePeriod)
+    }
+
     fun refresh(filesCount: Int, findingsCount: Int) {
         val newCodePeriod = getService(project, NewCodePeriodCache::class.java).periodAsString
         emptyText = computeEmptyText(newCodePeriod)
@@ -72,6 +82,18 @@ class TreeSummary(private val project: Project, private val treeContentKind: Tre
         }
         return "No ${treeContentKind.displayName}s to display"
     }
+
+    private fun computeEmptyTextForFiltered(newCodePeriod: String): String {
+        if (isFocusOnNewCode()) {
+            return if (holdsOldFindings) {
+                "No older ${treeContentKind.displayName}s due to current filtering"
+            } else {
+                "No new ${treeContentKind.displayName}s due to current filtering $newCodePeriod"
+            }
+        }
+        return "No ${treeContentKind.displayName}s to display due to current filtering"
+    }
+
 
     private fun isFocusOnNewCode() = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
 

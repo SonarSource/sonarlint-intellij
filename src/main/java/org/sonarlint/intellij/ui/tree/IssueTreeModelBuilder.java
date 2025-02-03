@@ -73,6 +73,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private boolean includeLocallyResolvedIssues = false;
   private Map<VirtualFile, Collection<LiveIssue>> latestIssues;
   private TreeSummary treeSummary;
+  private boolean areThereFilteredIssues;
 
   public IssueTreeModelBuilder(Project project) {
     this.project = project;
@@ -120,7 +121,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
       }
     }
 
-    treeSummary.refresh(fileWithIssuesCount, issuesCount);
+    treeSummary.refresh(fileWithIssuesCount, issuesCount, areThereFilteredIssues);
     model.nodeChanged(summaryNode);
   }
 
@@ -143,7 +144,10 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     }
 
     var filtered = filter(issues);
+    var nonFiltered = StreamSupport.stream(issues.spliterator(), false).toList();
+
     if (filtered.isEmpty()) {
+      areThereFilteredIssues = !nonFiltered.isEmpty();
       removeFile(file);
       return 0;
     }
