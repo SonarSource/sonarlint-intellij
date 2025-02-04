@@ -10,11 +10,11 @@ sonar-ruby = "1.18.0.234"
 sonar-go = "1.18.0.240"
 sonar-html = "3.18.0.5605"
 sonar-xml = "2.12.0.5749"
-sonar-omnisharp = "1.26.0.100277"
+sonar-omnisharp = "1.27.0.100294"
 sonar-text = "2.20.0.5038"
 sonar-iac = "1.41.0.14206"
 sonar-cpp = "6.62.0.78645"
-sonar-dotnet = "10.5.0.109200"
+sonar-dotnet = "10.6.0.109712"
 
 sonarqube = "4.4.1.3373"
 
