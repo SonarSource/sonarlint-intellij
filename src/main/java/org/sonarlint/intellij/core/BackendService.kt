@@ -325,11 +325,13 @@ class BackendService : Disposable {
         val jsTsRequirements = JsTsRequirementsDto(nodeJsPath, eslintBridgePath)
         val workDir = Paths.get(PathManager.getTempPath()).resolve("sonarlint")
         val omnisharpRequirementsDto = generateOmnisharpDto()
+        // e.g. IntelliJ IDEA 2024.3.2
+        val host = "${ApplicationInfo.getInstance().versionName} ${ApplicationInfo.getInstance().fullVersion}"
         return rpcServer.initialize(
             InitializeParams(
                 ClientConstantInfoDto(
                     ApplicationInfo.getInstance().versionName,
-                    "SonarQube for IDE " + getService(SonarLintPlugin::class.java).version
+                    "SonarQube for IDE (SonarLint) - IntelliJ ${getService(SonarLintPlugin::class.java).version} - $host"
                 ),
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
