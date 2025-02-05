@@ -61,6 +61,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.16.1 - Fix of an internal compatibility issue with SonarQube Server</li>
         <li>10.16 - Support analysis of Ansible files. Improve performance by analyzing focused files only. Fixed an issue where SonarQube for IDE would appear as a Java program in the menu bar on macOS. Fixed a noisy error that could happen when opening a project.</li>
         <li>10.15 - 1 new QuickFix for Java. Fix of a performance regression on Python. Fix a noisy log error. Avoid symbol errors on CLion. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.14.1 - Fix unwanted loading bar appearance for computing branch information. Fix connection issue for SonarQube Server versions 10.0 - 10.4.</li>
