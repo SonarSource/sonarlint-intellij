@@ -170,6 +170,7 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
         if (selectedFile != null) {
             currentIssuesPerOpenFile.remove(selectedFile)
+            nonDirtyAnalyzedFiles.remove(selectedFile)
         }
         updateCurrentFileTab()
     }

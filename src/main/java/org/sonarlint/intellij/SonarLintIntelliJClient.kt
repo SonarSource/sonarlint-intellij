@@ -134,7 +134,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.NoBindingSugge
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.event.DidReceiveServerHotspotEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.HotspotDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto

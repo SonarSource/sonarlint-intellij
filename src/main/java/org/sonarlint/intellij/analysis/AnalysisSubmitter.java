@@ -123,7 +123,7 @@ public final class AnalysisSubmitter {
       return null;
     }
     var callback = new UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder);
-    if (triggerType != TriggerType.SELECTION_CHANGED) {
+    if (TriggerType.Companion.getShouldResetDirtyFiles().contains(triggerType)) {
       onTheFlyFindingsHolder.clearNonDirtyAnalyzedFiles();
     }
     return analyzeInBackground(files, triggerType, callback);
