@@ -28,7 +28,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ex.ActionUtil
-import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -378,7 +377,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 return@runOnPooledThread
             }
             val matcher = TextRangeMatcher(project)
-            val rangeMarker = computeReadActionSafely<RangeMarker>(project) {
+            val rangeMarker = computeReadActionSafely(project) {
                 matcher.matchWithCode(showFinding.file, showFinding.textRange, showFinding.codeSnippet)
             }
             if (rangeMarker == null) {
