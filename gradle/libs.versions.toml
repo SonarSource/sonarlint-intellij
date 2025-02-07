@@ -7,7 +7,7 @@ sonar-php = "3.42.0.12795"
 sonar-python = "4.26.0.19456"
 sonar-kotlin = "2.22.0.5972"
 sonar-ruby = "1.18.0.234"
-sonar-go = "1.18.0.240"
+sonar-go = "1.19.0.512"
 sonar-html = "3.18.0.5605"
 sonar-xml = "2.12.0.5749"
 sonar-omnisharp = "1.27.0.100294"
@@ -51,7 +51,7 @@ sonar-html = { module = "org.sonarsource.html:sonar-html-plugin", version.ref = 
 sonar-xml = { module = "org.sonarsource.xml:sonar-xml-plugin", version.ref = "sonar-xml" }
 sonar-omnisharp = { module = "org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin", version.ref = "sonar-omnisharp" }
 sonar-text = { module = "org.sonarsource.text:sonar-text-plugin", version.ref = "sonar-text" }
-sonar-go = { module = "org.sonarsource.slang:sonar-go-plugin", version.ref = "sonar-go" }
+sonar-go = { module = "org.sonarsource.go:sonar-go-plugin", version.ref = "sonar-go" }
 sonar-iac = { module = "org.sonarsource.iac:sonar-iac-plugin", version.ref = "sonar-iac" }
 sonar-cfamily = { module = "com.sonarsource.cpp:sonar-cfamily-plugin", version.ref = "sonar-cpp" }
 sonar-dotnet = { module = "org.sonarsource.dotnet:sonar-csharp-plugin", version.ref = "sonar-dotnet" }
