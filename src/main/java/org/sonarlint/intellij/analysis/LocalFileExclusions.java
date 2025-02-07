@@ -39,6 +39,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -159,7 +160,11 @@ public final class LocalFileExclusions {
   }
 
   private void checkExclusionsFileByFile(boolean forcedAnalysis, BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler,
-    Map<Module, Collection<VirtualFile>> filesByModule, VirtualFile file) {
+    Map<Module, Collection<VirtualFile>> filesByModule, @Nullable VirtualFile file) {
+    if (file == null) {
+      excludedFileHandler.accept(null, ExcludeResult.excluded("file is not valid anymore"));
+      return;
+    }
     var module = findModuleForFile(file, myProject);
     // Handle this case first, so that later we are guaranteed module is not null
     if (module == null) {

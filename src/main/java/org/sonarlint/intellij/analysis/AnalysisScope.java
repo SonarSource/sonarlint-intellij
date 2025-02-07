@@ -38,7 +38,13 @@ class AnalysisScope {
     var localFileExclusions = getService(project, LocalFileExclusions.class);
     var console = getService(project, SonarLintConsole.class);
     var filesByModule = localFileExclusions.retainNonExcludedFilesByModules(files, isForcedAnalysis,
-      (f, r) -> console.debug("File '" + f.getName() + "' excluded: " + r.excludeReason()));
+      (f, r) -> {
+        if (f != null) {
+          console.debug("File '" + f.getName() + "' excluded: " + r.excludeReason());
+        } else {
+          console.debug("File excluded: " + r.excludeReason());
+        }
+      });
     return new AnalysisScope(filesByModule, trigger);
   }
 
