@@ -134,7 +134,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.NoBindingSugge
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.event.DidReceiveServerHotspotEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.HotspotDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
@@ -637,9 +636,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     val result = repo.electBestMatchingServerBranchForCurrentHead(mainBranchName, allBranchesNames) ?: mainBranchName
                     resultFuture.complete(result)
                 } catch (e: InterruptedException) {
-                    getService(project, SonarLintConsole::class.java).error(INTERRUPTED_MESSAGE, e)
+                    if (!project.isDisposed) {
+                        getService(project, SonarLintConsole::class.java).error(INTERRUPTED_MESSAGE, e)
+                    }
                 } catch (e: TimeoutException) {
-                    getService(project, SonarLintConsole::class.java).error(TIMEOUT_MESSAGE, e)
+                    if (!project.isDisposed) {
+                        getService(project, SonarLintConsole::class.java).error(TIMEOUT_MESSAGE, e)
+                    }
                 }
             }
         })
@@ -647,10 +650,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             try {
                 resultFuture.get()
             } catch (e: InterruptedException) {
-                getService(project, SonarLintConsole::class.java).error(INTERRUPTED_MESSAGE, e)
+                if (!project.isDisposed) {
+                    getService(project, SonarLintConsole::class.java).error(INTERRUPTED_MESSAGE, e)
+                }
                 null
             } catch (e: TimeoutException) {
-                getService(project, SonarLintConsole::class.java).error(TIMEOUT_MESSAGE, e)
+                if (!project.isDisposed) {
+                    getService(project, SonarLintConsole::class.java).error(TIMEOUT_MESSAGE, e)
+                }
                 null
             }
         }
