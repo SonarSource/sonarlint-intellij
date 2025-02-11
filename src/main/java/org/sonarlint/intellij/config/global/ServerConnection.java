@@ -32,6 +32,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.server.ServerLinks;
 import org.sonarlint.intellij.core.server.SonarCloudLinks;
 import org.sonarlint.intellij.core.server.SonarQubeLinks;
+import org.sonarsource.sonarlint.core.SonarCloudRegion;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
@@ -48,6 +49,8 @@ import org.sonarlint.intellij.core.server.SonarQubeLinks;
 // Don't change annotation, used for backward compatibility
 @Tag("SonarQubeServer")
 public class ServerConnection {
+  @OptionTag
+  private String region;
   @OptionTag
   private String hostUrl;
   @Tag
@@ -78,6 +81,7 @@ public class ServerConnection {
     this.enableProxy = builder.enableProxy;
     this.organizationKey = builder.organizationKey;
     this.disableNotifications = builder.disableNotifications;
+    this.region = builder.region;
   }
 
   @Override
@@ -112,6 +116,10 @@ public class ServerConnection {
 
   public String getHostUrl() {
     return hostUrl;
+  }
+
+  public String getRegion() {
+    return region;
   }
 
   @CheckForNull
@@ -195,6 +203,7 @@ public class ServerConnection {
     private String password;
     private boolean enableProxy;
     private boolean disableNotifications;
+    private String region;
 
     private Builder() {
       // no args
@@ -221,6 +230,11 @@ public class ServerConnection {
 
     public Builder setHostUrl(String hostUrl) {
       this.hostUrl = hostUrl;
+      return this;
+    }
+
+    public Builder setRegion(String region) {
+      this.region = region;
       return this;
     }
 

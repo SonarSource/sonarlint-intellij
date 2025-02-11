@@ -34,6 +34,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.SonarCloudRegion;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
