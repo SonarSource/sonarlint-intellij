@@ -1015,6 +1015,10 @@ class BackendService : Disposable {
         return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
     }
 
+    fun suggestAiCodeFixSuggestion(): CompletableFuture<Unit> {
+        return CompletableFuture<Unit>()
+    }
+
     fun isAlive(): Boolean {
         return sloop?.isAlive == true
     }

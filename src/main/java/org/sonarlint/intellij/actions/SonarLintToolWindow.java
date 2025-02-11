@@ -377,6 +377,34 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     return false;
   }
 
+  public void trySelectIssueForCodeFix(String findingKey) {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
+      if (content != null) {
+        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var issue = currentFilePanel.doesIssueExistFiltered(findingKey);
+
+        if (issue == null) {
+          if (currentFilePanel.doesIssueExist(findingKey)) {
+            getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
+              "The issue could not be opened by SonarQube for IDE due to the applied filters",
+              new IncludeResolvedIssueAction()
+            );
+          } else {
+            getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
+              "The issue was not found",
+              new IncludeResolvedIssueAction()
+            );
+          }
+        } else {
+          currentFilePanel.trySelectIssueForCodeFix(issue);
+        }
+      }
+    }
+  }
+
   public <T extends Finding> void trySelectIssue(ShowFinding<T> showFinding) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
@@ -388,7 +416,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
         if (issue == null && currentFilePanel.doesIssueExist(showFinding.getFindingKey())) {
           getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
-            "The issue could not be opened by SonarLint due to the applied filters",
+            "The issue could not be opened by SonarQube for IDE due to the applied filters",
             new IncludeResolvedIssueAction()
           );
         }

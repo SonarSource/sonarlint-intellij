@@ -255,4 +255,8 @@ public abstract class LiveFinding implements Finding {
     return highestImpact;
   }
 
+  @Override
+  public boolean withCodeFix() {
+    return true;
+  }
 }

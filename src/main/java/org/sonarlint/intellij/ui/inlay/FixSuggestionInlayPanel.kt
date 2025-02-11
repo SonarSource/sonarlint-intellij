@@ -20,8 +20,6 @@
 package org.sonarlint.intellij.ui.inlay
 
 import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.DiffRequestPanel
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
@@ -48,7 +46,6 @@ import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Cursor
-import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.ComponentEvent
 import javax.swing.JButton
@@ -59,6 +56,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fix.FixSuggestionSnippet
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.codefix.SonarQubeDiffView
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionStatus
 
@@ -70,12 +68,12 @@ class FixSuggestionInlayPanel(
     private val textRange: RangeMarker,
 ) : RoundedPanelWithBackgroundColor(), Disposable {
 
+    private lateinit var diffPanel: SonarQubeDiffView
     private val titlePanel = RoundedPanelWithBackgroundColor()
     private val centerPanel = RoundedPanelWithBackgroundColor()
     private val actionPanel = RoundedPanelWithBackgroundColor()
     private val explanationPanel = RoundedPanelWithBackgroundColor()
     private val inlayRef = Ref<Disposable>()
-    private var diffPanel: DiffRequestPanel? = null
 
     init {
         initPanels()
@@ -117,32 +115,15 @@ class FixSuggestionInlayPanel(
             ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE
         )
 
-        val toggleButton = JButton(AllIcons.Actions.Collapseall).apply {
-            preferredSize = Dimension(30, 30)
-            addActionListener {
-                runOnUiThread(project) {
-                    icon = if (centerPanel.isVisible) {
-                        AllIcons.Actions.Expandall
-                    } else {
-                        AllIcons.Actions.Collapseall
-                    }
-                    centerPanel.isVisible = !centerPanel.isVisible
-                    revalidate()
-                    repaint()
-                }
-            }
-        }
-
         val titleRightSidePanel = RoundedPanelWithBackgroundColor().apply {
             layout = HorizontalLayout(5)
             border = JBUI.Borders.emptyLeft(5)
-            add(toggleButton)
             add(closeButton)
         }
 
         titlePanel.apply {
             layout = BorderLayout()
-            border = JBUI.Borders.empty(5)
+            border = JBUI.Borders.empty(2)
             add(
                 JBLabel(
                     "SonarQube for IDE Fix Suggestion (fix ${suggestion.snippetIndex}/${suggestion.totalSnippets})",
@@ -154,23 +135,18 @@ class FixSuggestionInlayPanel(
     }
 
     private fun initCenterDiffPanel() {
-        diffPanel = DiffManager.getInstance().createRequestPanel(
-            project,
-            this,
-            null
+        diffPanel = SonarQubeDiffView(project)
+
+        val request = SimpleDiffRequest(
+            "Diff Between Code Examples",
+            DiffContentFactory.getInstance().create(suggestion.currentCode),
+            DiffContentFactory.getInstance().create(suggestion.newCode),
+            "Current code",
+            "Suggested code"
         )
 
-        diffPanel!!.setRequest(
-            SimpleDiffRequest(
-                "Diff Between Code Examples",
-                DiffContentFactory.getInstance().create(suggestion.currentCode),
-                DiffContentFactory.getInstance().create(suggestion.newCode),
-                "Current code",
-                "Suggested code"
-            )
-        )
-
-        centerPanel.add(diffPanel!!.component)
+        diffPanel.applyRequest(request)
+        centerPanel.add(diffPanel.component)
     }
 
     private fun initBottomPanel() {
@@ -237,7 +213,7 @@ class FixSuggestionInlayPanel(
         }
     }
 
-    private fun declineFix() {
+    fun declineFix() {
         getService(SonarLintTelemetry::class.java).fixSuggestionResolved(
             suggestion.suggestionId,
             FixSuggestionStatus.DECLINED,
@@ -246,7 +222,7 @@ class FixSuggestionInlayPanel(
         dispose()
     }
 
-    private fun acceptFix() {
+    fun acceptFix() {
         DocumentUtil.writeInRunUndoTransparentAction {
             editor.document.replaceString(
                 textRange.startOffset,
@@ -268,7 +244,7 @@ class FixSuggestionInlayPanel(
     override fun dispose() {
         runOnUiThread(project) {
             inlayRef.get()?.dispose()
-            diffPanel?.dispose()
+            diffPanel.dispose()
         }
     }
 

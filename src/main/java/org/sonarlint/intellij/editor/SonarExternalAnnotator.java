@@ -46,6 +46,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
+import org.sonarlint.intellij.ui.codefix.SuggestCodeFixIntentionAction;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
@@ -146,6 +147,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     if (finding instanceof LiveIssue liveIssue) {
       intentionActions.add(new MarkAsResolvedAction(liveIssue));
+      if (finding.withCodeFix()) {
+        intentionActions.add(new SuggestCodeFixIntentionAction(liveIssue));
+      }
     }
 
     finding.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(finding, c)));

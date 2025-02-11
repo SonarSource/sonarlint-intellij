@@ -23,6 +23,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -30,23 +31,46 @@ import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import java.awt.BorderLayout
+import java.awt.Font
+import javax.swing.DefaultComboBoxModel
+import org.sonarlint.intellij.ui.codefix.CodeFixTabPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleContextualSectionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDescriptionTabDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleMonolithicDescriptionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleSplitDescriptionDto
-import java.awt.BorderLayout
-import java.awt.Font
-import javax.swing.DefaultComboBoxModel
 
 class RuleDescriptionPanel(private val project: Project, private val parent: Disposable) : JBPanel<RuleDescriptionPanel>(BorderLayout()) {
 
-    fun addMonolith(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType) {
-        val scrollPane = parseCodeExamples(project, parent, monolithDescription.htmlContent, fileType)
-        add(scrollPane, BorderLayout.CENTER)
+    private var sectionsTabs: JBTabbedPane? = null
+    private var codeFixTab: CodeFixTabPanel? = null
+
+    fun openCodeFixTab() {
+        sectionsTabs.let {
+            it!!.selectedIndex = it.indexOfTab("AI CodeFix")
+        }
+        codeFixTab?.displaySuggestion()
     }
 
-    fun addSections(withSections: RuleSplitDescriptionDto, fileType: FileType) {
+    fun addMonolith(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, withCodeFix: Boolean, file: VirtualFile?) {
+        if (withCodeFix && file != null) {
+            val sectionsTabs = JBTabbedPane()
+            sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
+
+            sectionsTabs.insertTab("Description", null, createNonContextualTab(monolithDescription.htmlContent, fileType), null, 0)
+            codeFixTab = CodeFixTabPanel(project, file)
+            sectionsTabs.insertTab("AI CodeFix", null, codeFixTab, null, 1)
+
+            add(sectionsTabs, BorderLayout.CENTER)
+            this.sectionsTabs = sectionsTabs
+        } else {
+            val scrollPane = parseCodeExamples(project, parent, monolithDescription.htmlContent, fileType)
+            add(scrollPane, BorderLayout.CENTER)
+        }
+    }
+
+    fun addSections(withSections: RuleSplitDescriptionDto, fileType: FileType, withCodeFix: Boolean, file: VirtualFile?) {
         val htmlHeader = withSections.introductionHtmlContent
         if (!htmlHeader.isNullOrBlank()) {
             val htmlViewer = RuleHtmlViewer(false)
@@ -61,32 +85,52 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
             sectionsTabs.insertTab(tabDesc.title, null, createTab(tabDesc, fileType), null, index)
         }
 
+        if (withCodeFix && file != null) {
+            codeFixTab = CodeFixTabPanel(project, file)
+            sectionsTabs.insertTab("AI CodeFix", null, codeFixTab, null, withSections.tabs.size)
+        }
+
         add(sectionsTabs, BorderLayout.CENTER)
+        this.sectionsTabs = sectionsTabs
     }
 
-    private fun createTab(tabDesc: RuleDescriptionTabDto, fileType: FileType) : JBPanel<JBPanel<*>> {
-        val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
-        tabDesc.content.map({ nonContextual ->
-            val scrollPane = parseCodeExamples(project, parent, nonContextual.htmlContent, fileType)
-            sectionPanel.add(scrollPane, BorderLayout.CENTER)
+    private fun createTab(tabDesc: RuleDescriptionTabDto, fileType: FileType): JBPanel<JBPanel<*>> {
+        return tabDesc.content.map({ nonContextual ->
+            createNonContextualTab(nonContextual.htmlContent, fileType)
         }, { contextual ->
-            val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
-            comboPanel.add(JBLabel("Which component or framework contains the issue?"))
-            val contextCombo = ComboBox(DefaultComboBoxModel(contextual.contextualSections.toTypedArray()))
-            contextCombo.renderer = SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName)
-            contextCombo.addActionListener {
-                val layout = sectionPanel.layout as BorderLayout
-                layout.getLayoutComponent(BorderLayout.CENTER)?.let { sectionPanel.remove(it) }
-
-                val htmlContent = (contextCombo.selectedItem as RuleContextualSectionDto).htmlContent
-                val scrollPane = parseCodeExamples(project, parent, htmlContent, fileType)
-                sectionPanel.add(scrollPane, BorderLayout.CENTER)
-            }
-            comboPanel.add(contextCombo)
-            sectionPanel.add(comboPanel, BorderLayout.NORTH)
-            contextCombo.selectedIndex =
-                contextual.contextualSections.indexOfFirst { sec -> sec.contextKey == contextual.defaultContextKey }
+            createContextualTab(contextual.defaultContextKey, contextual.contextualSections, fileType)
         })
+    }
+
+    private fun createNonContextualTab(htmlContent: String, fileType: FileType) : JBPanel<JBPanel<*>> {
+        val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
+        val scrollPane = parseCodeExamples(project, parent, htmlContent, fileType)
+        sectionPanel.add(scrollPane, BorderLayout.CENTER)
+        return sectionPanel
+    }
+
+    private fun createContextualTab(
+        defaultContextKey: String,
+        contextualSections: List<RuleContextualSectionDto>,
+        fileType: FileType
+    ): JBPanel<JBPanel<*>> {
+        val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
+        val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
+        comboPanel.add(JBLabel("Which component or framework contains the issue?"))
+        val contextCombo = ComboBox(DefaultComboBoxModel(contextualSections.toTypedArray()))
+        contextCombo.renderer = SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName)
+        contextCombo.addActionListener {
+            val layout = sectionPanel.layout as BorderLayout
+            layout.getLayoutComponent(BorderLayout.CENTER)?.let { sectionPanel.remove(it) }
+
+            val htmlContent = (contextCombo.selectedItem as RuleContextualSectionDto).htmlContent
+            val scrollPane = parseCodeExamples(project, parent, htmlContent, fileType)
+            sectionPanel.add(scrollPane, BorderLayout.CENTER)
+        }
+        comboPanel.add(contextCombo)
+        sectionPanel.add(comboPanel, BorderLayout.NORTH)
+        contextCombo.selectedIndex =
+            contextualSections.indexOfFirst { sec -> sec.contextKey == defaultContextKey }
         return sectionPanel
     }
 

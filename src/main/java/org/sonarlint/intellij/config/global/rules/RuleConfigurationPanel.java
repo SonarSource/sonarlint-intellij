@@ -528,11 +528,11 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         .thenAcceptAsync(details -> runOnUiThread(project, ModalityState.stateForComponent(getComponent()), () -> {
           details.getDescription().map(
             monolithDescription -> {
-              ruleDescription.addMonolith(monolithDescription, fileType);
+              ruleDescription.addMonolith(monolithDescription, fileType, false, null);
               return null;
             },
             withSections -> {
-              ruleDescription.addSections(withSections, fileType);
+              ruleDescription.addSections(withSections, fileType, false, null);
               return null;
             });
 

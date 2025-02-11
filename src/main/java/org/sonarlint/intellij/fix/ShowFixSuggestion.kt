@@ -37,29 +37,45 @@ import org.sonarlint.intellij.ui.inlay.InlayManager
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 
-class ShowFixSuggestion(private val project: Project, private val file: VirtualFile, private val fixSuggestion: FixSuggestionDto) {
+data class LocalFixSuggestion(
+    val suggestionId: String,
+    val explanation: String,
+    val changes: List<FixChanges>,
+)
 
-    fun show() {
+data class FixChanges(
+    val startLine: Int,
+    val endLine: Int,
+    val beforeCode: String?,
+    val newCode: String
+)
+
+class ShowFixSuggestion(private val project: Project, private val file: VirtualFile) {
+
+    fun show(fixSuggestion: FixSuggestionDto) {
+        val localFixSuggestion = mapToLocalFixSuggestion(fixSuggestion)
+        show(localFixSuggestion)
+    }
+
+    fun show(fixSuggestion: LocalFixSuggestion): List<FixSuggestionInlayPanel> {
         val fileEditorManager = FileEditorManager.getInstance(project)
-        val psiFile = computeReadActionSafely(project) { PsiManager.getInstance(project).findFile(file) } ?: return
-        val document = computeReadActionSafely(project) { file.getDocument() } ?: return
+        val psiFile = computeReadActionSafely(project) { PsiManager.getInstance(project).findFile(file) } ?: return emptyList()
+        val document = computeReadActionSafely(project) { file.getDocument() } ?: return emptyList()
 
-        if (!isWithinBounds(document)) {
+        if (!isWithinBounds(document, fixSuggestion.changes)) {
             get(project).simpleNotification(
                 null, "Unable to open the fix suggestion, your file has probably changed", NotificationType.WARNING
             )
-            return
+            return emptyList()
         }
 
         var successfullyOpened = true
 
+        val inlayPanels = mutableListOf<FixSuggestionInlayPanel>()
         runOnUiThread(project, ModalityState.defaultModalityState()) {
-            fixSuggestion.fileEdit().changes().forEachIndexed { index, change ->
-                val startLine = change.beforeLineRange().startLine
-                val endLine = change.beforeLineRange().endLine
-
+            fixSuggestion.changes.forEachIndexed { index, change ->
                 if (index == 0) {
-                    val descriptor = OpenFileDescriptor(project, file, startLine - 1, -1)
+                    val descriptor = OpenFileDescriptor(project, file, change.startLine - 1, -1)
 
                     fileEditorManager.openTextEditor(descriptor, true)
 
@@ -72,26 +88,26 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                 fileEditorManager.selectedTextEditor?.let {
                     val doc = it.document
                     try {
-                        val rangeMarker = doc.createRangeMarker(doc.getLineStartOffset(startLine - 1), doc.getLineEndOffset(endLine - 1))
+                        val rangeMarker = doc.createRangeMarker(doc.getLineStartOffset(change.startLine - 1), doc.getLineEndOffset(change.endLine - 1))
                         val currentCode = doc.getText(TextRange(rangeMarker.startOffset, rangeMarker.endOffset))
                         val fixSuggestionSnippet = FixSuggestionSnippet(
                             currentCode,
-                            change.after(),
-                            startLine,
-                            endLine,
+                            change.newCode,
+                            change.startLine,
+                            change.endLine,
                             index + 1,
-                            fixSuggestion.fileEdit().changes().size,
-                            fixSuggestion.explanation(),
-                            fixSuggestion.suggestionId()
+                            fixSuggestion.changes.size,
+                            fixSuggestion.explanation,
+                            fixSuggestion.suggestionId
                         )
 
-                        FixSuggestionInlayPanel(
+                        inlayPanels.add(FixSuggestionInlayPanel(
                             project,
                             fixSuggestionSnippet,
                             it,
                             psiFile,
                             rangeMarker
-                        )
+                        ))
                     } catch (e: IndexOutOfBoundsException) {
                         SonarLintConsole.get(project).error("Fix is invalid", e)
                         successfullyOpened = false
@@ -105,7 +121,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                     "Unable to open the fix suggestion, your file has probably changed",
                     NotificationType.WARNING
                 )
-            } else if (isBeforeContentIdentical(document)) {
+            } else if (isBeforeContentIdentical(document, fixSuggestion.changes)) {
                 get(project).simpleNotification(
                     null,
                     "The fix suggestion has been successfully opened",
@@ -119,28 +135,49 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                 )
             }
         }
+        return inlayPanels
     }
 
-    private fun isWithinBounds(document: Document): Boolean {
-        return fixSuggestion.fileEdit().changes().all { change ->
-            val lineStart = change.beforeLineRange().startLine
-            val lineEnd = change.beforeLineRange().endLine
+    private fun isWithinBounds(document: Document, changes: List<FixChanges>): Boolean {
+        return changes.all { change ->
+            val lineStart = change.startLine
+            val lineEnd = change.endLine
 
             return lineStart <= document.lineCount && lineEnd <= document.lineCount
         }
     }
 
-    private fun isBeforeContentIdentical(document: Document): Boolean {
-        return fixSuggestion.fileEdit().changes().all { change ->
-            val lineStart = change.beforeLineRange().startLine
-            val lineEnd = change.beforeLineRange().endLine
+    private fun isBeforeContentIdentical(document: Document, changes: List<FixChanges>): Boolean {
+        return changes.all { change ->
+            if (change.beforeCode == null) {
+                return true
+            }
+            val lineStart = change.startLine
+            val lineEnd = change.endLine
 
             val lineStartOffset = document.getLineStartOffset(lineStart - 1)
             val lineEndOffset = document.getLineEndOffset(lineEnd - 1)
             val documentBeforeCode = document.getText(TextRange(lineStartOffset, lineEndOffset))
 
-            return documentBeforeCode.trim() == change.before().trim()
+            return documentBeforeCode.trim() == change.beforeCode.trim()
         }
+    }
+
+    private fun mapToLocalFixSuggestion(fixSuggestionDto: FixSuggestionDto): LocalFixSuggestion {
+        val changes = fixSuggestionDto.fileEdit().changes().map { change ->
+            FixChanges(
+                startLine = change.beforeLineRange().startLine,
+                endLine = change.beforeLineRange().endLine,
+                beforeCode = change.before(),
+                newCode = change.after()
+            )
+        }
+
+        return LocalFixSuggestion(
+            suggestionId = fixSuggestionDto.suggestionId(),
+            explanation = fixSuggestionDto.explanation(),
+            changes = changes
+        )
     }
 
 }

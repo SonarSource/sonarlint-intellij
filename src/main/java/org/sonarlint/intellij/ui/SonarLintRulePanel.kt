@@ -178,13 +178,16 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             })
         }
 
-        fun updateActiveIssueDetailsIfNeeded(module: Module, issueId: UUID) {
+        fun updateActiveIssueDetailsIfNeeded(module: Module, issueId: UUID, openOnCodeFixTab: Boolean) {
             ruleDetails = null
             val newState = RuleDetailsLoaderState(module, issueId, null)
             if (state == newState) {
                 // Still force a refresh of the UI, as some other fields of the finding may be different
                 runOnUiThread(project) {
                     updateUiComponents()
+                    if (openOnCodeFixTab) {
+                        descriptionPanel.openCodeFixTab()
+                    }
                 }
                 return
             }
@@ -206,6 +209,9 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                                 }
                                 runOnUiThread(project) {
                                     updateUiComponents()
+                                    if (openOnCodeFixTab) {
+                                        descriptionPanel.openCodeFixTab()
+                                    }
                                 }
                             }
                     }
@@ -232,9 +238,9 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, ruleKey)
     }
 
-    fun setSelectedFinding(module: Module, finding: Finding?, findingId: UUID) {
+    fun setSelectedFinding(module: Module, finding: Finding?, findingId: UUID, openOnCodeFixTab: Boolean) {
         this.finding = finding
-        ruleDetailsLoader.updateActiveIssueDetailsIfNeeded(module, findingId)
+        ruleDetailsLoader.updateActiveIssueDetailsIfNeeded(module, findingId, openOnCodeFixTab)
     }
 
     private fun updateUiComponents() {
@@ -249,8 +255,8 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             descriptionPanel.removeAll()
             val fileType = RuleLanguages.findFileTypeByRuleLanguage(issueDetails.language)
             issueDetails.description.map(
-                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
-                { withSections -> descriptionPanel.addSections(withSections, fileType) }
+                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType, finding.withCodeFix(), finding.file()) },
+                { withSections -> descriptionPanel.addSections(withSections, fileType, finding.withCodeFix(), finding.file()) }
             )
             updateParams(issueDetails)
         } else if (ruleKey != null && ruleDetails != null) {
@@ -259,8 +265,8 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             descriptionPanel.removeAll()
             val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language)
             ruleDetails.description.map(
-                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
-                { withSections -> descriptionPanel.addSections(withSections, fileType) }
+                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType, false, null) },
+                { withSections -> descriptionPanel.addSections(withSections, fileType, false, null) }
             )
             updateParams(ruleDetails)
         } else {
