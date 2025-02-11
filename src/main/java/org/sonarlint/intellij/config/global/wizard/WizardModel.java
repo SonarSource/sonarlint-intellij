@@ -29,6 +29,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.CheckNotificationsSupportedTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
+import org.sonarsource.sonarlint.core.SonarCloudRegion;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
@@ -37,6 +38,15 @@ public class WizardModel {
   private ServerType serverType;
   private String serverUrl;
   private String token;
+
+  public SonarCloudRegion getRegion() {
+    return region;
+  }
+
+  public void setRegion(SonarCloudRegion region) {
+    this.region = region;
+  }
+
   private String login;
   private char[] password;
   private String name;
@@ -44,6 +54,7 @@ public class WizardModel {
   private boolean proxyEnabled;
   private boolean notificationsDisabled = false;
   private boolean notificationsSupported = false;
+  private SonarCloudRegion region = SonarCloudRegion.EU;
 
   private List<OrganizationDto> organizationList = new ArrayList<>();
 
@@ -59,6 +70,9 @@ public class WizardModel {
   public WizardModel(ServerConnection connectionToEdit) {
     if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
+      if(region != null) {
+        region = SonarCloudRegion.valueOf(connectionToEdit.getRegion());
+      }
     } else {
       serverType = ServerType.SONARQUBE;
       serverUrl = connectionToEdit.getHostUrl();
@@ -100,7 +114,7 @@ public class WizardModel {
 
   public void queryIfNotificationsSupported() throws Exception {
     final var partialConnection = createConnectionWithoutOrganization();
-    var task = new CheckNotificationsSupportedTask(partialConnection);
+    var task = new CheckNotificationsSupportedTask(partialConnection, region);
     ProgressManager.getInstance().run(task);
     if (task.getException() != null) {
       throw task.getException();
@@ -111,7 +125,7 @@ public class WizardModel {
   public void queryOrganizations() throws Exception {
     if (isSonarCloud()) {
       final ServerConnection partialConnection = createConnectionWithoutOrganization();
-      final var task = buildAndRunGetOrganizationsTask(partialConnection);
+      final var task = buildAndRunGetOrganizationsTask(partialConnection, region);
       setOrganizationList(task.organizations());
       final var presetOrganizationKey = getOrganizationKey();
       if (presetOrganizationKey != null) {
@@ -124,8 +138,8 @@ public class WizardModel {
     }
   }
 
-  private static GetOrganizationsTask buildAndRunGetOrganizationsTask(ServerConnection partialConnection) throws Exception {
-    var task = new GetOrganizationsTask(partialConnection);
+  private static GetOrganizationsTask buildAndRunGetOrganizationsTask(ServerConnection partialConnection, SonarCloudRegion region) throws Exception {
+    var task = new GetOrganizationsTask(partialConnection, region);
     ProgressManager.getInstance().run(task);
     if (task.getException() != null) {
       throw task.getException();
@@ -137,7 +151,7 @@ public class WizardModel {
     // the previously configured organization might not be in the list. If that's the case, fetch it and add it to the list.
     var orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(presetOrganizationKey));
     if (!orgExists) {
-      var getOrganizationTask = new GetOrganizationTask(partialConnection, presetOrganizationKey);
+      var getOrganizationTask = new GetOrganizationTask(partialConnection, presetOrganizationKey, region);
       ProgressManager.getInstance().run(getOrganizationTask);
       final var fetchedOrganization = getOrganizationTask.organization();
       if (getOrganizationTask.getException() != null || fetchedOrganization == null) {
@@ -251,8 +265,13 @@ public class WizardModel {
       .setName(name);
 
     if (serverType == ServerType.SONARCLOUD) {
-      builder.setHostUrl(SONARCLOUD_URL);
-
+      if (region == SonarCloudRegion.US) {
+        builder.setHostUrl(SonarCloudRegion.US.getProductionUri().toString());
+        builder.setRegion("US");
+      } else {
+        builder.setHostUrl(SONARCLOUD_URL);
+        builder.setRegion("EU");
+      }
     } else {
       builder.setHostUrl(serverUrl);
     }

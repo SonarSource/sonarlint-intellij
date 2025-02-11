@@ -37,6 +37,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
@@ -46,11 +47,12 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
+import org.sonarsource.sonarlint.core.SonarCloudRegion;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE;
 
-public class ServerStep extends AbstractWizardStepEx {
+public class ServerStep extends AbstractWizardStepEx{
   private static final int NAME_MAX_LENGTH = 50;
   private final WizardModel model;
   private final Collection<String> existingNames;
@@ -70,6 +72,9 @@ public class ServerStep extends AbstractWizardStepEx {
   private JEditorPane sonarCloudDescription;
   private JEditorPane compareProducts;
   private ErrorPainter errorPainter;
+  private JRadioButton radioUS;
+  private JRadioButton radioEU;
+  private JTextPane EUTextPane;
 
   public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
     super("Server Details");
@@ -77,6 +82,8 @@ public class ServerStep extends AbstractWizardStepEx {
     this.existingNames = existingNames;
     radioSonarCloud.addChangeListener(e -> selectionChanged());
     radioSonarQube.addChangeListener(e -> selectionChanged());
+    radioEU.addChangeListener(e -> selectionChanged());
+    radioUS.addChangeListener(e -> selectionChanged());
 
     DocumentListener listener = new DocumentAdapter() {
       @Override
@@ -144,6 +151,11 @@ public class ServerStep extends AbstractWizardStepEx {
 
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
       radioSonarCloud.setSelected(true);
+      if (model.getRegion() == SonarCloudRegion.US) {
+        radioUS.setSelected(true);
+      } else {
+        radioEU.setSelected(true);
+      }
       if (editing) {
         sqsIcon = SonarLintIcons.toDisabled(sqsIcon);
       }
@@ -169,6 +181,9 @@ public class ServerStep extends AbstractWizardStepEx {
 
   private void selectionChanged() {
     boolean sq = radioSonarQube.isSelected();
+
+    radioEU.setEnabled(!sq);
+    radioUS.setEnabled(!sq);
 
     urlText.setEnabled(sq);
     urlLabel.setEnabled(sq);
@@ -239,8 +254,14 @@ public class ServerStep extends AbstractWizardStepEx {
   private void save() {
     if (radioSonarCloud.isSelected()) {
       model.setServerType(WizardModel.ServerType.SONARCLOUD);
-      model.setServerUrl(SONARCLOUD_URL);
-    } else {
+      var isUS = radioUS.isSelected();
+      if (isUS) {
+        model.setServerUrl(SonarCloudRegion.US.getProductionUri().toString());
+        model.setRegion(SonarCloudRegion.US);
+      } else {
+        model.setServerUrl(SONARCLOUD_URL);
+      }
+    } else {  
       model.setServerType(WizardModel.ServerType.SONARQUBE);
       model.setServerUrl(urlText.getText().trim());
     }

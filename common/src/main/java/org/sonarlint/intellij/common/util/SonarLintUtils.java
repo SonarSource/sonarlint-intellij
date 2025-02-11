@@ -45,7 +45,7 @@ public class SonarLintUtils {
   public static final String DEFAULT_SONARCLOUD_URL = "https://sonarcloud.io";
   public static final String SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.url", DEFAULT_SONARCLOUD_URL);
   private static final Set<String> SONARCLOUD_ALIAS = Set.copyOf(List.of("https://sonarqube.com", "https://www.sonarqube.com",
-    "https://www.sonarcloud.io", DEFAULT_SONARCLOUD_URL, SONARCLOUD_URL));
+    "https://www.sonarcloud.io", "https://us-sc-staging.io", DEFAULT_SONARCLOUD_URL, SONARCLOUD_URL));
 
   private SonarLintUtils() {
     // Utility class

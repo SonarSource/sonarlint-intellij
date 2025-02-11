@@ -26,6 +26,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarsource.sonarlint.core.SonarCloudRegion;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
@@ -34,6 +35,7 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWit
 public class GetOrganizationTask extends Task.Modal {
   private final ServerConnection server;
   private final String organizationKey;
+  private final SonarCloudRegion region;
 
   private Exception exception;
   private OrganizationDto organization;
@@ -42,6 +44,14 @@ public class GetOrganizationTask extends Task.Modal {
     super(null, "Fetch Organization From SonarQube Cloud", true);
     this.server = server;
     this.organizationKey = organizationKey;
+    this.region = SonarCloudRegion.EU;
+  }
+
+  public GetOrganizationTask(ServerConnection server, String organizationKey, SonarCloudRegion region) {
+    super(null, "Fetch Organization From SonarQube Cloud", true);
+    this.server = server;
+    this.organizationKey = organizationKey;
+    this.region = region;
   }
 
   @Override
@@ -50,7 +60,7 @@ public class GetOrganizationTask extends Task.Modal {
     try {
       indicator.setText("Searching organization");
       organization = computeOnPooledThreadWithoutCatching("Get User Organization Task",
-        () -> waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(server, organizationKey)).getOrganization());
+        () -> waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(server, organizationKey, region)).getOrganization());
     } catch (Exception e) {
       if (myProject != null) {
         SonarLintConsole.get(myProject).error("Failed to fetch organization", e);
