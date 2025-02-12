@@ -42,6 +42,9 @@ enum class TriggerType(private val displayName: String, private val shouldUpdate
         // Non snapshot do not include CHECK_IN analysis and OPEN_FINDING analysis, as they are specific cases
         val nonAnalysisSnapshot =
             listOf(EDITOR_OPEN, CURRENT_FILE_ACTION, COMPILATION, EDITOR_CHANGE, CONFIG_CHANGE, BINDING_UPDATE, SERVER_SENT_EVENT, SELECTION_CHANGED)
+
+        // Events that should reset the cache of the focused files already analyzed
+        val shouldResetDirtyFiles = listOf(COMPILATION, CONFIG_CHANGE, BINDING_UPDATE, SERVER_SENT_EVENT)
     }
 
     fun getName() = displayName
