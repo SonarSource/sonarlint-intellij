@@ -54,6 +54,7 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.ListModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarLintIcons;
@@ -128,15 +129,35 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       protected void customizeCellRenderer(JList list, ServerConnection server, int index, boolean selected, boolean hasFocus) {
         if (server.isSonarCloud()) {
           setIcon(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
+          if (hasMoreThanOneSCConnections()) {
+            append("[" + server.getRegion() + "] " + server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+          } else {
+            append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+          }
         } else {
           setIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
+          append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
         }
-        append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+
         if (!server.isSonarCloud()) {
           append("    (" + server.getHostUrl() + ")", SimpleTextAttributes.GRAYED_ATTRIBUTES, false);
         }
       }
     });
+  }
+
+  private boolean hasMoreThanOneSCConnections() {
+    ListModel<ServerConnection> model = connectionList.getModel();
+    long count = 0;
+    for (int i = 0; i < model.getSize(); i++) {
+      if (model.getElementAt(i).isSonarCloud()) {
+        count++;
+      }
+      if (count > 1) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static JPanel initConnectionTitle() {

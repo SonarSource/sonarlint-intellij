@@ -25,6 +25,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.sharing.AutomaticSharedConfigCreator
+import org.sonarsource.sonarlint.core.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 
 class AutoShareTokenExchangeAction(
@@ -36,20 +37,21 @@ class AutoShareTokenExchangeAction(
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         notification.expire()
-        val (isSQ, projectKey, orgOrServerUrl) = getAutoShareConfigParams(connectionSuggestionDto)
-        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, bindingMode).chooseResolution()
+        val (isSQ, projectKey, orgOrServerUrl, region) = getAutoShareConfigParams(connectionSuggestionDto)
+        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, bindingMode, region).chooseResolution()
     }
 
-    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<Boolean, String, String> {
+    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Quadruple {
         return if (uniqueSuggestion.connectionSuggestion.isRight) {
-            Triple(
+            Quadruple(
                 false, uniqueSuggestion.connectionSuggestion.right.projectKey,
-                uniqueSuggestion.connectionSuggestion.right.organization
+                uniqueSuggestion.connectionSuggestion.right.organization,
+                SonarCloudRegion.valueOf(uniqueSuggestion.connectionSuggestion.right.region.name)
             )
         } else {
-            Triple(
+            Quadruple(
                 true, uniqueSuggestion.connectionSuggestion.left.projectKey,
-                uniqueSuggestion.connectionSuggestion.left.serverUrl
+                uniqueSuggestion.connectionSuggestion.left.serverUrl, null
             )
         }
     }

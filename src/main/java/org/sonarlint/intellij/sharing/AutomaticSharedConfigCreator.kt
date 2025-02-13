@@ -64,6 +64,7 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
 import org.sonarlint.intellij.util.computeOnPooledThread
+import org.sonarsource.sonarlint.core.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
 
@@ -73,6 +74,7 @@ class AutomaticSharedConfigCreator(
     private val isSQ: Boolean,
     private val project: Project,
     private val bindingMode: BindingMode,
+    private val region: SonarCloudRegion?
 ) :
     DialogWrapper(false) {
     private var serverConnection: ServerConnection? = null
@@ -87,6 +89,7 @@ class AutomaticSharedConfigCreator(
     private val connectedModeDescriptionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val connectionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val projectKeyLabel = SwingHelper.createHtmlViewer(false, null, null, null)
+    private val scURLLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val projectKeyField = JBTextField(projectKey).apply {
         isEditable = false
     }
@@ -131,7 +134,13 @@ class AutomaticSharedConfigCreator(
         if (isSQ) {
             tokenGenerationButton.addActionListener { openTokenCreationPage(orgOrServerUrl) }
         } else {
-            tokenGenerationButton.addActionListener { openTokenCreationPage(SONARCLOUD_URL) }
+            tokenGenerationButton.addActionListener {
+                if (region == SonarCloudRegion.US) {
+                    openTokenCreationPage(SonarCloudRegion.US.productionUri.toString())
+                } else {
+                    openTokenCreationPage(SONARCLOUD_URL)
+                }
+            }
         }
         isResizable = false
 
@@ -147,7 +156,14 @@ class AutomaticSharedConfigCreator(
             if (isSQ) {
                 serverConnectionBuilder.setHostUrl(orgOrServerUrl)
             } else {
-                serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(SONARCLOUD_URL)
+                serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(
+                    if (region == SonarCloudRegion.US) {
+                        SonarCloudRegion.US.productionUri.toString()
+                    } else {
+                        SONARCLOUD_URL
+                    }
+                )
+                serverConnectionBuilder.setRegion(region?.name.toString())
             }
             serverConnection = serverConnectionBuilder.build()
 
@@ -207,6 +223,7 @@ class AutomaticSharedConfigCreator(
 
         connectionLabel.text = if (isSQ) "Server URL" else "SonarQube Cloud organization"
         projectKeyLabel.text = "Project key"
+        scURLLabel.text = "SonarQube Cloud URL"
         centerPanel.add(
             projectKeyLabel,
             GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
@@ -218,6 +235,7 @@ class AutomaticSharedConfigCreator(
 
         val urlLabel = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(serverUrlField, BorderLayout.CENTER) }
         val projectKeyLabel = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(projectKeyField, BorderLayout.CENTER) }
+
         centerPanel.add(
             projectKeyLabel,
             GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
@@ -241,23 +259,36 @@ class AutomaticSharedConfigCreator(
                     1, 5, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0
                 )
             )
+        } else {
+            val scURLField = JBTextField(region?.productionUri.toString()).apply {
+                isEditable = false
+            }
+            val scURLFieldText = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(scURLField, BorderLayout.CENTER) }
+            centerPanel.add(
+                scURLLabel,
+                GridBagConstraints(1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            )
+            centerPanel.add(
+                scURLFieldText,
+                GridBagConstraints(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            )
         }
 
         connectionNameLabel.text = "Connection name"
         centerPanel.add(
             connectionNameLabel,
-            GridBagConstraints(1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, 8, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         centerPanel.add(
             connectionNameField,
-            GridBagConstraints(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, 9, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         tokenLabel.text = "Token"
         centerPanel.add(
             tokenLabel,
-            GridBagConstraints(1, 8, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, 10, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         val listener: DocumentListener = object : DocumentAdapter() {
@@ -269,12 +300,12 @@ class AutomaticSharedConfigCreator(
 
         centerPanel.add(
             tokenField,
-            GridBagConstraints(1, 9, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
+            GridBagConstraints(1, 11, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
         )
 
         centerPanel.add(
             tokenGenerationButton,
-            GridBagConstraints(1, 10, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insetsBottom(20), 0, 0)
+            GridBagConstraints(1, 12, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insetsBottom(20), 0, 0)
         )
 
         centerPanel.preferredSize = Dimension(600, 300)
@@ -308,7 +339,8 @@ class AutomaticSharedConfigCreator(
             }
             val progressResult = ProgressRunner<ValidateConnectionResponse> { pi: ProgressIndicator ->
                 computeOnPooledThread<ValidateConnectionResponse>("Validate Connection") {
-                    val future = getService(BackendService::class.java).validateConnection(serverConnection!!)
+                    val future = getService(BackendService::class.java).validateConnection(serverConnection!!,
+                        SonarCloudRegion.valueOf(serverConnection!!.region))
                     waitForFuture(pi, future)
                 }
             }
