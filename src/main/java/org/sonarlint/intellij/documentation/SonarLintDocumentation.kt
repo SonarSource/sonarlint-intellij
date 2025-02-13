@@ -38,11 +38,11 @@ object SonarLintDocumentation {
     }
 
     object SonarQube {
-        const val SMART_NOTIFICATIONS = "https://docs.sonarsource.com/sonarqube-server/latest/user-guide/sonarlint-connected-mode/"
+        const val SMART_NOTIFICATIONS = "https://docs.sonarsource.com/sonarqube-server/latest/user-guide/connected-mode/"
     }
 
     object SonarCloud {
-        const val SMART_NOTIFICATIONS = "https://docs.sonarsource.com/sonarqube-cloud/improving/sonarlint/#smart-notifications/"
+        const val SMART_NOTIFICATIONS = "https://docs.sonarsource.com/sonarqube-cloud/improving/connected-mode/#smart-notifications/"
     }
 
     object Marketing {
