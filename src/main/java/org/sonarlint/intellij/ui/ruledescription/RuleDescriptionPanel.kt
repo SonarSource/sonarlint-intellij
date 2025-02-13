@@ -46,31 +46,39 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     private var sectionsTabs: JBTabbedPane? = null
     private var codeFixTab: CodeFixTabPanel? = null
 
-    fun openCodeFixTab() {
+    fun openCodeFixTabAndGenerate() {
         sectionsTabs.let {
             it!!.selectedIndex = it.indexOfTab("AI CodeFix")
         }
-        codeFixTab?.displaySuggestion()
+        codeFixTab?.loadSuggestion()
     }
 
-    fun addMonolith(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, withCodeFix: Boolean, file: VirtualFile?) {
-        if (withCodeFix && file != null) {
-            val sectionsTabs = JBTabbedPane()
-            sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
+    fun addMonolithWithCodeFix(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, issueId: String, file: VirtualFile) {
+        val sectionsTabs = JBTabbedPane()
+        sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
-            sectionsTabs.insertTab("Description", null, createNonContextualTab(monolithDescription.htmlContent, fileType), null, 0)
-            codeFixTab = CodeFixTabPanel(project, file)
-            sectionsTabs.insertTab("AI CodeFix", null, codeFixTab, null, 1)
+        sectionsTabs.insertTab("Description", null, createNonContextualTab(monolithDescription.htmlContent, fileType), null, 0)
+        codeFixTab = CodeFixTabPanel(project, file, issueId, parent)
+        sectionsTabs.insertTab("AI CodeFix", null, codeFixTab, null, 1)
 
-            add(sectionsTabs, BorderLayout.CENTER)
-            this.sectionsTabs = sectionsTabs
-        } else {
-            val scrollPane = parseCodeExamples(project, parent, monolithDescription.htmlContent, fileType)
-            add(scrollPane, BorderLayout.CENTER)
+        add(sectionsTabs, BorderLayout.CENTER)
+        this.sectionsTabs = sectionsTabs
+    }
+
+    fun addMonolith(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType) {
+        val scrollPane = parseCodeExamples(project, parent, monolithDescription.htmlContent, fileType)
+        add(scrollPane, BorderLayout.CENTER)
+    }
+
+    fun addSectionsWithCodeFix(withSections: RuleSplitDescriptionDto, fileType: FileType, issueId: String, file: VirtualFile) {
+        addSections(withSections, fileType)
+        sectionsTabs?.let {
+            codeFixTab = CodeFixTabPanel(project, file, issueId, parent)
+            it.insertTab("AI CodeFix", null, codeFixTab, null, withSections.tabs.size)
         }
     }
 
-    fun addSections(withSections: RuleSplitDescriptionDto, fileType: FileType, withCodeFix: Boolean, file: VirtualFile?) {
+    fun addSections(withSections: RuleSplitDescriptionDto, fileType: FileType) {
         val htmlHeader = withSections.introductionHtmlContent
         if (!htmlHeader.isNullOrBlank()) {
             val htmlViewer = RuleHtmlViewer(false)
@@ -83,11 +91,6 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
 
         withSections.tabs.forEachIndexed { index, tabDesc ->
             sectionsTabs.insertTab(tabDesc.title, null, createTab(tabDesc, fileType), null, index)
-        }
-
-        if (withCodeFix && file != null) {
-            codeFixTab = CodeFixTabPanel(project, file)
-            sectionsTabs.insertTab("AI CodeFix", null, codeFixTab, null, withSections.tabs.size)
         }
 
         add(sectionsTabs, BorderLayout.CENTER)

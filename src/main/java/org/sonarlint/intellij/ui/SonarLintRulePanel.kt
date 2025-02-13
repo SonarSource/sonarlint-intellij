@@ -186,7 +186,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 runOnUiThread(project) {
                     updateUiComponents()
                     if (openOnCodeFixTab) {
-                        descriptionPanel.openCodeFixTab()
+                        descriptionPanel.openCodeFixTabAndGenerate()
                     }
                 }
                 return
@@ -210,7 +210,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                                 runOnUiThread(project) {
                                     updateUiComponents()
                                     if (openOnCodeFixTab) {
-                                        descriptionPanel.openCodeFixTab()
+                                        descriptionPanel.openCodeFixTabAndGenerate()
                                     }
                                 }
                             }
@@ -254,10 +254,20 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             updateHeader(finding, issueDetails)
             descriptionPanel.removeAll()
             val fileType = RuleLanguages.findFileTypeByRuleLanguage(issueDetails.language)
-            issueDetails.description.map(
-                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType, finding.withCodeFix(), finding.file()) },
-                { withSections -> descriptionPanel.addSections(withSections, fileType, finding.withCodeFix(), finding.file()) }
-            )
+            val file = finding.file()
+            issueDetails.description.map({ monolithDescription ->
+                if (finding.withCodeFix() && file != null) {
+                    descriptionPanel.addMonolithWithCodeFix(monolithDescription, fileType, finding.getId().toString(), file)
+                } else {
+                    descriptionPanel.addMonolith(monolithDescription, fileType)
+                }
+            }, { withSections ->
+                if (finding.withCodeFix() && file != null) {
+                    descriptionPanel.addSectionsWithCodeFix(withSections, fileType, finding.getId().toString(), file)
+                } else {
+                    descriptionPanel.addSections(withSections, fileType)
+                }
+            })
             updateParams(issueDetails)
         } else if (ruleKey != null && ruleDetails != null) {
             disableEmptyDisplay(true)
@@ -265,8 +275,8 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             descriptionPanel.removeAll()
             val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language)
             ruleDetails.description.map(
-                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType, false, null) },
-                { withSections -> descriptionPanel.addSections(withSections, fileType, false, null) }
+                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
+                { withSections -> descriptionPanel.addSections(withSections, fileType) }
             )
             updateParams(ruleDetails)
         } else {

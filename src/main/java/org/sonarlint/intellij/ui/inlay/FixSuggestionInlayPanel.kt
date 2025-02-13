@@ -21,19 +21,14 @@ package org.sonarlint.intellij.ui.inlay
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.requests.SimpleDiffRequest
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.ActionToolbar
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Ref
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
@@ -56,6 +51,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fix.FixSuggestionSnippet
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.codefix.FixSuggestionInlayHolder
 import org.sonarlint.intellij.ui.codefix.SonarQubeDiffView
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionStatus
@@ -65,7 +61,7 @@ class FixSuggestionInlayPanel(
     private val suggestion: FixSuggestionSnippet,
     val editor: Editor,
     val file: PsiFile,
-    private val textRange: RangeMarker,
+    private val textRange: RangeMarker
 ) : RoundedPanelWithBackgroundColor(), Disposable {
 
     private lateinit var diffPanel: SonarQubeDiffView
@@ -102,23 +98,9 @@ class FixSuggestionInlayPanel(
     }
 
     private fun initTitlePanel() {
-        val closeAction = object : AnAction({ "Close" }, AllIcons.Actions.Close) {
-            override fun actionPerformed(e: AnActionEvent) {
-                dispose()
-            }
-        }
-
-        val closeButton = ActionButton(
-            closeAction,
-            closeAction.templatePresentation.clone(),
-            ActionPlaces.TOOLBAR,
-            ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE
-        )
-
         val titleRightSidePanel = RoundedPanelWithBackgroundColor().apply {
             layout = HorizontalLayout(5)
             border = JBUI.Borders.emptyLeft(5)
-            add(closeButton)
         }
 
         titlePanel.apply {
@@ -144,6 +126,7 @@ class FixSuggestionInlayPanel(
             "Current code",
             "Suggested code"
         )
+        Disposer.register(this, diffPanel)
 
         diffPanel.applyRequest(request)
         centerPanel.add(diffPanel.component)
@@ -213,7 +196,8 @@ class FixSuggestionInlayPanel(
         }
     }
 
-    fun declineFix() {
+    private fun declineFix() {
+        getService(project, FixSuggestionInlayHolder::class.java).removeSnippet(suggestion.suggestionId, suggestion.snippetIndex - 1)
         getService(SonarLintTelemetry::class.java).fixSuggestionResolved(
             suggestion.suggestionId,
             FixSuggestionStatus.DECLINED,
@@ -222,7 +206,7 @@ class FixSuggestionInlayPanel(
         dispose()
     }
 
-    fun acceptFix() {
+    private fun acceptFix() {
         DocumentUtil.writeInRunUndoTransparentAction {
             editor.document.replaceString(
                 textRange.startOffset,
@@ -231,6 +215,7 @@ class FixSuggestionInlayPanel(
             )
             CodeStyleManager.getInstance(project).reformatText(file, textRange.startOffset, textRange.endOffset)
         }
+        getService(project, FixSuggestionInlayHolder::class.java).removeSnippet(suggestion.suggestionId, suggestion.snippetIndex - 1)
         getService(SonarLintTelemetry::class.java).fixSuggestionResolved(
             suggestion.suggestionId,
             FixSuggestionStatus.ACCEPTED,
@@ -243,6 +228,7 @@ class FixSuggestionInlayPanel(
 
     override fun dispose() {
         runOnUiThread(project) {
+            getService(project, FixSuggestionInlayHolder::class.java).removeSnippet(suggestion.suggestionId, suggestion.snippetIndex - 1)
             inlayRef.get()?.dispose()
             diffPanel.dispose()
         }

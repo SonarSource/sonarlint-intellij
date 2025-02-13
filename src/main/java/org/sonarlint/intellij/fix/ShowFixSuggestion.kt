@@ -30,8 +30,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.codefix.FixSuggestionInlayHolder
 import org.sonarlint.intellij.ui.inlay.FixSuggestionInlayPanel
 import org.sonarlint.intellij.ui.inlay.InlayManager
 import org.sonarlint.intellij.util.getDocument
@@ -54,26 +56,27 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
 
     fun show(fixSuggestion: FixSuggestionDto) {
         val localFixSuggestion = mapToLocalFixSuggestion(fixSuggestion)
-        show(localFixSuggestion)
+        show(localFixSuggestion, true)
     }
 
-    fun show(fixSuggestion: LocalFixSuggestion): List<FixSuggestionInlayPanel> {
+    fun show(fixSuggestion: LocalFixSuggestion, firstTime: Boolean) {
         val fileEditorManager = FileEditorManager.getInstance(project)
-        val psiFile = computeReadActionSafely(project) { PsiManager.getInstance(project).findFile(file) } ?: return emptyList()
-        val document = computeReadActionSafely(project) { file.getDocument() } ?: return emptyList()
+        val psiFile = computeReadActionSafely(project) { PsiManager.getInstance(project).findFile(file) } ?: return
+        val document = computeReadActionSafely(project) { file.getDocument() } ?: return
 
         if (!isWithinBounds(document, fixSuggestion.changes)) {
             get(project).simpleNotification(
                 null, "Unable to open the fix suggestion, your file has probably changed", NotificationType.WARNING
             )
-            return emptyList()
+            return
         }
 
         var successfullyOpened = true
 
-        val inlayPanels = mutableListOf<FixSuggestionInlayPanel>()
         runOnUiThread(project, ModalityState.defaultModalityState()) {
             fixSuggestion.changes.forEachIndexed { index, change ->
+                if (!firstTime && !getService(project, FixSuggestionInlayHolder::class.java).shouldShowSnippet(fixSuggestion.suggestionId, index)) return@forEachIndexed
+
                 if (index == 0) {
                     val descriptor = OpenFileDescriptor(project, file, change.startLine - 1, -1)
 
@@ -101,7 +104,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                             fixSuggestion.suggestionId
                         )
 
-                        inlayPanels.add(FixSuggestionInlayPanel(
+                        getService(project, FixSuggestionInlayHolder::class.java).addInlaySnippet(fixSuggestion.suggestionId, index, FixSuggestionInlayPanel(
                             project,
                             fixSuggestionSnippet,
                             it,
@@ -115,27 +118,28 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                 }
             }
 
-            if (!successfullyOpened) {
-                get(project).simpleNotification(
-                    null,
-                    "Unable to open the fix suggestion, your file has probably changed",
-                    NotificationType.WARNING
-                )
-            } else if (isBeforeContentIdentical(document, fixSuggestion.changes)) {
-                get(project).simpleNotification(
-                    null,
-                    "The fix suggestion has been successfully opened",
-                    NotificationType.INFORMATION
-                )
-            } else {
-                get(project).simpleNotification(
-                    null,
-                    "The fix suggestion has been opened, but the file's content has changed, so it may not be applicable",
-                    NotificationType.WARNING
-                )
+            if (firstTime) {
+                if (!successfullyOpened) {
+                    get(project).simpleNotification(
+                        null,
+                        "Unable to open the fix suggestion, your file has probably changed",
+                        NotificationType.WARNING
+                    )
+                } else if (isBeforeContentIdentical(document, fixSuggestion.changes)) {
+                    get(project).simpleNotification(
+                        null,
+                        "The fix suggestion has been successfully opened",
+                        NotificationType.INFORMATION
+                    )
+                } else {
+                    get(project).simpleNotification(
+                        null,
+                        "The fix suggestion has been opened, but the file's content has changed, so it may not be applicable",
+                        NotificationType.WARNING
+                    )
+                }
             }
         }
-        return inlayPanels
     }
 
     private fun isWithinBounds(document: Document, changes: List<FixChanges>): Boolean {
