@@ -51,6 +51,7 @@ import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.AbstractAction;
+import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -373,7 +374,12 @@ public class SonarLintProjectBindPanel {
         attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
       }
 
-      append(value.getName(), attrs, true);
+      if (value.isSonarCloud() && hasMoreThanOneSCConnections()) {
+        append("[" + value.getRegion() + "] " + value.getName(), attrs, true);
+      } else {
+        append(value.getName(), attrs, true);
+      }
+
       setToolTipText("Bind project using this connection");
       if (value.isSonarCloud()) {
         setIcon(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
@@ -381,6 +387,20 @@ public class SonarLintProjectBindPanel {
         setIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
       }
     }
+  }
+
+  private boolean hasMoreThanOneSCConnections() {
+    ComboBoxModel<ServerConnection> model = connectionComboBox.getModel();
+    long count = 0;
+    for (int i = 0; i < model.getSize(); i++) {
+      if (model.getElementAt(i).isSonarCloud()) {
+        count++;
+      }
+      if (count > 1) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private class ServerItemListener implements ItemListener {
