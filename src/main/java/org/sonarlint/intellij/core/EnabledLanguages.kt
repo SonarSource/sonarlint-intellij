@@ -25,6 +25,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.EnumSet
+import kotlin.io.path.name
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.util.GlobalLogOutput
@@ -172,8 +173,11 @@ object EnabledLanguages {
             Files.newDirectoryStream(pluginsDir, pattern).use { directoryStream ->
                 val globalLogOutput = SonarLintUtils.getService(GlobalLogOutput::class.java)
                 for (path in directoryStream) {
-                    globalLogOutput.log(logPrefix + path.fileName.toString(), ClientLogOutput.Level.DEBUG)
-                    pluginsPaths.add(path)
+                    // Do not load C# analyzers, they are handled differently
+                    if (!path.name.contains("csharp")) {
+                        globalLogOutput.log(logPrefix + path.fileName.toString(), ClientLogOutput.Level.DEBUG)
+                        pluginsPaths.add(path)
+                    }
                 }
             }
         }
