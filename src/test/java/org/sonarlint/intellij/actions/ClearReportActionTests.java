@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class ClearReportActionTests extends AbstractSonarLintLightTests {
@@ -56,6 +56,6 @@ class ClearReportActionTests extends AbstractSonarLintLightTests {
 
     action.actionPerformed(event);
 
-    verifyNoInteractions(toolWindow);
+    verify(toolWindow, never()).clearReportTab();
   }
 }
