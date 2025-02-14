@@ -140,6 +140,7 @@ class LocalFileExclusionsTests extends AbstractSonarLintLightTests {
       PowerSaveMode.setEnabled(true);
 
       var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), false, excludeReasons::put);
+      
       assertIsExcluded(file, nonExcludedFilesByModule, "power save mode is enabled");
     } finally {
       PowerSaveMode.setEnabled(false);
@@ -154,10 +155,29 @@ class LocalFileExclusionsTests extends AbstractSonarLintLightTests {
       PowerSaveMode.setEnabled(true);
 
       var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), true, excludeReasons::put);
+      
       assertIsNotExcluded(file, nonExcludedFilesByModule);
     } finally {
       PowerSaveMode.setEnabled(false);
     }
+  }
+
+  @Test
+  void should_exclude_razor_files() {
+    var razor = myFixture.copyFileToProject("foo.razor", "foo.razor");
+
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(razor), false, excludeReasons::put);
+
+    assertIsExcluded(razor, nonExcludedFilesByModule, "file's type or location are not supported");
+  }
+
+  @Test
+  void should_exclude_partial_razor_files() {
+    var partialRazor = myFixture.copyFileToProject("bar.razor.cs", "bar.razor.cs");
+
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(partialRazor), false, excludeReasons::put);
+
+    assertIsExcluded(partialRazor, nonExcludedFilesByModule, "file's type or location are not supported");
   }
 
   private void assertIsNotExcluded(VirtualFile file, Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule) {

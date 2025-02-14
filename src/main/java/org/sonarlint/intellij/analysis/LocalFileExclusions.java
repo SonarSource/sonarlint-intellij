@@ -225,7 +225,7 @@ public final class LocalFileExclusions {
   }
 
   public static boolean isRazorFile(VirtualFile file) {
-    return (file.getExtension() != null) && (file.getExtension().equals("razor"));
+    return file.getExtension() != null && (file.getExtension().equals("razor") || file.getName().endsWith("razor.cs"));
   }
   
   @NotNull
