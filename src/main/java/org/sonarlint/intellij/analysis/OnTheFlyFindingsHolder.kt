@@ -55,6 +55,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
 
     fun clearNonDirtyAnalyzedFiles() = nonDirtyAnalyzedFiles.clear()
 
+    fun clearNonDirtyAnalyzedFile(file: VirtualFile) = nonDirtyAnalyzedFiles.remove(file)
+
     fun updateOnAnalysisResult(analysisResult: AnalysisResult) =
         updateViewsWithNewFindings(analysisResult.findings)
 

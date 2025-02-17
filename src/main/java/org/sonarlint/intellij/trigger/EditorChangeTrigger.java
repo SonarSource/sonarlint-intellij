@@ -25,9 +25,12 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import javax.annotation.concurrent.ThreadSafe;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.guessProjectForFile;
 
@@ -64,6 +67,14 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
     var project = guessProjectForFile(file);
 
     if (project == null || !project.equals(myProject)) {
+      return;
+    }
+
+    if (!FileEditorManager.getInstance(myProject).isFileOpen(file)) {
+      var findingsHolder = getService(myProject, AnalysisSubmitter.class).getOnTheFlyFindingsHolder();
+      if (findingsHolder != null) {
+        findingsHolder.clearNonDirtyAnalyzedFile(file);
+      }
       return;
     }
 

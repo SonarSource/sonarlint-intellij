@@ -24,6 +24,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFileFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -160,6 +161,17 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
 
     underTest.documentChanged(event);
     verifyNoInteractions(submitter);
+  }
+
+  @Test
+  void should_not_trigger_if_file_is_not_opened() {
+    var file = PsiFileFactory.getInstance(getProject())
+      .createFileFromText("MyClass.java", Language.findLanguageByID("JAVA"), "class MyClass {}", true, false);
+
+    underTest.documentChanged(createEvent(file.getVirtualFile()));
+
+    verify(submitter, timeout(1_000)).getOnTheFlyFindingsHolder();
+    verifyNoMoreInteractions(submitter);
   }
 
   @Test
