@@ -122,6 +122,7 @@ import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
+import org.sonarsource.sonarlint.core.SonarCloudRegion
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
@@ -419,9 +420,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val serverOrOrg = if (isSQ) params.connectionParams.left.serverUrl else params.connectionParams.right.organizationKey
         val tokenName = if (isSQ) params.connectionParams.left.tokenName else params.connectionParams.right.tokenName
         val tokenValue = if (isSQ) params.connectionParams.left.tokenValue else params.connectionParams.right.tokenValue
+        val region = if (isSQ) null else SonarCloudRegion.valueOf(params.connectionParams.right.region.name)
 
         val response = if (tokenName != null && tokenValue != null) {
-            setUpAutomaticConnection(serverOrOrg, tokenValue, isSQ)
+            setUpAutomaticConnection(serverOrOrg, tokenValue, isSQ, region)
         } else {
             if (isSQ) {
                 setUpManualConnection(serverOrOrg)
@@ -439,9 +441,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return response
     }
 
-    private fun setUpAutomaticConnection(serverOrOrg: String, tokenValue: String, isSQ: Boolean): AssistCreatingConnectionResponse {
+    private fun setUpAutomaticConnection(serverOrOrg: String, tokenValue: String,
+                                         isSQ: Boolean, region: SonarCloudRegion?): AssistCreatingConnectionResponse {
         val newConnection = ApplicationManager.getApplication().computeInEDT {
-            AutomaticServerConnectionCreator(serverOrOrg, tokenValue, isSQ).chooseResolution()
+            AutomaticServerConnectionCreator(serverOrOrg, tokenValue, isSQ, region).chooseResolution()
         } ?: run {
             throw CancellationException("Connection creation cancelled by the user")
         }

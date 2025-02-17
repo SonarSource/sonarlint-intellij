@@ -33,6 +33,7 @@ import org.sonarsource.sonarlint.core.SonarCloudRegion;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
 
 public class WizardModel {
   private ServerType serverType;
@@ -266,12 +267,11 @@ public class WizardModel {
 
     if (serverType == ServerType.SONARCLOUD) {
       if (region == SonarCloudRegion.US) {
-        builder.setHostUrl(SonarCloudRegion.US.getProductionUri().toString());
-        builder.setRegion("US");
+        builder.setHostUrl(US_SONARCLOUD_URL);
       } else {
         builder.setHostUrl(SONARCLOUD_URL);
-        builder.setRegion("EU");
       }
+      builder.setRegion(region.name());
     } else {
       builder.setHostUrl(serverUrl);
     }
