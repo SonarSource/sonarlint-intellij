@@ -75,7 +75,9 @@ public class ServerStep extends AbstractWizardStepEx{
   private ErrorPainter errorPainter;
   private JRadioButton radioUS;
   private JRadioButton radioEU;
+  private JLabel SCURL;
   private JTextPane EUTextPane;
+  private boolean isOnDogfood;
 
   public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
     super("Server Details");
@@ -127,7 +129,7 @@ public class ServerStep extends AbstractWizardStepEx{
 
     proxyButton.addActionListener(evt -> HttpConfigurable.editConfigurable(panel));
 
-    load(editing);
+    load(editing, SonarLintUtils.isDogfoodEnvironment());
     paintErrors();
   }
 
@@ -146,7 +148,11 @@ public class ServerStep extends AbstractWizardStepEx{
     errorPainter.installOn(panel, this);
   }
 
-  private void load(boolean editing) {
+  private void load(boolean editing, boolean isOnDogfood) {
+    SCURL.setVisible(isOnDogfood);
+    radioEU.setVisible(isOnDogfood);
+    radioUS.setVisible(isOnDogfood);
+
     var sqsIcon = SonarLintIcons.ICON_SONARQUBE_SERVER;
     var sqcIcon = SonarLintIcons.ICON_SONARQUBE_CLOUD;
 

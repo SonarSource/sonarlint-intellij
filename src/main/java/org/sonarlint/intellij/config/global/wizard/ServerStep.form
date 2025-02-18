@@ -1,25 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-
-    SonarLint for IntelliJ IDEA
-    Copyright (C) 2015-2025 SonarSource
-    sonarlint@sonarsource.com
-
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 3 of the License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    License along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
-
--->
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.sonarlint.intellij.config.global.wizard.ServerStep">
   <grid id="27dc6" binding="panel" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="10" vgap="10">
     <margin top="0" left="0" bottom="0" right="0"/>
@@ -129,7 +108,7 @@
                   <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
               </hspacer>
-              <component id="a5310" class="javax.swing.JLabel">
+              <component id="a5310" class="javax.swing.JLabel" binding="SCURL">
                 <constraints>
                   <grid row="5" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>

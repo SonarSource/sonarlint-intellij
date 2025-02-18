@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
@@ -48,6 +49,7 @@ public class SonarLintUtils {
   public static final String SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.url", DEFAULT_SONARCLOUD_URL);
   private static final Set<String> SONARCLOUD_ALIAS = Set.copyOf(List.of("https://sonarqube.com", "https://www.sonarqube.com",
     "https://www.sonarcloud.io", "https://us-sc-staging.io", DEFAULT_SONARCLOUD_URL, SONARCLOUD_URL));
+  public static final String SONARSOURCE_DOGFOODING_ENV_VAR_KEY = "SONARSOURCE_DOGFOODING";
 
   private SonarLintUtils() {
     // Utility class
@@ -205,5 +207,9 @@ public class SonarLintUtils {
 
   public static boolean isModuleLevelBindingEnabled() {
     return !isRider() && !isCLion() && !isAppCode();
+  }
+
+  public static boolean isDogfoodEnvironment() {
+    return "1".equals(SystemUtils.getEnvironmentVariable(SONARSOURCE_DOGFOODING_ENV_VAR_KEY, "0"));
   }
 }

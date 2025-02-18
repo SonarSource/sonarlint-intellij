@@ -58,6 +58,7 @@ import javax.swing.ListModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -128,9 +129,11 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       @Override
       protected void customizeCellRenderer(JList list, ServerConnection server, int index, boolean selected, boolean hasFocus) {
         if (server.isSonarCloud()) {
+          String serverRegion = server.getRegion() == null ? "EU" : server.getRegion();
+
           setIcon(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
-          if (hasMoreThanOneSCConnections()) {
-            append("[" + server.getRegion() + "] " + server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+          if (hasMoreThanOneSCConnections() && SonarLintUtils.isDogfoodEnvironment()) {
+            append("[" + serverRegion + "] " + server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
           } else {
             append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
           }
