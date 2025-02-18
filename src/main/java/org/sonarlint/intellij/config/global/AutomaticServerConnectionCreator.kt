@@ -43,7 +43,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
-import org.sonarsource.sonarlint.core.SonarCloudRegion
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 class AutomaticServerConnectionCreator(private val serverOrOrg: String, private val tokenValue: String,
                                        private val isSQ: Boolean, private val region: SonarCloudRegion?) :

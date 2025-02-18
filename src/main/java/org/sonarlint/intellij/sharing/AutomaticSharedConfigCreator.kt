@@ -51,6 +51,7 @@ import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
+import org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -64,9 +65,9 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
 import org.sonarlint.intellij.util.computeOnPooledThread
-import org.sonarsource.sonarlint.core.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 class AutomaticSharedConfigCreator(
     private val projectKey: String,
@@ -136,7 +137,7 @@ class AutomaticSharedConfigCreator(
         } else {
             tokenGenerationButton.addActionListener {
                 if (region == SonarCloudRegion.US) {
-                    openTokenCreationPage(SonarCloudRegion.US.productionUri.toString())
+                    openTokenCreationPage(US_SONARCLOUD_URL)
                 } else {
                     openTokenCreationPage(SONARCLOUD_URL)
                 }
@@ -158,7 +159,7 @@ class AutomaticSharedConfigCreator(
             } else {
                 serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(
                     if (region == SonarCloudRegion.US) {
-                        SonarCloudRegion.US.productionUri.toString()
+                        US_SONARCLOUD_URL
                     } else {
                         SONARCLOUD_URL
                     }
@@ -260,7 +261,7 @@ class AutomaticSharedConfigCreator(
                 )
             )
         } else {
-            val scURLField = JBTextField(region?.productionUri.toString()).apply {
+            val scURLField = JBTextField(US_SONARCLOUD_URL).apply {
                 isEditable = false
             }
             val scURLFieldText = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(scURLField, BorderLayout.CENTER) }

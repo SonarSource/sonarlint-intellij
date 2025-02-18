@@ -32,7 +32,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.server.ServerLinks;
 import org.sonarlint.intellij.core.server.SonarCloudLinks;
 import org.sonarlint.intellij.core.server.SonarQubeLinks;
-import org.sonarsource.sonarlint.core.SonarCloudRegion;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.

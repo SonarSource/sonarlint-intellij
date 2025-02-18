@@ -123,7 +123,6 @@ import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
-import org.sonarsource.sonarlint.core.SonarCloudRegion
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
@@ -157,6 +156,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
