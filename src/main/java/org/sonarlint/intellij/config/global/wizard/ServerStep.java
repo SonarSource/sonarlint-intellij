@@ -37,7 +37,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
@@ -49,7 +48,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE;
 
@@ -75,9 +73,7 @@ public class ServerStep extends AbstractWizardStepEx{
   private ErrorPainter errorPainter;
   private JRadioButton radioUS;
   private JRadioButton radioEU;
-  private JLabel SCURL;
-  private JTextPane EUTextPane;
-  private boolean isOnDogfood;
+  private JLabel SONARCLOUD_URL;
 
   public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
     super("Server Details");
@@ -149,7 +145,7 @@ public class ServerStep extends AbstractWizardStepEx{
   }
 
   private void load(boolean editing, boolean isOnDogfood) {
-    SCURL.setVisible(isOnDogfood);
+    SONARCLOUD_URL.setVisible(isOnDogfood);
     radioEU.setVisible(isOnDogfood);
     radioUS.setVisible(isOnDogfood);
 
@@ -266,7 +262,7 @@ public class ServerStep extends AbstractWizardStepEx{
         model.setServerUrl(US_SONARCLOUD_URL);
         model.setRegion(SonarCloudRegion.US);
       } else {
-        model.setServerUrl(SONARCLOUD_URL);
+        model.setServerUrl(SonarLintUtils.SONARCLOUD_URL);
       }
     } else {  
       model.setServerType(WizardModel.ServerType.SONARQUBE);

@@ -21,7 +21,9 @@ package org.sonarlint.intellij.tasks;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -40,18 +42,11 @@ public class GetOrganizationTask extends Task.Modal {
   private Exception exception;
   private OrganizationDto organization;
 
-  public GetOrganizationTask(ServerConnection server, String organizationKey) {
+  public GetOrganizationTask(ServerConnection server, String organizationKey, @Nullable SonarCloudRegion region) {
     super(null, "Fetch Organization From SonarQube Cloud", true);
     this.server = server;
     this.organizationKey = organizationKey;
-    this.region = SonarCloudRegion.EU;
-  }
-
-  public GetOrganizationTask(ServerConnection server, String organizationKey, SonarCloudRegion region) {
-    super(null, "Fetch Organization From SonarQube Cloud", true);
-    this.server = server;
-    this.organizationKey = organizationKey;
-    this.region = region;
+    this.region = Objects.requireNonNullElse(region, SonarCloudRegion.EU);
   }
 
   @Override
