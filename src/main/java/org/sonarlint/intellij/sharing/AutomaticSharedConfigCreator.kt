@@ -50,6 +50,7 @@ import javax.swing.event.DocumentListener
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -261,18 +262,20 @@ class AutomaticSharedConfigCreator(
                 )
             )
         } else {
-            val scURLField = JBTextField(US_SONARCLOUD_URL).apply {
-                isEditable = false
+            if (SonarLintUtils.isDogfoodEnvironment()) {
+                val scURLField = JBTextField(US_SONARCLOUD_URL).apply {
+                    isEditable = false
+                }
+                val scURLFieldText = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(scURLField, BorderLayout.CENTER) }
+                centerPanel.add(
+                    scURLLabel,
+                    GridBagConstraints(1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+                )
+                centerPanel.add(
+                    scURLFieldText,
+                    GridBagConstraints(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+                )
             }
-            val scURLFieldText = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(scURLField, BorderLayout.CENTER) }
-            centerPanel.add(
-                scURLLabel,
-                GridBagConstraints(1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
-            )
-            centerPanel.add(
-                scURLFieldText,
-                GridBagConstraints(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
-            )
         }
 
         connectionNameLabel.text = "Connection name"

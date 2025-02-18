@@ -61,6 +61,7 @@ import javax.swing.JPanel;
 import org.apache.commons.lang3.StringUtils;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.sharing.ConfigurationSharing;
@@ -373,8 +374,10 @@ public class SonarLintProjectBindPanel {
         attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
       }
 
-      if (value.isSonarCloud() && hasMoreThanOneSCConnections()) {
-        append("[" + value.getRegion() + "] " + value.getName(), attrs, true);
+      String serverRegion = value.getRegion() == null ? "EU" : value.getRegion();
+
+      if (value.isSonarCloud() && hasMoreThanOneSCConnections() && SonarLintUtils.isDogfoodEnvironment()) {
+        append("[" + serverRegion + "] " + value.getName(), attrs, true);
       } else {
         append(value.getName(), attrs, true);
       }

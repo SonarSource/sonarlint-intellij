@@ -473,6 +473,10 @@ class BackendService : Disposable {
         return requestFromBackend { it.telemetryService.status }.thenApplyAsync { status -> status.isEnabled }
     }
 
+    fun isOnDogfood(): CompletableFuture<Boolean> {
+        return requestFromBackend { it.dogfoodingService.isDogfoodingEnvironment }.thenApplyAsync { status -> status.isDogfoodingEnvironment }
+    }
+
     fun getAllProjects(server: ServerConnection, region: SonarCloudRegion = SonarCloudRegion.EU): CompletableFuture<GetAllProjectsResponse> {
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))

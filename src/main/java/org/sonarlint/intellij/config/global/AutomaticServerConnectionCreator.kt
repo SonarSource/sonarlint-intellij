@@ -38,6 +38,7 @@ import java.awt.event.ActionEvent
 import javax.swing.JButton
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL
 import org.sonarlint.intellij.config.Settings
@@ -174,7 +175,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         connectionNameLabel.text = "Connection Name"
         scURLLabel.text = "SonarQube Cloud URL"
 
-        if(!isSQ) {
+        if(!isSQ && SonarLintUtils.isDogfoodEnvironment()) {
             centerPanel.add(
                 scURLLabel, GridBagConstraints(
                     1, 4, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
