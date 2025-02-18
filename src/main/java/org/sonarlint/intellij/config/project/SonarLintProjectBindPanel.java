@@ -389,20 +389,20 @@ public class SonarLintProjectBindPanel {
         setIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
       }
     }
-  }
 
-  private boolean hasMoreThanOneSCConnections() {
-    ComboBoxModel<ServerConnection> model = connectionComboBox.getModel();
-    long count = 0;
-    for (int i = 0; i < model.getSize(); i++) {
-      if (model.getElementAt(i).isSonarCloud()) {
-        count++;
+    private boolean hasMoreThanOneSCConnections() {
+      ComboBoxModel<ServerConnection> model = connectionComboBox.getModel();
+      var count = 0;
+      for (int i = 0; i < model.getSize(); i++) {
+        if (model.getElementAt(i).isSonarCloud()) {
+          count++;
+        }
+        if (count > 1) {
+          return true;
+        }
       }
-      if (count > 1) {
-        return true;
-      }
+      return false;
     }
-    return false;
   }
 
   private class ServerItemListener implements ItemListener {

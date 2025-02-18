@@ -151,7 +151,8 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   private boolean hasMoreThanOneSCConnections() {
     ListModel<ServerConnection> model = connectionList.getModel();
-    long count = 0;
+    var count = 0;
+
     for (int i = 0; i < model.getSize(); i++) {
       if (model.getElementAt(i).isSonarCloud()) {
         count++;
