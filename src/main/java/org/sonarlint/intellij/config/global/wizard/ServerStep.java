@@ -47,9 +47,10 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
-import org.sonarsource.sonarlint.core.SonarCloudRegion;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE;
 
 public class ServerStep extends AbstractWizardStepEx{
@@ -256,7 +257,7 @@ public class ServerStep extends AbstractWizardStepEx{
       model.setServerType(WizardModel.ServerType.SONARCLOUD);
       var isUS = radioUS.isSelected();
       if (isUS) {
-        model.setServerUrl(SonarCloudRegion.US.getProductionUri().toString());
+        model.setServerUrl(US_SONARCLOUD_URL);
         model.setRegion(SonarCloudRegion.US);
       } else {
         model.setServerUrl(SONARCLOUD_URL);

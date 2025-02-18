@@ -81,7 +81,6 @@ import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
 import org.sonarlint.intellij.util.runOnPooledThread
-import org.sonarsource.sonarlint.core.SonarCloudRegion
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
@@ -161,7 +160,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
-import  org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion as rpcSonarCloudRegion
+import  org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 @Service(Service.Level.APP)
 class BackendService : Disposable {
@@ -528,11 +527,9 @@ class BackendService : Disposable {
         return SonarCloudConnectionConfigurationDto(
             createdConnection.name,
             createdConnection.organizationKey!!,
-            if(createdConnection.region != null) {
-                rpcSonarCloudRegion.valueOf(createdConnection.region)
-            } else {
-                rpcSonarCloudRegion.EU
-            },
+            createdConnection.region?.let {
+                SonarCloudRegion.valueOf(it)
+            } ?: SonarCloudRegion.EU,
             createdConnection.isDisableNotifications
         )
     }

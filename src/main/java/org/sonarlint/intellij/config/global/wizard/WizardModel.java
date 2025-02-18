@@ -29,8 +29,8 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.CheckNotificationsSupportedTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
-import org.sonarsource.sonarlint.core.SonarCloudRegion;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
@@ -39,14 +39,6 @@ public class WizardModel {
   private ServerType serverType;
   private String serverUrl;
   private String token;
-
-  public SonarCloudRegion getRegion() {
-    return region;
-  }
-
-  public void setRegion(SonarCloudRegion region) {
-    this.region = region;
-  }
 
   private String login;
   private char[] password;
@@ -71,8 +63,10 @@ public class WizardModel {
   public WizardModel(ServerConnection connectionToEdit) {
     if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
-      if(region != null) {
+      if (connectionToEdit.getRegion() != null) {
         region = SonarCloudRegion.valueOf(connectionToEdit.getRegion());
+      } else {
+        region = SonarCloudRegion.EU;
       }
     } else {
       serverType = ServerType.SONARQUBE;
@@ -249,6 +243,14 @@ public class WizardModel {
   public WizardModel setOrganizationKey(@Nullable String organization) {
     this.organizationKey = organization;
     return this;
+  }
+
+  public SonarCloudRegion getRegion() {
+    return region;
+  }
+
+  public void setRegion(SonarCloudRegion region) {
+    this.region = region;
   }
 
   public ServerConnection createConnectionWithoutOrganization() {
