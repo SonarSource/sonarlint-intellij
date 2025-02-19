@@ -71,7 +71,7 @@ public class CurrentFileConnectedModePanel {
     createPanel();
     switchCards();
     CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
-    project.getMessageBus().connect().subscribe(SonarProjectBranchListener.TOPIC, (module, branchName) -> updateBranchTooltip());
+    project.getMessageBus().connect().subscribe(SonarProjectBranchListener.TOPIC, (SonarProjectBranchListener) (module, branchName) -> updateBranchTooltip());
   }
 
   private void createPanel() {

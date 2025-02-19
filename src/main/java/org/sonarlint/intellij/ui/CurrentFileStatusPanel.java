@@ -58,8 +58,8 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
         runnable.run();
       }
     });
-    busConnection.subscribe(ProjectConfigurationListener.TOPIC, s -> runnable.run());
-    busConnection.subscribe(PowerSaveMode.TOPIC, runnable::run);
+    busConnection.subscribe(ProjectConfigurationListener.TOPIC, (ProjectConfigurationListener) s -> runnable.run());
+    busConnection.subscribe(PowerSaveMode.TOPIC, (PowerSaveMode.Listener) runnable::run);
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
       @Override
       public void selectionChanged(@NotNull FileEditorManagerEvent event) {
