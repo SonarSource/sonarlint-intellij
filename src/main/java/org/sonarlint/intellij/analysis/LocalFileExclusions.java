@@ -102,7 +102,7 @@ public final class LocalFileExclusions {
         loadGlobalExclusions(newSettings);
       }
     });
-    busConnection.subscribe(ProjectConfigurationListener.TOPIC, this::loadProjectExclusions);
+    busConnection.subscribe(ProjectConfigurationListener.TOPIC, (ProjectConfigurationListener) this::loadProjectExclusions);
   }
 
   /**

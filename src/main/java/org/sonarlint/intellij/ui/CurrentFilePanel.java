@@ -103,7 +103,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
     super.setContent(splitter);
     project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
-      newStatus -> runOnUiThread(project, this::refreshToolbar));
+      (StatusListener) newStatus -> runOnUiThread(project, this::refreshToolbar));
   }
 
   public void allowResolvedIssues(boolean allowResolved) {

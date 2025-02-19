@@ -54,7 +54,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     addToolbar();
     addConsole();
 
-    project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
+    project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC, (StatusListener) newStatus ->
     runOnUiThread(project, mainToolbar::updateActionsImmediately));
   }
 
