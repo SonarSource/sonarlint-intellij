@@ -347,7 +347,7 @@ class BackendService : Disposable {
                     shouldManageFullSynchronization = true,
                     enableTelemetry = telemetryEnabled,
                     canOpenFixSuggestion = true,
-                    enableMonitoring = false
+                    enableMonitoring = true
                 ),
                 getLocalStoragePath(),
                 workDir,
