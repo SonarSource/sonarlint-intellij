@@ -50,7 +50,8 @@ import javax.swing.event.DocumentListener
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -63,9 +64,11 @@ import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
+import org.sonarlint.intellij.util.RegionUtils
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 class AutomaticSharedConfigCreator(
     private val projectKey: String,
@@ -73,6 +76,7 @@ class AutomaticSharedConfigCreator(
     private val isSQ: Boolean,
     private val project: Project,
     private val bindingMode: BindingMode,
+    private val region: SonarCloudRegion?
 ) :
     DialogWrapper(false) {
     private var serverConnection: ServerConnection? = null
@@ -87,6 +91,7 @@ class AutomaticSharedConfigCreator(
     private val connectedModeDescriptionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val connectionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val projectKeyLabel = SwingHelper.createHtmlViewer(false, null, null, null)
+    private val scURLLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val projectKeyField = JBTextField(projectKey).apply {
         isEditable = false
     }
@@ -131,7 +136,9 @@ class AutomaticSharedConfigCreator(
         if (isSQ) {
             tokenGenerationButton.addActionListener { openTokenCreationPage(orgOrServerUrl) }
         } else {
-            tokenGenerationButton.addActionListener { openTokenCreationPage(SONARCLOUD_URL) }
+            tokenGenerationButton.addActionListener {
+                openTokenCreationPage(RegionUtils.getUrlByRegion(region))
+            }
         }
         isResizable = false
 
@@ -147,7 +154,10 @@ class AutomaticSharedConfigCreator(
             if (isSQ) {
                 serverConnectionBuilder.setHostUrl(orgOrServerUrl)
             } else {
-                serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(SONARCLOUD_URL)
+                serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(
+                    RegionUtils.getUrlByRegion(region)
+                )
+                serverConnectionBuilder.setRegion(region?.name ?: SonarCloudRegion.EU.name)
             }
             serverConnection = serverConnectionBuilder.build()
 
@@ -200,31 +210,33 @@ class AutomaticSharedConfigCreator(
                 BrowserUtil.browse(e.url)
             }
         })
-        centerPanel.add(
-            connectedModeDescriptionLabel,
-            GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
-        )
-
         connectionLabel.text = if (isSQ) "Server URL" else "SonarQube Cloud organization"
         projectKeyLabel.text = "Project key"
+        scURLLabel.text = "SonarQube Cloud URL"
+        val urlLabel = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(serverUrlField, BorderLayout.CENTER) }
+        val projectKeyFieldLabel = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(projectKeyField, BorderLayout.CENTER) }
+
+        var gridY = 0
+
+        centerPanel.add(
+            connectedModeDescriptionLabel,
+            GridBagConstraints(1, gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
+        )
         centerPanel.add(
             projectKeyLabel,
-            GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+        )
+        centerPanel.add(
+            projectKeyFieldLabel,
+            GridBagConstraints(1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
         centerPanel.add(
             connectionLabel,
-            GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
-        )
-
-        val urlLabel = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(serverUrlField, BorderLayout.CENTER) }
-        val projectKeyLabel = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(projectKeyField, BorderLayout.CENTER) }
-        centerPanel.add(
-            projectKeyLabel,
-            GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
         centerPanel.add(
             urlLabel,
-            GridBagConstraints(1, 4, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         if (isSQ) {
@@ -238,26 +250,44 @@ class AutomaticSharedConfigCreator(
             centerPanel.add(
                 warningPanel,
                 GridBagConstraints(
-                    1, 5, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0
+                    1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0
                 )
             )
+        } else {
+            if (SonarLintUtils.isDogfoodEnvironment()) {
+                val scURLField = JBTextField(US_SONARCLOUD_URL).apply {
+                    isEditable = false
+                }
+                val scURLFieldText = JBPanel<JBPanel<*>>(BorderLayout()).apply { add(scURLField, BorderLayout.CENTER) }
+                centerPanel.add(
+                    scURLLabel,
+                    GridBagConstraints(1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+                )
+                centerPanel.add(
+                    scURLFieldText,
+                    GridBagConstraints(1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+                )
+            }
         }
 
         connectionNameLabel.text = "Connection name"
         centerPanel.add(
             connectionNameLabel,
-            GridBagConstraints(1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, ++gridY,
+                1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         centerPanel.add(
             connectionNameField,
-            GridBagConstraints(1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, ++gridY,
+                1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         tokenLabel.text = "Token"
         centerPanel.add(
             tokenLabel,
-            GridBagConstraints(1, 8, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
+            GridBagConstraints(1, ++gridY,
+                1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
         )
 
         val listener: DocumentListener = object : DocumentAdapter() {
@@ -269,12 +299,14 @@ class AutomaticSharedConfigCreator(
 
         centerPanel.add(
             tokenField,
-            GridBagConstraints(1, 9, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
+            GridBagConstraints(1, ++gridY,
+                1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
         )
 
         centerPanel.add(
             tokenGenerationButton,
-            GridBagConstraints(1, 10, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insetsBottom(20), 0, 0)
+            GridBagConstraints(1, ++gridY,
+                1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insetsBottom(20), 0, 0)
         )
 
         centerPanel.preferredSize = Dimension(600, 300)

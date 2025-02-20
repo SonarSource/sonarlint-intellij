@@ -160,6 +160,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
+import  org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 @Service(Service.Level.APP)
 class BackendService : Disposable {
@@ -473,10 +474,13 @@ class BackendService : Disposable {
     }
 
     fun getAllProjects(server: ServerConnection): CompletableFuture<GetAllProjectsResponse> {
+        val serverRegion = server.region ?: SonarCloudRegion.EU.name
+
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: GetAllProjectsParams = if (server.isSonarCloud) {
-            GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
+            GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials,
+                SonarCloudRegion.valueOf(serverRegion)))
         } else {
             GetAllProjectsParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
         }
@@ -525,6 +529,9 @@ class BackendService : Disposable {
         return SonarCloudConnectionConfigurationDto(
             createdConnection.name,
             createdConnection.organizationKey!!,
+            createdConnection.region?.let {
+                SonarCloudRegion.valueOf(it)
+            } ?: SonarCloudRegion.EU,
             createdConnection.isDisableNotifications
         )
     }
@@ -769,11 +776,15 @@ class BackendService : Disposable {
         notifyBackend { it.sonarProjectBranchService.didVcsRepositoryChange(DidVcsRepositoryChangeParams(projectId(project))) }
     }
 
-    fun checkSmartNotificationsSupported(server: ServerConnection): CompletableFuture<CheckSmartNotificationsSupportedResponse> {
+    fun checkSmartNotificationsSupported(server: ServerConnection):
+        CompletableFuture<CheckSmartNotificationsSupportedResponse> {
+        val serverRegion = server.region ?: SonarCloudRegion.EU.name
+
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: CheckSmartNotificationsSupportedParams = if (server.isSonarCloud) {
-            CheckSmartNotificationsSupportedParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
+            CheckSmartNotificationsSupportedParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials,
+                SonarCloudRegion.valueOf(serverRegion)))
         } else {
             CheckSmartNotificationsSupportedParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
         }
@@ -781,10 +792,13 @@ class BackendService : Disposable {
     }
 
     fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
+        val serverRegion = server.region ?: SonarCloudRegion.EU.name
+
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
-            ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials))
+            ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey,
+                credentials, SonarCloudRegion.valueOf(serverRegion)))
         } else {
             ValidateConnectionParams(TransientSonarQubeConnectionDto(server.hostUrl, credentials))
         }
@@ -792,16 +806,23 @@ class BackendService : Disposable {
     }
 
     fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
+        val serverRegion = server.region ?: SonarCloudRegion.EU.name
+
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
-        val params = ListUserOrganizationsParams(credentials)
+        val params = ListUserOrganizationsParams(credentials,
+            SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.listUserOrganizations(params) }
     }
 
-    fun getOrganization(server: ServerConnection, organizationKey: String): CompletableFuture<GetOrganizationResponse> {
+    fun getOrganization(server: ServerConnection, organizationKey: String):
+        CompletableFuture<GetOrganizationResponse> {
+        val serverRegion = server.region ?: SonarCloudRegion.EU.name
+
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
             ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
-        val params = GetOrganizationParams(credentials, organizationKey)
+        val params = GetOrganizationParams(credentials, organizationKey,
+            SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.getOrganization(params) }
     }
 

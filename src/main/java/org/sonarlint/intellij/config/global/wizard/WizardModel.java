@@ -29,9 +29,9 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.CheckNotificationsSupportedTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
+import org.sonarlint.intellij.util.RegionUtils;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
 public class WizardModel {
   private ServerType serverType;
@@ -44,6 +44,7 @@ public class WizardModel {
   private boolean proxyEnabled;
   private boolean notificationsDisabled = false;
   private boolean notificationsSupported = false;
+  private SonarCloudRegion region = SonarCloudRegion.EU;
 
   private List<OrganizationDto> organizationList = new ArrayList<>();
 
@@ -59,6 +60,11 @@ public class WizardModel {
   public WizardModel(ServerConnection connectionToEdit) {
     if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
+      if (connectionToEdit.getRegion() != null) {
+        region = SonarCloudRegion.valueOf(connectionToEdit.getRegion());
+      } else {
+        region = SonarCloudRegion.EU;
+      }
     } else {
       serverType = ServerType.SONARQUBE;
       serverUrl = connectionToEdit.getHostUrl();
@@ -236,6 +242,15 @@ public class WizardModel {
     return this;
   }
 
+  public SonarCloudRegion getRegion() {
+    return region;
+  }
+
+  public WizardModel setRegion(SonarCloudRegion region) {
+    this.region = region;
+    return this;
+  }
+
   public ServerConnection createConnectionWithoutOrganization() {
     return createConnection(null);
   }
@@ -251,8 +266,8 @@ public class WizardModel {
       .setName(name);
 
     if (serverType == ServerType.SONARCLOUD) {
-      builder.setHostUrl(SONARCLOUD_URL);
-
+      builder.setHostUrl(RegionUtils.getUrlByRegion(region));
+      builder.setRegion(region.name());
     } else {
       builder.setHostUrl(serverUrl);
     }

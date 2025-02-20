@@ -46,8 +46,10 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE;
 
 public class ServerStep extends AbstractWizardStepEx {
@@ -70,6 +72,9 @@ public class ServerStep extends AbstractWizardStepEx {
   private JEditorPane sonarCloudDescription;
   private JEditorPane compareProducts;
   private ErrorPainter errorPainter;
+  private JRadioButton radioUS;
+  private JRadioButton radioEU;
+  private JLabel sonarCloudUrl;
 
   public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
     super("Server Details");
@@ -119,7 +124,7 @@ public class ServerStep extends AbstractWizardStepEx {
 
     proxyButton.addActionListener(evt -> HttpConfigurable.editConfigurable(panel));
 
-    load(editing);
+    load(editing, SonarLintUtils.isDogfoodEnvironment());
     paintErrors();
   }
 
@@ -138,12 +143,21 @@ public class ServerStep extends AbstractWizardStepEx {
     errorPainter.installOn(panel, this);
   }
 
-  private void load(boolean editing) {
+  private void load(boolean editing, boolean isOnDogfood) {
+    sonarCloudUrl.setVisible(isOnDogfood);
+    radioEU.setVisible(isOnDogfood);
+    radioUS.setVisible(isOnDogfood);
+
     var sqsIcon = SonarLintIcons.ICON_SONARQUBE_SERVER;
     var sqcIcon = SonarLintIcons.ICON_SONARQUBE_CLOUD;
 
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
       radioSonarCloud.setSelected(true);
+      if (model.getRegion() == SonarCloudRegion.US) {
+        radioUS.setSelected(true);
+      } else {
+        radioEU.setSelected(true);
+      }
       if (editing) {
         sqsIcon = SonarLintIcons.toDisabled(sqsIcon);
       }
@@ -169,6 +183,9 @@ public class ServerStep extends AbstractWizardStepEx {
 
   private void selectionChanged() {
     boolean sq = radioSonarQube.isSelected();
+
+    radioEU.setEnabled(!sq);
+    radioUS.setEnabled(!sq);
 
     urlText.setEnabled(sq);
     urlLabel.setEnabled(sq);
@@ -239,8 +256,15 @@ public class ServerStep extends AbstractWizardStepEx {
   private void save() {
     if (radioSonarCloud.isSelected()) {
       model.setServerType(WizardModel.ServerType.SONARCLOUD);
-      model.setServerUrl(SONARCLOUD_URL);
-    } else {
+      var isUS = radioUS.isSelected();
+      if (isUS) {
+        model.setServerUrl(US_SONARCLOUD_URL);
+        model.setRegion(SonarCloudRegion.US);
+      } else {
+        model.setServerUrl(SONARCLOUD_URL);
+        model.setRegion(SonarCloudRegion.EU);
+      }
+    } else {  
       model.setServerType(WizardModel.ServerType.SONARQUBE);
       model.setServerUrl(urlText.getText().trim());
     }

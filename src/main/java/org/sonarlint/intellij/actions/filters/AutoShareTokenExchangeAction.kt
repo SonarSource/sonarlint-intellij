@@ -26,6 +26,7 @@ import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.sharing.AutomaticSharedConfigCreator
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 class AutoShareTokenExchangeAction(
     text: String,
@@ -36,21 +37,24 @@ class AutoShareTokenExchangeAction(
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         notification.expire()
-        val (isSQ, projectKey, orgOrServerUrl) = getAutoShareConfigParams(connectionSuggestionDto)
-        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, bindingMode).chooseResolution()
+        val (isSQ, projectKey, orgOrServerUrl, region) = getAutoShareConfigParams(connectionSuggestionDto)
+        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, bindingMode, region).chooseResolution()
     }
 
-    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<Boolean, String, String> {
+    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): AutoShareConfigParams {
         return if (uniqueSuggestion.connectionSuggestion.isRight) {
-            Triple(
+            AutoShareConfigParams(
                 false, uniqueSuggestion.connectionSuggestion.right.projectKey,
-                uniqueSuggestion.connectionSuggestion.right.organization
+                uniqueSuggestion.connectionSuggestion.right.organization,
+                SonarCloudRegion.valueOf(uniqueSuggestion.connectionSuggestion.right.region.name)
             )
         } else {
-            Triple(
+            AutoShareConfigParams(
                 true, uniqueSuggestion.connectionSuggestion.left.projectKey,
-                uniqueSuggestion.connectionSuggestion.left.serverUrl
+                uniqueSuggestion.connectionSuggestion.left.serverUrl, null
             )
         }
     }
+
+    data class AutoShareConfigParams(val isSQ: Boolean, val projectKey: String, val orgOrServerUrl: String, val region: SonarCloudRegion?)
 }

@@ -21,8 +21,12 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.apache.commons.lang3.SystemUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -85,6 +89,19 @@ class SonarLintUtilsTests extends AbstractSonarLintLightTests {
   void testWithTrailingSlash() {
     assertThat(SonarLintUtils.withTrailingSlash(URL_WITH_SLASH)).isEqualTo(URL_WITH_SLASH);
     assertThat(SonarLintUtils.withTrailingSlash(URL_WITHOUT_SLASH)).isEqualTo(URL_WITH_SLASH);
+  }
+
+  @Test
+  void testIsDogfoodEnvironment() {
+    try (MockedStatic<SystemUtils> mockedSystemUtils = Mockito.mockStatic(SystemUtils.class)) {
+      mockedSystemUtils.when(() -> SystemUtils.getEnvironmentVariable(SonarLintUtils.SONARSOURCE_DOGFOODING_ENV_VAR_KEY, "0"))
+        .thenReturn("1");
+      Assertions.assertTrue(SonarLintUtils.isDogfoodEnvironment());
+
+      mockedSystemUtils.when(() -> SystemUtils.getEnvironmentVariable(SonarLintUtils.SONARSOURCE_DOGFOODING_ENV_VAR_KEY, "0"))
+        .thenReturn("0");
+      Assertions.assertFalse(SonarLintUtils.isDogfoodEnvironment());
+    }
   }
 
 }

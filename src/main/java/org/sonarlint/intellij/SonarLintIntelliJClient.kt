@@ -156,6 +156,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
@@ -420,9 +421,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val serverOrOrg = if (isSQ) params.connectionParams.left.serverUrl else params.connectionParams.right.organizationKey
         val tokenName = if (isSQ) params.connectionParams.left.tokenName else params.connectionParams.right.tokenName
         val tokenValue = if (isSQ) params.connectionParams.left.tokenValue else params.connectionParams.right.tokenValue
+        val region = if (isSQ) null else SonarCloudRegion.valueOf(params.connectionParams.right.region.name)
 
         val response = if (tokenName != null && tokenValue != null) {
-            setUpAutomaticConnection(serverOrOrg, tokenValue, isSQ)
+            setUpAutomaticConnection(serverOrOrg, tokenValue, isSQ, region)
         } else {
             if (isSQ) {
                 setUpManualConnection(serverOrOrg)
@@ -440,9 +442,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return response
     }
 
-    private fun setUpAutomaticConnection(serverOrOrg: String, tokenValue: String, isSQ: Boolean): AssistCreatingConnectionResponse {
+    private fun setUpAutomaticConnection(serverOrOrg: String, tokenValue: String,
+                                         isSQ: Boolean, region: SonarCloudRegion?): AssistCreatingConnectionResponse {
         val newConnection = ApplicationManager.getApplication().computeInEDT {
-            AutomaticServerConnectionCreator(serverOrOrg, tokenValue, isSQ).chooseResolution()
+            AutomaticServerConnectionCreator(serverOrOrg, tokenValue, isSQ, region).chooseResolution()
         } ?: run {
             throw CancellationException("Connection creation cancelled by the user")
         }

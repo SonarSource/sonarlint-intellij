@@ -57,6 +57,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -126,17 +127,36 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     connectionList.setCellRenderer(new ColoredListCellRenderer<>() {
       @Override
       protected void customizeCellRenderer(JList list, ServerConnection server, int index, boolean selected, boolean hasFocus) {
+        if (server.isSonarCloud() && hasMoreThanOneSCConnections() && SonarLintUtils.isDogfoodEnvironment()) {
+          var serverRegion = server.getRegion() == null ? "EU" : server.getRegion();
+          append("[" + serverRegion + "] " + server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+        } else {
+          append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+        }
+
         if (server.isSonarCloud()) {
           setIcon(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
         } else {
           setIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
-        }
-        append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-        if (!server.isSonarCloud()) {
           append("    (" + server.getHostUrl() + ")", SimpleTextAttributes.GRAYED_ATTRIBUTES, false);
         }
       }
     });
+  }
+
+  private boolean hasMoreThanOneSCConnections() {
+    var model = connectionList.getModel();
+    var count = 0;
+
+    for (var i = 0; i < model.getSize(); i++) {
+      if (model.getElementAt(i).isSonarCloud()) {
+        count++;
+      }
+      if (count > 1) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static JPanel initConnectionTitle() {
