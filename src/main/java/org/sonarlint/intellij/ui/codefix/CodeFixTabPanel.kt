@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.codefix
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.diff.util.DiffUserDataKeysEx
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
@@ -102,6 +103,7 @@ class CodeFixTabPanel(
         val codeFixImg = JBLabel(SonarLintIcons.CODEFIX)
         codeFixImg.alignmentX = Component.CENTER_ALIGNMENT
         val generateButton = JButton("Generate Fix").apply {
+            ClientProperty.put(this, DarculaButtonUI.DEFAULT_STYLE_KEY, true)
             alignmentX = Component.CENTER_ALIGNMENT
             preferredSize = Dimension(200, preferredSize.height)
         }
@@ -289,7 +291,9 @@ class CodeFixTabPanel(
             DiffContentFactory.getInstance().create(project, newCode),
             "Current code",
             "Suggested code"
-        )
+        ).apply {
+            putUserData(DiffUserDataKeysEx.EDITORS_HIDE_TITLE, true)
+        }
 
         val diffView = SonarQubeDiffView(project)
         diffView.applyRequest(request)

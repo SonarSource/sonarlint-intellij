@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.inlay
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.diff.util.DiffUserDataKeysEx
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
@@ -126,7 +127,9 @@ class FixSuggestionInlayPanel(
             DiffContentFactory.getInstance().create(suggestion.newCode),
             null,
             null
-        )
+        ).apply {
+            putUserData(DiffUserDataKeysEx.EDITORS_HIDE_TITLE, true)
+        }
         Disposer.register(this, diffPanel)
 
         diffPanel.applyRequest(request)
