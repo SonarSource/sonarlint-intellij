@@ -41,18 +41,20 @@ class AutoShareTokenExchangeAction(
         AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, bindingMode, region).chooseResolution()
     }
 
-    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Quadruple {
+    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): AutoShareConfigParams {
         return if (uniqueSuggestion.connectionSuggestion.isRight) {
-            Quadruple(
+            AutoShareConfigParams(
                 false, uniqueSuggestion.connectionSuggestion.right.projectKey,
                 uniqueSuggestion.connectionSuggestion.right.organization,
                 SonarCloudRegion.valueOf(uniqueSuggestion.connectionSuggestion.right.region.name)
             )
         } else {
-            Quadruple(
+            AutoShareConfigParams(
                 true, uniqueSuggestion.connectionSuggestion.left.projectKey,
                 uniqueSuggestion.connectionSuggestion.left.serverUrl, null
             )
         }
     }
+
+    data class AutoShareConfigParams(val isSQ: Boolean, val projectKey: String, val orgOrServerUrl: String, val region: SonarCloudRegion?)
 }

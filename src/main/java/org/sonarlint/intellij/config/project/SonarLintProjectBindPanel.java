@@ -51,7 +51,6 @@ import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.AbstractAction;
-import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -374,7 +373,7 @@ public class SonarLintProjectBindPanel {
         attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
       }
 
-      String serverRegion = value.getRegion() == null ? "EU" : value.getRegion();
+      var serverRegion = value.getRegion() == null ? "EU" : value.getRegion();
 
       if (value.isSonarCloud() && hasMoreThanOneSCConnections() && SonarLintUtils.isDogfoodEnvironment()) {
         append("[" + serverRegion + "] " + value.getName(), attrs, true);
@@ -391,7 +390,8 @@ public class SonarLintProjectBindPanel {
     }
 
     private boolean hasMoreThanOneSCConnections() {
-      ComboBoxModel<ServerConnection> model = connectionComboBox.getModel();
+      var model = connectionComboBox.getModel();
+
       var count = 0;
       for (int i = 0; i < model.getSize(); i++) {
         if (model.getElementAt(i).isSonarCloud()) {

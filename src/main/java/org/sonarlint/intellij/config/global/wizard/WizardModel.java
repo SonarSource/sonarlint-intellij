@@ -29,17 +29,14 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.CheckNotificationsSupportedTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
+import org.sonarlint.intellij.util.RegionUtils;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
 
 public class WizardModel {
   private ServerType serverType;
   private String serverUrl;
   private String token;
-
   private String login;
   private char[] password;
   private String name;
@@ -109,7 +106,7 @@ public class WizardModel {
 
   public void queryIfNotificationsSupported() throws Exception {
     final var partialConnection = createConnectionWithoutOrganization();
-    var task = new CheckNotificationsSupportedTask(partialConnection, region);
+    var task = new CheckNotificationsSupportedTask(partialConnection);
     ProgressManager.getInstance().run(task);
     if (task.getException() != null) {
       throw task.getException();
@@ -120,7 +117,7 @@ public class WizardModel {
   public void queryOrganizations() throws Exception {
     if (isSonarCloud()) {
       final ServerConnection partialConnection = createConnectionWithoutOrganization();
-      final var task = buildAndRunGetOrganizationsTask(partialConnection, region);
+      final var task = buildAndRunGetOrganizationsTask(partialConnection);
       setOrganizationList(task.organizations());
       final var presetOrganizationKey = getOrganizationKey();
       if (presetOrganizationKey != null) {
@@ -133,8 +130,8 @@ public class WizardModel {
     }
   }
 
-  private static GetOrganizationsTask buildAndRunGetOrganizationsTask(ServerConnection partialConnection, SonarCloudRegion region) throws Exception {
-    var task = new GetOrganizationsTask(partialConnection, region);
+  private static GetOrganizationsTask buildAndRunGetOrganizationsTask(ServerConnection partialConnection) throws Exception {
+    var task = new GetOrganizationsTask(partialConnection);
     ProgressManager.getInstance().run(task);
     if (task.getException() != null) {
       throw task.getException();
@@ -146,7 +143,7 @@ public class WizardModel {
     // the previously configured organization might not be in the list. If that's the case, fetch it and add it to the list.
     var orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(presetOrganizationKey));
     if (!orgExists) {
-      var getOrganizationTask = new GetOrganizationTask(partialConnection, presetOrganizationKey, region);
+      var getOrganizationTask = new GetOrganizationTask(partialConnection, presetOrganizationKey);
       ProgressManager.getInstance().run(getOrganizationTask);
       final var fetchedOrganization = getOrganizationTask.organization();
       if (getOrganizationTask.getException() != null || fetchedOrganization == null) {
@@ -249,8 +246,9 @@ public class WizardModel {
     return region;
   }
 
-  public void setRegion(SonarCloudRegion region) {
+  public WizardModel setRegion(SonarCloudRegion region) {
     this.region = region;
+    return this;
   }
 
   public ServerConnection createConnectionWithoutOrganization() {
@@ -268,11 +266,7 @@ public class WizardModel {
       .setName(name);
 
     if (serverType == ServerType.SONARCLOUD) {
-      if (region == SonarCloudRegion.US) {
-        builder.setHostUrl(US_SONARCLOUD_URL);
-      } else {
-        builder.setHostUrl(SONARCLOUD_URL);
-      }
+      builder.setHostUrl(RegionUtils.getUrlByRegion(region));
       builder.setRegion(region.name());
     } else {
       builder.setHostUrl(serverUrl);

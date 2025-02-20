@@ -54,7 +54,6 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.ListModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarLintIcons;
@@ -128,21 +127,17 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     connectionList.setCellRenderer(new ColoredListCellRenderer<>() {
       @Override
       protected void customizeCellRenderer(JList list, ServerConnection server, int index, boolean selected, boolean hasFocus) {
-        if (server.isSonarCloud()) {
-          String serverRegion = server.getRegion() == null ? "EU" : server.getRegion();
-
-          setIcon(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
-          if (hasMoreThanOneSCConnections() && SonarLintUtils.isDogfoodEnvironment()) {
-            append("[" + serverRegion + "] " + server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-          } else {
-            append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-          }
+        if (server.isSonarCloud() && hasMoreThanOneSCConnections() && SonarLintUtils.isDogfoodEnvironment()) {
+          var serverRegion = server.getRegion() == null ? "EU" : server.getRegion();
+          append("[" + serverRegion + "] " + server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
         } else {
-          setIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
           append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
         }
 
-        if (!server.isSonarCloud()) {
+        if (server.isSonarCloud()) {
+          setIcon(SonarLintIcons.ICON_SONARQUBE_CLOUD_16);
+        } else {
+          setIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16);
           append("    (" + server.getHostUrl() + ")", SimpleTextAttributes.GRAYED_ATTRIBUTES, false);
         }
       }
@@ -150,10 +145,10 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   }
 
   private boolean hasMoreThanOneSCConnections() {
-    ListModel<ServerConnection> model = connectionList.getModel();
+    var model = connectionList.getModel();
     var count = 0;
 
-    for (int i = 0; i < model.getSize(); i++) {
+    for (var i = 0; i < model.getSize(); i++) {
       if (model.getElementAt(i).isSonarCloud()) {
         count++;
       }
