@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.inlay
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.RangeMarker
@@ -33,11 +34,12 @@ import com.intellij.openapi.util.Ref
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
+import com.intellij.ui.ClientProperty
+import com.intellij.ui.Gray
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Cursor
@@ -62,13 +64,12 @@ class FixSuggestionInlayPanel(
     val editor: Editor,
     val file: PsiFile,
     private val textRange: RangeMarker
-) : RoundedPanelWithBackgroundColor(), Disposable {
+) : RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72)), Disposable {
 
     private lateinit var diffPanel: SonarQubeDiffView
-    private val titlePanel = RoundedPanelWithBackgroundColor()
-    private val centerPanel = RoundedPanelWithBackgroundColor()
-    private val actionPanel = RoundedPanelWithBackgroundColor()
-    private val explanationPanel = RoundedPanelWithBackgroundColor()
+    private val titlePanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
+    private val centerPanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
+    private val actionPanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
     private val inlayRef = Ref<Disposable>()
 
     init {
@@ -120,11 +121,11 @@ class FixSuggestionInlayPanel(
         diffPanel = SonarQubeDiffView(project)
 
         val request = SimpleDiffRequest(
-            "Diff Between Code Examples",
+            null,
             DiffContentFactory.getInstance().create(suggestion.currentCode),
             DiffContentFactory.getInstance().create(suggestion.newCode),
-            "Current code",
-            "Suggested code"
+            null,
+            null
         )
         Disposer.register(this, diffPanel)
 
@@ -133,23 +134,13 @@ class FixSuggestionInlayPanel(
     }
 
     private fun initBottomPanel() {
-        explanationPanel.apply {
-            layout = BorderLayout()
-            add(SwingHelper.createHtmlViewer(true, null, null, null).apply {
-                text = suggestion.explanation
-            }, BorderLayout.CENTER)
-            isVisible = false
-        }
-
         val applyButton = JButton("Apply").apply {
-            foreground = JBColor.green
+            isOpaque = false
+            ClientProperty.put(this, DarculaButtonUI.DEFAULT_STYLE_KEY, true)
             font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
         }
         val declineButton = JButton("Decline").apply {
-            foreground = JBColor.red
-            font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
-        }
-        val showExplanation = JButton("Show Explanation").apply {
+            isOpaque = false
             font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
         }
 
@@ -161,21 +152,6 @@ class FixSuggestionInlayPanel(
             declineFix()
         }
 
-        showExplanation.apply {
-            addActionListener {
-                runOnUiThread(project) {
-                    text = if (explanationPanel.isVisible) {
-                        "Show Explanation"
-                    } else {
-                        "Hide Explanation"
-                    }
-                    explanationPanel.isVisible = !explanationPanel.isVisible
-                    revalidate()
-                    repaint()
-                }
-            }
-        }
-
         val buttonPanel = RoundedPanelWithBackgroundColor().apply {
             layout = BorderLayout()
             add(RoundedPanelWithBackgroundColor().apply {
@@ -183,16 +159,11 @@ class FixSuggestionInlayPanel(
                 add(applyButton)
                 add(declineButton)
             }, BorderLayout.WEST)
-            add(RoundedPanelWithBackgroundColor().apply {
-                layout = HorizontalLayout(5)
-                add(showExplanation)
-            }, BorderLayout.EAST)
         }
 
         actionPanel.apply {
             layout = VerticalFlowLayout(5)
             add(buttonPanel)
-            add(explanationPanel)
         }
     }
 

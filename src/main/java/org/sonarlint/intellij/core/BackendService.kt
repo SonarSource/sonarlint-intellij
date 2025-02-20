@@ -157,7 +157,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParam
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
-import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -1019,9 +1018,9 @@ class BackendService : Disposable {
         return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
     }
 
-    fun suggestAiCodeFixSuggestion(module: Module, issueId: UUID): CompletableFuture<SuggestFixResponse> {
+    fun suggestAiCodeFixSuggestion(module: Module, issueId: String): CompletableFuture<SuggestFixResponse> {
         val moduleId = moduleId(module)
-        return requestFromBackend { it.aiCodeFixRpcService.suggestFix(SuggestFixParams(moduleId, issueId)) }
+        return requestFromBackend { it.aiCodeFixRpcService.suggestFix(SuggestFixParams(moduleId, UUID.fromString(issueId))) }
     }
 
     fun isAlive(): Boolean {

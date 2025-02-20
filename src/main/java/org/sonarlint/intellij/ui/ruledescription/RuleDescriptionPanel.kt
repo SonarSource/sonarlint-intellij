@@ -33,7 +33,6 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Font
-import java.util.UUID
 import javax.swing.DefaultComboBoxModel
 import org.sonarlint.intellij.ui.codefix.CodeFixTabPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
@@ -47,20 +46,24 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     private var sectionsTabs: JBTabbedPane? = null
     private var codeFixTab: CodeFixTabPanel? = null
 
+    companion object {
+        private const val AI_CODEFIX_TITLE = "AI CodeFix"
+    }
+
     fun openCodeFixTabAndGenerate() {
         sectionsTabs.let {
-            it!!.selectedIndex = it.indexOfTab("AI CodeFix")
+            it!!.selectedIndex = it.indexOfTab(AI_CODEFIX_TITLE)
         }
         codeFixTab?.loadSuggestion()
     }
 
-    fun addMonolithWithCodeFix(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
+    fun addMonolithWithCodeFix(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, issueId: String, file: VirtualFile) {
         val sectionsTabs = JBTabbedPane()
         sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
         sectionsTabs.insertTab("Description", null, createNonContextualTab(monolithDescription.htmlContent, fileType), null, 0)
         codeFixTab = CodeFixTabPanel(project, file, issueId, parent)
-        sectionsTabs.insertTab("AI CodeFix", null, codeFixTab, null, 1)
+        sectionsTabs.insertTab(AI_CODEFIX_TITLE, null, codeFixTab, null, 1)
 
         add(sectionsTabs, BorderLayout.CENTER)
         this.sectionsTabs = sectionsTabs
@@ -71,11 +74,11 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         add(scrollPane, BorderLayout.CENTER)
     }
 
-    fun addSectionsWithCodeFix(withSections: RuleSplitDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
+    fun addSectionsWithCodeFix(withSections: RuleSplitDescriptionDto, fileType: FileType, issueId: String, file: VirtualFile) {
         addSections(withSections, fileType)
         sectionsTabs?.let {
             codeFixTab = CodeFixTabPanel(project, file, issueId, parent)
-            it.insertTab("AI CodeFix", null, codeFixTab, null, withSections.tabs.size)
+            it.insertTab(AI_CODEFIX_TITLE, null, codeFixTab, null, withSections.tabs.size)
         }
     }
 

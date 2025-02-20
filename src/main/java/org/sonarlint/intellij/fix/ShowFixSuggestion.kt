@@ -28,7 +28,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import java.util.UUID
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -38,11 +37,29 @@ import org.sonarlint.intellij.ui.codefix.FixSuggestionInlayHolder
 import org.sonarlint.intellij.ui.inlay.FixSuggestionInlayPanel
 import org.sonarlint.intellij.ui.inlay.InlayManager
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixChangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 
+data class LocalFixChange(
+    val startLine: Int,
+    val endLine: Int,
+    val before: String,
+    val after: String
+)
+
+data class LocalFixSuggestion(
+    val id: String,
+    val explanation: String,
+    val changes: List<LocalFixChange>
+)
+
 class ShowFixSuggestion(private val project: Project, private val file: VirtualFile) {
+
+    companion object {
+        private const val FILE_CHANGED_ERROR = "Unable to open the fix suggestion, your file has probably changed"
+        private const val FILE_CHANGED_SUCCESS = "The fix suggestion has been opened, but the file's content has changed, so it may not be applicable"
+        private const val SUCCESSFULLY_OPENED = "The fix suggestion has been successfully opened"
+    }
 
     fun show(fixSuggestion: FixSuggestionDto) {
         val localFixSuggestion = mapToLocalFixSuggestion(fixSuggestion)
@@ -50,13 +67,23 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
     }
 
     fun show(fixSuggestion: SuggestFixResponse, firstTime: Boolean) {
+        val localFixSuggestion = mapToLocalFixSuggestion(fixSuggestion) ?: let {
+            get(project).simpleNotification(
+                null, FILE_CHANGED_ERROR, NotificationType.WARNING
+            )
+            return
+        }
+        show(localFixSuggestion, firstTime)
+    }
+
+    fun show(fixSuggestion: LocalFixSuggestion, firstTime: Boolean) {
         val fileEditorManager = FileEditorManager.getInstance(project)
         val psiFile = computeReadActionSafely(project) { PsiManager.getInstance(project).findFile(file) } ?: return
         val document = computeReadActionSafely(project) { file.getDocument() } ?: return
 
         if (!isWithinBounds(document, fixSuggestion.changes)) {
             get(project).simpleNotification(
-                null, "Unable to open the fix suggestion, your file has probably changed", NotificationType.WARNING
+                null, FILE_CHANGED_ERROR, NotificationType.WARNING
             )
             return
         }
@@ -85,7 +112,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                         val currentCode = doc.getText(TextRange(rangeMarker.startOffset, rangeMarker.endOffset))
                         val fixSuggestionSnippet = FixSuggestionSnippet(
                             currentCode,
-                            change.newCode,
+                            change.after,
                             change.startLine,
                             change.endLine,
                             index + 1,
@@ -108,32 +135,35 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                 }
             }
 
-            if (firstTime) {
-                if (!successfullyOpened) {
-                    get(project).simpleNotification(
-                        null,
-                        "Unable to open the fix suggestion, your file has probably changed",
-                        NotificationType.WARNING
-                    )
-                    //} else if (isBeforeContentIdentical(document, fixSuggestion.changes)) {
-                } else if (true) {
-                    get(project).simpleNotification(
-                        null,
-                        "The fix suggestion has been successfully opened",
-                        NotificationType.INFORMATION
-                    )
-                } else {
-                    get(project).simpleNotification(
-                        null,
-                        "The fix suggestion has been opened, but the file's content has changed, so it may not be applicable",
-                        NotificationType.WARNING
-                    )
-                }
+            handleNotifications(firstTime, successfullyOpened, document, fixSuggestion)
+        }
+    }
+
+    private fun handleNotifications(firstTime: Boolean, successfullyOpened: Boolean, document: Document, fixSuggestion: LocalFixSuggestion) {
+        if (firstTime) {
+            if (!successfullyOpened) {
+                get(project).simpleNotification(
+                    null,
+                    FILE_CHANGED_ERROR,
+                    NotificationType.WARNING
+                )
+            } else if (isBeforeContentIdentical(document, fixSuggestion.changes)) {
+                get(project).simpleNotification(
+                    null,
+                    SUCCESSFULLY_OPENED,
+                    NotificationType.INFORMATION
+                )
+            } else {
+                get(project).simpleNotification(
+                    null,
+                    FILE_CHANGED_SUCCESS,
+                    NotificationType.WARNING
+                )
             }
         }
     }
 
-    private fun isWithinBounds(document: Document, changes: List<SuggestFixChangeDto>): Boolean {
+    private fun isWithinBounds(document: Document, changes: List<LocalFixChange>): Boolean {
         return changes.all { change ->
             val lineStart = change.startLine
             val lineEnd = change.endLine
@@ -142,7 +172,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
         }
     }
 
-    private fun isBeforeContentIdentical(document: Document, changes: List<SuggestFixChangeDto>): Boolean {
+    private fun isBeforeContentIdentical(document: Document, changes: List<LocalFixChange>): Boolean {
         return changes.all { change ->
 
             val lineStart = change.startLine
@@ -152,22 +182,45 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
             val lineEndOffset = document.getLineEndOffset(lineEnd - 1)
             val documentBeforeCode = document.getText(TextRange(lineStartOffset, lineEndOffset))
 
-            return true
+            return documentBeforeCode.trim() == change.before.trim()
         }
     }
 
-    private fun mapToLocalFixSuggestion(fixSuggestionDto: FixSuggestionDto): SuggestFixResponse {
+    private fun mapToLocalFixSuggestion(fixResponse: SuggestFixResponse): LocalFixSuggestion? {
+        val document = computeReadActionSafely(project) { file.getDocument() } ?: return null
+
+        val changes = fixResponse.changes.map { change ->
+            val lineStartOffset = document.getLineStartOffset(change.startLine - 1)
+            val lineEndOffset = document.getLineEndOffset(change.endLine - 1)
+            val documentBeforeCode = document.getText(TextRange(lineStartOffset, lineEndOffset))
+
+            LocalFixChange(
+                change.startLine,
+                change.endLine,
+                documentBeforeCode,
+                change.newCode
+            )
+        }
+
+        return LocalFixSuggestion(
+            fixResponse.id.toString(),
+            fixResponse.explanation,
+            changes
+        )
+    }
+
+    private fun mapToLocalFixSuggestion(fixSuggestionDto: FixSuggestionDto): LocalFixSuggestion {
         val changes = fixSuggestionDto.fileEdit().changes().map { change ->
-            SuggestFixChangeDto(
+            LocalFixChange(
                 change.beforeLineRange().startLine,
                 change.beforeLineRange().endLine,
+                change.before(),
                 change.after()
             )
         }
 
-        return SuggestFixResponse(
-            // TODO: Change
-            UUID.randomUUID(),
+        return LocalFixSuggestion(
+            fixSuggestionDto.suggestionId(),
             fixSuggestionDto.explanation(),
             changes
         )

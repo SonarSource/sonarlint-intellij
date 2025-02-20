@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.codefix
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.Document
@@ -31,6 +32,7 @@ import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.ClientProperty
 import com.intellij.ui.Gray
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
@@ -45,7 +47,6 @@ import java.awt.CardLayout
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
-import java.util.UUID
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -72,7 +73,7 @@ private const val CODEFIX_ERROR = "CODEFIX_ERROR"
 class CodeFixTabPanel(
     private val project: Project,
     private val file: VirtualFile,
-    private val issueId: UUID,
+    private val issueId: String,
     private val disposableParent: Disposable
 ) : JBPanel<CodeFixTabPanel>() {
 
@@ -256,6 +257,7 @@ class CodeFixTabPanel(
 
         val navigateButton = JButton("Navigate to line").apply {
             isOpaque = false
+            ClientProperty.put(this, DarculaButtonUI.DEFAULT_STYLE_KEY, true)
             font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
         }
 

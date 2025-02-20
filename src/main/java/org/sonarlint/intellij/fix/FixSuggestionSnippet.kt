@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.fix
 
-import java.util.UUID
-
 data class FixSuggestionSnippet(
     val currentCode: String,
     val newCode: String,
@@ -29,5 +27,5 @@ data class FixSuggestionSnippet(
     val snippetIndex: Int,
     val totalSnippets: Int,
     val explanation: String,
-    val suggestionId: UUID,
+    val suggestionId: String,
 )
