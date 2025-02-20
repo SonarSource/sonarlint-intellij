@@ -29,7 +29,6 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
@@ -38,17 +37,11 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWit
 public class ServerDownloadProjectTask extends Task.WithResult<Map<String, SonarProjectDto>, Exception> {
   private final ServerConnection server;
   private final Project project;
-  private final SonarCloudRegion region;
 
   public ServerDownloadProjectTask(Project project, ServerConnection server) {
     super(project, "Downloading Project List", true);
     this.project = project;
     this.server = server;
-    if (server.getRegion() != null) {
-      this.region = SonarCloudRegion.valueOf(server.getRegion());
-    } else {
-      this.region = SonarCloudRegion.EU;
-    }
   }
 
   @Override
@@ -59,7 +52,7 @@ public class ServerDownloadProjectTask extends Task.WithResult<Map<String, Sonar
       return computeOnPooledThreadWithoutCatching(project, "Download Projects Task",
         () ->
         waitForFuture(indicator, getService(BackendService.class)
-          .getAllProjects(server, region))
+          .getAllProjects(server))
           .getSonarProjects()
           .stream().collect(Collectors.toMap(SonarProjectDto::getKey, p -> p)));
     } catch (Exception e) {

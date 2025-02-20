@@ -48,10 +48,11 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE;
 
-public class ServerStep extends AbstractWizardStepEx{
+public class ServerStep extends AbstractWizardStepEx {
   private static final int NAME_MAX_LENGTH = 50;
   private final WizardModel model;
   private final Collection<String> existingNames;
@@ -73,7 +74,7 @@ public class ServerStep extends AbstractWizardStepEx{
   private ErrorPainter errorPainter;
   private JRadioButton radioUS;
   private JRadioButton radioEU;
-  private JLabel SONARCLOUD_URL;
+  private JLabel sonarCloudUrl;
 
   public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
     super("Server Details");
@@ -81,8 +82,6 @@ public class ServerStep extends AbstractWizardStepEx{
     this.existingNames = existingNames;
     radioSonarCloud.addChangeListener(e -> selectionChanged());
     radioSonarQube.addChangeListener(e -> selectionChanged());
-    radioEU.addChangeListener(e -> selectionChanged());
-    radioUS.addChangeListener(e -> selectionChanged());
 
     DocumentListener listener = new DocumentAdapter() {
       @Override
@@ -145,7 +144,7 @@ public class ServerStep extends AbstractWizardStepEx{
   }
 
   private void load(boolean editing, boolean isOnDogfood) {
-    SONARCLOUD_URL.setVisible(isOnDogfood);
+    sonarCloudUrl.setVisible(isOnDogfood);
     radioEU.setVisible(isOnDogfood);
     radioUS.setVisible(isOnDogfood);
 
@@ -262,7 +261,8 @@ public class ServerStep extends AbstractWizardStepEx{
         model.setServerUrl(US_SONARCLOUD_URL);
         model.setRegion(SonarCloudRegion.US);
       } else {
-        model.setServerUrl(SonarLintUtils.SONARCLOUD_URL);
+        model.setServerUrl(SONARCLOUD_URL);
+        model.setRegion(SonarCloudRegion.EU);
       }
     } else {  
       model.setServerType(WizardModel.ServerType.SONARQUBE);

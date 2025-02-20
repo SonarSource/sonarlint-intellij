@@ -26,7 +26,6 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWithoutCatching;
@@ -36,14 +35,12 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWit
  */
 public class CheckNotificationsSupportedTask extends Task.Modal {
   private final ServerConnection connection;
-  private final SonarCloudRegion region;
   private Exception exception;
   private boolean notificationsSupported = false;
 
-  public CheckNotificationsSupportedTask(ServerConnection connection, SonarCloudRegion region) {
+  public CheckNotificationsSupportedTask(ServerConnection connection) {
     super(null, "Check If Smart Notifications Are Supported", true);
     this.connection = connection;
-    this.region = region;
   }
 
   @Override
@@ -52,7 +49,7 @@ public class CheckNotificationsSupportedTask extends Task.Modal {
     try {
       indicator.setText("Checking support of notifications");
       notificationsSupported = Boolean.TRUE.equals(computeOnPooledThreadWithoutCatching("Check Smart Notifications Supported Task",
-        () -> waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).checkSmartNotificationsSupported(connection, region)).isSuccess()));
+        () -> waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).checkSmartNotificationsSupported(connection)).isSuccess()));
     } catch (Exception e) {
       if (myProject != null) {
         SonarLintConsole.get(myProject).error("Failed to check notifications", e);

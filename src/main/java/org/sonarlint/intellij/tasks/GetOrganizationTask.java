@@ -21,15 +21,12 @@ package org.sonarlint.intellij.tasks;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWithoutCatching;
@@ -37,16 +34,14 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWit
 public class GetOrganizationTask extends Task.Modal {
   private final ServerConnection server;
   private final String organizationKey;
-  private final SonarCloudRegion region;
 
   private Exception exception;
   private OrganizationDto organization;
 
-  public GetOrganizationTask(ServerConnection server, String organizationKey, @Nullable SonarCloudRegion region) {
+  public GetOrganizationTask(ServerConnection server, String organizationKey) {
     super(null, "Fetch Organization From SonarQube Cloud", true);
     this.server = server;
     this.organizationKey = organizationKey;
-    this.region = Objects.requireNonNullElse(region, SonarCloudRegion.EU);
   }
 
   @Override
@@ -55,7 +50,7 @@ public class GetOrganizationTask extends Task.Modal {
     try {
       indicator.setText("Searching organization");
       organization = computeOnPooledThreadWithoutCatching("Get User Organization Task",
-        () -> waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(server, organizationKey, region)).getOrganization());
+        () -> waitForFuture(indicator, SonarLintUtils.getService(BackendService.class).getOrganization(server, organizationKey)).getOrganization());
     } catch (Exception e) {
       if (myProject != null) {
         SonarLintConsole.get(myProject).error("Failed to fetch organization", e);

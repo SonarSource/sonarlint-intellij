@@ -27,7 +27,6 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
 import org.sonarlint.intellij.util.computeOnPooledThreadWithoutCatching
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
-import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 class ConnectionTestTask(private val server: ServerConnection) :
     Task.WithResult<ValidateConnectionResponse?, Exception>(
@@ -37,10 +36,9 @@ class ConnectionTestTask(private val server: ServerConnection) :
     override fun compute(indicator: ProgressIndicator): ValidateConnectionResponse? {
         indicator.text = "Connecting to " + server.hostUrl + "\u2026"
         indicator.isIndeterminate = true
-        val region = server.region?.let { SonarCloudRegion.valueOf(it) } ?: SonarCloudRegion.EU
 
         return computeOnPooledThreadWithoutCatching("Validate Connection Task") {
-            waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(server, region))
+            waitForFuture(indicator, SonarLintUtils.getService(BackendService::class.java).validateConnection(server))
         }
     }
 }

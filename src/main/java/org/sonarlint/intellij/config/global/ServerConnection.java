@@ -117,6 +117,7 @@ public class ServerConnection {
     return hostUrl;
   }
 
+  @CheckForNull
   public String getRegion() {
     return region;
   }
@@ -232,7 +233,7 @@ public class ServerConnection {
       return this;
     }
 
-    public Builder setRegion(String region) {
+    public Builder setRegion(@Nullable String region) {
       this.region = region;
       return this;
     }

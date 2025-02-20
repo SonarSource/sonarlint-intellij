@@ -17,8 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions.filters
+package org.sonarlint.intellij.util
 
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
-data class Quadruple(val a: Boolean, val b: String, val c: String, val d: SonarCloudRegion?)
+class RegionUtils {
+
+    companion object {
+        @JvmStatic
+        fun getUrlByRegion(region: SonarCloudRegion?): String {
+            return if (region != null && region == SonarCloudRegion.US) {
+                SonarLintUtils.US_SONARCLOUD_URL
+            } else {
+                SonarLintUtils.SONARCLOUD_URL
+            }
+        }
+    }
+
+}

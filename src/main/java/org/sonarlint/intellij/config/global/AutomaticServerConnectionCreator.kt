@@ -39,11 +39,10 @@ import javax.swing.JButton
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
-import org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.util.RegionUtils
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 class AutomaticServerConnectionCreator(private val serverOrOrg: String, private val tokenValue: String,
@@ -73,8 +72,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         title = if (isSQ) "Trust This SonarQube Server Instance?" else "Trust This SonarQube Cloud Organization?"
         val connectionNames = Settings.getGlobalSettings().serverNames
         connectionNameField.text = findFirstUniqueConnectionName(connectionNames, serverOrOrg)
-        scURLField.text = if (!isSQ && region != null && region == SonarCloudRegion.US) US_SONARCLOUD_URL else SONARCLOUD_URL
-
+        scURLField.text = if (!isSQ) RegionUtils.getUrlByRegion(region) else ""
         val buttonTextAction = if (isSQ) "Connect to This SonarQube Server Instance" else "Connect to This SonarQube Cloud Organization"
 
         createConnectionAction = object : DialogWrapperAction(buttonTextAction) {
@@ -89,10 +87,8 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
                         .setName(connectionNameField.text).build()
                 } else {
                     ServerConnection.newBuilder().setOrganizationKey(serverOrOrg).setDisableNotifications(false).setToken(tokenValue)
-                        .setName(connectionNameField.text).setHostUrl(
-                            if(region == SonarCloudRegion.US) SONARCLOUD_URL else US_SONARCLOUD_URL
-                        )
-                        .setRegion(region?.name!!)
+                        .setName(connectionNameField.text).setHostUrl(RegionUtils.getUrlByRegion(region))
+                        .setRegion(region?.name ?: SonarCloudRegion.EU.name)
                         .build()
                 }
                 serverConnection?.apply {
@@ -117,12 +113,14 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
             }
         }
 
+        var gridY = 0
+
         centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())
 
         warningIcon.setIconWithAlignment(AllIcons.General.InformationDialog, SwingConstants.TOP, SwingConstants.TOP)
         centerPanel.add(
             warningIcon, GridBagConstraints(
-                0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, JBUI.insets(0, 10), 0, 18
+                0, gridY, 1, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, JBUI.insets(0, 10), 0, 18
             )
         )
 
@@ -136,14 +134,14 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         })
         centerPanel.add(
             connectedModeDescriptionLabel, GridBagConstraints(
-                1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
+                1, gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
             )
         )
 
         serverUrlOrOrgLabel.text = if (isSQ) "Server URL" else "Organization Name"
         centerPanel.add(
             serverUrlOrOrgLabel, GridBagConstraints(
-                1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+                1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
             )
         )
 
@@ -152,7 +150,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         urlProxyLabel.add(proxyButton, BorderLayout.EAST)
         centerPanel.add(
             urlProxyLabel, GridBagConstraints(
-                1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+                1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
             )
         )
 
@@ -164,40 +162,43 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         } else {
             "Ensure that the organization matches your SonarQube Cloud organization."
         }
+
         warningPanel.add(redWarningIcon, BorderLayout.WEST)
         warningPanel.add(warningLabel, BorderLayout.CENTER)
         centerPanel.add(
             warningPanel, GridBagConstraints(
-                1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0
+                1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(30), 0, 0
             )
         )
 
         connectionNameLabel.text = "Connection Name"
         scURLLabel.text = "SonarQube Cloud URL"
 
-        if(!isSQ && SonarLintUtils.isDogfoodEnvironment()) {
+        if (!isSQ && SonarLintUtils.isDogfoodEnvironment()) {
             centerPanel.add(
                 scURLLabel, GridBagConstraints(
-                    1, 4, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+                    1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
                 )
             )
 
             centerPanel.add(
                 scURLField, GridBagConstraints(
-                    1, 5, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
+                    1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
                 )
             )
         }
 
         centerPanel.add(
             connectionNameLabel, GridBagConstraints(
-                1, 6, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+                1, ++gridY,
+                1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
             )
         )
 
         centerPanel.add(
             connectionNameField, GridBagConstraints(
-                1, 7, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
+                1, ++gridY,
+                1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0
             )
         )
 
@@ -205,7 +206,8 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
             "A token will be automatically generated to allow access to your <u>${if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"}</u>."
         centerPanel.add(
             tokenLabel, GridBagConstraints(
-                1, 8, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
+                1, ++gridY,
+                1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0
             )
         )
 
