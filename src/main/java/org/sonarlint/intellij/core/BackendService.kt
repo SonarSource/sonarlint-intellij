@@ -72,13 +72,10 @@ import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
-import org.sonarlint.intellij.fix.FixChanges
-import org.sonarlint.intellij.fix.LocalFixSuggestion
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.ui.codefix.FixSuggestionInlayHolder
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.VirtualFileUtils
@@ -146,6 +143,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssuePara
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionParams
@@ -1018,23 +1017,9 @@ class BackendService : Disposable {
         return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
     }
 
-    fun suggestAiCodeFixSuggestion(project: Project, issueId: String): CompletableFuture<LocalFixSuggestion> {
-        val changes = listOf(
-            FixChanges(1, 2, null, """
-                    new line
-                    and new code here
-                """.trimIndent()),
-            FixChanges(5, 5, null, """
-                
-                
-            """.trimIndent()),
-        )
-        val fixSuggestion = LocalFixSuggestion("suggestionid", "This is the explanation message.", changes)
-        return CompletableFuture<LocalFixSuggestion>().completeAsync {
-            Thread.sleep(2000)
-            getService(project, FixSuggestionInlayHolder::class.java).addFixSuggestion(issueId, fixSuggestion)
-            fixSuggestion
-        }
+    fun suggestAiCodeFixSuggestion(module: Module, issueId: UUID): CompletableFuture<SuggestFixResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.aiCodeFixRpcService.suggestFix(SuggestFixParams(moduleId, issueId)) }
     }
 
     fun isAlive(): Boolean {

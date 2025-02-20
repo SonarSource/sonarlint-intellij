@@ -199,7 +199,7 @@ class FixSuggestionInlayPanel(
     private fun declineFix() {
         getService(project, FixSuggestionInlayHolder::class.java).removeSnippet(suggestion.suggestionId, suggestion.snippetIndex - 1)
         getService(SonarLintTelemetry::class.java).fixSuggestionResolved(
-            suggestion.suggestionId,
+            suggestion.suggestionId.toString(),
             FixSuggestionStatus.DECLINED,
             suggestion.snippetIndex
         )
@@ -217,7 +217,7 @@ class FixSuggestionInlayPanel(
         }
         getService(project, FixSuggestionInlayHolder::class.java).removeSnippet(suggestion.suggestionId, suggestion.snippetIndex - 1)
         getService(SonarLintTelemetry::class.java).fixSuggestionResolved(
-            suggestion.suggestionId,
+            suggestion.suggestionId.toString(),
             FixSuggestionStatus.ACCEPTED,
             suggestion.snippetIndex
         )

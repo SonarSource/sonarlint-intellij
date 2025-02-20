@@ -33,6 +33,7 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Font
+import java.util.UUID
 import javax.swing.DefaultComboBoxModel
 import org.sonarlint.intellij.ui.codefix.CodeFixTabPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
@@ -53,7 +54,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         codeFixTab?.loadSuggestion()
     }
 
-    fun addMonolithWithCodeFix(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, issueId: String, file: VirtualFile) {
+    fun addMonolithWithCodeFix(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
         val sectionsTabs = JBTabbedPane()
         sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
@@ -70,7 +71,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         add(scrollPane, BorderLayout.CENTER)
     }
 
-    fun addSectionsWithCodeFix(withSections: RuleSplitDescriptionDto, fileType: FileType, issueId: String, file: VirtualFile) {
+    fun addSectionsWithCodeFix(withSections: RuleSplitDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
         addSections(withSections, fileType)
         sectionsTabs?.let {
             codeFixTab = CodeFixTabPanel(project, file, issueId, parent)

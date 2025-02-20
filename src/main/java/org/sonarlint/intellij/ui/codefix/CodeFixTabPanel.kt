@@ -26,6 +26,7 @@ import java.awt.CardLayout
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
+import java.util.UUID
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -33,28 +34,32 @@ import javax.swing.JComponent
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.fix.FixChanges
-import org.sonarlint.intellij.fix.LocalFixSuggestion
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.getDocument
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixChangeDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 
 private const val CODEFIX_GENERATION = "CODEFIX_GENERATION"
 private const val CODEFIX_LOADING = "CODEFIX_LOADING"
 private const val CODEFIX_PRESENTATION = "CODEFIX_PRESENTATION"
+private const val CODEFIX_ERROR = "CODEFIX_ERROR"
 
 class CodeFixTabPanel(
     private val project: Project,
     private val file: VirtualFile,
-    private val issueId: String,
+    private val issueId: UUID,
     private val disposableParent: Disposable
 ) : JBPanel<CodeFixTabPanel>() {
 
     private lateinit var loadingDecorator: ProgressBarLoadingDecorator
     private lateinit var codefixPresentationPanel: JBPanel<CodeFixTabPanel>
+    private lateinit var errorLabel: JBLabel
     private val cardLayout = CardLayout()
 
     init {
@@ -63,6 +68,7 @@ class CodeFixTabPanel(
         add(initGenerationCard(), CODEFIX_GENERATION)
         add(initLoadingCard(), CODEFIX_LOADING)
         add(initGeneratedCard(), CODEFIX_PRESENTATION)
+        add(initErrorCard(), CODEFIX_ERROR)
 
         val fixSuggestion = getService(project, FixSuggestionInlayHolder::class.java).getFixSuggestion(issueId)
         if (fixSuggestion != null) {
@@ -142,6 +148,19 @@ class CodeFixTabPanel(
         }
     }
 
+    private fun initErrorCard(): JScrollPane {
+        errorLabel = JBLabel()
+
+        return ScrollPaneFactory.createScrollPane(errorLabel, true).apply {
+            horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+            verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
+            verticalScrollBar.unitIncrement = 10
+            isOpaque = false
+            viewport.isOpaque = false
+            border = JBUI.Borders.empty()
+        }
+    }
+
     private fun displayLoading() {
         switchCard(CODEFIX_LOADING)
         loadingDecorator.startLoading(false)
@@ -153,12 +172,29 @@ class CodeFixTabPanel(
 
     fun loadSuggestion() {
         displayLoading()
-        getService(BackendService::class.java).suggestAiCodeFixSuggestion(project, issueId).thenAcceptAsync { fixSuggestion ->
-            displaySuggestion(fixSuggestion, true)
+        val module = findModuleForFile(file, project) ?: run {
+            runOnUiThread(project, ModalityState.stateForComponent(this)) {
+                loadingDecorator.stopLoading()
+            }
+            return
         }
+        getService(BackendService::class.java).suggestAiCodeFixSuggestion(module, issueId)
+            .thenAcceptAsync { fixSuggestion ->
+                displaySuggestion(fixSuggestion, true)
+            }
+            .exceptionally { error ->
+                error.message?.let {
+                    SonarLintConsole.get(project).error(it, error)
+                    errorLabel.text = it
+                } ?: run {
+                    errorLabel.text = "An unexpected error happened during the generation"
+                }
+                switchCard(CODEFIX_ERROR)
+                null
+            }
     }
 
-    private fun displaySuggestion(fixSuggestion: LocalFixSuggestion, firstTime: Boolean) {
+    private fun displaySuggestion(fixSuggestion: SuggestFixResponse, firstTime: Boolean) {
         runOnUiThread(project, ModalityState.stateForComponent(this)) {
             loadingDecorator.stopLoading()
             ShowFixSuggestion(project, file).show(fixSuggestion, firstTime)
@@ -190,7 +226,7 @@ class CodeFixTabPanel(
         }
     }
 
-    private fun generateCodeFixSnippet(change: FixChanges): JBPanel<CodeFixTabPanel> {
+    private fun generateCodeFixSnippet(change: SuggestFixChangeDto): JBPanel<CodeFixTabPanel> {
         val panel = JBPanel<CodeFixTabPanel>(BorderLayout()).apply {
             isOpaque = false
         }

@@ -28,6 +28,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
+import java.util.UUID
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -37,20 +38,9 @@ import org.sonarlint.intellij.ui.codefix.FixSuggestionInlayHolder
 import org.sonarlint.intellij.ui.inlay.FixSuggestionInlayPanel
 import org.sonarlint.intellij.ui.inlay.InlayManager
 import org.sonarlint.intellij.util.getDocument
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixChangeDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
-
-data class LocalFixSuggestion(
-    val suggestionId: String,
-    val explanation: String,
-    val changes: List<FixChanges>,
-)
-
-data class FixChanges(
-    val startLine: Int,
-    val endLine: Int,
-    val beforeCode: String?,
-    val newCode: String
-)
 
 class ShowFixSuggestion(private val project: Project, private val file: VirtualFile) {
 
@@ -59,7 +49,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
         show(localFixSuggestion, true)
     }
 
-    fun show(fixSuggestion: LocalFixSuggestion, firstTime: Boolean) {
+    fun show(fixSuggestion: SuggestFixResponse, firstTime: Boolean) {
         val fileEditorManager = FileEditorManager.getInstance(project)
         val psiFile = computeReadActionSafely(project) { PsiManager.getInstance(project).findFile(file) } ?: return
         val document = computeReadActionSafely(project) { file.getDocument() } ?: return
@@ -75,7 +65,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
 
         runOnUiThread(project, ModalityState.defaultModalityState()) {
             fixSuggestion.changes.forEachIndexed { index, change ->
-                if (!firstTime && !getService(project, FixSuggestionInlayHolder::class.java).shouldShowSnippet(fixSuggestion.suggestionId, index)) return@forEachIndexed
+                if (!firstTime && !getService(project, FixSuggestionInlayHolder::class.java).shouldShowSnippet(fixSuggestion.id, index)) return@forEachIndexed
 
                 if (index == 0) {
                     val descriptor = OpenFileDescriptor(project, file, change.startLine - 1, -1)
@@ -101,10 +91,10 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                             index + 1,
                             fixSuggestion.changes.size,
                             fixSuggestion.explanation,
-                            fixSuggestion.suggestionId
+                            fixSuggestion.id
                         )
 
-                        getService(project, FixSuggestionInlayHolder::class.java).addInlaySnippet(fixSuggestion.suggestionId, index, FixSuggestionInlayPanel(
+                        getService(project, FixSuggestionInlayHolder::class.java).addInlaySnippet(fixSuggestion.id, index, FixSuggestionInlayPanel(
                             project,
                             fixSuggestionSnippet,
                             it,
@@ -125,7 +115,8 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                         "Unable to open the fix suggestion, your file has probably changed",
                         NotificationType.WARNING
                     )
-                } else if (isBeforeContentIdentical(document, fixSuggestion.changes)) {
+                    //} else if (isBeforeContentIdentical(document, fixSuggestion.changes)) {
+                } else if (true) {
                     get(project).simpleNotification(
                         null,
                         "The fix suggestion has been successfully opened",
@@ -142,7 +133,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
         }
     }
 
-    private fun isWithinBounds(document: Document, changes: List<FixChanges>): Boolean {
+    private fun isWithinBounds(document: Document, changes: List<SuggestFixChangeDto>): Boolean {
         return changes.all { change ->
             val lineStart = change.startLine
             val lineEnd = change.endLine
@@ -151,11 +142,9 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
         }
     }
 
-    private fun isBeforeContentIdentical(document: Document, changes: List<FixChanges>): Boolean {
+    private fun isBeforeContentIdentical(document: Document, changes: List<SuggestFixChangeDto>): Boolean {
         return changes.all { change ->
-            if (change.beforeCode == null) {
-                return true
-            }
+
             val lineStart = change.startLine
             val lineEnd = change.endLine
 
@@ -163,24 +152,24 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
             val lineEndOffset = document.getLineEndOffset(lineEnd - 1)
             val documentBeforeCode = document.getText(TextRange(lineStartOffset, lineEndOffset))
 
-            return documentBeforeCode.trim() == change.beforeCode.trim()
+            return true
         }
     }
 
-    private fun mapToLocalFixSuggestion(fixSuggestionDto: FixSuggestionDto): LocalFixSuggestion {
+    private fun mapToLocalFixSuggestion(fixSuggestionDto: FixSuggestionDto): SuggestFixResponse {
         val changes = fixSuggestionDto.fileEdit().changes().map { change ->
-            FixChanges(
-                startLine = change.beforeLineRange().startLine,
-                endLine = change.beforeLineRange().endLine,
-                beforeCode = change.before(),
-                newCode = change.after()
+            SuggestFixChangeDto(
+                change.beforeLineRange().startLine,
+                change.beforeLineRange().endLine,
+                change.after()
             )
         }
 
-        return LocalFixSuggestion(
-            suggestionId = fixSuggestionDto.suggestionId(),
-            explanation = fixSuggestionDto.explanation(),
-            changes = changes
+        return SuggestFixResponse(
+            // TODO: Change
+            UUID.randomUUID(),
+            fixSuggestionDto.explanation(),
+            changes
         )
     }
 

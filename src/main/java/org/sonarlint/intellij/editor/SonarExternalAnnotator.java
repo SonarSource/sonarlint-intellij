@@ -147,7 +147,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     if (finding instanceof LiveIssue liveIssue) {
       intentionActions.add(new MarkAsResolvedAction(liveIssue));
-      if (finding.withCodeFix()) {
+      if (liveIssue.isAiCodeFixable()) {
         intentionActions.add(new SuggestCodeFixIntentionAction(liveIssue));
       }
     }

@@ -256,14 +256,14 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             val fileType = RuleLanguages.findFileTypeByRuleLanguage(issueDetails.language)
             val file = finding.file()
             issueDetails.description.map({ monolithDescription ->
-                if (finding.withCodeFix() && file != null) {
-                    descriptionPanel.addMonolithWithCodeFix(monolithDescription, fileType, finding.getId().toString(), file)
+                if (finding.isAiCodeFixable() && file != null) {
+                    descriptionPanel.addMonolithWithCodeFix(monolithDescription, fileType, finding.getId()  , file)
                 } else {
                     descriptionPanel.addMonolith(monolithDescription, fileType)
                 }
             }, { withSections ->
-                if (finding.withCodeFix() && file != null) {
-                    descriptionPanel.addSectionsWithCodeFix(withSections, fileType, finding.getId().toString(), file)
+                if (finding.isAiCodeFixable() && file != null) {
+                    descriptionPanel.addSectionsWithCodeFix(withSections, fileType, finding.getId(), file)
                 } else {
                     descriptionPanel.addSections(withSections, fileType)
                 }
