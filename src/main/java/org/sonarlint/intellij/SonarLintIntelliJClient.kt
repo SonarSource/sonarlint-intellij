@@ -36,6 +36,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
@@ -951,11 +952,24 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     @Throws(ConfigScopeNotFoundException::class)
     override fun getBaseDir(configurationScopeId: String): Path {
         val project = BackendService.findProject(configurationScopeId)
-            ?: BackendService.findModule(configurationScopeId)?.project
-            ?: throw ConfigScopeNotFoundException()
-        return project.guessProjectDir()?.let {
-            Paths.get(it.path)
-        } ?: throw ConfigScopeNotFoundException()
+
+        if (project != null) {
+            project.guessProjectDir()?.let {
+                return Paths.get(it.path)
+            }
+        } else {
+            val module = BackendService.findModule(configurationScopeId)
+            if (module != null) {
+                // If we don't find a base directory for the module, fallback on the base directory of the project
+                module.guessModuleDir()?.let {
+                    return Paths.get(it.path)
+                } ?: module.project.guessProjectDir()?.let {
+                    return Paths.get(it.path)
+                }
+            }
+        }
+
+        throw ConfigScopeNotFoundException()
     }
 
 }
