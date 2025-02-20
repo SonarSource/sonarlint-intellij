@@ -143,6 +143,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssuePara
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionParams
@@ -423,9 +425,10 @@ class BackendService : Disposable {
 
     private fun getSonarCloudAlternativeEnvironment(): SonarCloudAlternativeEnvironmentDto? {
         val sonarCloudUrl = System.getProperty("sonarlint.internal.sonarcloud.url")
+        val sonarCloudApiUrl = System.getProperty("sonarlint.internal.sonarcloud.api.url")
         val sonarCloudWebSocketUrl = System.getProperty("sonarlint.internal.sonarcloud.websocket.url")
-        if (sonarCloudUrl != null && sonarCloudWebSocketUrl != null) {
-            return SonarCloudAlternativeEnvironmentDto(URI.create(sonarCloudUrl), URI.create(sonarCloudWebSocketUrl))
+        if (sonarCloudUrl != null && sonarCloudApiUrl != null && sonarCloudWebSocketUrl != null) {
+            return SonarCloudAlternativeEnvironmentDto(URI.create(sonarCloudUrl), URI.create(sonarCloudApiUrl), URI.create(sonarCloudWebSocketUrl))
         }
         return null
     }
@@ -1013,6 +1016,11 @@ class BackendService : Disposable {
 
     fun changeAutomaticAnalysisSetting(analysisEnabled: Boolean) {
         return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
+    }
+
+    fun suggestAiCodeFixSuggestion(module: Module, issueId: String): CompletableFuture<SuggestFixResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.aiCodeFixRpcService.suggestFix(SuggestFixParams(moduleId, UUID.fromString(issueId))) }
     }
 
     fun isAlive(): Boolean {

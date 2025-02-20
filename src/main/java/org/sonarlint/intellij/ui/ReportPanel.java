@@ -297,7 +297,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   }
 
   private void updateOnSelect(LiveFinding liveFinding) {
-    findingDetailsPanel.show(liveFinding);
+    findingDetailsPanel.show(liveFinding, false);
   }
 
   private void setToolbar(ActionGroup group) {
