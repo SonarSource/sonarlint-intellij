@@ -44,7 +44,7 @@ public class SonarLintUtils {
 
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
   public static final String DEFAULT_SONARCLOUD_URL = "https://sonarcloud.io";
-  public static final String DEFAULT_SONARCLOUD_US_URL = "https://us.sonarcloud.io";
+  public static final String DEFAULT_SONARCLOUD_US_URL = "https://us-sc-staging.io";
   public static final String US_SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.url", DEFAULT_SONARCLOUD_US_URL);
   public static final String SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.url", DEFAULT_SONARCLOUD_URL);
   public static final String SONARSOURCE_DOGFOODING_ENV_VAR_KEY = "SONARSOURCE_DOGFOODING";
