@@ -72,8 +72,8 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
         insertTab("Locations", null, flowsPanel, "All locations involved in the $findingKindText", LOCATIONS_TAB_INDEX)
     }
 
-    fun show(liveFinding: LiveFinding) {
-        rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.getId())
+    fun show(liveFinding: LiveFinding, openOnCodeFixTab: Boolean) {
+        rulePanel.setSelectedFinding(liveFinding.module, liveFinding, liveFinding.getId(), openOnCodeFixTab)
         flowsTreeBuilder.populateForFinding(liveFinding)
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightFinding(liveFinding)
         flowsTree.emptyText.text = "Selected $findingKindText doesn't have flows"
