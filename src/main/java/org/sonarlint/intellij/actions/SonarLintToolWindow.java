@@ -384,7 +384,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
       var content = contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
       if (content != null) {
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
-        var issue = currentFilePanel.doesIssueExistFiltered(findingKey);
+        var issue = currentFilePanel.getIssueFiltered(findingKey);
 
         if (issue == null) {
           if (currentFilePanel.doesIssueExist(findingKey)) {
@@ -412,7 +412,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
       var content = contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
       if (content != null) {
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
-        var issue = currentFilePanel.doesIssueExistFiltered(showFinding.getFindingKey());
+        var issue = currentFilePanel.getIssueFiltered(showFinding.getFindingKey());
 
         if (issue == null && currentFilePanel.doesIssueExist(showFinding.getFindingKey())) {
           getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(

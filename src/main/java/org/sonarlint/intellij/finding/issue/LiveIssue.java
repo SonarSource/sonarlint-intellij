@@ -69,7 +69,8 @@ public class LiveIssue extends LiveFinding implements Issue {
   }
 
   public boolean isAiCodeFixable() {
-    return this.isAiCodeFixable;
+    var hasNoQuickFix = quickFixes().stream().noneMatch(QuickFix::isSingleFile);
+    return this.isAiCodeFixable && hasNoQuickFix;
   }
 
 }

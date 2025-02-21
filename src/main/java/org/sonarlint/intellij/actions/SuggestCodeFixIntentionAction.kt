@@ -33,22 +33,30 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.DataKeys.Companion.ISSUE_DATA_KEY
 
 class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonarAction(
-    "Generate AI CodeFix", "Generate AI fix suggestion", null
+    "Generate AI CodeFix", "Generate AI fix suggestion", AllIcons.Actions.Lightning
 ), IntentionAction, PriorityAction, Iconable {
 
     override fun startInWriteAction() = false
     override fun getText() = "SonarQube: Generate AI codefix"
     override fun getFamilyName() = "SonarQube AI codefix suggestion"
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = true
-    override fun isVisible(e: AnActionEvent) = true
     override fun getPriority() = PriorityAction.Priority.HIGH
-    override fun getIcon(flags: Int) = AllIcons.Actions.IntentionBulb
+    override fun getIcon(flags: Int) = AllIcons.Actions.Lightning
 
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
-        showIssue(project)
+    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = finding?.isAiCodeFixable() ?: false
+
+    override fun isVisible(e: AnActionEvent): Boolean {
+        val issue: Issue = e.getData(ISSUE_DATA_KEY) ?: return false
+        return issue.isAiCodeFixable()
     }
 
-    private fun showIssue(project: Project, issue: Issue) {
+    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
+        if (finding == null) {
+            return
+        }
+        startSuggestingCodeFix(project, finding)
+    }
+
+    private fun startSuggestingCodeFix(project: Project, issue: Issue) {
         runOnUiThread(project) {
             val toolWindow = getService(project, SonarLintToolWindow::class.java)
             toolWindow.openCurrentFileTab()
@@ -58,17 +66,10 @@ class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonar
         }
     }
 
-    private fun showIssue(project: Project) {
-        if (finding == null) {
-            return
-        }
-        showIssue(project, finding)
-    }
-
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val issue: Issue = e.getData(ISSUE_DATA_KEY) ?: return
-        showIssue(project, issue)
+        startSuggestingCodeFix(project, issue)
     }
 
 }

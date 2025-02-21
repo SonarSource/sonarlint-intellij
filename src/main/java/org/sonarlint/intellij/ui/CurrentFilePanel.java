@@ -191,7 +191,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   }
 
   @CheckForNull
-  public LiveIssue doesIssueExistFiltered(String issueKey) {
+  public LiveIssue getIssueFiltered(String issueKey) {
     var issue = treeBuilder.findIssueByKey(issueKey);
     if (issue.isEmpty()) {
       issue = oldTreeBuilder.findIssueByKey(issueKey);

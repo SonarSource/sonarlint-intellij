@@ -1018,9 +1018,9 @@ class BackendService : Disposable {
         return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
     }
 
-    fun suggestAiCodeFixSuggestion(module: Module, issueId: String): CompletableFuture<SuggestFixResponse> {
+    fun suggestAiCodeFixSuggestion(module: Module, issueId: UUID): CompletableFuture<SuggestFixResponse> {
         val moduleId = moduleId(module)
-        return requestFromBackend { it.aiCodeFixRpcService.suggestFix(SuggestFixParams(moduleId, UUID.fromString(issueId))) }
+        return requestFromBackend { it.aiCodeFixRpcService.suggestFix(SuggestFixParams(moduleId, issueId)) }
     }
 
     fun isAlive(): Boolean {

@@ -266,13 +266,13 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         val file = actualFinding.file()
         actualIssueDetails.description.map({ monolithDescription ->
             if (actualFinding.isAiCodeFixable() && file != null) {
-                descriptionPanel.addMonolithWithCodeFix(monolithDescription, fileType, actualFinding.getId().toString(), file)
+                descriptionPanel.addMonolithWithCodeFix(monolithDescription, fileType, actualFinding.getId(), file)
             } else {
                 descriptionPanel.addMonolith(monolithDescription, fileType)
             }
         }, { withSections ->
             if (actualFinding.isAiCodeFixable() && file != null) {
-                descriptionPanel.addSectionsWithCodeFix(withSections, fileType, actualFinding.getId().toString(), file)
+                descriptionPanel.addSectionsWithCodeFix(withSections, fileType, actualFinding.getId(), file)
             } else {
                 descriptionPanel.addSections(withSections, fileType)
             }

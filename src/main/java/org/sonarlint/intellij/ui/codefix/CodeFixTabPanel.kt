@@ -48,6 +48,7 @@ import java.awt.CardLayout
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
+import java.util.UUID
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -79,7 +80,7 @@ private const val CODEFIX_ERROR = "CODEFIX_ERROR"
 class CodeFixTabPanel(
     private val project: Project,
     private val file: VirtualFile,
-    private val issueId: String,
+    private val issueId: UUID,
     private val disposableParent: Disposable
 ) : JBPanel<CodeFixTabPanel>() {
 
@@ -96,7 +97,7 @@ class CodeFixTabPanel(
         add(initGeneratedCard(), CODEFIX_PRESENTATION)
         add(initErrorCard(), CODEFIX_ERROR)
 
-        val fixSuggestion = getService(project, FixSuggestionInlayHolder::class.java).getFixSuggestion(issueId)
+        val fixSuggestion = getService(project, FixSuggestionInlayHolder::class.java).getFixSuggestion(issueId.toString())
         if (fixSuggestion != null) {
             displaySuggestion(fixSuggestion, true)
         } else {
@@ -192,7 +193,7 @@ class CodeFixTabPanel(
         }
         getService(BackendService::class.java).suggestAiCodeFixSuggestion(module, issueId)
             .thenAcceptAsync { fixSuggestion ->
-                getService(project, FixSuggestionInlayHolder::class.java).addFixSuggestion(issueId, fixSuggestion)
+                getService(project, FixSuggestionInlayHolder::class.java).addFixSuggestion(issueId.toString(), fixSuggestion)
                 displaySuggestion(fixSuggestion, false)
             }
             .exceptionally { error ->
@@ -212,14 +213,12 @@ class CodeFixTabPanel(
                     SonarLintRpcErrorCode.CONNECTION_NOT_FOUND -> errorLabel.text = "The current project is bound to an unknown connection"
                     SonarLintRpcErrorCode.CONNECTION_KIND_NOT_SUPPORTED -> errorLabel.text = "The current project is not bound to SonarQube Cloud"
                     SonarLintRpcErrorCode.FILE_NOT_FOUND -> errorLabel.text = "The file is considered unknown, reopen your project or modify the file"
-                    else -> errorLabel.text = "An unexpected error happened during the generation"
+                    else -> errorLabel.text = "An unexpected error happened during the generation, check the logs for more details"
                 }
             }
             else -> {
-                error.message?.let {
-                    SonarLintConsole.get(project).error(it, error)
-                }
-                errorLabel.text = "An unexpected error happened during the generation"
+                error.message?.let { SonarLintConsole.get(project).error(it, error) }
+                errorLabel.text = "An unexpected error happened during the generation, check the logs for more details"
             }
         }
     }
