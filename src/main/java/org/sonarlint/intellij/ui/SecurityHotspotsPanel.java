@@ -259,7 +259,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public void updateOnSelect(LiveFinding liveFinding) {
-    findingDetailsPanel.show(liveFinding);
+    findingDetailsPanel.show(liveFinding, false);
   }
 
   public JComponent getPanel() {

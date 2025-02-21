@@ -178,13 +178,16 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             })
         }
 
-        fun updateActiveIssueDetailsIfNeeded(module: Module, issueId: UUID) {
+        fun updateActiveIssueDetailsIfNeeded(module: Module, issueId: UUID, openOnCodeFixTab: Boolean) {
             ruleDetails = null
             val newState = RuleDetailsLoaderState(module, issueId, null)
             if (state == newState) {
                 // Still force a refresh of the UI, as some other fields of the finding may be different
                 runOnUiThread(project) {
                     updateUiComponents()
+                    if (openOnCodeFixTab) {
+                        descriptionPanel.openCodeFixTabAndGenerate()
+                    }
                 }
                 return
             }
@@ -206,6 +209,9 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                                 }
                                 runOnUiThread(project) {
                                     updateUiComponents()
+                                    if (openOnCodeFixTab) {
+                                        descriptionPanel.openCodeFixTabAndGenerate()
+                                    }
                                 }
                             }
                     }
@@ -232,9 +238,9 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, ruleKey)
     }
 
-    fun setSelectedFinding(module: Module, finding: Finding?, findingId: UUID) {
+    fun setSelectedFinding(module: Module, finding: Finding?, findingId: UUID, openOnCodeFixTab: Boolean) {
         this.finding = finding
-        ruleDetailsLoader.updateActiveIssueDetailsIfNeeded(module, findingId)
+        ruleDetailsLoader.updateActiveIssueDetailsIfNeeded(module, findingId, openOnCodeFixTab)
     }
 
     private fun updateUiComponents() {
@@ -244,32 +250,54 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         val issueDetails = this.issueDetails
         val ruleDetails = this.ruleDetails
         if (issueDetails != null && finding != null) {
-            disableEmptyDisplay(true)
-            updateHeader(finding, issueDetails)
-            descriptionPanel.removeAll()
-            val fileType = RuleLanguages.findFileTypeByRuleLanguage(issueDetails.language)
-            issueDetails.description.map(
-                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
-                { withSections -> descriptionPanel.addSections(withSections, fileType) }
-            )
-            updateParams(issueDetails)
+            handleIssueDescription(issueDetails, finding)
         } else if (ruleKey != null && ruleDetails != null) {
-            disableEmptyDisplay(true)
-            updateHeader(ruleDetails)
-            descriptionPanel.removeAll()
-            val fileType = RuleLanguages.findFileTypeByRuleLanguage(ruleDetails.language)
-            ruleDetails.description.map(
-                { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
-                { withSections -> descriptionPanel.addSections(withSections, fileType) }
-            )
-            updateParams(ruleDetails)
+            handleRuleDescription(ruleDetails)
         } else {
-            val errorLoadingRuleDetails = finding != null
-            descriptionPanel.removeAll()
-            ruleNameLabel.text = ""
-            disableEmptyDisplay(false)
-            mainPanel.withEmptyText(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
+            handleDescriptionError()
         }
+    }
+
+    private fun handleIssueDescription(actualIssueDetails: EffectiveIssueDetailsDto, actualFinding: Finding) {
+        disableEmptyDisplay(true)
+        updateHeader(actualFinding, actualIssueDetails)
+        descriptionPanel.removeAll()
+        val fileType = RuleLanguages.findFileTypeByRuleLanguage(actualIssueDetails.language)
+        val file = actualFinding.file()
+        actualIssueDetails.description.map({ monolithDescription ->
+            if (actualFinding.isAiCodeFixable() && file != null) {
+                descriptionPanel.addMonolithWithCodeFix(monolithDescription, fileType, actualFinding.getId().toString(), file)
+            } else {
+                descriptionPanel.addMonolith(monolithDescription, fileType)
+            }
+        }, { withSections ->
+            if (actualFinding.isAiCodeFixable() && file != null) {
+                descriptionPanel.addSectionsWithCodeFix(withSections, fileType, actualFinding.getId().toString(), file)
+            } else {
+                descriptionPanel.addSections(withSections, fileType)
+            }
+        })
+        updateParams(actualIssueDetails)
+    }
+
+    private fun handleRuleDescription(actualRuleDetails: EffectiveRuleDetailsDto) {
+        disableEmptyDisplay(true)
+        updateHeader(actualRuleDetails)
+        descriptionPanel.removeAll()
+        val fileType = RuleLanguages.findFileTypeByRuleLanguage(actualRuleDetails.language)
+        actualRuleDetails.description.map(
+            { monolithDescription -> descriptionPanel.addMonolith(monolithDescription, fileType) },
+            { withSections -> descriptionPanel.addSections(withSections, fileType) }
+        )
+        updateParams(actualRuleDetails)
+    }
+
+    private fun handleDescriptionError() {
+        val errorLoadingRuleDetails = finding != null
+        descriptionPanel.removeAll()
+        ruleNameLabel.text = ""
+        disableEmptyDisplay(false)
+        mainPanel.withEmptyText(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
     }
 
     private fun updateHeader(ruleDetails: EffectiveRuleDetailsDto) {

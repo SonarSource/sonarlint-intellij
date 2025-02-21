@@ -203,6 +203,10 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     return treeBuilder.doesIssueExists(issueKey) || oldTreeBuilder.doesIssueExists(issueKey);
   }
 
+  public void trySelectIssueForCodeFix(LiveIssue issue) {
+    selectAndOpenCodeFixTab(issue);
+  }
+
   public <T extends Finding> void trySelectFilteredIssue(@Nullable LiveIssue issue, ShowFinding<T> showFinding) {
     updateOnSelect(issue, showFinding);
   }
