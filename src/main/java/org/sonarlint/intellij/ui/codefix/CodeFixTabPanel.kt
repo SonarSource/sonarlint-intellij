@@ -54,6 +54,8 @@ import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -65,6 +67,7 @@ import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.getDocument
 import org.sonarlint.intellij.util.runOnPooledThread
+import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcErrorCode
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixChangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 
@@ -200,10 +203,25 @@ class CodeFixTabPanel(
     }
 
     private fun handleErrorMessage(error: Throwable) {
-        error.message?.let {
-            SonarLintConsole.get(project).error(it, error)
+        when (val cause = error.cause) {
+            is ResponseErrorException -> {
+                when (cause.responseError.code) {
+                    ResponseErrorCode.ParseError.value -> errorLabel.text = "The provided issue cannot be fixed"
+                    SonarLintRpcErrorCode.ISSUE_NOT_FOUND -> errorLabel.text = "The provided issue does not exist, try triggering a new analysis"
+                    SonarLintRpcErrorCode.CONFIG_SCOPE_NOT_BOUND -> errorLabel.text = "The current project is not bound"
+                    SonarLintRpcErrorCode.CONNECTION_NOT_FOUND -> errorLabel.text = "The current project is bound to an unknown connection"
+                    SonarLintRpcErrorCode.CONNECTION_KIND_NOT_SUPPORTED -> errorLabel.text = "The current project is not bound to SonarQube Cloud"
+                    SonarLintRpcErrorCode.FILE_NOT_FOUND -> errorLabel.text = "The file is considered unknown, reopen your project or modify the file"
+                    else -> errorLabel.text = "An unexpected error happened during the generation"
+                }
+            }
+            else -> {
+                error.message?.let {
+                    SonarLintConsole.get(project).error(it, error)
+                }
+                errorLabel.text = "An unexpected error happened during the generation"
+            }
         }
-        errorLabel.text = "An unexpected error happened during the generation"
     }
 
     private fun displaySuggestion(fixSuggestion: SuggestFixResponse, alreadySuggested: Boolean) {
