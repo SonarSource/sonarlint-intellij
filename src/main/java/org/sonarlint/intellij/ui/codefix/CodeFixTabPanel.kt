@@ -159,10 +159,12 @@ class CodeFixTabPanel(
     }
 
     private fun initErrorCard(): JScrollPane {
-        errorLabel = JBLabel()
+        errorLabel = JBLabel().apply {
+            alignmentX = Component.CENTER_ALIGNMENT
+        }
 
         val generateButton = initGenerateButton()
-        val panel = JBPanel<CodeFixTabPanel>(BorderLayout()).apply {
+        val panel = JBPanel<CodeFixTabPanel>().apply {
             add(Box.createVerticalGlue())
             add(errorLabel)
             add(Box.createVerticalStrut(10))
