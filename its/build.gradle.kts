@@ -86,6 +86,7 @@ tasks.runIdeForUiTests {
     systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.sc-staging.io/")
     systemProperty("robot-server.port", "8082")
     systemProperty("sonarlint.telemetry.disabled", "true")
+    systemProperty("sonarlint.monitoring.disabled", "true")
     systemProperty("sonarlint.logs.verbose", "true")
     systemProperty("idea.trust.all.projects", "true")
     systemProperty("ide.show.tips.on.startup.default.value", "false")

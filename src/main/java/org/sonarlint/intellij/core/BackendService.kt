@@ -157,12 +157,12 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParam
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
-import  org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
 @Service(Service.Level.APP)
 class BackendService : Disposable {
@@ -323,6 +323,7 @@ class BackendService : Disposable {
         val nonDefaultRpcRulesConfigurationByKey =
             getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
         val telemetryEnabled = !System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()
+        val monitoringEnabled = !System.getProperty("sonarlint.monitoring.disabled", "false").toBoolean()
         val nodeJsPath = if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
         val eslintBridgePath = generateEslintBridgePath()
         val jsTsRequirements = JsTsRequirementsDto(nodeJsPath, eslintBridgePath)
@@ -350,7 +351,7 @@ class BackendService : Disposable {
                     shouldManageFullSynchronization = true,
                     enableTelemetry = telemetryEnabled,
                     canOpenFixSuggestion = true,
-                    enableMonitoring = true
+                    enableMonitoring = monitoringEnabled
                 ),
                 getLocalStoragePath(),
                 workDir,

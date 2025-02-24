@@ -179,6 +179,7 @@ tasks.runPluginVerifier {
 tasks.test {
     useJUnitPlatform()
     systemProperty("sonarlint.telemetry.disabled", "true")
+    systemProperty("sonarlint.monitoring.disabled", "true")
     doNotTrackState("Tests should always run")
 }
 
@@ -186,6 +187,7 @@ val runIdeDirectory: String by project
 
 tasks.runIde {
     systemProperty("sonarlint.telemetry.disabled", "true")
+    systemProperty("sonarlint.monitoring.disabled", "true")
     // uncomment to customize the SonarCloud URL
     //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
     if (project.hasProperty("runIdeDirectory")) {
