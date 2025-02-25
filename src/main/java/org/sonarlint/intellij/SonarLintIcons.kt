@@ -87,6 +87,17 @@ object SonarLintIcons {
     val CODEFIX_PRESENTATION = getIcon("/images/codefix/presentation.svg")
     @JvmField
     val SPARKLE_GUTTER_ICON = getIcon("/images/codefix/sparkle_gutter_14.svg")
+    val CODEFIX = getIcon("/images/codefix.svg")
+    @JvmField
+    val WALKTHROUGH_LEARN_AS_YOU_CODE = getIcon("/images/walkthrough_learn.png")
+    @JvmField
+    val WALKTHROUGH_WELCOME = getIcon("/images/walkthrough_welcome.png")
+    @JvmField
+    val WALKTHROUGH_CONNECT_WITH_YOUR_TEAM = getIcon("/images/walkthrough_connect.png")
+    @JvmField
+    val WALKTHROUGH_REACH_OUT_TO_US = getIcon("/images/walkthrough_community.png")
+    @JvmField
+    val WALKTHROUGH_ICON_SMALL_GREY = getIcon("/images/walkthrough_icon.svg")
 
     private val BUG_ICONS = mapOf(
         IssueSeverity.BLOCKER to getIcon("/images/bug/bugBlocker.svg"),
