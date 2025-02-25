@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2024 SonarSource
+ * Copyright (C) 2015-2025 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -58,7 +58,7 @@ class LearnAsYouCodePanel(project: Project) :
         val font = UIUtil.getLabelFont()
 
         val learnAsYouCodeImageLabel =
-            JBLabel(SonarLintIcons.WALKTHROUGH_ICON)
+            JBLabel(SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE)
 
         val learnAsYouCodeStepLabel = JBLabel("Step 2/4", SwingConstants.LEFT)
         learnAsYouCodeStepLabel.font = Font(FONT, Font.PLAIN, 14)

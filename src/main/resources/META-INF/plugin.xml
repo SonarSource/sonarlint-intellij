@@ -211,7 +211,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Welcome to SonarQube for IDE"
                     anchor="left"
-                    icon="org.sonarlint.intellij.SonarLintIcons.WALKTHROUGH_ICON"
+                    icon="org.sonarlint.intellij.SonarLintIcons.WALKTHROUGH_ICON_SMALL_GREY"
                     factoryClass="org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindowFactory"/>
         <toolWindow id="SonarQube for IDE" anchor="bottom"
                     icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW"

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2024 SonarSource
+ * Copyright (C) 2015-2025 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -55,7 +55,7 @@ class ReachOutToUsPanel(project: Project) :
     init {
         val font = UIUtil.getLabelFont()
 
-        val icon = SonarLintIcons.WALKTHROUGH_ICON
+        val icon = SonarLintIcons.WALKTHROUGH_REACH_OUT_TO_US
         val reachOutToUsImageLabel = JBLabel(icon)
 
         val reachOutToUsStepLabel = JBLabel("Step 4/4", SwingConstants.LEFT)

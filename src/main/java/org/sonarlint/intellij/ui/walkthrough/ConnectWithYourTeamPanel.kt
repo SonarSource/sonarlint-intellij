@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2024 SonarSource
+ * Copyright (C) 2015-2025 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -57,7 +57,7 @@ class ConnectWithYourTeamPanel(project: Project) :
     init {
         val font = UIUtil.getLabelFont()
 
-        val connectWithYourTeamImageLabel = JBLabel(SonarLintIcons.WALKTHROUGH_ICON)
+        val connectWithYourTeamImageLabel = JBLabel(SonarLintIcons.WALKTHROUGH_CONNECT_WITH_YOUR_TEAM)
 
         val connectWithYourTeamStepLabel = JBLabel("Step 3/4", SwingConstants.LEFT)
         connectWithYourTeamStepLabel.font = Font(FONT, Font.PLAIN, 14)

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2024 SonarSource
+ * Copyright (C) 2015-2025 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -53,7 +53,7 @@ class WelcomePanel(project: Project) : JBPanel<WelcomePanel>(BorderLayout()) {
     init {
         val font = UIUtil.getLabelFont()
 
-        val icon = SonarLintIcons.WALKTHROUGH_ICON
+        val icon = SonarLintIcons.WALKTHROUGH_WELCOME
         val welcomeImageLabel = JBLabel(icon)
 
         val welcomeStepLabel = JBLabel(STEP_1_4, SwingConstants.LEFT)
