@@ -21,11 +21,11 @@ package org.sonarlint.intellij.ui.walkthrough
 
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.JBScrollPane
 import java.awt.BorderLayout
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.BorderFactory
-import javax.swing.JScrollPane
 
 object SonarLintWalkthroughUtils {
     const val SONARQUBE_FOR_IDE: String = "SonarQube for IDE"
@@ -38,7 +38,7 @@ object SonarLintWalkthroughUtils {
     const val WIDTH: Int = 300
     const val HEIGHT: Int = 200
 
-    fun createCenterPanel(stepLabel: JBLabel, pageLabel: JBLabel, scrollPane: JScrollPane?, gbc: GridBagConstraints): JBPanel<JBPanel<*>> {
+    fun createCenterPanel(stepLabel: JBLabel, pageLabel: JBLabel, scrollPane: JBScrollPane?, gbc: GridBagConstraints): JBPanel<JBPanel<*>> {
         val centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())
         pageLabel.border = BorderFactory.createEmptyBorder(2, 8, 2, 0)
         stepLabel.border = BorderFactory.createEmptyBorder(2, 8, 2, 0)
@@ -71,7 +71,7 @@ object SonarLintWalkthroughUtils {
     fun addCenterPanel(
         stepLabel: JBLabel,
         pageLabel: JBLabel,
-        scrollPane: JScrollPane,
+        scrollPane: JBScrollPane,
         lefButtonPanel: JBPanel<JBPanel<*>>,
         rightButtonPanel: JBPanel<JBPanel<*>>,
         panel: JBPanel<JBPanel<*>>,

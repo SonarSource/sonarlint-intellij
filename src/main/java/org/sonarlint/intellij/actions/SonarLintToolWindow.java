@@ -89,6 +89,11 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     this.<ReportPanel>openTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.updateFindings(analysisResult));
   }
 
+  public void openReportTab() {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+    this.<ReportPanel>openTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE);
+  }
+
   public void clearReportTab() {
     updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::clear);
   }

@@ -25,6 +25,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
@@ -35,10 +36,11 @@ import java.awt.Font
 import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JEditorPane
-import javax.swing.JScrollPane
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughUtils.FONT
 import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughUtils.PREVIOUS
@@ -55,19 +57,17 @@ class LearnAsYouCodePanel(project: Project) :
     val backButton = JButton(PREVIOUS)
 
     init {
-        val font = UIUtil.getLabelFont()
+        val labelFont = UIUtil.getLabelFont()
 
         val learnAsYouCodeImageLabel =
             JBLabel(SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE)
 
-        val learnAsYouCodeStepLabel = JBLabel("Step 2/4", SwingConstants.LEFT)
-        learnAsYouCodeStepLabel.font = Font(FONT, Font.PLAIN, 14)
+        val learnAsYouCodeStepLabel = JBLabel("Step 2/4", SwingConstants.LEFT).apply { font = Font(FONT, Font.PLAIN, 14) }
 
-        val learnAsYouCodePageLabel = JBLabel("Learn as You Code")
-        learnAsYouCodePageLabel.font = Font(FONT, Font.BOLD, 16)
-        val learnAsYouCodeText = createLearnAsYouCodePageText(font, project)
+        val learnAsYouCodePageLabel = JBLabel("Learn as You Code").apply { font = Font(FONT, Font.BOLD, 16) }
+        val learnAsYouCodeText = createLearnAsYouCodePageText(labelFont, project)
 
-        val learnAsYouCodeScrollPane = JScrollPane(learnAsYouCodeText)
+        val learnAsYouCodeScrollPane = JBScrollPane(learnAsYouCodeText)
         learnAsYouCodeScrollPane.border = BorderFactory.createEmptyBorder()
         learnAsYouCodeScrollPane.preferredSize = Dimension(WIDTH, HEIGHT)
 
@@ -96,20 +96,14 @@ class LearnAsYouCodePanel(project: Project) :
 
             addHyperlinkListener(object : HyperlinkAdapter() {
                 override fun hyperlinkActivated(e: HyperlinkEvent) {
-                    if ("#currentFile" == e.description) {
-                        val sonarqubeToolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARQUBE_FOR_IDE)
-                        sonarqubeToolWindow?.let {
-                            if (!sonarqubeToolWindow.isVisible) {
-                                sonarqubeToolWindow.activate(null)
-                            }
-                            val currentFileContent = sonarqubeToolWindow.contentManager.findContent(CURRENT_FILE)
-                            currentFileContent?.let {
-                                sonarqubeToolWindow.contentManager.setSelectedContent(currentFileContent)
-                            }
+                    when (e.description) {
+                        "#currentFile" -> {
+                            SonarLintUtils.getService(project, SonarLintToolWindow::class.java).openCurrentFileTab()
                         }
 
-                    } else if ("#settings" == e.description) {
-                        ShowSettingsUtil.getInstance().showSettingsDialog(project, SonarLintGlobalConfigurable::class.java)
+                        "#settings" -> {
+                            ShowSettingsUtil.getInstance().showSettingsDialog(project, SonarLintGlobalConfigurable::class.java)
+                        }
                     }
                 }
             })

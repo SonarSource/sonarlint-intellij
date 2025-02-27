@@ -24,6 +24,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
@@ -34,10 +35,11 @@ import java.awt.Font
 import java.awt.GridBagConstraints
 import javax.swing.JButton
 import javax.swing.JEditorPane
-import javax.swing.JScrollPane
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK
 import org.sonarlint.intellij.telemetry.LinkTelemetry
 import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughUtils.FONT
@@ -51,19 +53,17 @@ class WelcomePanel(project: Project) : JBPanel<WelcomePanel>(BorderLayout()) {
     val nextButton = JButton("Next: Learn as You Code")
 
     init {
-        val font = UIUtil.getLabelFont()
+        val labelFont = UIUtil.getLabelFont()
 
         val icon = SonarLintIcons.WALKTHROUGH_WELCOME
         val welcomeImageLabel = JBLabel(icon)
 
-        val welcomeStepLabel = JBLabel(STEP_1_4, SwingConstants.LEFT)
-        welcomeStepLabel.font = Font(FONT, Font.PLAIN, 14)
+        val welcomeStepLabel = JBLabel(STEP_1_4, SwingConstants.LEFT).apply { font = Font(FONT, Font.PLAIN, 14) }
+        val titleLabel = JBLabel("Get started", SwingConstants.LEFT).apply { font = Font(FONT, Font.BOLD, 16) }
 
-        val titleLabel = JBLabel("Get started", SwingConstants.LEFT)
-        titleLabel.font = Font(FONT, Font.BOLD, 16)
-        val welcomePageText = createWelcomePageText(font, project)
+        val welcomePageText = createWelcomePageText(labelFont, project)
 
-        val welcomePageScrollPane = JScrollPane(welcomePageText)
+        val welcomePageScrollPane = JBScrollPane(welcomePageText)
         welcomePageScrollPane.border = null
         welcomePageScrollPane.preferredSize = Dimension(70, 100)
 
@@ -77,7 +77,7 @@ class WelcomePanel(project: Project) : JBPanel<WelcomePanel>(BorderLayout()) {
     }
 
     private fun createWelcomePageLayout(
-        stepLabel: JBLabel, titleLabel: JBLabel, welcomePageScrollPane: JScrollPane,
+        stepLabel: JBLabel, titleLabel: JBLabel, welcomePageScrollPane: JBScrollPane,
         welcomePageNextButtonPanel: JBPanel<JBPanel<*>>, welcomePanel: JBPanel<WelcomePanel>, welcomePageImageLabel: JBLabel,
     ) {
         val gbc = GridBagConstraints()
@@ -107,18 +107,7 @@ class WelcomePanel(project: Project) : JBPanel<WelcomePanel>(BorderLayout()) {
             addHyperlinkListener(object : HyperlinkAdapter() {
                 override fun hyperlinkActivated(e: HyperlinkEvent) {
                     if ("#reportView" == e.description) {
-                        val sonarqubeToolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARQUBE_FOR_IDE)
-
-                        sonarqubeToolWindow?.let {
-                            if (!sonarqubeToolWindow.isVisible) {
-                                sonarqubeToolWindow.activate(null)
-                            }
-                            val reportContent = sonarqubeToolWindow.contentManager.findContent(REPORT)
-
-                            reportContent?.let {
-                                sonarqubeToolWindow.contentManager.setSelectedContent(reportContent)
-                            }
-                        }
+                        SonarLintUtils.getService(project, SonarLintToolWindow::class.java).openReportTab()
                     } else {
                         LinkTelemetry.RULE_SELECTION_PAGE.browseWithTelemetry()
                     }
