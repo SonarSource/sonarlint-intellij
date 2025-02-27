@@ -39,7 +39,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.LiveFinding;
@@ -52,6 +51,7 @@ import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
@@ -111,8 +111,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       @Override
       public void keyPressed(KeyEvent e) {
         if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
-          var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-          highlighting.removeHighlights();
+          getService(project, EditorDecorator.class).removeHighlights();
         }
       }
     });
@@ -127,8 +126,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       @Override
       public void keyPressed(KeyEvent e) {
         if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
-          var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-          highlighting.removeHighlights();
+          getService(project, EditorDecorator.class).removeHighlights();
         }
       }
     });
@@ -161,8 +159,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   private void clearSelection() {
     findingDetailsPanel.clear();
-    var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-    highlighting.removeHighlights();
+    getService(project, EditorDecorator.class).removeHighlights();
   }
 
   private void issueTreeSelectionChanged(TreeSelectionEvent e) {

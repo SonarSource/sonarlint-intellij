@@ -37,7 +37,7 @@ class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonar
 ), IntentionAction, PriorityAction, Iconable {
 
     override fun startInWriteAction() = false
-    override fun getText() = "SonarQube: Generate AI codefix"
+    override fun getText() = "SonarQube: Generate AI CodeFix"
     override fun getFamilyName() = "SonarQube AI codefix suggestion"
     override fun getPriority() = PriorityAction.Priority.HIGH
     override fun getIcon(flags: Int) = AllIcons.Actions.Lightning
@@ -56,14 +56,18 @@ class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonar
         startSuggestingCodeFix(project, finding)
     }
 
-    private fun startSuggestingCodeFix(project: Project, issue: Issue) {
-        runOnUiThread(project) {
-            val toolWindow = getService(project, SonarLintToolWindow::class.java)
-            toolWindow.openCurrentFileTab()
-            toolWindow.bringToFront()
+    companion object {
 
-            getService(project, SonarLintToolWindow::class.java).trySelectIssueForCodeFix(issue.getId().toString())
+        fun startSuggestingCodeFix(project: Project, issue: Issue) {
+            runOnUiThread(project) {
+                val toolWindow = getService(project, SonarLintToolWindow::class.java)
+                toolWindow.openCurrentFileTab()
+                toolWindow.bringToFront()
+
+                getService(project, SonarLintToolWindow::class.java).trySelectIssueForCodeFix(issue.getId().toString())
+            }
         }
+
     }
 
     override fun actionPerformed(e: AnActionEvent) {

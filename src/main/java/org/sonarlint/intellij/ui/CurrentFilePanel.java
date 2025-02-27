@@ -51,6 +51,7 @@ import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.ShowFinding;
@@ -176,11 +177,13 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       populateSubTree(oldTree, oldTreeBuilder, Map.of(file, oldIssues));
       oldTree.setVisible(true);
       updateIcon(file, newIssues);
+      getService(project, EditorDecorator.class).createGutterIconForIssues(newIssues);
     } else {
       populateSubTree(tree, treeBuilder, Map.of(file, this.currentIssues));
       populateSubTree(oldTree, oldTreeBuilder, Collections.emptyMap());
       oldTree.setVisible(false);
       updateIcon(file, this.currentIssues);
+      getService(project, EditorDecorator.class).createGutterIconForIssues(this.currentIssues);
     }
     expandTree();
   }
