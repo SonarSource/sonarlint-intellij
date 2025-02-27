@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.OffsetIcon;
 import com.intellij.ui.SimpleTextAttributes;
@@ -80,7 +81,11 @@ public class IssueNode extends FindingNode {
         var connection = serverConnection.get();
         renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " " +
           "analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
+        if (issue.isAiCodeFixable()) {
+          setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon, AllIcons.Actions.Lightning));
+        } else {
+          setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
+        }
       } else {
         renderer.setIconToolTip(impactText + " impact on " + qualityText);
         var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + gap;
@@ -101,7 +106,11 @@ public class IssueNode extends FindingNode {
       if (issue.getServerKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();
         renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon));
+        if (issue.isAiCodeFixable()) {
+          setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, AllIcons.Actions.Lightning));
+        } else {
+          setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon));
+        }
       } else {
         renderer.setIconToolTip(severityText + " " + typeStr);
         var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + gap;
