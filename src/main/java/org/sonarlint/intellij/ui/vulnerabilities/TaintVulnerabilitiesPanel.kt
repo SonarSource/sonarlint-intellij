@@ -192,8 +192,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             setSelectedVulnerability(selectedTaintNode[0])
         } else {
             rulePanel.clear()
-            val highlighting = getService(project, EditorDecorator::class.java)
-            highlighting.removeHighlights()
+            getService(project, EditorDecorator::class.java).removeHighlights()
         }
     }
 
@@ -253,6 +252,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             populateSubTree(tree, taintVulnerabilityTreeUpdater, newTaintVulnerabilities)
             populateSubTree(oldTree, oldTaintVulnerabilityTreeUpdater, newTaintVulnerabilities)
             switchCard()
+            getService(project, EditorDecorator::class.java).createGutterIconForTaints(newTaintVulnerabilities)
         }
     }
 
@@ -268,9 +268,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 showCard(INVALID_BINDING_CARD_ID)
             }
             taintVulnerabilityTreeUpdater.taintVulnerabilities.isEmpty() && oldTaintVulnerabilityTreeUpdater.taintVulnerabilities.isEmpty() -> {
-                val highlighting = getService(project, EditorDecorator::class.java)
                 showNoVulnerabilitiesLabel()
-                highlighting.removeHighlights()
+                getService(project, EditorDecorator::class.java).removeHighlights()
             }
             else -> {
                 if (taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.isEmpty() && oldTaintVulnerabilityTreeUpdater.filteredTaintVulnerabilities.isEmpty()) {
@@ -409,11 +408,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             it.addKeyListener(object : KeyAdapter() {
                 override fun keyPressed(e: KeyEvent) {
                     if (KeyEvent.VK_ESCAPE == e.keyCode) {
-                        val highlighting = getService(
-                            project,
-                            EditorDecorator::class.java
-                        )
-                        highlighting.removeHighlights()
+                        getService(project, EditorDecorator::class.java).removeHighlights()
                     }
                 }
             })
