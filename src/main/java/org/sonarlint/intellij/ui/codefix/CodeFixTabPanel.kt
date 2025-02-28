@@ -23,6 +23,8 @@ import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeysEx
+import com.intellij.icons.AllIcons
+import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
@@ -35,6 +37,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ClientProperty
 import com.intellij.ui.Gray
+import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBLabel
@@ -49,6 +52,7 @@ import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
 import java.util.UUID
+import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -61,6 +65,7 @@ import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.inlay.FixSuggestionInlayHolder
@@ -106,10 +111,10 @@ class CodeFixTabPanel(
     }
 
     private fun initGenerateButton(): JButton {
-        return JButton("Generate Fix").apply {
+        return JButton("Generate Fix", AllIcons.Actions.Lightning).apply {
             ClientProperty.put(this, DarculaButtonUI.DEFAULT_STYLE_KEY, true)
             alignmentX = Component.CENTER_ALIGNMENT
-            preferredSize = Dimension(200, preferredSize.height)
+            border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
             addActionListener {
                 runOnPooledThread(project) { loadSuggestion() }
             }
@@ -117,20 +122,50 @@ class CodeFixTabPanel(
     }
 
     private fun initGenerationCard(): JScrollPane {
-        val codeFixImg = JBLabel(SonarLintIcons.CODEFIX)
-        codeFixImg.alignmentX = Component.CENTER_ALIGNMENT
         val generateButton = initGenerateButton()
 
-        val panel = JBPanel<CodeFixTabPanel>().apply {
-            add(Box.createVerticalGlue())
-            add(codeFixImg)
-            add(Box.createVerticalStrut(10))
+        val title = JBLabel("Fix your issues faster with AI CodeFix").apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            font = font.deriveFont(Font.BOLD, 16f)
+        }
+
+        val description = JBLabel("Sonar AI CodeFix offers automated code fixes for issues detected by our code analysis tools.").apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+
+        val learnMore = HyperlinkLabel("Learn More")
+        // TODO: Update with AI doc
+        learnMore.addHyperlinkListener { BrowserUtil.browse(SonarLintDocumentation.Intellij.BASE_DOCS_URL) }
+
+        val buttonPanel = JBPanel<CodeFixTabPanel>().apply {
             add(generateButton)
+            add(Box.createHorizontalStrut(30))
+            add(learnMore)
+            alignmentX = Component.LEFT_ALIGNMENT
+            preferredSize = Dimension(preferredSize.width, 40)
+            maximumSize = Dimension(maximumSize.width, 40)
+        }
+        buttonPanel.layout = BoxLayout(buttonPanel, BoxLayout.X_AXIS)
+
+        val centerPanel = JBPanel<CodeFixTabPanel>().apply {
+            add(Box.createVerticalGlue())
+            add(title)
+            add(Box.createRigidArea(Dimension(0, 10)))
+            add(description)
+            add(Box.createRigidArea(Dimension(0, 10)))
+            add(buttonPanel)
             add(Box.createVerticalGlue())
         }
-        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+        centerPanel.layout = BoxLayout(centerPanel, BoxLayout.Y_AXIS)
 
-        return initScrollPane(panel)
+        val mainPanel = JBPanel<CodeFixTabPanel>(BorderLayout()).apply {
+            add(JBLabel(SonarLintIcons.CODEFIX).apply {
+                    border = JBUI.Borders.empty(10)
+            }, BorderLayout.WEST)
+            add(centerPanel, BorderLayout.CENTER)
+        }
+
+        return initScrollPane(mainPanel)
     }
 
     private fun initLoadingCard(): JScrollPane {
