@@ -76,12 +76,14 @@ class ConnectWithYourTeamPanel(project: Project) : AbstractWalkthroughPanel() {
         val descriptionPane = SwingHelper.createHtmlViewer(false, font, null, null)
         descriptionPane.apply {
             text = """
-                Apply the same set of rules as your team by using $SONARQUBE_FOR_IDE in Connected Mode with SonarQube Cloud or SonarQube Server.<br><br>
-                With Connected Mode, benefit from advanced analysis like <a href="#taintVulnerabilities">Taint Vulnerabilities</a> and open
-                issues and <a href="#aiFixSuggestions">AI fix suggestions</a> from SonarQube (Server, Cloud) in the IDE.<br><br>
-                Already using SonarQube (Server, Cloud)? <a href="#setupConnection">Set up a connection</a>
+                $SONARQUBE_FOR_IDE can connect to SonarQube (Server, Cloud) using connected mode;
+                this allows your entire team to use the same rules and applied quality standards.<br><br>
+                When using connected mode, you can highlight advanced issues like <a href="#taintVulnerabilities">taint vulnerabilities</a> 
+                and analyze more languages that aren’t available with a local analysis. SonarQube (Server, Cloud) can also generate
+                <a href="#aiFixSuggestions">AI fix suggestions</a>, and you can open them right in your IDE!<br><br>
+                Are you already using SonarQube (Server, Cloud)? <a href="#setupConnection">Click here</a> to set up a connection!
             """.trimIndent()
-            border = JBUI.Borders.empty(8, 8)
+            border = JBUI.Borders.empty(8)
 
             addHyperlinkListener(object : HyperlinkAdapter() {
                 override fun hyperlinkActivated(e: HyperlinkEvent) {

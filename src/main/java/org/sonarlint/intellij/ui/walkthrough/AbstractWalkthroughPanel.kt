@@ -27,11 +27,11 @@ import java.awt.GridBagLayout
 import javax.swing.BorderFactory
 import javax.swing.JScrollPane
 
-abstract class AbstractWalkthroughPanel : JBPanel<JBPanel<*>>(BorderLayout()) {
+const val SONARQUBE_FOR_IDE: String = "SonarQube for IDE"
+const val FONT: String = "Arial"
+const val PREVIOUS: String = "Previous"
 
-    val SONARQUBE_FOR_IDE: String = "SonarQube for IDE"
-    val FONT: String = "Arial"
-    val PREVIOUS: String = "Previous"
+abstract class AbstractWalkthroughPanel : JBPanel<JBPanel<*>>(BorderLayout()) {
 
     fun createCenterPanel(stepLabel: JBLabel, pageLabel: JBLabel, scrollPane: JScrollPane?, gbc: GridBagConstraints): JBPanel<JBPanel<*>> {
         val centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())

@@ -75,10 +75,11 @@ class ReachOutToUsPanel(project: Project) : AbstractWalkthroughPanel() {
         val descriptionPane = SwingHelper.createHtmlViewer(false, font, null, null)
         descriptionPane.apply {
             text = """
-                You suspect any issue with ${SONARQUBE_FOR_IDE}? Check the <a href="#logView">log view</a>.<br>
-                Share the verbose logs with us via the <a href="#communityForum">Community forum</a> in case of problem. We will be happy to help 
-                you debug.<br><br>
-                Learn more about $SONARQUBE_FOR_IDE through <a href="#docs">our docs</a>.
+                Are you having problems with ${SONARQUBE_FOR_IDE}? Open the <a href="#logView">log tab</a> 
+                and enable the Analysis logs and Verbose output.<br>
+                Share your verbose logs with us in a post on the <a href="#communityForum">Community forum</a>.
+                We are happy to help you debug!<br><br>
+                Learn more about $SONARQUBE_FOR_IDE in the product <a href="#docs">documentation</a>.
             """.trimIndent()
             border = JBUI.Borders.empty(8, 8)
 

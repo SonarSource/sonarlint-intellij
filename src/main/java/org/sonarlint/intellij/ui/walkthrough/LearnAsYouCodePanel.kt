@@ -76,10 +76,11 @@ class LearnAsYouCodePanel(project: Project) : AbstractWalkthroughPanel() {
         val descriptionPane = SwingHelper.createHtmlViewer(false, font, null, null)
         descriptionPane.apply {
             text = """
-                Check the <a href="#currentFile">Current File</a> view: When $SONARQUBE_FOR_IDE found something, click on the issue to 
-                get the rule description and an example of compliant code.<br><br>
+                Take a look at the <a href="#currentFile">Current File</a> tab: When $SONARQUBE_FOR_IDE finds an issue, select it to 
+                get its rule description and an example of compliant code.<br><br>
+                Double-click an issue in the Report tab to open its location in the Editor.
                 Some rules offer quick fixes when you hover over the issue location.<br><br>
-                Finally you can disable rules in the <a href="#settings">settings</a>.
+                If needed, you can disable rules in the <a href="#settings">Settings</a>.
             """.trimIndent()
             border = JBUI.Borders.empty(8, 8)
 
