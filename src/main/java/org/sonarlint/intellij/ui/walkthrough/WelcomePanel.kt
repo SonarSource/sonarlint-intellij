@@ -90,11 +90,11 @@ class WelcomePanel(project: Project) : AbstractWalkthroughPanel() {
         val descriptionPane = SwingHelper.createHtmlViewer(false, font, null, null)
         descriptionPane.apply {
             text = """
-                ${SONARQUBE_FOR_IDE} supports the analysis of 15+ languages including
-                Python, Java, Javascript, IaC domains along with secrets detection.
+                ${SONARQUBE_FOR_IDE} supports the analysis of more than 16 languages including
+                Python, Java, Javascript, IaC domains, and secrets detection.
                 <a href="${RULE_SECTION_LINK}">Learn more</a>.<br><br>
-                Detect issues while you code in open files or run the analysis on more file in the <a href="#reportView">report view</a>.<br><br>
-                Open a file and start your clean code journey.
+                Detect issues in your open file while you code or run an analysis on multiple files from the <a href="#reportView">Report tab</a>.<br><br>
+                Open a file to start your Clean Code journey.
             """.trimIndent()
             border = JBUI.Borders.empty(8, 8)
 
