@@ -27,16 +27,11 @@ import java.awt.GridBagLayout
 import javax.swing.BorderFactory
 import javax.swing.JScrollPane
 
-object SonarLintWalkthroughUtils {
-    const val SONARQUBE_FOR_IDE: String = "SonarQube for IDE"
-    const val PAGE_1: String = "Page 1"
-    const val PAGE_2: String = "Page 2"
-    const val PAGE_3: String = "Page 3"
-    const val PAGE_4: String = "Page 4"
-    const val FONT: String = "Arial"
-    const val PREVIOUS: String = "Previous"
-    const val WIDTH: Int = 300
-    const val HEIGHT: Int = 200
+abstract class AbstractWalkthroughPanel : JBPanel<JBPanel<*>>(BorderLayout()) {
+
+    val SONARQUBE_FOR_IDE: String = "SonarQube for IDE"
+    val FONT: String = "Arial"
+    val PREVIOUS: String = "Previous"
 
     fun createCenterPanel(stepLabel: JBLabel, pageLabel: JBLabel, scrollPane: JScrollPane?, gbc: GridBagConstraints): JBPanel<JBPanel<*>> {
         val centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())
@@ -67,7 +62,7 @@ object SonarLintWalkthroughUtils {
         gbc.weightx = 0.0
         gbc.weighty = 0.0
     }
-    
+
     fun addCenterPanel(
         stepLabel: JBLabel,
         pageLabel: JBLabel,
@@ -91,4 +86,5 @@ object SonarLintWalkthroughUtils {
         panel.add(imageLabel, BorderLayout.NORTH)
         panel.add(centerPanel, BorderLayout.CENTER)
     }
+
 }

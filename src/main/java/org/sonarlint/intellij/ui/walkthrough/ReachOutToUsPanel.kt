@@ -20,15 +20,12 @@
 package org.sonarlint.intellij.ui.walkthrough
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
-import java.awt.BorderLayout
-import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
 import javax.swing.JButton
@@ -37,38 +34,30 @@ import javax.swing.JScrollPane
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.telemetry.LinkTelemetry
-import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughUtils.FONT
-import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughUtils.PREVIOUS
-import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughUtils.SONARQUBE_FOR_IDE
-import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughUtils.addCenterPanel
 
-private const val LOG = "Log"
 private const val CLOSE = "Close"
 
-class ReachOutToUsPanel(project: Project) :
-    JBPanel<JBPanel<*>>(BorderLayout()) {
+class ReachOutToUsPanel(project: Project) : AbstractWalkthroughPanel() {
 
     val closeButton = JButton(CLOSE)
     val backButton = JButton(PREVIOUS)
 
     init {
-        val font = UIUtil.getLabelFont()
+        val labelFont = UIUtil.getLabelFont()
 
         val icon = SonarLintIcons.WALKTHROUGH_REACH_OUT_TO_US
         val reachOutToUsImageLabel = JBLabel(icon)
 
-        val reachOutToUsStepLabel = JBLabel("Step 4/4", SwingConstants.LEFT)
-        reachOutToUsStepLabel.font = Font(FONT, Font.PLAIN, 14)
+        val reachOutToUsStepLabel = JBLabel("Step 4/4", SwingConstants.LEFT).apply { font = Font(FONT, Font.PLAIN, 14) }
+        val reachOutToUsLabel = JBLabel("Reach out to us").apply { font = Font(FONT, Font.BOLD, 16)}
 
-        val reachOutToUsLabel = JBLabel("Reach out to us")
-        reachOutToUsLabel.font = Font(FONT, Font.BOLD, 16)
+        val reachOutToUsDescription = createReachOutToUsPageText(labelFont, project)
 
-        val reachOutToUsDescription = createReachOutToUsPageText(font, project)
-
+        //The old UI is not looking good with JBScrollPane, so we are using JScrollPane
         val reachOutToUsPane = JScrollPane(reachOutToUsDescription)
-        reachOutToUsPane.border = null
-        reachOutToUsPane.preferredSize = Dimension(WIDTH, 100)
 
         val reachOutToUsBackButtonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.LEFT))
         reachOutToUsBackButtonPanel.add(backButton)
@@ -97,17 +86,7 @@ class ReachOutToUsPanel(project: Project) :
                 override fun hyperlinkActivated(e: HyperlinkEvent) {
                     when (e.description) {
                         "#logView" -> {
-                            val sonarqubeToolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARQUBE_FOR_IDE)
-                            sonarqubeToolWindow?.let {
-                                if (!sonarqubeToolWindow.isVisible) {
-                                    sonarqubeToolWindow.activate(null)
-                                }
-                                val currentFileContent = sonarqubeToolWindow.contentManager.findContent(LOG)
-
-                                currentFileContent?.let {
-                                    sonarqubeToolWindow.contentManager.setSelectedContent(currentFileContent)
-                                }
-                            }
+                            SonarLintUtils.getService(project, SonarLintToolWindow::class.java).openLogTab()
                         }
 
                         "#communityForum" -> LinkTelemetry.COMMUNITY_PAGE.browseWithTelemetry()
