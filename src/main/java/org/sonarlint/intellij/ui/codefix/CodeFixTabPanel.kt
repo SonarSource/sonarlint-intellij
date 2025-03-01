@@ -23,7 +23,6 @@ import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeysEx
-import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
@@ -42,7 +41,6 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
-import com.intellij.ui.components.ProgressBarLoadingDecorator
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
@@ -78,7 +76,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 
 private const val CODEFIX_GENERATION = "CODEFIX_GENERATION"
-private const val CODEFIX_LOADING = "CODEFIX_LOADING"
 private const val CODEFIX_PRESENTATION = "CODEFIX_PRESENTATION"
 private const val CODEFIX_ERROR = "CODEFIX_ERROR"
 
@@ -89,16 +86,15 @@ class CodeFixTabPanel(
     private val disposableParent: Disposable
 ) : JBPanel<CodeFixTabPanel>() {
 
-    private lateinit var loadingDecorator: ProgressBarLoadingDecorator
     private lateinit var codefixPresentationPanel: JBPanel<CodeFixTabPanel>
     private lateinit var errorLabel: JBLabel
+    private val presentationImage = JBLabel()
     private val cardLayout = CardLayout()
 
     init {
         layout = cardLayout
 
         add(initGenerationCard(), CODEFIX_GENERATION)
-        add(initLoadingCard(), CODEFIX_LOADING)
         add(initGeneratedCard(), CODEFIX_PRESENTATION)
         add(initErrorCard(), CODEFIX_ERROR)
 
@@ -111,7 +107,7 @@ class CodeFixTabPanel(
     }
 
     private fun initGenerateButton(): JButton {
-        return JButton("Generate Fix", AllIcons.Actions.Lightning).apply {
+        return JButton("Generate Fix", SonarLintIcons.SPARKLE_GUTTER_ICON).apply {
             ClientProperty.put(this, DarculaButtonUI.DEFAULT_STYLE_KEY, true)
             alignmentX = Component.CENTER_ALIGNMENT
             border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -159,33 +155,14 @@ class CodeFixTabPanel(
         centerPanel.layout = BoxLayout(centerPanel, BoxLayout.Y_AXIS)
 
         val mainPanel = JBPanel<CodeFixTabPanel>(BorderLayout()).apply {
-            add(JBLabel(SonarLintIcons.CODEFIX).apply {
-                    border = JBUI.Borders.empty(10)
+            add(presentationImage.apply {
+                border = JBUI.Borders.empty(10)
+                icon = SonarLintIcons.CODEFIX_PRESENTATION
             }, BorderLayout.WEST)
             add(centerPanel, BorderLayout.CENTER)
         }
 
         return initScrollPane(mainPanel)
-    }
-
-    private fun initLoadingCard(): JScrollPane {
-        val codeFixImg = JBLabel(SonarLintIcons.CODEFIX)
-        codeFixImg.alignmentX = Component.CENTER_ALIGNMENT
-
-        loadingDecorator = ProgressBarLoadingDecorator(JBPanel<CodeFixTabPanel>(), disposableParent, 150).apply {
-            preferredSize = Dimension(200, preferredSize.height)
-        }
-
-        val panel = JBPanel<CodeFixTabPanel>().apply {
-            add(Box.createVerticalGlue())
-            add(codeFixImg)
-            add(Box.createVerticalStrut(10))
-            add(loadingDecorator.component)
-            add(Box.createVerticalGlue())
-        }
-        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-
-        return initScrollPane(panel)
     }
 
     private fun initGeneratedCard(): JScrollPane {
@@ -212,8 +189,8 @@ class CodeFixTabPanel(
     }
 
     private fun displayLoading() {
-        switchCard(CODEFIX_LOADING)
-        loadingDecorator.startLoading(false)
+        switchCard(CODEFIX_GENERATION)
+        presentationImage.icon = SonarLintIcons.loadingCodeFixIcon()
     }
 
     private fun switchCard(cardName: String) {
@@ -224,7 +201,7 @@ class CodeFixTabPanel(
         displayLoading()
         val module = findModuleForFile(file, project) ?: run {
             runOnUiThread(project, ModalityState.stateForComponent(this)) {
-                loadingDecorator.stopLoading()
+                presentationImage.icon = SonarLintIcons.CODEFIX_PRESENTATION
             }
             return
         }
@@ -262,7 +239,6 @@ class CodeFixTabPanel(
 
     private fun displaySuggestion(fixSuggestion: SuggestFixResponse, alreadySuggested: Boolean) {
         runOnUiThread(project, ModalityState.stateForComponent(this)) {
-            loadingDecorator.stopLoading()
             ShowFixSuggestion(project, file).show(fixSuggestion, alreadySuggested)
 
             codefixPresentationPanel.removeAll()

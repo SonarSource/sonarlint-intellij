@@ -1,6 +1,24 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015-2025 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
 package org.sonarlint.intellij.ui.codefix
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Editor
@@ -11,6 +29,7 @@ import com.intellij.openapi.ui.popup.PopupStep
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import java.awt.event.MouseEvent
 import javax.swing.Icon
+import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
@@ -43,16 +62,16 @@ class CodeFixGutterIconRenderer(val editor: Editor, val line: Int, val issues: L
     override fun hashCode() = icon.hashCode()
 
     override fun getIcon(): Icon {
-        return AllIcons.Actions.Lightning
+        return SonarLintIcons.SPARKLE_GUTTER_ICON
     }
 
     private class IssuePopupStep(private val project: Project, issues: List<Issue>) : BaseListPopupStep<Issue>(null, issues) {
 
         override fun getTextFor(issue: Issue): String {
             return when (issue) {
-                is LiveIssue -> "SonarQube: Generate AI CodeFix for '${issue.message}'"
-                is LocalTaintVulnerability -> "SonarQube: Generate AI CodeFix for '${issue.message()}'"
-                else -> "SonarQube: Generate AI CodeFix for '${issue.getRuleKey()}'"
+                is LiveIssue -> "SonarQube: Fix with AI CodeFix '${issue.message}'"
+                is LocalTaintVulnerability -> "SonarQube: Fix with AI CodeFix '${issue.message()}'"
+                else -> "SonarQube: Fix with AI CodeFix '${issue.getRuleKey()}'"
             }
         }
 

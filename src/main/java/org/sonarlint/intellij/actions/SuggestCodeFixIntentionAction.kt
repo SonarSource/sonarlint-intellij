@@ -21,26 +21,26 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
+import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.DataKeys.Companion.ISSUE_DATA_KEY
 
 class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonarAction(
-    "Generate AI CodeFix", "Generate AI fix suggestion", AllIcons.Actions.Lightning
+    "Fix with  AI CodeFix", "Generate AI fix suggestion", SonarLintIcons.SPARKLE_GUTTER_ICON
 ), IntentionAction, PriorityAction, Iconable {
 
     override fun startInWriteAction() = false
-    override fun getText() = "SonarQube: Generate AI CodeFix"
+    override fun getText() = "SonarQube: Fix with AI CodeFix"
     override fun getFamilyName() = "SonarQube AI codefix suggestion"
     override fun getPriority() = PriorityAction.Priority.HIGH
-    override fun getIcon(flags: Int) = AllIcons.Actions.Lightning
+    override fun getIcon(flags: Int) = SonarLintIcons.SPARKLE_GUTTER_ICON
 
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = finding?.isAiCodeFixable() ?: false
 

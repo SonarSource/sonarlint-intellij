@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.ruledescription
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
@@ -36,6 +35,7 @@ import java.awt.BorderLayout
 import java.awt.Font
 import java.util.UUID
 import javax.swing.DefaultComboBoxModel
+import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.ui.codefix.CodeFixTabPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
 import org.sonarlint.intellij.util.runOnPooledThread
@@ -66,7 +66,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
 
         sectionsTabs.insertTab("Description", null, createNonContextualTab(monolithDescription.htmlContent, fileType), null, 0)
         codeFixTab = CodeFixTabPanel(project, file, issueId, parent)
-        sectionsTabs.insertTab(AI_CODEFIX_TITLE, AllIcons.Actions.Lightning, codeFixTab, null, 1)
+        sectionsTabs.insertTab(AI_CODEFIX_TITLE, SonarLintIcons.SPARKLE_GUTTER_ICON, codeFixTab, null, 1)
 
         add(sectionsTabs, BorderLayout.CENTER)
         this.sectionsTabs = sectionsTabs
@@ -81,7 +81,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         addSections(withSections, fileType)
         sectionsTabs?.let {
             codeFixTab = CodeFixTabPanel(project, file, issueId, parent)
-            it.insertTab(AI_CODEFIX_TITLE, AllIcons.Actions.Lightning, codeFixTab, null, withSections.tabs.size)
+            it.insertTab(AI_CODEFIX_TITLE, SonarLintIcons.SPARKLE_GUTTER_ICON, codeFixTab, null, withSections.tabs.size)
         }
     }
 
