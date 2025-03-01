@@ -21,17 +21,45 @@ package org.sonarlint.intellij.ui.walkthrough
 
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.util.ui.SwingHelper
+import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
+import java.awt.FlowLayout
+import java.awt.Font
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.BorderFactory
+import javax.swing.Icon
+import javax.swing.JButton
 import javax.swing.JScrollPane
+import javax.swing.SwingConstants
 
 const val SONARQUBE_FOR_IDE: String = "SonarQube for IDE"
 const val FONT: String = "Arial"
 const val PREVIOUS: String = "Previous"
 
-abstract class AbstractWalkthroughPanel : JBPanel<JBPanel<*>>(BorderLayout()) {
+abstract class AbstractWalkthroughPanel(
+    icon: Icon, step: String, title: String,
+    previousButtonText: String?, nextButtonText: String,
+) : JBPanel<JBPanel<*>>(BorderLayout()) {
+
+    val labelFont = UIUtil.getLabelFont()
+    val pageImageLabel = JBLabel(icon)
+    val pageStepLabel = JBLabel(step, SwingConstants.LEFT).apply { font = Font(FONT, Font.PLAIN, 14) }
+    val pageTitleLabel = JBLabel(title, SwingConstants.LEFT).apply { font = Font(FONT, Font.BOLD, 16) }
+    val backButton = previousButtonText?.let { JButton(it) }
+    val nextButton = JButton(nextButtonText)
+    val mainText = SwingHelper.createHtmlViewer(false, font, null, null)
+
+    //The old UI is not looking good with JBScrollPane, so we are using JScrollPane
+    val mainScrollPane = JScrollPane(mainText)
+    val backButtonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.LEFT))
+    val nextButtonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.RIGHT))
+
+    init {
+        backButton?.let { backButtonPanel.add(it) }
+        nextButtonPanel.add(nextButton)
+    }
 
     fun createCenterPanel(stepLabel: JBLabel, pageLabel: JBLabel, scrollPane: JScrollPane?, gbc: GridBagConstraints): JBPanel<JBPanel<*>> {
         val centerPanel = JBPanel<JBPanel<*>>(GridBagLayout())

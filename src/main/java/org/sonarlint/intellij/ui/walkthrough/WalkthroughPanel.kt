@@ -57,12 +57,12 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         val reachOutToUsPanel = ReachOutToUsPanel(project)
 
         welcomePageNextButton = welcomePanel.nextButton
-        learnAsYouCodePageBackButton = learnAsYouCodePanel.backButton
+        learnAsYouCodePageBackButton = learnAsYouCodePanel.backButton!!
         learnAsYouCodePageNextButton = learnAsYouCodePanel.nextButton
-        connectWithYourTeamBackButton = connectWithYourTeamPanel.backButton
+        connectWithYourTeamBackButton = connectWithYourTeamPanel.backButton!!
         connectWithYourTeamNextButton = connectWithYourTeamPanel.nextButton
-        reachOutToUsBackButton = reachOutToUsPanel.backButton
-        closeButton = reachOutToUsPanel.closeButton
+        reachOutToUsBackButton = reachOutToUsPanel.backButton!!
+        closeButton = reachOutToUsPanel.nextButton
 
         mainPanel.add(welcomePanel, PAGE_1)
         mainPanel.add(learnAsYouCodePanel, PAGE_2)

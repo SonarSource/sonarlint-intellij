@@ -21,19 +21,10 @@ package org.sonarlint.intellij.ui.walkthrough
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.HyperlinkAdapter
-import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
-import com.intellij.util.ui.UIUtil
-import java.awt.BorderLayout
-import java.awt.FlowLayout
 import java.awt.Font
-import java.awt.GridBagConstraints
-import javax.swing.JButton
 import javax.swing.JEditorPane
-import javax.swing.JScrollPane
-import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -41,49 +32,22 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK
 import org.sonarlint.intellij.telemetry.LinkTelemetry
 
-private const val STEP_1_4 = "Step 1/4"
+private const val STEP = "Step 1/4"
+private const val TITLE = "Get started"
 
-class WelcomePanel(project: Project) : AbstractWalkthroughPanel() {
+private const val NEXT_BUTTON_TEXT = "Next: Learn as You Code"
 
-    val nextButton = JButton("Next: Learn as You Code")
+class WelcomePanel(project: Project) : AbstractWalkthroughPanel(SonarLintIcons.WALKTHROUGH_WELCOME, STEP, TITLE, null, NEXT_BUTTON_TEXT) {
 
     init {
-        val labelFont = UIUtil.getLabelFont()
+        mainScrollPane.viewport.view = createWelcomePageText(labelFont, project)
 
-        val icon = SonarLintIcons.WALKTHROUGH_WELCOME
-        val welcomeImageLabel = JBLabel(icon)
-
-        val welcomeStepLabel = JBLabel(STEP_1_4, SwingConstants.LEFT).apply { font = Font(FONT, Font.PLAIN, 14) }
-        val titleLabel = JBLabel("Get started", SwingConstants.LEFT).apply { font = Font(FONT, Font.BOLD, 16) }
-
-        val welcomePageText = createWelcomePageText(labelFont, project)
-
-        //The old UI is not looking good with JBScrollPane, so we are using JScrollPane
-        val welcomePageScrollPane = JScrollPane(welcomePageText)
-
-        val welcomePageNextButtonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.RIGHT))
-        welcomePageNextButtonPanel.add(nextButton)
-
-        createWelcomePageLayout(
-            welcomeStepLabel, titleLabel, welcomePageScrollPane, welcomePageNextButtonPanel, this,
-            welcomeImageLabel
+        //The reason we add the center panel here and not in the abstract panel is we would be leaking this(panel) in the constructor
+        //Which could cause issue in a multithreaded environment since it can be accessed before the constructor is finished
+        addCenterPanel(
+            pageStepLabel, pageTitleLabel, mainScrollPane,
+            backButtonPanel, nextButtonPanel, this, pageImageLabel
         )
-    }
-
-    private fun createWelcomePageLayout(
-        stepLabel: JBLabel, titleLabel: JBLabel, welcomePageScrollPane: JScrollPane,
-        welcomePageNextButtonPanel: JBPanel<JBPanel<*>>, welcomePanel: JBPanel<JBPanel<*>>, welcomePageImageLabel: JBLabel,
-    ) {
-        val gbc = GridBagConstraints()
-
-        val centerPanel = createCenterPanel(stepLabel, titleLabel, welcomePageScrollPane, gbc)
-
-        gbc.anchor = GridBagConstraints.SOUTHEAST
-        provideCommonButtonConstraints(gbc)
-        centerPanel.add(welcomePageNextButtonPanel, gbc)
-
-        welcomePanel.add(welcomePageImageLabel, BorderLayout.NORTH)
-        welcomePanel.add(centerPanel, BorderLayout.CENTER)
     }
 
     private fun createWelcomePageText(font: Font, project: Project): JEditorPane {
