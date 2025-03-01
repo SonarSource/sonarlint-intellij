@@ -22,17 +22,10 @@ package org.sonarlint.intellij.ui.walkthrough
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.HyperlinkAdapter
-import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
-import com.intellij.util.ui.UIUtil
-import java.awt.FlowLayout
 import java.awt.Font
-import javax.swing.JButton
 import javax.swing.JEditorPane
-import javax.swing.JScrollPane
-import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -41,34 +34,21 @@ import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable
 import org.sonarlint.intellij.telemetry.LinkTelemetry
 
 private const val NEXT_BUTTON_TEXT = "Next: Reach Out to Us"
+private const val STEP = "Step 3/4"
+private const val TITLE = "Connect with your team"
 
-class ConnectWithYourTeamPanel(project: Project) : AbstractWalkthroughPanel() {
-
-    val backButton = JButton(PREVIOUS)
-    val nextButton = JButton(NEXT_BUTTON_TEXT)
+class ConnectWithYourTeamPanel(project: Project) : AbstractWalkthroughPanel(
+    SonarLintIcons.WALKTHROUGH_CONNECT_WITH_YOUR_TEAM, STEP, TITLE, PREVIOUS, NEXT_BUTTON_TEXT
+) {
 
     init {
-        val labelFont = UIUtil.getLabelFont()
+        mainScrollPane.viewport.view = createConnectWithYourTeamPageText(labelFont, project)
 
-        val connectWithYourTeamImageLabel = JBLabel(SonarLintIcons.WALKTHROUGH_CONNECT_WITH_YOUR_TEAM)
-
-        val connectWithYourTeamStepLabel = JBLabel("Step 3/4", SwingConstants.LEFT).apply { font = Font(FONT, Font.PLAIN, 14) }
-        val connectWithYourTeamLabel = JBLabel("Connect with your team").apply { font = Font(FONT, Font.BOLD, 16) }
-
-        val connectWithYourTeamText = createConnectWithYourTeamPageText(labelFont, project)
-
-        //The old UI is not looking good with JBScrollPane, so we are using JScrollPane
-        val connectWithYourTeamScrollPane = JScrollPane(connectWithYourTeamText)
-
-        val connectWithYourTeamBackButtonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.LEFT))
-        connectWithYourTeamBackButtonPanel.add(backButton)
-
-        val connectWithYourTeamNextButtonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.RIGHT))
-        connectWithYourTeamNextButtonPanel.add(nextButton)
-
+        //The reason we add the center panel here and not in the abstract panel is we would be leaking this(panel) in the constructor
+        //Which could cause issue in a multithreaded environment since it can be accessed before the constructor is finished
         addCenterPanel(
-            connectWithYourTeamStepLabel, connectWithYourTeamLabel, connectWithYourTeamScrollPane,
-            connectWithYourTeamBackButtonPanel, connectWithYourTeamNextButtonPanel, this, connectWithYourTeamImageLabel
+            pageStepLabel, pageTitleLabel, mainScrollPane,
+            backButtonPanel, nextButtonPanel, this, pageImageLabel
         )
     }
 

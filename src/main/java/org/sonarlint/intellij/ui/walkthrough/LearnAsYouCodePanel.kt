@@ -22,17 +22,10 @@ package org.sonarlint.intellij.ui.walkthrough
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.HyperlinkAdapter
-import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
-import com.intellij.util.ui.UIUtil
-import java.awt.FlowLayout
 import java.awt.Font
-import javax.swing.JButton
 import javax.swing.JEditorPane
-import javax.swing.JScrollPane
-import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -40,35 +33,25 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 
 private const val NEXT_BUTTON_TEXT = "Next: Connect with Your Team"
+private const val STEP = "Step 2/4"
+private const val TITLE = "Learn as You Code"
 
-class LearnAsYouCodePanel(project: Project) : AbstractWalkthroughPanel() {
-
-    val nextButton = JButton(NEXT_BUTTON_TEXT)
-    val backButton = JButton(PREVIOUS)
+class LearnAsYouCodePanel(project: Project) : AbstractWalkthroughPanel(
+    SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE,
+    STEP,
+    TITLE,
+    PREVIOUS,
+    NEXT_BUTTON_TEXT
+) {
 
     init {
-        val labelFont = UIUtil.getLabelFont()
+        mainScrollPane.viewport.view = createLearnAsYouCodePageText(labelFont, project)
 
-        val learnAsYouCodeImageLabel =
-            JBLabel(SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE)
-
-        val learnAsYouCodeStepLabel = JBLabel("Step 2/4", SwingConstants.LEFT).apply { font = Font(FONT, Font.PLAIN, 14) }
-
-        val learnAsYouCodePageLabel = JBLabel("Learn as You Code").apply { font = Font(FONT, Font.BOLD, 16) }
-        val learnAsYouCodeText = createLearnAsYouCodePageText(labelFont, project)
-
-        //The old UI is not looking good with JBScrollPane, so we are using JScrollPane
-        val learnAsYouCodeScrollPane = JScrollPane(learnAsYouCodeText)
-
-        val learnAsYouCodePageBackButtonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.LEFT))
-        learnAsYouCodePageBackButtonPanel.add(backButton)
-
-        val learnAsYouCodePageNextButtonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.RIGHT))
-        learnAsYouCodePageNextButtonPanel.add(nextButton)
-
+        //The reason we add the center panel here and not in the abstract panel is we would be leaking this(panel) in the constructor
+        //Which could cause issue in a multithreaded environment since it can be accessed before the constructor is finished
         addCenterPanel(
-            learnAsYouCodeStepLabel, learnAsYouCodePageLabel, learnAsYouCodeScrollPane,
-            learnAsYouCodePageBackButtonPanel, learnAsYouCodePageNextButtonPanel, this, learnAsYouCodeImageLabel
+            pageStepLabel, pageTitleLabel, mainScrollPane,
+            backButtonPanel, nextButtonPanel, this, pageImageLabel
         )
     }
 
