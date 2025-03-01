@@ -80,11 +80,19 @@ public class IssueNode extends FindingNode {
         var connection = serverConnection.get();
         renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " " +
           "analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
+        if (issue.isAiCodeFixable()) {
+          setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon, SonarLintIcons.SPARKLE_GUTTER_ICON));
+        } else {
+          setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
+        }
       } else {
         renderer.setIconToolTip(impactText + " impact on " + qualityText);
         var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + gap;
-        setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, impactIcon)));
+        if (issue.isAiCodeFixable()) {
+          setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, impactIcon, SonarLintIcons.SPARKLE_GUTTER_ICON)));
+        } else {
+          setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, impactIcon)));
+        }
       }
     } else {
       var severity = issue.getUserSeverity();
@@ -101,11 +109,19 @@ public class IssueNode extends FindingNode {
       if (issue.getServerKey() != null && serverConnection.isPresent()) {
         var connection = serverConnection.get();
         renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon));
+        if (issue.isAiCodeFixable()) {
+          setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon, SonarLintIcons.SPARKLE_GUTTER_ICON));
+        } else {
+          setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon));
+        }
       } else {
         renderer.setIconToolTip(severityText + " " + typeStr);
         var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + gap;
-        setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon)));
+        if (issue.isAiCodeFixable()) {
+          setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon, SonarLintIcons.SPARKLE_GUTTER_ICON)));
+        } else {
+          setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon)));
+        }
       }
     }
 

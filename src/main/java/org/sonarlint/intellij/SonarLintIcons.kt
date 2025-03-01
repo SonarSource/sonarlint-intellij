@@ -85,6 +85,7 @@ object SonarLintIcons {
     val FOCUS = getIcon("/images/focus.svg")
     @JvmField
     val CODEFIX_PRESENTATION = getIcon("/images/codefix/presentation.svg")
+    @JvmField
     val SPARKLE_GUTTER_ICON = getIcon("/images/codefix/sparkle_gutter_14.svg")
 
     private val BUG_ICONS = mapOf(
