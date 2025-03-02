@@ -19,26 +19,26 @@
  */
 package org.sonarlint.intellij.ui.inlay
 
-import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.requests.SimpleDiffRequest
-import com.intellij.diff.util.DiffUserDataKeysEx
+import com.intellij.diff.comparison.ComparisonManagerImpl
+import com.intellij.diff.comparison.ComparisonPolicy
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.RangeMarker
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.openapi.editor.markup.HighlighterTargetArea
+import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Ref
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.ui.ClientProperty
-import com.intellij.ui.Gray
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
@@ -52,9 +52,11 @@ import javax.swing.SwingConstants
 import org.jdesktop.swingx.HorizontalLayout
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_ADDITION
 import org.sonarlint.intellij.fix.FixSuggestionSnippet
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.ruledescription.RuleCodeSnippet.Companion.IS_SONARLINT_DOCUMENT
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionStatus
 
@@ -64,12 +66,13 @@ class FixSuggestionInlayPanel(
     val editor: Editor,
     val file: PsiFile,
     private val textRange: RangeMarker
-) : RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72)), Disposable {
+) : RoundedPanelWithBackgroundColor(), Disposable {
 
-    private val titlePanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
-    private val centerPanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
-    private val actionPanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
+    private val titlePanel = RoundedPanelWithBackgroundColor()
+    private val centerPanel = RoundedPanelWithBackgroundColor()
+    private val actionPanel = RoundedPanelWithBackgroundColor()
     private val inlayRef = Ref<Disposable>()
+    private lateinit var myEditor: EditorEx
 
     init {
         initPanels()
@@ -81,6 +84,27 @@ class FixSuggestionInlayPanel(
         val viewport = (editor as? EditorImpl)?.scrollPane?.viewport
         viewport?.dispatchEvent(ComponentEvent(viewport, ComponentEvent.COMPONENT_RESIZED))
         EditorUtil.disposeWithEditor(editor, this)
+    }
+
+    private fun createEditor(): Editor {
+        val editorFactory = EditorFactory.getInstance()
+        val editorDocument = editorFactory.createDocument("")
+        editorDocument.putUserData(IS_SONARLINT_DOCUMENT, true)
+        val editor = editorFactory.createViewer(editorDocument) as EditorEx
+        val settings = editor.settings
+        settings.isLineMarkerAreaShown = false
+        settings.isFoldingOutlineShown = false
+        settings.additionalColumnsCount = 0
+        settings.additionalLinesCount = 0
+        settings.isRightMarginShown = false
+        settings.isCaretRowShown = false
+        settings.isLineNumbersShown = false
+        settings.isVirtualSpace = false
+        settings.isAdditionalPageAtBottom = false
+        editor.setCaretEnabled(false)
+        editor.contextMenuGroupId = null
+
+        return editor
     }
 
     private fun initPanels() {
@@ -108,7 +132,7 @@ class FixSuggestionInlayPanel(
             border = JBUI.Borders.empty(5)
             add(
                 JBLabel(
-                    "SonarQube for IDE Ai CodeFix (${suggestion.snippetIndex}/${suggestion.totalSnippets})",
+                    "AI CodeFix (${suggestion.snippetIndex}/${suggestion.totalSnippets})",
                     SonarLintIcons.SONARQUBE_FOR_INTELLIJ, SwingConstants.LEFT
                 ), BorderLayout.WEST
             )
@@ -117,26 +141,27 @@ class FixSuggestionInlayPanel(
     }
 
     private fun initCenterDiffPanel() {
-        val diffPanel = DiffManager.getInstance().createRequestPanel(
-            project,
-            this,
-            null
-        )
+        DocumentUtil.writeInRunUndoTransparentAction {
+        myEditor = createEditor() as EditorEx
+            layout = BorderLayout()
+            val document: Document = myEditor.document
+            document.replaceString(0, document.textLength, suggestion.newCode)
 
-        diffPanel.setRequest(
-            SimpleDiffRequest(
-                null,
-                DiffContentFactory.getInstance().create(suggestion.currentCode),
-                DiffContentFactory.getInstance().create(suggestion.newCode),
-                null,
-                null
-            ).apply {
-                putUserData(DiffUserDataKeysEx.EDITORS_HIDE_TITLE, true)
+            val fragments = ComparisonManagerImpl.getInstanceImpl()
+                .compareChars(suggestion.currentCode, suggestion.newCode, ComparisonPolicy.TRIM_WHITESPACES, EmptyProgressIndicator())
+
+            fragments.forEach { fragment ->
+                myEditor.markupModel.addRangeHighlighter(
+                    DIFF_ADDITION,
+                    fragment.startOffset2,
+                    fragment.endOffset2,
+                    0,
+                    HighlighterTargetArea.EXACT_RANGE
+                )
             }
-        )
-
-        Disposer.register(this, diffPanel)
-        centerPanel.add(diffPanel.component)
+        }
+        myEditor.document.setReadOnly(true)
+        centerPanel.add(myEditor.component)
     }
 
     private fun initBottomPanel() {
