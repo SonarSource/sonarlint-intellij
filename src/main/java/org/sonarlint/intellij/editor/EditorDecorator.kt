@@ -30,6 +30,9 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.markup.EffectType
+import com.intellij.openapi.editor.markup.HighlighterLayer
+import com.intellij.openapi.editor.markup.HighlighterTargetArea
+import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -39,16 +42,21 @@ import java.util.function.Consumer
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
+import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.Location
+import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.codefix.CodeFixGutterIconRenderer
+import org.sonarlint.intellij.util.getDocument
 
 private const val HIGHLIGHT_GROUP_ID = 1001
 
 @Service(Service.Level.PROJECT)
 class EditorDecorator(private val project: Project) {
     private val currentHighlightedDoc: HashSet<Document> = hashSetOf()
+    private val currentGutterIcons: HashSet<RangeHighlighter> = hashSetOf()
     private var blinker: RangeBlinker? = null
 
     fun removeHighlights() {
@@ -174,6 +182,70 @@ class EditorDecorator(private val project: Project) {
 
     fun isActiveInEditor(editor: Editor): Boolean {
         return editor.document in currentHighlightedDoc
+    }
+
+    private fun createGutterIcon(editor: Editor, startOffset: Int, line: Int, issues: List<Issue>) {
+        val renderer = CodeFixGutterIconRenderer(editor, line, issues)
+        currentGutterIcons.add(
+            editor.markupModel.addRangeHighlighter(
+                null,
+                startOffset,
+                startOffset,
+                HighlighterLayer.LAST,
+                HighlighterTargetArea.LINES_IN_RANGE
+            ).apply {
+                gutterIconRenderer = renderer
+            })
+    }
+
+    fun createGutterIconForTaints(taints: Collection<LocalTaintVulnerability>) {
+        val file = taints.first().file() ?: return
+        val document = file.getDocument() ?: return
+
+        val fixableTaintsByLine = taints
+            .filter { it.isAiCodeFixable() && it.rangeMarker() != null }
+            .groupBy { document.getLineNumber(it.rangeMarker()!!.startOffset) }
+
+        getEditors(document).forEach { editor ->
+            currentGutterIcons.forEach {
+                editor.markupModel.removeHighlighter(it)
+            }
+
+            fixableTaintsByLine.forEach { (line, fixableTaints) ->
+                val startOffset = taints.first().rangeMarker()?.startOffset ?: return
+                createGutterIcon(
+                    editor,
+                    startOffset,
+                    line,
+                    fixableTaints
+                )
+            }
+        }
+    }
+
+    fun createGutterIconForIssues(issues: Collection<LiveIssue>) {
+        val file = issues.first().file()
+        val document = file.getDocument() ?: return
+
+        val fixableIssuesByLine = issues
+            .filter { it.isAiCodeFixable() && it.range != null }
+            .groupBy { document.getLineNumber(it.range!!.startOffset) }
+
+        getEditors(document).forEach { editor ->
+            currentGutterIcons.forEach {
+                editor.markupModel.removeHighlighter(it)
+            }
+
+            fixableIssuesByLine.forEach { (line, fixableIssues) ->
+                val startOffset = fixableIssues.first().range?.startOffset ?: return
+                createGutterIcon(
+                    editor,
+                    startOffset,
+                    line,
+                    fixableIssues
+                )
+            }
+        }
     }
 
     private fun createHighlights(locations: List<Location>): MutableList<Highlight> {
