@@ -36,7 +36,6 @@ public class LiveIssue extends LiveFinding implements Issue {
 
   @Nullable
   private final RuleType type;
-  private final boolean isAiCodeFixable;
 
   public LiveIssue(Module module, RaisedIssueDto issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
     this(module, issue, virtualFile, null, null, quickFixes);
@@ -49,7 +48,6 @@ public class LiveIssue extends LiveFinding implements Issue {
     } else {
       this.type = null;
     }
-    this.isAiCodeFixable = issue.isAiCodeFixable();
   }
 
   @CheckForNull
@@ -66,11 +64,6 @@ public class LiveIssue extends LiveFinding implements Issue {
   @Override
   public void reopen() {
     setResolved(false);
-  }
-
-  public boolean isAiCodeFixable() {
-    var hasNoQuickFix = quickFixes().stream().noneMatch(QuickFix::isSingleFile);
-    return this.isAiCodeFixable && hasNoQuickFix;
   }
 
 }

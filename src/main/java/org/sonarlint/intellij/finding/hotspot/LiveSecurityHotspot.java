@@ -101,9 +101,4 @@ public class LiveSecurityHotspot extends LiveFinding {
   public boolean isResolved() {
     return status.isResolved();
   }
-
-  @Override
-  public boolean isAiCodeFixable() {
-    return false;
-  }
 }

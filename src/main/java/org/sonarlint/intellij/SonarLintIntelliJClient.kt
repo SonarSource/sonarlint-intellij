@@ -357,7 +357,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             return
         }
 
-        ShowFixSuggestion(project, file).show(fixSuggestion)
+        ShowFixSuggestion(project, file, fixSuggestion).show()
     }
 
     private fun <T : Finding> showFinding(

@@ -37,7 +37,6 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
-import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -147,9 +146,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     if (finding instanceof LiveIssue liveIssue) {
       intentionActions.add(new MarkAsResolvedAction(liveIssue));
-      if (liveIssue.isAiCodeFixable()) {
-        intentionActions.add(new SuggestCodeFixIntentionAction(liveIssue));
-      }
     }
 
     finding.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(finding, c)));

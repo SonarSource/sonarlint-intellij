@@ -39,7 +39,6 @@ import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReopenIssueAction;
-import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 
@@ -79,7 +78,6 @@ public class IssueTree extends FindingTree implements DataProvider {
     this.expandRow(0);
 
     var group = new DefaultActionGroup();
-    group.add(new SuggestCodeFixIntentionAction(getSelectedIssue()));
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
     group.add(new MarkAsResolvedAction());
     group.add(new ReopenIssueAction());
