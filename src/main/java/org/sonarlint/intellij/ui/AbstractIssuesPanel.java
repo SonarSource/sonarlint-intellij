@@ -195,11 +195,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   private void updateOnSelect(LiveFinding liveFinding) {
-    findingDetailsPanel.show(liveFinding, false);
-  }
-
-  public void selectAndOpenCodeFixTab(LiveFinding liveFinding) {
-    findingDetailsPanel.show(liveFinding, true);
+    findingDetailsPanel.show(liveFinding);
   }
 
   public <T extends Finding> void updateOnSelect(@Nullable LiveFinding issue, ShowFinding<T> showFinding) {

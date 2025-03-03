@@ -254,4 +254,5 @@ public abstract class LiveFinding implements Finding {
   public ImpactSeverity getHighestImpact() {
     return highestImpact;
   }
+
 }
