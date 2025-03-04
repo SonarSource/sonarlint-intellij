@@ -82,6 +82,8 @@ object SonarLintIcons {
     val RESOLVED = getIcon("/images/resolved.svg")
     @JvmField
     val FOCUS = getIcon("/images/focus.svg")
+    @JvmField
+    val CODEFIX = getIcon("/images/codefix.svg")
 
     private val BUG_ICONS = mapOf(
         IssueSeverity.BLOCKER to getIcon("/images/bug/bugBlocker.svg"),

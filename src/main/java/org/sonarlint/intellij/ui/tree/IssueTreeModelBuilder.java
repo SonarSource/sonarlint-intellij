@@ -231,7 +231,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     if (virtualFile.isPresent()) {
       var fileNode = index.getFileNode(virtualFile.get());
       if (fileNode != null) {
-        return fileNode.findChildren(c -> Objects.equals(c.getServerKey(), issueKey)).map(node -> ((IssueNode) node).issue());
+        return fileNode.findChildren(c -> Objects.equals(c.getServerKey(), issueKey) || Objects.equals(c.getId().toString(), issueKey)).map(node -> ((IssueNode) node).issue());
       }
     }
     return Optional.empty();
@@ -241,10 +241,11 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     var virtualFile = index.getAllFiles().stream().findFirst();
     if (virtualFile.isPresent()) {
       var foundIssue = latestIssues.get(virtualFile.get()).stream().filter(issue -> {
-        if (issue.getServerKey() != null) {
-          return issue.getServerKey().equals(issueKey);
+        if (issue.getServerKey() != null && issue.getServerKey().equals(issueKey)) {
+          return true;
+        } else {
+          return issue.getBackendId() != null && issue.getBackendId().toString().equals(issueKey);
         }
-        return false;
       }).findFirst();
 
       return foundIssue.isPresent();
