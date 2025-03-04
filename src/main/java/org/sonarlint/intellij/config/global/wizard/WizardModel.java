@@ -26,7 +26,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.tasks.CheckNotificationsSupportedTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
 import org.sonarlint.intellij.util.RegionUtils;
@@ -43,7 +42,6 @@ public class WizardModel {
   private String organizationKey;
   private boolean proxyEnabled;
   private boolean notificationsDisabled = false;
-  private boolean notificationsSupported = false;
   private SonarCloudRegion region = SonarCloudRegion.EU;
 
   private List<OrganizationDto> organizationList = new ArrayList<>();
@@ -93,25 +91,6 @@ public class WizardModel {
 
   public boolean isSonarCloud() {
     return ServerType.SONARCLOUD.equals(serverType);
-  }
-
-  public boolean isNotificationsSupported() {
-    return notificationsSupported;
-  }
-
-  public WizardModel setNotificationsSupported(boolean notificationsSupported) {
-    this.notificationsSupported = notificationsSupported;
-    return this;
-  }
-
-  public void queryIfNotificationsSupported() throws Exception {
-    final var partialConnection = createConnectionWithoutOrganization();
-    var task = new CheckNotificationsSupportedTask(partialConnection);
-    ProgressManager.getInstance().run(task);
-    if (task.getException() != null) {
-      throw task.getException();
-    }
-    setNotificationsSupported(task.notificationsSupported());
   }
 
   public void queryOrganizations() throws Exception {
