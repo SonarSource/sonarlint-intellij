@@ -393,7 +393,7 @@ public class SonarLintProjectBindPanel {
       var model = connectionComboBox.getModel();
 
       var count = 0;
-      for (int i = 0; i < model.getSize(); i++) {
+      for (var i = 0; i < model.getSize(); i++) {
         if (model.getElementAt(i).isSonarCloud()) {
           count++;
         }
