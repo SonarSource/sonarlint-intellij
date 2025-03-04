@@ -35,6 +35,8 @@ import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarlint.intellij.util.DateUtils;
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
@@ -43,6 +45,8 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 public class IssueNode extends FindingNode {
   private static final SimpleTextAttributes GRAYED_SMALL_ATTRIBUTES = new SimpleTextAttributes(STYLE_SMALLER,
     UIUtil.getInactiveTextColor());
+  private static final int GAP = JBUIScale.isUsrHiDPI() ? 8 : 4;
+  private static final int SERVER_ICON_EMPTY_SPACE = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + GAP;
 
   private final LiveIssue issue;
 
@@ -67,52 +71,74 @@ public class IssueNode extends FindingNode {
 
   private void doRender(TreeCellRenderer renderer) {
     var serverConnection = retrieveServerConnection();
-    var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
-    var highestQuality = issue.getHighestQuality();
     var highestImpact = issue.getHighestImpact();
+    var highestQuality = issue.getHighestQuality();
 
     if (issue.getCleanCodeAttribute() != null && highestQuality != null && highestImpact != null) {
-      var impactText = StringUtil.capitalize(highestImpact.toString().toLowerCase(Locale.ENGLISH));
-      var qualityText = StringUtil.capitalize(highestQuality.toString().toLowerCase(Locale.ENGLISH));
-      var impactIcon = SonarLintIcons.impact(highestImpact);
-
-      if (issue.getServerKey() != null && serverConnection.isPresent()) {
-        var connection = serverConnection.get();
-        renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " " +
-          "analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), impactIcon));
-      } else {
-        renderer.setIconToolTip(impactText + " impact on " + qualityText);
-        var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + gap;
-        setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, impactIcon)));
-      }
+      renderWithMqrMode(renderer, serverConnection, highestImpact, highestQuality);
     } else {
-      var severity = issue.getUserSeverity();
-      var type = issue.getType();
-      Icon typeIcon = null;
-      var typeStr = "";
-      var severityText = "";
-      if (severity != null && type != null) {
-        typeIcon = SonarLintIcons.getIconForTypeAndSeverity(type, severity);
-        typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
-        severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
-      }
-
-      if (issue.getServerKey() != null && serverConnection.isPresent()) {
-        var connection = serverConnection.get();
-        renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, connection.getProductIcon(), typeIcon));
-      } else {
-        renderer.setIconToolTip(severityText + " " + typeStr);
-        var serverIconEmptySpace = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + gap;
-        setIcon(renderer, new OffsetIcon(serverIconEmptySpace, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, typeIcon)));
-      }
+      renderWithStandardMode(renderer, serverConnection);
     }
 
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
     renderMessage(renderer);
     issue.context().ifPresent(context -> renderer.append(context.getSummaryDescription(), GRAYED_SMALL_ATTRIBUTES));
     renderIntroductionDate(renderer);
+  }
+
+  private void renderWithMqrMode(TreeCellRenderer renderer, Optional<ServerConnection> serverConnection,
+    ImpactSeverity highestImpact, SoftwareQuality highestQuality) {
+    var impactText = StringUtil.capitalize(highestImpact.toString().toLowerCase(Locale.ENGLISH));
+    var qualityText = StringUtil.capitalize(highestQuality.toString().toLowerCase(Locale.ENGLISH));
+    var impactIcon = SonarLintIcons.impact(highestImpact);
+
+    if (issue.getServerKey() != null && serverConnection.isPresent()) {
+      var connection = serverConnection.get();
+      renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " " +
+        "analysis");
+      if (issue.isAiCodeFixable()) {
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, connection.getProductIcon(), impactIcon, SonarLintIcons.SPARKLE_GUTTER_ICON));
+      } else {
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, connection.getProductIcon(), impactIcon));
+      }
+    } else {
+      renderer.setIconToolTip(impactText + " impact on " + qualityText);
+      if (issue.isAiCodeFixable()) {
+        setIcon(renderer, new OffsetIcon(SERVER_ICON_EMPTY_SPACE, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, impactIcon, SonarLintIcons.SPARKLE_GUTTER_ICON)));
+      } else {
+        setIcon(renderer, new OffsetIcon(SERVER_ICON_EMPTY_SPACE, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, impactIcon)));
+      }
+    }
+  }
+
+  private void renderWithStandardMode(TreeCellRenderer renderer, Optional<ServerConnection> serverConnection) {
+    var severity = issue.getUserSeverity();
+    var type = issue.getType();
+    Icon typeIcon = null;
+    var typeStr = "";
+    var severityText = "";
+    if (severity != null && type != null) {
+      typeIcon = SonarLintIcons.getIconForTypeAndSeverity(type, severity);
+      typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
+      severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
+    }
+
+    if (issue.getServerKey() != null && serverConnection.isPresent()) {
+      var connection = serverConnection.get();
+      renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
+      if (issue.isAiCodeFixable()) {
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, connection.getProductIcon(), typeIcon, SonarLintIcons.SPARKLE_GUTTER_ICON));
+      } else {
+        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, connection.getProductIcon(), typeIcon));
+      }
+    } else {
+      renderer.setIconToolTip(severityText + " " + typeStr);
+      if (issue.isAiCodeFixable()) {
+        setIcon(renderer, new OffsetIcon(SERVER_ICON_EMPTY_SPACE, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, typeIcon, SonarLintIcons.SPARKLE_GUTTER_ICON)));
+      } else {
+        setIcon(renderer, new OffsetIcon(SERVER_ICON_EMPTY_SPACE, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, typeIcon)));
+      }
+    }
   }
 
   private void renderMessage(TreeCellRenderer renderer) {
