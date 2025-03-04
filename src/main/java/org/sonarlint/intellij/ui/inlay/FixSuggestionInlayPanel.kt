@@ -23,7 +23,6 @@ import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.RangeMarker
-import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
@@ -65,8 +64,6 @@ class FixSuggestionInlayPanel(
     private val centerPanel = RoundedPanelWithBackgroundColor()
     private val actionPanel = RoundedPanelWithBackgroundColor()
     private val inlayRef = Ref<Disposable>()
-    private lateinit var beforeEditor: EditorEx
-    private lateinit var afterEditor: EditorEx
 
     init {
         initPanels()

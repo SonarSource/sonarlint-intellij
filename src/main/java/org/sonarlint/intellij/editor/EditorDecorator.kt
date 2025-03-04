@@ -199,8 +199,10 @@ class EditorDecorator(private val project: Project) {
     }
 
     fun createGutterIconForTaints(taints: Collection<LocalTaintVulnerability>) {
-        val file = taints.first().file() ?: return
-        val document = file.getDocument() ?: return
+        if (taints.isEmpty()) {
+            return
+        }
+        val document = taints.first().file()?.getDocument() ?: return
 
         val fixableTaintsByLine = taints
             .filter { it.isAiCodeFixable() && it.rangeMarker() != null }
@@ -224,8 +226,10 @@ class EditorDecorator(private val project: Project) {
     }
 
     fun createGutterIconForIssues(issues: Collection<LiveIssue>) {
-        val file = issues.first().file()
-        val document = file.getDocument() ?: return
+        if (issues.isEmpty()) {
+            return
+        }
+        val document = issues.first().file().getDocument() ?: return
 
         val fixableIssuesByLine = issues
             .filter { it.isAiCodeFixable() && it.range != null }
