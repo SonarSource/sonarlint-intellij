@@ -28,12 +28,13 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupStep
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import java.awt.event.MouseEvent
-import javax.swing.Icon
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+
+private const val ISSUE_TEXT_TITLE = "SonarQube: Fix with AI CodeFix"
 
 class CodeFixGutterIconRenderer(val editor: Editor, val line: Int, val issues: List<Issue>) : GutterIconRenderer() {
 
@@ -41,11 +42,8 @@ class CodeFixGutterIconRenderer(val editor: Editor, val line: Int, val issues: L
         return object : AnAction() {
             override fun actionPerformed(e: AnActionEvent) {
                 val project = e.project ?: return
-
                 val step = IssuePopupStep(project, issues)
-
                 val mouseLocation = (e.inputEvent as MouseEvent).locationOnScreen
-
                 JBPopupFactory.getInstance()
                     .createListPopup(step)
                     .apply {
@@ -54,24 +52,17 @@ class CodeFixGutterIconRenderer(val editor: Editor, val line: Int, val issues: L
             }
         }
     }
-
     override fun isNavigateAction() = true
-
     override fun equals(other: Any?) = icon == (other as? CodeFixGutterIconRenderer)?.icon
-
     override fun hashCode() = icon.hashCode()
-
-    override fun getIcon(): Icon {
-        return SonarLintIcons.SPARKLE_GUTTER_ICON
-    }
+    override fun getIcon() = SonarLintIcons.SPARKLE_GUTTER_ICON
 
     private class IssuePopupStep(private val project: Project, issues: List<Issue>) : BaseListPopupStep<Issue>(null, issues) {
-
         override fun getTextFor(issue: Issue): String {
             return when (issue) {
-                is LiveIssue -> "SonarQube: Fix with AI CodeFix '${issue.message}'"
-                is LocalTaintVulnerability -> "SonarQube: Fix with AI CodeFix '${issue.message()}'"
-                else -> "SonarQube: Fix with AI CodeFix '${issue.getRuleKey()}'"
+                is LiveIssue -> "$ISSUE_TEXT_TITLE '${issue.message}'"
+                is LocalTaintVulnerability -> "$ISSUE_TEXT_TITLE '${issue.message()}'"
+                else -> "$ISSUE_TEXT_TITLE '${issue.getRuleKey()}'"
             }
         }
 
@@ -81,4 +72,5 @@ class CodeFixGutterIconRenderer(val editor: Editor, val line: Int, val issues: L
             }
         }
     }
+
 }

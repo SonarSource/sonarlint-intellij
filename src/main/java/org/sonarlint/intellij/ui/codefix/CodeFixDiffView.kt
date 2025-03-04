@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.codefix
 
 import com.intellij.diff.comparison.ComparisonManagerImpl
 import com.intellij.diff.comparison.ComparisonPolicy
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
@@ -33,7 +34,8 @@ import java.awt.BorderLayout
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_ADDITION
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_REMOVAL
 
-class CodeFixDiffView(currentCode: String, newCode: String) : OnePixelSplitter(false, 0.5f, 0.01f, 0.99f) {
+class CodeFixDiffView(currentCode: String, newCode: String) :
+    OnePixelSplitter(false, 0.5f, 0.01f, 0.99f), Disposable {
 
     private lateinit var beforeEditor: EditorEx
     private lateinit var afterEditor: EditorEx
@@ -92,6 +94,11 @@ class CodeFixDiffView(currentCode: String, newCode: String) : OnePixelSplitter(f
         editor.setCaretEnabled(false)
         editor.contextMenuGroupId = null
         return editor
+    }
+
+    override fun dispose() {
+        EditorFactory.getInstance().releaseEditor(beforeEditor)
+        EditorFactory.getInstance().releaseEditor(afterEditor)
     }
 
 }

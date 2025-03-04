@@ -66,16 +66,17 @@ class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, 
         val editorDocument = editorFactory.createDocument("")
         editorDocument.putUserData(IS_SONARLINT_DOCUMENT, true)
         val editor = editorFactory.createViewer(editorDocument) as EditorEx
-        val settings = editor.settings
-        settings.isLineMarkerAreaShown = false
-        settings.isFoldingOutlineShown = false
-        settings.additionalColumnsCount = 0
-        settings.additionalLinesCount = 0
-        settings.isRightMarginShown = false
-        settings.isCaretRowShown = false
-        settings.isLineNumbersShown = false
-        settings.isVirtualSpace = false
-        settings.isAdditionalPageAtBottom = false
+        editor.settings.apply {
+            isLineMarkerAreaShown = false
+            isFoldingOutlineShown = false
+            additionalColumnsCount = 0
+            additionalLinesCount = 0
+            isRightMarginShown = false
+            isCaretRowShown = false
+            isLineNumbersShown = false
+            isVirtualSpace = false
+            isAdditionalPageAtBottom = false
+        }
         editor.setCaretEnabled(false)
         editor.contextMenuGroupId = null
 
