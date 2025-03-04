@@ -36,6 +36,7 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
@@ -243,22 +244,27 @@ class CodeFixTabPanel(
             codefixPresentationPanel.add(explanationTitleLabel)
             codefixPresentationPanel.add(Box.createVerticalStrut(20))
             codefixPresentationPanel.add(explanationLabel)
-            fixSuggestion.changes.forEachIndexed { index, change ->
-                codefixPresentationPanel.add(Box.createVerticalStrut(20))
+            try {
+                fixSuggestion.changes.forEachIndexed { index, change ->
+                    codefixPresentationPanel.add(Box.createVerticalStrut(20))
 
-                val snippetLabel = JBLabel("AI CodeFix Snippet ${index + 1}").apply {
-                    font = JBFont.label().asBold()
-                }
-                codefixPresentationPanel.add(snippetLabel, BorderLayout.NORTH)
+                    val snippetLabel = JBLabel("AI CodeFix Snippet ${index + 1}").apply {
+                        font = JBFont.label().asBold()
+                    }
+                    codefixPresentationPanel.add(snippetLabel, BorderLayout.NORTH)
 
-                codefixPresentationPanel.add(JBPanel<CodeFixTabPanel>(VerticalFlowLayout(20, 5)).apply {
-                    add(RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72)).apply {
-                        layout = VerticalFlowLayout(5, 5)
-                        add(generateCodeFixSnippet(change))
+                    codefixPresentationPanel.add(JBPanel<CodeFixTabPanel>(VerticalFlowLayout(20, 5)).apply {
+                        add(RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72)).apply {
+                            layout = VerticalFlowLayout(5, 5)
+                            add(generateCodeFixSnippet(change))
+                        })
                     })
-                })
+                }
+                switchCard(CODEFIX_PRESENTATION)
+            } catch (e: IllegalStateException) {
+                handleErrorMessage(e)
+                switchCard(CODEFIX_ERROR)
             }
-            switchCard(CODEFIX_PRESENTATION)
         }
     }
 
@@ -269,13 +275,16 @@ class CodeFixTabPanel(
 
         file.getDocument()?.let {
             val rangeMarker = it.createRangeMarker(it.getLineStartOffset(change.startLine - 1), it.getLineEndOffset(change.endLine - 1))
-            val currentCode = it.getText(TextRange(rangeMarker.startOffset, rangeMarker.endOffset))
+            val currentCode = if (DocumentUtil.isValidOffset(rangeMarker.startOffset, it) && DocumentUtil.isValidOffset(rangeMarker.endOffset, it)) {
+                it.getText(TextRange(rangeMarker.startOffset, rangeMarker.endOffset))
+            } else {
+                error("The fix was not applicable, the file could have been modified")
+            }
             panel.add(CodeFixDiffView(currentCode, change.newCode), BorderLayout.CENTER)
         }
 
         val navigateButton = JButton("Navigate to line").apply {
             isOpaque = false
-            ClientProperty.put(this, DarculaButtonUI.DEFAULT_STYLE_KEY, true)
             font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
         }
 

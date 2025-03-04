@@ -36,10 +36,12 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
 import java.awt.Font
 import java.util.function.Consumer
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
 import org.sonarlint.intellij.finding.Issue
@@ -48,6 +50,7 @@ import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.codefix.CodeFixGutterHandler
 import org.sonarlint.intellij.ui.codefix.CodeFixGutterIconRenderer
 import org.sonarlint.intellij.util.getDocument
 
@@ -55,8 +58,7 @@ private const val HIGHLIGHT_GROUP_ID = 1001
 
 @Service(Service.Level.PROJECT)
 class EditorDecorator(private val project: Project) {
-    private val currentHighlightedDoc: HashSet<Document> = hashSetOf()
-    private val currentGutterIcons: HashSet<RangeHighlighter> = hashSetOf()
+    private val currentHighlightedDoc: MutableSet<Document> = hashSetOf()
     private var blinker: RangeBlinker? = null
 
     fun removeHighlights() {
@@ -184,18 +186,17 @@ class EditorDecorator(private val project: Project) {
         return editor.document in currentHighlightedDoc
     }
 
-    private fun createGutterIcon(editor: Editor, startOffset: Int, line: Int, issues: List<Issue>) {
+    private fun createGutterIcon(editor: Editor, startOffset: Int, line: Int, issues: List<Issue>): RangeHighlighter {
         val renderer = CodeFixGutterIconRenderer(editor, line, issues)
-        currentGutterIcons.add(
-            editor.markupModel.addRangeHighlighter(
-                null,
-                startOffset,
-                startOffset,
-                HighlighterLayer.LAST,
-                HighlighterTargetArea.LINES_IN_RANGE
-            ).apply {
-                gutterIconRenderer = renderer
-            })
+        return editor.markupModel.addRangeHighlighter(
+            null,
+            startOffset,
+            startOffset,
+            HighlighterLayer.LAST,
+            HighlighterTargetArea.LINES_IN_RANGE
+        ).apply {
+            gutterIconRenderer = renderer
+        }
     }
 
     fun createGutterIconForTaints(taints: Collection<LocalTaintVulnerability>) {
@@ -209,11 +210,8 @@ class EditorDecorator(private val project: Project) {
             .groupBy { document.getLineNumber(it.rangeMarker()!!.startOffset) }
 
         getEditors(document).forEach { editor ->
-            currentGutterIcons.forEach {
-                editor.markupModel.removeHighlighter(it)
-            }
-
-            fixableTaintsByLine.forEach { (line, fixableTaints) ->
+            getService(project, CodeFixGutterHandler::class.java).cleanIconsFromDisposedEditorsAndSelectedEditor(editor)
+            val icons = fixableTaintsByLine.map { (line, fixableTaints) ->
                 val startOffset = taints.first().rangeMarker()?.startOffset ?: return
                 createGutterIcon(
                     editor,
@@ -221,26 +219,21 @@ class EditorDecorator(private val project: Project) {
                     line,
                     fixableTaints
                 )
-            }
+            }.toSet()
+            getService(project, CodeFixGutterHandler::class.java).addIcons(editor, icons)
         }
     }
 
-    fun createGutterIconForIssues(issues: Collection<LiveIssue>) {
-        if (issues.isEmpty()) {
-            return
-        }
-        val document = issues.first().file().getDocument() ?: return
+    fun createGutterIconForIssues(file: VirtualFile, issues: Collection<LiveIssue>) {
+        val document = file.getDocument() ?: return
 
         val fixableIssuesByLine = issues
             .filter { it.isAiCodeFixable() && it.range != null }
             .groupBy { document.getLineNumber(it.range!!.startOffset) }
 
         getEditors(document).forEach { editor ->
-            currentGutterIcons.forEach {
-                editor.markupModel.removeHighlighter(it)
-            }
-
-            fixableIssuesByLine.forEach { (line, fixableIssues) ->
+            getService(project, CodeFixGutterHandler::class.java).cleanIconsFromDisposedEditorsAndSelectedEditor(editor)
+            val icons = fixableIssuesByLine.map { (line, fixableIssues) ->
                 val startOffset = fixableIssues.first().range?.startOffset ?: return
                 createGutterIcon(
                     editor,
@@ -248,7 +241,8 @@ class EditorDecorator(private val project: Project) {
                     line,
                     fixableIssues
                 )
-            }
+            }.toSet()
+            getService(project, CodeFixGutterHandler::class.java).addIcons(editor, icons)
         }
     }
 

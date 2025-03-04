@@ -177,13 +177,13 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       populateSubTree(oldTree, oldTreeBuilder, Map.of(file, oldIssues));
       oldTree.setVisible(true);
       updateIcon(file, newIssues);
-      getService(project, EditorDecorator.class).createGutterIconForIssues(newIssues);
+      getService(project, EditorDecorator.class).createGutterIconForIssues(this.currentFile, newIssues);
     } else {
       populateSubTree(tree, treeBuilder, Map.of(file, this.currentIssues));
       populateSubTree(oldTree, oldTreeBuilder, Collections.emptyMap());
       oldTree.setVisible(false);
       updateIcon(file, this.currentIssues);
-      getService(project, EditorDecorator.class).createGutterIconForIssues(this.currentIssues);
+      getService(project, EditorDecorator.class).createGutterIconForIssues(this.currentFile, this.currentIssues);
     }
     expandTree();
   }

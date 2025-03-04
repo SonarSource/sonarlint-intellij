@@ -33,7 +33,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.DataKeys.Companion.ISSUE_DATA_KEY
 
 class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonarAction(
-    "Fix with  AI CodeFix", "Generate AI fix suggestion", SonarLintIcons.SPARKLE_GUTTER_ICON
+    "Fix with AI CodeFix", "Generate AI fix suggestion", SonarLintIcons.SPARKLE_GUTTER_ICON
 ), IntentionAction, PriorityAction, Iconable {
 
     override fun startInWriteAction() = false
