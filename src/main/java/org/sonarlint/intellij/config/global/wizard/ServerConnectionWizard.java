@@ -60,8 +60,6 @@ public class ServerConnectionWizard {
 
   public static ServerConnectionWizard forNotificationsEdition(ServerConnection connectionToEdit) {
     var wizard = new ServerConnectionWizard(new WizardModel(connectionToEdit));
-    // Assume notifications are supported, if not, why would we want to edit the setting
-    wizard.model.setNotificationsSupported(true);
     var steps = List.of(new NotificationsStep(wizard.model, true));
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
     return wizard;
@@ -73,7 +71,7 @@ public class ServerConnectionWizard {
       new AuthStep(model),
       new OrganizationStep(model),
       new NotificationsStep(model, false),
-      new ConfirmStep(model, editing)
+      new ConfirmStep(editing)
     );
   }
 

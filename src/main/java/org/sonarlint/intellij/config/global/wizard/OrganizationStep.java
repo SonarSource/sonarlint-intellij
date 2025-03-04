@@ -133,10 +133,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   @Nullable @Override public Object getNextStepId() {
-    if (model.isNotificationsSupported()) {
-      return NotificationsStep.class;
-    }
-    return ConfirmStep.class;
+    return NotificationsStep.class;
   }
 
   @Nullable @Override public Object getPreviousStepId() {
