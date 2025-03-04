@@ -346,7 +346,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 rulePanel.clear()
                 highlighting.removeHighlights()
             } else {
-                issue.module?.let { module -> rulePanel.setSelectedFinding(module, issue, issue.getId()) }
+                issue.module?.let { module -> rulePanel.setSelectedFinding(module, issue, issue.getId(), false) }
                     ?: rulePanel.clear()
             }
         }
@@ -389,7 +389,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             findModuleForFile(showFinding.file, project)?.let {
                 val taintId = UUID.fromString(showFinding.findingKey)
                 runOnUiThread(project) {
-                    rulePanel.setSelectedFinding(it, null, taintId)
+                    rulePanel.setSelectedFinding(it, null, taintId, false)
                     getService(project, EditorDecorator::class.java).highlightRange(rangeMarker)
                 }
             }
