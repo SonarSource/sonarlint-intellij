@@ -58,7 +58,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpd
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidAddConfigurationScopesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidRemoveConfigurationScopeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.ConnectionRpcService
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.check.CheckSmartNotificationsSupportedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidChangeCredentialsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationParams
@@ -565,31 +564,6 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val paramsCaptor = argumentCaptor<DidVcsRepositoryChangeParams>()
         verify(backendBranchService, timeout(500)).didVcsRepositoryChange(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.configurationScopeId).isEqualTo(projectBackendId(project))
-    }
-
-    @Test
-    fun test_check_sonarqube_smart_notification_supported() {
-        val serverConnection = ServerConnection.newBuilder().setName("id").setHostUrl("url").build()
-
-        service.checkSmartNotificationsSupported(serverConnection)
-
-        val paramsCaptor = argumentCaptor<CheckSmartNotificationsSupportedParams>()
-        verify(backendConnectionService, timeout(500)).checkSmartNotificationsSupported(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.transientConnection.isLeft).isTrue()
-        assertThat(paramsCaptor.firstValue.transientConnection.left.serverUrl).isEqualTo("url")
-    }
-
-    @Test
-    fun test_check_sonarcloud_smart_notification_supported() {
-        val serverConnection =
-            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org").build()
-
-        service.checkSmartNotificationsSupported(serverConnection)
-
-        val paramsCaptor = argumentCaptor<CheckSmartNotificationsSupportedParams>()
-        verify(backendConnectionService, timeout(500)).checkSmartNotificationsSupported(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.transientConnection.isRight).isTrue()
-        assertThat(paramsCaptor.firstValue.transientConnection.right.organization).isEqualTo("org")
     }
 
     @Test

@@ -112,7 +112,6 @@ public class AuthStep extends AbstractWizardStepEx {
     errorPainter.installOn(panel, this);
   }
 
-
   @Override
   public void _init() {
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
@@ -168,10 +167,7 @@ public class AuthStep extends AbstractWizardStepEx {
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
       return OrganizationStep.class;
     }
-    if (model.isNotificationsSupported()) {
-      return NotificationsStep.class;
-    }
-    return ConfirmStep.class;
+    return NotificationsStep.class;
   }
 
   @Nullable
@@ -203,7 +199,6 @@ public class AuthStep extends AbstractWizardStepEx {
     if (commitType == CommitType.Finish || commitType == CommitType.Next) {
       save();
       checkConnection();
-      tryQueryIfNotificationsSupported();
       tryQueryOrganizations();
     }
   }
@@ -213,18 +208,6 @@ public class AuthStep extends AbstractWizardStepEx {
       model.queryOrganizations();
     } catch (Exception e) {
       var msg = "Failed to query organizations. Please check the configuration and try again.";
-      if (e.getMessage() != null) {
-        msg = msg + " Error: " + e.getMessage();
-      }
-      throw new CommitStepException(msg);
-    }
-  }
-
-  private void tryQueryIfNotificationsSupported() throws CommitStepException {
-    try {
-      model.queryIfNotificationsSupported();
-    } catch (Exception e) {
-      var msg = "Failed to contact the server. Please check the configuration and try again.";
       if (e.getMessage() != null) {
         msg = msg + " Error: " + e.getMessage();
       }
@@ -293,7 +276,6 @@ public class AuthStep extends AbstractWizardStepEx {
       Messages.showErrorDialog(panel, e.getMessage(), "Unable to Generate Token");
     }
   }
-
 
   private void handleReceivedToken(String userToken) {
     tokenField.setText(userToken);
