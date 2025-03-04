@@ -19,15 +19,10 @@
  */
 package org.sonarlint.intellij.ui.codefix
 
-import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.requests.SimpleDiffRequest
-import com.intellij.diff.util.DiffUserDataKeysEx
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
@@ -54,7 +49,6 @@ import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
-import javax.swing.JComponent
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
@@ -274,7 +268,9 @@ class CodeFixTabPanel(
         }
 
         file.getDocument()?.let {
-            panel.add(generateDiffView(it, change.startLine, change.endLine, change.newCode), BorderLayout.CENTER)
+            val rangeMarker = it.createRangeMarker(it.getLineStartOffset(change.startLine - 1), it.getLineEndOffset(change.endLine - 1))
+            val currentCode = it.getText(TextRange(rangeMarker.startOffset, rangeMarker.endOffset))
+            panel.add(CodeFixDiffView(currentCode, change.newCode), BorderLayout.CENTER)
         }
 
         val navigateButton = JButton("Navigate to line").apply {
@@ -299,31 +295,6 @@ class CodeFixTabPanel(
         panel.add(buttonPanel, BorderLayout.SOUTH)
 
         return panel
-    }
-
-    private fun generateDiffView(document: Document, startLine: Int, endLine: Int, newCode: String): JComponent {
-        val rangeMarker = document.createRangeMarker(document.getLineStartOffset(startLine - 1), document.getLineEndOffset(endLine - 1))
-        val currentCode = document.getText(TextRange(rangeMarker.startOffset, rangeMarker.endOffset))
-
-        val diffPanel = DiffManager.getInstance().createRequestPanel(
-            project,
-            disposableParent,
-            null
-        )
-
-        diffPanel.setRequest(
-            SimpleDiffRequest(
-                null,
-                DiffContentFactory.getInstance().create(currentCode),
-                DiffContentFactory.getInstance().create(newCode),
-                null,
-                null
-            ).apply {
-                putUserData(DiffUserDataKeysEx.EDITORS_HIDE_TITLE, true)
-            }
-        )
-
-        return diffPanel.component
     }
 
     private fun initScrollPane(component: Component): JScrollPane {
