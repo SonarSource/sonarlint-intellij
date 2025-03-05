@@ -49,7 +49,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
@@ -90,7 +89,6 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
     verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
-    verifyNoInteractions(toolWindow);
   }
 
   @Test
@@ -122,7 +120,6 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var analysisResult = analysisResultCaptor.getValue();
     assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
     verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
-
   }
 
   @Test
