@@ -29,15 +29,13 @@ import org.jetbrains.annotations.Nullable;
 public class ConfirmStep extends AbstractWizardStepEx {
   private static final String TEXT1 = "Connection successfully created.";
   private static final String TEXT2 = "Click create to save your changes.";
-  private final WizardModel model;
   private final boolean editing;
   private JPanel panel;
   private JLabel textArea;
   private JLabel textArea2;
 
-  public ConfirmStep(WizardModel model, boolean editing) {
+  public ConfirmStep(boolean editing) {
     super("Configuration completed");
-    this.model = model;
     this.editing = editing;
   }
 
@@ -72,13 +70,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
   @Nullable
   @Override
   public Object getPreviousStepId() {
-    if (model.isNotificationsSupported()) {
-      return NotificationsStep.class;
-    }
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
-      return OrganizationStep.class;
-    }
-    return AuthStep.class;
+    return NotificationsStep.class;
   }
 
   @Override
