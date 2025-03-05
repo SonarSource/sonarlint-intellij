@@ -1,14 +1,14 @@
 val intellijUltimateBuildVersion: String by project
-val ideaHome: String? = System.getenv("IDEA_HOME")
+val ultimateHome: String? = System.getenv("ULTIMATE_HOME")
 
 plugins {
     kotlin("jvm")
 }
 
 intellij {
-    if (!ideaHome.isNullOrBlank()) {
-        localPath.set(ideaHome)
-        localSourcesPath.set(ideaHome)
+    if (!ultimateHome.isNullOrBlank()) {
+        localPath.set(ultimateHome)
+        localSourcesPath.set(ultimateHome)
     } else {
         version.set(intellijUltimateBuildVersion)
     }
