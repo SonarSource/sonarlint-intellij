@@ -58,7 +58,7 @@ import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intell
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String NODE_JS_TOOLTIP = "SonarQube for IDE requires Node.js to analyze some languages. " +
     "You can provide an explicit path for the node executable here or leave " +
-    "this field blank to let SonarQube for IDE look for it using your PATH environment variable." +
+    "this field blank to let SonarQube for IDE look for it using your IDE environment or your PATH environment variable." +
     " Restarting your IDE is recommended.";
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
