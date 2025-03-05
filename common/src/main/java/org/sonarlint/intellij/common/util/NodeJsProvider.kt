@@ -19,14 +19,12 @@
  */
 package org.sonarlint.intellij.common.util;
 
-import com.intellij.openapi.extensions.ExtensionPointName;
-import com.intellij.openapi.project.Project;
-import java.nio.file.Path;
-import javax.annotation.Nullable;
+import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.project.Project
+import java.nio.file.Path
 
 fun interface NodeJsProvider {
 
-  @Nullable
   fun getNodeJsPathFor(project: Project): Path?
 
   companion object {
