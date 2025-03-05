@@ -158,7 +158,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
 
   private static Optional<Path> getNodeJsPathFromIde() {
     return Arrays.stream(ProjectManager.getInstance().getOpenProjects()).map(project -> {
-      var optNodeJs = NodeJsProvider.EP_NAME.getExtensionList().stream().map(e -> e.getNodeJsPathFor(project)).filter(Objects::nonNull).findFirst();
+      var optNodeJs = NodeJsProvider.Companion.getEP_NAME().getExtensionList().stream().map(e -> e.getNodeJsPathFor(project)).filter(Objects::nonNull).findFirst();
       return optNodeJs.orElse(null);
     })
       .filter(Objects::nonNull)
