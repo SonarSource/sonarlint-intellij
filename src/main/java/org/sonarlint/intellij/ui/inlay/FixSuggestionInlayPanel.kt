@@ -19,10 +19,6 @@
  */
 package org.sonarlint.intellij.ui.inlay
 
-import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.requests.SimpleDiffRequest
-import com.intellij.diff.util.DiffUserDataKeysEx
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
@@ -31,14 +27,11 @@ import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Ref
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.ui.ClientProperty
-import com.intellij.ui.Gray
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
@@ -55,6 +48,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fix.FixSuggestionSnippet
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.codefix.CodeFixDiffView
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionStatus
 
@@ -64,11 +58,11 @@ class FixSuggestionInlayPanel(
     val editor: Editor,
     val file: PsiFile,
     private val textRange: RangeMarker
-) : RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72)), Disposable {
+) : RoundedPanelWithBackgroundColor(), Disposable {
 
-    private val titlePanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
-    private val centerPanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
-    private val actionPanel = RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72))
+    private val titlePanel = RoundedPanelWithBackgroundColor()
+    private val centerPanel = RoundedPanelWithBackgroundColor()
+    private val actionPanel = RoundedPanelWithBackgroundColor()
     private val inlayRef = Ref<Disposable>()
 
     init {
@@ -108,7 +102,7 @@ class FixSuggestionInlayPanel(
             border = JBUI.Borders.empty(5)
             add(
                 JBLabel(
-                    "SonarQube for IDE Ai CodeFix (${suggestion.snippetIndex}/${suggestion.totalSnippets})",
+                    "AI CodeFix (${suggestion.snippetIndex}/${suggestion.totalSnippets})",
                     SonarLintIcons.SONARQUBE_FOR_INTELLIJ, SwingConstants.LEFT
                 ), BorderLayout.WEST
             )
@@ -117,26 +111,8 @@ class FixSuggestionInlayPanel(
     }
 
     private fun initCenterDiffPanel() {
-        val diffPanel = DiffManager.getInstance().createRequestPanel(
-            project,
-            this,
-            null
-        )
-
-        diffPanel.setRequest(
-            SimpleDiffRequest(
-                null,
-                DiffContentFactory.getInstance().create(suggestion.currentCode),
-                DiffContentFactory.getInstance().create(suggestion.newCode),
-                null,
-                null
-            ).apply {
-                putUserData(DiffUserDataKeysEx.EDITORS_HIDE_TITLE, true)
-            }
-        )
-
-        Disposer.register(this, diffPanel)
-        centerPanel.add(diffPanel.component)
+        val splitter = CodeFixDiffView(suggestion.currentCode, suggestion.newCode)
+        centerPanel.add(splitter)
     }
 
     private fun initBottomPanel() {

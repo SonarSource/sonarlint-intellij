@@ -20,6 +20,7 @@
 package org.sonarlint.intellij
 
 import com.intellij.openapi.util.IconLoader
+import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.JBColor
 import java.awt.Color
 import javax.swing.Icon
@@ -83,7 +84,9 @@ object SonarLintIcons {
     @JvmField
     val FOCUS = getIcon("/images/focus.svg")
     @JvmField
-    val CODEFIX = getIcon("/images/codefix.svg")
+    val CODEFIX_PRESENTATION = getIcon("/images/codefix/presentation.svg")
+    @JvmField
+    val SPARKLE_GUTTER_ICON = getIcon("/images/codefix/sparkle_gutter_14.svg")
 
     private val BUG_ICONS = mapOf(
         IssueSeverity.BLOCKER to getIcon("/images/bug/bugBlocker.svg"),
@@ -129,6 +132,23 @@ object SonarLintIcons {
         ImpactSeverity.MEDIUM to getIcon("/images/impact/medium.svg"),
         ImpactSeverity.LOW to getIcon("/images/impact/low.svg"),
         ImpactSeverity.INFO to getIcon("/images/impact/info.svg")
+    )
+
+    private val LOADING_CODEFIX_ICONS = listOf(
+        getIcon("/images/codefix/loading/1.svg"),
+        getIcon("/images/codefix/loading/2.svg"),
+        getIcon("/images/codefix/loading/3.svg"),
+        getIcon("/images/codefix/loading/4.svg"),
+        getIcon("/images/codefix/loading/5.svg"),
+        getIcon("/images/codefix/loading/6.svg"),
+        getIcon("/images/codefix/loading/7.svg"),
+        getIcon("/images/codefix/loading/8.svg"),
+        getIcon("/images/codefix/loading/9.svg"),
+        getIcon("/images/codefix/loading/10.svg"),
+        getIcon("/images/codefix/loading/11.svg"),
+        getIcon("/images/codefix/loading/12.svg"),
+        getIcon("/images/codefix/loading/13.svg")
+
     )
 
     val backgroundColorsByVulnerabilityProbability = mapOf(
@@ -201,7 +221,8 @@ object SonarLintIcons {
         return IconLoader.getIcon(path, SonarLintIcons::class.java)
     }
 
-    @JvmStatic
+    fun loadingCodeFixIcon() = AnimatedIcon(125, *LOADING_CODEFIX_ICONS.toTypedArray())
+
     fun severity(severity: IssueSeverity): Icon {
         return SEVERITY_ICONS[severity]!!
     }

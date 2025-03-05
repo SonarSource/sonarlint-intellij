@@ -64,7 +64,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
 
     fun show(fixSuggestion: FixSuggestionDto) {
         val localFixSuggestion = mapToLocalFixSuggestion(fixSuggestion)
-        show(localFixSuggestion, true)
+        show(localFixSuggestion, false)
     }
 
     /**
