@@ -46,7 +46,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
-import org.sonarlint.intellij.common.util.NodeJsProvider;
+import org.sonarlint.intellij.common.nodejs.NodeJsProvider;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.HelpLabelUtils;
