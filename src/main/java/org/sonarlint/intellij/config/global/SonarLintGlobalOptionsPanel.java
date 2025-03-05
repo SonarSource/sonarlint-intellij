@@ -33,6 +33,7 @@ import com.intellij.util.ui.SwingHelper;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
 import javax.swing.BorderFactory;
@@ -171,7 +172,15 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
-    settings.setNodejsPath(nodeJsPath.getText());
+    // Do not let the user save an invalid path, this way we fall back to the auto-detection
+    if (isNodejsPathValid(nodeJsPath.getText())) {
+      settings.setNodejsPath(nodeJsPath.getText());
+    }
+  }
+
+  private static boolean isNodejsPathValid(String nodeJsPath) {
+    var forcedNodeJsPath = Paths.get(nodeJsPath);
+    return Files.exists(forcedNodeJsPath) && !Files.isDirectory(forcedNodeJsPath);
   }
 }
 
