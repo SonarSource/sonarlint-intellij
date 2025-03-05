@@ -17,12 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.nodejs;
+package org.sonarlint.intellij.nodejs
 
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
 import com.intellij.openapi.project.Project
 import java.nio.file.Paths
-import org.sonarlint.intellij.common.util.NodeJsProvider
+import org.sonarlint.intellij.common.nodejs.NodeJsProvider
 
 class JavaScriptNodeJsProvider : NodeJsProvider {
 
