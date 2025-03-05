@@ -24,12 +24,14 @@ import com.intellij.openapi.project.Project;
 import java.nio.file.Path;
 import javax.annotation.Nullable;
 
-public interface NodeJsProvider {
-
-  // Name is constructed from plugin-id.extension-point-name
-  ExtensionPointName<NodeJsProvider> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.nodeJsProvider");
+fun interface NodeJsProvider {
 
   @Nullable
-  Path getNodeJsPathFor(Project project);
+  fun getNodeJsPathFor(project: Project): Path?
+
+  companion object {
+    // Name is constructed from plugin-id.extension-point-name
+    val EP_NAME: ExtensionPointName<NodeJsProvider> = ExtensionPointName.create("org.sonarlint.idea.nodeJsProvider");
+  }
 
 }
