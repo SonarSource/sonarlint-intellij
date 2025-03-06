@@ -39,7 +39,6 @@ import java.awt.event.ComponentEvent
 import java.util.concurrent.ConcurrentHashMap
 import javax.swing.ScrollPaneConstants
 import kotlin.math.ceil
-import kotlin.math.max
 import kotlin.math.min
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
@@ -116,7 +115,7 @@ class InlayManager(val editor: EditorImpl) : Disposable {
         }
 
         override fun getPreferredSize(): Dimension {
-            return Dimension(min(component.preferredSize.width, editorWidthWatcher.editorTextWidth), component.preferredSize.height)
+            return Dimension(editorWidthWatcher.editorTextWidth, component.preferredSize.height)
         }
     }
 
@@ -157,7 +156,7 @@ class InlayManager(val editor: EditorImpl) : Disposable {
 
         private fun calcWidth(): Int {
             val visibleEditorTextWidth = editor.scrollPane.viewport.width - getVerticalScrollbarWidth() - getGutterTextGap()
-            return min(max(visibleEditorTextWidth, 0), maximumEditorTextWidth)
+            return min(visibleEditorTextWidth, maximumEditorTextWidth)
         }
 
         private fun getVerticalScrollbarWidth(): Int {

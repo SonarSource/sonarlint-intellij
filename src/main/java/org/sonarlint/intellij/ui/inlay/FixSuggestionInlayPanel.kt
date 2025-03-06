@@ -36,7 +36,6 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.ui.ClientProperty
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
@@ -47,9 +46,7 @@ import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.ComponentEvent
 import javax.swing.JButton
-import javax.swing.SwingConstants
 import org.jdesktop.swingx.HorizontalLayout
-import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fix.FixSuggestionSnippet
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
@@ -66,7 +63,6 @@ class FixSuggestionInlayPanel(
     private val textRange: RangeMarker
 ) : RoundedPanelWithBackgroundColor(), Disposable {
 
-    private val titlePanel = RoundedPanelWithBackgroundColor()
     private val centerPanel = RoundedPanelWithBackgroundColor()
     private val actionPanel = RoundedPanelWithBackgroundColor()
     private val inlayRef = Ref<Disposable>()
@@ -84,34 +80,19 @@ class FixSuggestionInlayPanel(
     }
 
     private fun initPanels() {
-        initTitlePanel()
         initCenterDiffPanel()
         initBottomPanel()
 
         layout = BorderLayout()
         centerPanel.layout = VerticalFlowLayout(0)
 
-        add(titlePanel, BorderLayout.NORTH)
         add(centerPanel, BorderLayout.CENTER)
         add(actionPanel, BorderLayout.SOUTH)
         cursor = Cursor.getDefaultCursor()
     }
 
-    private fun initTitlePanel() {
-        titlePanel.apply {
-            layout = BorderLayout()
-            border = JBUI.Borders.empty(10)
-            add(
-                JBLabel(
-                    "AI CodeFix (${suggestion.snippetIndex}/${suggestion.totalSnippets})",
-                    SonarLintIcons.SONARQUBE_FOR_INTELLIJ, SwingConstants.LEFT
-                ), BorderLayout.WEST
-            )
-        }
-    }
-
     private fun initCenterDiffPanel() {
-        val splitter = CodeFixDiffView(suggestion.currentCode, suggestion.newCode)
+        val splitter = CodeFixDiffView(suggestion.currentCode, suggestion.newCode).apply { border = JBUI.Borders.empty(5, 5, 0, 5) }
         centerPanel.add(splitter)
     }
 
