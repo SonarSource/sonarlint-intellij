@@ -48,4 +48,34 @@ class FixSuggestionInlayHolder {
         inlaySnippetsPerSuggestionId[suggestionId]?.remove(index)
     }
 
+    fun getPreviousInlay(suggestionId: String, currIndex: Int): FixSuggestionInlayPanel? {
+        val inlays = inlaySnippetsPerSuggestionId[suggestionId] ?: return null
+        val maxIndex = inlays.keys.maxOrNull() ?: return null
+
+        for (index in (currIndex - 1) downTo 0) {
+            inlays[index]?.let { return it }
+        }
+
+        for (index in maxIndex downTo currIndex + 1) {
+            inlays[index]?.let { return it }
+        }
+
+        return null
+    }
+
+    fun getNextInlay(suggestionId: String, currIndex: Int): FixSuggestionInlayPanel? {
+        val inlays = inlaySnippetsPerSuggestionId[suggestionId] ?: return null
+        val maxIndex = inlays.keys.maxOrNull() ?: return null
+
+        for (index in (currIndex + 1)..maxIndex) {
+            inlays[index]?.let { return it }
+        }
+
+        for (index in 0 until currIndex) {
+            inlays[index]?.let { return it }
+        }
+
+        return null
+    }
+
 }

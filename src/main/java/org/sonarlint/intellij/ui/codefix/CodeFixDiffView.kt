@@ -31,6 +31,7 @@ import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.ui.OnePixelSplitter
 import com.intellij.util.DocumentUtil
 import java.awt.BorderLayout
+import java.awt.Dimension
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_ADDITION
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_REMOVAL
 
@@ -49,6 +50,10 @@ class CodeFixDiffView(currentCode: String, newCode: String) :
             val afterDocument: Document = afterEditor.document
             beforeDocument.replaceString(0, beforeDocument.textLength, currentCode)
             afterDocument.replaceString(0, afterDocument.textLength, newCode)
+            beforeEditor.component.preferredSize = Dimension(beforeEditor.component.preferredSize.width,
+                beforeEditor.lineHeight * beforeDocument.lineCount + beforeEditor.lineHeight)
+            afterEditor.component.preferredSize = Dimension(afterEditor.component.preferredSize.width,
+                afterEditor.lineHeight * afterDocument.lineCount + beforeEditor.lineHeight)
 
             val fragments = ComparisonManagerImpl.getInstanceImpl()
                 .compareChars(currentCode, newCode, ComparisonPolicy.TRIM_WHITESPACES, EmptyProgressIndicator())

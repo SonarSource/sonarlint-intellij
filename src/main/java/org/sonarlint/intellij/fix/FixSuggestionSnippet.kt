@@ -22,8 +22,6 @@ package org.sonarlint.intellij.fix
 data class FixSuggestionSnippet(
     val currentCode: String,
     val newCode: String,
-    val startLine: Int,
-    val endLine: Int,
     val snippetIndex: Int,
     val totalSnippets: Int,
     val explanation: String,
