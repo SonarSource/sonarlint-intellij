@@ -67,10 +67,10 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         connectWithYourTeamPageData(),
         reachOutToUsPageData()
     )
-    private val previousButton = JButton("Previous").apply {
+    private val previousButton = JButton().apply {
         isVisible = false
     }
-    private val nextButton = JButton("Next")
+    private val nextButton = JButton()
     private var currentPageIndex = 0
 
     init {
@@ -131,27 +131,20 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
     }
 
     private fun createNavigationPanel(): JBPanel<WalkthroughPanel> {
+        updateNavigationButtons(0)
         previousButton.apply {
             addActionListener {
-                nextButton.isVisible = true
-                if (currentPageIndex > 0) {
-                    currentPageIndex--
-                    cardLayout.previous(cardPanel)
-                }
-                if (currentPageIndex == 0) {
-                    isVisible = false
-                }
+                updateNavigationButtons(-1)
+                cardLayout.previous(cardPanel)
             }
         }
         nextButton.apply {
             addActionListener {
-                previousButton.isVisible = true
-                if (currentPageIndex < pages.size - 1) {
-                    currentPageIndex++
-                    cardLayout.next(cardPanel)
-                }
                 if (currentPageIndex == pages.size - 1) {
-                    isVisible = false
+                    getService(project, SonarLintWalkthroughToolWindow::class.java).hide()
+                } else {
+                    updateNavigationButtons(1)
+                    cardLayout.next(cardPanel)
                 }
             }
         }
@@ -162,6 +155,21 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         }
     }
 
+    private fun updateNavigationButtons(pageUpdate: Int) {
+        currentPageIndex += pageUpdate
+
+        previousButton.isVisible = currentPageIndex > 0
+        nextButton.text = if (currentPageIndex < pages.size - 1) {
+            "Next: ${pages[currentPageIndex + 1].title}"
+        } else {
+            "Close"
+        }
+        previousButton.text = if (currentPageIndex > 0) {
+            "Previous: ${pages[currentPageIndex - 1].title}"
+        } else {
+            "Previous"
+        }
+    }
 
     private fun welcomePageData(): PageData {
         return PageData(

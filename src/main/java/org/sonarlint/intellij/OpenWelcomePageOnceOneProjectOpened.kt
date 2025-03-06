@@ -39,7 +39,7 @@ class OpenWelcomePageOnceOneProjectOpened : StartupActivity {
 
         if (!properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false)) {
             properties.setValue(HAS_WALKTHROUGH_RUN_ONCE, true)
-            SonarLintUtils.getService(project, SonarLintWalkthroughToolWindow::class.java).openWelcomePage(project)
+            SonarLintUtils.getService(project, SonarLintWalkthroughToolWindow::class.java).openWelcomePage()
         }
     }
 

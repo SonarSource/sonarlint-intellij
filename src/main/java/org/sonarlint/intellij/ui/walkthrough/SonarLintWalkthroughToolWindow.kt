@@ -27,15 +27,11 @@ import com.intellij.ui.content.ContentManagerListener
 class SonarLintWalkthroughToolWindow(private val project: Project) : ContentManagerListener {
 
     fun hide() {
-        SonarLintWalkthroughToolWindowFactory.getSonarLintToolWindow(project)?.let { toolWindow ->
-            toolWindow.hide()
-        }
+        getSonarLintToolWindow(project)?.hide()
     }
 
-    fun openWelcomePage(project: Project) {
-        SonarLintWalkthroughToolWindowFactory.getSonarLintToolWindow(project)?.let { toolWindow ->
-            toolWindow.show()
-        }
+    fun openWelcomePage() {
+        getSonarLintToolWindow(project)?.show()
     }
 
 }

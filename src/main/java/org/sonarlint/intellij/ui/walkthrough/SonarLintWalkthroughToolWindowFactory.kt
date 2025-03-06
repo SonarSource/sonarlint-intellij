@@ -26,16 +26,9 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ToolWindowType
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
+private const val WALKTHROUGH_SONARQUBE_FOR_IDE: String = "Welcome to SonarQube for IDE"
+
 class SonarLintWalkthroughToolWindowFactory : ToolWindowFactory {
-
-    companion object {
-        const val WALKTROUGH_SONARQUBE_FOR_IDE: String = "Welcome to SonarQube for IDE"
-
-        fun getSonarLintToolWindow(project: Project): ToolWindow? {
-            val toolWindowManager: ToolWindowManager = ToolWindowManager.getInstance(project)
-            return toolWindowManager.getToolWindow(WALKTROUGH_SONARQUBE_FOR_IDE)
-        }
-    }
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         toolWindow.setType(ToolWindowType.DOCKED, null)
@@ -46,3 +39,7 @@ class SonarLintWalkthroughToolWindowFactory : ToolWindowFactory {
 
 }
 
+fun getSonarLintToolWindow(project: Project): ToolWindow? {
+    val toolWindowManager: ToolWindowManager = ToolWindowManager.getInstance(project)
+    return toolWindowManager.getToolWindow(WALKTHROUGH_SONARQUBE_FOR_IDE)
+}
