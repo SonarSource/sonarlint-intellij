@@ -164,11 +164,7 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         } else {
             "Close"
         }
-        previousButton.text = if (currentPageIndex > 0) {
-            "Previous: ${pages[currentPageIndex - 1].title}"
-        } else {
-            "Previous"
-        }
+        previousButton.text = "Previous"
     }
 
     private fun welcomePageData(): PageData {
