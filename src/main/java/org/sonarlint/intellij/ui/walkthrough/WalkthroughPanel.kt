@@ -19,99 +19,210 @@
  */
 package org.sonarlint.intellij.ui.walkthrough
 
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.SwingHelper
+import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Dimension
+import java.awt.Font
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import javax.swing.BorderFactory
+import javax.swing.Icon
 import javax.swing.JButton
+import javax.swing.JPanel
+import javax.swing.event.HyperlinkEvent
+import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
+import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable
+import org.sonarlint.intellij.telemetry.LinkTelemetry
 
-const val WALKTHROUGH_WIDTH: Int = 300
-const val WALKTHROUGH_HEIGHT: Int = 200
-const val PAGE_1: String = "Page 1"
-const val PAGE_2: String = "Page 2"
-const val PAGE_3: String = "Page 3"
-const val PAGE_4: String = "Page 4"
+enum class WalkthroughActions(val id: String, val action: (Project) -> (Unit)) {
+    REPORT_VIEW("#reportView", { project -> getService(project, SonarLintToolWindow::class.java).openReportTab() }),
+    RULE_LINK("#ruleLink", { LinkTelemetry.RULE_SELECTION_PAGE.browseWithTelemetry() }),
+    CURRENT_FILE("#currentFile", { project -> getService(project, SonarLintToolWindow::class.java).openCurrentFileTab() }),
+    SETTINGS("#settings", { project -> ShowSettingsUtil.getInstance().showSettingsDialog(project, SonarLintGlobalConfigurable::class.java) }),
+    TAINT_VULNERABILITIES("#taintVulnerabilities", { project -> getService(project, SonarLintToolWindow::class.java).openTaintVulnerabilityTab() }),
+    AI_FIX_SUGGESTIONS("#aiFixSuggestions", { LinkTelemetry.AI_FIX_SUGGESTIONS_PAGE.browseWithTelemetry() }),
+    SETUP_CONNECTION("#setupConnection", { project -> ShowSettingsUtil.getInstance().editConfigurable(project, SonarLintProjectConfigurable(project)) }),
+    LOG_VIEW("#logView", { project -> getService(project, SonarLintToolWindow::class.java).openLogTab() }),
+    COMMUNITY_FORUM("#communityForum", { LinkTelemetry.COMMUNITY_PAGE.browseWithTelemetry() }),
+    DOCS("#docs", { LinkTelemetry.BASE_DOCS_PAGE.browseWithTelemetry() })
+}
 
 class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(true, true) {
 
-    private var welcomePageNextButton: JButton
-    private var learnAsYouCodePageBackButton: JButton
-    private var learnAsYouCodePageNextButton: JButton
-    private var connectWithYourTeamBackButton: JButton
-    private var connectWithYourTeamNextButton: JButton
-    private var reachOutToUsBackButton: JButton
-    private var closeButton: JButton
+    private val cardLayout = CardLayout()
+    private val cardPanel = JPanel(cardLayout)
+    private val pages = listOf(
+        welcomePageData(),
+        learnAsYouCodePageData(),
+        connectWithYourTeamPageData(),
+        reachOutToUsPageData()
+    )
+    private val previousButton = JButton("Previous").apply {
+        isVisible = false
+    }
+    private val nextButton = JButton("Next")
+    private var currentPageIndex = 0
 
     init {
-        preferredSize = Dimension(WALKTHROUGH_WIDTH, WALKTHROUGH_HEIGHT)
+        preferredSize = Dimension(300, 20)
+        pages.forEach { pageData ->
+            cardPanel.add(createPagePanel(pageData), pageData.step)
+        }
 
-        val mainPanel = JBPanel<JBPanel<*>>(CardLayout())
-        mainPanel.preferredSize =
-            Dimension(WALKTHROUGH_WIDTH, WALKTHROUGH_HEIGHT)
+        val mainPanel = JBPanel<WalkthroughPanel>(BorderLayout()).apply {
+            add(cardPanel, BorderLayout.CENTER)
+            add(createNavigationPanel(), BorderLayout.SOUTH)
+        }
 
-        val welcomePanel = WelcomePanel(project)
-        val learnAsYouCodePanel = LearnAsYouCodePanel(project)
-        val connectWithYourTeamPanel = ConnectWithYourTeamPanel(project)
-        val reachOutToUsPanel = ReachOutToUsPanel(project)
+        setContent(mainPanel)
+    }
 
-        welcomePageNextButton = welcomePanel.nextButton
-        learnAsYouCodePageBackButton = learnAsYouCodePanel.backButton!!
-        learnAsYouCodePageNextButton = learnAsYouCodePanel.nextButton
-        connectWithYourTeamBackButton = connectWithYourTeamPanel.backButton!!
-        connectWithYourTeamNextButton = connectWithYourTeamPanel.nextButton
-        reachOutToUsBackButton = reachOutToUsPanel.backButton!!
-        closeButton = reachOutToUsPanel.nextButton
+    private fun createPagePanel(pageData: PageData): JPanel {
+        val imageLabel = JBLabel(pageData.icon)
+        val stepLabel = JBLabel(pageData.step).apply {
+            border = BorderFactory.createEmptyBorder(2, 8, 2, 0)
+            font = font.deriveFont(Font.PLAIN, 14f)
+        }
+        val titleLabel = JBLabel(pageData.title).apply {
+            border = BorderFactory.createEmptyBorder(2, 8, 2, 0)
+            font = font.deriveFont(Font.BOLD, 16f)
+        }
+        val textLabel = SwingHelper.createHtmlViewer(false, font, null, null).apply {
+            text = pageData.text
+            border = JBUI.Borders.empty(8)
+            addHyperlinkListener { e ->
+                if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                    WalkthroughActions.values().find { it.id == e.description }?.action?.invoke(project)
+                }
+            }
+        }
 
-        mainPanel.add(welcomePanel, PAGE_1)
-        mainPanel.add(learnAsYouCodePanel, PAGE_2)
-        mainPanel.add(connectWithYourTeamPanel, PAGE_3)
-        mainPanel.add(reachOutToUsPanel, PAGE_4)
-
-        addButtonActionListeners(
-            mainPanel
+        val centerPanel = JBPanel<WalkthroughPanel>(GridBagLayout())
+        val gbc = GridBagConstraints(
+            0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
+            JBUI.emptyInsets(), 0, 0
         )
 
-        super.setContent(mainPanel)
-    }
-
-    private fun addButtonActionListeners(
-        mainPanel: JBPanel<JBPanel<*>>,
-    ) {
-        welcomePageNextButton.addActionListener {
-            val cl = mainPanel.layout as CardLayout
-            cl.show(mainPanel, PAGE_2)
+        centerPanel.add(stepLabel, gbc)
+        gbc.gridy = 1
+        centerPanel.add(titleLabel, gbc)
+        gbc.apply {
+            gridy = 2
+            fill = GridBagConstraints.BOTH
+            weightx = 1.0
+            weighty = 1.0
         }
+        centerPanel.add(textLabel, gbc)
 
-        learnAsYouCodePageBackButton.addActionListener {
-            val cl = mainPanel.layout as CardLayout
-            cl.show(mainPanel, PAGE_1)
-        }
-
-        learnAsYouCodePageNextButton.addActionListener {
-            val cl = mainPanel.layout as CardLayout
-            cl.show(mainPanel, PAGE_3)
-        }
-
-        connectWithYourTeamBackButton.addActionListener {
-            val cl = mainPanel.layout as CardLayout
-            cl.show(mainPanel, PAGE_2)
-        }
-
-        connectWithYourTeamNextButton.addActionListener {
-            val cl = mainPanel.layout as CardLayout
-            cl.show(mainPanel, PAGE_4)
-        }
-
-        reachOutToUsBackButton.addActionListener {
-            val cl = mainPanel.layout as CardLayout
-            cl.show(mainPanel, PAGE_3)
-        }
-
-        closeButton.addActionListener {
-            getService(project, SonarLintWalkthroughToolWindow::class.java).hide()
+        return JBPanel<WalkthroughPanel>(BorderLayout()).apply {
+            add(imageLabel, BorderLayout.NORTH)
+            add(centerPanel, BorderLayout.CENTER)
         }
     }
 
+    private fun createNavigationPanel(): JBPanel<WalkthroughPanel> {
+        previousButton.apply {
+            addActionListener {
+                nextButton.isVisible = true
+                if (currentPageIndex > 0) {
+                    currentPageIndex--
+                    cardLayout.previous(cardPanel)
+                }
+                if (currentPageIndex == 0) {
+                    isVisible = false
+                }
+            }
+        }
+        nextButton.apply {
+            addActionListener {
+                previousButton.isVisible = true
+                if (currentPageIndex < pages.size - 1) {
+                    currentPageIndex++
+                    cardLayout.next(cardPanel)
+                }
+                if (currentPageIndex == pages.size - 1) {
+                    isVisible = false
+                }
+            }
+        }
+
+        return JBPanel<WalkthroughPanel>(BorderLayout()).apply {
+            add(previousButton, BorderLayout.WEST)
+            add(nextButton, BorderLayout.EAST)
+        }
+    }
+
+
+    private fun welcomePageData(): PageData {
+        return PageData(
+            "Step 1/4",
+            "Get started",
+            text = """
+                SonarQube for IDE supports the analysis of more than 16 languages including
+                Python, Java, Javascript, IaC domains, and secrets detection.
+                <a href="${WalkthroughActions.RULE_LINK.id}">Learn more</a>.<br><br>
+                Detect issues in your open file while you code or run an analysis on multiple files from the <a href="${WalkthroughActions.REPORT_VIEW.id}">Report tab</a>.<br><br>
+                Open a file to start your Clean Code journey.
+            """.trimIndent(),
+            SonarLintIcons.WALKTHROUGH_WELCOME
+        )
+    }
+
+    private fun learnAsYouCodePageData(): PageData {
+        return PageData(
+            "Step 2/4",
+            "Learn as You Code",
+            text = """
+                Take a look at the <a href="${WalkthroughActions.CURRENT_FILE.id}">Current File</a> tab: When SonarQube for IDE finds an issue, select it to 
+                get its rule description and an example of compliant code.<br><br>
+                Double-click an issue in the Report tab to open its location in the Editor.
+                Some rules offer quick fixes when you hover over the issue location.<br><br>
+                If needed, you can disable rules in the <a href="${WalkthroughActions.SETTINGS.id}">Settings</a>.
+            """.trimIndent(),
+            SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE
+        )
+    }
+
+    private fun connectWithYourTeamPageData(): PageData {
+        return PageData(
+            "Step 3/4",
+            "Connect with your team",
+            text = """
+                SonarQube for IDE can connect to SonarQube (Server, Cloud) using connected mode;
+                this allows your entire team to use the same rules and applied quality standards.<br><br>
+                When using connected mode, you can highlight advanced issues like <a href="${WalkthroughActions.TAINT_VULNERABILITIES.id}">taint vulnerabilities</a> 
+                and analyze more languages that aren’t available with a local analysis. SonarQube (Server, Cloud) can also generate
+                <a href="${WalkthroughActions.AI_FIX_SUGGESTIONS.id}">AI fix suggestions</a>, and you can open them right in your IDE!<br><br>
+                Are you already using SonarQube (Server, Cloud)? <a href="${WalkthroughActions.SETUP_CONNECTION.id}">Click here</a> to set up a connection!
+            """.trimIndent(),
+            SonarLintIcons.WALKTHROUGH_CONNECT_WITH_YOUR_TEAM
+        )
+    }
+
+    private fun reachOutToUsPageData(): PageData {
+        return PageData(
+            "Step 4/4",
+            "Reach out to us",
+            text = """
+                Are you having problems with SonarQube for IDE? Open the <a href="${WalkthroughActions.LOG_VIEW.id}">log tab</a> 
+                and enable the Analysis logs and Verbose output.<br>
+                Share your verbose logs with us in a post on the <a href="${WalkthroughActions.COMMUNITY_FORUM.id}">Community forum</a>.
+                We are happy to help you debug!<br><br>
+                Learn more about SonarQube for IDE in the product <a href="${WalkthroughActions.DOCS.id}">documentation</a>.
+            """.trimIndent(),
+            SonarLintIcons.WALKTHROUGH_REACH_OUT_TO_US
+        )
+    }
+
+    data class PageData(val step: String, val title: String, val text: String, val icon: Icon)
 }
