@@ -104,7 +104,6 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
 
                 if (index == 0) {
                     val descriptor = OpenFileDescriptor(project, file, change.startLine - 1, -1)
-
                     fileEditorManager.openTextEditor(descriptor, true)
 
                     fileEditorManager.selectedTextEditor?.let {
@@ -122,23 +121,21 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
                         val fixSuggestionSnippet = FixSuggestionSnippet(
                             currentCode,
                             change.after,
-                            change.startLine,
-                            change.endLine,
                             index + 1,
                             fixSuggestion.changes.size,
                             fixSuggestion.explanation,
                             fixSuggestion.id
                         )
 
-                        getService(project, FixSuggestionInlayHolder::class.java).addInlaySnippet(
-                            fixSuggestion.id, index, FixSuggestionInlayPanel(
-                                project,
-                                fixSuggestionSnippet,
-                                it,
-                                psiFile,
-                                rangeMarker
-                            )
+                        val inlayPanel = FixSuggestionInlayPanel(
+                            project,
+                            fixSuggestionSnippet,
+                            it,
+                            psiFile,
+                            rangeMarker
                         )
+
+                        getService(project, FixSuggestionInlayHolder::class.java).addInlaySnippet(fixSuggestion.id, index, inlayPanel)
                     } catch (e: IndexOutOfBoundsException) {
                         SonarLintConsole.get(project).error("Fix is invalid", e)
                         successfullyOpened = false

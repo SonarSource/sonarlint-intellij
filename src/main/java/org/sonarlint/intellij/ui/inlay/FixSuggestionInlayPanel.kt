@@ -19,12 +19,16 @@
  */
 package org.sonarlint.intellij.ui.inlay
 
+import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.util.Ref
@@ -33,11 +37,13 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.ui.ClientProperty
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBPanel
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Cursor
+import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.ComponentEvent
 import javax.swing.JButton
@@ -55,8 +61,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestio
 class FixSuggestionInlayPanel(
     private val project: Project,
     private val suggestion: FixSuggestionSnippet,
-    val editor: Editor,
-    val file: PsiFile,
+    private val editor: Editor,
+    private val file: PsiFile,
     private val textRange: RangeMarker
 ) : RoundedPanelWithBackgroundColor(), Disposable {
 
@@ -69,7 +75,7 @@ class FixSuggestionInlayPanel(
         initPanels()
 
         val manager = InlayManager.from(editor)
-        val inlay = manager.insertBefore(suggestion.startLine, this)
+        val inlay = manager.insertBefore(textRange.startOffset, this)
         revalidate()
         inlayRef.set(inlay)
         val viewport = (editor as? EditorImpl)?.scrollPane?.viewport
@@ -92,21 +98,15 @@ class FixSuggestionInlayPanel(
     }
 
     private fun initTitlePanel() {
-        val titleRightSidePanel = RoundedPanelWithBackgroundColor().apply {
-            layout = HorizontalLayout(5)
-            border = JBUI.Borders.emptyLeft(5)
-        }
-
         titlePanel.apply {
             layout = BorderLayout()
-            border = JBUI.Borders.empty(5)
+            border = JBUI.Borders.empty(10)
             add(
                 JBLabel(
                     "AI CodeFix (${suggestion.snippetIndex}/${suggestion.totalSnippets})",
                     SonarLintIcons.SONARQUBE_FOR_INTELLIJ, SwingConstants.LEFT
                 ), BorderLayout.WEST
             )
-            add(titleRightSidePanel, BorderLayout.EAST)
         }
     }
 
@@ -120,22 +120,37 @@ class FixSuggestionInlayPanel(
             isOpaque = false
             ClientProperty.put(this, DarculaButtonUI.DEFAULT_STYLE_KEY, true)
             font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
+            addActionListener { acceptFix() }
         }
         val declineButton = JButton("Decline").apply {
             isOpaque = false
             font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
+            addActionListener { declineFix() }
         }
-
-        applyButton.addActionListener {
-            acceptFix()
+        val upButton = JButton(AllIcons.General.ArrowUp).apply {
+            preferredSize = Dimension(35, height)
+            isOpaque = false
+            addActionListener {
+                navigateToPreviousInlay()
+            }
         }
-
-        declineButton.addActionListener {
-            declineFix()
+        val downButton = JButton(AllIcons.General.ArrowDown).apply {
+            preferredSize = Dimension(35, height)
+            isOpaque = false
+            addActionListener {
+                navigateToNextInlay()
+            }
         }
 
         val buttonPanel = RoundedPanelWithBackgroundColor().apply {
             layout = BorderLayout()
+            if (suggestion.totalSnippets > 1) {
+                add(JBPanel<JBPanel<*>>().apply {
+                    layout = HorizontalLayout(5)
+                    add(upButton)
+                    add(downButton)
+                }, BorderLayout.WEST)
+            }
             add(RoundedPanelWithBackgroundColor().apply {
                 layout = HorizontalLayout(5)
                 add(applyButton)
@@ -149,6 +164,26 @@ class FixSuggestionInlayPanel(
         }
     }
 
+    private fun navigateToPreviousInlay() {
+        getService(project, FixSuggestionInlayHolder::class.java).getPreviousInlay(suggestion.suggestionId, suggestion.snippetIndex - 1)?.let {
+            val startLine = editor.document.getLineNumber(it.textRange.startOffset)
+            val descriptor = OpenFileDescriptor(project, file.virtualFile, startLine, -1)
+            runOnUiThread(project, ModalityState.defaultModalityState()) {
+                FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
+            }
+        }
+    }
+
+    private fun navigateToNextInlay() {
+        getService(project, FixSuggestionInlayHolder::class.java).getNextInlay(suggestion.suggestionId, suggestion.snippetIndex - 1)?.let {
+            val startLine = editor.document.getLineNumber(it.textRange.startOffset)
+            val descriptor = OpenFileDescriptor(project, file.virtualFile, startLine, -1)
+            runOnUiThread(project, ModalityState.defaultModalityState()) {
+                FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
+            }
+        }
+    }
+
     private fun declineFix() {
         getService(project, FixSuggestionInlayHolder::class.java).removeSnippet(suggestion.suggestionId, suggestion.snippetIndex - 1)
         getService(SonarLintTelemetry::class.java).fixSuggestionResolved(
@@ -156,6 +191,7 @@ class FixSuggestionInlayPanel(
             FixSuggestionStatus.DECLINED,
             suggestion.snippetIndex
         )
+        navigateToPreviousInlay()
         dispose()
     }
 
@@ -174,6 +210,7 @@ class FixSuggestionInlayPanel(
             FixSuggestionStatus.ACCEPTED,
             suggestion.snippetIndex
         )
+        navigateToNextInlay()
         dispose()
     }
 

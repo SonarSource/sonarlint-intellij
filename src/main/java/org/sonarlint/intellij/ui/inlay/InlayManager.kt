@@ -61,12 +61,11 @@ class InlayManager(val editor: EditorImpl) : Disposable {
     }
 
     @RequiresEdt
-    fun insertBefore(lineIndex: Int, component: FixSuggestionInlayPanel): Disposable? {
+    fun insertBefore(lineStartOffset: Int, component: FixSuggestionInlayPanel): Disposable? {
         return try {
             if (disposed) return null
 
             val wrappedComponent = ComponentWrapper(component)
-            val offset = editor.document.getLineEndOffset(lineIndex)
 
             EditorEmbeddedComponentManager.getInstance()
                 .addComponent(
@@ -77,7 +76,7 @@ class InlayManager(val editor: EditorImpl) : Disposable {
                         true,
                         true,
                         0,
-                        offset
+                        lineStartOffset
                     )
                 )?.also {
                     managedInlays[wrappedComponent] = it
