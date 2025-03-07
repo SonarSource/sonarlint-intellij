@@ -254,7 +254,7 @@ class AutomaticSharedConfigCreator(
                 )
             )
         } else {
-            if (SonarLintUtils.isDogfoodEnvironment()) {
+            if (getGlobalSettings().isRegionSelection) {
                 val scURLField = JBTextField(US_SONARCLOUD_URL).apply {
                     isEditable = false
                 }
