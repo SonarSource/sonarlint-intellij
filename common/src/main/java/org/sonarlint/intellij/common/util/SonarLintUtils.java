@@ -208,8 +208,4 @@ public class SonarLintUtils {
   public static boolean isModuleLevelBindingEnabled() {
     return !isRider() && !isCLion() && !isAppCode();
   }
-
-  public static boolean isDogfoodEnvironment() {
-    return "1".equals(SystemUtils.getEnvironmentVariable(SONARSOURCE_DOGFOODING_ENV_VAR_KEY, "0"));
-  }
 }

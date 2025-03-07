@@ -45,6 +45,7 @@ public final class SonarLintGlobalSettings {
   private boolean isPromotionDisabled = false;
 
   private boolean autoTrigger = true;
+  private boolean isRegionEnabled = false;
   private String nodejsPath = "";
 
   private List<ServerConnection> servers = new LinkedList<>();
@@ -174,6 +175,14 @@ public final class SonarLintGlobalSettings {
 
   public void setAutoTrigger(boolean autoTrigger) {
     this.autoTrigger = autoTrigger;
+  }
+
+  public boolean isRegionEnabled() {
+    return isRegionEnabled;
+  }
+
+  public void setRegionEnabled(boolean regionEnabled) {
+    this.isRegionEnabled = regionEnabled;
   }
 
   public String getNodejsPath() {

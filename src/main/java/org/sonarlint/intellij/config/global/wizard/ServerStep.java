@@ -50,6 +50,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE;
 
 public class ServerStep extends AbstractWizardStepEx {
@@ -144,11 +145,11 @@ public class ServerStep extends AbstractWizardStepEx {
   }
 
   private void load(boolean editing) {
-    var isOnDogfood = SonarLintUtils.isDogfoodEnvironment();
+    var isRegionEnabled = getGlobalSettings().isRegionEnabled();
 
-    sonarCloudUrl.setVisible(isOnDogfood);
-    radioEU.setVisible(isOnDogfood);
-    radioUS.setVisible(isOnDogfood);
+    sonarCloudUrl.setVisible(isRegionEnabled);
+    radioEU.setVisible(isRegionEnabled);
+    radioUS.setVisible(isRegionEnabled);
 
     var sqsIcon = SonarLintIcons.ICON_SONARQUBE_SERVER;
     var sqcIcon = SonarLintIcons.ICON_SONARQUBE_CLOUD;
