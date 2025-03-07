@@ -58,6 +58,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     " Restarting your IDE is recommended.";
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
+  private JBCheckBox enableRegion;
   private JBTextField nodeJsPath;
   private JBLabel nodeJsVersion;
   private JBCheckBox focusOnNewCode;
@@ -101,6 +102,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   private JPanel createTopPanel() {
     var optionsPanel = new JPanel(new GridBagLayout());
     optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+
     autoTrigger = new JBCheckBox("Automatically trigger analysis");
     autoTrigger.setFocusable(false);
     optionsPanel.add(autoTrigger, new GridBagConstraints(0, 1, 3, 1, 0.0, 0.0,
@@ -123,13 +125,19 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     optionsPanel.add(nodeJsVersion, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
+    enableRegion = new JBCheckBox("Show region selection for SonarQube Cloud (early access)");
+    enableRegion.setFocusable(false);
+    optionsPanel.add(enableRegion, new GridBagConstraints(0, 3, 3, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+
     return optionsPanel;
   }
 
   @Override
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();
-    return model.isAutoTrigger() != autoTrigger.isSelected()
+    return model.isRegionEnabled() != enableRegion.isSelected()
+      || model.isAutoTrigger() != autoTrigger.isSelected()
       || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText())
       || model.isFocusOnNewCode() != focusOnNewCode.isSelected();
   }
@@ -138,6 +146,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   public void load(SonarLintGlobalSettings model) {
     getComponent();
     autoTrigger.setSelected(model.isAutoTrigger());
+    enableRegion.setSelected(model.isRegionEnabled());
     nodeJsPath.setText(model.getNodejsPath());
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
     loadNodeJsSettings(model);
@@ -172,6 +181,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
+    settings.setRegionEnabled(enableRegion.isSelected());
     // Do not let the user save an invalid path, this way we fall back to the auto-detection
     if (isNodejsPathValid(nodeJsPath.getText())) {
       settings.setNodejsPath(nodeJsPath.getText());

@@ -60,7 +60,6 @@ import javax.swing.JPanel;
 import org.apache.commons.lang3.StringUtils;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.sharing.ConfigurationSharing;
@@ -73,6 +72,7 @@ import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 public class SonarLintProjectBindPanel {
@@ -375,7 +375,7 @@ public class SonarLintProjectBindPanel {
 
       var serverRegion = value.getRegion() == null ? "EU" : value.getRegion();
 
-      if (value.isSonarCloud() && hasMoreThanOneSCConnections() && SonarLintUtils.isDogfoodEnvironment()) {
+      if (value.isSonarCloud() && hasMoreThanOneSCConnections() && getGlobalSettings().isRegionEnabled()) {
         append("[" + serverRegion + "] " + value.getName(), attrs, true);
       } else {
         append(value.getName(), attrs, true);

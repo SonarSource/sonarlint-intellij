@@ -50,7 +50,6 @@ import javax.swing.event.DocumentListener
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
@@ -254,7 +253,7 @@ class AutomaticSharedConfigCreator(
                 )
             )
         } else {
-            if (SonarLintUtils.isDogfoodEnvironment()) {
+            if (getGlobalSettings().isRegionEnabled) {
                 val scURLField = JBTextField(US_SONARCLOUD_URL).apply {
                     isEditable = false
                 }
