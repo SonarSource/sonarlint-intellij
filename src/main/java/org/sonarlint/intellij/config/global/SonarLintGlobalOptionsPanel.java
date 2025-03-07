@@ -58,6 +58,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     " Restarting your IDE is recommended.";
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
+  private JBCheckBox regionSelection;
   private JBTextField nodeJsPath;
   private JBLabel nodeJsVersion;
   private JBCheckBox focusOnNewCode;
@@ -102,13 +103,17 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     var optionsPanel = new JPanel(new GridBagLayout());
     optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
     autoTrigger = new JBCheckBox("Automatically trigger analysis");
+    regionSelection = new JBCheckBox("Show region selection for SonarQube Cloud (early access)");
     autoTrigger.setFocusable(false);
+    regionSelection.setFocusable(false);
     optionsPanel.add(autoTrigger, new GridBagConstraints(0, 1, 3, 1, 0.0, 0.0,
+      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+    optionsPanel.add(regionSelection, new GridBagConstraints(0, 2, 3, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
     var label = new JLabel("Node.js path: ");
     label.setToolTipText(NODE_JS_TOOLTIP);
-    optionsPanel.add(label, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+    optionsPanel.add(label, new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
     nodeJsPath = new JBTextField();
@@ -116,11 +121,11 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     nodeJsPathWithBrowse.setToolTipText(NODE_JS_TOOLTIP);
     var fileChooser = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
     nodeJsPathWithBrowse.addBrowseFolderListener("Select Node.js Binary", "Select Node.js binary to be used by SonarQube for IDE", null, fileChooser);
-    optionsPanel.add(nodeJsPathWithBrowse, new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+    optionsPanel.add(nodeJsPathWithBrowse, new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
     nodeJsVersion = new JBLabel();
-    optionsPanel.add(nodeJsVersion, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+    optionsPanel.add(nodeJsVersion, new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
     return optionsPanel;
@@ -129,7 +134,8 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();
-    return model.isAutoTrigger() != autoTrigger.isSelected()
+    return model.isRegionSelection() != regionSelection.isSelected()
+      || model.isAutoTrigger() != autoTrigger.isSelected()
       || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText())
       || model.isFocusOnNewCode() != focusOnNewCode.isSelected();
   }
@@ -138,6 +144,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   public void load(SonarLintGlobalSettings model) {
     getComponent();
     autoTrigger.setSelected(model.isAutoTrigger());
+    regionSelection.setSelected(model.isRegionSelection());
     nodeJsPath.setText(model.getNodejsPath());
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
     loadNodeJsSettings(model);
@@ -172,6 +179,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
+    settings.setRegionSelection(regionSelection.isSelected());
     // Do not let the user save an invalid path, this way we fall back to the auto-detection
     if (isNodejsPathValid(nodeJsPath.getText())) {
       settings.setNodejsPath(nodeJsPath.getText());

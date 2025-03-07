@@ -176,7 +176,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         connectionNameLabel.text = "Connection Name"
         scURLLabel.text = "SonarQube Cloud URL"
 
-        if (!isSQ && SonarLintUtils.isDogfoodEnvironment()) {
+        if (!isSQ && Settings.getGlobalSettings().isRegionSelection) {
             centerPanel.add(
                 scURLLabel, GridBagConstraints(
                     1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0

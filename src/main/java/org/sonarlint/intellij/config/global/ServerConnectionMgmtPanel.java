@@ -64,6 +64,7 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.CONNECTED_MODE_DOCS;
 
@@ -127,7 +128,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     connectionList.setCellRenderer(new ColoredListCellRenderer<>() {
       @Override
       protected void customizeCellRenderer(JList list, ServerConnection server, int index, boolean selected, boolean hasFocus) {
-        if (server.isSonarCloud() && hasMoreThanOneSCConnections() && SonarLintUtils.isDogfoodEnvironment()) {
+        if (server.isSonarCloud() && hasMoreThanOneSCConnections() && getGlobalSettings().isRegionSelection()) {
           var serverRegion = server.getRegion() == null ? "EU" : server.getRegion();
           append("[" + serverRegion + "] " + server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
         } else {
