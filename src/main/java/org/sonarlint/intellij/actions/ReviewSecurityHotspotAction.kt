@@ -44,11 +44,10 @@ import org.sonarlint.intellij.ui.review.ReviewSecurityHotspotDialog
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
-import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 
-class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, private var status: HotspotReviewStatus? = null) :
+class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, private var status: HotspotStatus? = null) :
     AbstractSonarAction(
         "Review Security Hotspot", "Review Security Hotspot Status", null
     ), IntentionAction, PriorityAction, Iconable {

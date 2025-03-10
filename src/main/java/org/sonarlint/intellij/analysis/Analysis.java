@@ -39,7 +39,6 @@ import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.fs.VirtualFileEvent;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarsource.sonarlint.core.commons.api.progress.CanceledException;
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
 
 import static java.util.stream.Collectors.toSet;
@@ -139,7 +138,7 @@ public class Analysis implements Cancelable {
       checkCanceled(indicator);
       checkCanceled(indicator);
       return summary.analysisIds;
-    } catch (CanceledException | ProcessCanceledException e1) {
+    } catch (ProcessCanceledException e) {
       console.info("Analysis canceled");
     } catch (Exception e) {
       handleError(e, indicator);
@@ -165,7 +164,7 @@ public class Analysis implements Cancelable {
 
   private void checkCanceled(ProgressIndicator indicator) {
     if (isCancelled(indicator)) {
-      throw new CanceledException();
+      throw new ProcessCanceledException();
     }
   }
 

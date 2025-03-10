@@ -30,7 +30,6 @@ import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
-import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
@@ -39,7 +38,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
 public class LiveSecurityHotspot extends LiveFinding {
   private final VulnerabilityProbability vulnerabilityProbability;
-  private HotspotReviewStatus status;
+  private HotspotStatus status;
 
   public LiveSecurityHotspot(Module module, RaisedHotspotDto hotspot, VirtualFile virtualFile, List<QuickFix> quickFixes) {
     this(module, hotspot, virtualFile, null, null, quickFixes);
@@ -52,15 +51,15 @@ public class LiveSecurityHotspot extends LiveFinding {
     this.status = mapStatus(hotspot.getStatus());
   }
 
-  private static HotspotReviewStatus mapStatus(@Nullable HotspotStatus status) {
+  private static HotspotStatus mapStatus(@Nullable org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus status) {
     if (status == null) {
-      return HotspotReviewStatus.TO_REVIEW;
+      return HotspotStatus.TO_REVIEW;
     }
     return switch (status) {
-      case TO_REVIEW -> HotspotReviewStatus.TO_REVIEW;
-      case SAFE -> HotspotReviewStatus.SAFE;
-      case FIXED -> HotspotReviewStatus.FIXED;
-      case ACKNOWLEDGED -> HotspotReviewStatus.ACKNOWLEDGED;
+      case TO_REVIEW -> HotspotStatus.TO_REVIEW;
+      case SAFE -> HotspotStatus.SAFE;
+      case FIXED -> HotspotStatus.FIXED;
+      case ACKNOWLEDGED -> HotspotStatus.ACKNOWLEDGED;
     };
   }
 
@@ -85,21 +84,21 @@ public class LiveSecurityHotspot extends LiveFinding {
     return RuleType.SECURITY_HOTSPOT;
   }
 
-  public void setStatus(HotspotReviewStatus status) {
+  public void setStatus(HotspotStatus status) {
     this.status = status;
   }
 
-  public void setStatus(HotspotStatus status) {
-    this.status = HotspotReviewStatus.valueOf(status.name());
+  public void setStatus(org.sonarsource.sonarlint.core.client.utils.HotspotStatus status) {
+    this.status = HotspotStatus.valueOf(status.name());
   }
 
-  public HotspotReviewStatus getStatus() {
+  public HotspotStatus getStatus() {
     return status;
   }
 
   @Override
   public boolean isResolved() {
-    return status.isResolved();
+    return this.status.equals(HotspotStatus.SAFE) || this.status.equals(HotspotStatus.FIXED);
   }
 
   @Override

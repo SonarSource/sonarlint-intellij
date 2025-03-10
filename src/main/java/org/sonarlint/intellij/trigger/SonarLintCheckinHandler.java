@@ -61,8 +61,7 @@ import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -170,13 +169,12 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       return ReturnResult.COMMIT;
     }
 
-    var numFiles = issuesPerFile.keySet().size();
+    var numFiles = issuesPerFile.size();
 
     var issues = issuesPerFile.values().stream().flatMap(Collection::stream).toList();
     var numSecretsIssues = issues.stream()
       .filter(issue -> !shouldFocusOnNewCode || issue.isOnNewCode())
-      .filter(issue -> issue.getRuleKey()
-        .startsWith(SonarLanguage.SECRETS.getSonarLanguageKey()))
+      .filter(issue -> issue.getRuleKey().startsWith("secrets"))
       .count();
     var msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
 
