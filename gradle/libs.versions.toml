@@ -25,11 +25,11 @@ artifactory-plugin = "4.33.1"
 cyclonedx-plugin = "1.10.0"
 
 commons-lang3 = "3.17.0"
-commons-text = "1.12.0"
+commons-text = "1.13.0"
 findbugs-jsr305 = "3.0.2"
 junit-bom = "5.11.3"
 mockito-kotlin = "5.4.0"
-awaitility = "4.2.2"
+awaitility = "4.3.0"
 
 its-remote = "0.11.23"
 its-sonar-scala = "1.8.3.2219"
