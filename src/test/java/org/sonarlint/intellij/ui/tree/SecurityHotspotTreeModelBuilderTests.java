@@ -43,7 +43,6 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
-import org.sonarsource.sonarlint.core.commons.HotspotReviewStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto;
@@ -140,11 +139,11 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   void testSecurityHotspotFilteringSonarQube() {
     Map<VirtualFile, Collection<LiveSecurityHotspot>> data = new HashMap<>();
 
-    addFileWithStatusAndFindingKeyForHotspot(data, "file1", 1, HotspotReviewStatus.TO_REVIEW, null);
-    addFileWithStatusAndFindingKeyForHotspot(data, "file2", 1, HotspotReviewStatus.TO_REVIEW, "keyA");
-    addFileWithStatusAndFindingKeyForHotspot(data, "file3", 1, HotspotReviewStatus.ACKNOWLEDGED, "keyB");
-    addFileWithStatusAndFindingKeyForHotspot(data, "file4", 1, HotspotReviewStatus.FIXED, "keyC");
-    addFileWithStatusAndFindingKeyForHotspot(data, "file5", 1, HotspotReviewStatus.SAFE, "keyD");
+    addFileWithStatusAndFindingKeyForHotspot(data, "file1", 1, HotspotStatus.TO_REVIEW, null);
+    addFileWithStatusAndFindingKeyForHotspot(data, "file2", 1, HotspotStatus.TO_REVIEW, "keyA");
+    addFileWithStatusAndFindingKeyForHotspot(data, "file3", 1, HotspotStatus.ACKNOWLEDGED, "keyB");
+    addFileWithStatusAndFindingKeyForHotspot(data, "file4", 1, HotspotStatus.FIXED, "keyC");
+    addFileWithStatusAndFindingKeyForHotspot(data, "file5", 1, HotspotStatus.SAFE, "keyD");
 
     treeBuilder.updateModelWithoutFileNode(data);
 
@@ -162,10 +161,10 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   void testSecurityHotspotFilteringResolvedSonarQube() {
     Map<VirtualFile, Collection<LiveSecurityHotspot>> data = new HashMap<>();
 
-    addFileWithStatusAndFindingKeyForHotspot(data, "file2", 1, HotspotReviewStatus.TO_REVIEW, "keyA");
-    addFileWithStatusAndFindingKeyForHotspot(data, "file2", 1, HotspotReviewStatus.ACKNOWLEDGED, "keyB");
-    addFileWithStatusAndFindingKeyForHotspot(data, "file3", 1, HotspotReviewStatus.FIXED, "keyC");
-    addFileWithStatusAndFindingKeyForHotspot(data, "file4", 1, HotspotReviewStatus.SAFE, "keyD");
+    addFileWithStatusAndFindingKeyForHotspot(data, "file2", 1, HotspotStatus.TO_REVIEW, "keyA");
+    addFileWithStatusAndFindingKeyForHotspot(data, "file2", 1, HotspotStatus.ACKNOWLEDGED, "keyB");
+    addFileWithStatusAndFindingKeyForHotspot(data, "file3", 1, HotspotStatus.FIXED, "keyC");
+    addFileWithStatusAndFindingKeyForHotspot(data, "file4", 1, HotspotStatus.SAFE, "keyD");
 
     treeBuilder.updateModelWithoutFileNode(data);
 
@@ -179,7 +178,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   void shouldUpdateStatusAndApplyCurrentFiltering() {
     Map<VirtualFile, Collection<LiveSecurityHotspot>> data = new HashMap<>();
 
-    var file = addFileWithStatusAndFindingKeyForHotspot(data, "file1", 1, HotspotReviewStatus.TO_REVIEW, "keyA");
+    var file = addFileWithStatusAndFindingKeyForHotspot(data, "file1", 1, HotspotStatus.TO_REVIEW, "keyA");
     var hotspot = data.get(file).stream().findFirst();
     if (hotspot.isEmpty()) {
       Assertions.fail();
@@ -196,7 +195,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   void shouldFindHotspotByKey() {
     Map<VirtualFile, Collection<LiveSecurityHotspot>> data = new HashMap<>();
 
-    var file = addFileWithStatusAndFindingKeyForHotspot(data, "file1", 1, HotspotReviewStatus.SAFE, "keyA");
+    var file = addFileWithStatusAndFindingKeyForHotspot(data, "file1", 1, HotspotStatus.SAFE, "keyA");
     var hotspot = data.get(file).stream().findFirst();
     if (hotspot.isEmpty()) {
       Assertions.fail();
@@ -218,11 +217,11 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   }
 
   private void addFile(Map<VirtualFile, Collection<LiveSecurityHotspot>> data, String fileName, int numSecurityHotspots) {
-    addFileWithStatusAndFindingKeyForHotspot(data, fileName, numSecurityHotspots, HotspotReviewStatus.TO_REVIEW, null);
+    addFileWithStatusAndFindingKeyForHotspot(data, fileName, numSecurityHotspots, HotspotStatus.TO_REVIEW, null);
   }
 
   private VirtualFile addFileWithStatusAndFindingKeyForHotspot(Map<VirtualFile, Collection<LiveSecurityHotspot>> data, String fileName, int numSecurityHotspots,
-    HotspotReviewStatus status, @Nullable String serverFindingKey) {
+    HotspotStatus status, @Nullable String serverFindingKey) {
     var file = mock(VirtualFile.class);
     when(file.getName()).thenReturn(fileName);
     when(file.getPath()).thenReturn("path_" + fileName);
@@ -245,7 +244,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
   }
 
   private LiveSecurityHotspot mockSecurityHotspot(String path, int startOffset, String rule,
-    VulnerabilityProbability vulnerability, @Nullable Instant introductionDate, HotspotReviewStatus status, @Nullable String serverFindingKey) {
+    VulnerabilityProbability vulnerability, @Nullable Instant introductionDate, HotspotStatus status, @Nullable String serverFindingKey) {
 
     var virtualFile = mock(VirtualFile.class);
     when(virtualFile.getPath()).thenReturn(path);
@@ -274,12 +273,12 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
 
   private LiveSecurityHotspot mockSecurityHotspot(String path, int startOffset, String rule,
     VulnerabilityProbability vulnerability, @Nullable Instant introductionDate) {
-    return mockSecurityHotspot(path, startOffset, rule, vulnerability, introductionDate, HotspotReviewStatus.TO_REVIEW, null);
+    return mockSecurityHotspot(path, startOffset, rule, vulnerability, introductionDate, HotspotStatus.TO_REVIEW, null);
   }
 
   private LiveSecurityHotspotNode mockSecurityHotspotNode(String path, int startOffset, String rule,
     VulnerabilityProbability vulnerability) {
-    var securityHotspot = mockSecurityHotspot(path, startOffset, rule, vulnerability, null, HotspotReviewStatus.TO_REVIEW, null);
+    var securityHotspot = mockSecurityHotspot(path, startOffset, rule, vulnerability, null, HotspotStatus.TO_REVIEW, null);
     return new LiveSecurityHotspotNode(securityHotspot, false);
   }
 
