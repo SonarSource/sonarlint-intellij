@@ -104,6 +104,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMa
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
 import org.sonarlint.intellij.notifications.OpenLinkAction
+import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
@@ -973,6 +974,21 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
 
         throw ConfigScopeNotFoundException()
+    }
+
+    override fun invalidToken(connectionId: String) {
+        val globalSettings = getGlobalSettings()
+        ProjectManager.getInstance().openProjects.forEach { project ->
+            if (project.isDisposed) return@forEach
+            globalSettings.getServerConnectionByName(connectionId).ifPresent {
+                get(project).simpleNotification(
+                    null,
+                    "The token used for connection '${it.name}' is invalid, please update your credentials",
+                    NotificationType.ERROR,
+                    OpenProjectSettingsAction(project)
+                )
+            }
+        }
     }
 
 }

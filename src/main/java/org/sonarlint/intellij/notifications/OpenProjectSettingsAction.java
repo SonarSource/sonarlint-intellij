@@ -22,13 +22,13 @@ package org.sonarlint.intellij.notifications;
 import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 
-class OpenProjectSettingsAction extends OpenConfigurableAction {
+public class OpenProjectSettingsAction extends OpenConfigurableAction {
 
-  OpenProjectSettingsAction(Project project) {
+  public OpenProjectSettingsAction(Project project) {
     this(project, "Open SonarQube for IDE Project Configuration");
   }
 
-  OpenProjectSettingsAction(Project project, String text) {
+  public OpenProjectSettingsAction(Project project, String text) {
     super(project, text, new SonarLintProjectConfigurable(project));
   }
 
