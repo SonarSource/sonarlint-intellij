@@ -93,7 +93,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     var statusText = issuesPanel.getEmptyText();
     statusText.setText("No analysis done");
     issuesPanel.add(treeScrollPane, BorderLayout.CENTER);
-    disableEmptyDisplay(false);
+    disableEmptyDisplay();
 
     var mainPanel = new JBPanel<CurrentFilePanel>(new BorderLayout());
     mainPanel.add(issuesPanel);
@@ -111,6 +111,11 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     treeBuilder.allowResolvedIssues(allowResolved);
     oldTreeBuilder.allowResolvedIssues(allowResolved);
     refreshModel();
+    runOnUiThread(project, () -> handleDisplayStatus(!currentIssues.isEmpty(), isDisplayingIssues()));
+  }
+
+  public boolean isDisplayingIssues() {
+    return treeBuilder.getCountOfDisplayedIssues() > 0 || oldTreeBuilder.getCountOfDisplayedIssues() > 0;
   }
 
   @Override
@@ -137,14 +142,14 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       statusText.setText(SONARLINT_ERROR_MSG);
       statusText.appendLine("Restart SonarQube for IDE Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
         ignore -> ActionUtil.invokeAction(restartSonarLintAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
-      disableEmptyDisplay(false);
+      enableEmptyDisplay();
       populateSubTree(tree, treeBuilder, Map.of());
       populateSubTree(oldTree, oldTreeBuilder, Map.of());
       return;
     }
     if (file == null) {
       statusText.setText("No file opened in the editor");
-      disableEmptyDisplay(false);
+      enableEmptyDisplay();
       populateSubTree(tree, treeBuilder, Map.of());
       populateSubTree(oldTree, oldTreeBuilder, Map.of());
       return;
@@ -166,7 +171,6 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     } else {
       statusText.setText("No issues to display");
     }
-    disableEmptyDisplay(!issues.isEmpty());
 
     this.currentFile = file;
     this.currentIssues = List.copyOf(issues);
@@ -185,6 +189,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       updateIcon(file, this.currentIssues);
       getService(project, EditorDecorator.class).createGutterIconForIssues(this.currentFile, this.currentIssues);
     }
+    handleDisplayStatus(!currentIssues.isEmpty(), isDisplayingIssues());
     expandTree();
   }
 
@@ -232,8 +237,25 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     TreeUtil.expandAll(tree);
   }
 
-  private void disableEmptyDisplay(boolean state) {
-    treeScrollPane.setVisible(state);
+  private void handleDisplayStatus(boolean hasIssues, boolean hasFilteredIssues) {
+    var emptyText = issuesPanel.getEmptyText();
+    if (!hasIssues && !hasFilteredIssues) {
+      emptyText.setText("No issues to display");
+      enableEmptyDisplay();
+    } else if (hasIssues && !hasFilteredIssues) {
+      emptyText.setText("No issues to display due to the current filtering");
+      enableEmptyDisplay();
+    } else {
+      disableEmptyDisplay();
+    }
+  }
+
+  private void disableEmptyDisplay() {
+    treeScrollPane.setVisible(true);
+  }
+
+  private void enableEmptyDisplay() {
+    treeScrollPane.setVisible(false);
   }
 
   @Nullable
