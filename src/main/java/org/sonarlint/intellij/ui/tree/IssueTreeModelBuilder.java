@@ -73,10 +73,12 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private boolean includeLocallyResolvedIssues = false;
   private Map<VirtualFile, Collection<LiveIssue>> latestIssues;
   private TreeSummary treeSummary;
+  private int issueCount;
 
   public IssueTreeModelBuilder(Project project) {
     this.project = project;
     this.index = new FindingTreeIndex();
+    this.issueCount = 0;
   }
 
   /**
@@ -111,16 +113,16 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     toRemove.forEach(this::removeFile);
 
     var fileWithIssuesCount = 0;
-    var issuesCount = 0;
+    issueCount = 0;
     for (var e : map.entrySet()) {
       var fileIssuesCount = setFileIssues(e.getKey(), e.getValue());
       if (fileIssuesCount > 0) {
-        issuesCount += fileIssuesCount;
+        issueCount += fileIssuesCount;
         fileWithIssuesCount++;
       }
     }
 
-    treeSummary.refresh(fileWithIssuesCount, issuesCount);
+    treeSummary.refresh(fileWithIssuesCount, issueCount);
     model.nodeChanged(summaryNode);
   }
 
@@ -128,6 +130,10 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     if (includeLocallyResolvedIssues != allowResolved) {
       includeLocallyResolvedIssues = allowResolved;
     }
+  }
+
+  public int getCountOfDisplayedIssues() {
+    return issueCount;
   }
 
   public void refreshModel(Project project) {
