@@ -60,6 +60,7 @@ class GitRepoProvider : VcsRepoProvider {
     }
 
     private fun findRepoFor(repositoryManager: GitRepositoryManager, module: Module): Set<GitRepository> {
+        if (module.isDisposed) { return setOf() }
         return ModuleRootManager.getInstance(module)
             .contentRoots
             .mapNotNull { root -> repositoryManager.getRepositoryForFile(root) }
