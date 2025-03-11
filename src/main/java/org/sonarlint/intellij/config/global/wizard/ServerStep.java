@@ -95,6 +95,8 @@ public class ServerStep extends AbstractWizardStepEx {
 
     nameField.setToolTipText("Name of this configuration (mandatory field)");
 
+    sonarCloudUrl.setText("<html><b>Choose your region</b></html>");
+
     var sqMainText = "An <b>open-source, self-managed</b> tool that easily integrates into the developers' " +
       "CI/CD pipeline and DevOps platform to systematically help developers and organizations deliver Clean Code.";
     sonarQubeDescription.setText(sqMainText);
@@ -187,6 +189,7 @@ public class ServerStep extends AbstractWizardStepEx {
   private void selectionChanged() {
     boolean sq = radioSonarQube.isSelected();
 
+    sonarCloudUrl.setEnabled(!sq);
     radioEU.setEnabled(!sq);
     radioUS.setEnabled(!sq);
 
