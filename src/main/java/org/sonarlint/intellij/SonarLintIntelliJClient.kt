@@ -588,24 +588,20 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun didChangeAnalysisReadiness(configurationScopeIds: Set<String>, areReadyForAnalysis: Boolean) {
         GlobalLogOutput.get().log("Analysis became ready=$areReadyForAnalysis for $configurationScopeIds", ClientLogOutput.Level.DEBUG)
-        configurationScopeIds.associateBy(
-            { BackendService.findModule(it)?.project ?: findProject(it) },
-            { BackendService.findModule(it) }
-        )
-            .forEach { (project, module) ->
+        configurationScopeIds
+            .map { BackendService.findModule(it)?.project ?: findProject(it) }
+            .distinct()
+            .forEach { project ->
                 if (project == null || project.isDisposed) return@forEach
                 getService(project, AnalysisReadinessCache::class.java).isReady = areReadyForAnalysis
                 if (areReadyForAnalysis) {
                     runOnPooledThread(project) {
+                        runOnUiThread(project) { getService(project, SonarLintToolWindow::class.java).setAnalysisReadyCurrentFile() }
                         val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
                         if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
                             getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
                         }
-
-                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFilesForModule(
-                            TriggerType.BINDING_UPDATE,
-                            module
-                        )
+                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles(TriggerType.BINDING_UPDATE)
                     }
                 }
             }
@@ -877,10 +873,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } ?: return
         getService(project, SonarLintToolWindow::class.java).updateTaintVulnerabilities(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
     }
-
-    private fun findProjects(projectKey: String?) = ProjectManager.getInstance().openProjects.filter { project ->
-        projectKey in getService(project, ProjectBindingManager::class.java).uniqueProjectKeys
-    }.toSet()
 
     override fun raiseIssues(
         configurationScopeId: String,

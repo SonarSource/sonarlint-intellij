@@ -51,7 +51,7 @@ public class LiveSecurityHotspot extends LiveFinding {
     this.status = mapStatus(hotspot.getStatus());
   }
 
-  private static HotspotStatus mapStatus(@Nullable org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus status) {
+  private static HotspotStatus mapStatus(@Nullable HotspotStatus status) {
     if (status == null) {
       return HotspotStatus.TO_REVIEW;
     }

@@ -246,6 +246,10 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
+  public void setAnalysisReadyCurrentFile() {
+    this.updateTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE, CurrentFilePanel::setAnalysisIsReady);
+  }
+
   private void openTab(String name) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();

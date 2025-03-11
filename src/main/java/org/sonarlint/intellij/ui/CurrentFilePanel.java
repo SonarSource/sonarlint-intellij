@@ -90,8 +90,6 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     treeScrollPane = ScrollPaneFactory.createScrollPane(treePanel, true);
 
     issuesPanel = new JBPanelWithEmptyText(new BorderLayout());
-    var statusText = issuesPanel.getEmptyText();
-    statusText.setText("No analysis done");
     issuesPanel.add(treeScrollPane, BorderLayout.CENTER);
     disableEmptyDisplay();
 
@@ -102,6 +100,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     findingDetailsPanel.setMinimumSize(new Dimension(350, 200));
     var splitter = createSplitter(project, this, this, mainPanel, findingDetailsPanel, SPLIT_PROPORTION_PROPERTY, 0.5f);
 
+    handleDisplayStatus();
+
     super.setContent(splitter);
     project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       (StatusListener) newStatus -> runOnUiThread(project, this::refreshToolbar));
@@ -111,7 +111,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     treeBuilder.allowResolvedIssues(allowResolved);
     oldTreeBuilder.allowResolvedIssues(allowResolved);
     refreshModel();
-    runOnUiThread(project, () -> handleDisplayStatus(!currentIssues.isEmpty(), isDisplayingIssues()));
+    runOnUiThread(project, this::handleDisplayStatus);
   }
 
   public boolean isDisplayingIssues() {
@@ -134,8 +134,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   }
 
   public void update(@Nullable VirtualFile file, @Nullable Collection<LiveIssue> issues) {
-    currentFile = null;
-    currentIssues = null;
+    this.currentFile = file;
     var statusText = issuesPanel.getEmptyText();
     var backendIsAlive = getService(BackendService.class).isAlive();
     if (!backendIsAlive) {
@@ -154,42 +153,34 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       populateSubTree(oldTree, oldTreeBuilder, Map.of());
       return;
     }
-    if (issues == null) {
-      var templateText = analyzeCurrentFileAction.getTemplateText();
 
-      if (getService(project, AnalysisReadinessCache.class).isReady()) {
-        statusText.setText("No analysis done on the current opened file");
-        if (templateText != null) {
-          statusText.appendLine(templateText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-            ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
-        }
-      } else {
-        statusText.setText("Waiting for SonarQube for IDE to be ready");
-      }
-
-      issues = Collections.emptyList();
+    Collection<LiveIssue> issuesToProceed;
+    if (issues != null) {
+      this.currentIssues = List.copyOf(issues);
+      issuesToProceed = this.currentIssues;
     } else {
-      statusText.setText("No issues to display");
+      // currentIssues should not be replaced by an empty list
+      // Otherwise it fakes the behavior, as when a refresh is made, behavior is different if it's null or empty
+      this.currentIssues = null;
+      issuesToProceed = Collections.emptyList();
     }
 
-    this.currentFile = file;
-    this.currentIssues = List.copyOf(issues);
     if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)) {
-      var oldIssues = this.currentIssues.stream().filter(not(LiveFinding::isOnNewCode)).toList();
-      var newIssues = this.currentIssues.stream().filter(LiveFinding::isOnNewCode).toList();
+      var oldIssues = issuesToProceed.stream().filter(not(LiveFinding::isOnNewCode)).toList();
+      var newIssues = issuesToProceed.stream().filter(LiveFinding::isOnNewCode).toList();
       populateSubTree(tree, treeBuilder, Map.of(file, newIssues));
       populateSubTree(oldTree, oldTreeBuilder, Map.of(file, oldIssues));
       oldTree.setVisible(true);
       updateIcon(file, newIssues);
       getService(project, EditorDecorator.class).createGutterIconForIssues(this.currentFile, newIssues);
     } else {
-      populateSubTree(tree, treeBuilder, Map.of(file, this.currentIssues));
+      populateSubTree(tree, treeBuilder, Map.of(file, issuesToProceed));
       populateSubTree(oldTree, oldTreeBuilder, Collections.emptyMap());
       oldTree.setVisible(false);
-      updateIcon(file, this.currentIssues);
-      getService(project, EditorDecorator.class).createGutterIconForIssues(this.currentFile, this.currentIssues);
+      updateIcon(file, issuesToProceed);
+      getService(project, EditorDecorator.class).createGutterIconForIssues(this.currentFile, issuesToProceed);
     }
-    handleDisplayStatus(!currentIssues.isEmpty(), isDisplayingIssues());
+    handleDisplayStatus();
     expandTree();
   }
 
@@ -237,8 +228,20 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     TreeUtil.expandAll(tree);
   }
 
-  private void handleDisplayStatus(boolean hasIssues, boolean hasFilteredIssues) {
+  private void handleDisplayStatus() {
     var emptyText = issuesPanel.getEmptyText();
+    if (currentIssues == null) {
+      if (getService(project, AnalysisReadinessCache.class).isReady()) {
+        setAnalysisIsReady();
+      } else {
+        emptyText.setText("Waiting for SonarQube for IDE to be ready");
+      }
+      enableEmptyDisplay();
+      return;
+    }
+
+    var hasIssues = !currentIssues.isEmpty();
+    var hasFilteredIssues = isDisplayingIssues();
     if (!hasIssues && !hasFilteredIssues) {
       emptyText.setText("No issues to display");
       enableEmptyDisplay();
@@ -281,5 +284,15 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
 
   public void refreshView() {
     runOnUiThread(project, () -> update(currentFile, currentIssues));
+  }
+
+  public void setAnalysisIsReady() {
+    var emptyText = issuesPanel.getEmptyText();
+    var templateText = analyzeCurrentFileAction.getTemplateText();
+    emptyText.setText("No analysis done on the current opened file");
+    if (templateText != null) {
+      emptyText.appendLine(templateText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
+        ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+    }
   }
 }
