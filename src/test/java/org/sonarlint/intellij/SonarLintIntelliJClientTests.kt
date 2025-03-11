@@ -19,15 +19,22 @@
  */
 package org.sonarlint.intellij
 
+import com.intellij.openapi.project.guessModuleDir
+import com.intellij.openapi.project.guessProjectDir
 import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.BackendService
+import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
+import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 
 class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
@@ -194,6 +201,91 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
             tuple(
                 "",
                 "Some message"
+            )
+        )
+    }
+
+    @Test
+    fun should_notify_unsatisfied_jre() {
+        client.didSkipLoadingPlugin(projectBackendId, Language.JAVA, DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_JRE, "1.0", "0.2")
+
+        assertThat(projectNotifications).extracting("title", "content").containsExactly(
+            tuple(
+                "<b>SonarQube for IDE failed to analyze Java code</b>",
+                "SonarQube for IDE requires Java runtime version 1.0 or later to analyze Java code. Current version is 0.2."
+            )
+        )
+    }
+
+    @Test
+    fun should_notify_unsatisfied_node_js() {
+        client.didSkipLoadingPlugin(projectBackendId, Language.JS, DidSkipLoadingPluginParams.SkipReason.UNSATISFIED_NODE_JS, "1.0", "0.2")
+
+        assertThat(projectNotifications).extracting("title", "content").containsExactly(
+            tuple(
+                "<b>SonarQube for IDE failed to analyze JavaScript code</b>",
+                "SonarQube for IDE requires Node.js runtime version 1.0 or later to analyze JavaScript code. " +
+                    "Current version is 0.2.<br>Please configure the Node.js path in the SonarQube for IDE settings."
+            )
+        )
+    }
+
+    @Test
+    fun should_notify_detected_secret() {
+        client.didDetectSecret(projectBackendId)
+
+        assertThat(projectNotifications).extracting("title", "content").containsExactly(
+            tuple(
+                "SonarQube for IDE: secret(s) detected",
+                "SonarQube for IDE detected some secrets in one of the open files. " +
+                    "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +
+                    "Please refer to the SonarQube for IDE tool window for more information."
+            )
+        )
+    }
+
+    @Test
+    fun should_promote_extra_languages() {
+        client.promoteExtraEnabledLanguagesInConnectedMode(projectBackendId, setOf(Language.ANSIBLE, Language.SCALA))
+
+        assertThat(projectNotifications).extracting("title", "content").containsExactly(
+            tuple(
+                "<b>SonarQube for IDE suggestions</b>",
+                "Enable Ansible / Scala analysis by connecting your project"
+            )
+        )
+    }
+
+    @Test
+    fun should_find_project_basedir() {
+        val expectedBaseDir = Paths.get(project.guessProjectDir()!!.path)
+        val baseDir = client.getBaseDir(projectBackendId)
+
+        assertThat(baseDir).isEqualTo(expectedBaseDir)
+    }
+
+    @Test
+    fun should_find_module_basedir() {
+        val expectedBaseDir = Paths.get(module.guessModuleDir()!!.path)
+        val baseDir = client.getBaseDir(BackendService.moduleId(module))
+
+        assertThat(baseDir).isEqualTo(expectedBaseDir)
+    }
+
+    @Test
+    fun should_not_find_unknown_config_scope_basedir() {
+        Assertions.assertThrows(ConfigScopeNotFoundException::class.java) { client.getBaseDir("unknownId") }
+    }
+
+    @Test
+    fun it_should_send_invalid_token_notification() {
+        globalSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("connectionId").build())
+        client.invalidToken("connectionId")
+
+        assertThat(projectNotifications).extracting("title", "content").containsExactly(
+            tuple(
+                "",
+                "The token used for connection 'connectionId' is invalid, please update your credentials"
             )
         )
     }
