@@ -131,6 +131,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.JsTsRequir
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.LanguageSpecificRequirements
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.OmnisharpRequirementsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SonarCloudAlternativeEnvironmentDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SonarQubeCloudRegionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SslConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.TelemetryClientConstantAttributesDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.AddIssueCommentParams
@@ -424,13 +425,23 @@ class BackendService : Disposable {
     }
 
     private fun getSonarCloudAlternativeEnvironment(): SonarCloudAlternativeEnvironmentDto? {
+        val alternateRegions = mutableMapOf<SonarCloudRegion, SonarQubeCloudRegionDto>()
+
         val sonarCloudUrl = System.getProperty("sonarlint.internal.sonarcloud.url")
         val sonarCloudApiUrl = System.getProperty("sonarlint.internal.sonarcloud.api.url")
         val sonarCloudWebSocketUrl = System.getProperty("sonarlint.internal.sonarcloud.websocket.url")
         if (sonarCloudUrl != null && sonarCloudApiUrl != null && sonarCloudWebSocketUrl != null) {
-            return SonarCloudAlternativeEnvironmentDto(URI.create(sonarCloudUrl), URI.create(sonarCloudApiUrl), URI.create(sonarCloudWebSocketUrl))
+            alternateRegions[SonarCloudRegion.EU] = SonarQubeCloudRegionDto(URI.create(sonarCloudUrl), URI.create(sonarCloudApiUrl), URI.create(sonarCloudWebSocketUrl))
         }
-        return null
+
+        val sonarCloudUsUrl = System.getProperty("sonarlint.internal.sonarcloud.us.url")
+        val sonarCloudUsApiUrl = System.getProperty("sonarlint.internal.sonarcloud.us.api.url")
+        val sonarCloudUsWebSocketUrl = System.getProperty("sonarlint.internal.sonarcloud.us.websocket.url")
+        if (sonarCloudUsUrl != null && sonarCloudUsApiUrl != null && sonarCloudUsWebSocketUrl != null) {
+            alternateRegions[SonarCloudRegion.US] = SonarQubeCloudRegionDto(URI.create(sonarCloudUsUrl), URI.create(sonarCloudUsApiUrl), URI.create(sonarCloudUsWebSocketUrl))
+        }
+
+        return if (alternateRegions.isEmpty()) null else SonarCloudAlternativeEnvironmentDto(alternateRegions)
     }
 
     private fun getPathProperty(propertyName: String): Path? {

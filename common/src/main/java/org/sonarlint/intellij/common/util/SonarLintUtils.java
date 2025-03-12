@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
@@ -45,9 +44,8 @@ public class SonarLintUtils {
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
   public static final String DEFAULT_SONARCLOUD_URL = "https://sonarcloud.io";
   public static final String DEFAULT_SONARCLOUD_US_URL = "https://sonarqube.us";
-  public static final String US_SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.url", DEFAULT_SONARCLOUD_US_URL);
   public static final String SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.url", DEFAULT_SONARCLOUD_URL);
-  public static final String SONARSOURCE_DOGFOODING_ENV_VAR_KEY = "SONARSOURCE_DOGFOODING";
+  public static final String US_SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.us.url", DEFAULT_SONARCLOUD_US_URL);
   private static final Set<String> SONARCLOUD_ALIAS = Set.copyOf(List.of("https://sonarqube.com", "https://www.sonarqube.com",
     "https://www.sonarcloud.io", DEFAULT_SONARCLOUD_URL, SONARCLOUD_URL, DEFAULT_SONARCLOUD_US_URL, US_SONARCLOUD_URL));
 
