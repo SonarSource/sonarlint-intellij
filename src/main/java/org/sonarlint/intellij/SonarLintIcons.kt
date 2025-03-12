@@ -86,7 +86,7 @@ object SonarLintIcons {
     @JvmField
     val CODEFIX_PRESENTATION = getIcon("/images/codefix/presentation.svg")
     @JvmField
-    val SPARKLE_GUTTER_ICON = getIcon("/images/codefix/sparkle_gutter_14.svg")
+    val SPARKLE_GUTTER_ICON = getIcon("/images/codefix/sparkle.svg")
     @JvmField
     val WALKTHROUGH_LEARN_AS_YOU_CODE = getIcon("/images/walkthrough/learn.png")
     @JvmField
