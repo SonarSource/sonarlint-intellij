@@ -13,7 +13,7 @@ env:
   RIDER_HOME: "/opt/rider"
   RESHARPER_HOME: "/opt/resharper"
   CLION_HOME: "/opt/clion"
-  #ULTIMATE_HOME: "/opt/ultimate"
+  ULTIMATE_HOME: "/opt/ultimate"
 
 auto_cancellation: $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
 
@@ -153,7 +153,7 @@ validate_windows_task:
     RIDER_HOME: "/C/Program Files/rider"
     RESHARPER_HOME: "/C/Program Files/resharper"
     CLION_HOME: "/C/Program Files/clion"
-    #ULTIMATE_HOME: "C/Program Files/ultimate"
+    ULTIMATE_HOME: "C/Program Files/ultimate"
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
