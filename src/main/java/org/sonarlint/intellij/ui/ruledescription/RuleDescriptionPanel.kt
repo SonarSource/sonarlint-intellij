@@ -65,7 +65,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
         sectionsTabs.insertTab("Description", null, createNonContextualTab(monolithDescription.htmlContent, fileType), null, 0)
-        codeFixTab = CodeFixTabPanel(project, file, issueId, parent)
+        codeFixTab = CodeFixTabPanel(project, file, issueId)
         sectionsTabs.insertTab(AI_CODEFIX_TITLE, SonarLintIcons.SPARKLE_GUTTER_ICON, codeFixTab, null, 1)
 
         add(sectionsTabs, BorderLayout.CENTER)
@@ -80,7 +80,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     fun addSectionsWithCodeFix(withSections: RuleSplitDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
         addSections(withSections, fileType)
         sectionsTabs?.let {
-            codeFixTab = CodeFixTabPanel(project, file, issueId, parent)
+            codeFixTab = CodeFixTabPanel(project, file, issueId)
             it.insertTab(AI_CODEFIX_TITLE, SonarLintIcons.SPARKLE_GUTTER_ICON, codeFixTab, null, withSections.tabs.size)
         }
     }

@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui.codefix
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -71,14 +70,14 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 
 private const val CODEFIX_GENERATION = "CODEFIX_GENERATION"
+private const val CODEFIX_LOADING = "CODEFIX_LOADING"
 private const val CODEFIX_PRESENTATION = "CODEFIX_PRESENTATION"
 private const val CODEFIX_ERROR = "CODEFIX_ERROR"
 
 class CodeFixTabPanel(
     private val project: Project,
     private val file: VirtualFile,
-    private val issueId: UUID,
-    private val disposableParent: Disposable
+    private val issueId: UUID
 ) : JBPanel<CodeFixTabPanel>() {
 
     private lateinit var codefixPresentationPanel: JBPanel<CodeFixTabPanel>
@@ -90,6 +89,7 @@ class CodeFixTabPanel(
         layout = cardLayout
 
         add(initGenerationCard(), CODEFIX_GENERATION)
+        add(initLoadingCard(), CODEFIX_LOADING)
         add(initGeneratedCard(), CODEFIX_PRESENTATION)
         add(initErrorCard(), CODEFIX_ERROR)
 
@@ -160,6 +160,28 @@ class CodeFixTabPanel(
         return initScrollPane(mainPanel)
     }
 
+    private fun initLoadingCard(): JScrollPane {
+        val description = JBLabel("A fix is being generated…").apply {
+            font = JBFont.label().asBold()
+            alignmentX = Component.CENTER_ALIGNMENT
+        }
+
+        val loadingIcon = JBLabel(SonarLintIcons.loadingCodeFixIcon()).apply {
+            alignmentX = Component.CENTER_ALIGNMENT
+        }
+
+        val mainPanel = JBPanel<CodeFixTabPanel>().apply {
+            add(Box.createVerticalGlue())
+            add(loadingIcon)
+            add(Box.createVerticalStrut(20))
+            add(description)
+            add(Box.createVerticalGlue())
+        }
+        mainPanel.layout = BoxLayout(mainPanel, BoxLayout.Y_AXIS)
+
+        return initScrollPane(mainPanel)
+    }
+
     private fun initGeneratedCard(): JScrollPane {
         codefixPresentationPanel = JBPanel<CodeFixTabPanel>(VerticalFlowLayout(0, 0))
         return initScrollPane(codefixPresentationPanel)
@@ -183,21 +205,15 @@ class CodeFixTabPanel(
         return initScrollPane(panel)
     }
 
-    private fun displayLoading() {
-        switchCard(CODEFIX_GENERATION)
-        presentationImage.icon = SonarLintIcons.loadingCodeFixIcon()
-    }
-
     private fun switchCard(cardName: String) {
         runOnUiThread(project) { cardLayout.show(this, cardName) }
     }
 
     fun loadSuggestion() {
-        displayLoading()
+        switchCard(CODEFIX_LOADING)
         val module = findModuleForFile(file, project) ?: run {
-            runOnUiThread(project, ModalityState.stateForComponent(this)) {
-                presentationImage.icon = SonarLintIcons.CODEFIX_PRESENTATION
-            }
+            handleErrorMessage(null)
+            switchCard(CODEFIX_ERROR)
             return
         }
         getService(BackendService::class.java).suggestAiCodeFixSuggestion(module, issueId)
@@ -212,7 +228,11 @@ class CodeFixTabPanel(
             }
     }
 
-    private fun handleErrorMessage(error: Throwable) {
+    private fun handleErrorMessage(error: Throwable?) {
+        if (error == null) {
+            errorLabel.text = "An unexpected error happened during the generation, check the logs for more details"
+            return
+        }
         when (val cause = error.cause) {
             is ResponseErrorException -> {
                 when (cause.responseError.code) {
