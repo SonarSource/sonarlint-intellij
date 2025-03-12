@@ -57,6 +57,16 @@ RUN curl -L -o clion.zip https://cache-redirector.jetbrains.com/www.jetbrains.co
     rm clion.zip && \
     ls /opt/clion
 
+# Download and extract Ultimate sources
+RUN curl -L -o ultimate.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIU/2022.3.1/ideaIU-2022.3.1.zip && \
+    mkdir -p /opt/ultimate && \
+    curl -L -o /opt/ultimate/ideaIU-2022.3.1.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIU/2022.3.1/ideaIU-2022.3.1.pom && \
+    unzip ultimate.zip -d /opt/ultimate && \
+    chown sonarsource: /opt/ultimate && \
+    chmod -R 755 /opt/ultimate && \
+    rm ultimate.zip && \
+    ls /opt/ultimate
+
 COPY --chmod=755 .cirrus/xvfb /etc/init.d/
 
 USER sonarsource
