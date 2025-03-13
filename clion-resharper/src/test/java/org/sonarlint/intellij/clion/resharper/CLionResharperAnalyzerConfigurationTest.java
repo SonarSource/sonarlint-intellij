@@ -20,12 +20,12 @@
 package org.sonarlint.intellij.clion.resharper;
 
 import com.intellij.openapi.vfs.VirtualFile;
+import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.workspace.compiler.AppleClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangClCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
-import com.jetbrains.rider.cpp.fileType.CppLanguage;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -33,6 +33,7 @@ import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -41,7 +42,10 @@ class CLionResharperAnalyzerConfigurationTest {
 
   @Test
   void get_sonar_language() {
-    assertEquals(ForcedLanguage.CPP, CLionResharperAnalyzerConfiguration.getSonarLanguage(CppLanguage.INSTANCE));
+    assertEquals(ForcedLanguage.CPP, CLionResharperAnalyzerConfiguration.getSonarLanguage(CLanguageKind.CPP));
+    assertEquals(ForcedLanguage.C, CLionResharperAnalyzerConfiguration.getSonarLanguage(CLanguageKind.C));
+    assertEquals(ForcedLanguage.OBJC, CLionResharperAnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_C));
+    assertNull(CLionResharperAnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_CPP));
   }
 
   @Test
