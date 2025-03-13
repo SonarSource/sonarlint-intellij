@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
+import com.intellij.remoterobot.steps.CommonSteps
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
@@ -101,6 +102,8 @@ open class BaseUiTest {
                 it.close()
             }
         }
+
+        private val steps = CommonSteps(remoteRobot)
     }
 
 
