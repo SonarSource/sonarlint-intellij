@@ -103,10 +103,12 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
       properties.put("isHeaderFile", "true");
     }
 
-    if (isRemoteOrWslToolchainSupported() && usingRemoteOrWslToolchain(configuration)) {
-      collectPropertiesForRemoteToolchain(compilerSettings, properties);
-    } else if (compilerKind instanceof MSVCCompilerKind) {
+    if (compilerKind instanceof MSVCCompilerKind) {
       collectMSVCProperties(compilerSettings, properties);
+    } else if (hasCMakeWorkspaceClass() && usingRemoteOrWslToolchainWithCMakeWorkspace(configuration)) {
+      collectPropertiesForRemoteToolchain(compilerSettings, properties);
+    } else if (usingRemoteOrWslToolchain()) {
+      collectPropertiesForRemoteToolchain(compilerSettings, properties);
     }
 
     var sonarLanguage = getSonarLanguage(languageKind);
@@ -130,7 +132,19 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     }
   }
 
-  private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
+  private boolean usingRemoteOrWslToolchain() {
+    final var initializedWorkspaces = CidrWorkspace.getInitializedWorkspaces(project);
+    for (var initializedWorkspace : initializedWorkspaces) {
+      var cppEnvironment = tryReflection(initializedWorkspace, project);
+      if (cppEnvironment != null) {
+        return cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker();
+      }
+    }
+    SonarLintConsole.get(project).debug("Not using remote or WSL toolchain");
+    return false;
+  }
+
+  private boolean usingRemoteOrWslToolchainWithCMakeWorkspace(OCResolveConfiguration configuration) {
     final var initializedWorkspaces = CidrWorkspace.getInitializedWorkspaces(project);
     for (var initializedWorkspace : initializedWorkspaces) {
       if (initializedWorkspace instanceof CMakeWorkspace) {
@@ -149,12 +163,12 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     return false;
   }
 
-  private boolean isRemoteOrWslToolchainSupported() {
+  private boolean hasCMakeWorkspaceClass() {
     try {
       Class.forName("com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace");
       return true;
     } catch (ClassNotFoundException | NoClassDefFoundError e) {
-      SonarLintConsole.get(project).debug("Could not support remote or WSL toolchain");
+      SonarLintConsole.get(project).debug("CMakeWorkspace class not found");
       return false;
     }
   }
