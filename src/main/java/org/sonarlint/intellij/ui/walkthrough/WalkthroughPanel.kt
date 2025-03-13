@@ -228,7 +228,7 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
             "Reach out to us",
             text = """
                 Are you having problems with SonarQube for IDE? Open the <a href="${WalkthroughActions.LOG_VIEW.id}">log tab</a> 
-                and enable the <a href="${WalkthroughActions.TROUBLESHOOTING_LINK.id}">Analysis logs and Verbose output</a>.<br> 
+                and enable the <a href="${WalkthroughActions.TROUBLESHOOTING_LINK.id}">Analysis logs and Verbose output</a>.<br><br>
                 Share your verbose logs with us in a post on the <a href="${WalkthroughActions.COMMUNITY_FORUM.id}">Community</a> forum.
                 We are happy to help you debug!<br><br>
             """.trimIndent(),
