@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.clion.resharper;
 
 import com.intellij.execution.ExecutionException;
-import com.intellij.lang.Language;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -29,13 +28,15 @@ import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCFileTypeHelpers;
+import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
+import com.jetbrains.cidr.lang.workspace.OCLanguageKindCalculatorBase;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
-import com.jetbrains.rider.cpp.fileType.CppLanguage;
 import com.jetbrains.rider.cpp.fileType.psi.CppFile;
 import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.clion.common.AnalyzerConfiguration;
@@ -45,6 +46,11 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
+
+  private static final Map<OCLanguageKind, ForcedLanguage> SUPPORTED_LANGUAGES = Map.of(
+    CLanguageKind.C, ForcedLanguage.C,
+    CLanguageKind.CPP, ForcedLanguage.CPP,
+    CLanguageKind.OBJ_C, ForcedLanguage.OBJC);
   private final Project project;
 
   public CLionResharperAnalyzerConfiguration(@NotNull Project project) {
@@ -68,10 +74,14 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
       return new ConfigurationResult(cppFile + " not in project sources");
     }
     var configuration = getConfiguration(project, file);
-    var cLanguageKind = getLanguageKind(cppFile.getLanguage());
-    if (cLanguageKind == null) {
-      return ConfigurationResult.skip("not from a C language");
+
+    // get the language kind of the file
+    // do not use psiFile.getLanguage() because it always returns C++ in resharper nova mode
+    var cLanguageKind = OCLanguageKindCalculatorBase.tryPsiFile(psiFile);
+    if (!SUPPORTED_LANGUAGES.containsKey(cLanguageKind)) {
+      return ConfigurationResult.skip("language not supported: " + cLanguageKind.getDisplayName());
     }
+
     if (configuration == null) {
       return ConfigurationResult.skip("configuration not found");
     }
@@ -96,7 +106,7 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
       collectMSVCProperties(compilerSettings, properties);
     }
 
-    var sonarLanguage = getSonarLanguage(cppFile.getLanguage());
+    var sonarLanguage = getSonarLanguage(cLanguageKind);
     if (sonarLanguage != null) {
       properties.put("sonarLanguage", LANGUAGE_KEYS.get(sonarLanguage));
     }
@@ -105,29 +115,8 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
   }
 
   @Nullable
-  static CLanguageKind getLanguageKind(Language language) {
-    if (language.getDisplayName().equals(CLanguageKind.C.getDisplayName())) {
-      return CLanguageKind.C;
-    } else if (language.equals(CppLanguage.INSTANCE)) {
-      return CLanguageKind.CPP;
-    } else if (language.getDisplayName().equals(CLanguageKind.OBJ_C.getDisplayName())) {
-      return CLanguageKind.OBJ_C;
-    } else {
-      return null;
-    }
-  }
-
-  @Nullable
-  static ForcedLanguage getSonarLanguage(Language language) {
-    if (language.getDisplayName().equals(CLanguageKind.C.getDisplayName())) {
-      return ForcedLanguage.C;
-    } else if (language.equals(CppLanguage.INSTANCE)) {
-      return ForcedLanguage.CPP;
-    } else if (language.getDisplayName().equals(CLanguageKind.OBJ_C.getDisplayName())) {
-      return ForcedLanguage.OBJC;
-    } else {
-      return null;
-    }
+  static ForcedLanguage getSonarLanguage(OCLanguageKind language) {
+    return SUPPORTED_LANGUAGES.get(language);
   }
 
   private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
