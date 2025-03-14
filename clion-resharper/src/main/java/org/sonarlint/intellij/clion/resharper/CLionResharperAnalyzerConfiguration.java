@@ -73,15 +73,21 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
     if (!ProjectFileIndex.getInstance(cppFile.getProject()).isInSource(file)) {
       return new ConfigurationResult(cppFile + " not in project sources");
     }
-    var configuration = getConfiguration(project, file);
 
     // get the language kind of the file
     // do not use psiFile.getLanguage() because it always returns C++ in resharper nova mode
     var cLanguageKind = OCLanguageKindCalculatorBase.tryPsiFile(psiFile);
+    if (cLanguageKind == null) {
+      cLanguageKind = OCLanguageKindCalculatorBase.tryFileTypeAndExtension(project, file);
+      if (cLanguageKind == null) {
+        return ConfigurationResult.skip("language kind not found");
+      }
+    }
     if (!SUPPORTED_LANGUAGES.containsKey(cLanguageKind)) {
       return ConfigurationResult.skip("language not supported: " + cLanguageKind.getDisplayName());
     }
 
+    var configuration = getConfiguration(project, file);
     if (configuration == null) {
       return ConfigurationResult.skip("configuration not found");
     }
