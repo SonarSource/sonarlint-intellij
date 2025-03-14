@@ -61,6 +61,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.19 - Kotlin analysis now leverages K2.</li>
         <li>10.18 - Improve speed of analysis by leveraging native git, this is particularly significant on git repositories with a large history. 9 new rules for Java. Fixed an issue where some files on a multi-module project would wrongly get ignored. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.17 - Support of Go 1.23. 1 new rule for C++. A parsing error for Go is not reported anymore by default. Optimize triggering of analysis and avoid unnecessary computations. Do not report issues for partial classes with Razor. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.16.1 - Fix of an internal compatibility issue with SonarQube Server</li>
