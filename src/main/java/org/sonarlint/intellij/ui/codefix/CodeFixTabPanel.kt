@@ -121,13 +121,12 @@ class CodeFixTabPanel(
             font = font.deriveFont(Font.BOLD, 16f)
         }
 
-        val description = JBLabel("Sonar AI CodeFix offers automated code fixes for issues detected by our code analysis tools.").apply {
+        val description = JBLabel("Sonar's AI CodeFix offers AI-generated code fixes for issues detected in your code").apply {
             alignmentX = Component.LEFT_ALIGNMENT
         }
 
         val learnMore = HyperlinkLabel("Learn More")
-        // TODO: Update with AI doc
-        learnMore.addHyperlinkListener { BrowserUtil.browse(SonarLintDocumentation.Intellij.BASE_DOCS_URL) }
+        learnMore.addHyperlinkListener { BrowserUtil.browse(SonarLintDocumentation.Intellij.AI_CAPABILITIES) }
 
         val buttonPanel = JBPanel<CodeFixTabPanel>().apply {
             add(generateButton)
