@@ -40,6 +40,7 @@ object SonarLintDocumentation {
         const val AI_FIX_SUGGESTIONS_LINK = "$BASE_DOCS_URL/using/investigating-issues/#ai-generated-fix-suggestions"
         const val INVESTIGATING_ISSUES_LINK = "$BASE_DOCS_URL/using/investigating-issues"
         const val OPEN_IN_IDE_LINK = "$BASE_DOCS_URL/using/investigating-issues/#opening-issues-in-the-ide"
+        const val AI_CAPABILITIES = "$BASE_DOCS_URL/using/ai-capabilities"
     }
 
     object Community {
