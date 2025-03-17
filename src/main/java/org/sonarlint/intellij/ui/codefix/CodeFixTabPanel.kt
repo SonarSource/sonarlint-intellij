@@ -75,6 +75,8 @@ private const val CODEFIX_LOADING = "CODEFIX_LOADING"
 private const val CODEFIX_PRESENTATION = "CODEFIX_PRESENTATION"
 private const val CODEFIX_ERROR = "CODEFIX_ERROR"
 
+private const val UNEXPECTED_ERROR = "An unexpected error happened during the generation, check the logs for more details"
+
 class CodeFixTabPanel(
     private val project: Project,
     private val file: VirtualFile,
@@ -230,7 +232,7 @@ class CodeFixTabPanel(
 
     private fun handleErrorMessage(error: Throwable?) {
         if (error == null) {
-            errorLabel.text = "An unexpected error happened during the generation, check the logs for more details"
+            errorLabel.text = UNEXPECTED_ERROR
             return
         }
         when (val cause = error.cause) {
@@ -242,12 +244,12 @@ class CodeFixTabPanel(
                     SonarLintRpcErrorCode.CONNECTION_NOT_FOUND -> errorLabel.text = "The current project is bound to an unknown connection"
                     SonarLintRpcErrorCode.CONNECTION_KIND_NOT_SUPPORTED -> errorLabel.text = "The current project is not bound to SonarQube Cloud"
                     SonarLintRpcErrorCode.FILE_NOT_FOUND -> errorLabel.text = "The file is considered unknown, reopen your project or modify the file"
-                    else -> errorLabel.text = "An unexpected error happened during the generation, check the logs for more details"
+                    else -> errorLabel.text = UNEXPECTED_ERROR
                 }
             }
             else -> {
                 error.message?.let { SonarLintConsole.get(project).error(it, error) }
-                errorLabel.text = "An unexpected error happened during the generation, check the logs for more details"
+                errorLabel.text = UNEXPECTED_ERROR
             }
         }
     }
