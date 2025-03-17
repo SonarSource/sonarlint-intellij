@@ -38,6 +38,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.CardLayout
@@ -260,7 +261,9 @@ class CodeFixTabPanel(
             val explanationTitleLabel = JBLabel("Explanation").apply {
                 font = JBFont.label().asBold()
             }
-            val explanationLabel = JBLabel(fixSuggestion.explanation)
+            val explanationLabel = SwingHelper.createHtmlViewer(false, null, null, null).apply {
+                text = fixSuggestion.explanation
+            }
             codefixPresentationPanel.add(explanationTitleLabel)
             codefixPresentationPanel.add(Box.createVerticalStrut(20))
             codefixPresentationPanel.add(explanationLabel)
