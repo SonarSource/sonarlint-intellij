@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.SonarLintIcons.impact
+import org.sonarlint.intellij.SonarLintIcons.loadingCodeFixIcon
 import org.sonarlint.intellij.SonarLintIcons.severity
 import org.sonarlint.intellij.SonarLintIcons.toDisabled
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability
@@ -60,6 +61,11 @@ class SonarLintIconsTest {
     }
 
     @Test
+    fun testLoadingCodeFix() {
+        assertThat(loadingCodeFixIcon()).isNotNull
+    }
+
+    @Test
     fun testIcons() {
         assertThat(SonarLintIcons.ICON_SONARQUBE_SERVER).isNotNull
         assertThat(SonarLintIcons.ICON_SONARQUBE_CLOUD).isNotNull
@@ -84,6 +90,13 @@ class SonarLintIconsTest {
         assertThat(SonarLintIcons.CONNECTION_ERROR).isNotNull
         assertThat(SonarLintIcons.RESOLVED).isNotNull
         assertThat(SonarLintIcons.FOCUS).isNotNull
+        assertThat(SonarLintIcons.CODEFIX_PRESENTATION).isNotNull
+        assertThat(SonarLintIcons.SPARKLE_GUTTER_ICON).isNotNull
+        assertThat(SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE).isNotNull
+        assertThat(SonarLintIcons.WALKTHROUGH_WELCOME).isNotNull
+        assertThat(SonarLintIcons.WALKTHROUGH_CONNECT_WITH_YOUR_TEAM).isNotNull
+        assertThat(SonarLintIcons.WALKTHROUGH_REACH_OUT_TO_US).isNotNull
+        assertThat(SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON).isNotNull
     }
 
     @Test

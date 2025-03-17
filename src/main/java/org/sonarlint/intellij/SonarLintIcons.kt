@@ -158,7 +158,6 @@ object SonarLintIcons {
         getIcon("/images/codefix/loading/11.svg"),
         getIcon("/images/codefix/loading/12.svg"),
         getIcon("/images/codefix/loading/13.svg")
-
     )
 
     val backgroundColorsByVulnerabilityProbability = mapOf(
