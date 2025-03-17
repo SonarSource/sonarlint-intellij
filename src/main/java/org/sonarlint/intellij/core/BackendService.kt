@@ -318,12 +318,11 @@ class BackendService : Disposable {
             serverConnections.filter { it.isSonarCloud && it.organizationKey != null }.map { toSonarCloudBackendConnection(it) }
         val sonarQubeConnections =
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
-        val nodejsPath = getGlobalSettings().nodejsPath
         val nonDefaultRpcRulesConfigurationByKey =
             getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
         val telemetryEnabled = !System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()
         val monitoringEnabled = !System.getProperty("sonarlint.monitoring.disabled", "false").toBoolean()
-        val nodeJsPath = if (nodejsPath.isBlank()) null else Paths.get(nodejsPath)
+        val nodeJsPath = NodeJsSettings.getNodeJsPathForInitialization()?.let { Paths.get(it) }
         val eslintBridgePath = generateEslintBridgePath()
         val jsTsRequirements = JsTsRequirementsDto(nodeJsPath, eslintBridgePath)
         val workDir = Paths.get(PathManager.getTempPath()).resolve("sonarlint")

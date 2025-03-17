@@ -17,25 +17,15 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.global
+package org.sonarlint.intellij.nodejs
 
-import com.intellij.openapi.project.ProjectManager
-import java.nio.file.Path
+import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
+import com.intellij.openapi.project.Project
+import java.nio.file.Paths
 import org.sonarlint.intellij.common.nodejs.NodeJsProvider
-import org.sonarlint.intellij.config.Settings.getGlobalSettings
 
-data class NodeJsSettings(val path: Path, val version: String) {
+class JavaScriptNodeJsProvider : NodeJsProvider {
 
-    companion object {
-        fun getNodeJsPathFromIde(): Path? {
-            return ProjectManager.getInstance().openProjects.map { project ->
-                NodeJsProvider.EP_NAME.extensionList.firstNotNullOfOrNull { provider -> provider.getNodeJsPathFor(project) }
-            }.firstOrNull()
-        }
-
-        fun getNodeJsPathForInitialization(): String? {
-            return getGlobalSettings().nodejsPath?.let { getNodeJsPathFromIde()?.toString() }
-        }
-    }
+  override fun getNodeJsPathFor(project: Project) = NodeJsInterpreterManager.getInstance(project).interpreter?.let { Paths.get(it.referenceName) }
 
 }

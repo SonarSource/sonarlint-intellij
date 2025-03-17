@@ -216,6 +216,7 @@ dependencies {
     compileOnly(libs.findbugs.jsr305)
     runtimeOnly(project(":clion"))
     runtimeOnly(project(":clion-resharper"))
+    runtimeOnly(project(":nodejs"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(platform(libs.junit.bom))

@@ -54,7 +54,7 @@ import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intell
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String NODE_JS_TOOLTIP = "SonarQube for IDE requires Node.js to analyze some languages. " +
     "You can provide an explicit path for the node executable here or leave " +
-    "this field blank to let SonarQube for IDE look for it using your PATH environment variable." +
+    "this field blank to let SonarQube for IDE look for it using your IDE environment or your PATH environment variable." +
     " Restarting your IDE is recommended.";
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
@@ -152,27 +152,48 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     loadNodeJsSettings(model);
   }
 
+  private void setForcedNodeJs(String nodeJsPath) {
+    var forcedNodeJsPath = Paths.get(nodeJsPath);
+    getService(BackendService.class).changeClientNodeJsPath(forcedNodeJsPath).thenAccept(settings -> {
+      if (settings == null) {
+        this.nodeJsVersion.setText("N/A");
+      } else {
+        this.nodeJsPath.setText(settings.getPath().toString());
+        this.nodeJsVersion.setText(settings.getVersion());
+      }
+    });
+  }
+
+  private void setAutoDetectedNodeJs() {
+    getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
+      if (settings == null) {
+        this.nodeJsPath.getEmptyText().setText("Node.js not found");
+        this.nodeJsVersion.setText("N/A");
+      } else {
+        this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
+        this.nodeJsVersion.setText(settings.getVersion());
+      }
+    });
+  }
+
   private void loadNodeJsSettings(SonarLintGlobalSettings model) {
     if (model.getNodejsPath() == null || model.getNodejsPath().isBlank()) {
-      getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
-        if (settings == null) {
-          this.nodeJsPath.getEmptyText().setText("Node.js not found");
-          this.nodeJsVersion.setText("N/A");
-        } else {
-          this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
-          this.nodeJsVersion.setText(settings.getVersion());
-        }
-      });
+      var nodeJsPathFromIde = NodeJsSettings.Companion.getNodeJsPathFromIde();
+      if (nodeJsPathFromIde != null) {
+        getService(BackendService.class).changeClientNodeJsPath(nodeJsPathFromIde).thenAccept(settings -> {
+          if (settings == null) {
+            // Fallback to auto-detected Node.js
+            setAutoDetectedNodeJs();
+          } else {
+            this.nodeJsPath.setText(settings.getPath().toString());
+            this.nodeJsVersion.setText(settings.getVersion());
+          }
+        });
+      } else {
+        setAutoDetectedNodeJs();
+      }
     } else {
-      var forcedNodeJsPath = Paths.get(model.getNodejsPath());
-      getService(BackendService.class).changeClientNodeJsPath(forcedNodeJsPath).thenAccept(settings -> {
-        if (settings == null) {
-          this.nodeJsVersion.setText("N/A");
-        } else {
-          this.nodeJsPath.setText(settings.getPath().toString());
-          this.nodeJsVersion.setText(settings.getVersion());
-        }
-      });
+      setForcedNodeJs(model.getNodejsPath());
     }
   }
 

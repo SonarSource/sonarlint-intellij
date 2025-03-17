@@ -1,5 +1,5 @@
 rootProject.name = "sonarlint-intellij"
-include("its", "clion", "clion-resharper", "clion-common", "common", "git", "rider")
+include("its", "clion", "clion-resharper", "nodejs", "clion-common", "common", "git", "rider")
 
 dependencyResolutionManagement {
     versionCatalogs {
