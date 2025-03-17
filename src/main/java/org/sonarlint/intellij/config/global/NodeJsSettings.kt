@@ -19,6 +19,23 @@
  */
 package org.sonarlint.intellij.config.global
 
+import com.intellij.openapi.project.ProjectManager
 import java.nio.file.Path
+import org.sonarlint.intellij.common.nodejs.NodeJsProvider
+import org.sonarlint.intellij.config.Settings.getGlobalSettings
 
-data class NodeJsSettings(val path: Path, val version: String)
+data class NodeJsSettings(val path: Path, val version: String) {
+
+    companion object {
+        fun getNodeJsPathFromIde(): Path? {
+            return ProjectManager.getInstance().openProjects.map { project ->
+                NodeJsProvider.EP_NAME.extensionList.firstNotNullOfOrNull { provider -> provider.getNodeJsPathFor(project) }
+            }.firstOrNull()
+        }
+
+        fun getNodeJsPathForInitialization(): String? {
+            return getGlobalSettings().nodejsPath?.let { getNodeJsPathFromIde()?.toString() }
+        }
+    }
+
+}

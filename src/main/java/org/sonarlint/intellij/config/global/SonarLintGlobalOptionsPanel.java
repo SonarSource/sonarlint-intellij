@@ -21,7 +21,6 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.components.JBCheckBox;
@@ -35,11 +34,8 @@ import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -47,7 +43,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
-import org.sonarlint.intellij.common.nodejs.NodeJsProvider;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.HelpLabelUtils;
@@ -157,15 +152,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     loadNodeJsSettings(model);
   }
 
-  private static Optional<Path> getNodeJsPathFromIde() {
-    return Arrays.stream(ProjectManager.getInstance().getOpenProjects()).map(project -> {
-      var optNodeJs = NodeJsProvider.Companion.getEP_NAME().getExtensionList().stream().map(e -> e.getNodeJsPathFor(project)).filter(Objects::nonNull).findFirst();
-      return optNodeJs.orElse(null);
-    })
-      .filter(Objects::nonNull)
-      .findFirst();
-  }
-
   private void setForcedNodeJs(String nodeJsPath) {
     var forcedNodeJsPath = Paths.get(nodeJsPath);
     getService(BackendService.class).changeClientNodeJsPath(forcedNodeJsPath).thenAccept(settings -> {
@@ -192,10 +178,9 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
 
   private void loadNodeJsSettings(SonarLintGlobalSettings model) {
     if (model.getNodejsPath() == null || model.getNodejsPath().isBlank()) {
-      var optNodeJsPathFromIde = getNodeJsPathFromIde();
-      if (optNodeJsPathFromIde.isPresent()) {
-        var path = optNodeJsPathFromIde.get();
-        getService(BackendService.class).changeClientNodeJsPath(path).thenAccept(settings -> {
+      var nodeJsPathFromIde = NodeJsSettings.Companion.getNodeJsPathFromIde();
+      if (nodeJsPathFromIde != null) {
+        getService(BackendService.class).changeClientNodeJsPath(nodeJsPathFromIde).thenAccept(settings -> {
           if (settings == null) {
             // Fallback to auto-detected Node.js
             setAutoDetectedNodeJs();
