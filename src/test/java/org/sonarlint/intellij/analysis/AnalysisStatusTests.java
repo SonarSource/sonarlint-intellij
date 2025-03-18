@@ -25,7 +25,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class AnalysisStatusTests extends AbstractSonarLintLightTests {
+public class AnalysisStatusTests extends AbstractSonarLintLightTests {
   private AnalysisStatus status;
 
   @BeforeEach

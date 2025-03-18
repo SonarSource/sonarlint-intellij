@@ -19,10 +19,10 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.projectRoots.JavaSdk;
+import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.testFramework.IdeaTestUtil;
 import com.intellij.testFramework.LightProjectDescriptor;
-import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -34,18 +34,18 @@ import org.sonarlint.intellij.java.JavaAnalysisConfigurator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLintLightTests {
+public class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLintLightTests {
 
   private static final Path FAKE_JDK_ROOT_PATH = Paths.get("src/test/resources/fake_jdk/").toAbsolutePath();
 
-  private JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
+  private final JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
 
   @Override
   protected LightProjectDescriptor getProjectDescriptor() {
-    return new DefaultLightProjectDescriptor() {
+    return new LightProjectDescriptor() {
       @Override
       public Sdk getSdk() {
-        return addJrtFsJarTo(IdeaTestUtil.getMockJdk9());
+        return addJrtFsJarTo(ProjectJdkTable.getInstance().createSdk("sdk", JavaSdk.getInstance()));
       }
     };
   }

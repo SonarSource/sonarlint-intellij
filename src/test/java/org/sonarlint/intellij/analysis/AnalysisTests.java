@@ -66,7 +66,7 @@ import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 @DisabledOnOs(OS.WINDOWS)
-class AnalysisTests extends AbstractSonarLintLightTests {
+public class AnalysisTests extends AbstractSonarLintLightTests {
 
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
   private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
@@ -211,7 +211,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
-    ExtensionPoint<@org.jetbrains.annotations.NotNull LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
+    ExtensionPoint<LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
     return extensionPoint.extensions().toList();
   }
 
