@@ -1,22 +1,24 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 val clionResharperBuildVersion: String by project
 val resharperHome: String? = System.getenv("RESHARPER_HOME")
 
 plugins {
+    id("org.jetbrains.intellij.platform.module")
     kotlin("jvm")
 }
 
-intellij {
-    if (!resharperHome.isNullOrBlank()) {
-        println("Using local installation of CLion: $resharperHome")
-        localPath.set(resharperHome)
-        localSourcesPath.set(resharperHome)
-    } else {
-        println("No local installation of CLion found, using version $clionResharperBuildVersion")
-        version.set(clionResharperBuildVersion)
-    }
-}
-
 dependencies {
+    intellijPlatform {
+        if (!resharperHome.isNullOrBlank()) {
+            println("Using local installation of CLion: $resharperHome")
+            local(resharperHome)
+        } else {
+            println("No local installation of CLion found, using version $clionResharperBuildVersion")
+            rider(clionResharperBuildVersion, useInstaller = false)
+        }
+        testFramework(TestFrameworkType.Platform)
+    }
     implementation(project(":common"))
     testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)
