@@ -21,7 +21,7 @@ package org.sonarlint.intellij.sharing
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
-import com.intellij.util.io.exists
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -39,7 +39,7 @@ class SonarLintSharedFolderUtils {
                 var root = project.basePath?.let { Paths.get(it) }
                 var sonarlintFolder = root?.resolve(".sonarlint")
 
-                if (isRider() && (sonarlintFolder == null || !sonarlintFolder.exists())) {
+                if (isRider() && (sonarlintFolder == null || !Files.exists(sonarlintFolder))) {
                     root = findSharedFolderForRider(project)
                     sonarlintFolder = root?.resolve(".sonarlint") ?: sonarlintFolder
                 }

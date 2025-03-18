@@ -92,13 +92,13 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
 
   @NotNull
   @Override
-  public AttributesDescriptor @NotNull [] getAttributeDescriptors() {
+  public AttributesDescriptor [] getAttributeDescriptors() {
     return DESCRIPTORS;
   }
 
   @NotNull
   @Override
-  public ColorDescriptor @NotNull [] getColorDescriptors() {
+  public ColorDescriptor [] getColorDescriptors() {
     return ColorDescriptor.EMPTY_ARRAY;
   }
 

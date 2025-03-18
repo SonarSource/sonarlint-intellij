@@ -1,23 +1,25 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 val riderBuildVersion: String by project
 val riderHome: String? = System.getenv("RIDER_HOME")
 
 plugins {
+    id("org.jetbrains.intellij.platform.module")
     kotlin("jvm")
 }
 
-intellij {
-    if (!riderHome.isNullOrBlank()) {
-        println("Using local installation of Rider: $riderHome")
-        localPath.set(riderHome)
-        localSourcesPath.set(riderHome)
-    } else {
-        println("No local installation of Rider found, using version $riderBuildVersion")
-        version.set(riderBuildVersion)
-    }
-    plugins.set(listOf("Git4Idea"))
-}
-
 dependencies {
+    intellijPlatform {
+        if (!riderHome.isNullOrBlank()) {
+            println("Using local installation of Rider: $riderHome")
+            local(riderHome)
+        } else {
+            println("No local installation of Rider found, using version $riderBuildVersion")
+            rider(riderBuildVersion, useInstaller = false)
+        }
+        bundledPlugins("Git4Idea")
+        testFramework(TestFrameworkType.Platform)
+    }
     implementation(project(":common"))
     implementation(project(":git"))
     compileOnly(libs.findbugs.jsr305)
