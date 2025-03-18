@@ -21,7 +21,20 @@ compileKotlin.kotlinOptions.jvmTarget = "17"
 val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
 compileTestKotlin.kotlinOptions.jvmTarget = "17"
 
+val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
+    ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
+    ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
+
 repositories {
+    maven("https://repox.jfrog.io/repox/sonarsource") {
+        if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+            credentials {
+                username = artifactoryUsername
+                password = artifactoryPassword
+            }
+        }
+    }
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
     mavenCentral()
 }
