@@ -98,7 +98,6 @@ allprojects {
         }
     }
 
-
     tasks.cyclonedxBom {
         setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
         inputs.files(configurations.runtimeClasspath, configurations.archives.get())
@@ -219,21 +218,6 @@ intellijPlatform {
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
-    systemProperty("sonarlint.telemetry.disabled", "true")
-    systemProperty("sonarlint.monitoring.disabled", "true")
-    doNotTrackState("Tests should always run")
-}
-
-tasks.runIde {
-    systemProperty("sonarlint.telemetry.disabled", "true")
-    systemProperty("sonarlint.monitoring.disabled", "true")
-    // uncomment to customize the SonarCloud URL
-    //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
-    maxHeapSize = "2g"
-}
-
 configurations {
     val sqplugins = create("sqplugins") { isTransitive = false }
     create("sqplugins_deps") {
@@ -275,6 +259,7 @@ dependencies {
     runtimeOnly(project(":git"))
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("junit:junit:4.13.2")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
@@ -291,6 +276,21 @@ dependencies {
 }
 
 tasks {
+    runIde {
+        systemProperty("sonarlint.telemetry.disabled", "true")
+        systemProperty("sonarlint.monitoring.disabled", "true")
+        // uncomment to customize the SonarCloud URL
+        //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
+        maxHeapSize = "2g"
+    }
+
+    test {
+        useJUnitPlatform()
+        systemProperty("sonarlint.telemetry.disabled", "true")
+        systemProperty("sonarlint.monitoring.disabled", "true")
+        doNotTrackState("Tests should always run")
+    }
+
     fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
         copy {
             from(project.configurations["sqplugins"])
@@ -444,14 +444,14 @@ tasks {
             xml.required.set(true)
         }
     }
-}
 
-tasks.artifactoryPublish {
-    mustRunAfter(
-        getTasksByName("cyclonedxBom", true),
-        tasks.buildPlugin,
-        getTasksByName("buildPluginBlockmap", true)
-    )
+    artifactoryPublish {
+        mustRunAfter(
+            getTasksByName("cyclonedxBom", true),
+            buildPlugin,
+            getTasksByName("buildPluginBlockmap", true)
+        )
+    }
 }
 
 signing {
