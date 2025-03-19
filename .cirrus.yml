@@ -368,7 +368,7 @@ qa_task:
     gradle :its:runIdeForUiTests --stacktrace --debug -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
-    .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500
+    .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 1000
   recording_background_script: |
     echo 'Recording tests on video'
     ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -i ${DISPLAY} -codec:v libx264 -r 12 ${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4
@@ -396,10 +396,8 @@ qa_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
-    slack_notification_script: |
-      source slack-failure-notification
-    display_fail_log_script:
-      - cat ${CIRRUS_WORKING_DIR}/runIdeGradle.log
+    #slack_notification_script: |
+    #  source slack-failure-notification
 
 inspect_orchestrator_cache_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
