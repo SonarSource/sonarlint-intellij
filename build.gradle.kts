@@ -82,6 +82,7 @@ allprojects {
         }
         intellijPlatform {
             defaultRepositories()
+            localPlatformArtifacts()
         }
     }
 
@@ -144,6 +145,7 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "223.8214.6"
+            untilBuild = provider { null }
         }
         name = "sonarlint-intellij"
     }
@@ -230,18 +232,8 @@ configurations {
 
 dependencies {
     intellijPlatform {
-        if (!ideaHome.isNullOrBlank()) {
-            println("Using local installation of IntelliJ IDEA: $ideaHome")
-            local(ideaHome)
-        } else {
-            println("No local installation of IntelliJ IDEA found, using version $intellijBuildVersion")
-            if (project.hasProperty("runIdeDirectory")) {
-                local(runIdeDirectory)
-            } else {
-                intellijIdeaCommunity(intellijBuildVersion)
-            }
-        }
-        bundledPlugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
+        intellijIdeaCommunity(intellijBuildVersion)
+        bundledPlugins("com.intellij.java", "Git4Idea")
         pluginVerifier()
         testFramework(TestFrameworkType.Platform)
     }
@@ -286,6 +278,16 @@ tasks {
         // uncomment to customize the SonarCloud URL
         //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
         maxHeapSize = "2g"
+    }
+
+    val runLocalIde by intellijPlatformTesting.runIde.registering {
+        if (!ideaHome.isNullOrBlank()) {
+            println("Using local installation of IntelliJ IDEA: $ideaHome")
+            localPath.set(file(ideaHome))
+        } else if (project.hasProperty("runIdeDirectory")) {
+            println("Using runIdeDirectory: $runIdeDirectory")
+            localPath.set(file(runIdeDirectory))
+        }
     }
 
     test {

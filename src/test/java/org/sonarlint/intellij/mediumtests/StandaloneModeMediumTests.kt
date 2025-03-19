@@ -220,6 +220,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    @Disabled("Provider \"temp\" not installed")
     fun should_analyze_kubernetes_files() {
         val fileToAnalyze = sendFileToBackend("src/Kubernetes.yaml")
 
