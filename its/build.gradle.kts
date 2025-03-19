@@ -37,6 +37,9 @@ repositories {
     }
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 dependencies {
@@ -78,44 +81,45 @@ tasks {
         }
         testLogging.showStandardStreams = true
     }
+}
 
-    val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
-        task {
-            jvmArgumentProviders += CommandLineArgumentProvider {
-                listOf(
-                    "-Xmx1G",
-                    "-Drobot-server.port=8082",
-                    "-Dsonarlint.internal.sonarcloud.url=https://sc-staging.io",
-                    "-Dsonarlint.internal.sonarcloud.api.url=https://api.sc-staging.io",
-                    "-Dsonarlint.internal.sonarcloud.websocket.url=wss://events-api.sc-staging.io/",
-                    "-Dsonarlint.internal.sonarcloud.us.url=https://us-sc-staging.io",
-                    "-Dsonarlint.internal.sonarcloud.us.api.url=https://api.us-sc-staging.io",
-                    "-Dsonarlint.internal.sonarcloud.us.websocket.url=wss://events-api.us-sc-staging.io",
-                    "-Dsonarlint.telemetry.disabled=true",
-                    "-Dsonarlint.monitoring.disabled=true",
-                    "-Dsonarlint.logs.verbose=true",
-                    "-Didea.trust.all.projects=true",
-                    "-Dide.show.tips.on.startup.default.value=false",
-                    "-Djb.privacy.policy.text=<!--999.999-->",
-                    "-Djb.consents.confirmation.enabled=false",
-                    "-Deap.require.license=true"
-                )
-            }
+val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
+    task {
+        jvmArgumentProviders += CommandLineArgumentProvider {
+            listOf(
+                "-Xmx1G",
+                "-Drobot-server.port=8082",
+                "-Drobot-server.host.public=true",
+                "-Dsonarlint.internal.sonarcloud.url=https://sc-staging.io",
+                "-Dsonarlint.internal.sonarcloud.api.url=https://api.sc-staging.io",
+                "-Dsonarlint.internal.sonarcloud.websocket.url=wss://events-api.sc-staging.io/",
+                "-Dsonarlint.internal.sonarcloud.us.url=https://us-sc-staging.io",
+                "-Dsonarlint.internal.sonarcloud.us.api.url=https://api.us-sc-staging.io",
+                "-Dsonarlint.internal.sonarcloud.us.websocket.url=wss://events-api.us-sc-staging.io",
+                "-Dsonarlint.telemetry.disabled=true",
+                "-Dsonarlint.monitoring.disabled=true",
+                "-Dsonarlint.logs.verbose=true",
+                "-Didea.trust.all.projects=true",
+                "-Dide.show.tips.on.startup.default.value=false",
+                "-Djb.privacy.policy.text=<!--999.999-->",
+                "-Djb.consents.confirmation.enabled=false",
+                "-Deap.require.license=true"
+            )
+        }
 
-            doFirst {
-                if (project.hasProperty("slPluginDirectory")) {
-                    copy {
-                        from(project.property("slPluginDirectory"))
-                        into(sandboxPluginsDirectory)
-                    }
+        doFirst {
+            if (project.hasProperty("slPluginDirectory")) {
+                copy {
+                    from(project.property("slPluginDirectory"))
+                    into(sandboxPluginsDirectory)
                 }
             }
         }
+    }
 
-        plugins {
-            robotServerPlugin()
-            localPlugin(rootProject.dependencies.project(":"))
-        }
+    plugins {
+        robotServerPlugin("0.11.23")
+        localPlugin(rootProject.dependencies.project(":"))
     }
 }
 
