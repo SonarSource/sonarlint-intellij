@@ -276,6 +276,10 @@ dependencies {
 }
 
 tasks {
+    jar {
+        archiveClassifier = ""
+    }
+
     runIde {
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
@@ -452,19 +456,19 @@ tasks {
             getTasksByName("buildPluginBlockmap", true)
         )
     }
-}
 
-signing {
-    setRequired {
-        val branch = System.getenv("CIRRUS_BRANCH") ?: ""
-        val pr = System.getenv("CIRRUS_PR") ?: ""
-        (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
-            pr == "" &&
-            gradle.taskGraph.hasTask(":artifactoryPublish")
+    signing {
+        setRequired {
+            val branch = System.getenv("CIRRUS_BRANCH") ?: ""
+            val pr = System.getenv("CIRRUS_PR") ?: ""
+            (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
+                pr == "" &&
+                gradle.taskGraph.hasTask(":artifactoryPublish")
+        }
+        val signingKeyId: String? by project
+        val signingKey: String? by project
+        val signingPassword: String? by project
+        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+        sign(configurations.archives.get())
     }
-    val signingKeyId: String? by project
-    val signingKey: String? by project
-    val signingPassword: String? by project
-    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-    sign(configurations.archives.get())
 }
