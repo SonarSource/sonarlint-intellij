@@ -21,7 +21,6 @@ package org.sonarlint.intellij.util
 
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager
@@ -58,15 +57,6 @@ object VirtualFileUtils {
             getService(GlobalLogOutput::class.java).log("Could not find file for URI $fileUri", ClientLogOutput.Level.DEBUG)
             null
         }
-    }
-
-    /** Checks a virtual file to be an actual file (not a directory) and contain non-binary information (text) */
-    fun isNonBinaryFile(fileOrDir: VirtualFile): Boolean = when {
-        fileOrDir.isDirectory
-            || ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir, fileOrDir.fileType)
-            || fileOrDir.fileType.isBinary -> false
-
-        else -> true
     }
 
     fun getFileContent(virtualFile: VirtualFile): String {

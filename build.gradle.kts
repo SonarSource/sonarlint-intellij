@@ -398,7 +398,6 @@ tasks {
     val buildPluginBlockmap by registering {
         inputs.file(buildPlugin.get().archiveFile)
         doLast {
-            println("buildPluginBlockmap file: ${buildPlugin.get().archiveFile.get().asFile.name}")
             val distribZip = buildPlugin.get().archiveFile.get().asFile
             artifacts.add("archives", distribZip) {
                 name = project.name
