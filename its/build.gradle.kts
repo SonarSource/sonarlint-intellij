@@ -39,6 +39,7 @@ repositories {
     mavenCentral()
     intellijPlatform {
         defaultRepositories()
+        localPlatformArtifacts()
     }
 }
 
@@ -136,4 +137,5 @@ intellijPlatform {
         name = "sonarlint-intellij-its"
     }
     instrumentCode.set(false)
+    sandboxContainer = rootProject.layout.buildDirectory.dir("../idea-sandbox")
 }
