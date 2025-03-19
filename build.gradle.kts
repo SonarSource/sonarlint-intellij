@@ -398,7 +398,14 @@ tasks {
     val buildPluginBlockmap by registering {
         inputs.file(buildPlugin.get().archiveFile)
         doLast {
+            println("buildPluginBlockmap file: ${buildPlugin.get().archiveFile.get().asFile.name}")
             val distribZip = buildPlugin.get().archiveFile.get().asFile
+            artifacts.add("archives", distribZip) {
+                name = project.name
+                extension = "zip"
+                type = "zip"
+                builtBy("buildPluginBlockmap")
+            }
             val blockMapBytes =
                 com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
             val blockMapFile = File(distribZip.parentFile, "blockmap.json")
