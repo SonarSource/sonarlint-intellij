@@ -398,7 +398,7 @@ qa_task:
       format: junit
     slack_notification_script: |
       source slack-failure-notification
-    display_log_script:
+    display_fail_log_script:
       - cat ${CIRRUS_WORKING_DIR}/runIdeGradle.log
 
 inspect_orchestrator_cache_task:
