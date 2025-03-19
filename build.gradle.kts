@@ -343,7 +343,6 @@ tasks {
         val entry = zipFile.entries().asSequence().find { it.name.matches(Regex("sonarjs-.*\\.tgz")) }
             ?: throw GradleException("eslint bridge server bundle not found in JAR $jarPath")
 
-
         val outputFolderPath = Paths.get("$pluginsDir/eslint-bridge")
         val outputFilePath = outputFolderPath.resolve(entry.name)
 
