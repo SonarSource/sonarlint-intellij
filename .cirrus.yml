@@ -353,16 +353,16 @@ qa_task:
     source .cirrus/use-gradle-wrapper.sh
     source set_gradle_build_version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
-    mkdir -p its/build/idea-sandbox/config-uiTest/
-    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/config-uiTest/clion.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/config-uiTest/goland.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/config-uiTest/datagrip.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > its/build/idea-sandbox/config-uiTest/idea.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > its/build/idea-sandbox/config-uiTest/phpstorm.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > its/build/idea-sandbox/config-uiTest/pycharm.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/config-uiTest/rider.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/config-uiTest/rubymine.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/config-uiTest/webstorm.key
+    mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/
+    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/clion.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/goland.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/datagrip.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/idea.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/phpstorm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/pycharm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/rider.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/rubymine.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config-uiTest/webstorm.key
     metacity --sm-disable --replace &
     sleep 10 # give metacity some time to start
     gradle :its:runIdeForUiTests --stacktrace --debug -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
