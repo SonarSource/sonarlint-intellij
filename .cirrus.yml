@@ -354,6 +354,10 @@ qa_task:
     source set_gradle_build_version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
     mkdir -p build/idea-sandbox/${IDEA_VERSION}/config-test/
+    mkdir -p build/idea-sandbox/${IDEA_VERSION}/config/
+    mkdir -p build/idea-sandbox/${IDEA_VERSION}/config-uiTest/
+    mkdir -p build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
+    
     base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-test/clion.key
     base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-test/goland.key
     base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-test/datagrip.key
@@ -363,6 +367,37 @@ qa_task:
     base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-test/rider.key
     base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-test/rubymine.key
     base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-test/webstorm.key
+    
+    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/clion.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/goland.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/datagrip.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/idea.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/phpstorm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/pycharm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/rider.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/rubymine.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config/webstorm.key
+    
+    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/clion.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/goland.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/datagrip.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/idea.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/phpstorm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/pycharm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/rider.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/rubymine.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config-uiTest/webstorm.key
+    
+    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/clion.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/goland.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/datagrip.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/idea.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/phpstorm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/pycharm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rider.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rubymine.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/webstorm.key
+    
     ls build/idea-sandbox/${IDEA_VERSION}/
     ls build/idea-sandbox/${IDEA_VERSION}/config-test/
     pwd
