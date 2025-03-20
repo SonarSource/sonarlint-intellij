@@ -48,11 +48,7 @@ dependencies {
         if (project.hasProperty("ijVersion")) {
             create(ijVersion)
         } else {
-            if (project.hasProperty("runIdeDirectory")) {
-                local(runIdeDirectory)
-            } else {
-                intellijIdeaCommunity(intellijBuildVersion)
-            }
+            intellijIdeaCommunity(intellijBuildVersion)
         }
         if (!project.hasProperty("slPluginDirectory")) {
             localPlugin(project(":"))
@@ -85,6 +81,11 @@ tasks {
 }
 
 val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
+    if (project.hasProperty("runIdeDirectory")) {
+        println("Using runIdeDirectory: $runIdeDirectory")
+        localPath.set(file(runIdeDirectory))
+    }
+
     task {
         jvmArgumentProviders += CommandLineArgumentProvider {
             listOf(
@@ -137,5 +138,4 @@ intellijPlatform {
         name = "sonarlint-intellij-its"
     }
     instrumentCode.set(false)
-    sandboxContainer = rootProject.layout.buildDirectory.dir("../idea-sandbox")
 }
