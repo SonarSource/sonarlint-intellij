@@ -32,7 +32,7 @@ import org.sonarlint.intellij.java.JavaAnalysisConfigurator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLintLightTests {
+class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLintLightTests {
 
   private final JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
 
