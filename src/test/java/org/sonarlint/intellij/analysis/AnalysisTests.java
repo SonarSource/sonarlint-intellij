@@ -65,7 +65,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @DisabledOnOs(OS.WINDOWS)
-public class AnalysisTests extends AbstractSonarLintLightTests {
+class AnalysisTests extends AbstractSonarLintLightTests {
 
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
   private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
