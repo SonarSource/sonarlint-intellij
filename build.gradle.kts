@@ -16,10 +16,10 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 
 plugins {
+    java
     alias(libs.plugins.kotlin)
     alias(libs.plugins.intellij)
     alias(libs.plugins.sonarqube)
-    java
     jacoco
     alias(libs.plugins.license)
     alias(libs.plugins.artifactory)
