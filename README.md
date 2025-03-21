@@ -78,7 +78,7 @@ How to run UI tests
 
     ./gradlew :its:runIdeForUiTests &
 
-The above will start an IDE instance with the SonarQube for IntelliJ plugin. Wait for the UI robot server to start, then run the ITs:
+The above will start an IDE instance with the SonarQube for IntelliJ plugin. If you are aiming to test for IDEs that has default Java runtime of 21, you should make sure your JAVA_PATH is set accordingly, otherwise robot server might not start. Wait for the UI robot server to start, then run the ITs:
 
     ./gradlew :its:check
 
