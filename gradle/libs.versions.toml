@@ -28,6 +28,7 @@ commons-lang3 = "3.17.0"
 commons-text = "1.13.0"
 findbugs-jsr305 = "3.0.2"
 junit-bom = "5.11.3"
+junit-four = "4.13.2"
 mockito-kotlin = "5.4.0"
 awaitility = "4.3.0"
 
@@ -61,6 +62,7 @@ commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "c
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
+junit-four = { module = "junit:junit", version.ref = "junit-four" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 

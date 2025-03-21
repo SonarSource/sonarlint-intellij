@@ -66,7 +66,7 @@ import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 @DisabledOnOs(OS.WINDOWS)
-public class AnalysisTests extends AbstractSonarLintLightTests {
+class AnalysisTests extends AbstractSonarLintLightTests {
 
   private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
   private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);

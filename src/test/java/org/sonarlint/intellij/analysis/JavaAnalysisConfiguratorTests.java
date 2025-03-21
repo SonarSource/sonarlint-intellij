@@ -55,7 +55,7 @@ import org.sonarlint.intellij.java.JavaAnalysisConfigurator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
+class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
 
   private static final Path FAKE_JDK_ROOT_PATH = Paths.get("src/test/resources/fake_jdk/").toAbsolutePath();
   private static final String MY_EXPORTED_LIB_JAR = "myExportedLib.jar";

@@ -251,7 +251,7 @@ dependencies {
     runtimeOnly(project(":git"))
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit.four)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
