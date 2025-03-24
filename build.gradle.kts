@@ -18,7 +18,6 @@ import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.intellij)
-    alias(libs.plugins.intellij.migration)
     alias(libs.plugins.sonarqube)
     java
     jacoco
