@@ -110,7 +110,7 @@ build_task:
     source cirrus-env BUILD-PRIVATE
     source .cirrus/use-gradle-wrapper.sh
     source set_gradle_build_version
-    regular_gradle_build_deploy_analyze -x build -x sonar :buildPlugin :cyclonedxBom
+    regular_gradle_build_deploy_analyze --scan -x build -x sonar :buildPlugin :cyclonedxBom
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     slack_notification_script: |
@@ -133,7 +133,7 @@ validate_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check --scan -x :its:check -x artifactoryPublish sonar jacocoTestReport
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
