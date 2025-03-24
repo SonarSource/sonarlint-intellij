@@ -19,7 +19,6 @@ plugins {
     java
     alias(libs.plugins.kotlin)
     alias(libs.plugins.intellij)
-    alias(libs.plugins.intellij.migration)
     alias(libs.plugins.sonarqube)
     jacoco
     alias(libs.plugins.license)
