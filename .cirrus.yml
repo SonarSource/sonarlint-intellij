@@ -79,7 +79,7 @@ setup_gradle_cache_template: &SETUP_GRADLE_CACHE
 
 cleanup_gradle_cache_script_template: &CLEANUP_GRADLE_CACHE_SCRIPT
   cleanup_gradle_script: |
-    - /usr/bin/find ${GRADLE_USER_HOME}/.gradle/caches/ -name "*.lock" -type f -delete
+    /usr/bin/find ${GRADLE_USER_HOME}/caches/ -name "*.lock" -type f -delete
     - rm -rf ${GRADLE_USER_HOME}/daemon/
     - rm -rf ${GRADLE_USER_HOME}/.gradle/caches/4.10.2/
     - rm -rf ${GRADLE_USER_HOME}/.gradle/caches/journal-1/
