@@ -27,7 +27,7 @@ dependencies {
 }
 
 tasks.compileJava {
-    outputs.cacheIf { true }
+    options.isIncremental = true
 }
 
 tasks.test {
