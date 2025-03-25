@@ -18,3 +18,7 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
 }
+
+tasks.compileJava {
+    options.isIncremental = true
+}
