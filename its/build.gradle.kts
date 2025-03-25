@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("org.jetbrains.intellij.platform.module")
     kotlin("jvm")
@@ -14,12 +16,6 @@ java {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
-
-val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileKotlin.kotlinOptions.jvmTarget = "17"
-
-val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileTestKotlin.kotlinOptions.jvmTarget = "17"
 
 val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
     ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
@@ -66,6 +62,18 @@ dependencies {
 }
 
 tasks {
+    compileKotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+
+    compileTestKotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+
     test {
         useJUnitPlatform {
             val tag = System.getenv("TEST_SUITE")

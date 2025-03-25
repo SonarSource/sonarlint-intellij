@@ -12,6 +12,7 @@ import java.util.zip.ZipOutputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 
@@ -266,6 +267,77 @@ dependencies {
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
+val ijVersion: String? by project
+val actualIjVersion = if (ijVersion.isNullOrBlank()) {
+    "2022.3.1"
+} else {
+    ijVersion
+}
+
+intellijPlatformTesting {
+    runIde {
+        val runIJUltimate by registering {
+            type = IntelliJPlatformType.IntellijIdeaUltimate
+            version = ijVersion
+        }
+        val runIJCommunity by registering {
+            type = IntelliJPlatformType.IntellijIdeaCommunity
+            version = ijVersion
+        }
+        val runCLion by registering {
+            type = IntelliJPlatformType.CLion
+            version = ijVersion
+        }
+        val runAndroidStudio by registering {
+            type = IntelliJPlatformType.AndroidStudio
+            version = ijVersion
+        }
+        val runAqua by registering {
+            type = IntelliJPlatformType.Aqua
+            version = ijVersion
+        }
+        val runDataGrip by registering {
+            type = IntelliJPlatformType.DataGrip
+            version = ijVersion
+        }
+        val runGoLand by registering {
+            type = IntelliJPlatformType.GoLand
+            version = ijVersion
+        }
+        val runPhpStorm by registering {
+            type = IntelliJPlatformType.PhpStorm
+            version = ijVersion
+        }
+        val runPCCommunity by registering {
+            type = IntelliJPlatformType.PyCharmCommunity
+            version = ijVersion
+        }
+        val runPCProfessional by registering {
+            type = IntelliJPlatformType.PyCharmProfessional
+            version = ijVersion
+        }
+        val runRider by registering {
+            type = IntelliJPlatformType.Rider
+            version = ijVersion
+        }
+        val runRubyMine by registering {
+            type = IntelliJPlatformType.RubyMine
+            version = ijVersion
+        }
+        val runWebStorm by registering {
+            type = IntelliJPlatformType.WebStorm
+            version = ijVersion
+        }
+
+        val runLocalIde by registering {
+            if (project.hasProperty("runIdeDirectory")) {
+                println("Using runIdeDirectory: $runIdeDirectory")
+                localPath.set(file(runIdeDirectory))
+            }
+        }
+    }
+}
+
 tasks {
     jar {
         archiveClassifier = ""
@@ -277,16 +349,6 @@ tasks {
         // uncomment to customize the SonarCloud URL
         //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
         maxHeapSize = "2g"
-    }
-
-    val runLocalIde by intellijPlatformTesting.runIde.registering {
-        if (!ideaHome.isNullOrBlank()) {
-            println("Using local installation of IntelliJ IDEA: $ideaHome")
-            localPath.set(file(ideaHome))
-        } else if (project.hasProperty("runIdeDirectory")) {
-            println("Using runIdeDirectory: $runIdeDirectory")
-            localPath.set(file(runIdeDirectory))
-        }
     }
 
     test {
