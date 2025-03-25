@@ -74,19 +74,15 @@ ec2_instance_definition: &WINVM_DEFINITION
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
     folder: ${GRADLE_USER_HOME}/caches
-    fingerprint_script:
-      - echo $CIRRUS_OS
-      - cat **/*.gradle* gradle/wrapper/gradle-wrapper.properties || true
-    populate_script:
-      - mkdir -p ${GRADLE_USER_HOME}/caches
+  populate_script:
+    - mkdir -p ${GRADLE_USER_HOME}/caches
 
 cleanup_gradle_cache_script_template: &CLEANUP_GRADLE_CACHE_SCRIPT
   cleanup_gradle_script: |
-    rm -rf ${GRADLE_USER_HOME}/caches/$GRADLE_VERSION/
-    rm -rf ${GRADLE_USER_HOME}/daemon/
-    rm -rf ${GRADLE_USER_HOME}/caches/transforms-*
-    rm -rf ${GRADLE_USER_HOME}/caches/journal-*
-    /usr/bin/find ${GRADLE_USER_HOME}/caches/ -name "*.lock" -type f -delete
+    - /usr/bin/find "${CIRRUS_WORKING_DIR}/.gradle/caches/" -name "*.lock" -type f -delete
+    - rm -rf "${CIRRUS_WORKING_DIR}/.gradle/caches/4.10.2/"
+    - rm -rf "${CIRRUS_WORKING_DIR}/.gradle/caches/journal-1/"
+    - rm -rf "${CIRRUS_WORKING_DIR}/.gradle/caches/build-cache-1/"
 
 build_task:
   #  name: "Build and stage to repox"
