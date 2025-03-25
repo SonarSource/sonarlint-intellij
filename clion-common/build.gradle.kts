@@ -26,6 +26,10 @@ dependencies {
     compileOnly(libs.findbugs.jsr305)
 }
 
+tasks.compileJava {
+    outputs.cacheIf { true }
+}
+
 tasks.test {
     useJUnitPlatform()
 }
