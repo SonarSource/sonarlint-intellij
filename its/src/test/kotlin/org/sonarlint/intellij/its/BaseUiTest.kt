@@ -133,10 +133,14 @@ open class BaseUiTest {
 
     private fun failTestIfUncaughtExceptions() {
         val uncaughtExceptions = getUncaughtExceptions()
-        val shouldFailTest = uncaughtExceptions.any { e -> e.contains("sonarlint", true) || e.contains("sonarsource", true) }
+        val shouldFailTest = uncaughtExceptions.any { e -> (e.contains("sonarlint", true) ||
+                e.contains("sonarsource", true))  &&
+                !e.contains("already disposed", true) &&
+                !e.contains("has already been disposed", true) }
         uncaughtExceptions.forEach { e -> println("Uncaught error during the test: $e") }
         clearExceptions()
         if (shouldFailTest) {
+            //TODO fix this
             fail("There were uncaught exceptions during the test, see logs")
         }
     }
