@@ -1,5 +1,3 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
@@ -15,10 +13,5 @@ dependencies {
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
         }
-        testFramework(TestFrameworkType.Platform)
     }
-}
-
-tasks.compileJava {
-    options.isIncremental = true
 }

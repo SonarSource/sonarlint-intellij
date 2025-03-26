@@ -1,5 +1,3 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
@@ -16,7 +14,6 @@ dependencies {
             intellijIdeaCommunity(intellijBuildVersion)
         }
         bundledPlugins("Git4Idea")
-        testFramework(TestFrameworkType.Platform)
     }
     implementation(project(":common"))
 }
