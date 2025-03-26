@@ -1,5 +1,3 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-
 val intellijUltimateBuildVersion: String by project
 val ultimateHome: String? = System.getenv("ULTIMATE_HOME")
 
@@ -18,7 +16,6 @@ dependencies {
             intellijIdeaUltimate(intellijUltimateBuildVersion)
         }
         bundledPlugins("JavaScript")
-        testFramework(TestFrameworkType.Platform)
     }
     implementation(project(":common"))
 }
