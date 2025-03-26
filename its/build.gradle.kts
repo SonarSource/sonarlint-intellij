@@ -23,14 +23,6 @@ val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
     ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 repositories {
-    maven("https://repox.jfrog.io/repox/sonarsource") {
-        if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-            credentials {
-                username = artifactoryUsername
-                password = artifactoryPassword
-            }
-        }
-    }
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
     mavenCentral()
     intellijPlatform {

@@ -14,6 +14,8 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     java
@@ -62,6 +64,12 @@ allprojects {
         plugin("com.github.hierynomus.license")
     }
 
+    dependencies {
+        intellijPlatform {
+            testFramework(TestFrameworkType.JUnit5)
+        }
+    }
+
     configurations.archives.get().isCanBeResolved = true
 
     repositories {
@@ -92,9 +100,9 @@ allprojects {
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions {
-            apiVersion = "1.7"
-            jvmTarget = "17"
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+            apiVersion.set(KotlinVersion.KOTLIN_2_1)
         }
     }
 
@@ -234,7 +242,6 @@ dependencies {
         intellijIdeaCommunity(intellijBuildVersion)
         bundledPlugins("com.intellij.java", "Git4Idea")
         pluginVerifier()
-        testFramework(TestFrameworkType.Platform)
     }
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
