@@ -27,6 +27,8 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
+
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -87,7 +89,15 @@ public final class LocalFileExclusions {
     var projectDirExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.DIRECTORY);
     var projectGlobExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.GLOB);
 
-    this.projectExclusions = new ClientFileExclusions(projectFileExclusions, projectDirExclusions, projectGlobExclusions);
+    var normalizedProjectFileExclusions = projectFileExclusions.stream()
+            .map(path -> (Paths.get(path).toString()))
+            .collect(Collectors.toSet());
+
+    var normalizedProjectDirExclusions = projectDirExclusions.stream()
+            .map(path -> (Paths.get(path).toString()))
+            .collect(Collectors.toSet());
+
+    this.projectExclusions = new ClientFileExclusions(normalizedProjectFileExclusions, normalizedProjectDirExclusions, projectGlobExclusions);
   }
 
   private void loadGlobalExclusions(SonarLintGlobalSettings settings) {

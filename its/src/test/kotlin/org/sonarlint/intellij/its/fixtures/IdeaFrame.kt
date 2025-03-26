@@ -21,6 +21,7 @@ package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
@@ -106,11 +107,15 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
   }
 
     fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
-        return if (remoteRobot.isModernUI()) {
-            find<ActionMenuFixture>(byXpath("menu $label", "//div[@tooltiptext='Main Menu']")).apply(function)
-        } else {
-            findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
-        }
+        try {
+            find<ActionButtonFixture>(byXpath("menu $label", "//div[@tooltiptext='Main Menu']")).click()
+        } catch (e: Exception) {}
+
+        try {
+            return find<ActionMenuFixture>(byXpath("menu $label", "//div[@tooltiptext='Main Menu']")).apply(function)
+        } catch (e: Exception) {}
+
+        return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
     }
 
     fun IdeaFrame.analyzeFile() {
