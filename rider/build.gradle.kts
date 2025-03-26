@@ -1,5 +1,3 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-
 val riderBuildVersion: String by project
 val riderHome: String? = System.getenv("RIDER_HOME")
 
@@ -18,7 +16,6 @@ dependencies {
             rider(riderBuildVersion, useInstaller = false)
         }
         bundledPlugins("Git4Idea")
-        testFramework(TestFrameworkType.Platform)
     }
     implementation(project(":common"))
     implementation(project(":git"))
