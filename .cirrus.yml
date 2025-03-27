@@ -236,8 +236,7 @@ qa_task:
     GITHUB_TOKEN: VAULT[development/github/token/licenses-ro token]
     DISPLAY: :10
     JDK_VERSION: "17"
-    SONAR_JAVA_PATH: "/opt/java/jdk17/bin/java"
-    SONARCLOUD_IT_PASSWORD: VAULT[development/team/sonarlint/kv/data/sonarcloud-it data.password]
+    SONARCLOUD_IT_TOKEN: VAULT[development/team/sonarlint/kv/data/sonarcloud-it data.token]
   clionKey_file:
     path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/clion.key.b64
     variable_name: CLION_KEY
@@ -372,7 +371,7 @@ qa_task:
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
-    gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin -Dorchestrator.configUrl=file:///$CIRRUS_WORKING_DIR/its/orchestrator.properties
+    gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     stop_recording_script: |
