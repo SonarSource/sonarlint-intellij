@@ -14,6 +14,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
@@ -65,6 +66,13 @@ allprojects {
     dependencies {
         intellijPlatform {
             testFramework(TestFrameworkType.JUnit5)
+        }
+    }
+
+    tasks.withType<KotlinCompile>().configureEach {
+        kotlinOptions {
+            apiVersion = "1.7"
+            jvmTarget = "17"
         }
     }
 
