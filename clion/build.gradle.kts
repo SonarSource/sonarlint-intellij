@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 val clionBuildVersion: String by project
 val clionHome: String? = System.getenv("CLION_HOME")
 
@@ -15,6 +17,7 @@ dependencies {
             clion(clionBuildVersion)
         }
         bundledPlugins("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang")
+        testFramework(TestFrameworkType.JUnit5)
     }
     implementation(project(":common"))
     implementation(project(":clion-common"))
