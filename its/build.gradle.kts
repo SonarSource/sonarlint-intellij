@@ -42,7 +42,7 @@ dependencies {
         if (!project.hasProperty("slPluginDirectory")) {
             localPlugin(project(":"))
         }
-        testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.JUnit5)
     }
     testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:5.1.0.2254") {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
@@ -52,6 +52,7 @@ dependencies {
     testImplementation(libs.bundles.its.remote)
     testImplementation(libs.junit.api)
     testImplementation(libs.assertj.core)
+    testRuntimeOnly(libs.junit.four)
     testRuntimeOnly(libs.junit.engine)
 }
 
