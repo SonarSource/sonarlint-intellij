@@ -20,12 +20,27 @@
 package org.sonarlint.intellij.nodejs
 
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
+import com.intellij.javascript.nodejs.interpreter.download.NodeJsDownloadableInterpreter
+import com.intellij.javascript.nodejs.interpreter.local.NodeJsLocalInterpreter
+import com.intellij.javascript.nodejs.interpreter.remote.NodeJsRemoteInterpreter
+import com.intellij.javascript.nodejs.interpreter.wsl.WslNodeInterpreter
 import com.intellij.openapi.project.Project
+import java.nio.file.Path
 import java.nio.file.Paths
 import org.sonarlint.intellij.common.nodejs.NodeJsProvider
 
 class JavaScriptNodeJsProvider : NodeJsProvider {
 
-  override fun getNodeJsPathFor(project: Project) = NodeJsInterpreterManager.getInstance(project).interpreter?.let { Paths.get(it.referenceName) }
+  override fun getNodeJsPathFor(project: Project): Path? {
+    return NodeJsInterpreterManager.getInstance(project).interpreter?.let {
+      return when (it) {
+        is NodeJsLocalInterpreter -> Paths.get(it.interpreterSystemIndependentPath)
+        is NodeJsRemoteInterpreter -> null
+        is WslNodeInterpreter -> null
+        is NodeJsDownloadableInterpreter -> null
+        else -> null
+      }
+    }
+  }
 
 }
