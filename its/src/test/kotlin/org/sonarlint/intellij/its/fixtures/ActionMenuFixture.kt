@@ -39,7 +39,7 @@ class ActionMenuFixture(
     attempt(tries = 3) {
       click()
       if (remoteRobot.isModernUI()) {
-        find<ContainerFixture>(byXpath("//div[@text='File']//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
+        hasText("Exit")
       } else {
         find<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
       }
