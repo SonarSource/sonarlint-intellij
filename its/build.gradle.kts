@@ -1,3 +1,4 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -41,6 +42,7 @@ dependencies {
         if (!project.hasProperty("slPluginDirectory")) {
             localPlugin(project(":"))
         }
+        testFramework(TestFrameworkType.Platform)
     }
     testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:5.1.0.2254") {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
