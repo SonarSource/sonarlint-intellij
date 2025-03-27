@@ -65,7 +65,7 @@ allprojects {
 
     dependencies {
         intellijPlatform {
-            testFramework(TestFrameworkType.JUnit5)
+            testFramework(TestFrameworkType.Platform)
         }
     }
 
