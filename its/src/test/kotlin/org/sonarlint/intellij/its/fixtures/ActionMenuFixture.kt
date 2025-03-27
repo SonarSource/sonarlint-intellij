@@ -38,7 +38,11 @@ class ActionMenuFixture(
     // sometimes the menu list does not appear after the click
     attempt(tries = 3) {
       click()
-      find<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
+      if (remoteRobot.isModernUI()) {
+        find<ContainerFixture>(byXpath("//div[@text='File']//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
+      } else {
+        find<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
+      }
     }
   }
 
