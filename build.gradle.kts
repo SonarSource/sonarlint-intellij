@@ -63,12 +63,6 @@ allprojects {
         plugin("com.github.hierynomus.license")
     }
 
-    dependencies {
-        intellijPlatform {
-            testFramework(TestFrameworkType.Platform)
-        }
-    }
-
     tasks.withType<KotlinCompile>().configureEach {
         kotlinOptions {
             apiVersion = "1.7"
@@ -241,6 +235,7 @@ dependencies {
         intellijIdeaCommunity(intellijBuildVersion)
         bundledPlugins("com.intellij.java", "Git4Idea")
         pluginVerifier()
+        testFramework(TestFrameworkType.Platform)
     }
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)

@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 val clionResharperBuildVersion: String by project
 val resharperHome: String? = System.getenv("RESHARPER_HOME")
 
@@ -14,6 +16,7 @@ dependencies {
             println("No local installation of Rider found, using version $clionResharperBuildVersion")
             rider(clionResharperBuildVersion, useInstaller = false)
         }
+        testFramework(TestFrameworkType.Platform)
     }
     implementation(project(":common"))
     implementation(project(":clion-common"))
