@@ -157,9 +157,7 @@ class SettingsUtils {
             optionalIdeaFrame()?.apply {
                 actionMenu("File") {
                     open()
-                    item("Power Save Mode") {
-                        click()
-                    }
+                    findText("Power Save Mode").click()
                 }
             }
         }
