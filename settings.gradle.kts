@@ -1,6 +1,10 @@
 rootProject.name = "sonarlint-intellij"
 include("its", "clion", "clion-resharper", "nodejs", "clion-common", "common", "git", "rider")
 
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.9.0")
+}
+
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
@@ -23,10 +27,7 @@ buildCache {
     remote<HttpBuildCache> {
         url = uri("http://${buildCacheHost}/")
         isEnabled = isCiServer
-        isPush = isMasterBranch
+        //isPush = isMasterBranch
+        isPush = true
     }
-}
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.9.0")
 }

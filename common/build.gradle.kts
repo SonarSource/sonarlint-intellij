@@ -2,14 +2,16 @@ val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
 plugins {
+    id("org.jetbrains.intellij.platform.module")
     kotlin("jvm")
 }
 
-intellij {
-    if (!ideaHome.isNullOrBlank()) {
-        localPath.set(ideaHome)
-        localSourcesPath.set(ideaHome)
-    } else {
-        version.set(intellijBuildVersion)
+dependencies {
+    intellijPlatform {
+        if (!ideaHome.isNullOrBlank()) {
+            local(ideaHome)
+        } else {
+            intellijIdeaCommunity(intellijBuildVersion)
+        }
     }
 }
