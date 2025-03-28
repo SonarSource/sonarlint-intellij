@@ -49,7 +49,6 @@ import javax.swing.JPanel
 import javax.swing.border.Border
 import javax.swing.plaf.FontUIResource
 import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.util.SonarGotItTooltipsUtils
 
 class SonarLintTrafficLightWidget(
     private val action: AnAction,
@@ -115,7 +114,6 @@ class SonarLintTrafficLightWidget(
             // make sure the tooltip has the same lifecycle as the editor
             val disposable = Disposer.newDisposable()
             EditorUtil.disposeWithEditor(editor, disposable)
-            SonarGotItTooltipsUtils.showTrafficLightToolTip(iconAndFindingsCountLabel, disposable)
         }
     }
 

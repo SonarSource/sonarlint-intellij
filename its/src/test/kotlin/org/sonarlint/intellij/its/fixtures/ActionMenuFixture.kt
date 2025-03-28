@@ -38,11 +38,23 @@ class ActionMenuFixture(
     // sometimes the menu list does not appear after the click
     attempt(tries = 3) {
       click()
-      find<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
+      if (remoteRobot.isModernUI()) {
+        hasText("Exit")
+      } else {
+        find<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
+      }
     }
   }
 
   fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-    return findElement<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
+    return if (remoteRobot.isModernUI()) {
+      findElement<ActionMenuItemFixture>(byXpath("//div[@text='$label']")).apply(
+        function
+      )
+    } else {
+      findElement<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(
+        function
+      )
+    }
   }
 }
