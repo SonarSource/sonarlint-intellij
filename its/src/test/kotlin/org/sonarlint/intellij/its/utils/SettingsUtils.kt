@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.its.utils
 
 import com.intellij.remoterobot.fixtures.JListFixture
-import com.intellij.remoterobot.utils.attempt
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import java.time.Duration
@@ -158,10 +157,8 @@ class SettingsUtils {
             optionalIdeaFrame()?.apply {
                 actionMenu("File") {
                     open()
-                    attempt(tries = 3) {
-                        findText("Power Save Mode").click()
-                    }
                 }
+                findText("Power Save Mode").click()
             }
         }
 
