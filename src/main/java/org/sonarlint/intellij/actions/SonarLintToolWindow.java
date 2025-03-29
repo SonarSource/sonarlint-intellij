@@ -414,6 +414,23 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
+  public void trySelectTaintForCodeFix(String findingKey) {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var content = getTaintVulnerabilitiesContent();
+      if (content != null) {
+        var taintPanel = (TaintVulnerabilitiesPanel) content.getComponent();
+        var taint = taintPanel.setAndGetSelectedVulnerability(findingKey);
+
+        if (taint == null) {
+          getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
+            "The taint vulnerability was not found",
+            new IncludeResolvedIssueAction());
+        }
+      }
+    }
+  }
+
   public <T extends Finding> void trySelectIssue(ShowFinding<T> showFinding) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {

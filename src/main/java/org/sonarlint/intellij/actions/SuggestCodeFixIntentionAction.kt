@@ -29,8 +29,11 @@ import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.Issue
+import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.DataKeys.Companion.ISSUE_DATA_KEY
+import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 
 class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonarAction(
     "Fix with AI CodeFix", "Generate AI fix suggestion", SonarLintIcons.SPARKLE_GUTTER_ICON
@@ -45,7 +48,10 @@ class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonar
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?) = finding?.isAiCodeFixable() ?: false
 
     override fun isVisible(e: AnActionEvent): Boolean {
-        val issue: Issue = e.getData(ISSUE_DATA_KEY) ?: return false
+        var issue: Issue? = e.getData(ISSUE_DATA_KEY)
+        if (issue == null) {
+            issue = e.getData(TAINT_VULNERABILITY_DATA_KEY) ?: return false
+        }
         return issue.isAiCodeFixable()
     }
 
@@ -57,8 +63,14 @@ class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonar
     }
 
     companion object {
-
         fun startSuggestingCodeFix(project: Project, issue: Issue) {
+            when (issue) {
+                is LiveIssue -> startSuggestingCodeFixForIssue(project, issue)
+                is LocalTaintVulnerability -> startSuggestingCodeFixForTaint(project, issue)
+            }
+        }
+
+        private fun startSuggestingCodeFixForIssue(project: Project, issue: Issue) {
             runOnUiThread(project) {
                 val toolWindow = getService(project, SonarLintToolWindow::class.java)
                 toolWindow.openCurrentFileTab()
@@ -68,11 +80,24 @@ class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonar
             }
         }
 
+        private fun startSuggestingCodeFixForTaint(project: Project, issue: Issue) {
+            val serverKey = issue.getServerKey() ?: return
+            runOnUiThread(project) {
+                val toolWindow = getService(project, SonarLintToolWindow::class.java)
+                toolWindow.openTaintVulnerabilityTab()
+                toolWindow.bringToFront()
+
+                getService(project, SonarLintToolWindow::class.java).trySelectTaintForCodeFix(serverKey)
+            }
+        }
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val issue: Issue = e.getData(ISSUE_DATA_KEY) ?: return
+        var issue: Issue? = e.getData(ISSUE_DATA_KEY)
+        if (issue == null) {
+            issue = e.getData(TAINT_VULNERABILITY_DATA_KEY) ?: return
+        }
         startSuggestingCodeFix(project, issue)
     }
 
