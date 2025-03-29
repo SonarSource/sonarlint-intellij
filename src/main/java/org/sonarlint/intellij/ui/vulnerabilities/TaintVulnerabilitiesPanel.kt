@@ -322,6 +322,27 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         } else {
             tree.setSelectedVulnerability(vulnerability)
         }
+        val file = vulnerability.file() ?: return
+        runOnPooledThread(project) {
+            findModuleForFile(file, project)?.let { module ->
+                runOnUiThread(project) {
+                    rulePanel.setSelectedFinding(module, vulnerability, vulnerability.getId(), false)
+                }
+            }
+        }
+    }
+
+    fun setAndGetSelectedVulnerability(taintKey: String): LocalTaintVulnerability? {
+        val taint = tree.setAndGetSelectedVulnerability(taintKey) ?: oldTree.setAndGetSelectedVulnerability(taintKey) ?: return null
+        val file = taint.file() ?: return taint
+        runOnPooledThread(project) {
+            findModuleForFile(file, project)?.let { module ->
+                runOnUiThread(project) {
+                    rulePanel.setSelectedFinding(module, taint, taint.getId(), true)
+                }
+            }
+        }
+        return taint
     }
 
     fun remove(taintVulnerability: LocalTaintVulnerability) {

@@ -199,28 +199,42 @@ class EditorDecorator(private val project: Project) {
         }
     }
 
+    // Taints comes from multiple files, unlike issues that are found for the current file opened
+    // We should probably refresh the gutter icons when a new file is selected, as we can only add the icons on the current editor
     fun createGutterIconForTaints(taints: Collection<LocalTaintVulnerability>) {
         if (taints.isEmpty()) {
             return
         }
-        val document = taints.first().file()?.getDocument() ?: return
 
-        val fixableTaintsByLine = taints
-            .filter { it.isAiCodeFixable() && it.rangeMarker() != null }
-            .groupBy { document.getLineNumber(it.rangeMarker()!!.startOffset) }
+        val fixableTaintsByFile = taints
+            .filter { it.isAiCodeFixable() && it.rangeMarker() != null && it.file() != null }
+            .groupBy { it.file() }
 
-        getEditors(document).forEach { editor ->
-            getService(project, CodeFixGutterHandler::class.java).cleanIconsFromDisposedEditorsAndSelectedEditor(editor)
-            val icons = fixableTaintsByLine.map { (line, fixableTaints) ->
-                val startOffset = taints.first().rangeMarker()?.startOffset ?: return
-                createGutterIcon(
-                    editor,
-                    startOffset,
-                    line,
-                    fixableTaints
-                )
-            }.toSet()
-            getService(project, CodeFixGutterHandler::class.java).addIcons(editor, icons)
+        fixableTaintsByFile.forEach { (file, taints) ->
+            val document = file?.getDocument() ?: return@forEach
+            val fixableTaintsByLine = taints.groupBy {
+                val marker = it.rangeMarker() ?: return@forEach
+                if (marker.startOffset > document.textLength || marker.endOffset > document.textLength) {
+                    return@forEach
+                }
+                document.getLineNumber(marker.startOffset)
+            }
+
+            getEditors(document).forEach { editor ->
+                getService(project, CodeFixGutterHandler::class.java).cleanIconsFromDisposedEditorsAndSelectedEditor(editor)
+                if (!editor.isDisposed) {
+                    val icons = fixableTaintsByLine.map { (line, fixableTaints) ->
+                        val startOffset = taints.first().rangeMarker()?.startOffset ?: return
+                        createGutterIcon(
+                            editor,
+                            startOffset,
+                            line,
+                            fixableTaints
+                        )
+                    }.toSet()
+                    getService(project, CodeFixGutterHandler::class.java).addIcons(editor, icons)
+                }
+            }
         }
     }
 
