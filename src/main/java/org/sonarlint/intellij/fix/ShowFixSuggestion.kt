@@ -72,9 +72,7 @@ class ShowFixSuggestion(private val project: Project, private val file: VirtualF
      */
     fun show(fixSuggestion: SuggestFixResponse, alreadySuggested: Boolean) {
         val localFixSuggestion = mapToLocalFixSuggestion(fixSuggestion) ?: let {
-            get(project).simpleNotification(
-                null, FILE_CHANGED_ERROR, NotificationType.WARNING
-            )
+            get(project).simpleNotification(null, FILE_CHANGED_ERROR, NotificationType.WARNING)
             return
         }
         show(localFixSuggestion, alreadySuggested)
