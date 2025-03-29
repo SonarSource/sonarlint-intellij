@@ -21,10 +21,14 @@ package org.sonarlint.intellij.ui.codefix
 
 import com.intellij.diff.comparison.ComparisonManagerImpl
 import com.intellij.diff.comparison.ComparisonPolicy
+import com.intellij.diff.tools.util.BaseSyncScrollable
+import com.intellij.diff.tools.util.SyncScrollSupport.TwosideSyncScrollSupport
+import com.intellij.diff.util.DiffUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.event.VisibleAreaListener
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.progress.EmptyProgressIndicator
@@ -80,6 +84,8 @@ class CodeFixDiffView(currentCode: String, newCode: String) :
 
         firstComponent = beforeEditor.component
         secondComponent = afterEditor.component
+
+        synchronizeScrollbars()
     }
 
     private fun createCodeFixEditor(): Editor {
@@ -99,6 +105,23 @@ class CodeFixDiffView(currentCode: String, newCode: String) :
         editor.setCaretEnabled(false)
         editor.contextMenuGroupId = null
         return editor
+    }
+
+    private fun synchronizeScrollbars() {
+        val scrollable = object : BaseSyncScrollable() {
+            override fun processHelper(helper: ScrollHelper) {
+                if (!helper.process(0, 0)) return
+                helper.process(DiffUtil.getLineCount(beforeEditor.document), DiffUtil.getLineCount(afterEditor.document))
+            }
+
+            override fun isSyncScrollEnabled(): Boolean = true
+        }
+
+        val scrollSupport = TwosideSyncScrollSupport(listOf(beforeEditor, afterEditor), scrollable)
+        val listener = VisibleAreaListener { e -> scrollSupport.visibleAreaChanged(e) }
+
+        beforeEditor.scrollingModel.addVisibleAreaListener(listener)
+        afterEditor.scrollingModel.addVisibleAreaListener(listener)
     }
 
     override fun dispose() {
