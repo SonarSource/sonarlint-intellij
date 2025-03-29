@@ -304,7 +304,7 @@ class CodeFixTabPanel(
             } else {
                 error("The fix was not applicable, the file could have been modified")
             }
-            panel.add(CodeFixDiffView(currentCode, change.newCode), BorderLayout.CENTER)
+            panel.add(CodeFixDiffView(project, file, currentCode, change.newCode), BorderLayout.CENTER)
         }
 
         val navigateButton = JButton("Navigate to line").apply {
