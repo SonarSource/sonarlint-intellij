@@ -72,14 +72,14 @@ class CodeFixDiffView(project: Project, file: VirtualFile, currentCode: String, 
                     fragment.startOffset1,
                     fragment.endOffset1,
                     0,
-                    HighlighterTargetArea.EXACT_RANGE
+                    HighlighterTargetArea.LINES_IN_RANGE
                 )
                 afterEditor.markupModel.addRangeHighlighter(
                     DIFF_ADDITION,
                     fragment.startOffset2,
                     fragment.endOffset2,
                     0,
-                    HighlighterTargetArea.EXACT_RANGE
+                    HighlighterTargetArea.LINES_IN_RANGE
                 )
             }
         }
