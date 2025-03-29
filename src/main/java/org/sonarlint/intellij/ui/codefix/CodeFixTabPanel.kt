@@ -280,7 +280,7 @@ class CodeFixTabPanel(
                     codefixPresentationPanel.add(JBPanel<CodeFixTabPanel>(VerticalFlowLayout(20, 5)).apply {
                         add(RoundedPanelWithBackgroundColor(JBColor(Gray._236, Gray._72)).apply {
                             layout = VerticalFlowLayout(5, 5)
-                            add(generateCodeFixSnippet(change))
+                            add(generateCodeFixSnippet(fixSuggestion, change))
                         })
                     })
                 }
@@ -292,7 +292,7 @@ class CodeFixTabPanel(
         }
     }
 
-    private fun generateCodeFixSnippet(change: SuggestFixChangeDto): JBPanel<CodeFixTabPanel> {
+    private fun generateCodeFixSnippet(fixSuggestion: SuggestFixResponse, change: SuggestFixChangeDto): JBPanel<CodeFixTabPanel> {
         val panel = JBPanel<CodeFixTabPanel>(BorderLayout()).apply {
             isOpaque = false
         }
@@ -321,10 +321,21 @@ class CodeFixTabPanel(
             }
         }
 
-        val buttonPanel = JBPanel<CodeFixTabPanel>(BorderLayout()).apply {
+        val reopenButton = JButton("Reopen all").apply {
+            isOpaque = false
+            font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
+        }
+
+        reopenButton.addActionListener {
+            ShowFixSuggestion(project, file).show(fixSuggestion, false)
+        }
+
+        val buttonPanel = JBPanel<CodeFixTabPanel>().apply {
             isOpaque = false
             add(navigateButton, BorderLayout.WEST)
+            add(reopenButton, BorderLayout.WEST)
         }
+        buttonPanel.layout = BoxLayout(buttonPanel, BoxLayout.X_AXIS)
         panel.add(buttonPanel, BorderLayout.SOUTH)
 
         return panel
