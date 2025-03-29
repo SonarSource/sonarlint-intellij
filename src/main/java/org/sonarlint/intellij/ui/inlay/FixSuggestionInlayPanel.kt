@@ -92,7 +92,7 @@ class FixSuggestionInlayPanel(
     }
 
     private fun initCenterDiffPanel() {
-        val splitter = CodeFixDiffView(suggestion.currentCode, suggestion.newCode).apply { border = JBUI.Borders.empty(5, 5, 0, 5) }
+        val splitter = CodeFixDiffView(project, file.virtualFile, suggestion.currentCode, suggestion.newCode).apply { border = JBUI.Borders.empty(5, 5, 0, 5) }
         centerPanel.add(splitter)
     }
 
