@@ -22,34 +22,35 @@ package org.sonarlint.intellij.its.tests
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.fixtures.isModernUI
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.closeFile
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 
 @Tag("Standalone")
 @EnabledIf("isIdeaCommunity")
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class StandaloneIdeaTests : BaseUiTest() {
 
-    //If executed after the should_exclude_rule_and_focus_on_new_code test, it will fail because there is already issues appearing
-    //Better solution would be to close all the files before starting each test.
     @Test
-    @Order(1)
     fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
         openExistingProject("sample-java-issues")
         excludeFile("src/main/java/foo/Foo.java")
+        if (remoteRobot.isModernUI()) {
+            closeFile()
+        }
         openFile("src/main/java/foo/Foo.java", "Foo.java")
-        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
+        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file",
+            "This file is not automatically analyzed")
         removeFileExclusion("src/main/java/foo/Foo.java")
     }
 
     @Test
-    @Order(2)
     fun should_exclude_rule_and_focus_on_new_code() = uiTest {
         openExistingProject("sample-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
@@ -71,8 +72,7 @@ class StandaloneIdeaTests : BaseUiTest() {
     }
 
     @Test
-    @Order(3)
-    fun chart() = uiTest {
+    fun should_analyze_helm_files() = uiTest {
         openExistingProject("DuplicatedEnvsChart")
         openFile("templates/memory_limit_pod2.yml", "memory_limit_pod2.yml")
         verifyCurrentFileTabContainsMessages("Bind this resource's automounted service account to RBAC or disable automounting.")
