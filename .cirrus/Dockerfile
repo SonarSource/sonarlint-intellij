@@ -6,11 +6,6 @@ USER root
 
 ENV NODE_VERSION=18
 
-RUN wget https://download.oracle.com/java/17/archive/jdk-17.0.12_linux-x64_bin.tar.gz && \
-    mkdir -p /opt/java/jdk17 && \
-    tar -xzf jdk-17.0.12_linux-x64_bin.tar.gz -C /opt/java/jdk17 --strip-components=1 && \
-    rm jdk-17.0.12_linux-x64_bin.tar.gz
-
 RUN apt-get update && apt-get install -y metacity xvfb xauth ffmpeg \
     nodejs=${NODE_VERSION}.* \
     build-essential \

@@ -27,29 +27,28 @@ import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeA
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.closeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
 
 @Tag("Standalone")
 @EnabledIf("isIdeaCommunity")
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class StandaloneIdeaTests : BaseUiTest() {
 
-    //If executed after the should_exclude_rule_and_focus_on_new_code test, it will fail because there is already issues appearing
-    //Better solution would be to close all the files before starting each test.
     @Test
-    @Order(1)
     fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
         openExistingProject("sample-java-issues")
         excludeFile("src/main/java/foo/Foo.java")
+        closeProject()
+        openExistingProject("sample-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
-        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
+        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file",
+            "This file is not automatically analyzed")
         removeFileExclusion("src/main/java/foo/Foo.java")
     }
 
     @Test
-    @Order(2)
     fun should_exclude_rule_and_focus_on_new_code() = uiTest {
         openExistingProject("sample-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
@@ -71,7 +70,6 @@ class StandaloneIdeaTests : BaseUiTest() {
     }
 
     @Test
-    @Order(3)
     fun chart() = uiTest {
         openExistingProject("DuplicatedEnvsChart")
         openFile("templates/memory_limit_pod2.yml", "memory_limit_pod2.yml")
