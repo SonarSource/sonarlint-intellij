@@ -34,6 +34,7 @@ import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.editor.markup.TextAttributes
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -206,8 +207,9 @@ class EditorDecorator(private val project: Project) {
             return
         }
 
+        val selectedFiles = FileEditorManager.getInstance(project).selectedFiles
         val fixableTaintsByFile = taints
-            .filter { it.isAiCodeFixable() && it.rangeMarker() != null && it.file() != null }
+            .filter { it.isAiCodeFixable() && it.rangeMarker() != null && it.file() != null && selectedFiles.contains(it.file()) }
             .groupBy { it.file() }
 
         fixableTaintsByFile.forEach { (file, taints) ->
@@ -221,7 +223,7 @@ class EditorDecorator(private val project: Project) {
             }
 
             getEditors(document).forEach { editor ->
-                getService(project, CodeFixGutterHandler::class.java).cleanIconsFromDisposedEditorsAndSelectedEditor(editor)
+                getService(project, CodeFixGutterHandler::class.java).cleanTaintIconsFromDisposedEditorsAndSelectedEditor(editor)
                 if (!editor.isDisposed) {
                     val icons = fixableTaintsByLine.map { (line, fixableTaints) ->
                         val startOffset = taints.first().rangeMarker()?.startOffset ?: return
@@ -232,7 +234,7 @@ class EditorDecorator(private val project: Project) {
                             fixableTaints
                         )
                     }.toSet()
-                    getService(project, CodeFixGutterHandler::class.java).addIcons(editor, icons)
+                    getService(project, CodeFixGutterHandler::class.java).addTaintIcons(editor, icons)
                 }
             }
         }
@@ -246,7 +248,7 @@ class EditorDecorator(private val project: Project) {
             .groupBy { document.getLineNumber(it.range!!.startOffset) }
 
         getEditors(document).forEach { editor ->
-            getService(project, CodeFixGutterHandler::class.java).cleanIconsFromDisposedEditorsAndSelectedEditor(editor)
+            getService(project, CodeFixGutterHandler::class.java).cleanIssueIconsFromDisposedEditorsAndSelectedEditor(editor)
             val icons = fixableIssuesByLine.map { (line, fixableIssues) ->
                 val startOffset = fixableIssues.first().range?.startOffset ?: return
                 createGutterIcon(
@@ -256,7 +258,7 @@ class EditorDecorator(private val project: Project) {
                     fixableIssues
                 )
             }.toSet()
-            getService(project, CodeFixGutterHandler::class.java).addIcons(editor, icons)
+            getService(project, CodeFixGutterHandler::class.java).addIssueIcons(editor, icons)
         }
     }
 

@@ -291,6 +291,14 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
+  public void refreshTaintCodeFix() {
+    var content = getTaintVulnerabilitiesContent();
+    if (content != null) {
+      var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
+      taintVulnerabilitiesPanel.updateGutterIconForTaints();
+    }
+  }
+
   public void populateSecurityHotspotsTab(SecurityHotspotsLocalDetectionSupport status) {
     var content = getSecurityHotspotContent();
     if (content != null) {
