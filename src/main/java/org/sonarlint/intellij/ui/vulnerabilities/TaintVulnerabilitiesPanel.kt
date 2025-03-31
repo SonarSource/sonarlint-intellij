@@ -252,8 +252,12 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             populateSubTree(tree, taintVulnerabilityTreeUpdater, newTaintVulnerabilities)
             populateSubTree(oldTree, oldTaintVulnerabilityTreeUpdater, newTaintVulnerabilities)
             switchCard()
-            getService(project, EditorDecorator::class.java).createGutterIconForTaints(newTaintVulnerabilities)
+            updateGutterIconForTaints()
         }
+    }
+
+    fun updateGutterIconForTaints() {
+        getService(project, EditorDecorator::class.java).createGutterIconForTaints(taintVulnerabilityTreeUpdater.filteredTaintVulnerabilities)
     }
 
     fun switchCard() {

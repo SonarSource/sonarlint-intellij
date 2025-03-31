@@ -36,15 +36,28 @@ data class GutterIconHolder(
 @Service(Service.Level.PROJECT)
 class CodeFixGutterHandler {
 
-    private val iconHolders = mutableListOf<GutterIconHolder>()
+    private val iconTaintHolders = mutableListOf<GutterIconHolder>()
+    private val iconIssueHolders = mutableListOf<GutterIconHolder>()
 
-    fun addIcons(editor: Editor, icons: Set<RangeHighlighter>) {
-        iconHolders.add(GutterIconHolder(editor, icons.toMutableSet()))
+    fun addTaintIcons(editor: Editor, icons: Set<RangeHighlighter>) {
+        iconTaintHolders.add(GutterIconHolder(editor, icons.toMutableSet()))
     }
 
-    fun cleanIconsFromDisposedEditorsAndSelectedEditor(editor: Editor) {
+    fun addIssueIcons(editor: Editor, icons: Set<RangeHighlighter>) {
+        iconIssueHolders.add(GutterIconHolder(editor, icons.toMutableSet()))
+    }
+
+    fun cleanTaintIconsFromDisposedEditorsAndSelectedEditor(editor: Editor) {
+        cleanIconsFromDisposedEditorsAndSelectedEditor(iconTaintHolders, editor)
+    }
+
+    fun cleanIssueIconsFromDisposedEditorsAndSelectedEditor(editor: Editor) {
+        cleanIconsFromDisposedEditorsAndSelectedEditor(iconIssueHolders, editor)
+    }
+
+    private fun cleanIconsFromDisposedEditorsAndSelectedEditor(holders: MutableList<GutterIconHolder>, editor: Editor) {
         // Iterate on disposed editors and remove the entries
-        val listIterator = iconHolders.iterator()
+        val listIterator = holders.iterator()
         while (listIterator.hasNext()) {
             val item = listIterator.next()
             if (item.editor.isDisposed) {
@@ -53,7 +66,7 @@ class CodeFixGutterHandler {
         }
 
         // For the selected editor, simply clear the icons as preparation for the new issues raised
-        iconHolders.forEach { holder ->
+        holders.forEach { holder ->
             if (holder.editor == editor) {
                 holder.clearIcons()
             }

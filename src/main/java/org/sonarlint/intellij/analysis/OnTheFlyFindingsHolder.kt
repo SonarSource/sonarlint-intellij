@@ -125,6 +125,7 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
 
         updateCurrentFileTab()
+        updateTaintTab()
     }
 
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
@@ -151,6 +152,14 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             getService(
                 project, SonarLintToolWindow::class.java
             ).updateCurrentFileTab(selectedFile, selectedFile?.let { currentIssuesPerOpenFile[it] })
+        }
+    }
+
+    private fun updateTaintTab() {
+        if (!project.isDisposed) {
+            getService(
+                project, SonarLintToolWindow::class.java
+            ).refreshTaintCodeFix()
         }
     }
 
