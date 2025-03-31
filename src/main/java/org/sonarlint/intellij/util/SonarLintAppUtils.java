@@ -41,6 +41,7 @@ import org.sonarlint.intellij.common.util.FileUtils;
 
 import static com.intellij.openapi.vfs.VirtualFileVisitor.NO_FOLLOW_SYMLINKS;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isRider;
 
 public class SonarLintAppUtils {
 
@@ -81,14 +82,26 @@ public class SonarLintAppUtils {
    */
   @CheckForNull
   public static String getRelativePathForAnalysis(Module module, VirtualFile virtualFile) {
-    var relativePathToModule = getPathRelativeToModuleBaseDir(module, virtualFile);
-    if (relativePathToModule != null) {
-      return relativePathToModule;
-    }
+    if (isRider()) {
+      var relativePathToProject = getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
+      if (relativePathToProject != null) {
+        return relativePathToProject;
+      }
 
-    var relativePathToProject = getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
-    if (relativePathToProject != null) {
-      return relativePathToProject;
+      var relativePathToModule = getPathRelativeToModuleBaseDir(module, virtualFile);
+      if (relativePathToModule != null) {
+        return relativePathToModule;
+      }
+    } else {
+      var relativePathToModule = getPathRelativeToModuleBaseDir(module, virtualFile);
+      if (relativePathToModule != null) {
+        return relativePathToModule;
+      }
+
+      var relativePathToProject = getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
+      if (relativePathToProject != null) {
+        return relativePathToProject;
+      }
     }
 
     var strictRelativePathToContentRoot = getPathRelativeToContentRoot(module, virtualFile);
