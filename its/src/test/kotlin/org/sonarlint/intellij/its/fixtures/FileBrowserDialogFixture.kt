@@ -62,7 +62,11 @@ class FileBrowserDialogFixture(
 
   fun selectProjectFile(projectName: String, isMaven: Boolean) {
     val projectsDir = Paths.get("projects").toAbsolutePath()
-    val projectBaseDir = projectsDir.resolve("$projectName-tmp")
+    val projectBaseDir = if(projectName == "sample-cpp") {
+      projectsDir.resolve("$projectName")
+    } else {
+      projectsDir.resolve("$projectName-tmp")
+    }
     val button = button("OK")
     waitFor(Duration.ofSeconds(10)) { button.isEnabled() }
 

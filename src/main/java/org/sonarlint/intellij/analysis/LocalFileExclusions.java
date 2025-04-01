@@ -89,15 +89,7 @@ public final class LocalFileExclusions {
     var projectDirExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.DIRECTORY);
     var projectGlobExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.GLOB);
 
-    var normalizedProjectFileExclusions = projectFileExclusions.stream()
-            .map(path -> (Paths.get(path).toString()))
-            .collect(Collectors.toSet());
-
-    var normalizedProjectDirExclusions = projectDirExclusions.stream()
-            .map(path -> (Paths.get(path).toString()))
-            .collect(Collectors.toSet());
-
-    this.projectExclusions = new ClientFileExclusions(normalizedProjectFileExclusions, normalizedProjectDirExclusions, projectGlobExclusions);
+    this.projectExclusions = new ClientFileExclusions(projectFileExclusions, projectDirExclusions, projectGlobExclusions);
   }
 
   private void loadGlobalExclusions(SonarLintGlobalSettings settings) {

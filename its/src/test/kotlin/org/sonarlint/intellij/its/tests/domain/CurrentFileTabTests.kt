@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.tests.domain
 import com.intellij.remoterobot.utils.waitFor
 import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.swing.timing.Pause
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
@@ -117,6 +118,15 @@ class CurrentFileTabTests {
             }
         }
 
+        fun clickToolWindow() {
+            with(remoteRobot) {
+                idea {
+                    toolWindow("SonarQube for IDE") {
+                    }
+                }
+            }
+        }
+
         fun verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
@@ -129,6 +139,32 @@ class CurrentFileTabTests {
                         if (remoteRobot.isModernUI().not()) ensureOpen()
                         tabTitleContains("Current File") { select() }
                         content("CurrentFilePanel") {
+                            expectedMessages.forEach {
+                                // the synchronization can take a while to happen
+                                waitFor(duration = Duration.ofSeconds(30)) {
+                                    hasText(it)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        fun verifyCurrentFileTabContainsMessagesAdvanced(vararg expectedMessages: String) {
+            with(remoteRobot) {
+                idea {
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarQube for IDE") {
+                            ensureOpen()
+                        }
+                    }
+                    toolWindow("SonarQube for IDE") {
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
+                        tabTitleContains("Current File") { select() }
+                        content("CurrentFilePanel") {
+                            findText("Analyze Current File").click()
+                            Pause.pause(10000)
                             expectedMessages.forEach {
                                 // the synchronization can take a while to happen
                                 waitFor(duration = Duration.ofSeconds(30)) {
