@@ -26,6 +26,7 @@ import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.closeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.optionalStep
@@ -57,6 +58,12 @@ class CLionTests : BaseUiTest() {
         idea {
             waitBackgroundTasksFinished()
         }
+
+        openFile("main.cpp")
+
+        closeProject()
+
+        openExistingProject("sample-cpp")
 
         openFile("main.cpp")
 
