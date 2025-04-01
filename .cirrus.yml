@@ -110,7 +110,7 @@ build_task:
     source cirrus-env BUILD-PRIVATE
     source .cirrus/use-gradle-wrapper.sh
     source set_gradle_build_version
-    regular_gradle_build_deploy_analyze --profile --info -x build -x sonar :buildPlugin :cyclonedxBom
+    regular_gradle_build_deploy_analyze -x build -x sonar :buildPlugin :cyclonedxBom
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
@@ -138,11 +138,11 @@ validate_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze --profile --info check -x :its:check -x artifactoryPublish sonar jacocoTestReport
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
-      path: "**/reports/profile/**"
+      path: "**/reports/**/**"
   on_failure:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
@@ -170,7 +170,7 @@ validate_windows_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    ./gradlew :check --profile --info
+    ./gradlew :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
@@ -377,7 +377,7 @@ qa_task:
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
-    .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 2000
+    .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 1500
   recording_background_script: |
     echo 'Recording tests on video'
     ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -i ${DISPLAY} -codec:v libx264 -r 12 ${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4
@@ -405,8 +405,8 @@ qa_task:
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
-    #slack_notification_script: |
-    #  source slack-failure-notification
+    slack_notification_script: |
+      source slack-failure-notification
 
 inspect_orchestrator_cache_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
