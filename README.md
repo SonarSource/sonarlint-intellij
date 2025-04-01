@@ -111,7 +111,7 @@ How to debug SLOOP
 
 If you want to debug SLOOP:
 
-* open the Run configuration you are using to launch the IDE (`runIde` or `its:runIdeForUiTests`)
+* open the Run configuration you are using to launch the IDE (`runIde`, `runLocalIde` or `its:runIdeForUiTests`)
 * Add an environment variable: `SONARLINT_JVM_OPTS` with the value `-agentlib:jdwp=transport=dt_socket,address=8080,server=y,suspend=n`
 * Run the task
 * Open the SLCORE project and click `Run` > `Attach to process`
@@ -132,9 +132,9 @@ To run an IntelliJ instance with the plugin installed, execute the Gradle task `
 or the **Gradle** toolbar in IntelliJ, under `Tasks/intellij`.
 The instance files are stored under `build/idea-sandbox`.
 
-To run against a specific IDE, the `runIdeDirectory` property can be used as such:
+To run against a specific IDE, the `runLocalIde` task with the `runIdeDirectory` property can be used as such:
 
-    ./gradlew :runIde -PrunIdeDirectory=<IDE_PATH>
+    ./gradlew :runLocalIde -PrunIdeDirectory=<IDE_PATH>
 
 Keep in mind that the `clean` task will wipe out the content of `build/idea-sandbox`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
