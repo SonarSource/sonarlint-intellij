@@ -292,6 +292,8 @@
         <notificationGroup id="SonarQube for IDE: Mark Issue as Resolved"
                            displayType="BALLOON"/>
         <pluginRepositoryAuthProvider implementation="org.sonarlint.intellij.dogfood.DogfoodPluginRepositoryAuthProvider"/>
+        <fileType name="Properties" fileNames=".sonarcloud.properties;sonar-project.properties"/>
+        <fileType name="JSON" patterns="*.sonarlint/*.json" fileNames="connectedMode.json"/>
     </extensions>
 
     <extensionPoints>
