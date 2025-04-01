@@ -142,3 +142,12 @@ intellijPlatform {
     }
     instrumentCode.set(false)
 }
+
+
+configurations {
+    testRuntimeClasspath {
+        resolutionStrategy {
+            disableDependencyVerification()
+        }
+    }
+}
