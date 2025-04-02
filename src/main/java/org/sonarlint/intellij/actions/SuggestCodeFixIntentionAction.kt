@@ -35,12 +35,22 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.DataKeys.Companion.ISSUE_DATA_KEY
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 
+private const val ISSUE_TEXT_TITLE = "SonarQube: Fix with AI CodeFix"
+
 class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonarAction(
     "Fix with AI CodeFix", "Generate AI fix suggestion", SonarLintIcons.SPARKLE_GUTTER_ICON
 ), IntentionAction, PriorityAction, Iconable {
 
     override fun startInWriteAction() = false
-    override fun getText() = "SonarQube: Fix with AI CodeFix"
+    override fun getText(): String {
+        return finding?.let {
+            when (it) {
+                is LiveIssue -> "$ISSUE_TEXT_TITLE '${it.message}'"
+                is LocalTaintVulnerability -> "$ISSUE_TEXT_TITLE '${it.message()}'"
+                else -> "$ISSUE_TEXT_TITLE '${it.getRuleKey()}'"
+            }
+        } ?: ISSUE_TEXT_TITLE
+    }
     override fun getFamilyName() = "SonarQube AI codefix suggestion"
     override fun getPriority() = PriorityAction.Priority.HIGH
     override fun getIcon(flags: Int) = SonarLintIcons.SPARKLE_GUTTER_ICON
