@@ -1,5 +1,4 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val clionResharperBuildVersion: String by project
 val resharperHome: String? = System.getenv("RESHARPER_HOME")
@@ -17,19 +16,11 @@ plugins {
     idea
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
-    kotlin("jvm")
 }
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        apiVersion = "1.7"
-        jvmTarget = "17"
     }
 }
 

@@ -12,17 +12,10 @@ val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
 
 plugins {
     id("org.jetbrains.intellij.platform.module")
-    java
     idea
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
     kotlin("jvm")
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -35,14 +28,7 @@ tasks.withType<KotlinCompile>().configureEach {
 configurations.archives.get().isCanBeResolved = true
 
 repositories {
-    maven("https://repox.jfrog.io/repox/sonarsource") {
-        if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-            credentials {
-                username = artifactoryUsername
-                password = artifactoryPassword
-            }
-        }
-    }
+    maven("https://repox.jfrog.io/repox/sonarsource")
     mavenCentral {
         content {
             // avoid dependency confusion
