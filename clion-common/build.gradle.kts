@@ -97,6 +97,12 @@ dependencies {
     compileOnly(libs.findbugs.jsr305)
 }
 
-tasks.test {
-    useJUnitPlatform()
+tasks {
+    compileJava {
+        options.isIncremental = false
+    }
+
+    test {
+        useJUnitPlatform()
+    }
 }
