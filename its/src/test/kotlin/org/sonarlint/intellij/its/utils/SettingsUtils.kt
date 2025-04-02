@@ -25,17 +25,7 @@ import com.intellij.remoterobot.utils.waitFor
 import java.time.Duration
 import org.assertj.swing.timing.Pause
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
-import org.sonarlint.intellij.its.fixtures.IdeaFrame
-import org.sonarlint.intellij.its.fixtures.PreferencesDialog
-import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
-import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.jPasswordField
-import org.sonarlint.intellij.its.fixtures.jRadioButtons
-import org.sonarlint.intellij.its.fixtures.jbTextFields
-import org.sonarlint.intellij.its.fixtures.preferencesDialog
-import org.sonarlint.intellij.its.fixtures.waitUntilLoaded
-import org.sonarlint.intellij.its.fixtures.welcomeFrame
+import org.sonarlint.intellij.its.fixtures.*
 
 class SettingsUtils {
 
@@ -156,7 +146,8 @@ class SettingsUtils {
         fun clickPowerSaveMode() {
             optionalIdeaFrame()?.apply {
                 actionMenu("File") {
-                    open()
+                    if (!remoteRobot.isModernUI()) open()
+
                     item("Power Save Mode") {
                         click()
                     }

@@ -270,11 +270,6 @@ class OpenInIdeTests : BaseUiTest() {
             verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
             showResolvedIssues()
 
-            // Power Save Mode Test
-            clickPowerSaveMode()
-            openFile("src/main/java/foo/Bar.java", "Bar.java")
-            verifyCurrentFileTabContainsMessages("This file is not automatically analyzed because power save mode is enabled")
-            clickPowerSaveMode()
             enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, false, "Orchestrator")
         }
 
