@@ -98,10 +98,6 @@ dependencies {
 }
 
 tasks {
-    compileJava {
-        options.isIncremental = false
-    }
-
     test {
         useJUnitPlatform()
     }
