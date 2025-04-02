@@ -102,3 +102,9 @@ dependencies {
     implementation(project(":git"))
     compileOnly(libs.findbugs.jsr305)
 }
+
+tasks {
+    compileJava {
+        options.isIncremental = false
+    }
+}
