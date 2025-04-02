@@ -1,9 +1,88 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
+    ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
+    ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 plugins {
-    id("org.jetbrains.intellij.platform.module")
+    alias(libs.plugins.intellij)
+    java
+    idea
+    alias(libs.plugins.cyclonedx)
+    alias(libs.plugins.license)
     kotlin("jvm")
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        apiVersion = "1.7"
+        jvmTarget = "17"
+    }
+}
+
+configurations.archives.get().isCanBeResolved = true
+
+repositories {
+    maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+    maven("https://repox.jfrog.io/repox/sonarsource") {
+        if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+            credentials {
+                username = artifactoryUsername
+                password = artifactoryPassword
+            }
+        }
+    }
+    mavenCentral {
+        content {
+            // avoid dependency confusion
+            excludeGroupByRegex("com\\.sonarsource.*")
+        }
+    }
+    intellijPlatform {
+        defaultRepositories()
+        localPlatformArtifacts()
+    }
+}
+
+tasks.cyclonedxBom {
+    setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
+    inputs.files(configurations.runtimeClasspath, configurations.archives.get())
+    mustRunAfter(
+        getTasksByName("buildPluginBlockmap", true)
+    )
+}
+
+val bomFile = layout.buildDirectory.file("reports/bom.json")
+artifacts.add("archives", bomFile.get().asFile) {
+    name = "sonarlint-intellij"
+    type = "json"
+    classifier = "cyclonedx"
+    builtBy("cyclonedxBom")
+}
+
+license {
+    header = rootProject.file("HEADER")
+    mapping(
+        mapOf(
+            "java" to "SLASHSTAR_STYLE",
+            "kt" to "SLASHSTAR_STYLE",
+            "svg" to "XML_STYLE",
+            "form" to "XML_STYLE"
+        )
+    )
+    excludes(
+        listOf("**/*.jar", "**/*.png", "**/README")
+    )
+    strictCheck = true
 }
 
 val intellijBuildVersion: String by project
@@ -18,18 +97,8 @@ java {
     }
 }
 
-val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
-    ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
-    ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
-
-repositories {
-    maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
-    mavenCentral()
-    intellijPlatform {
-        defaultRepositories()
-        localPlatformArtifacts()
-    }
+intellijPlatform {
+    buildSearchableOptions = false
 }
 
 dependencies {
@@ -83,7 +152,7 @@ tasks {
     }
 }
 
-val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
+val runIdeForUiTests by intellijPlatformTesting.testIde.registering {
     if (project.hasProperty("runIdeDirectory")) {
         println("Using runIdeDirectory: $runIdeDirectory")
         localPath.set(file(runIdeDirectory))

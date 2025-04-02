@@ -34,7 +34,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.6")
+        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.7")
     }
 }
 
@@ -54,92 +54,128 @@ val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
 
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
-allprojects {
-    apply {
-        plugin("idea")
-        plugin("java")
-        plugin("org.jetbrains.intellij.platform")
-        plugin("org.cyclonedx.bom")
-        plugin("com.github.hierynomus.license")
-    }
-
-    tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions {
-            apiVersion = "1.7"
-            jvmTarget = "17"
-        }
-    }
-
-    configurations.archives.get().isCanBeResolved = true
-
-    repositories {
-        maven("https://repox.jfrog.io/repox/sonarsource") {
-            if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-                credentials {
-                    username = artifactoryUsername
-                    password = artifactoryPassword
-                }
+repositories {
+    maven("https://repox.jfrog.io/repox/sonarsource") {
+        if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+            credentials {
+                username = artifactoryUsername
+                password = artifactoryPassword
             }
         }
-        mavenCentral {
-            content {
-                // avoid dependency confusion
-                excludeGroupByRegex("com\\.sonarsource.*")
-            }
-        }
-        intellijPlatform {
-            defaultRepositories()
-            localPlatformArtifacts()
+    }
+    mavenCentral {
+        content {
+            // avoid dependency confusion
+            excludeGroupByRegex("com\\.sonarsource.*")
         }
     }
-
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
-        }
-    }
-
-    tasks.cyclonedxBom {
-        setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
-        inputs.files(configurations.runtimeClasspath, configurations.archives.get())
-        mustRunAfter(
-            getTasksByName("buildPluginBlockmap", true)
-        )
-    }
-
-    val bomFile = layout.buildDirectory.file("reports/bom.json")
-    artifacts.add("archives", bomFile.get().asFile) {
-        name = "sonarlint-intellij"
-        type = "json"
-        classifier = "cyclonedx"
-        builtBy("cyclonedxBom")
-    }
-
-    license {
-        header = rootProject.file("HEADER")
-        mapping(
-            mapOf(
-                "java" to "SLASHSTAR_STYLE",
-                "kt" to "SLASHSTAR_STYLE",
-                "svg" to "XML_STYLE",
-                "form" to "XML_STYLE"
-            )
-        )
-        excludes(
-            listOf("**/*.jar", "**/*.png", "**/README")
-        )
-        strictCheck = true
-    }
-}
-
-subprojects {
     intellijPlatform {
-        // the only module contributing settings is the root one
-        buildSearchableOptions = false
+        defaultRepositories()
+        localPlatformArtifacts()
     }
 }
 
 val verifierVersions: String by project
+
+configurations {
+    val sqplugins = create("sqplugins") { isTransitive = false }
+    create("sqplugins_deps") {
+        extendsFrom(sqplugins)
+        isTransitive = true
+    }
+    create("omnisharp")
+    create("sloop")
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        apiVersion = "1.7"
+        jvmTarget = "17"
+    }
+}
+
+configurations.archives.get().isCanBeResolved = true
+
+tasks.cyclonedxBom {
+    setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
+    inputs.files(configurations.runtimeClasspath, configurations.archives.get())
+    mustRunAfter(
+        getTasksByName("buildPluginBlockmap", true)
+    )
+}
+
+val bomFile = layout.buildDirectory.file("reports/bom.json")
+artifacts.add("archives", bomFile.get().asFile) {
+    name = "sonarlint-intellij"
+    type = "json"
+    classifier = "cyclonedx"
+    builtBy("cyclonedxBom")
+}
+
+license {
+    header = rootProject.file("HEADER")
+    mapping(
+        mapOf(
+            "java" to "SLASHSTAR_STYLE",
+            "kt" to "SLASHSTAR_STYLE",
+            "svg" to "XML_STYLE",
+            "form" to "XML_STYLE"
+        )
+    )
+    excludes(
+        listOf("**/*.jar", "**/*.png", "**/README")
+    )
+    strictCheck = true
+}
+
+dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity(intellijBuildVersion)
+        bundledPlugins("com.intellij.java", "Git4Idea")
+        testFramework(TestFrameworkType.Platform)
+        pluginModule(implementation(project(":clion")))
+        pluginModule(implementation(project(":clion-resharper")))
+        pluginModule(implementation(project(":nodejs")))
+        pluginModule(implementation(project(":clion-common")))
+        pluginModule(implementation(project(":common")))
+        pluginModule(implementation(project(":git")))
+        pluginModule(implementation(project(":rider")))
+    }
+    implementation(libs.sonarlint.java.client.utils)
+    implementation(libs.sonarlint.rpc.java.client)
+    implementation(libs.sonarlint.rpc.impl)
+    implementation(libs.commons.langs3)
+    implementation(libs.commons.text)
+    implementation(project(":common"))
+    compileOnly(libs.findbugs.jsr305)
+    runtimeOnly(project(":clion"))
+    runtimeOnly(project(":clion-resharper"))
+    runtimeOnly(project(":nodejs"))
+    runtimeOnly(project(":rider"))
+    runtimeOnly(project(":git"))
+    testRuntimeOnly(libs.junit.four)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.awaitility)
+    "sqplugins"(libs.bundles.sonar.analyzers)
+    if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+        "sqplugins"(libs.sonar.cfamily)
+        "sqplugins"(libs.sonar.dotnet.enterprise)
+        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
+        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
+        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
+    }
+    "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
+}
 
 intellijPlatform {
     pluginConfiguration {
@@ -218,53 +254,6 @@ intellijPlatform {
             }
         }
     }
-}
-
-configurations {
-    val sqplugins = create("sqplugins") { isTransitive = false }
-    create("sqplugins_deps") {
-        extendsFrom(sqplugins)
-        isTransitive = true
-    }
-    create("omnisharp")
-    create("sloop")
-}
-
-dependencies {
-    intellijPlatform {
-        intellijIdeaCommunity(intellijBuildVersion)
-        bundledPlugins("com.intellij.java", "Git4Idea")
-        pluginVerifier()
-        testFramework(TestFrameworkType.Platform)
-    }
-    implementation(libs.sonarlint.java.client.utils)
-    implementation(libs.sonarlint.rpc.java.client)
-    implementation(libs.sonarlint.rpc.impl)
-    implementation(libs.commons.langs3)
-    implementation(libs.commons.text)
-    implementation(project(":common"))
-    compileOnly(libs.findbugs.jsr305)
-    runtimeOnly(project(":clion"))
-    runtimeOnly(project(":clion-resharper"))
-    runtimeOnly(project(":nodejs"))
-    runtimeOnly(project(":rider"))
-    runtimeOnly(project(":git"))
-    testRuntimeOnly(libs.junit.four)
-    testImplementation(platform(libs.junit.bom))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
-    testImplementation(libs.awaitility)
-    "sqplugins"(libs.bundles.sonar.analyzers)
-    if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"(libs.sonar.cfamily)
-        "sqplugins"(libs.sonar.dotnet.enterprise)
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
-    }
-    "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
 val ijVersion: String? by project
