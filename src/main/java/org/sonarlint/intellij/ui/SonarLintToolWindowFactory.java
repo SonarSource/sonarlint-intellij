@@ -167,7 +167,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   private static void addHelpAndSupportTab(Project project, ToolWindow toolWindow) {
     var helpContent = toolWindow.getContentManager().getFactory()
       .createContent(
-        new SonarLintHelpAndSupportPanel(toolWindow, project),
+        new SonarLintHelpAndSupportPanel(project),
         HELP_AND_SUPPORT_TAB_TITLE,
         false);
     helpContent.setCloseable(false);

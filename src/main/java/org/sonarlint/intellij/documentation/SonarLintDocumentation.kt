@@ -60,6 +60,7 @@ object SonarLintDocumentation {
         const val SONARQUBE_EDITIONS_DOWNLOADS_LINK = "$BASE_MARKETING_URL/products/sonarqube/downloads"
         const val SONARCLOUD_PRODUCT_LINK = "$BASE_MARKETING_URL/products/sonarcloud"
         const val SONARCLOUD_PRODUCT_SIGNUP_LINK = "$BASE_MARKETING_URL/products/sonarcloud/signup-free/"
+        const val SONARQUBE_FOR_IDE_ROADMAP_LINK = "$BASE_MARKETING_URL/products/sonarlint/roadmap/"
     }
 
 }
