@@ -155,6 +155,7 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         }
 
         return JBPanel<WalkthroughPanel>(BorderLayout()).apply {
+            border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
             add(previousButton, BorderLayout.WEST)
             add(nextButton, BorderLayout.EAST)
         }
