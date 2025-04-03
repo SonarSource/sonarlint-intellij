@@ -84,3 +84,9 @@ dependencies {
     }
     implementation(project(":common"))
 }
+
+tasks {
+    compileKotlin {
+        incremental = false
+    }
+}
