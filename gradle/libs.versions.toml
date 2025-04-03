@@ -21,7 +21,7 @@ sonarqube = "4.4.1.3373"
 kotlin-plugin = "2.1.10"
 intellij-plugin = "2.4.0"
 license-plugin = "0.16.1"
-artifactory-plugin = "4.33.1"
+artifactory-plugin = "5.2.5"
 cyclonedx-plugin = "1.10.0"
 
 commons-lang3 = "3.17.0"
