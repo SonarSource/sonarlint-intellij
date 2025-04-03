@@ -6,14 +6,15 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.EnumSet
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
@@ -33,7 +34,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.6")
+        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.7")
     }
 }
 
@@ -42,6 +43,7 @@ description = "SonarLint for IntelliJ IDEA"
 
 val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
+val runIdeDirectory: String by project
 
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
@@ -52,149 +54,28 @@ val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
 
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
-allprojects {
-    apply {
-        plugin("idea")
-        plugin("java")
-        plugin("org.jetbrains.intellij")
-        plugin("org.cyclonedx.bom")
-        plugin("com.github.hierynomus.license")
-    }
-
-    configurations.archives.get().isCanBeResolved = true
-
-    repositories {
-        maven("https://repox.jfrog.io/repox/sonarsource") {
-            if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-                credentials {
-                    username = artifactoryUsername
-                    password = artifactoryPassword
-                }
-            }
-        }
-        mavenCentral {
-            content {
-                // avoid dependency confusion
-                excludeGroupByRegex("com\\.sonarsource.*")
+repositories {
+    maven("https://repox.jfrog.io/repox/sonarsource") {
+        if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+            credentials {
+                username = artifactoryUsername
+                password = artifactoryPassword
             }
         }
     }
-
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
+    mavenCentral {
+        content {
+            // avoid dependency confusion
+            excludeGroupByRegex("com\\.sonarsource.*")
         }
     }
-
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions {
-            apiVersion = "1.7"
-            jvmTarget = "17"
-        }
-    }
-
-
-    tasks.cyclonedxBom {
-        setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
-        inputs.files(configurations.runtimeClasspath, configurations.archives.get())
-        mustRunAfter(
-            getTasksByName("buildPluginBlockmap", true)
-        )
-    }
-
-    val bomFile = layout.buildDirectory.file("reports/bom.json")
-    artifacts.add("archives", bomFile.get().asFile) {
-        name = "sonarlint-intellij"
-        type = "json"
-        classifier = "cyclonedx"
-        builtBy("cyclonedxBom")
-    }
-
-    license {
-        header = rootProject.file("HEADER")
-        mapping(
-            mapOf(
-                "java" to "SLASHSTAR_STYLE",
-                "kt" to "SLASHSTAR_STYLE",
-                "svg" to "XML_STYLE",
-                "form" to "XML_STYLE"
-            )
-        )
-        excludes(
-            listOf("**/*.jar", "**/*.png", "**/README")
-        )
-        strictCheck = true
-    }
-}
-
-subprojects {
-    tasks {
-        buildSearchableOptions {
-            // the only module contributing settings is the root one
-            enabled = false
-        }
-    }
-}
-
-intellij {
-    pluginName.set("sonarlint-intellij")
-    updateSinceUntilBuild.set(false)
-    plugins.set(listOf("java", "Git4Idea"))
-    if (!ideaHome.isNullOrBlank()) {
-        println("Using local installation of IntelliJ IDEA: $ideaHome")
-        localPath.set(ideaHome)
-        localSourcesPath.set(ideaHome)
-    } else {
-        println("No local installation of IntelliJ IDEA found, using version $intellijBuildVersion")
-        version.set(intellijBuildVersion)
+    intellijPlatform {
+        defaultRepositories()
+        localPlatformArtifacts()
     }
 }
 
 val verifierVersions: String by project
-
-tasks.runPluginVerifier {
-    if (project.hasProperty("verifierVersions")) {
-        ideVersions.set(verifierVersions.split(','))
-    } else {
-        // Test oldest supported, and latest
-        ideVersions.set(listOf("IC-2022.3.1", "IC-2024.3.1"))
-    }
-    failureLevel.set(
-        EnumSet.complementOf(
-            EnumSet.of(
-                // these are the only issues we tolerate
-                RunPluginVerifierTask.FailureLevel.DEPRECATED_API_USAGES,
-                RunPluginVerifierTask.FailureLevel.EXPERIMENTAL_API_USAGES,
-                RunPluginVerifierTask.FailureLevel.NOT_DYNAMIC,
-                RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
-                // TODO Workaround for CLion
-                RunPluginVerifierTask.FailureLevel.MISSING_DEPENDENCIES,
-                // needed because of CPPToolset.isRemote()
-                RunPluginVerifierTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES
-            )
-        )
-    )
-}
-
-tasks.test {
-    useJUnitPlatform()
-    systemProperty("sonarlint.telemetry.disabled", "true")
-    systemProperty("sonarlint.monitoring.disabled", "true")
-    doNotTrackState("Tests should always run")
-}
-
-val runIdeDirectory: String by project
-
-tasks.runIde {
-    systemProperty("sonarlint.telemetry.disabled", "true")
-    systemProperty("sonarlint.monitoring.disabled", "true")
-    // uncomment to customize the SonarCloud URL
-    //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
-    if (project.hasProperty("runIdeDirectory")) {
-        ideDir.set(File(runIdeDirectory))
-    }
-    maxHeapSize = "2g"
-}
 
 configurations {
     val sqplugins = create("sqplugins") { isTransitive = false }
@@ -206,7 +87,66 @@ configurations {
     create("sloop")
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        apiVersion = "1.7"
+        jvmTarget = "17"
+    }
+}
+
+configurations.archives.get().isCanBeResolved = true
+
+tasks.cyclonedxBom {
+    setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
+    inputs.files(configurations.runtimeClasspath, configurations.archives.get())
+    mustRunAfter(
+        getTasksByName("buildPluginBlockmap", true)
+    )
+}
+
+val bomFile = layout.buildDirectory.file("reports/bom.json")
+artifacts.add("archives", bomFile.get().asFile) {
+    name = "sonarlint-intellij"
+    type = "json"
+    classifier = "cyclonedx"
+    builtBy("cyclonedxBom")
+}
+
+license {
+    header = rootProject.file("HEADER")
+    mapping(
+        mapOf(
+            "java" to "SLASHSTAR_STYLE",
+            "kt" to "SLASHSTAR_STYLE",
+            "svg" to "XML_STYLE",
+            "form" to "XML_STYLE"
+        )
+    )
+    excludes(
+        listOf("**/*.jar", "**/*.png", "**/README")
+    )
+    strictCheck = true
+}
+
 dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity(intellijBuildVersion)
+        bundledPlugins("com.intellij.java", "Git4Idea")
+        testFramework(TestFrameworkType.Platform)
+        pluginModule(implementation(project(":clion")))
+        pluginModule(implementation(project(":clion-resharper")))
+        pluginModule(implementation(project(":nodejs")))
+        pluginModule(implementation(project(":clion-common")))
+        pluginModule(implementation(project(":common")))
+        pluginModule(implementation(project(":git")))
+        pluginModule(implementation(project(":rider")))
+    }
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
     implementation(libs.sonarlint.rpc.impl)
@@ -219,6 +159,7 @@ dependencies {
     runtimeOnly(project(":nodejs"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
+    testRuntimeOnly(libs.junit.four)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
@@ -236,85 +177,209 @@ dependencies {
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
-tasks {
-    fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "223.8214.6"
+            untilBuild = provider { null }
+        }
+        name = "sonarlint-intellij"
+    }
+
+    pluginVerification {
+        failureLevel = listOf(
+            // these are the only issues we tolerate
+            VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES,
+            VerifyPluginTask.FailureLevel.EXPERIMENTAL_API_USAGES,
+            VerifyPluginTask.FailureLevel.NOT_DYNAMIC,
+            VerifyPluginTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
+            // TODO Workaround for CLion
+            VerifyPluginTask.FailureLevel.MISSING_DEPENDENCIES,
+            // needed because of CPPToolset.isRemote()
+            VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES
+        )
+
+        if (project.hasProperty("verifierVersions")) {
+            ides {
+                verifierVersions.split(',').forEach {
+                    ide(it)
+                }
+            }
+        } else {
+            // Test oldest supported, and latest
+            ides {
+                ide("IC-2022.3.1")
+                ide("IC-2024.3.1")
+            }
+        }
+
+    }
+
+    sonar {
+        properties {
+            property("sonar.projectName", "SonarLint for IntelliJ IDEA")
+        }
+    }
+
+    artifactory {
+        clientConfig.info.buildName = "sonarlint-intellij"
+        clientConfig.info.buildNumber = System.getenv("BUILD_ID")
+        clientConfig.isIncludeEnvVars = true
+        clientConfig.envVarsExcludePatterns =
+            "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
+        clientConfig.info.addEnvironmentProperty(
+            "ARTIFACTS_TO_DOWNLOAD",
+            "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip,org.sonarsource.sonarlint.intellij:sonarlint-intellij:json:cyclonedx"
+        )
+        setContextUrl(System.getenv("ARTIFACTORY_URL"))
+        publish {
+            repository {
+                repoKey = System.getenv("ARTIFACTORY_DEPLOY_REPO")
+                username = System.getenv("ARTIFACTORY_DEPLOY_USERNAME")
+                password = System.getenv("ARTIFACTORY_DEPLOY_PASSWORD")
+            }
+            defaults {
+                setProperties(
+                    mapOf(
+                        "vcs.revision" to System.getenv("CIRRUS_CHANGE_IN_REPO"),
+                        "vcs.branch" to (System.getenv("CIRRUS_BASE_BRANCH")
+                            ?: System.getenv("CIRRUS_BRANCH")),
+                        "build.name" to "sonarlint-intellij",
+                        "build.number" to System.getenv("BUILD_ID")
+                    )
+                )
+                publications("archives")
+                setPublishPom(true)
+                setPublishIvy(false)
+            }
+        }
+    }
+}
+
+val ijVersion: String? by project
+val actualIjVersion = if (ijVersion.isNullOrBlank()) {
+    "2022.3.1"
+} else {
+    ijVersion
+}
+
+intellijPlatformTesting {
+    runIde {
+        val runLocalIde by registering {
+            if (project.hasProperty("runIdeDirectory")) {
+                println("Using runIdeDirectory: $runIdeDirectory")
+                localPath.set(file(runIdeDirectory))
+            }
+            prepareSandboxTask {
+                doLast {
+                    copyPlugins(destinationDir, pluginName)
+                    renameCsharpPlugins(destinationDir, pluginName)
+                    copyOmnisharp(destinationDir, pluginName)
+                    copySloop(destinationDir, pluginName)
+                    unzipEslintBridgeBundle(destinationDir, pluginName)
+                }
+            }
+        }
+    }
+}
+
+fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
+    copy {
+        from(project.configurations["sqplugins"])
+        into(file("$destinationDir/${pluginName.get()}/plugins"))
+    }
+}
+
+fun renameCsharpPlugins(destinationDir: File, pluginName: Property<String>) {
+    val pluginsDir = File("$destinationDir/${pluginName.get()}/plugins")
+    pluginsDir.listFiles()?.forEach { file ->
+        if (file.name.matches(Regex("sonar-csharp-enterprise-plugin-.*\\.jar"))) {
+            file.renameTo(File(pluginsDir, "sonar-csharp-enterprise-plugin.jar"))
+        } else if (file.name.matches(Regex("sonar-csharp-plugin-.*\\.jar"))) {
+            file.renameTo(File(pluginsDir, "sonar-csharp-plugin.jar"))
+        }
+    }
+}
+
+fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
+    configurations["omnisharp"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
         copy {
-            from(project.configurations["sqplugins"])
-            into(file("$destinationDir/${pluginName.get()}/plugins"))
+            from(zipTree(artifact.file))
+            into(file("$destinationDir/${pluginName.get()}/omnisharp/${artifact.classifier}"))
+        }
+    }
+}
+
+fun copySloop(destinationDir: File, pluginName: Property<String>) {
+    configurations["sloop"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
+        copy {
+            from(zipTree(artifact.file))
+            into(file("$destinationDir/${pluginName.get()}/sloop/"))
+        }
+    }
+}
+
+fun unzipEslintBridgeBundle(destinationDir: File, pluginName: Property<String>) {
+    val pluginsDir = File("$destinationDir/${pluginName.get()}/plugins")
+    val jarPath = pluginsDir.listFiles()?.find {
+        it.name.startsWith("sonar-javascript-plugin-") && it.name.endsWith(".jar")
+    } ?: throw GradleException("sonar-javascript-plugin-* JAR not found in $destinationDir")
+
+    val zipFile = ZipFile(jarPath)
+    val entry = zipFile.entries().asSequence().find { it.name.matches(Regex("sonarjs-.*\\.tgz")) }
+        ?: throw GradleException("eslint bridge server bundle not found in JAR $jarPath")
+
+    val outputFolderPath = Paths.get("$pluginsDir/eslint-bridge")
+    val outputFilePath = outputFolderPath.resolve(entry.name)
+
+    if (!Files.exists(outputFolderPath)) {
+        Files.createDirectory(outputFolderPath)
+    }
+
+    zipFile.getInputStream(entry).use { input ->
+        FileOutputStream(outputFilePath.toFile()).use { output ->
+            input.copyTo(output)
         }
     }
 
-    fun renameCsharpPlugins(destinationDir: File, pluginName: Property<String>) {
-        val pluginsDir = File("$destinationDir/${pluginName.get()}/plugins")
-        pluginsDir.listFiles()?.forEach { file ->
-            if (file.name.matches(Regex("sonar-csharp-enterprise-plugin-.*\\.jar"))) {
-                file.renameTo(File(pluginsDir, "sonar-csharp-enterprise-plugin.jar"))
-            } else if (file.name.matches(Regex("sonar-csharp-plugin-.*\\.jar"))) {
-                file.renameTo(File(pluginsDir, "sonar-csharp-plugin.jar"))
-            }
-        }
-    }
-
-    fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
-        configurations["omnisharp"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
-            copy {
-                from(zipTree(artifact.file))
-                into(file("$destinationDir/${pluginName.get()}/omnisharp/${artifact.classifier}"))
-            }
-        }
-    }
-
-    fun copySloop(destinationDir: File, pluginName: Property<String>) {
-        configurations["sloop"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
-            copy {
-                from(zipTree(artifact.file))
-                into(file("$destinationDir/${pluginName.get()}/sloop/"))
-            }
-        }
-    }
-
-    fun unzipEslintBridgeBundle(destinationDir: File, pluginName: Property<String>) {
-        val pluginsDir = File("$destinationDir/${pluginName.get()}/plugins")
-        val jarPath = pluginsDir.listFiles()?.find {
-            it.name.startsWith("sonar-javascript-plugin-") && it.name.endsWith(".jar")
-        } ?: throw GradleException("sonar-javascript-plugin-* JAR not found in $destinationDir")
-
-        val zipFile = ZipFile(jarPath)
-        val entry = zipFile.entries().asSequence().find { it.name.matches(Regex("sonarjs-.*\\.tgz")) }
-            ?: throw GradleException("eslint bridge server bundle not found in JAR $jarPath")
-
-
-        val outputFolderPath = Paths.get("$pluginsDir/eslint-bridge")
-        val outputFilePath = outputFolderPath.resolve(entry.name)
-
-        if (!Files.exists(outputFolderPath)) {
-            Files.createDirectory(outputFolderPath)
-        }
-
-        zipFile.getInputStream(entry).use { input ->
-            FileOutputStream(outputFilePath.toFile()).use { output ->
-                input.copyTo(output)
-            }
-        }
-
-        GzipCompressorInputStream(FileInputStream(outputFilePath.toFile())).use { gzipInput ->
-            TarArchiveInputStream(gzipInput).use { tarInput ->
-                var tarEntry: TarArchiveEntry?
-                while (tarInput.nextEntry.also { tarEntry = it } != null) {
-                    val outputFile = outputFolderPath.resolve(tarEntry!!.name).toFile()
-                    if (tarEntry!!.isDirectory) {
-                        outputFile.mkdirs()
-                    } else {
-                        outputFile.parentFile.mkdirs()
-                        FileOutputStream(outputFile).use { output ->
-                            tarInput.copyTo(output)
-                        }
+    GzipCompressorInputStream(FileInputStream(outputFilePath.toFile())).use { gzipInput ->
+        TarArchiveInputStream(gzipInput).use { tarInput ->
+            var tarEntry: TarArchiveEntry?
+            while (tarInput.nextEntry.also { tarEntry = it as TarArchiveEntry? } != null) {
+                val outputFile = outputFolderPath.resolve(tarEntry!!.name).toFile()
+                if (tarEntry!!.isDirectory) {
+                    outputFile.mkdirs()
+                } else {
+                    outputFile.parentFile.mkdirs()
+                    FileOutputStream(outputFile).use { output ->
+                        tarInput.copyTo(output)
                     }
                 }
             }
         }
+    }
 
-        Files.delete(outputFilePath)
+    Files.delete(outputFilePath)
+}
+
+tasks {
+    jar {
+        archiveClassifier = ""
+    }
+
+    runIde {
+        systemProperty("sonarlint.telemetry.disabled", "true")
+        systemProperty("sonarlint.monitoring.disabled", "true")
+        // uncomment to customize the SonarCloud URL
+        //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
+        maxHeapSize = "2g"
+    }
+
+    test {
+        useJUnitPlatform()
+        systemProperty("sonarlint.telemetry.disabled", "true")
+        systemProperty("sonarlint.monitoring.disabled", "true")
+        doNotTrackState("Tests should always run")
     }
 
     prepareSandbox {
@@ -327,7 +392,7 @@ tasks {
         }
     }
 
-    prepareTestingSandbox {
+    prepareTestSandbox {
         doLast {
             copyPlugins(destinationDir, pluginName)
             renameCsharpPlugins(destinationDir, pluginName)
@@ -341,6 +406,12 @@ tasks {
         inputs.file(buildPlugin.get().archiveFile)
         doLast {
             val distribZip = buildPlugin.get().archiveFile.get().asFile
+            artifacts.add("archives", distribZip) {
+                name = project.name
+                extension = "zip"
+                type = "zip"
+                builtBy("buildPluginBlockmap")
+            }
             val blockMapBytes =
                 com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
             val blockMapFile = File(distribZip.parentFile, "blockmap.json")
@@ -390,66 +461,27 @@ tasks {
             xml.required.set(true)
         }
     }
-}
 
-tasks.artifactoryPublish {
-    mustRunAfter(
-        getTasksByName("cyclonedxBom", true),
-        tasks.buildPlugin,
-        getTasksByName("buildPluginBlockmap", true)
-    )
-}
-
-sonar {
-    properties {
-        property("sonar.projectName", "SonarLint for IntelliJ IDEA")
+    artifactoryPublish {
+        mustRunAfter(
+            getTasksByName("cyclonedxBom", true),
+            buildPlugin,
+            getTasksByName("buildPluginBlockmap", true)
+        )
     }
-}
 
-artifactory {
-    clientConfig.info.buildName = "sonarlint-intellij"
-    clientConfig.info.buildNumber = System.getenv("BUILD_ID")
-    clientConfig.isIncludeEnvVars = true
-    clientConfig.envVarsExcludePatterns = "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
-    clientConfig.info.addEnvironmentProperty(
-        "ARTIFACTS_TO_DOWNLOAD",
-        "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip,org.sonarsource.sonarlint.intellij:sonarlint-intellij:json:cyclonedx"
-    )
-    setContextUrl(System.getenv("ARTIFACTORY_URL"))
-    publish {
-        repository {
-            setProperty("repoKey", System.getenv("ARTIFACTORY_DEPLOY_REPO"))
-            setProperty("username", System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
-            setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_PASSWORD"))
+    signing {
+        setRequired {
+            val branch = System.getenv("CIRRUS_BRANCH") ?: ""
+            val pr = System.getenv("CIRRUS_PR") ?: ""
+            (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
+                pr == "" &&
+                gradle.taskGraph.hasTask(":artifactoryPublish")
         }
-        defaults {
-            setProperties(
-                mapOf(
-                    "vcs.revision" to System.getenv("CIRRUS_CHANGE_IN_REPO"),
-                    "vcs.branch" to (System.getenv("CIRRUS_BASE_BRANCH")
-                        ?: System.getenv("CIRRUS_BRANCH")),
-                    "build.name" to "sonarlint-intellij",
-                    "build.number" to System.getenv("BUILD_ID")
-                )
-            )
-            publishConfigs("archives")
-            setPublishPom(true)
-            setPublishIvy(false)
-        }
+        val signingKeyId: String? by project
+        val signingKey: String? by project
+        val signingPassword: String? by project
+        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+        sign(configurations.archives.get())
     }
-}
-
-signing {
-    setRequired {
-        val branch = System.getenv("CIRRUS_BRANCH") ?: ""
-        val pr = System.getenv("CIRRUS_PR") ?: ""
-        (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
-            pr == "" &&
-            gradle.taskGraph.hasTask(":artifactoryPublish")
-    }
-    val signingKeyId: String? by project
-    val signingKey: String? by project
-    val signingPassword: String? by project
-    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-    sign(configurations.archives.get())
 }
