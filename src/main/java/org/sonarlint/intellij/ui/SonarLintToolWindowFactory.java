@@ -52,6 +52,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String REPORT_TAB_TITLE = "Report";
   public static final String TAINT_VULNERABILITIES_TAB_TITLE = "Taint Vulnerabilities";
   public static final String SECURITY_HOTSPOTS_TAB_TITLE = "Security Hotspots";
+  public static final String HELP_AND_SUPPORT_TAB_TITLE = "Help & Support";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
@@ -65,6 +66,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         addTaintVulnerabilitiesTab(project, contentManager);
       }
       addLogTab(project, toolWindow);
+      addHelpAndSupportTab(project, toolWindow);
       toolWindow.setType(ToolWindowType.DOCKED, null);
       contentManager.addContentManagerListener(sonarLintToolWindow);
     });
@@ -160,6 +162,16 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         false);
     logContent.setCloseable(false);
     toolWindow.getContentManager().addContent(logContent);
+  }
+
+  private static void addHelpAndSupportTab(Project project, ToolWindow toolWindow) {
+    var helpContent = toolWindow.getContentManager().getFactory()
+      .createContent(
+        new SonarLintHelpAndSupportPanel(project),
+        HELP_AND_SUPPORT_TAB_TITLE,
+        false);
+    helpContent.setCloseable(false);
+    toolWindow.getContentManager().addContent(helpContent);
   }
 
   public static ToolWindow getSonarLintToolWindow(Project project) {

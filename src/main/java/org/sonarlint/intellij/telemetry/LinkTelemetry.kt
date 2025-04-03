@@ -46,7 +46,10 @@ enum class LinkTelemetry(
     TROUBLESHOOTING_PAGE("troubleshootingPage", TROUBLESHOOTING_LINK),
     AI_FIX_SUGGESTIONS_PAGE("aiFixSuggestionsDocs", AI_FIX_SUGGESTIONS_LINK),
     COMMUNITY_PAGE("communityReportPage", COMMUNITY_LINK),
-    BASE_DOCS_PAGE("baseDocs", BASE_DOCS_URL);
+    BASE_DOCS_WALKTHROUGH("baseDocs", BASE_DOCS_URL),
+    BASE_DOCS_HELP("docs", BASE_DOCS_URL),
+    COMMUNITY_HELP("gethelp", COMMUNITY_LINK),
+    SUGGEST_FEATURE_HELP("suggestfeature", SonarLintDocumentation.Marketing.SONARQUBE_FOR_IDE_ROADMAP_LINK);
 
     fun browseWithTelemetry() {
         SonarLintUtils.getService(SonarLintTelemetry::class.java).helpAndFeedbackLinkClicked(linkId)
