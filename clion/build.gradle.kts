@@ -107,6 +107,11 @@ dependencies {
     testRuntimeOnly(libs.junit.engine)
 }
 
-tasks.test {
-    useJUnitPlatform()
+tasks {
+    compileJava {
+        options.isIncremental = false
+    }
+    test {
+        useJUnitPlatform()
+    }
 }
