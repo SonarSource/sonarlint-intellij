@@ -234,9 +234,9 @@ intellijPlatform {
         setContextUrl(System.getenv("ARTIFACTORY_URL"))
         publish {
             repository {
-                repoKey = System.getenv("ARTIFACTORY_DEPLOY_REPO")
-                username = System.getenv("ARTIFACTORY_DEPLOY_USERNAME")
-                password = System.getenv("ARTIFACTORY_DEPLOY_PASSWORD")
+                setProperty("repoKey", System.getenv("ARTIFACTORY_DEPLOY_REPO"))
+                setProperty("username", System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
+                setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_PASSWORD"))
             }
             defaults {
                 setProperties(
@@ -248,7 +248,7 @@ intellijPlatform {
                         "build.number" to System.getenv("BUILD_ID")
                     )
                 )
-                publications("archives")
+                publishConfigs("archives")
                 setPublishPom(true)
                 setPublishIvy(false)
             }
