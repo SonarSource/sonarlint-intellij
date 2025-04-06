@@ -27,6 +27,7 @@ plugins {
     idea
     signing
     alias(libs.plugins.cyclonedx)
+    `maven-publish`
 }
 
 buildscript {
