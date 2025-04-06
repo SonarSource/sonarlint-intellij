@@ -24,16 +24,9 @@ import com.intellij.remoterobot.utils.keyboard
 import java.awt.Point
 import java.io.File
 import java.time.Duration
-import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
-import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.isCLion
-import org.sonarlint.intellij.its.fixtures.isRider
-import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
-import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
-import org.sonarlint.intellij.its.fixtures.welcomeFrame
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.optionalIdeaFrame
+import org.sonarlint.intellij.its.fixtures.*
+import java.awt.event.KeyEvent
 
 class OpeningUtils {
 
@@ -54,6 +47,17 @@ class OpeningUtils {
         """, true
                     )
                     waitBackgroundTasksFinished()
+                }
+            }
+        }
+
+        fun closeFile() {
+            with(remoteRobot) {
+                idea {
+                    editorComponent().click()
+                    keyboard {
+                        hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_F4)
+                    }
                 }
             }
         }
@@ -131,20 +135,22 @@ class OpeningUtils {
         }
 
         fun closeProject() {
-            optionalIdeaFrame()?.apply {
-                actionMenu("File") {
-                    open()
-                    if (isRider()) {
-                        item("Close Solution") {
-                            click()
-                        }
-                    } else {
-                        item("Close Project") {
-                            click()
-                        }
-                    }
+            remoteRobot.runJs(
+                """
+            importClass(com.intellij.openapi.application.ApplicationManager)
+            
+            const actionId = "CloseProject";
+            const actionManager = com.intellij.openapi.actionSystem.ActionManager.getInstance();
+            const action = actionManager.getAction(actionId);
+            
+            const runAction = new Runnable({
+                run: function() {
+                    actionManager.tryToExecute(action, com.intellij.openapi.ui.playback.commands.ActionCommand.getInputEvent(actionId), null, null, true);
                 }
-            }
+            })
+            ApplicationManager.getApplication().invokeLater(runAction)
+        """, true
+            )
         }
 
         private fun copyProjectFiles(projectName: String) {

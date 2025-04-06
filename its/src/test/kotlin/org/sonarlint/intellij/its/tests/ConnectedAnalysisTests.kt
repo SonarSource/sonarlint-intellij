@@ -175,6 +175,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
             // Focus On New Code Test
             enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator")
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
+
             setFocusOnNewCode()
             analyzeAndVerifyReportTabContainsMessages(
                 "No new issues from last 1 days",

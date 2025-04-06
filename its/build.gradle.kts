@@ -33,6 +33,8 @@ dependencies {
     testImplementation(libs.junit.api)
     testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.engine)
+    // https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-faq.html#junit5-test-framework-refers-to-junit4
+    testRuntimeOnly(libs.junit4)
 }
 
 tasks.test {

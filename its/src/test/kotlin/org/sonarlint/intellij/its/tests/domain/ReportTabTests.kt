@@ -22,6 +22,8 @@ package org.sonarlint.intellij.its.tests.domain
 import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isModernUI
+import org.sonarlint.intellij.its.fixtures.tool.window.leftToolWindow
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 
 class ReportTabTests {
@@ -31,8 +33,13 @@ class ReportTabTests {
             with(remoteRobot) {
                 idea {
                     analyzeFile()
+                    if (remoteRobot.isModernUI()) {
+                        leftToolWindow("SonarQube for IDE") {
+                            ensureOpen()
+                        }
+                    }
                     toolWindow("SonarQube for IDE") {
-                        ensureOpen()
+                        if (remoteRobot.isModernUI().not()) ensureOpen()
                         content("ReportPanel") {
                             expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                         }

@@ -188,7 +188,7 @@ plugin_verifier_task:
     - env:
         IDEA_VERSION: '2022.3.1'
     - env:
-        IDEA_VERSION: '2024.3.1'
+        IDEA_VERSION: '2024.3.5'
     - env:
         # It automatically retrieves the latest version available for the given year (likely to be the EAP)
         IDEA_VERSION: '2024'
@@ -282,7 +282,7 @@ qa_task:
         QA_CATEGORY: 'Idea2022'
         TEST_SUITE: 'Standalone'
     - env:
-        IDEA_VERSION: 'IC-2024.1.4'
+        IDEA_VERSION: 'IC-2024.3.5'
         QA_CATEGORY: 'Idea2024'
         TEST_SUITE: 'OpenInIdeTests'
     - env:
@@ -290,30 +290,30 @@ qa_task:
         QA_CATEGORY: 'Idea2024'
         TEST_SUITE: 'ConnectedAnalysisTests'
     - env:
-        IDEA_VERSION: 'IC-2024.1.4'
+        IDEA_VERSION: 'IC-2024.3.5'
         QA_CATEGORY: 'Idea2024'
         TEST_SUITE: 'ConfigurationTests'
     - env:
-        IDEA_VERSION: 'IC-2024.1.4'
+        IDEA_VERSION: 'IC-2024.3.5'
         QA_CATEGORY: 'Idea2024'
         TEST_SUITE: 'Standalone'
     - env:
         IDEA_VERSION: 'IU-2022.3.1'
         QA_CATEGORY: 'IdeaUltimate2022'
     - env:
-        IDEA_VERSION: 'IU-2024.1.4'
+        IDEA_VERSION: 'IU-2024.3.5'
         QA_CATEGORY: 'IdeaUltimate2024'
     - env:
         IDEA_VERSION: 'PY-2022.3.1'
         QA_CATEGORY: 'PyCharmProfessional2022'
     - env:
-        IDEA_VERSION: 'PY-2024.1.4'
+        IDEA_VERSION: 'PY-2024.3.5'
         QA_CATEGORY: 'PyCharmProfessional2024'
     - env:
         IDEA_VERSION: 'PC-2022.3.1'
         QA_CATEGORY: 'PyCharmCommunity2022'
     - env:
-        IDEA_VERSION: 'PC-2024.1.4'
+        IDEA_VERSION: 'PC-2024.3.5'
         QA_CATEGORY: 'PyCharmCommunity2024'
     - env:
         IDEA_VERSION: 'RD-2022.3.1'
@@ -325,13 +325,13 @@ qa_task:
         IDEA_VERSION: 'PS-2022.3.1'
         QA_CATEGORY: 'PhpStorm2022'
     - env:
-        IDEA_VERSION: 'PS-2024.1.4'
+        IDEA_VERSION: 'PS-2024.3.5'
         QA_CATEGORY: 'PhpStorm2024'
     - env:
         IDEA_VERSION: 'GO-2022.3.1'
         QA_CATEGORY: 'GoLand2022'
     - env:
-        IDEA_VERSION: 'GO-2024.1.4'
+        IDEA_VERSION: 'GO-2024.3.5'
         QA_CATEGORY: 'GoLand2024'
     - env:
         IDEA_VERSION: 'CL-2022.3.1'

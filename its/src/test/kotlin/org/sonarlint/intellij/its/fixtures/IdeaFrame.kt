@@ -21,13 +21,17 @@ package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
+import org.assertj.swing.timing.Pause
+import java.awt.event.KeyEvent
 import java.time.Duration
 import org.sonarlint.intellij.its.utils.optionalStep
 
@@ -103,10 +107,14 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     println("Check background tasks - done")
   }
 
-  fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
-    return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
-  }
-    
+    fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
+        return if (remoteRobot.isModernUI()) {
+            find<ActionMenuFixture>(byXpath("menu $label", "//div[@tooltiptext='Main Menu']")).apply(function)
+        } else {
+            findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
+        }
+    }
+
     fun IdeaFrame.analyzeFile() {
         editorComponent().rightClick()
         actionMenuItem("Analyze with SonarQube for IDE") {
@@ -128,10 +136,16 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     }
 
     fun openSettings() {
-        actionMenu("File") {
-            open()
-            item("Settings...") {
-                click()
+        if (remoteRobot.isModernUI()) {
+            keyboard {
+                hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_S)
+            }
+        } else {
+            actionMenu("File") {
+                open()
+                item("Settings...") {
+                    click()
+                }
             }
         }
     }
