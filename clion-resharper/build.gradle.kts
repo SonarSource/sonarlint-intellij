@@ -98,7 +98,6 @@ dependencies {
         }
         testFramework(TestFrameworkType.Platform)
     }
-    implementation(project(":common"))
     implementation(project(":clion-common"))
     testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)

@@ -178,10 +178,6 @@ dependencies {
 }
 
 intellijPlatform {
-    buildSearchableOptions = false
-}
-
-intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "223.8214.6"

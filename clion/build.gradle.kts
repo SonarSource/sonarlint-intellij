@@ -99,7 +99,6 @@ dependencies {
         bundledPlugins("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang")
         testFramework(TestFrameworkType.JUnit5)
     }
-    implementation(project(":common"))
     implementation(project(":clion-common"))
     testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)
