@@ -27,6 +27,6 @@ buildCache {
     remote<HttpBuildCache> {
         url = uri("http://${buildCacheHost}/")
         isEnabled = isCiServer
-        isPush = isMasterBranch
+        isPush = true
     }
 }
