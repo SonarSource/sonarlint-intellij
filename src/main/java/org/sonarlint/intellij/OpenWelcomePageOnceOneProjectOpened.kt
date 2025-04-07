@@ -24,6 +24,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.config.global.WalkthroughSettingsStore
 import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindow
 
 private const val HAS_WALKTHROUGH_RUN_ONCE: String = "hasWalkthroughRunOnce"
@@ -37,8 +38,10 @@ class OpenWelcomePageOnceOneProjectOpened : StartupActivity {
 
         val properties = PropertiesComponent.getInstance()
 
-        if (!properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false)) {
+        if (!properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false) ||
+            !WalkthroughSettingsStore.instance.hasWalkthroughRunOnce()) {
             properties.setValue(HAS_WALKTHROUGH_RUN_ONCE, true)
+            WalkthroughSettingsStore.instance.setWalkthroughRunOnce(true)
             SonarLintUtils.getService(project, SonarLintWalkthroughToolWindow::class.java).openWelcomePage()
         }
     }
