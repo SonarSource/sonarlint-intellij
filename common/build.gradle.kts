@@ -96,9 +96,3 @@ dependencies {
         }
     }
 }
-
-tasks {
-    compileJava {
-        options.isIncremental = false
-    }
-}
