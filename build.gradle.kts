@@ -29,6 +29,12 @@ plugins {
     alias(libs.plugins.cyclonedx)
 }
 
+// Enable parallel compilation
+tasks.withType<JavaCompile>().configureEach {
+    options.isFork = true
+    options.isIncremental = true
+}
+
 buildscript {
     repositories {
         mavenCentral()
@@ -97,6 +103,7 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         apiVersion = "1.7"
         jvmTarget = "17"
+        freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xskip-prerelease-check")
     }
 }
 
@@ -368,6 +375,8 @@ tasks {
     }
 
     runIde {
+        // Add memory settings for faster run
+        jvmArgs("-XX:+UseParallelGC", "-XX:MaxMetaspaceSize=1g")
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
         // uncomment to customize the SonarCloud URL
@@ -379,10 +388,14 @@ tasks {
         useJUnitPlatform()
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
+        maxHeapSize = "2g"
+        jvmArgs("-XX:+UseParallelGC", "-XX:MaxMetaspaceSize=1g")
+        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
         doNotTrackState("Tests should always run")
     }
 
     prepareSandbox {
+        outputs.cacheIf { true }
         doLast {
             copyPlugins(destinationDir, pluginName)
             renameCsharpPlugins(destinationDir, pluginName)
@@ -393,6 +406,7 @@ tasks {
     }
 
     prepareTestSandbox {
+        outputs.cacheIf { true }
         doLast {
             copyPlugins(destinationDir, pluginName)
             renameCsharpPlugins(destinationDir, pluginName)
@@ -402,8 +416,16 @@ tasks {
         }
     }
 
+    withType<JavaCompile>().configureEach {
+        options.isFork = true
+        options.isIncremental = true
+        options.encoding = "UTF-8"
+    }
+
     val buildPluginBlockmap by registering {
         inputs.file(buildPlugin.get().archiveFile)
+        outputs.cacheIf { true }
+
         doLast {
             val distribZip = buildPlugin.get().archiveFile.get().asFile
             artifacts.add("archives", distribZip) {
@@ -483,5 +505,21 @@ tasks {
         val signingPassword: String? by project
         useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
         sign(configurations.archives.get())
+    }
+}
+
+// Add parallel task execution
+gradle.taskGraph.whenReady {
+    allTasks
+        .filter { it is JavaCompile || it is KotlinCompile }
+        .forEach { it.outputs.cacheIf { true } }
+}
+
+// Configure Gradle for optimal performance
+gradle.projectsEvaluated {
+    rootProject.allprojects {
+        tasks.withType<JavaCompile> {
+            options.compilerArgs.add("-Xlint:none")
+        }
     }
 }
