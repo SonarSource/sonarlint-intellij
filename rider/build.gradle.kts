@@ -104,9 +104,6 @@ dependencies {
 }
 
 tasks {
-    compileJava {
-        options.isIncremental = false
-    }
     compileKotlin {
         incremental = false
     }
