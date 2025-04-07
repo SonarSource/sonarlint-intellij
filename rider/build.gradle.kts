@@ -107,22 +107,4 @@ tasks {
     compileKotlin {
         incremental = false
     }
-
-    // Configure Java compilation tasks to properly track state
-    withType<JavaCompile>().configureEach {
-        options.encoding = "UTF-8"
-        options.isFork = true
-        options.isIncremental = true
-        outputs.cacheIf { true }
-    }
-
-    // Ensure all task outputs are properly cached
-    withType<AbstractArchiveTask>().configureEach {
-        isPreserveFileTimestamps = false
-        isReproducibleFileOrder = true
-    }
-
-    test {
-        outputs.cacheIf { true }
-    }
 }
