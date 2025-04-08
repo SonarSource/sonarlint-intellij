@@ -19,7 +19,6 @@ dependencyResolutionManagement {
 }
 
 val isCiServer = System.getenv()["CI"] != null
-val isMasterBranch = System.getenv()["CIRRUS_BRANCH"] == "master"
 buildCache {
     local {
         isEnabled = !isCiServer
