@@ -17,9 +17,6 @@ env:
   CLION_HOME: "/opt/clion"
   ULTIMATE_HOME: "/opt/ultimate"
 
-  DEVELOCITY_TOKEN: VAULT[development/kv/data/develocity data.token]
-  DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${DEVELOCITY_TOKEN}
-
 auto_cancellation: $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
 
 only_if_nightly: &ONLY_IF_NIGHTLY
