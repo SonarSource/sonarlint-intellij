@@ -37,17 +37,13 @@ class OpenWelcomePageOnceOneProjectOpened : StartupActivity {
         }
 
         val properties = PropertiesComponent.getInstance()
-        val hasPropertiesWalkthroughRunOnce = properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false)
-        if (hasPropertiesWalkthroughRunOnce) {
-            getGlobalSettings().setHasWalkthroughRunOnce(true)
-            return
-        }
 
-        if (!getGlobalSettings().hasWalkthroughRunOnce()) {
-            properties.setValue(HAS_WALKTHROUGH_RUN_ONCE, true)
-            getGlobalSettings().setHasWalkthroughRunOnce(true)
+        if (!properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false) && !getGlobalSettings().hasWalkthroughRunOnce()) {
             SonarLintUtils.getService(project, SonarLintWalkthroughToolWindow::class.java).openWelcomePage()
         }
+
+        properties.setValue(HAS_WALKTHROUGH_RUN_ONCE, true)
+        getGlobalSettings().setHasWalkthroughRunOnce(true)
     }
 
 }
