@@ -25,12 +25,16 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
+import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.verifyWalkthroughIsNotShowing
+import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.closeWalkthrough
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
+import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.closeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.toggleRule
+import org.sonarlint.intellij.its.utils.optionalStep
 
 @Tag("Standalone")
 @EnabledIf("isIdeaCommunity")
@@ -71,5 +75,16 @@ class StandaloneIdeaTests : BaseUiTest() {
         openExistingProject("DuplicatedEnvsChart")
         openFile("templates/memory_limit_pod2.yml", "memory_limit_pod2.yml")
         verifyCurrentFileTabContainsMessages("Bind this resource's automounted service account to RBAC or disable automounting.")
+    }
+
+    @Test
+    fun should_not_open_walkthrough_after_opened_once() = uiTest {
+        openExistingProject("DuplicatedEnvsChart")
+        optionalStep {
+            closeWalkthrough()
+        }
+        closeProject()
+        openExistingProject("sample-java-issues")
+        verifyWalkthroughIsNotShowing()
     }
 }

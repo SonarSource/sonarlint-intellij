@@ -52,6 +52,8 @@ fun ContainerFixture.jbTable() = findElement<JBTableFixture>(byXpath("//div[@cla
 
 fun ContainerFixture.editorComponent() = findElement<ComponentFixture>(byXpath("//div[@class='PsiAwareTextEditorComponent']"))
 
+fun ContainerFixture.walkthroughComponent() = findElement<ComponentFixture>(byXpath("//div[@class='ToolWindowHeader'][.//div[@text='Welcome to SonarQube for IDE']]"))
+
 fun CommonContainerFixture.jPasswordField() = textField(byXpath("//div[@class='JPasswordField']"))
 
 fun CommonContainerFixture.jBPasswordField() = textField(byXpath("//div[@class='JBPasswordField']"))
