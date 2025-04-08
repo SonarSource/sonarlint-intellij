@@ -92,6 +92,8 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     getService(SonarLintGlobalSettingsStore.class).save(newSettings);
 
     newSettings.setSecretsNeverBeenAnalysed(currentSettings.isSecretsNeverBeenAnalysed());
+    newSettings.setHasWalkthroughRunOnce(currentSettings.hasWalkthroughRunOnce());
+    newSettings.setPromotionDisabled(currentSettings.isPromotionDisabled());
 
     ApplicationManager.getApplication().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC)
       .applied(currentSettings, newSettings);
