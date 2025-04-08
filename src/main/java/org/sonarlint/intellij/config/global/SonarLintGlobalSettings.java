@@ -50,6 +50,8 @@ public final class SonarLintGlobalSettings {
 
   private List<ServerConnection> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
+  private boolean hasWalkthroughRunOnce = false;
+
   @Deprecated
   private Set<String> includedRules;
   @Deprecated
@@ -191,6 +193,14 @@ public final class SonarLintGlobalSettings {
 
   public void setNodejsPath(String nodejsPath) {
     this.nodejsPath = nodejsPath;
+  }
+
+  public boolean hasWalkthroughRunOnce() {
+    return hasWalkthroughRunOnce;
+  }
+
+  public void setHasWalkthroughRunOnce(boolean hasWalkthroughRunOnce) {
+    this.hasWalkthroughRunOnce = hasWalkthroughRunOnce;
   }
 
   // Don't change annotation, used for backward compatibility
