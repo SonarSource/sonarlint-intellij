@@ -71,6 +71,7 @@ public class AuthStep extends AbstractWizardStepEx {
   private JButton openTokenCreationPageButton;
   private JLabel deprecated;
   private final ErrorPainter errorPainter;
+  private boolean nextStepTriggered = false;
 
   public AuthStep(WizardModel model) {
     super("Authentication");
@@ -110,6 +111,12 @@ public class AuthStep extends AbstractWizardStepEx {
 
     errorPainter = new ErrorPainter();
     errorPainter.installOn(panel, this);
+  }
+
+  @Override
+  protected void fireGoNext() {
+    nextStepTriggered = true;
+    super.fireGoNext();
   }
 
   @Override
@@ -283,6 +290,9 @@ public class AuthStep extends AbstractWizardStepEx {
     if (visibleFrame != null) {
       visibleFrame.toFront();
     }
-    fireGoNext();
+    // Prevent triggering next step if user already clicked on next
+    if (!nextStepTriggered) {
+      fireGoNext();
+    }
   }
 }
