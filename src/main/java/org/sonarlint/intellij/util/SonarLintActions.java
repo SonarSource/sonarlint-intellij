@@ -82,10 +82,10 @@ public final class SonarLintActions {
     clearReportAction = new ClearReportAction("Clear Project Files Issues",
       "Clear analysis results",
       SonarLintIcons.CLEAN);
-    clearIssuesAction = new ClearCurrentFileIssuesAction("Clear SonarQube Issues",
+    clearIssuesAction = new ClearCurrentFileIssuesAction("Clear SonarQube for IDE Issues",
       "Clear SonarQube for IDE issues",
       SonarLintIcons.CLEAN);
-    cleanConsoleAction = new SonarCleanConsoleAction("Clear SonarQube Console",
+    cleanConsoleAction = new SonarCleanConsoleAction("Clear SonarQube for IDE Console",
       "Clear SonarQube for IDE console",
       SonarLintIcons.CLEAN);
     analyzeAllFilesAction = new SonarAnalyzeAllFilesAction("Analyze All Project Files",
