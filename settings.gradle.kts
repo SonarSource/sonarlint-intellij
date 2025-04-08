@@ -3,6 +3,7 @@ include(":its", ":clion", ":clion-resharper", ":nodejs", ":clion-common", ":comm
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version ("0.9.0")
+    id("com.gradle.develocity") version("3.18.2")
 }
 
 dependencyResolutionManagement {
@@ -28,5 +29,24 @@ buildCache {
         url = uri("http://${buildCacheHost}/")
         isEnabled = isCiServer
         isPush = true
+    }
+}
+
+develocity {
+    server = "https://develocity.sonar.build"
+    buildScan {
+        if (isCiServer) {
+            uploadInBackground.set(false)
+            tag("CI")
+            for (key in listOf(
+                "CIRRUS_BUILD_ID",
+                "CIRRUS_TASK_ID",
+                "CIRRUS_TASK_NAME",
+                "CIRRUS_BRANCH",
+                "CIRRUS_CHANGE_IN_REPO"
+            )) {
+                value(key, System.getenv(key))
+            }
+        }
     }
 }
