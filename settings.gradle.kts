@@ -18,17 +18,15 @@ dependencyResolutionManagement {
     }
 }
 
-val isCiServer = System.getenv().containsKey("CIRRUS_CI")
+val isCiServer = System.getenv()["CI"] != null
 val isMasterBranch = System.getenv()["CIRRUS_BRANCH"] == "master"
-val buildCacheHost: String = System.getenv().getOrDefault("CIRRUS_HTTP_CACHE_HOST", "localhost:12321")
 buildCache {
     local {
         isEnabled = !isCiServer
     }
-    remote<HttpBuildCache> {
-        url = uri("http://${buildCacheHost}/")
-        isEnabled = isCiServer
-        isPush = true
+    remote(develocity.buildCache) {
+        isEnabled = true
+        isPush = isCiServer
     }
 }
 
