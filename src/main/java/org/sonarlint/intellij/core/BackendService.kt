@@ -567,7 +567,7 @@ class BackendService : Disposable {
         }
     }
 
-    internal fun projectClosed(project: Project) {
+    fun projectClosed(project: Project) {
         ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
         val projectId = projectId(project)
         notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId)) }
@@ -897,6 +897,7 @@ class BackendService : Disposable {
     }
 
     override fun dispose() {
+        GlobalLogOutput.get().log("Shutting down backend service...", ClientLogOutput.Level.INFO)
         backendFuture.thenAccept { it.shutdown() }
     }
 
