@@ -23,12 +23,14 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.TestDialog;
 import com.intellij.openapi.ui.TestDialogManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -63,6 +65,7 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
 
   @Test
   void testNoProject() {
+    clearInvocations(analysisSubmitter);
     AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(null);
 

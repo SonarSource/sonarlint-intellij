@@ -60,6 +60,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
   private final CheckinProjectPanel checkinProjectPanel = mock(CheckinProjectPanel.class);
   private final CheckInCallable checkInCallable = mock(CheckInCallable.class);
   private SonarLintCheckinHandler handler;
+  private UUID analysisUuid;
 
   @BeforeEach
   void prepare() {
@@ -68,21 +69,21 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     replaceProjectService(SonarLintToolWindow.class, toolWindow);
 
     when(checkinProjectPanel.getVirtualFiles()).thenReturn(Collections.singleton(file));
+    analysisUuid = UUID.randomUUID();
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
+      .thenReturn(Pair.of(checkInCallable, List.of(analysisUuid)));
   }
 
   @Test
   void testNoUnresolvedIssues() {
-    var uuid = UUID.randomUUID();
-    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
+    var analysisState = new AnalysisState(analysisUuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
     var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
       .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
-    when(runningAnalysesTracker.getById(uuid)).thenReturn(analysisState);
-    when(runningAnalysesTracker.getById(uuid)).thenReturn(null);
-    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
-      .thenReturn(Pair.of(checkInCallable, List.of(uuid)));
+    when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
+    when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var result = handler.beforeCheckin(null, null);
@@ -93,17 +94,14 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
   @Test
   void testIssues() {
-    var uuid = UUID.randomUUID();
-    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
+    var analysisState = new AnalysisState(analysisUuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("java:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
       .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
-    when(runningAnalysesTracker.getById(uuid)).thenReturn(analysisState);
-    when(runningAnalysesTracker.getById(uuid)).thenReturn(null);
-    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
-      .thenReturn(Pair.of(checkInCallable, List.of(uuid)));
+    when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
+    when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
@@ -124,17 +122,14 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
   @Test
   void testSecretsIssues() {
-    var uuid = UUID.randomUUID();
-    var analysisState = new AnalysisState(uuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
+    var analysisState = new AnalysisState(analysisUuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("secrets:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
       .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
-    when(runningAnalysesTracker.getById(uuid)).thenReturn(analysisState);
-    when(runningAnalysesTracker.getById(uuid)).thenReturn(null);
-    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
-      .thenReturn(Pair.of(checkInCallable, List.of(uuid)));
+    when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
+    when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
