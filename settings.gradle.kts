@@ -1,5 +1,10 @@
 rootProject.name = "sonarlint-intellij"
-include("its", "clion", "clion-resharper", "nodejs", "clion-common", "common", "git", "rider")
+include(":its", ":clion", ":clion-resharper", ":nodejs", ":clion-common", ":common", ":git", ":rider")
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.9.0")
+    id("com.gradle.develocity") version("3.18.2")
+}
 
 dependencyResolutionManagement {
     versionCatalogs {
@@ -13,20 +18,32 @@ dependencyResolutionManagement {
     }
 }
 
-val isCiServer = System.getenv().containsKey("CIRRUS_CI")
-val isMasterBranch = System.getenv()["CIRRUS_BRANCH"] == "master"
-val buildCacheHost: String = System.getenv().getOrDefault("CIRRUS_HTTP_CACHE_HOST", "localhost:12321")
+val isCiServer = System.getenv()["CI"] != null
 buildCache {
     local {
         isEnabled = !isCiServer
     }
-    remote<HttpBuildCache> {
-        url = uri("http://${buildCacheHost}/")
-        isEnabled = isCiServer
-        isPush = isMasterBranch
+    remote(develocity.buildCache) {
+        isEnabled = true
+        isPush = isCiServer
     }
 }
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.9.0")
+develocity {
+    server = "https://develocity.sonar.build"
+    buildScan {
+        if (isCiServer) {
+            uploadInBackground.set(false)
+            tag("CI")
+            for (key in listOf(
+                "CIRRUS_BUILD_ID",
+                "CIRRUS_TASK_ID",
+                "CIRRUS_TASK_NAME",
+                "CIRRUS_BRANCH",
+                "CIRRUS_CHANGE_IN_REPO"
+            )) {
+                value(key, System.getenv(key))
+            }
+        }
+    }
 }
