@@ -1,7 +1,4 @@
-resource "aws_s3_bucket" "mynoncompliantbucket" {
-  bucket = "mybucketname"
-
-  tags = {
-    "anycompany:cost-center" = "Accounting"
-  }
+resource "aws_api_gateway_domain_name" "example" {
+  domain_name = "api.example.com"
+  security_policy = "TLS_1_0" # Noncompliant
 }

@@ -211,9 +211,9 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactly(
                 tuple(
-                    "terraform:S6273",
-                    "Rename tag key \"anycompany:cost-center\" to match the regular expression \"^([A-Z][A-Za-z]*:)*([A-Z][A-Za-z]*)\$\".",
-                    Pair(90, 114)
+                    "terraform:S4423",
+                    "Change this code to disable support of older TLS versions.",
+                    Pair(87, 114)
                 )
             )
         assertThat(highlightInfos).hasSize(1)
