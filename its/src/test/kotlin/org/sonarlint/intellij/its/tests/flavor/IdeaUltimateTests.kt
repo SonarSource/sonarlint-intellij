@@ -38,7 +38,7 @@ class IdeaUltimateTests : BaseUiTest() {
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "file.yaml",
-            "Rename tag key \"anycompany:cost-center\" to match the regular expression \"^([A-Z][A-Za-z]*:)*([A-Z][A-Za-z]*)\$\"."
+            "Change this code to disable support of older TLS versions."
         )
 
         openFile("Dockerfile")
@@ -59,7 +59,7 @@ class IdeaUltimateTests : BaseUiTest() {
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "file.tf",
-            "Rename tag key \"anycompany:cost-center\" to match the regular expression \"^([A-Z][A-Za-z]*:)*([A-Z][A-Za-z]*)\$\"."
+            "Change this code to disable support of older TLS versions."
         )
     }
 

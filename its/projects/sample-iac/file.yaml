@@ -1,9 +1,6 @@
-AWSTemplateFormatVersion: 2010-09-09
+AWSTemplateFormatVersion: '2010-09-09'
 Resources:
-  S3Bucket:
-    Type: 'AWS::S3::Bucket'
+  CustomApi:
+    Type: AWS::ApiGateway::DomainName
     Properties:
-      BucketName: "mybucketname"
-      Tags:
-        - Key: "anycompany:cost-center"
-          Value: "Accounting"
+      SecurityPolicy: "TLS_1_0"  # Noncompliant
