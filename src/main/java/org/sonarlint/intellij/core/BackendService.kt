@@ -568,9 +568,11 @@ class BackendService : Disposable {
     }
 
     internal fun projectClosed(project: Project) {
-        ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
-        val projectId = projectId(project)
-        notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId)) }
+        if (!project.isDisposed) {
+            ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
+            val projectId = projectId(project)
+            notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId)) }
+        }
     }
 
     private fun toBackendConfigurationScope(project: Project, binding: ProjectBinding?) =
