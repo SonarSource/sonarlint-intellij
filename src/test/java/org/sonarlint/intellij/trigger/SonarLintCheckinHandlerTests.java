@@ -31,12 +31,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.tuple.Pair;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisState;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
@@ -46,10 +49,12 @@ import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
@@ -72,6 +77,10 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     analysisUuid = UUID.randomUUID();
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
       .thenReturn(Pair.of(checkInCallable, List.of(analysisUuid)));
+    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
+      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue()
+    );
+    clearInvocations(analysisSubmitter);
   }
 
   @Test
