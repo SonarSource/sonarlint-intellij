@@ -19,15 +19,20 @@
  */
 package org.sonarlint.intellij.ui.walkthrough
 
+import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.ui.ClientProperty
+import com.intellij.ui.JBColor
+import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import java.awt.BorderLayout
 import java.awt.CardLayout
+import java.awt.Color
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.GridBagConstraints
@@ -58,7 +63,7 @@ enum class WalkthroughActions(val id: String, val action: (Project) -> (Unit)) {
     SETUP_CONNECTION("#setupConnection", { project -> ShowSettingsUtil.getInstance().editConfigurable(project, SonarLintProjectConfigurable(project)) }),
     LOG_VIEW("#logView", { project -> getService(project, SonarLintToolWindow::class.java).openLogTab() }),
     COMMUNITY_FORUM("#communityForum", { LinkTelemetry.COMMUNITY_PAGE.browseWithTelemetry() }),
-    DOCS("#docs", { LinkTelemetry.BASE_DOCS_PAGE.browseWithTelemetry() })
+    DOCS("#docs", { LinkTelemetry.BASE_DOCS_WALKTHROUGH.browseWithTelemetry() })
 }
 
 class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(true, true) {
@@ -82,28 +87,32 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         pages.forEach { pageData ->
             cardPanel.add(createPagePanel(pageData), pageData.step)
         }
+        cardPanel.isOpaque = false
+
+        ClientProperty.put(nextButton, DarculaButtonUI.DEFAULT_STYLE_KEY, true)
 
         val mainPanel = JBPanel<WalkthroughPanel>(BorderLayout()).apply {
             add(cardPanel, BorderLayout.CENTER)
             add(createNavigationPanel(), BorderLayout.SOUTH)
+            isOpaque = false
         }
 
         setContent(mainPanel)
     }
 
+    override fun getBackground(): Color = JBColor(Color(18, 110, 211), Color(18, 110, 211))
+
     private fun createPagePanel(pageData: PageData): JPanel {
         val imageLabel = JBLabel(pageData.icon)
         val stepLabel = JBLabel(pageData.step).apply {
-            border = BorderFactory.createEmptyBorder(2, 8, 2, 0)
             font = font.deriveFont(Font.PLAIN, 14f)
         }
         val titleLabel = JBLabel(pageData.title).apply {
-            border = BorderFactory.createEmptyBorder(2, 8, 2, 0)
             font = font.deriveFont(Font.BOLD, 16f)
         }
         val textLabel = SwingHelper.createHtmlViewer(false, font, null, null).apply {
             text = pageData.text
-            border = JBUI.Borders.empty(8)
+            border = BorderFactory.createEmptyBorder()
             addHyperlinkListener { e ->
                 if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
                     WalkthroughActions.values().find { it.id == e.description }?.action?.invoke(project)
@@ -111,26 +120,38 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
             }
         }
 
-        val centerPanel = JBPanel<WalkthroughPanel>(GridBagLayout())
-        val gbc = GridBagConstraints(
-            0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-            JBUI.emptyInsets(), 0, 0
-        )
+        val centerPanel = JBPanel<WalkthroughPanel>(GridBagLayout()).apply {
+            val gbc = GridBagConstraints().apply {
+                gridx = 0
+                fill = GridBagConstraints.HORIZONTAL
+                weightx = 1.0
+                insets = JBUI.insets(10)
+            }
 
-        centerPanel.add(stepLabel, gbc)
-        gbc.gridy = 1
-        centerPanel.add(titleLabel, gbc)
-        gbc.apply {
-            gridy = 2
-            fill = GridBagConstraints.BOTH
-            weightx = 1.0
-            weighty = 1.0
+            gbc.gridy = 0
+            add(stepLabel, gbc)
+
+            gbc.gridy = 1
+            add(titleLabel, gbc)
+
+            gbc.gridy = 2
+            pageData.additionalAction?.let {
+                add(textLabel, gbc)
+                gbc.gridy = 3
+                gbc.anchor = GridBagConstraints.NORTH
+                gbc.weighty = 1.0
+                add(it, gbc)
+            } ?: run {
+                gbc.fill = GridBagConstraints.BOTH
+                gbc.weighty = 1.0
+                add(textLabel, gbc)
+            }
         }
-        centerPanel.add(textLabel, gbc)
 
         return JBPanel<WalkthroughPanel>(BorderLayout()).apply {
             add(imageLabel, BorderLayout.NORTH)
             add(centerPanel, BorderLayout.CENTER)
+            isOpaque = false
         }
     }
 
@@ -154,6 +175,7 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         }
 
         return JBPanel<WalkthroughPanel>(BorderLayout()).apply {
+            border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
             add(previousButton, BorderLayout.WEST)
             add(nextButton, BorderLayout.EAST)
         }
@@ -166,7 +188,7 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         nextButton.text = if (currentPageIndex < pages.size - 1) {
             "Next: ${pages[currentPageIndex + 1].title}"
         } else {
-            "Close"
+            "You're all set!"
         }
     }
 
@@ -182,7 +204,8 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
                 files from the <a href="${WalkthroughActions.REPORT_VIEW.id}">Report tab</a>.<br><br>
                 Open a file to start your Clean Code journey.
             """.trimIndent(),
-            SonarLintIcons.WALKTHROUGH_WELCOME
+            SonarLintIcons.WALKTHROUGH_WELCOME,
+            null
         )
     }
 
@@ -200,7 +223,8 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
                 Some rules offer quick fixes when you hover over the issue location.<br><br>
                 If needed, you can disable rules in the <a href="${WalkthroughActions.SETTINGS.id}">Settings</a>.
             """.trimIndent(),
-            SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE
+            SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE,
+            null
         )
     }
 
@@ -215,26 +239,28 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
                 you can highlight advanced issues like <a href="${WalkthroughActions.TAINT_VULNERABILITIES.id}">taint vulnerabilities</a> 
                 and analyze more languages that aren’t available with a local analysis. SonarQube (Server, Cloud) can also generate
                 <a href="${WalkthroughActions.AI_FIX_SUGGESTIONS.id}">AI fix suggestions</a>, 
-                and you can <a href="${WalkthroughActions.OPEN_IN_IDE_LINK.id}">open them right in your IDE!</a><br><br>
+                and you can <a href="${WalkthroughActions.OPEN_IN_IDE_LINK.id}">open them right in your IDE</a>!<br><br>
                 Are you already using SonarQube (Server, Cloud)? <a href="${WalkthroughActions.SETUP_CONNECTION.id}">Click here</a> to set up a connection!
             """.trimIndent(),
-            SonarLintIcons.WALKTHROUGH_CONNECT_WITH_YOUR_TEAM
+            SonarLintIcons.WALKTHROUGH_CONNECT_WITH_YOUR_TEAM,
+            null
         )
     }
 
     private fun reachOutToUsPageData(): PageData {
         return PageData(
             "Step 4/4",
-            "Reach out to us",
+            "Have questions? Get in touch!",
             text = """
-                Are you having problems with SonarQube for IDE? Open the <a href="${WalkthroughActions.LOG_VIEW.id}">log tab</a> 
-                and enable the <a href="${WalkthroughActions.TROUBLESHOOTING_LINK.id}">Analysis logs and Verbose output</a>.<br><br>
-                Share your verbose logs with us in a post on the <a href="${WalkthroughActions.COMMUNITY_FORUM.id}">Community</a> forum.
-                We are happy to help you debug!<br><br>
+                Share more details with us from the <a href="${WalkthroughActions.LOG_VIEW.id}">Log tab</a> in our
+                Community Forum. We are happy to help you!
             """.trimIndent(),
-            SonarLintIcons.WALKTHROUGH_REACH_OUT_TO_US
+            SonarLintIcons.WALKTHROUGH_REACH_OUT_TO_US,
+            ActionLink("Go to the Community Forum") { LinkTelemetry.BASE_DOCS_WALKTHROUGH.browseWithTelemetry() }.apply {
+                setExternalLinkIcon()
+            }
         )
     }
 
-    data class PageData(val step: String, val title: String, val text: String, val icon: Icon)
+    data class PageData(val step: String, val title: String, val text: String, val icon: Icon, val additionalAction: ActionLink?)
 }
