@@ -1,3 +1,22 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015-2025 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
 package org.sonarlint.intellij.ui
 
 import com.intellij.openapi.project.Project
@@ -7,8 +26,11 @@ import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBFont
+import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import java.awt.Dimension
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JSeparator
@@ -42,13 +64,20 @@ private val FEATURE_CARD = HelpCard(
     LinkTelemetry.SUGGEST_FEATURE_HELP
 )
 
-class SonarLintHelpAndSupportPanel(private val project: Project) : SimpleToolWindowPanel(false, false) {
+class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWindowPanel(false, false) {
 
     private val topLabel = SwingHelper.createHtmlViewer(false, null, null, null)
-    private val cardPanel = JBPanel<SonarLintHelpAndSupportPanel>()
+    private val cardPanel = JBPanel<SonarLintHelpAndFeedbackPanel>()
 
     init {
-        layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 10, 10, true, false)
+        layout = GridBagLayout()
+        val constraints = GridBagConstraints().apply {
+            gridx = 0
+            gridy = GridBagConstraints.RELATIVE
+            weightx = 1.0
+            fill = GridBagConstraints.HORIZONTAL
+            insets = JBUI.insets(10)
+        }
 
         topLabel.apply {
             text = """
@@ -76,13 +105,19 @@ class SonarLintHelpAndSupportPanel(private val project: Project) : SimpleToolWin
             add(generateHelpCard(FEATURE_CARD))
         }
 
-        add(topLabel)
-        add(JSeparator(SwingConstants.HORIZONTAL))
-        add(cardPanel)
+        add(topLabel, constraints)
+
+        constraints.gridy = 1
+        add(JSeparator(SwingConstants.HORIZONTAL), constraints)
+
+        constraints.gridy = 2
+        constraints.fill = GridBagConstraints.BOTH
+        constraints.weighty = 1.0
+        add(cardPanel, constraints)
     }
 
-    private fun generateHelpCard(card: HelpCard): JBPanel<SonarLintHelpAndSupportPanel> {
-        return JBPanel<SonarLintHelpAndSupportPanel>(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, false)).apply {
+    private fun generateHelpCard(card: HelpCard): JBPanel<SonarLintHelpAndFeedbackPanel> {
+        return JBPanel<SonarLintHelpAndFeedbackPanel>(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, false)).apply {
             add(JBLabel(card.title).apply {
                 font = JBFont.label().asBold()
             })
