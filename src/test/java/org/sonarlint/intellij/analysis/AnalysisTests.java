@@ -63,6 +63,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 @DisabledOnOs(OS.WINDOWS)
 class AnalysisTests extends AbstractSonarLintLightTests {
@@ -80,8 +81,6 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   private AnalysisResults analysisResults;
   @Mock
   private BackendService backendService;
-  @Mock
-  private AnalysisReadinessCache analysisReadinessCache;
 
   @BeforeEach
   void prepare() {
@@ -96,13 +95,13 @@ class AnalysisTests extends AbstractSonarLintLightTests {
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(AnalysisState.class), any(ProgressIndicator.class), any(Boolean.class)))
       .thenReturn(moduleAnalysisResult);
 
-    analysisReadinessCache.setReady(true);
-    replaceModuleService(AnalysisReadinessCache.class, analysisReadinessCache);
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
     replaceProjectService(SonarLintConsole.class, sonarLintConsole);
 
     task = new Analysis(getProject(), filesToAnalyze, TriggerType.CURRENT_FILE_ACTION, mock(AnalysisCallback.class));
+
+    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue());
 
     // IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     AnalysisStatus.get(getProject()).stopRun();
