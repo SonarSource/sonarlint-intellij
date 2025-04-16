@@ -24,7 +24,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:5.1.0.2254") {
+    testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:5.5.0.2535") {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
     }
     testImplementation(libs.its.sonar.scala)
