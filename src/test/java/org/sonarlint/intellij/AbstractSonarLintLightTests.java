@@ -95,11 +95,17 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getProjectSettings().setProjectKey(null);
     getProjectSettings().setBindingEnabled(false);
     getProjectSettings().setBindingSuggestionsEnabled(true);
+    getProjectSettings().setAnalysisLogsEnabled(true);
+    getProjectSettings().setVerboseEnabled(true);
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().clearBindingOverride();
     getService(BackendService.class).moduleUnbound(getModule());
     getService(BackendService.class).projectUnbound(getProject());
     getService(BackendService.class).connectionsUpdated(Collections.emptyList());
+    getService(BackendService.class).moduleRemoved(getModule());
+    getService(BackendService.class).projectClosed(getProject());
+    getService(BackendService.class).projectOpened(getProject());
+    getService(BackendService.class).modulesAdded(getProject(), List.of(getModule()));
   }
 
   @RegisterExtension
