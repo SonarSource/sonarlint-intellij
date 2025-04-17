@@ -62,7 +62,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
     getGlobalSettings().setAutoTrigger(true);
     underTest = new EditorChangeTrigger(getProject());
     underTest.onProjectOpened();
-    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue());
+    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue());
     clearInvocations(submitter);
   }
 

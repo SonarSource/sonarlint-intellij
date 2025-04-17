@@ -63,7 +63,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
     when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file1});
     when(e.getPlace()).thenReturn(EDITOR_POPUP);
 
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(myProject, AnalysisReadinessCache.class).isReady()).isTrue());
+    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(myProject, AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue());
     Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(myProject, RunningAnalysesTracker.class).isAnalysisRunning()).isFalse());
     clearInvocations(analysisSubmitter);
   }

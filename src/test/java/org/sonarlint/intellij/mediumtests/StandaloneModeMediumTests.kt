@@ -66,7 +66,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         getService(BackendService::class.java).projectOpened(project)
         getService(BackendService::class.java).modulesAdded(project, listOf(module))
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
+            assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
         }
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
@@ -473,7 +473,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         val submitter = getService(project, AnalysisSubmitter::class.java)
         val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
         Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
+            assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
         }
 
         submitter.autoAnalyzeFiles(filesToAnalyze.toList(), TriggerType.EDITOR_CHANGE)
