@@ -87,6 +87,7 @@ import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
 import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.core.BackendService.Companion.findModule
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
@@ -409,7 +410,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         )
         getService(project, OpenInIdeFindingCache::class.java).finding = showFinding
         getService(project, OpenInIdeFindingCache::class.java).analysisQueued = false
-        if (getService(project, AnalysisReadinessCache::class.java).isReady) {
+        if (getService(project, AnalysisReadinessCache::class.java).isProjectReady) {
             getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(showFinding)
         }
     }
@@ -588,23 +589,31 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun didChangeAnalysisReadiness(configurationScopeIds: Set<String>, areReadyForAnalysis: Boolean) {
         GlobalLogOutput.get().log("Analysis became ready=$areReadyForAnalysis for $configurationScopeIds", ClientLogOutput.Level.DEBUG)
-        configurationScopeIds
-            .map { BackendService.findModule(it)?.project ?: findProject(it) }
-            .distinct()
-            .forEach { project ->
-                if (project == null || project.isDisposed) return@forEach
-                getService(project, AnalysisReadinessCache::class.java).isReady = areReadyForAnalysis
-                if (areReadyForAnalysis) {
-                    runOnPooledThread(project) {
-                        runOnUiThread(project) { getService(project, SonarLintToolWindow::class.java).setAnalysisReadyCurrentFile() }
-                        val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
-                        if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
-                            getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
-                        }
-                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles(TriggerType.BINDING_UPDATE)
+        val projectToModulesMap = configurationScopeIds
+            .mapNotNull { configScopeId ->
+                val module = findModule(configScopeId)
+                val project = module?.project ?: findProject(configScopeId)
+                if (project != null) project to module else null
+            }
+            .groupBy({ it.first }, { it.second }) // Group by project, collecting modules into a list
+
+        projectToModulesMap.forEach { (project, modules) ->
+            if (project.isDisposed) return@forEach
+            modules.filterNotNull().forEach { module ->
+                getService(project, AnalysisReadinessCache::class.java).setReadinessForModule(module, areReadyForAnalysis)
+            }
+            getService(project, AnalysisReadinessCache::class.java).isProjectReady = areReadyForAnalysis
+            if (areReadyForAnalysis) {
+                runOnPooledThread(project) {
+                    runOnUiThread(project) { getService(project, SonarLintToolWindow::class.java).setAnalysisReadyCurrentFile() }
+                    val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
+                    if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
+                        getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
                     }
+                    getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles(TriggerType.BINDING_UPDATE)
                 }
             }
+        }
     }
 
     override fun matchSonarProjectBranch(

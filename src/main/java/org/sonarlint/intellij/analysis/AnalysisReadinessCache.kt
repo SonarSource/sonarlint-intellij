@@ -20,8 +20,21 @@
 package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.module.Module
 
 @Service(Service.Level.PROJECT)
 class AnalysisReadinessCache {
-    var isReady: Boolean = false
+
+    private val readinessPerModule = mutableMapOf<Module, Boolean>()
+
+    var isProjectReady: Boolean = false
+
+    fun setReadinessForModule(module: Module, isReady: Boolean) {
+        readinessPerModule[module] = isReady
+    }
+
+    fun isModuleReady(module: Module): Boolean {
+        return isProjectReady && readinessPerModule[module] ?: false
+    }
+
 }

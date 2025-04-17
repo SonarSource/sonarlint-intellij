@@ -78,7 +78,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
       .thenReturn(Pair.of(checkInCallable, List.of(analysisUuid)));
     Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isReady()).isTrue()
+      assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue()
     );
     clearInvocations(analysisSubmitter);
   }
