@@ -29,11 +29,15 @@ import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
+
+  private static final String VCS_CHANGED_ANALYSIS_TYPE = "trigger_count_vcs_changed_files";
+
   public SonarAnalyzeChangedFilesAction() {
     super();
   }
@@ -63,6 +67,9 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
       return;
     }
 
+    getService(SonarLintTelemetry.class).analysisReportingTriggered(VCS_CHANGED_ANALYSIS_TYPE);
+
     runOnPooledThread(project, () -> SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeVcsChangedFiles());
   }
+
 }

@@ -246,10 +246,6 @@
                             testServiceImplementation="org.sonarlint.intellij.util.GlobalLogOutputTestImpl"/>
 
         <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
-        <applicationService serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"
-                            serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl"/>
-
-        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
         <applicationService serviceInterface="org.sonarlint.intellij.fs.VirtualFileSystemEventsHandler"
                             serviceImplementation="org.sonarlint.intellij.fs.DefaultVirtualFileSystemEventsHandler"
                             testServiceImplementation="org.sonarlint.intellij.fs.VirtualFileSystemEventsTestHandler"/>
