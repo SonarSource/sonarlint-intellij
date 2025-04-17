@@ -83,17 +83,13 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     final boolean rulesModified = rules.isModified(currentSettings);
     final boolean globalSettingsModified = globalPanel.isModified(currentSettings);
 
-    var newSettings = new SonarLintGlobalSettings();
+    var newSettings = new SonarLintGlobalSettings(currentSettings);
     connectionsPanel.save(newSettings);
     globalPanel.save(newSettings);
     about.save(telemetry);
     rules.save(newSettings);
     exclusions.save(newSettings);
     getService(SonarLintGlobalSettingsStore.class).save(newSettings);
-
-    newSettings.setSecretsNeverBeenAnalysed(currentSettings.isSecretsNeverBeenAnalysed());
-    newSettings.setHasWalkthroughRunOnce(currentSettings.hasWalkthroughRunOnce());
-    newSettings.setPromotionDisabled(currentSettings.isPromotionDisabled());
 
     ApplicationManager.getApplication().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC)
       .applied(currentSettings, newSettings);
