@@ -30,6 +30,8 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.clearInvocations;
@@ -41,15 +43,18 @@ import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
-  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
-  private AnActionEvent event = mock(AnActionEvent.class);
 
-  private SonarAnalyzeAllFilesAction action = new SonarAnalyzeAllFilesAction();
+  private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
+  private final AnActionEvent event = mock(AnActionEvent.class);
+  private final SonarAnalyzeAllFilesAction action = new SonarAnalyzeAllFilesAction();
+  private final SonarLintTelemetry sonarLintTelemetry = mock(SonarLintTelemetry.class);
+
   private AnalysisStatus status;
 
   @BeforeEach
   void before() {
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
+    replaceApplicationService(SonarLintTelemetry.class, sonarLintTelemetry);
     status = AnalysisStatus.get(getProject());
     myFixture.copyFileToProject("foo/foo.php", "foo/foo.php");
     Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
@@ -72,7 +77,6 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
 
   @Test
   void testNoProject() {
-    AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(null);
 
     action.actionPerformed(event);
@@ -82,12 +86,23 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
 
   @Test
   void testRun() {
-    AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(getProject());
     TestDialogManager.setTestDialog(TestDialog.OK);
+
     action.actionPerformed(event);
 
     verify(analysisSubmitter, timeout(1000)).analyzeAllFiles();
+  }
+
+  @Test
+  void testTelemetryIsSent() {
+    when(event.getProject()).thenReturn(getProject());
+    TestDialogManager.setTestDialog(TestDialog.OK);
+
+    action.actionPerformed(event);
+
+    verify(analysisSubmitter, timeout(1000)).analyzeAllFiles();
+    verify(sonarLintTelemetry, timeout(1000)).analysisReportingTriggered(AnalysisReportingType.ALL_FILES_ANALYSIS_TYPE);
   }
 
 }

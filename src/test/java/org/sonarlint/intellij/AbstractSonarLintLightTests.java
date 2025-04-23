@@ -22,6 +22,7 @@ package org.sonarlint.intellij;
 import com.intellij.lang.Language;
 import com.intellij.notification.Notification;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
@@ -145,6 +146,10 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
 
   protected List<Notification> getProjectNotifications() {
     return List.of(getNotificationsManager().getNotificationsOfType(Notification.class, getProject()));
+  }
+
+  protected <T> void replaceApplicationService(Class<T> clazz, T newInstance) {
+    ((ComponentManagerImpl) ApplicationManager.getApplication()).replaceServiceInstance(clazz, newInstance, disposable);
   }
 
   protected <T> void replaceProjectService(Class<T> clazz, T newInstance) {
