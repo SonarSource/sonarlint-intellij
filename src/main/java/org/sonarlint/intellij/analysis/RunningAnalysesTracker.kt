@@ -37,16 +37,19 @@ class RunningAnalysesTracker {
         analysisStateById.remove(analysisState.id)
     }
 
-    fun finishAll() {
-        analysisStateById.clear()
-    }
-
     fun getById(analysisId: UUID): AnalysisState? {
         return analysisStateById[analysisId]
     }
 
     fun cancel(analysisId: UUID) {
         analysisStateById[analysisId]?.let {
+            it.cancel()
+            finish(it)
+        }
+    }
+
+    fun cancelAll() {
+        analysisStateById.values.forEach {
             it.cancel()
             finish(it)
         }
