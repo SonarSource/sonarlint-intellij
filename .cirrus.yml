@@ -135,12 +135,13 @@ validate_task:
     source .cirrus/use-gradle-wrapper.sh
     PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
-  on_failure:
+  always:
     reports_artifacts:
       path: "**/reports/**/*"
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
+  on_failure:
     slack_notification_script: |
       source slack-failure-notification
 
@@ -165,12 +166,13 @@ validate_windows_task:
     source .cirrus/use-gradle-wrapper.sh
     ./gradlew :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
-  on_failure:
+  always:
     reports_artifacts:
       path: "**/reports/**/*"
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
+  on_failure:
     slack_notification_script: |
       source slack-failure-notification
 

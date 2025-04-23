@@ -45,7 +45,7 @@ class EventSchedulerTests : AbstractSonarLintLightTests() {
         replaceProjectService(AnalysisSubmitter::class.java, submitter)
         globalSettings.isAutoTrigger = true
         Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted {
-            Assertions.assertThat(SonarLintUtils.getService(project, AnalysisReadinessCache::class.java).isReady).isTrue()
+            Assertions.assertThat(SonarLintUtils.getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
         }
         Mockito.clearInvocations(submitter)
     }

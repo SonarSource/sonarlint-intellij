@@ -103,7 +103,7 @@ public class Analysis implements Cancelable {
       console.info("Analysis skipped as SonarQube for IDE is not alive");
       return Collections.emptyList();
     }
-    if (!getService(project, AnalysisReadinessCache.class).isReady()) {
+    if (!getService(project, AnalysisReadinessCache.class).isProjectReady()) {
       if (trigger == TriggerType.OPEN_FINDING) {
         getService(project, OpenInIdeFindingCache.class).setAnalysisQueued(false);
       }
