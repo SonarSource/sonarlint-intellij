@@ -39,7 +39,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility
 import org.jetbrains.annotations.NotNull
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -61,21 +60,12 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
     fun notifyProjectOpened() {
-        getService(project, RunningAnalysesTracker::class.java).finishAll()
-        getService(BackendService::class.java).projectOpened(project)
-        getService(BackendService::class.java).modulesAdded(project, listOf(module))
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
         }
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
         }
-    }
-
-    @AfterEach
-    fun notifyProjectClosed() {
-        getService(BackendService::class.java).projectClosed(project)
-        getService(BackendService::class.java).moduleRemoved(module)
     }
 
     @Test

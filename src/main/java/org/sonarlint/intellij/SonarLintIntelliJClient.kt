@@ -182,7 +182,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
         for (suggestion in suggestionsByConfigScope) {
-            val project = BackendService.findModule(suggestion.key)?.project
+            val project = findModule(suggestion.key)?.project
                 ?: BackendService.findProject(suggestion.key) ?: continue
 
             if (suggestion.value.size == 1) {
@@ -246,7 +246,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val configScopeId = params.configScopeId
 
         configScopeId?.let {
-            val project = BackendService.findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
+            val project = findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
             project?.let {
                 val console: SonarLintConsole = getService(project, SonarLintConsole::class.java)
                 logProjectLevel(params.level, params.toString(), console)
@@ -285,7 +285,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
 
     override fun showSoonUnsupportedMessage(params: ShowSoonUnsupportedMessageParams) {
-        val project = BackendService.findModule(params.configurationScopeId)?.project
+        val project = findModule(params.configurationScopeId)?.project
             ?: BackendService.findProject(params.configurationScopeId) ?: return
         showOneTimeBalloon(project, params.text, params.doNotShowAgainId, OpenLinkAction(SUPPORT_POLICY_LINK, "Learn more"))
     }
@@ -304,7 +304,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun showSmartNotification(params: ShowSmartNotificationParams) {
         val projects = params.scopeIds.mapNotNull {
-            BackendService.findModule(it)?.project ?: BackendService.findProject(it)
+            findModule(it)?.project ?: BackendService.findProject(it)
         }.toSet()
         projects.map { get(it).handle(params) }
     }
@@ -344,7 +344,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun showFixSuggestion(configurationScopeId: String, issueKey: String, fixSuggestion: FixSuggestionDto) {
-        val project = BackendService.findModule(configurationScopeId)?.project ?: BackendService.findProject(configurationScopeId)
+        val project = findModule(configurationScopeId)?.project ?: BackendService.findProject(configurationScopeId)
         ?: throw IllegalStateException("Unable to find project with id '$configurationScopeId'")
 
         val file = tryFindFile(project, fixSuggestion.fileEdit().idePath())
@@ -366,7 +366,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         configScopeId: String, filePath: Path, findingKey: String, ruleKey: String,
         textRange: TextRangeDto, codeSnippet: String?, type: Class<T>, flows: List<FlowDto>, flowMessage: String,
     ) {
-        val project = BackendService.findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
+        val project = findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
         ?: throw IllegalStateException("Unable to find project with id '$configScopeId'")
         if (!project.isDisposed) {
             get(project).expireCurrentFindingNotificationIfNeeded()
@@ -483,7 +483,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val projectKey = params.projectKey
         val configScopeId = params.configScopeId
         val project: Project? = configScopeId?.let {
-            BackendService.findModule(it)?.project ?: findProject(it)
+            findModule(it)?.project ?: findProject(it)
         }
 
         return if (project == null) {
@@ -503,7 +503,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
                 )
             }
-            val module = BackendService.findModule(configScopeId)
+            val module = findModule(configScopeId)
             getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh(module)
             AssistBindingResponse(BackendService.projectId(project))
         }
@@ -623,7 +623,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         cancelChecker: SonarLintCancelChecker,
     ): String? {
         val repositoriesEPs = VcsRepoProvider.EP_NAME.extensionList
-        val repositories = BackendService.findModule(configurationScopeId)?.let { module ->
+        val repositories = findModule(configurationScopeId)?.let { module ->
             matchSonarModule(module, repositoriesEPs)
         } ?: run {
             BackendService.findProject(configurationScopeId)?.let { project ->
@@ -632,7 +632,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } ?: return null
         val repo = repositories.first()
 
-        val project = BackendService.findModule(configurationScopeId)?.project
+        val project = findModule(configurationScopeId)?.project
             ?: BackendService.findProject(configurationScopeId) ?: return null
         val resultFuture = CompletableFuture<String>()
         ProgressManager.getInstance().run(object : Task.Backgroundable(
@@ -677,7 +677,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         configurationScopeId: String, branchNameToMatch: String, cancelChecker: SonarLintCancelChecker
     ): Boolean {
         val repositoriesEPs = VcsRepoProvider.EP_NAME.extensionList
-        val repositories = BackendService.findModule(configurationScopeId)?.let { module ->
+        val repositories = findModule(configurationScopeId)?.let { module ->
             matchSonarModule(module, repositoriesEPs)
         } ?: run {
             BackendService.findProject(configurationScopeId)?.let { project ->
@@ -721,7 +721,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun didChangeMatchedSonarProjectBranch(configScopeId: String, newMatchedBranchName: String) {
-        val module = BackendService.findModule(configScopeId)
+        val module = findModule(configScopeId)
         if (module != null) {
             getService(module.project, SonarProjectBranchCache::class.java).setMatchedBranch(module, newMatchedBranchName)
         } else {
@@ -732,7 +732,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
         val timeStart = System.currentTimeMillis()
-        val listClientFiles = BackendService.findModule(configScopeId)?.let { module ->
+        val listClientFiles = findModule(configScopeId)?.let { module ->
             listModuleFiles(module, configScopeId)
         } ?: findProject(configScopeId)?.let { project ->
             val listProjectFiles = listProjectFiles(project, configScopeId)
@@ -889,7 +889,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         isIntermediatePublication: Boolean,
         analysisId: UUID?,
     ) {
-        val module = BackendService.findModule(configurationScopeId)
+        val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
 
@@ -910,7 +910,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         isIntermediatePublication: Boolean,
         analysisId: UUID?,
     ) {
-        val module = BackendService.findModule(configurationScopeId)
+        val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
 
@@ -929,14 +929,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         configurationScopeId: String, language: Language, reason: DidSkipLoadingPluginParams.SkipReason,
         minVersion: String, currentVersion: String?,
     ) {
-        val project = BackendService.findModule(configurationScopeId)?.project
+        val project = findModule(configurationScopeId)?.project
             ?: BackendService.findProject(configurationScopeId) ?: return
 
         notifyOnceForSkippedPlugins(project, language, reason, minVersion, currentVersion)
     }
 
     override fun didDetectSecret(configurationScopeId: String) {
-        val project = BackendService.findModule(configurationScopeId)?.project
+        val project = findModule(configurationScopeId)?.project
             ?: BackendService.findProject(configurationScopeId) ?: return
 
         if (getGlobalSettings().isSecretsNeverBeenAnalysed) {
@@ -948,7 +948,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     override fun promoteExtraEnabledLanguagesInConnectedMode(configurationScopeId: String, languagesToPromote: Set<Language>) {
         if (languagesToPromote.isEmpty()) return
 
-        val project = BackendService.findModule(configurationScopeId)?.project
+        val project = findModule(configurationScopeId)?.project
             ?: BackendService.findProject(configurationScopeId) ?: return
 
         getService(project, PromotionProvider::class.java).processExtraLanguagePromotion(languagesToPromote)
@@ -963,7 +963,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 return Paths.get(it.path)
             }
         } else {
-            val module = BackendService.findModule(configurationScopeId)
+            val module = findModule(configurationScopeId)
             if (module != null) {
                 // If we don't find a base directory for the module, fallback on the base directory of the project
                 module.guessModuleDir()?.let {
