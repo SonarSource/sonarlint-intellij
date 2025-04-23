@@ -19,10 +19,15 @@
  */
 package org.sonarlint.intellij.finding
 
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.awaitility.Awaitility.await
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.issue.aFileEdit
 import org.sonarlint.intellij.finding.issue.aQuickFix
 import org.sonarlint.intellij.finding.issue.aTextEdit
@@ -31,6 +36,13 @@ import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.getDocument
 
 class QuickFixTests : AbstractSonarLintLightTests() {
+    @BeforeEach
+    fun setup() {
+        await().atMost(20, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
+        }
+    }
+
     @Test
     fun should_convert_quick_fix_if_file_and_text_edit_are_valid() {
         val file = myFixture.configureByText("file.ext", "Text")

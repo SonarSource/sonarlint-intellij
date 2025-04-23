@@ -231,7 +231,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   private void handleDisplayStatus() {
     var emptyText = issuesPanel.getEmptyText();
     if (currentIssues == null) {
-      if (getService(project, AnalysisReadinessCache.class).isReady()) {
+      if (getService(project, AnalysisReadinessCache.class).isProjectReady()) {
         setAnalysisIsReady();
       } else {
         emptyText.setText("Waiting for SonarQube for IDE to be ready");
