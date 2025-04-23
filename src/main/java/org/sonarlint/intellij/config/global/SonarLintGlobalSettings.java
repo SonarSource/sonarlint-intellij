@@ -40,7 +40,9 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTrailingSlash;
 
+// While adding new non-static fields to this class, please make sure the corresponding copy constructor is updated accordingly
 public final class SonarLintGlobalSettings {
+
   private boolean isFocusOnNewCode = false;
   private boolean isPromotionDisabled = false;
 
@@ -60,9 +62,31 @@ public final class SonarLintGlobalSettings {
   Collection<Rule> rules = new HashSet<>();
   @Transient
   Map<String, Rule> rulesByKey = new HashMap<>();
-  private boolean taintVulnerabilitiesTabDisclaimerDismissed;
 
+  private boolean taintVulnerabilitiesTabDisclaimerDismissed;
   private boolean secretsNeverBeenAnalysed = true;
+
+  public SonarLintGlobalSettings() {}
+
+  public SonarLintGlobalSettings(SonarLintGlobalSettings original) {
+    this.isFocusOnNewCode = original.isFocusOnNewCode;
+    this.isPromotionDisabled = original.isPromotionDisabled;
+    this.autoTrigger = original.autoTrigger;
+    this.isRegionEnabled = original.isRegionEnabled;
+    this.nodejsPath = original.nodejsPath;
+    this.hasWalkthroughRunOnce = original.hasWalkthroughRunOnce;
+    this.secretsNeverBeenAnalysed = original.secretsNeverBeenAnalysed;
+    this.taintVulnerabilitiesTabDisclaimerDismissed = original.taintVulnerabilitiesTabDisclaimerDismissed;
+
+    this.servers = new LinkedList<>(original.servers);
+    this.fileExclusions = new LinkedList<>(original.fileExclusions);
+
+    this.includedRules = original.includedRules != null ? new HashSet<>(original.includedRules) : null;
+    this.excludedRules = original.excludedRules != null ? new HashSet<>(original.excludedRules) : null;
+
+    this.rules = new HashSet<>(original.rules);
+    this.rulesByKey = new HashMap<>(original.rulesByKey);
+  }
 
   public boolean isPromotionDisabled() {
     return isPromotionDisabled;

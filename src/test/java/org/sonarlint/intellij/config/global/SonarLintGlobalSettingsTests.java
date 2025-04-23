@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
 
+  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 14;
   private static final String RULE = "rule";
   private static final String RULE1 = "rule1";
   private static final String PARAM = "param";
@@ -151,5 +153,75 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
     assertThat(settings.getConnectionsTo("http://host"))
       .extracting(ServerConnection::getName)
       .containsOnly("name");
+  }
+
+  @Test
+  void testCopyConstructorHasSameFieldSize() {
+    var declaredFields = SonarLintGlobalSettings.class.getDeclaredFields();
+    var nonStaticFieldCount = 0;
+    for (var field : declaredFields) {
+      if (!Modifier.isStatic(field.getModifiers())) {
+        nonStaticFieldCount++;
+      }
+    }
+
+    assertThat(nonStaticFieldCount).isEqualTo(EXPECTED_NON_STATIC_FIELD_COUNT);
+  }
+
+  @Test
+  void testCopyConstructorCopiesProperly() {
+    var original = new SonarLintGlobalSettings();
+    original.setFocusOnNewCode(true);
+    original.setPromotionDisabled(true);
+    original.setAutoTrigger(false);
+    original.setRegionEnabled(true);
+    original.setNodejsPath("/usr/local/node");
+    original.setHasWalkthroughRunOnce(true);
+    original.setSecretsNeverBeenAnalysed(false);
+    original.setTaintVulnerabilitiesTabDisclaimerDismissed(true);
+    original.setServerConnections(List.of(
+      ServerConnection.newBuilder().setName("test-server").setHostUrl("http://localhost:9000").build()
+    ));
+    original.setFileExclusions(List.of("**/test/**"));
+    original.setRules(List.of());
+
+    var copy = new SonarLintGlobalSettings(original);
+
+    assertThat(copy.isFocusOnNewCode()).isEqualTo(original.isFocusOnNewCode());
+    assertThat(copy.isPromotionDisabled()).isEqualTo(original.isPromotionDisabled());
+    assertThat(copy.isAutoTrigger()).isEqualTo(original.isAutoTrigger());
+    assertThat(copy.isRegionEnabled()).isEqualTo(original.isRegionEnabled());
+    assertThat(copy.getNodejsPath()).isEqualTo(original.getNodejsPath());
+    assertThat(copy.hasWalkthroughRunOnce()).isEqualTo(original.hasWalkthroughRunOnce());
+    assertThat(copy.isSecretsNeverBeenAnalysed()).isEqualTo(original.isSecretsNeverBeenAnalysed());
+    assertThat(copy.isTaintVulnerabilitiesTabDisclaimerDismissed())
+      .isEqualTo(original.isTaintVulnerabilitiesTabDisclaimerDismissed());
+    assertThat(copy.getServerConnections()).isEqualTo(original.getServerConnections());
+    assertThat(copy.getFileExclusions()).isEqualTo(original.getFileExclusions());
+    assertThat(copy.getRules()).isEqualTo(original.getRules());
+    assertThat(copy.getRulesByKey()).isEqualTo(original.getRulesByKey());
+  }
+
+  @Test
+  void testDeepCopyOfServerConnections() {
+    var original = new SonarLintGlobalSettings();
+    original.setServerConnections(List.of(
+      ServerConnection.newBuilder()
+        .setName("test-server")
+        .setHostUrl("http://localhost:9000")
+        .build()
+    ));
+
+    var copy = new SonarLintGlobalSettings(original);
+    var modifiedConnection = ServerConnection.newBuilder()
+      .setName("modified-server")
+      .setHostUrl("http://localhost:9000")
+      .build();
+    copy.setServerConnections(List.of(modifiedConnection));
+
+    assertThat(original.getServerConnections()).hasSize(1);
+    assertThat(original.getServerConnections().get(0).getName()).isEqualTo("test-server");
+    assertThat(copy.getServerConnections()).hasSize(1);
+    assertThat(copy.getServerConnections().get(0).getName()).isEqualTo("modified-server");
   }
 }
