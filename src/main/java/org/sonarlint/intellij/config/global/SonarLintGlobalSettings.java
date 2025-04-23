@@ -40,8 +40,32 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTrailingSlash;
 
-//While adding new non-static fields to this class, please make sure the corresponding copy constructor is updated accordingly
+// While adding new non-static fields to this class, please make sure the corresponding copy constructor is updated accordingly
 public final class SonarLintGlobalSettings {
+
+  private boolean isFocusOnNewCode = false;
+  private boolean isPromotionDisabled = false;
+
+  private boolean autoTrigger = true;
+  private boolean isRegionEnabled = false;
+  private String nodejsPath = "";
+
+  private List<ServerConnection> servers = new LinkedList<>();
+  private List<String> fileExclusions = new LinkedList<>();
+  private boolean hasWalkthroughRunOnce = false;
+
+  @Deprecated
+  private Set<String> includedRules;
+  @Deprecated
+  private Set<String> excludedRules;
+  @XCollection(propertyElementName = "rules", elementName = "rule")
+  Collection<Rule> rules = new HashSet<>();
+  @Transient
+  Map<String, Rule> rulesByKey = new HashMap<>();
+
+  private boolean taintVulnerabilitiesTabDisclaimerDismissed;
+  private boolean secretsNeverBeenAnalysed = true;
+
   public SonarLintGlobalSettings() {}
 
   public SonarLintGlobalSettings(SonarLintGlobalSettings original) {
@@ -63,29 +87,6 @@ public final class SonarLintGlobalSettings {
     this.rules = new HashSet<>(original.rules);
     this.rulesByKey = new HashMap<>(original.rulesByKey);
   }
-
-  private boolean isFocusOnNewCode = false;
-  private boolean isPromotionDisabled = false;
-
-  private boolean autoTrigger = true;
-  private boolean isRegionEnabled = false;
-  private String nodejsPath = "";
-
-  private List<ServerConnection> servers = new LinkedList<>();
-  private List<String> fileExclusions = new LinkedList<>();
-  private boolean hasWalkthroughRunOnce = false;
-
-  @Deprecated
-  private Set<String> includedRules;
-  @Deprecated
-  private Set<String> excludedRules;
-  @XCollection(propertyElementName = "rules", elementName = "rule")
-  Collection<Rule> rules = new HashSet<>();
-  @Transient
-  Map<String, Rule> rulesByKey = new HashMap<>();
-  private boolean taintVulnerabilitiesTabDisclaimerDismissed;
-
-  private boolean secretsNeverBeenAnalysed = true;
 
   public boolean isPromotionDisabled() {
     return isPromotionDisabled;

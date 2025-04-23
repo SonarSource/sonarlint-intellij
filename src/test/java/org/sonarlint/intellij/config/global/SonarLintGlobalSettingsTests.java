@@ -31,12 +31,11 @@ import static org.assertj.core.api.Assertions.entry;
 
 class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
 
+  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 14;
   private static final String RULE = "rule";
   private static final String RULE1 = "rule1";
   private static final String PARAM = "param";
   private static final String VALUE = "value";
-
-  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 14;
 
   @Test
   void testRoundTrip() {
@@ -158,8 +157,6 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
 
   @Test
   void testCopyConstructorHasSameFieldSize() {
-    // Expected number of non-static fields; update if fields are intentionally added.
-
     var declaredFields = SonarLintGlobalSettings.class.getDeclaredFields();
     var nonStaticFieldCount = 0;
     for (var field : declaredFields) {
@@ -216,7 +213,6 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
     ));
 
     var copy = new SonarLintGlobalSettings(original);
-
     var modifiedConnection = ServerConnection.newBuilder()
       .setName("modified-server")
       .setHostUrl("http://localhost:9000")
