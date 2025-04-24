@@ -100,3 +100,16 @@ dependencies {
     }
     implementation(project(":common"))
 }
+
+tasks {
+    // Make initializeIntellijPlatformPlugin task cacheable
+    named("initializeIntellijPlatformPlugin") {
+        outputs.cacheIf { true }
+        outputs.upToDateWhen { true }
+
+        // Add explicit input/output declarations to help with caching
+        inputs.property("intellijPlatformVersion", intellijUltimateBuildVersion)
+        inputs.property("ultimateHome", ultimateHome ?: "")
+        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
+    }
+}

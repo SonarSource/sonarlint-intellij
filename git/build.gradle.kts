@@ -89,4 +89,15 @@ tasks {
     compileKotlin {
         incremental = false
     }
+
+    // Make initializeIntellijPlatformPlugin task cacheable
+    named("initializeIntellijPlatformPlugin") {
+        outputs.cacheIf { true }
+        outputs.upToDateWhen { true }
+
+        // Add explicit input/output declarations to help with caching
+        inputs.property("intellijPlatformVersion", intellijBuildVersion)
+        inputs.property("ideaHome", ideaHome ?: "")
+        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
+    }
 }
