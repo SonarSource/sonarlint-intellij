@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,9 +40,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
-  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
-  private ChangeListManager changeListManager = mock(ChangeListManager.class);
-  private AnActionEvent event = mock(AnActionEvent.class);
+
+  private final AnActionEvent event = mock(AnActionEvent.class);
+  private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
+  private final ChangeListManager changeListManager = mock(ChangeListManager.class);
+  private final SonarLintTelemetry sonarLintTelemetry = mock(SonarLintTelemetry.class);
 
   private SonarAnalyzeChangedFilesAction action;
   private AnalysisStatus status;
@@ -51,6 +55,7 @@ class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
     status = AnalysisStatus.get(getProject());
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     replaceProjectService(ChangeListManager.class, changeListManager);
+    replaceApplicationService(SonarLintTelemetry.class, sonarLintTelemetry);
   }
 
   @Test
@@ -69,7 +74,6 @@ class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
 
   @Test
   void testNoProject() {
-    AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(null);
 
     action.actionPerformed(event);
@@ -79,10 +83,7 @@ class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
 
   @Test
   void testRun() {
-    AnActionEvent event = mock(AnActionEvent.class);
-
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
-
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
     when(event.getProject()).thenReturn(getProject());
     when(changeListManager.getAffectedFiles()).thenReturn(List.of(file));
 
@@ -90,4 +91,17 @@ class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
 
     verify(analysisSubmitter, timeout(1000)).analyzeVcsChangedFiles();
   }
+
+  @Test
+  void testTelemetryIsSent() {
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    when(event.getProject()).thenReturn(getProject());
+    when(changeListManager.getAffectedFiles()).thenReturn(List.of(file));
+
+    action.actionPerformed(event);
+
+    verify(analysisSubmitter, timeout(1000)).analyzeVcsChangedFiles();
+    verify(sonarLintTelemetry, timeout(1000)).analysisReportingTriggered(AnalysisReportingType.VCS_CHANGED_ANALYSIS_TYPE);
+  }
+
 }

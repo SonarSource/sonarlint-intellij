@@ -19,19 +19,24 @@
  */
 package org.sonarlint.intellij.telemetry
 
+import com.intellij.openapi.components.Service
 import java.util.concurrent.CompletableFuture
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingTriggeredParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionResolvedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.FixSuggestionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.HelpAndFeedbackClickedParams
 
-class SonarLintTelemetryImpl : SonarLintTelemetry {
-    override fun optOut(optOut: Boolean) {
+@Service(Service.Level.APP)
+class SonarLintTelemetry {
+
+    fun optOut(optOut: Boolean) {
         if (optOut) {
             notifyTelemetry { it.disableTelemetry() }
         } else {
@@ -39,43 +44,47 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
         }
     }
 
-    override fun enabled(): CompletableFuture<Boolean> {
+    fun enabled(): CompletableFuture<Boolean> {
         return getService(BackendService::class.java).isTelemetryEnabled()
     }
 
-    override fun devNotificationsClicked(eventType: String) {
+    fun devNotificationsClicked(eventType: String) {
         notifyTelemetry { it.devNotificationsClicked(DevNotificationsClickedParams(eventType)) }
     }
 
-    override fun taintVulnerabilitiesInvestigatedRemotely() {
+    fun taintVulnerabilitiesInvestigatedRemotely() {
         notifyTelemetry { it.taintVulnerabilitiesInvestigatedRemotely() }
     }
 
-    override fun taintVulnerabilitiesInvestigatedLocally() {
+    fun taintVulnerabilitiesInvestigatedLocally() {
         notifyTelemetry { it.taintVulnerabilitiesInvestigatedLocally() }
     }
 
-    override fun addQuickFixAppliedForRule(ruleKey: String) {
+    fun addQuickFixAppliedForRule(ruleKey: String) {
         notifyTelemetry { it.addQuickFixAppliedForRule(AddQuickFixAppliedForRuleParams(ruleKey)) }
     }
 
-    override fun helpAndFeedbackLinkClicked(itemId: String) {
+    fun helpAndFeedbackLinkClicked(itemId: String) {
         notifyTelemetry { it.helpAndFeedbackLinkClicked(HelpAndFeedbackClickedParams(itemId)) }
     }
 
-    override fun addedAutomaticBindings() {
+    fun analysisReportingTriggered(analysisType: AnalysisReportingType) {
+        notifyTelemetry { it.analysisReportingTriggered(AnalysisReportingTriggeredParams(analysisType)) }
+    }
+
+    fun addedAutomaticBindings() {
         notifyTelemetry { it.addedAutomaticBindings() }
     }
 
-    override fun addedImportedBindings() {
+    fun addedImportedBindings() {
         notifyTelemetry { it.addedImportedBindings() }
     }
 
-    override fun addedManualBindings() {
+    fun addedManualBindings() {
         notifyTelemetry { it.addedManualBindings() }
     }
 
-    override fun fixSuggestionResolved(suggestionId: String, status: FixSuggestionStatus, snippetIndex: Int?) {
+    fun fixSuggestionResolved(suggestionId: String, status: FixSuggestionStatus, snippetIndex: Int?) {
         notifyTelemetry { it.fixSuggestionResolved(FixSuggestionResolvedParams(suggestionId, status, snippetIndex)) }
     }
 
@@ -84,4 +93,5 @@ class SonarLintTelemetryImpl : SonarLintTelemetry {
             runOnPooledThread { getService(BackendService::class.java).notifyTelemetry(action) }
         }
     }
+
 }

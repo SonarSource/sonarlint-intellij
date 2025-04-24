@@ -34,14 +34,17 @@ import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
-  private static final String HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning";
+
   public static final String WARNING_MESSAGE = "Analysing all files may take a considerable amount of time to complete.\n"
     + "To get the best from SonarQube for IDE, you should preferably use the automatic analysis of the file you're working on.";
+  private static final String HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning";
 
   public SonarAnalyzeAllFilesAction() {
     super();
@@ -69,6 +72,8 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace()) || !userConfirmed(project)) {
       return;
     }
+
+    getService(SonarLintTelemetry.class).analysisReportingTriggered(AnalysisReportingType.ALL_FILES_ANALYSIS_TYPE);
 
     runOnPooledThread(project, () -> SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeAllFiles());
   }

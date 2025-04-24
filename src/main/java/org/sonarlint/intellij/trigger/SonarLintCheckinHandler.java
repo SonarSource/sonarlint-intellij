@@ -60,7 +60,9 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -92,6 +94,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     if (checkBox != null && !checkBox.isSelected()) {
       return ReturnResult.COMMIT;
     }
+
+    getService(SonarLintTelemetry.class).analysisReportingTriggered(AnalysisReportingType.PRE_COMMIT_ANALYSIS_TYPE);
 
     // de-duplicate as the same file can be present several times in the panel (e.g. in several changelists)
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());

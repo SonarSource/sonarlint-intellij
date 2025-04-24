@@ -47,6 +47,8 @@ import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.callable.CheckInCallable;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.clearInvocations;
@@ -64,6 +66,8 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
   private final SonarLintToolWindow toolWindow = mock(SonarLintToolWindow.class);
   private final CheckinProjectPanel checkinProjectPanel = mock(CheckinProjectPanel.class);
   private final CheckInCallable checkInCallable = mock(CheckInCallable.class);
+  private final SonarLintTelemetry sonarLintTelemetry = mock(SonarLintTelemetry.class);
+
   private SonarLintCheckinHandler handler;
   private UUID analysisUuid;
 
@@ -72,6 +76,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     replaceProjectService(RunningAnalysesTracker.class, runningAnalysesTracker);
     replaceProjectService(SonarLintToolWindow.class, toolWindow);
+    replaceApplicationService(SonarLintTelemetry.class, sonarLintTelemetry);
 
     when(checkinProjectPanel.getVirtualFiles()).thenReturn(Collections.singleton(file));
     analysisUuid = UUID.randomUUID();
@@ -159,4 +164,24 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
     verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
   }
+
+  @Test
+  void testTelemetryIsSent() {
+    var analysisState = new AnalysisState(analysisUuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
+    var issue = mock(LiveIssue.class);
+    when(issue.isResolved()).thenReturn(true);
+    when(checkInCallable.analysisSucceeded()).thenReturn(true);
+    when(checkInCallable.getResults())
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
+    when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
+    when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
+
+    handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
+    var result = handler.beforeCheckin(null, null);
+
+    assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
+    verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(sonarLintTelemetry, timeout(1000)).analysisReportingTriggered(AnalysisReportingType.PRE_COMMIT_ANALYSIS_TYPE);
+  }
+
 }
