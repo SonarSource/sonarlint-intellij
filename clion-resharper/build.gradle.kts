@@ -105,6 +105,19 @@ dependencies {
     compileOnly(libs.findbugs.jsr305)
 }
 
-tasks.test {
-    useJUnitPlatform()
+tasks {
+    test {
+        useJUnitPlatform()
+    }
+
+    // Make initializeIntellijPlatformPlugin task cacheable
+    named("initializeIntellijPlatformPlugin") {
+        outputs.cacheIf { true }
+        outputs.upToDateWhen { true }
+
+        // Add explicit input/output declarations to help with caching
+        inputs.property("intellijPlatformVersion", clionResharperBuildVersion)
+        inputs.property("resharperHome", resharperHome ?: "")
+        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
+    }
 }
