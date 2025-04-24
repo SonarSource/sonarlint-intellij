@@ -1,6 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
     ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
@@ -16,16 +15,12 @@ plugins {
     kotlin("jvm")
 }
 
+// Apply shared module conventions
+apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        apiVersion = "1.7"
-        jvmTarget = "17"
     }
 }
 
@@ -91,12 +86,6 @@ val ijVersion: String by project
 group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
-
 intellijPlatform {
     buildSearchableOptions = false
 }
@@ -149,6 +138,15 @@ tasks {
             }
         }
         testLogging.showStandardStreams = true
+
+        // Enable parallel test execution
+        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
+
+        // Increase test heap size for faster execution
+        maxHeapSize = "1g"
+
+        // Disable test task tracking to ensure tests always run
+        doNotTrackState("Tests should always run")
     }
 }
 

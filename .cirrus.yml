@@ -76,7 +76,8 @@ setup_gradle_cache_template: &SETUP_GRADLE_CACHE
     folder: ${GRADLE_USER_HOME}/caches
   fingerprint_script:
     - echo $CIRRUS_OS
-    - cat **/*.gradle* gradle/wrapper/gradle-wrapper.properties || true
+    - echo $GRADLE_VERSION
+    - find . -name "*.gradle*" -o -name "gradle-wrapper.properties" | sort | xargs cat || true
   populate_script:
     - mkdir -p ${GRADLE_USER_HOME}/caches
 
@@ -110,7 +111,8 @@ build_task:
     source cirrus-env BUILD-PRIVATE
     source .cirrus/use-gradle-wrapper.sh
     source set_gradle_build_version
-    regular_gradle_build_deploy_analyze -x build -x sonar :buildPlugin :cyclonedxBom --profile --info
+    # Add parallel flag and configure on demand for faster builds
+    regular_gradle_build_deploy_analyze -x build -x sonar :buildPlugin :cyclonedxBom --parallel --configure-on-demand --profile --info
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
@@ -138,7 +140,8 @@ validate_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport --profile --info
+    # Add parallel flag and configure on demand for faster builds
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport --parallel --configure-on-demand --profile --info
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
@@ -170,7 +173,8 @@ validate_windows_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    ./gradlew :check --profile --info
+    # Add parallel flag and configure on demand for faster builds
+    ./gradlew :check --parallel --configure-on-demand --profile --info
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
@@ -215,7 +219,8 @@ plugin_verifier_task:
     source .cirrus/use-gradle-wrapper.sh
     VERSIONS=$(curl -s -L https://jb.gg/intellij-platform-builds-list | jq '.[] | "\(.code) \(.releases[].version)"' | grep -Ew "${ALLOWED_IDE}" | grep "${IDEA_VERSION}" | tr -d '"' | awk '{k=$1} $2>a[k]{a[k]=$2} END{for (i in a) print i, a[i]}' | sort -u | sed 's/ /-/' | paste -s -d',')
     echo ${VERSIONS}
-    ./gradlew :runPluginVerifier -PverifierVersions=${VERSIONS}
+    # Add parallel flag and configure on demand for faster builds
+    ./gradlew :runPluginVerifier -PverifierVersions=${VERSIONS} --parallel --configure-on-demand
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     reports_artifacts:
@@ -361,7 +366,7 @@ qa_task:
     source set_gradle_build_version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
     mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
-    
+
     base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/clion.key
     base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/goland.key
     base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/datagrip.key
@@ -371,7 +376,7 @@ qa_task:
     base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rider.key
     base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rubymine.key
     base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/webstorm.key
-    
+
     metacity --sm-disable --replace &
     sleep 10 # give metacity some time to start
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &

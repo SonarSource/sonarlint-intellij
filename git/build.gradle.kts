@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
@@ -18,12 +16,9 @@ plugins {
     kotlin("jvm")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        apiVersion = "1.7"
-        jvmTarget = "17"
-    }
-}
+// Apply shared module conventions
+apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
+
 
 configurations.archives.get().isCanBeResolved = true
 
@@ -86,16 +81,13 @@ dependencies {
 }
 
 tasks {
+    // Override the incremental setting for compileKotlin
     compileKotlin {
         incremental = false
     }
 
-    // Make initializeIntellijPlatformPlugin task cacheable
+    // Add specific input/output declarations for caching
     named("initializeIntellijPlatformPlugin") {
-        outputs.cacheIf { true }
-        outputs.upToDateWhen { true }
-
-        // Add explicit input/output declarations to help with caching
         inputs.property("intellijPlatformVersion", intellijBuildVersion)
         inputs.property("ideaHome", ideaHome ?: "")
         outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))

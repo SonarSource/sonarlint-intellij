@@ -18,6 +18,9 @@ plugins {
     alias(libs.plugins.license)
 }
 
+// Apply shared module conventions
+apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
@@ -98,16 +101,8 @@ dependencies {
 }
 
 tasks {
-    test {
-        useJUnitPlatform()
-    }
-
-    // Make initializeIntellijPlatformPlugin task cacheable
+    // Add specific input/output declarations for caching
     named("initializeIntellijPlatformPlugin") {
-        outputs.cacheIf { true }
-        outputs.upToDateWhen { true }
-
-        // Add explicit input/output declarations to help with caching
         inputs.property("intellijPlatformVersion", clionResharperBuildVersion)
         inputs.property("resharperHome", resharperHome ?: "")
         outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
