@@ -3,6 +3,8 @@ include("its", "clion", "clion-resharper", "nodejs", "clion-common", "common", "
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version ("0.9.0")
+    id("com.gradle.develocity") version "3.18.2"
+    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.2.1"
 }
 
 dependencyResolutionManagement {
@@ -26,5 +28,14 @@ buildCache {
     remote(develocity.buildCache) {
         isEnabled = true
         isPush = isCiServer
+    }
+}
+
+develocity {
+    server = "https://develocity.sonar.build"
+    buildScan {
+        capture {
+            buildLogging.set(!startParameter.taskNames.contains("properties"))
+        }
     }
 }
