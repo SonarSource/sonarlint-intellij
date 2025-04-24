@@ -101,4 +101,9 @@ tasks {
     test {
         useJUnitPlatform()
     }
+
+    // Make initializeIntellijPlatformPlugin task cacheable
+    named("initializeIntellijPlatformPlugin") {
+        outputs.cacheIf { true }
+    }
 }
