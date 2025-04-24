@@ -272,15 +272,20 @@ intellijPlatformTesting {
             }
             prepareSandboxTask {
                 doLast {
-                    copyPlugins(destinationDir, pluginName)
-                    renameCsharpPlugins(destinationDir, pluginName)
-                    copyOmnisharp(destinationDir, pluginName)
-                    copySloop(destinationDir, pluginName)
-                    unzipEslintBridgeBundle(destinationDir, pluginName)
+                    setupSandbox(destinationDir, pluginName)
                 }
             }
         }
     }
+}
+
+// Helper function to setup sandbox with all required plugins and tools
+fun setupSandbox(destinationDir: File, pluginName: Property<String>) {
+    copyPlugins(destinationDir, pluginName)
+    renameCsharpPlugins(destinationDir, pluginName)
+    copyOmnisharp(destinationDir, pluginName)
+    copySloop(destinationDir, pluginName)
+    unzipEslintBridgeBundle(destinationDir, pluginName)
 }
 
 fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
@@ -380,6 +385,9 @@ tasks {
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
         doNotTrackState("Tests should always run")
+        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
+        // Increase test heap size for faster execution
+        maxHeapSize = "1g"
     }
 
     // Make initializeIntellijPlatformPlugin task cacheable
@@ -393,23 +401,29 @@ tasks {
         outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
     }
 
+    // Optimize Gradle tasks
+    withType<JavaCompile>().configureEach {
+        options.isFork = true
+        options.isIncremental = true
+    }
+
+    withType<KotlinCompile>().configureEach {
+        kotlinOptions {
+            apiVersion = "1.7"
+            jvmTarget = "17"
+            freeCompilerArgs = listOf("-Xjsr305=strict", "-Xopt-in=kotlin.RequiresOptIn")
+        }
+    }
+
     prepareSandbox {
         doLast {
-            copyPlugins(destinationDir, pluginName)
-            renameCsharpPlugins(destinationDir, pluginName)
-            copyOmnisharp(destinationDir, pluginName)
-            copySloop(destinationDir, pluginName)
-            unzipEslintBridgeBundle(destinationDir, pluginName)
+            setupSandbox(destinationDir, pluginName)
         }
     }
 
     prepareTestSandbox {
         doLast {
-            copyPlugins(destinationDir, pluginName)
-            renameCsharpPlugins(destinationDir, pluginName)
-            copyOmnisharp(destinationDir, pluginName)
-            copySloop(destinationDir, pluginName)
-            unzipEslintBridgeBundle(destinationDir, pluginName)
+            setupSandbox(destinationDir, pluginName)
         }
     }
 

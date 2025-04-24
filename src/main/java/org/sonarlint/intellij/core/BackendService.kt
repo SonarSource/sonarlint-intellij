@@ -489,7 +489,7 @@ class BackendService : Disposable {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params: GetAllProjectsParams = if (server.isSonarCloud) {
             GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials,
                 SonarCloudRegion.valueOf(serverRegion)))
@@ -792,7 +792,7 @@ class BackendService : Disposable {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
             ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey,
                 credentials, SonarCloudRegion.valueOf(serverRegion)))
@@ -806,7 +806,7 @@ class BackendService : Disposable {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params = ListUserOrganizationsParams(credentials,
             SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.listUserOrganizations(params) }
@@ -817,7 +817,7 @@ class BackendService : Disposable {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
         val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+            ?: Either.forRight(UsernamePasswordDto(server.login!!, server.password!!))
         val params = GetOrganizationParams(credentials, organizationKey,
             SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.getOrganization(params) }

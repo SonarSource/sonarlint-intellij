@@ -1,5 +1,4 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val clionBuildVersion: String by project
 val clionHome: String? = System.getenv("CLION_HOME")
@@ -19,16 +18,12 @@ plugins {
     alias(libs.plugins.license)
 }
 
+// Apply shared module conventions
+apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        apiVersion = "1.7"
-        jvmTarget = "17"
     }
 }
 
@@ -107,16 +102,8 @@ dependencies {
 }
 
 tasks {
-    test {
-        useJUnitPlatform()
-    }
-
-    // Make initializeIntellijPlatformPlugin task cacheable
+    // Add specific input/output declarations for caching
     named("initializeIntellijPlatformPlugin") {
-        outputs.cacheIf { true }
-        outputs.upToDateWhen { true }
-
-        // Add explicit input/output declarations to help with caching
         inputs.property("intellijPlatformVersion", clionBuildVersion)
         inputs.property("clionHome", clionHome ?: "")
         outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))

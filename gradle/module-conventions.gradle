@@ -1,0 +1,36 @@
+// Apply common optimizations to all module build files
+
+// Optimize Java compilation
+tasks.withType(JavaCompile).configureEach {
+    options.fork = true
+    options.incremental = true
+}
+
+// Optimize Kotlin compilation (if Kotlin plugin is applied)
+plugins.withId("org.jetbrains.kotlin.jvm") {
+    tasks.matching { task -> task.name.endsWith("KotlinCompile") }.configureEach { task ->
+        task.kotlinOptions.apiVersion = "1.7"
+        task.kotlinOptions.jvmTarget = "17"
+        task.kotlinOptions.freeCompilerArgs = ["-Xjsr305=strict", "-Xopt-in=kotlin.RequiresOptIn"]
+    }
+}
+
+// Optimize test execution (if tests are present)
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+
+    // Enable parallel test execution
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2 > 0) ? Runtime.getRuntime().availableProcessors() / 2 : 1
+
+    // Increase test heap size for faster execution
+    maxHeapSize = "1g"
+
+    // Disable test task tracking to ensure tests always run
+    doNotTrackState("Tests should always run")
+}
+
+// Make initializeIntellijPlatformPlugin task cacheable
+tasks.matching { it.name == "initializeIntellijPlatformPlugin" }.configureEach {
+    outputs.cacheIf { true }
+    outputs.upToDateWhen { true }
+}

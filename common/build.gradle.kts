@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
@@ -19,16 +17,12 @@ plugins {
     kotlin("jvm")
 }
 
+// Apply shared module conventions
+apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        apiVersion = "1.7"
-        jvmTarget = "17"
     }
 }
 
