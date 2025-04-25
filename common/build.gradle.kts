@@ -51,6 +51,7 @@ repositories {
 
 tasks {
     compileKotlin {
+        incremental = false
         doNotTrackState("")
     }
 }
