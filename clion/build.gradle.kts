@@ -46,7 +46,6 @@ repositories {
     }
     intellijPlatform {
         defaultRepositories()
-        localPlatformArtifacts()
     }
 }
 
@@ -104,8 +103,9 @@ dependencies {
 tasks {
     // Add specific input/output declarations for caching
     named("initializeIntellijPlatformPlugin") {
-        inputs.property("intellijPlatformVersion", clionBuildVersion)
-        inputs.property("clionHome", clionHome ?: "")
-        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
+        if (!clionHome.isNullOrBlank()) {
+            inputs.dir(file(clionHome))
+        }
+        outputs.dir("${layout.buildDirectory}/idea-sandbox")
     }
 }

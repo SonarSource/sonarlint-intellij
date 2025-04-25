@@ -46,7 +46,6 @@ repositories {
     }
     intellijPlatform {
         defaultRepositories()
-        localPlatformArtifacts()
     }
 }
 
@@ -101,10 +100,10 @@ dependencies {
 }
 
 tasks {
-    // Add specific input/output declarations for caching
     named("initializeIntellijPlatformPlugin") {
-        inputs.property("intellijPlatformVersion", clionResharperBuildVersion)
-        inputs.property("resharperHome", resharperHome ?: "")
-        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
+        if (!resharperHome.isNullOrBlank()) {
+            inputs.dir(file(resharperHome))
+        }
+        outputs.dir("${layout.buildDirectory}/idea-sandbox")
     }
 }

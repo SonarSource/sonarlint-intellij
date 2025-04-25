@@ -19,7 +19,6 @@ plugins {
 // Apply shared module conventions
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 
-
 configurations.archives.get().isCanBeResolved = true
 
 repositories {
@@ -32,7 +31,6 @@ repositories {
     }
     intellijPlatform {
         defaultRepositories()
-        localPlatformArtifacts()
     }
 }
 
@@ -88,11 +86,9 @@ tasks {
 
     // Add specific input/output declarations for caching
     named("initializeIntellijPlatformPlugin") {
-        inputs.property("intellijPlatformVersion", intellijBuildVersion)
-        inputs.property("ideaHome", ideaHome ?: "")
-        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
-
-        // Enable caching for this task
-        outputs.cacheIf { true }
+        if (!ideaHome.isNullOrBlank()) {
+            inputs.dir(file(ideaHome))
+        }
+        outputs.dir("${layout.buildDirectory}/idea-sandbox")
     }
 }

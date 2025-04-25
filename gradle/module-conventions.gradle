@@ -25,6 +25,4 @@ tasks.withType(Test).configureEach {
 // Configure caching for initializeIntellijPlatformPlugin
 tasks.matching { it.name == "initializeIntellijPlatformPlugin" }.configureEach {
     outputs.cacheIf { true }
-    // Allow up-to-date checks to enable proper caching
-    // outputs.upToDateWhen { false }
 }
