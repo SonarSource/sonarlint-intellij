@@ -111,8 +111,7 @@ build_task:
     source cirrus-env BUILD-PRIVATE
     source .cirrus/use-gradle-wrapper.sh
     source set_gradle_build_version
-    # Add parallel flag and configure on demand for faster builds
-    regular_gradle_build_deploy_analyze -x build -x sonar :buildPlugin :cyclonedxBom --parallel --configure-on-demand --profile --info
+    regular_gradle_build_deploy_analyze -x build -x sonar :buildPlugin :cyclonedxBom
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
@@ -140,8 +139,7 @@ validate_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    # Add parallel flag and configure on demand for faster builds
-    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport --parallel --configure-on-demand --profile --info
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
@@ -172,8 +170,7 @@ validate_windows_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    # Add parallel flag and configure on demand for faster builds
-    ./gradlew :check --parallel --configure-on-demand --profile --info
+    ./gradlew :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
@@ -217,8 +214,7 @@ plugin_verifier_task:
     source .cirrus/use-gradle-wrapper.sh
     VERSIONS=$(curl -s -L https://jb.gg/intellij-platform-builds-list | jq '.[] | "\(.code) \(.releases[].version)"' | grep -Ew "${ALLOWED_IDE}" | grep "${IDEA_VERSION}" | tr -d '"' | awk '{k=$1} $2>a[k]{a[k]=$2} END{for (i in a) print i, a[i]}' | sort -u | sed 's/ /-/' | paste -s -d',')
     echo ${VERSIONS}
-    # Add parallel flag and configure on demand for faster builds
-    ./gradlew :runPluginVerifier -PverifierVersions=${VERSIONS} --parallel --configure-on-demand
+    ./gradlew :runPluginVerifier -PverifierVersions=${VERSIONS}
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     reports_artifacts:
