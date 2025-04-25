@@ -11,7 +11,7 @@ plugins.withId("org.jetbrains.kotlin.jvm") {
     tasks.matching { task -> task.name.endsWith("KotlinCompile") }.configureEach { task ->
         task.kotlinOptions.apiVersion = "1.7"
         task.kotlinOptions.jvmTarget = "17"
-        task.kotlinOptions.freeCompilerArgs = ["-Xjsr305=strict", "-Xopt-in=kotlin.RequiresOptIn"]
+        task.kotlinOptions.freeCompilerArgs = ["-opt-in=kotlin.RequiresOptIn"]
     }
 }
 
@@ -29,8 +29,8 @@ tasks.withType(Test).configureEach {
     doNotTrackState("Tests should always run")
 }
 
-// Make initializeIntellijPlatformPlugin task cacheable
+// Disable up-to-date checks for initializeIntellijPlatformPlugin to avoid long fingerprinting
 tasks.matching { it.name == "initializeIntellijPlatformPlugin" }.configureEach {
     outputs.cacheIf { true }
-    outputs.upToDateWhen { true }
+    outputs.upToDateWhen { false }
 }
