@@ -96,6 +96,6 @@ tasks {
         if (!ideaHome.isNullOrBlank()) {
             inputs.dir(file(ideaHome))
         }
-        outputs.dir("${layout.buildDirectory}/idea-sandbox")
+        outputs.dir(file("${layout.buildDirectory}/idea-sandbox"))
     }
 }

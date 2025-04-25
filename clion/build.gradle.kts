@@ -106,6 +106,6 @@ tasks {
         if (!clionHome.isNullOrBlank()) {
             inputs.dir(file(clionHome))
         }
-        outputs.dir("${layout.buildDirectory}/idea-sandbox")
+        outputs.dir(file("${layout.buildDirectory}/idea-sandbox"))
     }
 }

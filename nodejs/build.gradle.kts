@@ -100,6 +100,6 @@ tasks {
         if (!ultimateHome.isNullOrBlank()) {
             inputs.dir(file(ultimateHome))
         }
-        outputs.dir("${layout.buildDirectory}/idea-sandbox")
+        outputs.dir(file("${layout.buildDirectory}/idea-sandbox"))
     }
 }

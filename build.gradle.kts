@@ -389,7 +389,7 @@ tasks {
     named("initializeIntellijPlatformPlugin") {
         outputs.cacheIf { true }
         inputs.property("intellijPlatformVersion", intellijBuildVersion)
-        outputs.dir("${layout.buildDirectory}/idea-sandbox")
+        outputs.dir(file("${layout.buildDirectory}/idea-sandbox"))
     }
 
     // Optimize Gradle tasks
