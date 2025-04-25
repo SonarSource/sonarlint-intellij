@@ -45,7 +45,6 @@ repositories {
     }
     intellijPlatform {
         defaultRepositories()
-        localPlatformArtifacts()
     }
 }
 
@@ -94,8 +93,9 @@ dependencies {
 tasks {
     // Add specific input/output declarations for caching
     named("initializeIntellijPlatformPlugin") {
-        inputs.property("intellijPlatformVersion", intellijBuildVersion)
-        inputs.property("ideaHome", ideaHome ?: "")
-        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
+        if (!ideaHome.isNullOrBlank()) {
+            inputs.dir(file(ideaHome))
+        }
+        outputs.dir("${layout.buildDirectory}/idea-sandbox")
     }
 }

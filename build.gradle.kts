@@ -71,7 +71,6 @@ repositories {
     }
     intellijPlatform {
         defaultRepositories()
-        localPlatformArtifacts()
     }
 }
 
@@ -387,15 +386,10 @@ tasks {
         doNotTrackState("Tests should always run")
     }
 
-    // Disable up-to-date checks for initializeIntellijPlatformPlugin to avoid long fingerprinting
     named("initializeIntellijPlatformPlugin") {
         outputs.cacheIf { true }
-        outputs.upToDateWhen { false }
-
-        // Add explicit input/output declarations to help with caching
         inputs.property("intellijPlatformVersion", intellijBuildVersion)
-        inputs.property("ideaHome", ideaHome ?: "")
-        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
+        outputs.dir("${layout.buildDirectory}/idea-sandbox")
     }
 
     // Optimize Gradle tasks
