@@ -105,6 +105,6 @@ tasks {
         if (!resharperHome.isNullOrBlank()) {
             inputs.dir(file(resharperHome))
         }
-        outputs.dir(file("${layout.buildDirectory}/idea-sandbox"))
+        outputs.dir(layout.buildDirectory.dir("idea-sandbox").map { it.asFile })
     }
 }
