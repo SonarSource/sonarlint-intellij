@@ -51,8 +51,8 @@ repositories {
 
 tasks {
     compileKotlin {
-        incremental = false
-        doNotTrackState("")
+        // Disable up-to-date checks to avoid fingerprinting
+        outputs.upToDateWhen { false }
     }
 }
 
