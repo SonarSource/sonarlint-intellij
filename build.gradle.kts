@@ -97,7 +97,6 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         apiVersion = "1.7"
         jvmTarget = "17"
-        freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
     }
 }
 
@@ -386,9 +385,6 @@ tasks {
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
         doNotTrackState("Tests should always run")
-        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
-        // Increase test heap size for faster execution
-        maxHeapSize = "1g"
     }
 
     // Disable up-to-date checks for initializeIntellijPlatformPlugin to avoid long fingerprinting
@@ -412,7 +408,6 @@ tasks {
         kotlinOptions {
             apiVersion = "1.7"
             jvmTarget = "17"
-            freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
         }
     }
 

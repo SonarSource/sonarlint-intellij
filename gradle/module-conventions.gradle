@@ -18,13 +18,6 @@ plugins.withId("org.jetbrains.kotlin.jvm") {
 // Optimize test execution (if tests are present)
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
-
-    // Enable parallel test execution
-    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2 > 0) ? Runtime.getRuntime().availableProcessors() / 2 : 1
-
-    // Increase test heap size for faster execution
-    maxHeapSize = "1g"
-
     // Disable test task tracking to ensure tests always run
     doNotTrackState("Tests should always run")
 }
