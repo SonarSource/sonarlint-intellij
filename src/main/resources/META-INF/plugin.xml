@@ -61,6 +61,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.22 - 1 new rule for Python. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.21 - Introduction of a new tab 'Help & Feedback' to provide support and guidance. Fix an issue where a file path with non-ASCII characters would not get analyzed. 7 new rules for Kotlin. 2 new rules for Java. 1 new rule for XML. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.20 - UI/UX improvements for AI CodeFix. Fix an issue where the automatic detection of Node.js on Windows would not work. Fix an issue where file exclusion would not work on Windows. Correctly resolve the relative path of files. 133 new secret detection rules. Bug fixes for C/C++ analysis.</li>
         <li>10.19 - Allow generating AI CodeFix directly in the IDE when connected to an eligible SonarQube Cloud organization. Fix an issue where C projects would not be analyzed on CLion Nova. SonarQube for IDE now automatically uses Node.js set within the IDE settings when available. Introduce a new walkthrough introduction page for new users. Early access for SonarQube Cloud US region. Kotlin analysis now leverages K2. Improve the UI when no issues are visible due to filtering.</li>
