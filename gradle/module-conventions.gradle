@@ -22,8 +22,9 @@ tasks.withType(Test).configureEach {
     doNotTrackState("Tests should always run")
 }
 
-// Disable up-to-date checks for initializeIntellijPlatformPlugin to avoid long fingerprinting
+// Configure caching for initializeIntellijPlatformPlugin
 tasks.matching { it.name == "initializeIntellijPlatformPlugin" }.configureEach {
     outputs.cacheIf { true }
-    outputs.upToDateWhen { false }
+    // Allow up-to-date checks to enable proper caching
+    // outputs.upToDateWhen { false }
 }

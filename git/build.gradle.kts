@@ -91,5 +91,8 @@ tasks {
         inputs.property("intellijPlatformVersion", intellijBuildVersion)
         inputs.property("ideaHome", ideaHome ?: "")
         outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
+
+        // Enable caching for this task
+        outputs.cacheIf { true }
     }
 }
