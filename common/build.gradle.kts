@@ -49,13 +49,6 @@ repositories {
     }
 }
 
-tasks {
-    compileKotlin {
-        // Disable up-to-date checks to avoid fingerprinting
-        outputs.upToDateWhen { false }
-    }
-}
-
 tasks.cyclonedxBom {
     setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
     inputs.files(configurations.runtimeClasspath, configurations.archives.get())
@@ -95,5 +88,14 @@ dependencies {
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
         }
+    }
+}
+
+tasks {
+    // Add specific input/output declarations for caching
+    named("initializeIntellijPlatformPlugin") {
+        inputs.property("intellijPlatformVersion", intellijBuildVersion)
+        inputs.property("ideaHome", ideaHome ?: "")
+        outputs.dir(layout.buildDirectory.dir("tmp/initializeIntelliJPlugin"))
     }
 }
