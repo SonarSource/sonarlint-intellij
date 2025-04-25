@@ -9,7 +9,7 @@ env:
   DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${DEVELOCITY_TOKEN}
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
   SLACK_CHANNEL: squad-ide-intellij-family-bots
-  GRADLE_VERSION: "8.13"
+  GRADLE_VERSION: "8.14"
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
   IDEA_HOME: "/opt/intellij"
   RIDER_HOME: "/opt/rider"

@@ -31,6 +31,17 @@ buildCache {
     }
 }
 
+// Enable caching for CollectorTransformer
+dependencies {
+    registerTransform(org.jetbrains.intellij.platform.gradle.artifacts.transform.CollectorTransformer::class) {
+        from.attribute(org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE, objects.named(org.gradle.api.attributes.Usage::class.java, "intellij-platform-local-ide"))
+        to.attribute(org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE, objects.named(org.gradle.api.attributes.Usage::class.java, "intellij-platform-collected-ide"))
+        parameters {
+            cacheableWhen { true }
+        }
+    }
+}
+
 develocity {
     server = "https://develocity.sonar.build"
     buildScan {
