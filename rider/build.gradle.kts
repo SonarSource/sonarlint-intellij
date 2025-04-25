@@ -107,6 +107,6 @@ tasks {
         if (!riderHome.isNullOrBlank()) {
             inputs.dir(file(riderHome))
         }
-        outputs.dir("${layout.buildDirectory}/idea-sandbox")
+        outputs.dir(file("${layout.buildDirectory}/idea-sandbox"))
     }
 }
