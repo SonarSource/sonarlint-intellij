@@ -139,9 +139,6 @@ tasks {
         }
         testLogging.showStandardStreams = true
 
-        // Enable parallel test execution
-        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
-
         // Increase test heap size for faster execution
         maxHeapSize = "1g"
 
@@ -150,7 +147,7 @@ tasks {
     }
 }
 
-val runIdeForUiTests by intellijPlatformTesting.testIde.registering {
+val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
     if (project.hasProperty("runIdeDirectory")) {
         println("Using runIdeDirectory: $runIdeDirectory")
         localPath.set(file(runIdeDirectory))
