@@ -97,6 +97,7 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         apiVersion = "1.7"
         jvmTarget = "17"
+        freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
     }
 }
 
@@ -390,10 +391,10 @@ tasks {
         maxHeapSize = "1g"
     }
 
-    // Make initializeIntellijPlatformPlugin task cacheable
+    // Disable up-to-date checks for initializeIntellijPlatformPlugin to avoid long fingerprinting
     named("initializeIntellijPlatformPlugin") {
         outputs.cacheIf { true }
-        outputs.upToDateWhen { true }
+        outputs.upToDateWhen { false }
 
         // Add explicit input/output declarations to help with caching
         inputs.property("intellijPlatformVersion", intellijBuildVersion)
@@ -411,7 +412,7 @@ tasks {
         kotlinOptions {
             apiVersion = "1.7"
             jvmTarget = "17"
-            freeCompilerArgs = listOf("-Xjsr305=strict", "-Xopt-in=kotlin.RequiresOptIn")
+            freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
         }
     }
 
