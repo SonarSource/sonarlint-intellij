@@ -49,6 +49,12 @@ repositories {
     }
 }
 
+tasks {
+    compileKotlin {
+        doNotTrackState("")
+    }
+}
+
 tasks.cyclonedxBom {
     setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
     inputs.files(configurations.runtimeClasspath, configurations.archives.get())
