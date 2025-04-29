@@ -53,6 +53,13 @@ class SonarCloudUtils {
             )
         }
 
+        fun cleanupProjects(adminWsClient: WsClient, projectKey: String) {
+            val request = PostRequest("api/projects/bulk_delete")
+            request.setParam("q", projectKey)
+            request.setParam("organization", SONARCLOUD_ORGANIZATION)
+            adminWsClient.wsConnector().call(request)
+        }
+
         fun analyzeSonarCloudWithMaven(adminWsClient: WsClient, projectKey: String, projectDirName: String, token: String) {
             val projectDir = Paths.get("projects/$projectDirName").toAbsolutePath()
             runMaven(

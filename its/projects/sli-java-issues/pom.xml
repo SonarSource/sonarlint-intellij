@@ -2,14 +2,14 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.sonarsource.sonarlint.core</groupId>
-  <artifactId>sample-java-issues</artifactId>
+  <artifactId>sli-java-issues</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>Sample Java Issues</name>
+  <name>SLI Java Issues</name>
   <description>Sample project for ITs</description>
   
   <properties>
     <old.version>${project.version}</old.version>
-    <sonar.projectKey>sample-java-issues</sonar.projectKey>
+    <sonar.projectKey>sli-java-issues</sonar.projectKey>
   </properties>
 
   <build>
