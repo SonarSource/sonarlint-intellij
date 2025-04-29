@@ -1,7 +1,7 @@
 [versions]
 sonarlint-core = "10.20.0.81055"
 
-sonar-java = "8.12.0.38599"
+sonar-java = "8.13.0.38826"
 sonar-javascript = "10.22.0.32148"
 sonar-php = "3.45.0.12991"
 sonar-python = "5.3.0.21704"
