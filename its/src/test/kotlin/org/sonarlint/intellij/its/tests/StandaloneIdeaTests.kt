@@ -25,8 +25,8 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
-import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.verifyWalkthroughIsNotShowing
 import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.closeWalkthrough
+import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.verifyWalkthroughIsNotShowing
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.excludeFile
 import org.sonarlint.intellij.its.utils.ExclusionUtils.Companion.removeFileExclusion
 import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.setFocusOnNewCode
@@ -42,7 +42,7 @@ class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
     fun should_exclude_rule_and_focus_on_new_code() = uiTest {
-        openExistingProject("sample-java-issues")
+        openExistingProject("sli-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         toggleRule("java:S2094", "Classes should not be empty")
         verifyCurrentFileTabContainsMessages("No issues to display")
@@ -63,7 +63,7 @@ class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
     fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
-        openExistingProject("sample-java-issues")
+        openExistingProject("sli-java-issues")
         excludeFile("src/main/java/foo/Foo.java")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
@@ -84,7 +84,7 @@ class StandaloneIdeaTests : BaseUiTest() {
             closeWalkthrough()
         }
         closeProject()
-        openExistingProject("sample-java-issues")
+        openExistingProject("sli-java-issues")
         verifyWalkthroughIsNotShowing()
     }
 }

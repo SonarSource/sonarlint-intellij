@@ -57,6 +57,7 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMo
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_STAGING_URL
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.analyzeSonarCloudWithMaven
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.associateSonarCloudProjectToQualityProfile
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.cleanupProjects
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.newAdminSonarCloudWsClientWithUser
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.provisionSonarCloudProfile
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.restoreSonarCloudProfile
@@ -86,7 +87,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
         private lateinit var adminSonarCloudWsClient: WsClient
 
         const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
-        const val ISSUE_PROJECT_KEY = "sample-java-issues"
+        const val ISSUE_PROJECT_KEY = "sli-java-issues"
         val SONARCLOUD_ISSUE_PROJECT_KEY = projectKey(ISSUE_PROJECT_KEY)
 
         private var firstIssueKey: String? = null
@@ -136,6 +137,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
         @JvmStatic
         @AfterAll
         fun cleanup() {
+            cleanupProjects(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY)
             adminSonarCloudWsClient.userTokens().revoke(RevokeRequest().setName(sonarCloudTokenName))
         }
     }
@@ -230,19 +232,19 @@ class ConnectedAnalysisTests : BaseUiTest() {
         @BeforeAll
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-issue.xml"))
-            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "Sample Java Issues")
+            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "SLI Java Issues")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
                 ISSUE_PROJECT_KEY,
                 "java",
                 "SonarLint IT Java Issue"
             )
             // Build and analyze project to raise issue
-            executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR)
+            executeBuildWithMaven("projects/sli-java-issues/pom.xml", ORCHESTRATOR)
             firstIssueKey = getFirstIssueKey(adminWsClient)
 
             restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
             provisionSonarCloudProfile(
-                adminSonarCloudWsClient, "Sample Java Issues",
+                adminSonarCloudWsClient, "SLI Java Issues",
                 SONARCLOUD_ISSUE_PROJECT_KEY
             )
             associateSonarCloudProjectToQualityProfile(
@@ -254,7 +256,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
 
             analyzeSonarCloudWithMaven(
                 adminSonarCloudWsClient,
-                SONARCLOUD_ISSUE_PROJECT_KEY, "sample-java-issues",
+                SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues",
                 sonarCloudToken
             )
 
@@ -263,7 +265,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
 
         @Test
         fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
-            openExistingProject("sample-java-issues")
+            openExistingProject("sli-java-issues")
 
             // Issue Analysis Test
             enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator")

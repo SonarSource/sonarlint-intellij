@@ -67,6 +67,7 @@ import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_ORG
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_STAGING_URL
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.analyzeSonarCloudWithMaven
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.associateSonarCloudProjectToQualityProfile
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.cleanupProjects
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.newAdminSonarCloudWsClientWithUser
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.provisionSonarCloudProfile
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.restoreSonarCloudProfile
@@ -96,7 +97,7 @@ class OpenInIdeTests : BaseUiTest() {
         private lateinit var adminSonarCloudWsClient: WsClient
 
         const val SECURITY_HOTSPOT_PROJECT_KEY = "sample-java-hotspot"
-        const val ISSUE_PROJECT_KEY = "sample-java-issues"
+        const val ISSUE_PROJECT_KEY = "sli-java-issues"
         val SONARCLOUD_ISSUE_PROJECT_KEY = projectKey(ISSUE_PROJECT_KEY)
 
         private var firstHotspotKey: String? = null
@@ -109,7 +110,7 @@ class OpenInIdeTests : BaseUiTest() {
 
         private fun projectKey(key: String): String {
             val randomPositiveInt = Random.nextInt(Int.MAX_VALUE)
-            return "sonarlint-its-$key-$randomPositiveInt"
+            return "sli-its-$key-$randomPositiveInt"
         }
 
         private fun getFirstHotspotKey(client: WsClient): String? {
@@ -155,6 +156,7 @@ class OpenInIdeTests : BaseUiTest() {
         @JvmStatic
         @AfterAll
         fun cleanup() {
+            cleanupProjects(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY)
             adminSonarCloudWsClient.userTokens().revoke(RevokeRequest().setName(sonarCloudTokenName))
         }
     }
@@ -209,18 +211,18 @@ class OpenInIdeTests : BaseUiTest() {
         @BeforeAll
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-issue.xml"))
-            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "Sample Java Issues")
+            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "SLI Java Issues")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
                 ISSUE_PROJECT_KEY,
                 "java",
                 "SonarLint IT Java Issue"
             )
             // Build and analyze project to raise issue
-            executeBuildWithMaven("projects/sample-java-issues/pom.xml", ORCHESTRATOR)
+            executeBuildWithMaven("projects/sli-java-issues/pom.xml", ORCHESTRATOR)
             firstIssueKey = getFirstIssueKey(adminWsClient)
 
             restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
-            provisionSonarCloudProfile(adminSonarCloudWsClient, "Sample Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
+            provisionSonarCloudProfile(adminSonarCloudWsClient, "SLI Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
             associateSonarCloudProjectToQualityProfile(
                 adminSonarCloudWsClient,
                 "java",
@@ -228,7 +230,7 @@ class OpenInIdeTests : BaseUiTest() {
                 "SonarLint IT Java Issue"
             )
 
-            analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sample-java-issues", sonarCloudToken)
+            analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues", sonarCloudToken)
 
             firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
         }
@@ -237,7 +239,7 @@ class OpenInIdeTests : BaseUiTest() {
         @Test
         fun click_open_in_ide_SC_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
-            openExistingProject("sample-java-issues")
+            openExistingProject("sli-java-issues")
             triggerOpenSCIssueRequest(
                 SONARCLOUD_ISSUE_PROJECT_KEY,
                 firstSCIssueKey,
@@ -254,7 +256,7 @@ class OpenInIdeTests : BaseUiTest() {
 
         @Test
         fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
-            openExistingProject("sample-java-issues")
+            openExistingProject("sli-java-issues")
 
             // Issue Analysis Test
             enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator")
@@ -282,7 +284,7 @@ class OpenInIdeTests : BaseUiTest() {
         @Test
         fun click_open_in_ide_issue_then_should_manually_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
-            openExistingProject("sample-java-issues")
+            openExistingProject("sli-java-issues")
             triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main")
             createConnection(tokenValue)
             verifyIssueOpened()
@@ -292,7 +294,7 @@ class OpenInIdeTests : BaseUiTest() {
         @Disabled("Flaky test - Timeout while opening a file")
         fun click_open_in_ide_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
-            openExistingProject("sample-java-issues")
+            openExistingProject("sli-java-issues")
             triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main", tokenName, tokenValue)
             acceptNewAutomatedConnection()
             verifyIssueOpened()
