@@ -190,6 +190,8 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
         } else {
             "You're all set!"
         }
+
+        rootPane?.defaultButton = nextButton
     }
 
     private fun welcomePageData(): PageData {
