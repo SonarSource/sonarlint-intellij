@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.global;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -31,7 +30,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
 
-  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 14;
+  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 12;
   private static final String RULE = "rule";
   private static final String RULE1 = "rule1";
   private static final String PARAM = "param";
@@ -53,24 +52,6 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
 
     settings.setNodejsPath("path/to/node");
     assertThat(settings.getNodejsPath()).isEqualTo("path/to/node");
-  }
-
-  @Test
-  void testLoadStateOldFormat() {
-    var state = new SonarLintGlobalSettings();
-    var includedRules = Collections.singleton(RULE);
-    var excludedRules = Collections.singleton(RULE1);
-    state.setIncludedRules(includedRules);
-    state.setExcludedRules(excludedRules);
-
-    var settingsStore = new SonarLintGlobalSettingsStore();
-    settingsStore.loadState(state);
-
-    var rules = state.getRulesByKey();
-    assertThat(rules).containsOnlyKeys(RULE, RULE1);
-    assertThat(rules.get(RULE).isActive).isTrue();
-    assertThat(rules.get(RULE1).isActive).isFalse();
-
   }
 
   @Test

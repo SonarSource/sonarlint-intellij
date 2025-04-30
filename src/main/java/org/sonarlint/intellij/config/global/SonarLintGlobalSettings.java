@@ -54,10 +54,6 @@ public final class SonarLintGlobalSettings {
   private List<String> fileExclusions = new LinkedList<>();
   private boolean hasWalkthroughRunOnce = false;
 
-  @Deprecated
-  private Set<String> includedRules;
-  @Deprecated
-  private Set<String> excludedRules;
   @XCollection(propertyElementName = "rules", elementName = "rule")
   Collection<Rule> rules = new HashSet<>();
   @Transient
@@ -80,9 +76,6 @@ public final class SonarLintGlobalSettings {
 
     this.servers = new LinkedList<>(original.servers);
     this.fileExclusions = new LinkedList<>(original.fileExclusions);
-
-    this.includedRules = original.includedRules != null ? new HashSet<>(original.includedRules) : null;
-    this.excludedRules = original.excludedRules != null ? new HashSet<>(original.excludedRules) : null;
 
     this.rules = new HashSet<>(original.rules);
     this.rulesByKey = new HashMap<>(original.rulesByKey);
@@ -159,19 +152,7 @@ public final class SonarLintGlobalSettings {
   }
 
   public Map<String, Rule> getRulesByKey() {
-    migrateOldStyleRuleActivations();
     return rulesByKey;
-  }
-
-  private void migrateOldStyleRuleActivations() {
-    if (includedRules != null && !includedRules.isEmpty()) {
-      includedRules.forEach(it -> rulesByKey.put(it, new Rule(it, true)));
-    }
-    includedRules = null;
-    if (excludedRules != null && !excludedRules.isEmpty()) {
-      excludedRules.forEach(it -> rulesByKey.put(it, new Rule(it, false)));
-    }
-    excludedRules = null;
   }
 
   public Collection<Rule> getRules() {
@@ -267,38 +248,6 @@ public final class SonarLintGlobalSettings {
 
   public void setFileExclusions(List<String> fileExclusions) {
     this.fileExclusions = List.copyOf(fileExclusions);
-  }
-
-  /**
-   * @deprecated only used for serialization
-   */
-  @Deprecated
-  public Set<String> getIncludedRules() {
-    return includedRules;
-  }
-
-  /**
-   * @deprecated only used for serialization
-   */
-  @Deprecated
-  public void setIncludedRules(Set<String> includedRules) {
-    this.includedRules = includedRules;
-  }
-
-  /**
-   * @deprecated only used for serialization
-   */
-  @Deprecated
-  public Set<String> getExcludedRules() {
-    return excludedRules;
-  }
-
-  /**
-   * @deprecated only used for serialization
-   */
-  @Deprecated
-  public void setExcludedRules(Set<String> excludedRules) {
-    this.excludedRules = excludedRules;
   }
 
   public List<ServerConnection> getConnectionsTo(String serverUrl) {
