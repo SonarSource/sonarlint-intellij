@@ -27,7 +27,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.callable.CheckInCallable;
 import org.sonarlint.intellij.callable.ShowFindingCallable;
 import org.sonarlint.intellij.callable.ShowReportCallable;
@@ -53,7 +51,6 @@ import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
-import static org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllFilesForProject;
 
 @Service(Service.Level.PROJECT)

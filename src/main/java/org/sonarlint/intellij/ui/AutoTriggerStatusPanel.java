@@ -121,7 +121,7 @@ public class AutoTriggerStatusPanel {
 
   private void handleExcludedFiles(VirtualFile selectedFile, Map<Module, Collection<VirtualFile>> nonExcluded) {
     var module = findModuleForFile(selectedFile, project);
-    if (!nonExcluded.isEmpty() && module != null) {
+    if (!nonExcluded.isEmpty() && module != null && nonExcluded.containsKey(module)) {
       var files = nonExcluded.get(module);
       var excludedFilesFromServer = getService(BackendService.class).getExcludedFiles(module, files);
       files.removeAll(excludedFilesFromServer);
