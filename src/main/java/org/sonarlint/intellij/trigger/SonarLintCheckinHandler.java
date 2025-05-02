@@ -101,7 +101,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
     // this will block EDT (modal)
     try {
-      var analysisIdsByCallback = getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+      var analysisSubmitter = getService(project, AnalysisSubmitter.class);
+      var analysisIdsByCallback = analysisSubmitter.analyzeFilesPreCommit(affectedFiles);
       if (analysisIdsByCallback == null) {
         SonarLintConsole.get(project).debug("Pre commit analysis cancelled because analysis did not start");
         return ReturnResult.CANCEL;

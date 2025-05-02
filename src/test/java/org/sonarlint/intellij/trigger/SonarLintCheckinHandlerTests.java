@@ -73,6 +73,11 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
   @BeforeEach
   void prepare() {
+    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
+      assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue()
+    );
+    clearInvocations(analysisSubmitter);
+
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     replaceProjectService(RunningAnalysesTracker.class, runningAnalysesTracker);
     replaceProjectService(SonarLintToolWindow.class, toolWindow);
@@ -82,10 +87,6 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     analysisUuid = UUID.randomUUID();
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
       .thenReturn(Pair.of(checkInCallable, List.of(analysisUuid)));
-    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
-      assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue()
-    );
-    clearInvocations(analysisSubmitter);
   }
 
   @Test
@@ -102,7 +103,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var result = handler.beforeCheckin(null, null);
 
-    verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
   }
 
@@ -131,7 +132,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     verify(toolWindow, timeout(1000)).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
     assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
-    verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 
   @Test
@@ -162,7 +163,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     verify(toolWindow, timeout(1000)).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
     assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
-    verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 
   @Test
@@ -180,7 +181,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
-    verify(analysisSubmitter, timeout(1000)).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
     verify(sonarLintTelemetry, timeout(1000)).analysisReportingTriggered(AnalysisReportingType.PRE_COMMIT_ANALYSIS_TYPE);
   }
 
