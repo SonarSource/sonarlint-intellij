@@ -23,19 +23,24 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
   private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
@@ -46,6 +51,11 @@ class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
 
   @BeforeEach
   void prepare() {
+    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
+      assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue()
+    );
+    clearInvocations(analysisSubmitter);
+
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     when(event.getProject()).thenReturn(getProject());
     when(event.getPresentation()).thenReturn(presentation);

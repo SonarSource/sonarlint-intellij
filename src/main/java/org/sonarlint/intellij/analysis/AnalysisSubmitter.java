@@ -93,22 +93,6 @@ public final class AnalysisSubmitter {
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
-  public void autoAnalyzeSelectedFilesForModule(TriggerType triggerType, @Nullable Module module) {
-    if (module == null) {
-      autoAnalyzeSelectedFiles(triggerType);
-      return;
-    }
-
-    var selectedFiles = FileEditorManager.getInstance(project).getSelectedFiles();
-    var filesToAnalyze = Arrays.stream(selectedFiles)
-      .filter(file -> module.equals(findModuleForFile(file, project)))
-      .toList();
-
-    if (!filesToAnalyze.isEmpty()) {
-      autoAnalyzeFiles(filesToAnalyze, triggerType);
-    }
-  }
-
   public void autoAnalyzeSelectedFiles(TriggerType triggerType) {
     var selectedFiles = FileEditorManager.getInstance(project).getSelectedFiles();
 
