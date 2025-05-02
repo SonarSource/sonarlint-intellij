@@ -34,6 +34,7 @@ buildCache {
 develocity {
     server = "https://develocity.sonar.build"
     buildScan {
+        publishing.onlyIf { isCiServer && it.isAuthenticated }
         capture {
             buildLogging.set(!startParameter.taskNames.contains("properties"))
         }
