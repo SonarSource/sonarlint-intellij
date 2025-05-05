@@ -25,12 +25,12 @@ only_if_nightly: &ONLY_IF_NIGHTLY
 only_pr_and_maintained_branches_including_nightly: &ONLY_PR_AND_MAINTAINED_BRANCHES_INCLUDING_NIGHTLY
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
-    && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH == "ci-images-verifier" || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
+    && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH == "ci/images-it/master" || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
 
 only_pr_and_maintained_branches: &ONLY_PR_AND_MAINTAINED_BRANCHES
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == ""
-    && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH == "ci-images-verifier" || $CIRRUS_BRANCH =~ "dogfood-on-.*") && $CIRRUS_BUILD_SOURCE != "cron"
+    && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH == "ci/images-it/master" || $CIRRUS_BRANCH =~ "dogfood-on-.*") && $CIRRUS_BUILD_SOURCE != "cron"
 
 only_main_branches: &ONLY_MAIN_BRANCHES
   skip: "changesIncludeOnly('*.txt', '**/README.md')"
