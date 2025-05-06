@@ -61,7 +61,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.23 - 5 new rules for Python PySpark library.</li>
+        <li>10.23 - 5 new rules for Python PySpark library. ARM64 support for Go.</li>
         <li>10.22 - Improve the analysis performance when multiple issues are detected in a file. 3 new rules for Java. 1 new rule for Python. Fix an issue where a taint vulnerability could not be opened from SonarQube (Server, Cloud). Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.21 - Introduction of a new tab 'Help & Feedback' to provide support and guidance. Fix an issue where a file path with non-ASCII characters would not get analyzed. 7 new rules for Kotlin. 2 new rules for Java. 1 new rule for XML. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.20 - UI/UX improvements for AI CodeFix. Fix an issue where the automatic detection of Node.js on Windows would not work. Fix an issue where file exclusion would not work on Windows. Correctly resolve the relative path of files. 133 new secret detection rules. Bug fixes for C/C++ analysis.</li>
