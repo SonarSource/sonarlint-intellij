@@ -157,7 +157,7 @@ tasks.runPluginVerifier {
         ideVersions.set(verifierVersions.split(','))
     } else {
         // Test oldest supported, and latest
-        ideVersions.set(listOf("IC-2022.3.1", "IC-2024.3.1"))
+        ideVersions.set(listOf("IC-2022.3.1", "IC-2025.1"))
     }
     failureLevel.set(
         EnumSet.complementOf(
