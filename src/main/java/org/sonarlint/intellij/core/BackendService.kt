@@ -551,6 +551,8 @@ class BackendService : Disposable {
     fun projectOpened(project: Project) {
         val binding = getService(project, ProjectBindingManager::class.java).binding
         notifyBackend {
+            val bindingInfo = if (binding != null) "(no binding)" else "(with binding)"
+            SonarLintConsole.get(project).debug("Opening project $bindingInfo: ${projectId(project)}")
             it.configurationService.didAddConfigurationScopes(
                 DidAddConfigurationScopesParams(
                     listOf(
@@ -570,7 +572,10 @@ class BackendService : Disposable {
     fun projectClosed(project: Project) {
         ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
         val projectId = projectId(project)
-        notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId)) }
+        notifyBackend {
+            SonarLintConsole.get(project).debug("Closing project: $projectId")
+            it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId))
+        }
     }
 
     private fun toBackendConfigurationScope(project: Project, binding: ProjectBinding?) =
@@ -619,13 +624,18 @@ class BackendService : Disposable {
     }
 
     fun modulesAdded(project: Project, modules: List<Module>) {
+        val logging = StringBuilder()
         val projectBinding = getService(project, ProjectBindingManager::class.java).binding
+        val bindingInfo = if (projectBinding != null) "(no binding)" else "(with binding)"
+        logging.appendLine("Adding the following modules $bindingInfo:")
         notifyBackend {
-            it.configurationService.didAddConfigurationScopes(
-                DidAddConfigurationScopesParams(
-                    modules.map { module -> toConfigurationScope(module, projectBinding) }
-                )
-            )
+            val configScopes = modules.map { module ->
+                val configScope = toConfigurationScope(module, projectBinding)
+                logging.appendLine(configScope.id)
+                configScope
+            }
+            SonarLintConsole.get(project).debug(logging.toString())
+            it.configurationService.didAddConfigurationScopes(DidAddConfigurationScopesParams(configScopes))
         }
     }
 
@@ -638,7 +648,10 @@ class BackendService : Disposable {
 
     fun moduleRemoved(module: Module) {
         val moduleId = moduleId(module)
-        notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(moduleId)) }
+        notifyBackend {
+            SonarLintConsole.get(module.project).debug("Removing the following module: $moduleId")
+            it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(moduleId))
+        }
     }
 
     fun moduleUnbound(module: Module) {
