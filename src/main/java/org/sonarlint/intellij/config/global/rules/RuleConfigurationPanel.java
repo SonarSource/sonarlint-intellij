@@ -97,6 +97,7 @@ import javax.swing.text.NumberFormatter;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.BackendService;
@@ -104,8 +105,6 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel;
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel;
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages;
-import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRuleDescriptionParams;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleDefinitionDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleParamDefinitionDto;
@@ -257,7 +256,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         this.isDirty.lazySet(false);
       })
       .exceptionally(error -> {
-        GlobalLogOutput.get().log("Could not recompute rules: " + error.getMessage(), ClientLogOutput.Level.ERROR);
+        SonarLintConsole.get(project).error("Could not recompute rules: " + error.getMessage());
         return null;
       }));
   }
@@ -299,7 +298,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
           });
       })
       .exceptionally(error -> {
-        GlobalLogOutput.get().log("Could not load rules: " + error.getMessage(), ClientLogOutput.Level.ERROR);
+        SonarLintConsole.get(project).error("Could not load rules: " + error.getMessage());
         return null;
       }));
   }
@@ -556,7 +555,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
           myParamsPanel.repaint();
         }))
         .exceptionally(error -> {
-          GlobalLogOutput.get().log("Could not retrieve rule description", ClientLogOutput.Level.ERROR);
+          SonarLintConsole.get(project).error("Could not retrieve rule description");
           return null;
         })
     );
@@ -614,7 +613,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         case INTEGER -> createIntParam(rule, configPanel, constraints, param);
         case FLOAT -> createFloatParam(rule, configPanel, constraints, param);
         case BOOLEAN -> createBooleanParam(rule, configPanel, constraints, param);
-        default -> GlobalLogOutput.get().log("Unknown rule parameter type: " + param.getType() + " for rule " + rule.getKey(), ClientLogOutput.Level.ERROR);
+        default -> SonarLintConsole.get(project).error("Unknown rule parameter type: " + param.getType() + " for rule " + rule.getKey());
       }
       constraints.gridy++;
     }

@@ -42,7 +42,7 @@ fun runOnPooledThread(project: Project, runnable: Runnable) {
 }
 
 fun <T> computeOnPooledThread(project: Project, taskName: String, callable: Callable<T>): T? {
-    return waitForTask(ApplicationManager.getApplication().executeOnPooledThread<T> {
+    return waitForTask(project, ApplicationManager.getApplication().executeOnPooledThread<T> {
         if (!project.isDisposed) {
             callable.call()
         } else {

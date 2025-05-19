@@ -52,6 +52,21 @@ public class FutureUtils {
   }
 
   @Nullable
+  public static <T> T waitForTask(Project project, Future<T> task, String taskName, Duration timeoutDuration) {
+    try {
+      return waitForFutureWithTimeout(task, timeoutDuration);
+    } catch (TimeoutException ex) {
+      task.cancel(true);
+      SonarLintConsole.get(project).error(taskName + " " + TASK_EXPIRED, ex);
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+    } catch (Exception ex) {
+      SonarLintConsole.get(project).error(taskName + " " + TASK_FAILED, ex);
+    }
+    return null;
+  }
+
+  @Nullable
   public static <T> T waitForTaskWithoutCatching(Future<T> task, String taskName, Duration timeoutDuration) throws TimeoutException, ExecutionException {
     try {
       return waitForFutureWithTimeout(task, timeoutDuration);

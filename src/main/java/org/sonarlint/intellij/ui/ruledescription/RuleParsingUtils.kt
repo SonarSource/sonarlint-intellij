@@ -32,8 +32,8 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
-import org.apache.commons.text.StringEscapeUtils
 import org.apache.commons.lang3.StringUtils
+import org.apache.commons.text.StringEscapeUtils
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
 import org.sonarlint.intellij.ui.ruledescription.section.HtmlFragment
@@ -74,7 +74,7 @@ class RuleParsingUtils {
                     if (isWithinTable(computedRuleDescription)) {
                         section.mergeOrAdd(HtmlFragment("<pre>$middle$PRE_TAG_ENDING"))
                     } else {
-                        section.add(CodeExampleFragment(replaceSpaceCharacters(middle), diffType, diffId))
+                        section.add(project, CodeExampleFragment(replaceSpaceCharacters(middle), diffType, diffId))
                     }
                 }
                 computedRuleDescription += remainingRuleDescription.substring(matcherStart.start(), matcherEnd.end())

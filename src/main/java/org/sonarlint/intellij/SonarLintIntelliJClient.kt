@@ -731,14 +731,16 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun listFiles(configScopeId: String): List<ClientFileDto> {
+        val project = findModule(configScopeId)?.project ?: findProject(configScopeId)
+
         val timeStart = System.currentTimeMillis()
         val listClientFiles = findModule(configScopeId)?.let { module ->
             listModuleFiles(module, configScopeId)
-        } ?: findProject(configScopeId)?.let { project ->
-            val listProjectFiles = listProjectFiles(project, configScopeId)
+        } ?: project?.let { foundProject ->
+            val listProjectFiles = listProjectFiles(foundProject, configScopeId)
 
             if (isRider()) {
-                computeRiderSharedConfiguration(project, configScopeId)?.let {
+                computeRiderSharedConfiguration(foundProject, configScopeId)?.let {
                     listProjectFiles.add(it)
                 }
             }
@@ -747,10 +749,16 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }
         ?: emptyList()
         val timeEnd = System.currentTimeMillis()
-        GlobalLogOutput.get().log(
-            "Listed ${listClientFiles.size} files for $configScopeId in ${(timeEnd - timeStart)} ms",
-            ClientLogOutput.Level.DEBUG
-        )
+
+        if (project != null) {
+            SonarLintConsole.get(project).debug("Listed ${listClientFiles.size} files for $configScopeId in ${(timeEnd - timeStart)} ms")
+        } else {
+            GlobalLogOutput.get().log(
+                "Listed ${listClientFiles.size} files for $configScopeId in ${(timeEnd - timeStart)} ms",
+                ClientLogOutput.Level.DEBUG
+            )
+        }
+
         return listClientFiles
     }
 
@@ -866,7 +874,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 )
             }
         } catch (e: IOException) {
-            GlobalLogOutput.get().logError("Error while computing ClientFileDto", e)
+            SonarLintConsole.get(project).error("Error while computing ClientFileDto", e)
             null
         }
     }
