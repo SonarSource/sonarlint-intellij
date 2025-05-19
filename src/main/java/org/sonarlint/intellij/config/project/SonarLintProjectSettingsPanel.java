@@ -30,10 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.JPanel;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
-import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -89,7 +89,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       if (!getGlobalSettings().connectionExists(selectedConnection.getName())) {
         throw new ConfigurationException("Connection should be saved first");
       }
-      isConnectionValid(selectedConnection);
+      isConnectionValid(project, selectedConnection);
       if (selectedProjectKey == null || selectedProjectKey.isBlank()) {
         throw new ConfigurationException("Project key should not be empty");
       }
@@ -113,14 +113,14 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     }
   }
 
-  private static void isConnectionValid(ServerConnection connection) throws ConfigurationException {
+  private static void isConnectionValid(Project project, ServerConnection connection) throws ConfigurationException {
     var connectionTest = new ConnectionTestTask(connection);
     var msg = "Failed to connect to the server. Please check the configuration.";
     ValidateConnectionResponse result;
     try {
       result = ProgressManager.getInstance().run(connectionTest);
     } catch (Exception e) {
-      GlobalLogOutput.get().logError("Connection test failed", e);
+      SonarLintConsole.get(project).error("Connection test failed", e);
       if (e.getMessage() != null) {
         msg = msg + " Error: " + e.getMessage();
       }

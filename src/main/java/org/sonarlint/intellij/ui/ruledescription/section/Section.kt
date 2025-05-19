@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.ui.ruledescription.section
 
-import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
+import com.intellij.openapi.project.Project
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 
 class Section {
     val fragments: MutableList<SectionFragment> = mutableListOf()
@@ -35,15 +35,14 @@ class Section {
         }
     }
 
-    fun add(codeExampleFragment: CodeExampleFragment) {
+    fun add(project: Project, codeExampleFragment: CodeExampleFragment) {
         fragments.add(codeExampleFragment)
         codeExampleFragment.diffId?.let { diffId ->
             val previousCodeFragments: MutableList<CodeExampleFragment>?
             if (codeExampleFragmentsToDiffById.containsKey(diffId)) {
                 previousCodeFragments = codeExampleFragmentsToDiffById[diffId]
                 if (previousCodeFragments!!.size > 1) {
-                    GlobalLogOutput.get()
-                        .log("More than 2 code examples with the same 'data-diff-id' value: $diffId", ClientLogOutput.Level.DEBUG)
+                    SonarLintConsole.get(project).debug("More than 2 code examples with the same 'data-diff-id' value: $diffId")
                 } else {
                     val previousCodeExample = previousCodeFragments.first()
                     previousCodeExample.diffTarget = codeExampleFragment
