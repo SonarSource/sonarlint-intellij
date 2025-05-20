@@ -34,7 +34,11 @@ data class NodeJsSettings(val path: Path, val version: String) {
         }
 
         fun getNodeJsPathForInitialization(): String? {
-            return getGlobalSettings().nodejsPath?.let { getNodeJsPathFromIde()?.toString() }
+            return if (!getGlobalSettings().nodejsPath.isNullOrBlank()) {
+                getGlobalSettings().nodejsPath
+            } else {
+                getNodeJsPathFromIde()?.toString()
+            }
         }
     }
 
