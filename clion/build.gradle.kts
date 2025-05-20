@@ -16,6 +16,7 @@ plugins {
     idea
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
+    alias(libs.plugins.kotlin)
 }
 
 // Apply shared module conventions
