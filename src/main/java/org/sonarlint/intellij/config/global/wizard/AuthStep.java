@@ -21,7 +21,6 @@ package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
-import com.intellij.ide.wizard.CommitStepCancelledException;
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.impl.ProgressResult;
@@ -238,7 +237,8 @@ public class AuthStep extends AbstractWizardStepEx {
       throw new CommitStepException(msg);
     }
     if (result == null) {
-      throw new CommitStepCancelledException();
+      throw new CommitStepException("An unexpected error occurred, please make sure your token and the provided url is correct." +
+        " You can refer to logs for more information.");
     } else if (!result.isSuccess()) {
       throw new CommitStepException(msg + " Cause: " + result.getMessage());
     }
