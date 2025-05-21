@@ -123,8 +123,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusCh
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.OpenHotspotInBrowserParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.ClientConstantInfoDto
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.FeatureFlagsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.HttpConfigurationDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.InitializeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.JsTsRequirementsDto
@@ -249,7 +249,7 @@ class BackendService : Disposable {
                         "Initializing the SonarQube for IDE service...",
                         ClientLogOutput.Level.INFO
                     )
-                    initRpcServer(sloop.rpcServer).get(1, TimeUnit.MINUTES)
+                    initRpcServer(sloop.rpcServer)[1, TimeUnit.MINUTES]
                     getService(GlobalLogOutput::class.java).log("SonarQube for IDE service initialized...", ClientLogOutput.Level.INFO)
                     backendFuture.complete(sloop.rpcServer)
                 } catch (t: TimeoutException) {
@@ -320,8 +320,6 @@ class BackendService : Disposable {
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         val nonDefaultRpcRulesConfigurationByKey =
             getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
-        val telemetryEnabled = !System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()
-        val monitoringEnabled = !System.getProperty("sonarlint.monitoring.disabled", "false").toBoolean()
         val nodeJsPath = NodeJsSettings.getNodeJsPathForInitialization()?.let { Paths.get(it) }
         val eslintBridgePath = generateEslintBridgePath()
         val jsTsRequirements = JsTsRequirementsDto(nodeJsPath, eslintBridgePath)
@@ -338,19 +336,7 @@ class BackendService : Disposable {
                 getTelemetryConstantAttributes(),
                 getHttpConfiguration(),
                 getSonarCloudAlternativeEnvironment(),
-                generateFeatureFlagsDto(
-                    shouldManageSmartNotifications = true,
-                    taintVulnerabilitiesEnabled = true,
-                    shouldSynchronizeProjects = true,
-                    shouldManageLocalServer = true,
-                    enableSecurityHotspots = true,
-                    shouldManageServerSentEvents = true,
-                    enableDataflowBugDetection = true,
-                    shouldManageFullSynchronization = true,
-                    enableTelemetry = telemetryEnabled,
-                    canOpenFixSuggestion = true,
-                    enableMonitoring = monitoringEnabled
-                ),
+                generateBackendCapabilities(),
                 getLocalStoragePath(),
                 workDir,
                 EnabledLanguages.findEmbeddedPlugins(),
@@ -363,12 +349,30 @@ class BackendService : Disposable {
                 null,
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
-
                 LanguageSpecificRequirements(jsTsRequirements, omnisharpRequirementsDto),
                 false,
                 null
             )
         )
+    }
+
+    private fun generateBackendCapabilities(): Set<BackendCapability> {
+        val capabilities = mutableSetOf(
+            BackendCapability.EMBEDDED_SERVER,
+            BackendCapability.SERVER_SENT_EVENTS,
+            BackendCapability.SECURITY_HOTSPOTS,
+            BackendCapability.DATAFLOW_BUG_DETECTION,
+            BackendCapability.FULL_SYNCHRONIZATION,
+            BackendCapability.PROJECT_SYNCHRONIZATION,
+            BackendCapability.SMART_NOTIFICATIONS
+        )
+        if (!System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()) {
+            capabilities.add(BackendCapability.TELEMETRY)
+        }
+        if (!System.getProperty("sonarlint.monitoring.disabled", "false").toBoolean()) {
+            capabilities.add(BackendCapability.MONITORING)
+        }
+        return capabilities
     }
 
     private fun generateOmnisharpDto(): OmnisharpRequirementsDto {
@@ -386,33 +390,6 @@ class BackendService : Disposable {
         val pluginPath = getService(SonarLintPlugin::class.java).path
         return pluginPath.resolve("plugins/eslint-bridge")
     }
-
-    private fun generateFeatureFlagsDto(
-        shouldManageSmartNotifications: Boolean,
-        taintVulnerabilitiesEnabled: Boolean,
-        shouldSynchronizeProjects: Boolean,
-        shouldManageLocalServer: Boolean,
-        enableSecurityHotspots: Boolean,
-        shouldManageServerSentEvents: Boolean,
-        enableDataflowBugDetection: Boolean,
-        shouldManageFullSynchronization: Boolean,
-        enableTelemetry: Boolean,
-        canOpenFixSuggestion: Boolean,
-        enableMonitoring: Boolean
-    ) =
-        FeatureFlagsDto(
-            shouldManageSmartNotifications,
-            taintVulnerabilitiesEnabled,
-            shouldSynchronizeProjects,
-            shouldManageLocalServer,
-            enableSecurityHotspots,
-            shouldManageServerSentEvents,
-            enableDataflowBugDetection,
-            shouldManageFullSynchronization,
-            enableTelemetry,
-            canOpenFixSuggestion,
-            enableMonitoring
-        )
 
     private fun getHttpConfiguration(): HttpConfigurationDto {
         return HttpConfigurationDto(
