@@ -32,6 +32,7 @@ import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
+import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
 import java.util.HashMap;
 import javax.annotation.Nullable;
@@ -106,7 +107,11 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     if (isRemoteOrWslToolchainSupported() && usingRemoteOrWslToolchain(configuration)) {
       collectPropertiesForRemoteToolchain(compilerSettings, properties);
     } else if (compilerKind instanceof MSVCCompilerKind) {
-      collectMSVCProperties(compilerSettings, properties);
+      // For MSVC, we collect built-in headers only, and the driver on CFamily side still handles '/external:I' arguments.
+      collectDefinesAndIncludes(compilerSettings, properties, HeadersSearchPath::isBuiltInHeaders);
+    } else if ("iar".equals(cFamilyCompiler)) {
+      // For IAR, we are interested in all headers. This is necessary to support the C_INCLUDE environment variable (as it is a user header).
+      collectDefinesAndIncludes(compilerSettings, properties, h -> true);
     }
 
     var sonarLanguage = getSonarLanguage(languageKind);
