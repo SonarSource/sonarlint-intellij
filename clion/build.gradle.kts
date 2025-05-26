@@ -2,7 +2,7 @@ val clionBuildVersion: String by project
 val clionHome: String? = System.getenv("CLION_HOME")
 
 intellij {
-    plugins.set(listOf("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang"))
+    plugins.set(listOf("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang", "com.intellij.clion.embedded"))
     if (!clionHome.isNullOrBlank()) {
         println("Using local installation of CLion: $clionHome")
         localPath.set(clionHome)
