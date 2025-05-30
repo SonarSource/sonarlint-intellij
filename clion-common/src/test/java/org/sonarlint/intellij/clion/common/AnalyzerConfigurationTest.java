@@ -100,7 +100,6 @@ class AnalyzerConfigurationTest {
 
     var header = mock(HeadersSearchPath.class);
     when(header.getPath()).thenReturn("/some/path");
-    when(header.isBuiltInHeaders()).thenReturn(false);
 
     when(compilerSettings.getHeadersSearchPaths()).thenReturn(List.of(header));
 
