@@ -115,7 +115,17 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   }
 
   private static String getLanguageLevelOption(LanguageLevel level) {
-    return level.toJavaVersion().feature < 5 ? ("1." + level.toJavaVersion().feature) : String.valueOf(level.toJavaVersion().feature);
+    String name = level.name();
+
+    if (name.startsWith("JDK_1_")) {
+      return name.substring(4, 7);
+    } else if (name.startsWith("JDK_")) {
+      String versionPart = name.substring(4);
+      int underscoreIndex = versionPart.indexOf('_');
+      return underscoreIndex > 0 ? versionPart.substring(0, underscoreIndex) : versionPart;
+    }
+
+    return "8";
   }
 
   private static void collectModuleClasspath(JavaModuleClasspath moduleClasspath, @Nullable final Module module, boolean topLevel, boolean testClasspathOnly) {
