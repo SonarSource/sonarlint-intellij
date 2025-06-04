@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.ui.codefix
 
-import com.intellij.diff.comparison.ComparisonManagerImpl
+import com.intellij.diff.comparison.ComparisonManager
 import com.intellij.diff.comparison.ComparisonPolicy
 import com.intellij.diff.tools.util.BaseSyncScrollable
 import com.intellij.diff.tools.util.SyncScrollSupport.TwosideSyncScrollSupport
@@ -63,8 +63,9 @@ class CodeFixDiffView(project: Project, file: VirtualFile, currentCode: String, 
             afterEditor.component.preferredSize = Dimension(afterEditor.component.preferredSize.width,
                 afterEditor.lineHeight * afterDocument.lineCount + beforeEditor.lineHeight)
 
-            val fragments = ComparisonManagerImpl.getInstanceImpl()
-                .compareChars(currentCode, newCode, ComparisonPolicy.TRIM_WHITESPACES, EmptyProgressIndicator())
+            val fragments = ComparisonManager.getInstance().compareChars(
+                    currentCode, newCode, ComparisonPolicy.TRIM_WHITESPACES, EmptyProgressIndicator()
+                )
 
             fragments.forEach { fragment ->
                 beforeEditor.markupModel.addRangeHighlighter(
