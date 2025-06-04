@@ -23,6 +23,5 @@ import java.nio.file.Path
 
 interface VcsRepo {
     fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>): String?
-    fun isBranchMatchingCurrentHead(branch: String): Boolean
     fun getGitDir(): Path?
 }

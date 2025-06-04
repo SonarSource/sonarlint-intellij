@@ -56,9 +56,9 @@ data class LocalFixSuggestion(
 class ShowFixSuggestion(private val project: Project, private val file: VirtualFile) {
 
     companion object {
-        private const val FILE_CHANGED_ERROR = "Unable to open the fix suggestion, your file has probably changed"
+        private const val FILE_CHANGED_ERROR = "Unable to open the fix suggestion, your file has probably changed. Please verify you are in the right branch."
         private const val FILE_CHANGED_SUCCESS =
-            "The fix suggestion has been opened, but the file's content has changed, so it may not be applicable"
+            "The fix suggestion has been opened, but the file's content has changed, so it may not be applicable. Please verify you are in the right branch."
         private const val SUCCESSFULLY_OPENED = "The fix suggestion has been successfully opened"
     }
 

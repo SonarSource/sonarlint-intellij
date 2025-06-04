@@ -73,7 +73,7 @@ class ShowFindingCallable<T: Finding>(private val project: Project, onTheFlyFind
         val found = getService(project, SonarLintToolWindow::class.java).doesSecurityHotspotExist(showFinding.findingKey)
         if (!found) {
             SonarLintProjectNotifications.get(project)
-                .notifyUnableToOpenFinding("The Security Hotspot could not be detected by SonarQube for IDE in the current code")
+                .notifyUnableToOpenFinding("The Security Hotspot could not be detected by SonarQube for IDE in the current code. Please verify you are in the right branch.")
         } else {
             val selected =
                 getService(project, SonarLintToolWindow::class.java).trySelectSecurityHotspot(showFinding.findingKey)
