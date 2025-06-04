@@ -406,7 +406,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             }
             if (rangeMarker == null) {
                 SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarQube for IDE in the current code")
+                    .notifyUnableToOpenFinding("The taint vulnerability could not be detected by SonarQube for IDE in the current code." +
+                        " Please verify you are in the right branch.")
                 return@runOnPooledThread
             }
 

@@ -56,15 +56,6 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
         }
     }
 
-    override fun isBranchMatchingCurrentHead(branch: String): Boolean {
-        return try {
-            return repo.currentBranchName == branch
-        } catch (e: Exception) {
-            SonarLintConsole.get(project).error("Couldn't compare branches", e)
-            false
-        }
-    }
-
     override fun getGitDir(): Path? {
         return try {
             repo.root.toNioPath()

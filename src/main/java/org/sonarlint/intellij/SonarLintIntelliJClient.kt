@@ -352,7 +352,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             if (!project.isDisposed) {
                 get(project).simpleNotification(
                     null,
-                    "Unable to open the fix suggestion. Cannot find the file: ${fixSuggestion.fileEdit().idePath()}",
+                    "Unable to open the fix suggestion. Cannot find the file: ${fixSuggestion.fileEdit().idePath()}." +
+                        " Please verify you are in the right branch.",
                     NotificationType.WARNING
                 )
             }
@@ -374,7 +375,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val file = tryFindFile(project, filePath)
         if (file == null) {
             if (!project.isDisposed) {
-                get(project).simpleNotification(null, "Unable to open finding. Cannot find the file: $filePath", NotificationType.WARNING)
+                get(project).simpleNotification(null, "Unable to open finding. Cannot find the file: $filePath" +
+                    ". Please verify you are in the right branch.", NotificationType.WARNING)
             }
             return
         }
@@ -671,21 +673,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 null
             }
         }
-    }
-
-    override fun matchProjectBranch(
-        configurationScopeId: String, branchNameToMatch: String, cancelChecker: SonarLintCancelChecker
-    ): Boolean {
-        val repositoriesEPs = VcsRepoProvider.EP_NAME.extensionList
-        val repositories = findModule(configurationScopeId)?.let { module ->
-            matchSonarModule(module, repositoriesEPs)
-        } ?: run {
-            BackendService.findProject(configurationScopeId)?.let { project ->
-                matchSonarProject(project, repositoriesEPs)
-            }
-        } ?: return false
-        val repo = repositories.first()
-        return repo.isBranchMatchingCurrentHead(branchNameToMatch)
     }
 
     private fun matchSonarModule(module: Module, repositoriesEPs: List<VcsRepoProvider>): List<VcsRepo>? {

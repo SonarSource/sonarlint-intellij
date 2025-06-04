@@ -213,7 +213,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
         var rangeMarker = computeReadActionSafely(project, () -> matcher.matchWithCode(showFinding.getFile(), showFinding.getTextRange(), showFinding.getCodeSnippet()));
         if (rangeMarker == null) {
           SonarLintProjectNotifications.Companion.get(project)
-            .notifyUnableToOpenFinding("The issue could not be detected by SonarQube for IDE in the current code");
+            .notifyUnableToOpenFinding("The issue could not be detected by SonarQube for IDE in the current code. Please verify you are in the right branch.");
           return;
         }
 
