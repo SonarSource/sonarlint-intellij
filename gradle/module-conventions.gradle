@@ -1,0 +1,60 @@
+// Apply common logic to all module build files
+
+tasks.withType(JavaCompile).configureEach {
+    options.fork = true
+    options.incremental = true
+}
+
+plugins.withId("org.jetbrains.kotlin.jvm") {
+    tasks.matching { task -> task.name.endsWith("KotlinCompile") }.configureEach { task ->
+        task.kotlinOptions.apiVersion = "1.7"
+        task.kotlinOptions.jvmTarget = "17"
+        task.kotlinOptions.freeCompilerArgs = ["-opt-in=kotlin.RequiresOptIn"]
+    }
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    // Disable test task tracking to ensure tests always run
+    doNotTrackState("Tests should always run")
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+intellijPlatform {
+    buildSearchableOptions = false
+}
+
+configurations.archives.canBeResolved = true
+
+tasks.cyclonedxBom {
+    setIncludeConfigs(List.of("runtimeClasspath"))
+    inputs.files(configurations.named("runtimeClasspath").get(), configurations.archives)
+    mustRunAfter(getTasksByName("buildPluginBlockmap", true))
+}
+
+var bomFile = layout.buildDirectory.file("reports/bom.json")
+artifacts.add("archives", bomFile.get().asFile) {
+    name = "sonarlint-intellij"
+    type = "json"
+    classifier = "cyclonedx"
+    builtBy("cyclonedxBom")
+}
+
+license {
+    header = rootProject.file("HEADER")
+    mapping(
+      Map.of(
+        "java", "SLASHSTAR_STYLE",
+        "kt", "SLASHSTAR_STYLE",
+        "svg", "XML_STYLE",
+        "form", "XML_STYLE"
+      )
+    )
+    excludes(List.of("**/*.jar", "**/*.png", "**/README"))
+    strictCheck = true
+}

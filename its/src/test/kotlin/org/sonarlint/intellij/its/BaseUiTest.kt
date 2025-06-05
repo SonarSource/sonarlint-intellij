@@ -103,7 +103,6 @@ open class BaseUiTest {
         }
     }
 
-
     fun uiTest(test: RemoteRobot.() -> Unit) {
         try {
             remoteRobot.apply(test)

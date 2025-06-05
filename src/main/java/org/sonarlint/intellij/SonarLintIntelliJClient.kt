@@ -548,7 +548,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return if (connection.token != null) {
             Either.forLeft(TokenDto(connection.token!!))
         } else {
-            Either.forRight(UsernamePasswordDto(connection.login, connection.password))
+            Either.forRight(UsernamePasswordDto(connection.login!!, connection.password!!))
         }
     }
 

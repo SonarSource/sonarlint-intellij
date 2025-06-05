@@ -343,7 +343,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     table.getTree().setSelectionPaths(selectionPaths);
   }
 
-  private RulesTreeNode.@NotNull LanguageNode getOrCreateLanguageNode(Language language) {
+  private @NotNull RulesTreeNode.LanguageNode getOrCreateLanguageNode(Language language) {
     var languageLabel = org.sonarsource.sonarlint.core.client.utils.Language.fromDto(language).getLabel();
     return languageNodesByName.computeIfAbsent(languageLabel, RulesTreeNode.LanguageNode::new);
   }

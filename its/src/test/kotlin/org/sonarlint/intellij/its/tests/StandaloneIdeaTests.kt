@@ -71,7 +71,7 @@ class StandaloneIdeaTests : BaseUiTest() {
     }
 
     @Test
-    fun chart() = uiTest {
+    fun should_analyze_ansible() = uiTest {
         openExistingProject("DuplicatedEnvsChart")
         openFile("templates/memory_limit_pod2.yml", "memory_limit_pod2.yml")
         verifyCurrentFileTabContainsMessages("Bind this resource's automounted service account to RBAC or disable automounting.")

@@ -17,19 +17,27 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.utils
+package org.sonarlint.intellij.analysis
 
-import com.intellij.remoterobot.stepsProcessing.StepLogger
-import com.intellij.remoterobot.stepsProcessing.StepWorker
+import com.intellij.openapi.module.LanguageLevelUtil
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.roots.LanguageLevelModuleExtension
+import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.roots.ModuleRootModificationUtil
+import com.intellij.pom.java.LanguageLevel
 
-object StepsLogger {
-    private var initialized = false
+object IdeaJdkTestUtils {
 
-    @JvmStatic
-    fun init() {
-        if (initialized.not()) {
-            StepWorker.registerProcessor(StepLogger())
-            initialized = true
+    fun setModuleLanguageLevel(module: Module, level: LanguageLevel?): LanguageLevel? {
+        val prev = LanguageLevelUtil.getCustomLanguageLevel(module)
+        ModuleRootModificationUtil.updateModel(
+            module
+        ) { model: ModifiableRootModel ->
+            model.getModuleExtension(
+                LanguageLevelModuleExtension::class.java
+            ).languageLevel = level
         }
+        return prev
     }
+
 }
