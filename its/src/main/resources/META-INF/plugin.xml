@@ -26,7 +26,5 @@
   <vendor url="https://sonarsource.com">SonarSource</vendor>
   <description>Fake Plugin To Run SonarQube for IntelliJ UI tests with multiple flavors</description>
 
-  <idea-version since-build="223.8214.6"/>
-
   <depends>com.intellij.modules.lang</depends>
 </idea-plugin>

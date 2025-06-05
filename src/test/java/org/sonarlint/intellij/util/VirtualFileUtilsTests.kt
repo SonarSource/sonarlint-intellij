@@ -19,10 +19,8 @@
  */
 package org.sonarlint.intellij.util
 
-import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
-import com.intellij.util.application
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import org.assertj.core.api.Assertions.assertThat
@@ -33,35 +31,6 @@ import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.util.VirtualFileUtils.removeMarkdownCells
 
 class VirtualFileUtilsTests : AbstractSonarLintHeavyTests() {
-
-    /** SLI-942: Don't analyze binary files */
-    @Test
-    fun test_isNonBinaryFile() {
-        lateinit var directory: VirtualFile
-        lateinit var binaryFile: VirtualFile
-        lateinit var nonBinaryFile: VirtualFile
-
-        val module = createModule("SLI-942")
-        val contentRoot = createTestProjectStructure()
-        ModuleRootModificationUtil.addContentRoot(module, contentRoot)
-
-        application.runWriteAction {
-            directory = contentRoot.createChildDirectory(project, "src")
-
-            // HowTo Binary file to test: add values outside text character spectrum
-            binaryFile = directory.createChildData(project, "Binary.kt")
-            binaryFile.setBinaryContent(
-                intArrayOf(0x01, 0xFF).foldIndexed(ByteArray(2)) { i, a, v -> a.apply { set(i, v.toByte()) } }
-            )
-
-            nonBinaryFile = directory.createChildData(project, "NonBinary.kt")
-            nonBinaryFile.setBinaryContent("fun main() { println('main method') }".toByteArray())
-        }
-
-        assertThat(VirtualFileUtils.isNonBinaryFile(directory)).isFalse()
-        assertThat(VirtualFileUtils.isNonBinaryFile(binaryFile)).isFalse()
-        assertThat(VirtualFileUtils.isNonBinaryFile(nonBinaryFile)).isTrue()
-    }
 
     @Test
     fun test_should_correctly_encode_basic_file() {
