@@ -12,6 +12,7 @@ its/projects/**/obj
 *.iml
 *.ipr
 .idea
+.intellijPlatform
 
 # ---- Eclipse
 .classpath

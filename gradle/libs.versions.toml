@@ -19,8 +19,8 @@ sonar-dotnet = "10.14.0.120626"
 
 sonarqube = "4.4.1.3373"
 
-kotlin-plugin = "1.9.25"
-intellij-plugin = "1.17.4"
+kotlin-plugin = "2.1.10"
+intellij-plugin = "2.6.0"
 license-plugin = "0.16.1"
 artifactory-plugin = "4.33.1"
 cyclonedx-plugin = "1.10.0"
@@ -29,6 +29,7 @@ commons-lang3 = "3.17.0"
 commons-text = "1.13.0"
 findbugs-jsr305 = "3.0.2"
 junit-bom = "5.11.3"
+junit-four = "4.13.2"
 mockito-kotlin = "5.4.0"
 awaitility = "4.3.0"
 
@@ -62,6 +63,7 @@ commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "c
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
+junit-four = { module = "junit:junit", version.ref = "junit-four" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 
@@ -77,7 +79,8 @@ its-remote = ["its-remote-robot", "its-remote-fixtures"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-plugin" }
-intellij = { id = "org.jetbrains.intellij", version.ref = "intellij-plugin" }
+intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij-plugin" }
+intellij-module = { id = "org.jetbrains.intellij.platform.module", version.ref = "intellij-plugin" }
 license = { id = "com.github.hierynomus.license", version.ref = "license-plugin" }
 artifactory = { id = "com.jfrog.artifactory", version.ref = "artifactory-plugin" }
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-plugin" }
