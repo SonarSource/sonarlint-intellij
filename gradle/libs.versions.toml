@@ -2,6 +2,7 @@
 sonarlint-core = "10.23.0.81288"
 
 sonar-java = "8.15.0.39343"
+sonar-java-symbolic = "8.16.0.131"
 sonar-javascript = "10.24.0.33043"
 sonar-php = "3.46.0.13151"
 sonar-python = "5.4.0.22255"
@@ -40,7 +41,7 @@ sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarli
 sonarlint-rpc-java-client = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-java-client", version.ref = "sonarlint-core" }
 sonarlint-rpc-impl = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-impl", version.ref = "sonarlint-core" }
 
-sonar-java-symbolic-execution = { module = "org.sonarsource.java:sonar-java-symbolic-execution-plugin", version.ref = "sonar-java" }
+sonar-java-symbolic-execution = { module = "org.sonarsource.java:sonar-java-symbolic-execution-plugin", version.ref = "sonar-java-symbolic" }
 sonar-java = { module = "org.sonarsource.java:sonar-java-plugin", version.ref = "sonar-java" }
 sonar-javascript = { module = "org.sonarsource.javascript:sonar-javascript-plugin", version.ref = "sonar-javascript" }
 sonar-php = { module = "org.sonarsource.php:sonar-php-plugin", version.ref = "sonar-php" }
