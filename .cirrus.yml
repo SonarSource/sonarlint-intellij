@@ -88,8 +88,8 @@ cleanup_gradle_cache_script_template: &CLEANUP_GRADLE_CACHE_SCRIPT
     rm -rf ${GRADLE_USER_HOME}/caches/journal-*
     /usr/bin/find ${GRADLE_USER_HOME}/caches/ -name "*.lock" -type f -delete
 
-build_task:
-  #  name: "Build and stage to repox"
+build_plugin_task:
+  #  name: "Build plugin and stage to repox"
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES_INCLUDING_NIGHTLY
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
@@ -117,9 +117,7 @@ build_task:
       source slack-failure-notification
 
 validate_task:
-  #  name: "Run UTs and trigger SonarQube analysis"
-  depends_on:
-    - build
+  #  name: "Run tests and SonarQube analysis"
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
     SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
@@ -133,6 +131,7 @@ validate_task:
   build_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
+    # Run tests and SonarQube analysis
     PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
@@ -147,8 +146,6 @@ validate_task:
 
 validate_windows_task:
   #  name: "Run unit tests on Windows"
-  depends_on:
-    - build
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
     JDK_VERSION: "17"
@@ -160,9 +157,7 @@ validate_windows_task:
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
-  # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
   build_script: |
-    source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
     ./gradlew :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
@@ -179,7 +174,7 @@ validate_windows_task:
 plugin_verifier_task:
   #  name: "Run plugin verifier on all IDEs"
   depends_on:
-    - build
+    - build_plugin
   <<: *ONLY_IF_NIGHTLY
   env:
     JDK_VERSION: "17"
@@ -219,7 +214,7 @@ plugin_verifier_task:
 qa_task:
   #  name: "Run ITs"
   depends_on:
-    - build
+    - build_plugin
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   <<: *ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
   eks_container:
@@ -401,7 +396,7 @@ qa_task:
 
 inspect_orchestrator_cache_task:
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
-  depends_on: build
+  depends_on: build_plugin
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 1
@@ -416,7 +411,7 @@ inspect_orchestrator_cache_task:
 
 mend_scan_task:
   depends_on:
-    - build
+    - build_plugin
   <<: *ONLY_MAIN_BRANCHES
   eks_container:
     <<: *CONTAINER_DEFINITION
@@ -433,7 +428,6 @@ mend_scan_task:
   mend_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    source set_gradle_build_version
     source ws_scan.sh
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   allow_failures: "true"
@@ -446,7 +440,7 @@ mend_scan_task:
 
 promote_task:
   depends_on:
-    - build
+    - build_plugin
     - validate
     - validate_windows
     - qa
