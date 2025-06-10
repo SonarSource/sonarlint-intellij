@@ -157,6 +157,7 @@ validate_windows_task:
   ec2_instance:
     <<: *WINVM_DEFINITION
   <<: *SETUP_GRADLE_CACHE
+  # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
   build_script: |
     source .cirrus/use-gradle-wrapper.sh
     ./gradlew :check
