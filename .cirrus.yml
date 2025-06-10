@@ -429,6 +429,7 @@ mend_scan_task:
   mend_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
+    source set_gradle_build_version
     source ws_scan.sh
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   allow_failures: "true"
