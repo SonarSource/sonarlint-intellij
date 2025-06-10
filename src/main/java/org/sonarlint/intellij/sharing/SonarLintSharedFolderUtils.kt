@@ -19,8 +19,10 @@
  */
 package org.sonarlint.intellij.sharing
 
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.util.io.exists
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -34,17 +36,35 @@ class SonarLintSharedFolderUtils {
 
     companion object {
 
+        private const val SONARLINT_FOLDER = ".sonarlint"
+
         fun findSharedFolder(project: Project): Path? {
             return computeOnPooledThread(project, "Find Shared Folder Task") {
                 var root = project.basePath?.let { Paths.get(it) }
-                var sonarlintFolder = root?.resolve(".sonarlint")
+                var sonarlintFolder = root?.resolve(SONARLINT_FOLDER)
 
                 if (isRider() && (sonarlintFolder == null || !sonarlintFolder.exists())) {
                     root = findSharedFolderForRider(project)
-                    sonarlintFolder = root?.resolve(".sonarlint") ?: sonarlintFolder
+                    sonarlintFolder = root?.resolve(SONARLINT_FOLDER) ?: sonarlintFolder
                 }
 
                 sonarlintFolder
+            }
+        }
+
+        fun findSharedFolder(module: Module): Path? {
+            return computeOnPooledThread(module.project, "Find Module Shared Folder Task") {
+                val contentRoots = ModuleRootManager.getInstance(module).contentRoots
+                // Only handle basic structure of modules with a single root
+                if (contentRoots.size == 1) {
+                    contentRoots.firstOrNull()?.path?.let { Paths.get(it).resolve(SONARLINT_FOLDER) }
+                } else {
+                    getService(
+                        module.project,
+                        SonarLintConsole::class.java
+                    ).debug("Could not share binding for module '$module' because of its complex structure")
+                    null
+                }
             }
         }
 
@@ -62,7 +82,7 @@ class SonarLintSharedFolderUtils {
                     getService(
                         module.project,
                         SonarLintConsole::class.java
-                    ).debug("Several candidate VCS repositories detected for module $module, choosing first")
+                    ).debug("Several candidate VCS repositories detected for module '$module', choosing first")
                 }
                 repositories.first()
             }.toSet().firstOrNull()?.getGitDir()

@@ -24,6 +24,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.NotificationType.ERROR
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder.Companion.okCancel
 import com.intellij.openapi.vfs.VfsUtil
@@ -51,7 +52,13 @@ class ConfigurationSharing {
             if (project == null || project.isDisposed) return
 
             if (confirm(project)) {
-                runOnPooledThread(project) { createFile(project, modalityState) }
+                runOnPooledThread(project) {
+                    createFile(project, modalityState)
+
+                    getService(project, ProjectBindingManager::class.java).getBinding()?.moduleBindingsOverrides?.forEach { override ->
+                        createFile(override.key, modalityState)
+                    }
+                }
             }
         }
 
@@ -107,6 +114,58 @@ class ConfigurationSharing {
                 }
         }
 
+        private fun createFile(module: Module, modalityState: ModalityState) {
+            val sonarlintFolder = findSharedFolder(module)
+
+            if (sonarlintFolder == null) {
+                get(module.project).simpleNotification(
+                    null,
+                    "Could not find the directory where to store the configuration file",
+                    ERROR
+                )
+                return
+            }
+
+            getService(BackendService::class.java)
+                .getSharedConnectedModeConfigFileContents(module)
+                .thenAcceptAsync { sharedFileContent: GetSharedConnectedModeConfigFileResponse ->
+                    val filename = if (isRider()) {
+                        "${module.name}.json"
+                    } else {
+                        "connectedMode.json"
+                    }
+
+                    try {
+                        runOnUiThread(module.project, modalityState) {
+                            ApplicationManager.getApplication().runWriteAction {
+                                VfsUtil.createDirectoryIfMissing(sonarlintFolder.toString())
+
+                                val sonarlintDir = VfsUtil.findFile(sonarlintFolder, true)
+                                if (sonarlintDir != null) {
+                                    val sonarlintFile = sonarlintDir.createChildData(module, filename)
+                                    sonarlintFile.refresh(true, false) {
+                                        sonarlintFile.setBinaryContent(sharedFileContent.jsonFileContent.toByteArray())
+                                    }
+                                }
+
+                                get(module.project).simpleNotification(
+                                    null,
+                                    "File '$filename' has been created",
+                                    NotificationType.INFORMATION
+                                )
+                            }
+                        }
+                    } catch (e: IOException) {
+                        get(module.project).simpleNotification(
+                            null,
+                            "Could not create the file '$filename', please check the logs for more details",
+                            ERROR
+                        )
+                        SonarLintConsole.get(module.project).error("Error while creating the shared file, IO exception : " + e.message)
+                    }
+                }
+        }
+
         @JvmStatic
         fun showAutoSharedConfigurationNotification(
             project: Project, message: String, doNotShowAgainId: String,
@@ -128,6 +187,10 @@ class ConfigurationSharing {
                 return false
             }
 
+            val moduleOverridesText = if (binding.moduleBindingsOverrides.isNotEmpty()) {
+                "Additionally, configuration files will be created for each of the overridden modules in your project.\n"
+            } else "\n"
+
             val connectionKind = getService(project, ProjectBindingManager::class.java)
                 .tryGetServerConnection().map { if (it.isSonarCloud) "SonarQube Cloud organization" else "SonarQube Server instance" }
                 .orElse(null)
@@ -141,8 +204,8 @@ class ConfigurationSharing {
             return okCancel(
                 "Share This Connected Mode Configuration?",
                 """
-                    A configuration file 'connectedMode.json' will be created in your local repository with a reference to project '$projectKey' on $connectionKind '$connectionName'
-                    
+                    A configuration file will be created in the '.sonarlint' folder with a reference to project '$projectKey' on $connectionKind '$connectionName'.
+                    $moduleOverridesText
                     This will help other team members configure the binding for the same project.
                     <a href="${SonarLintDocumentation.Intellij.SHARING_CONNECTED_MODE_CONFIGURATION_LINK}">Learn more</a> """.trimIndent()
             )

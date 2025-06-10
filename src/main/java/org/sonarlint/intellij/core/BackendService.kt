@@ -674,6 +674,15 @@ class BackendService : Disposable {
         }
     }
 
+    fun getSharedConnectedModeConfigFileContents(module: Module): CompletableFuture<GetSharedConnectedModeConfigFileResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend {
+            it.bindingService.getSharedConnectedModeConfigFileContents(
+                GetSharedConnectedModeConfigFileParams(moduleId)
+            )
+        }
+    }
+
     fun getStandaloneRuleDetails(params: GetStandaloneRuleDescriptionParams): CompletableFuture<GetStandaloneRuleDescriptionResponse> {
         return requestFromBackend { it.rulesService.getStandaloneRuleDetails(params) }
     }
