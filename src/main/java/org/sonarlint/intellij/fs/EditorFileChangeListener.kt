@@ -70,6 +70,7 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
     private fun groupByProject(files: List<VirtualFile>) =
         files.fold(mutableMapOf<Project, MutableList<VirtualFile>>()) { acc, file ->
             ProjectLocator.getInstance().getProjectsForFile(file)
+                .filterNotNull()
                 .filter { !it.isDisposed }
                 .forEach { project -> acc.computeIfAbsent(project) { mutableListOf() }.add(file) }
             acc

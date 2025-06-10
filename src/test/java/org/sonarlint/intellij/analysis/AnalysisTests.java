@@ -211,7 +211,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
-    ExtensionPoint<@org.jetbrains.annotations.NotNull LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
+    ExtensionPoint<LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
     return extensionPoint.extensions().toList();
   }
 
