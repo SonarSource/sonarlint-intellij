@@ -22,6 +22,8 @@ package org.sonarlint.intellij.core
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileSystem
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
@@ -58,6 +60,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.Did
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.ListUserOrganizationsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidOpenFileParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.FileRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckLocalDetectionSupportedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedParams
@@ -92,6 +96,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     private lateinit var backendBindingService: BindingRpcService
     private lateinit var backendHotspotService: HotspotRpcService
     private lateinit var backendBranchService: SonarProjectBranchRpcService
+    private lateinit var backendFileService: FileRpcService
     private lateinit var service: BackendService
 
     override fun initApplication() {
@@ -112,8 +117,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         backendBindingService = mock(BindingRpcService::class.java)
         backendHotspotService = mock(HotspotRpcService::class.java)
         backendBranchService = mock(SonarProjectBranchRpcService::class.java)
+        backendFileService = mock(FileRpcService::class.java)
         val taintService = mock(TaintVulnerabilityTrackingRpcService::class.java)
         `when`(taintService.listAll(any())).thenReturn(CompletableFuture.completedFuture(ListAllResponse(emptyList())))
+        `when`(backend.fileService).thenReturn(backendFileService)
         `when`(backend.connectionService).thenReturn(backendConnectionService)
         `when`(backend.configurationService).thenReturn(backendConfigurationService)
         `when`(backend.rulesService).thenReturn(backendRuleService)
@@ -627,6 +634,46 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         verify(backendConnectionService, timeout(500)).getOrganization(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.organizationKey).isEqualTo(organizationKey)
         assertThat(paramsCaptor.firstValue.credentials.isRight).isTrue()
+    }
+
+    @Test
+    fun test_did_open_file_for_project() {
+        val file = mock<VirtualFile>()
+        val fileSystem = mock<VirtualFileSystem>()
+
+        `when`(fileSystem.protocol).thenReturn("file")
+        `when`(file.fileSystem).thenReturn(fileSystem)
+        `when`(file.path).thenReturn("/test.java")
+        `when`(file.isInLocalFileSystem).thenReturn(true)
+
+        service.didOpenFileForProject(project, file)
+
+        val paramsCaptor = argumentCaptor<DidOpenFileParams>()
+        verify(backendFileService, timeout(500)).didOpenFile(paramsCaptor.capture())
+
+        assertThat(paramsCaptor.firstValue.configurationScopeId).isEqualTo(projectBackendId(project))
+        assertThat(paramsCaptor.firstValue.fileUri.toString()).startsWith("file:/")
+        assertThat(paramsCaptor.firstValue.fileUri.path).endsWith("/test.java")
+    }
+
+    @Test
+    fun test_did_open_file_for_module() {
+        val file = mock<VirtualFile>()
+        val fileSystem = mock<VirtualFileSystem>()
+
+        `when`(fileSystem.protocol).thenReturn("file")
+        `when`(file.fileSystem).thenReturn(fileSystem)
+        `when`(file.path).thenReturn("/test.java")
+        `when`(file.isInLocalFileSystem).thenReturn(true)
+
+        service.didOpenFileForModule(module, file)
+
+        val paramsCaptor = argumentCaptor<DidOpenFileParams>()
+        verify(backendFileService, timeout(500)).didOpenFile(paramsCaptor.capture())
+
+        assertThat(paramsCaptor.firstValue.configurationScopeId).isEqualTo(moduleBackendId(module))
+        assertThat(paramsCaptor.firstValue.fileUri.scheme).isEqualTo("file")
+        assertThat(paramsCaptor.firstValue.fileUri.path).endsWith("/test.java")
     }
 
 }

@@ -81,6 +81,7 @@ import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
+import org.sonarlint.intellij.util.VirtualFileUtils.toURI
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
@@ -115,6 +116,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.G
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidOpenFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidUpdateFileSystemParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
@@ -352,7 +354,7 @@ class BackendService : Disposable {
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
                 LanguageSpecificRequirements(jsTsRequirements, omnisharpRequirementsDto),
-                false,
+                true,
                 null
             )
         )
@@ -971,7 +973,7 @@ class BackendService : Disposable {
         module: Module,
         type: ModuleFileEvent.Type,
         events: List<VirtualFileEvent>,
-        shouldIncludeContent: Boolean
+        shouldIncludeContent: Boolean,
     ): List<ClientFileDto> {
         val virtualFiles = events.filter { it.type == type }.map { it.virtualFile }.toList()
         val contributedLanguages = collectContributedLanguages(module, virtualFiles)
@@ -1036,4 +1038,23 @@ class BackendService : Disposable {
         return sloop?.isAlive == true
     }
 
+    fun didOpenFileForProject(project: Project, file: VirtualFile) {
+        val uri = toURI(file)
+        val projectId = projectId(project)
+
+        if (uri != null) {
+            val params = DidOpenFileParams(projectId, uri)
+            return notifyBackend { it.fileService.didOpenFile(params) }
+        }
+    }
+
+    fun didOpenFileForModule(module: Module, file: VirtualFile) {
+        val uri = toURI(file)
+        val moduleId = moduleId(module)
+
+        if (uri != null) {
+            val params = DidOpenFileParams(moduleId, uri)
+            return notifyBackend { it.fileService.didOpenFile(params) }
+        }
+    }
 }
