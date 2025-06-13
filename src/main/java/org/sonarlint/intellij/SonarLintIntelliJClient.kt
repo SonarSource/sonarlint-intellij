@@ -195,6 +195,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
      *    - Send a single binding notification for the main project along with its related modules
      */
     override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
+        // It was decided to only handle the case where there is only one notification per configuration scope
+        // A future improvement could allow the user to choose its preferred binding
         val clientSuggestions = suggestionsByConfigScope.filter { (_, suggestions) -> suggestions.size == 1 }.mapNotNull { (configScopeId, suggestions) ->
             findProject(configScopeId)?.let { ClientBindingSuggestion(configScopeId, it, null, suggestions.first()) } ?:
             findModule(configScopeId)?.let { ClientBindingSuggestion(configScopeId, it.project, it, suggestions.first()) }
