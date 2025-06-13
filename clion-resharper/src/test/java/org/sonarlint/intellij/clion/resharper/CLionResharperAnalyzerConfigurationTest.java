@@ -57,7 +57,7 @@ class CLionResharperAnalyzerConfigurationTest {
     assertEquals("clang-cl", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(ClangClCompilerKind.INSTANCE));
     assertEquals("msvc-cl", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(MSVCCompilerKind.INSTANCE));
     assertEquals("clang", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(AppleClangCompilerKind.INSTANCE));
-    OCCompilerKind iarCompilerKind = mock(OCCompilerKind.class);
+    var iarCompilerKind = mock(OCCompilerKind.class);
     when(iarCompilerKind.getDisplayName()).thenReturn("IAR");
     assertEquals("iar", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(iarCompilerKind));
   }

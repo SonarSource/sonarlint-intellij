@@ -56,7 +56,7 @@ class AnalyzerConfigurationTest {
 
     when(compilerSettings.getHeadersSearchPaths()).thenReturn(List.of(header1, header2, header3));
 
-    Map<String, String> properties = new HashMap<>();
+    var properties = new HashMap<String, String>();
     Predicate<HeadersSearchPath> allHeadersFilter = h -> true;
 
     AnalyzerConfiguration.collectDefinesAndIncludes(compilerSettings, properties, allHeadersFilter);
