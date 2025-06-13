@@ -32,6 +32,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -147,6 +148,7 @@ public abstract class AnalyzerConfiguration {
       case "AppleClang", "Clang", "GCC" -> "clang";
       case "clang-cl" -> "clang-cl";
       case "MSVC" -> "msvc-cl";
+      case "IAR" -> "iar";
       default -> null;
     };
   }
@@ -162,10 +164,10 @@ public abstract class AnalyzerConfiguration {
     properties.put("frameworkDirs", frameworkDirs);
   }
 
-  public static void collectMSVCProperties(OCCompilerSettings compilerSettings, Map<String, String> properties) {
+  public static void collectDefinesAndIncludes(OCCompilerSettings compilerSettings, Map<String, String> properties, Predicate<HeadersSearchPath> headerPathFilter) {
     properties.put("preprocessorDefines", getPreprocessorDefines(compilerSettings));
     properties.put("builtinHeaders",
-      compilerSettings.getHeadersSearchPaths().stream().filter(HeadersSearchPath::isBuiltInHeaders).map(HeadersSearchPath::getPath).collect(Collectors.joining("\n")));
+      compilerSettings.getHeadersSearchPaths().stream().filter(headerPathFilter).map(HeadersSearchPath::getPath).collect(Collectors.joining("\n")));
   }
 
   @NotNull
