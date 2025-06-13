@@ -42,7 +42,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
     fun prepare() {
-        // also important as this starts the notification manager service
+        // Important as this starts the notification manager service
         clearNotifications()
         client = SonarLintIntelliJClient
     }

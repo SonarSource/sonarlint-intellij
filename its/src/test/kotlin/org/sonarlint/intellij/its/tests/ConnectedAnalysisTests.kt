@@ -172,7 +172,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
 
         @Test
         fun should_focus_on_new_code_in_each_tabs_then_should_find_taint_vulnerability_in_connected_mode() = uiTest {
-            openExistingProject("sample-java-taint-vulnerability", true)
+            openExistingProject("sample-java-taint-vulnerability")
 
             // Focus On New Code Test
             enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator")

@@ -31,8 +31,6 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
-import org.sonarlint.intellij.its.tests.ConfigurationTests.Companion.MODULE_PROJECT_KEY
-import org.sonarlint.intellij.its.tests.ConfigurationTests.Companion.PROJECT_KEY
 import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.sonarLintGlobalSettings
 
 class ProjectBindingUtils {
@@ -72,7 +70,7 @@ class ProjectBindingUtils {
             }
         }
 
-        fun bindProjectAndModuleInFileSettings() {
+        fun bindProjectAndModuleInFileSettings(moduleName: String, projectKey: String, moduleProjectKey: String) {
             sonarLintGlobalSettings {
                 tree {
                     clickPath("Tools", "SonarQube for IDE", "Project Settings")
@@ -89,20 +87,20 @@ class ProjectBindingUtils {
                 pressOk()
                 errorMessage("Project key should not be empty")
 
-                jbTextField().text = PROJECT_KEY
+                jbTextField().text = projectKey
 
                 addConnectionButton().clickWhenEnabled()
                 dialog("Select module") {
-                    jbTable().selectItemContaining("sample-scala-module")
+                    jbTable().selectItemContaining(moduleName)
                     pressOk()
                 }
 
                 pressOk()
-                errorMessage("Project key for module 'sample-scala-module' should not be empty")
+                errorMessage("Project key for module '$moduleName' should not be empty")
                 buttons(JButtonFixture.byText("Search in list\u2026"))[1].click()
                 dialog("Select SonarQube Server Project To Bind") {
                     jList {
-                        clickItem(MODULE_PROJECT_KEY, false)
+                        clickItem(moduleProjectKey, false)
                     }
                     pressOk()
                 }

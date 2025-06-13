@@ -62,7 +62,7 @@ class SonarLintSharedFolderUtils {
                     getService(
                         module.project,
                         SonarLintConsole::class.java
-                    ).debug("Could not share binding for module '$module' because of its complex structure")
+                    ).debug("Could not share binding for module '$module' because of its complex structure. Try creating the file manually.")
                     null
                 }
             }
