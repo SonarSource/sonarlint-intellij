@@ -23,6 +23,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.impl.ProgressRunner
 import com.intellij.openapi.progress.util.ProgressWindow
@@ -74,6 +75,7 @@ class AutomaticSharedConfigCreator(
     private val orgOrServerUrl: String,
     private val isSQ: Boolean,
     private val project: Project,
+    private val moduleOverridesPerProjectKey: Map<Module, String>,
     private val bindingMode: BindingMode,
     private val region: SonarCloudRegion?
 ) :
@@ -169,14 +171,14 @@ class AutomaticSharedConfigCreator(
                 getGlobalSettings().addServerConnection(this!!)
                 val serverChangeListener =
                     ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-                // Notify in case the connections settings dialog is open to reflect the change
+                // Notify in case the connection settings dialog is open to reflect the change
                 serverChangeListener.changed(globalSettings.serverConnections)
             }
 
             val connection = getGlobalSettings().getServerConnectionByName(connectionNameField.text)
                 .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
 
-            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), bindingMode)
+            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, moduleOverridesPerProjectKey, bindingMode)
             val connectionTypeMessage = if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",

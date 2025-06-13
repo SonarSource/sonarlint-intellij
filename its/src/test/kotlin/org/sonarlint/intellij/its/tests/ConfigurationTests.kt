@@ -91,10 +91,11 @@ class ConfigurationTests : BaseUiTest() {
         private lateinit var adminWsClient: WsClient
         private lateinit var adminSonarCloudWsClient: WsClient
 
-        const val PROJECT_KEY = "sample-scala"
-        const val MODULE_PROJECT_KEY = "sample-scala-mod"
+        const val SCALA_PROJECT_KEY = "sample-scala"
+        const val SCALA_MODULE_PROJECT_KEY = "sample-scala-mod"
         const val ISSUE_PROJECT_KEY = "sli-java-issues"
         const val SHARED_CONNECTED_MODE_KEY = "shared-connected-mode"
+        const val SHARED_CONNECTED_MODE_MODULE_KEY = "shared-connected-mode-module"
         val SONARCLOUD_ISSUE_PROJECT_KEY = projectKey(ISSUE_PROJECT_KEY)
 
         private var firstIssueKey: String? = null
@@ -109,9 +110,9 @@ class ConfigurationTests : BaseUiTest() {
             return "sonarlint-its-$key-$randomPositiveInt"
         }
 
-        private fun getFirstIssueKey(client: WsClient): String? {
+        private fun getFirstIssueKey(client: WsClient, projectKey: String): String? {
             val searchRequest = SearchRequest()
-            searchRequest.projects = listOf(ISSUE_PROJECT_KEY)
+            searchRequest.projects = listOf(projectKey)
             val searchResults = client.issues().search(searchRequest)
             val issue = searchResults.issuesList[0]
             return issue.key
@@ -159,23 +160,23 @@ class ConfigurationTests : BaseUiTest() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))
 
-            ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Scala")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
-            ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
+            ORCHESTRATOR.server.provisionProject(SCALA_PROJECT_KEY, "Sample Scala")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(SCALA_PROJECT_KEY, "scala", "SonarLint IT Scala")
+            ORCHESTRATOR.server.provisionProject(SCALA_MODULE_PROJECT_KEY, "Sample Scala Module")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(SCALA_MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
 
             val excludeFileRequest = SetRequest()
             excludeFileRequest.key = "sonar.exclusions"
-            excludeFileRequest.component = MODULE_PROJECT_KEY
+            excludeFileRequest.component = SCALA_MODULE_PROJECT_KEY
             excludeFileRequest.values = listOf("src/Excluded.scala")
             adminWsClient.settings().set(excludeFileRequest)
 
-            executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, PROJECT_KEY)
-            executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, MODULE_PROJECT_KEY)
+            executeBuildWithSonarScanner("projects/sample-scala/", ORCHESTRATOR, SCALA_PROJECT_KEY)
+            executeBuildWithSonarScanner("projects/sample-scala/mod/", ORCHESTRATOR, SCALA_MODULE_PROJECT_KEY)
 
             val searchRequest = SearchRequest()
             searchRequest.s = "FILE_LINE"
-            searchRequest.projects = listOf(MODULE_PROJECT_KEY)
+            searchRequest.projects = listOf(SCALA_MODULE_PROJECT_KEY)
             val response = adminWsClient.issues().search(searchRequest)
             val firstIssueKey = response.issuesList[0].key
             adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
@@ -184,13 +185,13 @@ class ConfigurationTests : BaseUiTest() {
         @Test
         fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
             // Scala should only be supported in connected mode
-            openExistingProject("sample-scala", true)
+            openExistingProject("sample-scala")
             verifyCurrentFileShowsCard("EmptyCard")
 
             openFile("HelloProject.scala")
             verifyCurrentFileShowsCard("NotConnectedCard")
 
-            bindProjectAndModuleInFileSettings()
+            bindProjectAndModuleInFileSettings("sample-scala-module", SCALA_PROJECT_KEY,SCALA_MODULE_PROJECT_KEY)
             // Wait for re-analysis to happen
             with(this) {
                 idea {
@@ -219,7 +220,7 @@ class ConfigurationTests : BaseUiTest() {
                 "No analysis done on the current opened file",
                 "This file is not automatically analyzed",
             )
-            enableConnectedModeFromCurrentFilePanel(PROJECT_KEY, false, "Orchestrator")
+            enableConnectedModeFromCurrentFilePanel(SCALA_PROJECT_KEY, false, "Orchestrator")
         }
 
     }
@@ -237,15 +238,16 @@ class ConfigurationTests : BaseUiTest() {
                 "java",
                 "SonarLint IT ConnectedMode Java Issue"
             )
-            // Build and analyze project to raise issue
-            executeBuildWithMaven("projects/shared-connected-mode/pom.xml", ORCHESTRATOR)
-            firstIssueKey = getFirstIssueKey(adminWsClient)
+
+            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/shared-connected-mode-java-module-issue.xml"))
+            ORCHESTRATOR.server.provisionProject(SHARED_CONNECTED_MODE_MODULE_KEY, "Shared Connected Mode Module")
+            ORCHESTRATOR.server.associateProjectToQualityProfile(SHARED_CONNECTED_MODE_MODULE_KEY, "java", "SonarLint IT ConnectedMode Java Module Issue")
         }
 
         @Test
         fun should_export_then_import_connected_mode_configuration() = uiTest {
             openExistingProject("shared-connected-mode")
-            enableConnectedModeFromCurrentFilePanel(SHARED_CONNECTED_MODE_KEY, true, "Orchestrator")
+            bindProjectAndModuleInFileSettings("shared-connected-mode-module", SHARED_CONNECTED_MODE_KEY, SHARED_CONNECTED_MODE_MODULE_KEY)
             shareConfiguration()
             enableConnectedModeFromCurrentFilePanel(SHARED_CONNECTED_MODE_KEY, false, "Orchestrator")
             clearConnections()
@@ -271,7 +273,7 @@ class ConfigurationTests : BaseUiTest() {
             )
             // Build and analyze project to raise issue
             executeBuildWithMaven("projects/sli-java-issues/pom.xml", ORCHESTRATOR)
-            firstIssueKey = getFirstIssueKey(adminWsClient)
+            firstIssueKey = getFirstIssueKey(adminWsClient, ISSUE_PROJECT_KEY)
 
             restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
             provisionSonarCloudProfile(adminSonarCloudWsClient, "SLI Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
@@ -283,7 +285,6 @@ class ConfigurationTests : BaseUiTest() {
             )
 
             analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues", sonarCloudToken)
-
             firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
         }
 

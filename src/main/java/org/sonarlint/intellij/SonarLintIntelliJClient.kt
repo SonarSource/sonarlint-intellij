@@ -73,6 +73,10 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
 import org.sonarlint.intellij.analysis.OpenInIdeFindingCache
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
+import org.sonarlint.intellij.binding.BindingSuggestionHandler.findOverriddenModules
+import org.sonarlint.intellij.binding.BindingSuggestionHandler.findProjectBinding
+import org.sonarlint.intellij.binding.BindingSuggestionHandler.getAutoShareConfigParams
+import org.sonarlint.intellij.binding.ClientBindingSuggestion
 import org.sonarlint.intellij.common.analysis.FilesContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -163,10 +167,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
-
 private const val INTERRUPTED_MESSAGE = "Interrupted while waiting for Sonar project branch matching result"
-
 private const val TIMEOUT_MESSAGE = "Timeout while waiting for Sonar project branch matching result"
+
 
 object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
@@ -180,39 +183,47 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         suggestionsByConfigScopeId.forEach { (configScopeId, suggestions) -> suggestAutoBind(findProject(configScopeId), suggestions) }
     }
 
+    /**
+     * In IntelliJ, a project is associated with a specific project key and connection.
+     * Overridden modules are linked to different project keys but share the same connection as the original project.
+     *
+     * This method aims to:
+     * - Group all suggestions by their project
+     * - For each project group:
+     *    - Identify the main project and its associated connection
+     *    - Collect all overridden modules that share the same connection but have different project keys
+     *    - Send a single binding notification for the main project along with its related modules
+     */
     override fun suggestConnection(suggestionsByConfigScope: Map<String, List<ConnectionSuggestionDto>>) {
-        for (suggestion in suggestionsByConfigScope) {
-            val project = findModule(suggestion.key)?.project
-                ?: BackendService.findProject(suggestion.key) ?: continue
-
-            if (suggestion.value.size == 1) {
-                // It was decided to only handle the case where there is only one notification per configuration scope
-                val uniqueSuggestion = suggestion.value[0]
-                val (connectionKind, projectKey, connectionName) = getAutoShareConfigParams(uniqueSuggestion)
-                val mode = if (uniqueSuggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
-
-                ConfigurationSharing.showAutoSharedConfigurationNotification(
-                    project, """
-                    A Connected Mode configuration file is available to bind to project '%s' on %s '%s'.
-                    The binding can also be manually configured later.
-                """.trimIndent().format(projectKey, connectionKind, connectionName),
-                    SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
-                    uniqueSuggestion,
-                    mode
-                )
-            }
+        // It was decided to only handle the case where there is only one notification per configuration scope
+        // A future improvement could allow the user to choose its preferred binding
+        val clientSuggestions = suggestionsByConfigScope.filter { (_, suggestions) -> suggestions.size == 1 }.mapNotNull { (configScopeId, suggestions) ->
+            findProject(configScopeId)?.let { ClientBindingSuggestion(configScopeId, it, null, suggestions.first()) } ?:
+            findModule(configScopeId)?.let { ClientBindingSuggestion(configScopeId, it.project, it, suggestions.first()) }
         }
-    }
 
-    private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): Triple<String, String, String> {
-        return if (uniqueSuggestion.connectionSuggestion.isRight) {
-            Triple(
-                "SonarQube Cloud organization", uniqueSuggestion.connectionSuggestion.right.projectKey,
-                uniqueSuggestion.connectionSuggestion.right.organization)
-        } else {
-            Triple(
-                "SonarQube Server instance", uniqueSuggestion.connectionSuggestion.left.projectKey,
-                uniqueSuggestion.connectionSuggestion.left.serverUrl)
+        val moduleSuggestionsPerProject = clientSuggestions.groupBy { it.project }
+
+        moduleSuggestionsPerProject.forEach { (_, suggestions) ->
+            val projectBinding = findProjectBinding(suggestions) ?: return@forEach
+            val modules = findOverriddenModules(suggestions, projectBinding)
+
+            val (connectionKind, projKey, connectionName) = getAutoShareConfigParams(projectBinding.suggestion)
+            val mode = if (projectBinding.suggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
+            val optionalModulesBindingMessage = if (modules.isEmpty()) "" else "Some of your modules will also be automatically bound.\n"
+
+            ConfigurationSharing.showAutoSharedConfigurationNotification(
+                projectBinding.project,
+                modules,
+                """
+                A Connected Mode configuration file is available to bind to project '%s' on %s '%s'.
+                $optionalModulesBindingMessage
+                The binding can also be manually configured later.
+                """.trimIndent().format(projKey, connectionKind, connectionName),
+                SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
+                projectBinding.suggestion,
+                mode
+            )
         }
     }
 
