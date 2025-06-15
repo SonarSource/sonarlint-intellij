@@ -104,7 +104,6 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getService(BackendService.class).moduleUnbound(getModule());
     getService(BackendService.class).projectUnbound(getProject());
     getService(BackendService.class).connectionsUpdated(Collections.emptyList());
-    getService(BackendService.class).projectOpened(getProject());
     getService(BackendService.class).modulesAdded(getProject(), List.of(getModule()));
   }
 

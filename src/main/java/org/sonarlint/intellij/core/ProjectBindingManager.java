@@ -24,13 +24,10 @@ import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -43,7 +40,6 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -177,20 +173,6 @@ public final class ProjectBindingManager {
     return allModules().stream()
       .filter(m -> getSettingsFor(m).isProjectBindingOverridden())
       .collect(Collectors.toMap(m -> m, m -> org.sonarlint.intellij.config.Settings.getSettingsFor(m).getProjectKey()));
-  }
-
-  public Set<String> getUniqueProjectKeys() {
-    var projectSettings = getSettingsFor(myProject);
-    if (projectSettings.isBound()) {
-      return getUniqueProjectKeysForModules(allModules());
-    }
-    return Collections.emptySet();
-  }
-
-  private static Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
-    return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())
-      .filter(projectKey -> !isBlank(projectKey))
-      .collect(Collectors.toSet());
   }
 
   public static void updateTelemetryOnBind(BindingMode bindingMode) {
