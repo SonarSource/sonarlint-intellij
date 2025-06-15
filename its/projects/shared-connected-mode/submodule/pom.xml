@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.sonarsource.sonarlint.core</groupId>
-    <artifactId>shared-connected-mode-tmp</artifactId>
+    <artifactId>shared-connected-mode</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
   <artifactId>shared-connected-mode-module</artifactId>
