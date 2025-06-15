@@ -45,57 +45,6 @@ class BindingSuggestionHandlerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `should find project binding if single project`() {
-        val sonarqubeProject1 = ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "project_1"), true)
-        val suggestions = listOf(ClientBindingSuggestion("scopeId", mockProject("project"), null, sonarqubeProject1))
-
-        val projectBinding = BindingSuggestionHandler.findProjectBinding(suggestions)
-
-        assertThat(projectBinding).isNotNull
-        assertThat(projectBinding!!.configScopeId).isEqualTo("scopeId")
-    }
-
-    @Test
-    fun `should find project binding if single module matching project name`() {
-        val sonarqubeProject1 = ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "project_1"), true)
-        val suggestions = listOf(ClientBindingSuggestion("scopeId", mockProject("project"), mockModule("project"), sonarqubeProject1))
-
-        val projectBinding = BindingSuggestionHandler.findProjectBinding(suggestions)
-
-        assertThat(projectBinding).isNotNull()
-        assertThat(projectBinding!!.configScopeId).isEqualTo("scopeId")
-    }
-
-    @Test
-    fun `should find project binding if multiple bindings`() {
-        val sonarqubeProject1 = ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "project_1"), true)
-        val sonarqubeProject2 = ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "project_2"), true)
-        val suggestions = listOf(
-            ClientBindingSuggestion("scopeId", mockProject("project"), null, sonarqubeProject1),
-            ClientBindingSuggestion("scopeIdModule", mockProject("project"), mockModule("module"), sonarqubeProject2)
-        )
-
-        val projectBinding = BindingSuggestionHandler.findProjectBinding(suggestions)
-
-        assertThat(projectBinding).isNotNull
-        assertThat(projectBinding!!.configScopeId).isEqualTo("scopeId")
-    }
-
-    @Test
-    fun `should not find main binding if two projects`() {
-        val sonarqubeProject1 = ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "project_1"), true)
-        val sonarqubeProject2 = ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "project_2"), true)
-        val suggestions = listOf(
-            ClientBindingSuggestion("scopeId", mockProject("project"), null, sonarqubeProject1),
-            ClientBindingSuggestion("scopeIdModule", mockProject("project"), null, sonarqubeProject2)
-        )
-
-        val projectBinding = BindingSuggestionHandler.findProjectBinding(suggestions)
-
-        assertThat(projectBinding).isNull()
-    }
-
-    @Test
     fun `should find overridden modules for SonarQube Server`() {
         val module1 = mockModule("module1")
         val project = mockProject("project")

@@ -38,11 +38,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.io.FileUtilRt
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
@@ -74,7 +72,6 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLangu
 import org.sonarlint.intellij.analysis.OpenInIdeFindingCache
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.findOverriddenModules
-import org.sonarlint.intellij.binding.BindingSuggestionHandler.findProjectBinding
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.getAutoShareConfigParams
 import org.sonarlint.intellij.binding.ClientBindingSuggestion
 import org.sonarlint.intellij.common.analysis.FilesContributor
@@ -116,7 +113,8 @@ import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.sharing.ConfigurationSharing
-import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
+import org.sonarlint.intellij.sharing.SharedConnectedModeUtils.Companion.findConnectedModeFile
+import org.sonarlint.intellij.sharing.SharedConnectedModeUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
@@ -205,7 +203,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val moduleSuggestionsPerProject = clientSuggestions.groupBy { it.project }
 
         moduleSuggestionsPerProject.forEach { (_, suggestions) ->
-            val projectBinding = findProjectBinding(suggestions) ?: return@forEach
+            val projectBinding = suggestions.firstOrNull { it.module == null } ?: return@forEach
             val modules = findOverriddenModules(suggestions, projectBinding)
 
             val (connectionKind, projKey, connectionName) = getAutoShareConfigParams(projectBinding.suggestion)
@@ -736,13 +734,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             listModuleFiles(module, configScopeId)
         } ?: project?.let { foundProject ->
             val listProjectFiles = listProjectFiles(foundProject, configScopeId)
-
-            if (isRider()) {
-                computeRiderSharedConfiguration(foundProject, configScopeId)?.let {
-                    listProjectFiles.add(it)
-                }
-            }
-
+            computeSharedConfiguration(foundProject, configScopeId)?.let { listProjectFiles.add(it) }
             listProjectFiles
         }
         ?: emptyList()
@@ -760,28 +752,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return listClientFiles
     }
 
-    private fun computeRiderSharedConfiguration(project: Project, configScopeId: String): ClientFileDto? {
+    private fun computeSharedConfiguration(project: Project, configScopeId: String): ClientFileDto? {
         val sonarlintFolder = findSharedFolder(project) ?: return null
-        VfsUtil.findFile(sonarlintFolder, false)?.let { sonarlintDir ->
-            sonarlintDir.children.forEach { conf ->
-                val solutionName = conf.nameWithoutExtension
-                if (project.name == solutionName) {
-                    getRelativePathForAnalysis(project.modules[0], conf)?.let { path ->
-                        val clientFileDto = toClientFileDto(
-                            project,
-                            configScopeId,
-                            conf,
-                            path,
-                            Language.JSON
-                        )
-                        if (clientFileDto != null) {
-                            return clientFileDto
-                        }
-                    }
-                }
-            }
-        }
-        return null
+        return findConnectedModeFile(sonarlintFolder, project, configScopeId)
     }
 
     private fun listModuleFiles(module: Module, configScopeId: String): MutableList<ClientFileDto> {
@@ -807,7 +780,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }.toMutableList()
 
         if (isRider()) {
-            computeRiderSharedConfiguration(module.project, configScopeId)?.let {
+            computeSharedConfiguration(module.project, configScopeId)?.let {
                 clientFiles.add(it)
             }
         }
@@ -839,7 +812,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }?.toSet() ?: return emptySet()
     }
 
-    private fun toClientFileDto(
+    fun toClientFileDto(
         project: Project,
         configScopeId: String,
         file: VirtualFile,

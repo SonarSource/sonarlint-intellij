@@ -24,16 +24,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionS
 
 object BindingSuggestionHandler {
 
-    fun findProjectBinding(suggestions: List<ClientBindingSuggestion>): ClientBindingSuggestion? {
-        var projectBindings = suggestions.filter { it.module == null }
-        // If no project is found, it's possible that the main binding is linked to a module
-        // In this case; we look for a module with the same name as the project, it's possible that it doesn't find a match
-        if (projectBindings.isEmpty()) {
-            projectBindings = suggestions.filter { it.module != null && it.module.name == it.project.name }
-        }
-        return if (projectBindings.size == 1) projectBindings.first() else null
-    }
-
     fun findOverriddenModules(suggestions: List<ClientBindingSuggestion>, projectBinding: ClientBindingSuggestion): Map<Module, String> {
         return suggestions
             .filter { it.module != null }
