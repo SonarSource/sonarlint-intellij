@@ -44,6 +44,7 @@ class SharedConfigurationTests {
         fun importConfiguration(token: String) {
             with(remoteRobot) {
                 idea {
+                    notificationByActionName("Use configuration").hasText("Some of your modules will also be automatically bound.")
                     notificationByActionName("Use configuration").click()
                     dialog("Connect to This SonarQube Server Instance?") {
                         jBPasswordField().text = token

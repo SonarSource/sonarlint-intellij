@@ -182,7 +182,7 @@ class OpenInIdeTests : BaseUiTest() {
         @Test
         fun should_open_in_ide_security_hotspot_then_should_propose_to_bind_then_should_review_security_hotspot() = uiTest {
             clearConnections()
-            openExistingProject("sample-java-hotspot", true)
+            openExistingProject("sample-java-hotspot")
 
             // Open In Ide Security Hotspot Test
             triggerOpenHotspotRequest(SECURITY_HOTSPOT_PROJECT_KEY, firstHotspotKey, ORCHESTRATOR.server.url)

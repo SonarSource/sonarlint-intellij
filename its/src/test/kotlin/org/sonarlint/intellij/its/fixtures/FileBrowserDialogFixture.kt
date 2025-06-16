@@ -60,7 +60,7 @@ class FileBrowserDialogFixture(
     return findElement(byXpath("//div[(@accessiblename='Refresh' and @class='ActionButton')]"))
   }
 
-  fun selectProjectFile(projectName: String, isMaven: Boolean) {
+  fun selectProjectFile(projectName: String) {
     val projectsDir = Paths.get("projects").toAbsolutePath()
     val projectBaseDir = projectsDir.resolve("$projectName-tmp")
     val button = button("OK")

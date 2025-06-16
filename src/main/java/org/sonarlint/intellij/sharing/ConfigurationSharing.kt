@@ -38,7 +38,7 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
-import org.sonarlint.intellij.sharing.SonarLintSharedFolderUtils.Companion.findSharedFolder
+import org.sonarlint.intellij.sharing.SharedConnectedModeUtils.Companion.findSharedFolder
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
@@ -109,20 +109,17 @@ class ConfigurationSharing {
                             "Could not create the file '$filename', please check the logs for more details",
                             ERROR
                         )
-                        SonarLintConsole.get(project).error("Error while creating the shared file, IO exception : " + e.message)
+                        SonarLintConsole.get(project).error("Error while creating the shared connected mode file", e)
                     }
                 }
         }
 
+        // Don't send notifications on file creation for module, it could generate a lot of noise
         private fun createFile(module: Module, modalityState: ModalityState) {
             val sonarlintFolder = findSharedFolder(module)
 
             if (sonarlintFolder == null) {
-                get(module.project).simpleNotification(
-                    null,
-                    "Could not find the directory where to store the configuration file",
-                    ERROR
-                )
+                SonarLintConsole.get(module.project).error("Could not find the directory where to store the configuration file for module ${module.name}")
                 return
             }
 
@@ -147,28 +144,17 @@ class ConfigurationSharing {
                                         sonarlintFile.setBinaryContent(sharedFileContent.jsonFileContent.toByteArray())
                                     }
                                 }
-
-                                get(module.project).simpleNotification(
-                                    null,
-                                    "File '$filename' has been created",
-                                    NotificationType.INFORMATION
-                                )
                             }
                         }
                     } catch (e: IOException) {
-                        get(module.project).simpleNotification(
-                            null,
-                            "Could not create the file '$filename', please check the logs for more details",
-                            ERROR
-                        )
-                        SonarLintConsole.get(module.project).error("Error while creating the shared file, IO exception : " + e.message)
+                        SonarLintConsole.get(module.project).error("Error while creating the shared connected mode file for module ${module.name}", e)
                     }
                 }
         }
 
         @JvmStatic
         fun showAutoSharedConfigurationNotification(
-            project: Project, message: String, doNotShowAgainId: String,
+            project: Project, moduleOverridesPerProjectKey: Map<Module, String>, message: String, doNotShowAgainId: String,
             connectionSuggestionDto: ConnectionSuggestionDto, bindingMode: BindingMode,
         ) {
             if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
@@ -176,7 +162,7 @@ class ConfigurationSharing {
                     "",
                     message,
                     doNotShowAgainId,
-                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project, bindingMode)
+                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project, moduleOverridesPerProjectKey, bindingMode)
                 )
             }
         }

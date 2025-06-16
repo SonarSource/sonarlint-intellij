@@ -23,20 +23,27 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.io.exists
 import java.nio.file.Path
 import java.nio.file.Paths
+import org.sonarlint.intellij.SonarLintIntelliJClient.toClientFileDto
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.common.vcs.VcsRepoProvider
+import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.computeOnPooledThread
+import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
-class SonarLintSharedFolderUtils {
+class SharedConnectedModeUtils {
 
     companion object {
 
         private const val SONARLINT_FOLDER = ".sonarlint"
+        private const val CONNECTED_MODE_FILE = "connectedMode.json"
 
         fun findSharedFolder(project: Project): Path? {
             return computeOnPooledThread(project, "Find Shared Folder Task") {
@@ -62,7 +69,7 @@ class SonarLintSharedFolderUtils {
                     getService(
                         module.project,
                         SonarLintConsole::class.java
-                    ).debug("Could not share binding for module '$module' because of its complex structure")
+                    ).debug("Could not share binding for module '$module' because of its complex structure. Try creating the file manually.")
                     null
                 }
             }
@@ -86,6 +93,33 @@ class SonarLintSharedFolderUtils {
                 }
                 repositories.first()
             }.toSet().firstOrNull()?.getGitDir()
+        }
+
+        fun findConnectedModeFile(sonarlintFolder: Path, project: Project, configScopeId: String): ClientFileDto? {
+            VfsUtil.findFile(sonarlintFolder, false)?.let { sonarlintDir ->
+                sonarlintDir.children.forEach { conf ->
+                    if (isRider()) {
+                        checkForRiderConnectedModeFile(conf, project, configScopeId)?.let { return it }
+                    } else {
+                        if (conf.name == CONNECTED_MODE_FILE) {
+                            getRelativePathForAnalysis(project, conf)?.let { path ->
+                                return toClientFileDto(project, configScopeId, conf, path, Language.JSON)
+                            }
+                        }
+                    }
+                }
+            }
+            return null
+        }
+
+        private fun checkForRiderConnectedModeFile(file: VirtualFile, project: Project, configScopeId: String): ClientFileDto? {
+            val solutionName = file.nameWithoutExtension
+            if (project.name == solutionName) {
+                getRelativePathForAnalysis(project.modules[0], file)?.let { path ->
+                    toClientFileDto(project, configScopeId, file, path, Language.JSON)?.let { return it }
+                }
+            }
+            return null
         }
 
     }

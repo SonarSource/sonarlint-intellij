@@ -165,6 +165,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChan
 
 @Service(Service.Level.APP)
 class BackendService : Disposable {
+    private val projectsOpened = mutableSetOf<Project>()
     private var initializationTriedOnce = AtomicBoolean(false)
     private var backendFuture = CompletableFuture<SonarLintRpcServer>()
     private var sloop: Sloop? = null
@@ -525,27 +526,18 @@ class BackendService : Disposable {
         )
     }
 
-    fun projectOpened(project: Project) {
+    fun projectOpened(project: Project): ConfigurationScopeDto? {
+        if (projectsOpened.contains(project)) {
+            return null
+        }
+        projectsOpened.add(project)
         val binding = getService(project, ProjectBindingManager::class.java).binding
-        notifyBackend {
-            it.configurationService.didAddConfigurationScopes(
-                DidAddConfigurationScopesParams(
-                    listOf(
-                        toBackendConfigurationScope(
-                            project,
-                            binding
-                        )
-                    )
-                )
-            )
-        }
-        runOnPooledThread {
-            refreshTaintVulnerabilities(project)
-        }
+        return toBackendConfigurationScope(project, binding)
     }
 
     fun projectClosed(project: Project) {
         ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
+        projectsOpened.remove(project)
         val projectId = projectId(project)
         notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId)) }
     }
@@ -595,14 +587,22 @@ class BackendService : Disposable {
         }
     }
 
+    // IntelliJ projects contain at least one module. We have to send the project at the same time;
+    // Otherwise modules are sent first which can cause issues
     fun modulesAdded(project: Project, modules: List<Module>) {
+        val projectScope = projectOpened(project)
         val projectBinding = getService(project, ProjectBindingManager::class.java).binding
         notifyBackend {
             it.configurationService.didAddConfigurationScopes(
                 DidAddConfigurationScopesParams(
-                    modules.map { module -> toConfigurationScope(module, projectBinding) }
+                    (modules.map { module -> toConfigurationScope(module, projectBinding) } + projectScope).filterNotNull()
                 )
             )
+        }
+        projectScope?.let {
+            runOnPooledThread {
+                refreshTaintVulnerabilities(project)
+            }
         }
     }
 

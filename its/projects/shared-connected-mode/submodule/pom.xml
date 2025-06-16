@@ -1,16 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.sonarsource.sonarlint.core</groupId>
-  <artifactId>shared-connected-mode</artifactId>
+  <parent>
+    <groupId>org.sonarsource.sonarlint.core</groupId>
+    <artifactId>shared-connected-mode</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>shared-connected-mode-module</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>Shared Connected Mode</name>
+  <name>Shared Connected Mode Module</name>
   <description>Sample project for ITs</description>
-  <packaging>pom</packaging>
-  
-  <modules>
-    <module>submodule</module>
-  </modules>
 
   <build>
     <plugins>

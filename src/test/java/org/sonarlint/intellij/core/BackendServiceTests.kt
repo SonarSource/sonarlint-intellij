@@ -169,7 +169,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_opening_a_non_bound_project() {
-        service.projectOpened(project)
+        service.projectClosed(project)
+        service.modulesAdded(project, listOf())
 
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
         await().during(500, TimeUnit.MILLISECONDS).untilAsserted {
@@ -192,7 +193,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         globalSettings.serverConnections = listOf(connection)
         projectSettings.bindTo(connection, "key")
 
-        service.projectOpened(project)
+        service.projectClosed(project)
+        service.modulesAdded(project, listOf())
 
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
         verify(backendConfigurationService, timeout(500).atLeastOnce()).didAddConfigurationScopes(paramsCaptor.capture())
@@ -210,7 +212,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     @Test
     fun test_notify_backend_when_closing_a_project() {
         val newProject = ProjectManagerEx.getInstanceEx().openProject(Path.of("test"), OpenProjectTask.build().asNewProject())!!
-        service.projectOpened(newProject)
+        service.modulesAdded(newProject, listOf())
 
         ProjectManagerEx.getInstanceEx().closeAndDispose(newProject)
 
