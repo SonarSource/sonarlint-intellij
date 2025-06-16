@@ -76,7 +76,7 @@ class OpeningUtils {
             }
         }
 
-        fun openExistingProject(projectName: String, isMaven: Boolean = false, copyProjectFiles: Boolean = true) {
+        fun openExistingProject(projectName: String, copyProjectFiles: Boolean = true) {
             if (copyProjectFiles) {
                 copyProjectFiles(projectName)
             }
@@ -87,11 +87,11 @@ class OpeningUtils {
                 }
                 if (remoteRobot.isRider()) {
                     openSolutionBrowserDialog {
-                        selectProjectFile(projectName, isMaven)
+                        selectProjectFile(projectName)
                     }
                 } else {
                     openProjectFileBrowserDialog {
-                        selectProjectFile(projectName, isMaven)
+                        selectProjectFile(projectName)
                     }
                 }
                 if (!remoteRobot.isCLion()) {

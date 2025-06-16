@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<profile>
+  <name>SonarLint IT ConnectedMode Java Module Issue</name>
+  <language>java</language>
+  <rules>
+    <!-- Remove this empty class, write its code or make it an "interface". -->
+    <rule>
+      <repositoryKey>java</repositoryKey>
+      <key>S2094</key>
+      <priority>MINOR</priority>
+    </rule>
+  </rules>
+</profile>
