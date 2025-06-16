@@ -24,14 +24,21 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang3.tuple.Pair;
 import org.sonarlint.intellij.callable.CheckInCallable;
@@ -43,11 +50,14 @@ import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.tasks.TaskRunnerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.util.VirtualFileUtils;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -120,8 +130,56 @@ public final class AnalysisSubmitter {
     }
 
     var callback = new CheckInCallable();
-    var analysis = new Analysis(project, files, trigger, callback);
-    var analysisIds = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
+    //var analysis = new Analysis(project, files, trigger, callback);
+    //var analysisIds = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
+    var scope = AnalysisScope.defineFrom(project, files, trigger);
+    List<UUID> analysisIds = new ArrayList<>();
+
+    for (var filesByModule : scope.getFilesByModule().entrySet()) {
+      var module = filesByModule.getKey();
+      var filesInModule = filesByModule.getValue();
+
+      List<URI> uris = filesInModule.stream()
+        .map(VirtualFileUtils.INSTANCE::toURI)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
+      if (!uris.isEmpty()) {
+        CompletableFuture<ForceAnalyzeResponse> future = getService(BackendService.class).analyzeFileList(module, uris);
+
+        ForceAnalyzeResponse response = TaskRunnerKt.runModalTaskWithResult(
+          project,
+          ANALYSIS_TASK_TITLE,
+          (progressIndicator) -> {
+            try {
+              return future.get();
+            } catch (InterruptedException | ExecutionException e) {
+              console.error("Error analyzing files for pre-commit", e);
+              if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+              }
+              return null;
+            }
+          }
+        );
+
+        if (response != null) {
+          var progressIndicator = new EmptyProgressIndicator();
+          progressIndicator.setIndeterminate(true);
+          progressIndicator.setText("Running SonarQube for IDE Analysis for pre-commit");
+
+          var analysisId = response.getAnalysisId();
+
+          if(analysisId != null) {
+            var analysisState = new AnalysisState(response.getAnalysisId(), callback, filesInModule, module, TriggerType.CHECK_IN, progressIndicator);
+            getService(project, RunningAnalysesTracker.class).track(analysisState);
+
+            analysisIds.add(response.getAnalysisId());
+          }
+        }
+      }
+    }
+
     return Pair.of(callback, analysisIds);
   }
 
