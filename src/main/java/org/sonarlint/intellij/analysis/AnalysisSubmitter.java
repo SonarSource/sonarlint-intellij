@@ -24,7 +24,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -36,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
@@ -62,6 +60,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyze
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllFilesForProject;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 @Service(Service.Level.PROJECT)
 public final class AnalysisSubmitter {
@@ -133,6 +132,11 @@ public final class AnalysisSubmitter {
     //var analysis = new Analysis(project, files, trigger, callback);
     //var analysisIds = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
     var scope = AnalysisScope.defineFrom(project, files, trigger);
+
+    if (scope.isEmpty()) {
+      return Pair.of(callback, List.of());
+    }
+
     List<UUID> analysisIds = new ArrayList<>();
 
     for (var filesByModule : scope.getFilesByModule().entrySet()) {
@@ -145,37 +149,32 @@ public final class AnalysisSubmitter {
         .collect(Collectors.toList());
 
       if (!uris.isEmpty()) {
-        CompletableFuture<ForceAnalyzeResponse> future = getService(BackendService.class).analyzeFileList(module, uris);
-
-        ForceAnalyzeResponse response = TaskRunnerKt.runModalTaskWithResult(
-          project,
-          ANALYSIS_TASK_TITLE,
-          (progressIndicator) -> {
+        ForceAnalyzeResponse response = computeOnPooledThread(
+          "SonarLint Pre-commit Analysis",
+          () -> {
             try {
-              return future.get();
-            } catch (InterruptedException | ExecutionException e) {
+              return getService(BackendService.class).analyzeFileList(module, uris).get();
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+              console.error("Analysis interrupted", e);
+              return null;
+            } catch (ExecutionException e) {
               console.error("Error analyzing files for pre-commit", e);
-              if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-              }
               return null;
             }
-          }
-        );
+          });
 
-        if (response != null) {
-          var progressIndicator = new EmptyProgressIndicator();
-          progressIndicator.setIndeterminate(true);
-          progressIndicator.setText("Running SonarQube for IDE Analysis for pre-commit");
+        if (response != null && response.getAnalysisId() != null) {
+          var analysisState = new AnalysisState(
+            response.getAnalysisId(),
+            callback,
+            filesInModule,
+            module,
+            TriggerType.CHECK_IN,
+            null);
+          getService(project, RunningAnalysesTracker.class).track(analysisState);
 
-          var analysisId = response.getAnalysisId();
-
-          if(analysisId != null) {
-            var analysisState = new AnalysisState(response.getAnalysisId(), callback, filesInModule, module, TriggerType.CHECK_IN, progressIndicator);
-            getService(project, RunningAnalysesTracker.class).track(analysisState);
-
-            analysisIds.add(response.getAnalysisId());
-          }
+          analysisIds.add(response.getAnalysisId());
         }
       }
     }
