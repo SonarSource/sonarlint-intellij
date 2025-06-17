@@ -9,7 +9,7 @@ env:
   DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${DEVELOCITY_TOKEN}
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
   SLACK_CHANNEL: squad-ide-intellij-family-bots
-  GRADLE_VERSION: "8.9"
+  GRADLE_VERSION: "8.14.1"
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
   IDEA_HOME: "/opt/intellij"
   RIDER_HOME: "/opt/rider"
@@ -74,19 +74,20 @@ ec2_instance_definition: &WINVM_DEFINITION
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
   gradle_cache:
     folder: ${GRADLE_USER_HOME}/caches
-    fingerprint_script:
-      - echo $CIRRUS_OS
-      - cat **/*.gradle* gradle/wrapper/gradle-wrapper.properties || true
-    populate_script:
-      - mkdir -p ${GRADLE_USER_HOME}/caches
+  fingerprint_script:
+    - echo $CIRRUS_OS
+    - echo $GRADLE_VERSION
+    - find . -name "*.gradle*" -o -name "gradle-wrapper.properties" | sort | xargs cat || true
+  populate_script:
+    - mkdir -p ${GRADLE_USER_HOME}/caches
 
 cleanup_gradle_cache_script_template: &CLEANUP_GRADLE_CACHE_SCRIPT
   cleanup_gradle_script: |
-    rm -rf ${GRADLE_USER_HOME}/caches/$GRADLE_VERSION/
+    /usr/bin/find ${GRADLE_USER_HOME}/caches/ -name "*.lock" -type f -delete
+    rm -rf ${GRADLE_USER_HOME}/caches/${GRADLE_VERSION}/
     rm -rf ${GRADLE_USER_HOME}/daemon/
     rm -rf ${GRADLE_USER_HOME}/caches/transforms-*
     rm -rf ${GRADLE_USER_HOME}/caches/journal-*
-    /usr/bin/find ${GRADLE_USER_HOME}/caches/ -name "*.lock" -type f -delete
 
 build_plugin_task:
   #  name: "Build plugin and stage to repox"
@@ -112,6 +113,11 @@ build_plugin_task:
     source set_gradle_build_version
     regular_gradle_build_deploy_analyze -x build -x sonar :buildPlugin :cyclonedxBom
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  always:
+    reports_artifacts:
+      path: "**/reports/profile/**"
+    test_artifacts:
+      path: "**/.gradle/**"
   on_failure:
     slack_notification_script: |
       source slack-failure-notification
@@ -136,7 +142,7 @@ validate_task:
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
-      path: "**/reports/**/*"
+      path: "**/reports/**/**"
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
@@ -164,7 +170,7 @@ validate_windows_task:
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
-      path: "**/reports/**/*"
+      path: "**/reports/profile/**"
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit
@@ -204,7 +210,7 @@ plugin_verifier_task:
     source .cirrus/use-gradle-wrapper.sh
     VERSIONS=$(curl -s -L https://jb.gg/intellij-platform-builds-list | jq '.[] | "\(.code) \(.releases[].version)"' | grep -Ew "${ALLOWED_IDE}" | grep "${IDEA_VERSION}" | tr -d '"' | awk '{k=$1} $2>a[k]{a[k]=$2} END{for (i in a) print i, a[i]}' | sort -u | sed 's/ /-/' | paste -s -d',')
     echo ${VERSIONS}
-    ./gradlew :runPluginVerifier -PverifierVersions=${VERSIONS}
+    ./gradlew :verifyPlugin -PverifierVersions=${VERSIONS}
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     reports_artifacts:
@@ -221,7 +227,7 @@ qa_task:
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 6
-    memory: 16G
+    memory: 22G
   env:
     CLION_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.clion]
     GOLAND_KEY: VAULT[development/team/sonarlint/kv/data/ide.keys data.goland]
@@ -349,22 +355,24 @@ qa_task:
     source .cirrus/use-gradle-wrapper.sh
     source set_gradle_build_version
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip "-DoutputDirectory=${CIRRUS_WORKING_DIR}/staged-plugin"
-    mkdir -p its/build/idea-sandbox/config-uiTest/
-    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/config-uiTest/clion.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/config-uiTest/goland.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/config-uiTest/datagrip.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > its/build/idea-sandbox/config-uiTest/idea.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > its/build/idea-sandbox/config-uiTest/phpstorm.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > its/build/idea-sandbox/config-uiTest/pycharm.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/config-uiTest/rider.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/config-uiTest/rubymine.key
-    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/config-uiTest/webstorm.key
+    mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
+
+    base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/clion.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/goland.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/datagrip.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/idea.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/phpstorm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/pycharm.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rider.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rubymine.key
+    base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/webstorm.key
+
     metacity --sm-disable --replace &
     sleep 10 # give metacity some time to start
     gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
-    .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 500
+    .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 2000
   recording_background_script: |
     echo 'Recording tests on video'
     ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -i ${DISPLAY} -codec:v libx264 -r 12 ${CIRRUS_WORKING_DIR}/recording_${IDEA_VERSION}.mp4

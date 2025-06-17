@@ -110,7 +110,6 @@ private class AwaitingBackgroundTask(
         onCompletion()
     }
 
-
     fun updateProgress(notification: ProgressUpdateNotification) {
         synchronized(waitMonitor) {
             waitMonitor.notify()
