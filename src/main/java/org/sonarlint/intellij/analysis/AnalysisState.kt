@@ -29,7 +29,9 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.RawIssueAdapter
@@ -117,15 +119,20 @@ class AnalysisState(
         })
 
         if (isAnalysisFinished()) {
-            analysisCallback.onSuccess(
-                AnalysisResult(
-                    analysisId,
-                    LiveFindings(liveIssues, liveHotspots),
-                    filesToAnalyze,
-                    triggerType,
-                    analysisDate
+            runReadActionSafely(module.project) {
+                analysisCallback.onSuccess(
+                    AnalysisResult(
+                        analysisId,
+                        LiveFindings(liveIssues, liveHotspots),
+                        filesToAnalyze,
+                        triggerType,
+                        analysisDate
+                    )
                 )
-            )
+
+                getService(module.project, RunningAnalysesTracker::class.java).finish(this)
+            }
+
         } else {
             analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
         }
