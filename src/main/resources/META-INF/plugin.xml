@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>10.26 - Add 33 new rules for python core.</li>
         <li>10.25 - Add 2 new rules for Java 23. Improve consistency when opening an issue from SonarQube Server or Cloud. Bug fixes and fewer FPs for Go and JS/TS.</li>
         <li>10.24 - Introduce AI CodeFix when connected to SonarQube Server, starting from 2025.3. Fixed an issue where SonarQube for IDE would not use the Node.js path saved in the settings upon restart. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.23 - 5 new rules for Python PySpark library. ARM64 support for Go. Bug fixes, fewer FPs and improvements for many languages.</li>
