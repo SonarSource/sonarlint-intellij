@@ -52,6 +52,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
@@ -65,6 +66,7 @@ import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
@@ -103,6 +105,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     try {
       var analysisSubmitter = getService(project, AnalysisSubmitter.class);
       var analysisIdsByCallback = analysisSubmitter.analyzeFilesPreCommit(affectedFiles);
+      System.out.println(analysisIdsByCallback == null ? "Analysis did not start" : "Analysis started with IDs: " + analysisIdsByCallback.getRight());
       if (analysisIdsByCallback == null) {
         SonarLintConsole.get(project).debug("Pre commit analysis cancelled because analysis did not start");
         return ReturnResult.CANCEL;
@@ -116,6 +119,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
               var analysis = analysisIdsByCallback.getRight().stream().map(id -> getService(project, RunningAnalysesTracker.class).getById(id)).filter(Objects::nonNull).toList();
               if (analysis.isEmpty()) {
                 cancel();
+                getService(project, AnalysisStatus.class).stopRun();
               }
             }
           }, 0, 100);
@@ -126,7 +130,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         SonarLintConsole.get(project).debug("Pre commit analysis cancelled because analysis did not succeed");
         return ReturnResult.CANCEL;
       }
-      var results = analysisIdsByCallback.getLeft().getResults();
+      var results = computeReadActionSafely(() -> analysisIdsByCallback.getLeft().getResults());
+      System.out.println(results);
       return processResults(results);
     } catch (Exception e) {
       handleError(e, affectedFiles.size());
