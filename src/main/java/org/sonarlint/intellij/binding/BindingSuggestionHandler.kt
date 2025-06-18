@@ -49,9 +49,9 @@ object BindingSuggestionHandler {
             .associate {
                 val module = it.module!!
                 if (it.suggestion.connectionSuggestion.isRight) {
-                    module to it.suggestion.connectionSuggestion.right.organization
+                    module to it.suggestion.connectionSuggestion.right.projectKey
                 } else {
-                    module to it.suggestion.connectionSuggestion.left.serverUrl
+                    module to it.suggestion.connectionSuggestion.left.projectKey
                 }
             }
     }

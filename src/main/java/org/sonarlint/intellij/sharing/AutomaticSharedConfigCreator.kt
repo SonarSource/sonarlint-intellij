@@ -75,7 +75,7 @@ class AutomaticSharedConfigCreator(
     private val orgOrServerUrl: String,
     private val isSQ: Boolean,
     private val project: Project,
-    private val moduleOverridesPerProjectKey: Map<Module, String>,
+    private val overridesPerModule: Map<Module, String>,
     private val bindingMode: BindingMode,
     private val region: SonarCloudRegion?
 ) :
@@ -90,6 +90,7 @@ class AutomaticSharedConfigCreator(
     private val connectionNameField = JBTextField()
     private val tokenField = JBPasswordField()
     private val connectedModeDescriptionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
+    private val connectedModeOverriddenBindingsLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val connectionLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val projectKeyLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val scURLLabel = SwingHelper.createHtmlViewer(false, null, null, null)
@@ -178,7 +179,7 @@ class AutomaticSharedConfigCreator(
             val connection = getGlobalSettings().getServerConnectionByName(connectionNameField.text)
                 .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
 
-            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, moduleOverridesPerProjectKey, bindingMode)
+            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, overridesPerModule, bindingMode)
             val connectionTypeMessage = if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
@@ -211,6 +212,17 @@ class AutomaticSharedConfigCreator(
                 BrowserUtil.browse(e.url)
             }
         })
+
+        // Avoid displaying too much information if there are many overrides
+        if (overridesPerModule.size <= 5) {
+            connectedModeOverriddenBindingsLabel.text = "The following modules will also be bound: " +
+                overridesPerModule
+                    .map { "'${it.key.name}' to '${it.value}'" }
+                    .joinToString(", ")
+        } else {
+            connectedModeOverriddenBindingsLabel.text = "Some of your modules will also be automatically bound to different project keys (too many to display)."
+        }
+
         connectionLabel.text = if (isSQ) "Server URL" else "SonarQube Cloud organization"
         projectKeyLabel.text = "Project key"
         scURLLabel.text = "SonarQube Cloud URL"
@@ -223,6 +235,14 @@ class AutomaticSharedConfigCreator(
             connectedModeDescriptionLabel,
             GridBagConstraints(1, gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
         )
+
+        if (overridesPerModule.isNotEmpty()) {
+            centerPanel.add(
+                connectedModeOverriddenBindingsLabel,
+                GridBagConstraints(1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.insetsBottom(20), 0, 0)
+            )
+        }
+
         centerPanel.add(
             projectKeyLabel,
             GridBagConstraints(1, ++gridY, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0)
