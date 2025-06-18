@@ -239,13 +239,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void recomputeDirtyState() {
-    runOnPooledThread(project, () -> getService(BackendService.class).getListAllStandaloneRulesDefinitions()
-      .thenAcceptAsync(response -> {
-        var persistedRules = response.getRulesByKey().values().stream()
-          .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
-            loadRuleActivation(getGlobalSettings(), ruleDefinitionDto),
-            loadNonDefaultRuleParams(getGlobalSettings(), ruleDefinitionDto)))
-          .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
+    runOnPooledThread(project, () -> getService(BackendService.class).getListAllStandaloneRulesDefinitions().thenAcceptAsync(response -> {
+      var persistedRules = response.getRulesByKey().values().stream().map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto, loadRuleActivation(getGlobalSettings(),
+        ruleDefinitionDto), loadNonDefaultRuleParams(getGlobalSettings(), ruleDefinitionDto))).collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
 
       dirtyRules.clear();
 
