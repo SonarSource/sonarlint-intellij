@@ -100,8 +100,6 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     runOnPooledThread(() -> {
       if (exclusionsModified || globalSettingsModified) {
         analyzeOpenFiles(false);
-      } else if (rulesModified) {
-        analyzeOpenFiles(true);
       }
     });
   }
