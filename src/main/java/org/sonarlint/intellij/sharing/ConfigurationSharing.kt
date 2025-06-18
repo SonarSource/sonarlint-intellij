@@ -154,7 +154,7 @@ class ConfigurationSharing {
 
         @JvmStatic
         fun showAutoSharedConfigurationNotification(
-            project: Project, moduleOverridesPerProjectKey: Map<Module, String>, message: String, doNotShowAgainId: String,
+            project: Project, overridesPerModule: Map<Module, String>, message: String, doNotShowAgainId: String,
             connectionSuggestionDto: ConnectionSuggestionDto, bindingMode: BindingMode,
         ) {
             if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
@@ -162,7 +162,7 @@ class ConfigurationSharing {
                     "",
                     message,
                     doNotShowAgainId,
-                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project, moduleOverridesPerProjectKey, bindingMode)
+                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project, overridesPerModule, bindingMode)
                 )
             }
         }

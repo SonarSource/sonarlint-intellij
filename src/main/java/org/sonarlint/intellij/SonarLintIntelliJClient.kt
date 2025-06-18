@@ -204,15 +204,15 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
         moduleSuggestionsPerProject.forEach { (_, suggestions) ->
             val projectBinding = suggestions.firstOrNull { it.module == null } ?: return@forEach
-            val modules = findOverriddenModules(suggestions, projectBinding)
+            val overridesPerModule = findOverriddenModules(suggestions, projectBinding)
 
             val (connectionKind, projKey, connectionName) = getAutoShareConfigParams(projectBinding.suggestion)
             val mode = if (projectBinding.suggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
-            val optionalModulesBindingMessage = if (modules.isEmpty()) "" else "Some of your modules will also be automatically bound.\n"
+            val optionalModulesBindingMessage = if (overridesPerModule.isEmpty()) "" else "Some of your modules will also be automatically bound.\n"
 
             ConfigurationSharing.showAutoSharedConfigurationNotification(
                 projectBinding.project,
-                modules,
+                overridesPerModule,
                 """
                 A Connected Mode configuration file is available to bind to project '%s' on %s '%s'.
                 $optionalModulesBindingMessage

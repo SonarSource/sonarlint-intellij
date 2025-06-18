@@ -33,14 +33,14 @@ class AutoShareTokenExchangeAction(
     text: String,
     private val connectionSuggestionDto: ConnectionSuggestionDto,
     private val project: Project,
-    private val moduleOverridesPerProjectKey: Map<Module, String>,
+    private val overridesPerModule: Map<Module, String>,
     private val bindingMode: BindingMode,
 ) : NotificationAction(text) {
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         notification.expire()
         val (isSQ, projectKey, orgOrServerUrl, region) = getAutoShareConfigParams(connectionSuggestionDto)
-        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, moduleOverridesPerProjectKey, bindingMode, region).chooseResolution()
+        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, overridesPerModule, bindingMode, region).chooseResolution()
     }
 
     private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): AutoShareConfigParams {

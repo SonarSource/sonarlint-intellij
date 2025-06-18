@@ -64,7 +64,7 @@ class BindingSuggestionHandlerTests : AbstractSonarLintLightTests() {
 
         val result = BindingSuggestionHandler.findOverriddenModules(suggestions, projectBinding)
 
-        assertThat(result).containsEntry(module1, "url")
+        assertThat(result).containsEntry(module1, "projectKey2")
     }
 
     @Test
@@ -89,7 +89,7 @@ class BindingSuggestionHandlerTests : AbstractSonarLintLightTests() {
 
         val result = BindingSuggestionHandler.findOverriddenModules(suggestions, projectBinding)
 
-        assertThat(result).containsEntry(module1, "org")
+        assertThat(result).containsEntry(module1, "projectKey2")
     }
 
     @Test
