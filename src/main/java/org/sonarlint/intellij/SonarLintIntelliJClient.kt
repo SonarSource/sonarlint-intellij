@@ -893,7 +893,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             if (runningAnalysis.isAnalysisFinished()) {
                 getService(project, RunningAnalysesTracker::class.java).finish(runningAnalysis)
             }
-        } else if (module != null) {
+        } else if (analysisId == null && module != null) {
             val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
             onTheFlyFindingsHolder.updateViewsWithNewIssues(module, issuesByFileUri)
         }
