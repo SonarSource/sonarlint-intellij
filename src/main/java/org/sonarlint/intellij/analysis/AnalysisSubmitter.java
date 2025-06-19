@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -131,8 +130,6 @@ public final class AnalysisSubmitter {
     }
 
     var callback = new CheckInCallable();
-    //var analysis = new Analysis(project, files, trigger, callback);
-    //var analysisIds = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
     var scope = AnalysisScope.defineFrom(project, files, trigger);
 
     if (scope.isEmpty()) {
@@ -141,16 +138,12 @@ public final class AnalysisSubmitter {
 
     List<UUID> analysisIds = new ArrayList<>();
 
-    return TaskRunnerKt.runModalTaskWithResult(
-      project,
-      ANALYSIS_TASK_TITLE,
-      (progressIndicator) -> {
-        progressIndicator.setIndeterminate(true);
-        progressIndicator.setText("Running SonarQube for IDE Analysis for pre-commit");
+    return TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, progressIndicator -> {
+      progressIndicator.setIndeterminate(true);
+      progressIndicator.setText("Running SonarQube for IDE Analysis for pre-commit");
 
-        return getCheckInCallableListPair(scope, console, callback, analysisIds, progressIndicator);
-      }
-    );
+      return getCheckInCallableListPair(scope, console, callback, analysisIds, progressIndicator);
+    });
   }
 
   private @NotNull Pair<CheckInCallable, List<UUID>> getCheckInCallableListPair(AnalysisScope scope, SonarLintConsole console,
@@ -162,7 +155,7 @@ public final class AnalysisSubmitter {
       List<URI> uris = filesInModule.stream()
         .map(VirtualFileUtils.INSTANCE::toURI)
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .toList();
 
       if (!uris.isEmpty()) {
         try {
@@ -187,7 +180,6 @@ public final class AnalysisSubmitter {
       }
     }
 
-    System.out.println("returning analysisIds: " + analysisIds);
     return Pair.of(callback, analysisIds);
   }
 
