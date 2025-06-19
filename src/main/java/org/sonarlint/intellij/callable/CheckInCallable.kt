@@ -31,7 +31,6 @@ class CheckInCallable : AnalysisCallback {
     private val errored = AtomicBoolean(false)
 
     override fun onSuccess(analysisResult: AnalysisResult) {
-        System.out.println("Analysis succeeded for analysis ID: ${analysisResult.analysisId}")
         analysisResult.analysisId?.let { resultsPerAnalysis[it] = analysisResult }
     }
 
