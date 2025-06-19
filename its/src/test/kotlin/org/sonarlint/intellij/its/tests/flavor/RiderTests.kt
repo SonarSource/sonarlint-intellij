@@ -48,7 +48,7 @@ class RiderTests : BaseUiTest() {
         openExistingProject("sample-complex-rider")
 
         openFile("folder1/file1.cs")
-
+        //Check
         verifyCurrentFileTabContainsMessages(
             "Found 2 issues in 1 file",
             "file1.cs",
