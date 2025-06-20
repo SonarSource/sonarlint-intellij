@@ -81,6 +81,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
             .addBundledPluginToKeep("sonar-php")
             .addBundledPluginToKeep("sonar-python")
             .addBundledPluginToKeep("sonar-swift")
+            .addBundledPluginToKeep("sonar-kotlin")
             .build()
 
         private lateinit var adminWsClient: WsClient

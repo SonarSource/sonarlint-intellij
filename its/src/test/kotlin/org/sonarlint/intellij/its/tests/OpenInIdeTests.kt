@@ -91,6 +91,7 @@ class OpenInIdeTests : BaseUiTest() {
             .addBundledPluginToKeep("sonar-security")
             .addBundledPluginToKeep("sonar-php")
             .addBundledPluginToKeep("sonar-python")
+            .addBundledPluginToKeep("sonar-kotlin")
             .build()
 
         private lateinit var adminWsClient: WsClient
