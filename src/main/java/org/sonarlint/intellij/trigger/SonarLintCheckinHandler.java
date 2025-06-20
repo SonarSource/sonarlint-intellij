@@ -43,6 +43,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
@@ -52,6 +54,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
@@ -65,6 +68,7 @@ import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
@@ -108,29 +112,51 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         return ReturnResult.CANCEL;
       }
 
+      var analysisCompleteLatch = new CountDownLatch(1);
+
       new Task.Modal(project, "Waiting for SonarQube for IDE Analysis", true) {
         public void run(@NotNull final ProgressIndicator progressIndicator) {
-          new Timer().scheduleAtFixedRate(new TimerTask() {
+          progressIndicator.setIndeterminate(true);
+          var timer = new Timer();
+          timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-              var analysis = analysisIdsByCallback.getRight().stream().map(id -> getService(project, RunningAnalysesTracker.class).getById(id)).filter(Objects::nonNull).toList();
-              if (analysis.isEmpty()) {
+              var analyses = analysisIdsByCallback.getRight().stream()
+                .map(id -> getService(project, RunningAnalysesTracker.class).getById(id))
+                .filter(Objects::nonNull)
+                .toList();
+              if (analyses.isEmpty()) {
                 cancel();
+                timer.cancel();
+                getService(project, AnalysisStatus.class).stopRun();
+                analysisCompleteLatch.countDown();
               }
             }
           }, 0, 100);
         }
       }.queue();
 
+      waitForAllAnalysisToFinish(analysisCompleteLatch);
+
       if (!analysisIdsByCallback.getLeft().analysisSucceeded()) {
         SonarLintConsole.get(project).debug("Pre commit analysis cancelled because analysis did not succeed");
         return ReturnResult.CANCEL;
       }
-      var results = analysisIdsByCallback.getLeft().getResults();
+
+      var results = computeReadActionSafely(() -> analysisIdsByCallback.getLeft().getResults());
       return processResults(results);
     } catch (Exception e) {
       handleError(e, affectedFiles.size());
       return ReturnResult.CANCEL;
+    }
+  }
+
+  private void waitForAllAnalysisToFinish(CountDownLatch analysisCompleteLatch) {
+    try {
+      analysisCompleteLatch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      SonarLintConsole.get(project).debug("Interrupted while waiting for analysis to complete");
     }
   }
 

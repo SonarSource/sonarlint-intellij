@@ -24,16 +24,21 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.callable.CheckInCallable;
 import org.sonarlint.intellij.callable.ShowFindingCallable;
 import org.sonarlint.intellij.callable.ShowReportCallable;
@@ -43,15 +48,20 @@ import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.tasks.TaskRunnerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.util.VirtualFileUtils;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllFilesForProject;
+import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWithoutCatching;
 
 @Service(Service.Level.PROJECT)
 public final class AnalysisSubmitter {
@@ -120,8 +130,56 @@ public final class AnalysisSubmitter {
     }
 
     var callback = new CheckInCallable();
-    var analysis = new Analysis(project, files, trigger, callback);
-    var analysisIds = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
+    var scope = AnalysisScope.defineFrom(project, files, trigger);
+
+    if (scope.isEmpty()) {
+      return Pair.of(callback, List.of());
+    }
+
+    List<UUID> analysisIds = new ArrayList<>();
+
+    return TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, progressIndicator -> {
+      progressIndicator.setIndeterminate(true);
+      progressIndicator.setText("Running SonarQube for IDE Analysis for pre-commit");
+
+      return getCheckInCallableListPair(scope, console, callback, analysisIds, progressIndicator);
+    });
+  }
+
+  private @NotNull Pair<CheckInCallable, List<UUID>> getCheckInCallableListPair(AnalysisScope scope, SonarLintConsole console,
+    CheckInCallable callback, List<UUID> analysisIds, ProgressIndicator progressIndicator) {
+    for (var filesByModule : scope.getFilesByModule().entrySet()) {
+      var module = filesByModule.getKey();
+      var filesInModule = filesByModule.getValue();
+
+      List<URI> uris = filesInModule.stream()
+        .map(VirtualFileUtils.INSTANCE::toURI)
+        .filter(Objects::nonNull)
+        .toList();
+
+      if (!uris.isEmpty()) {
+        try {
+          ForceAnalyzeResponse response = computeOnPooledThreadWithoutCatching("SonarLint Pre-commit Analysis",
+            () -> waitForFuture(progressIndicator, getService(BackendService.class).analyzeFileList(module, uris)));
+
+          if (response != null && response.getAnalysisId() != null) {
+            var analysisState = new AnalysisState(
+              response.getAnalysisId(),
+              callback,
+              filesInModule,
+              module,
+              TriggerType.CHECK_IN,
+              progressIndicator);
+            getService(project, RunningAnalysesTracker.class).track(analysisState);
+
+            analysisIds.add(response.getAnalysisId());
+          }
+        } catch (Exception e) {
+          console.error("Error analyzing files for pre-commit", e);
+        }
+      }
+    }
+
     return Pair.of(callback, analysisIds);
   }
 

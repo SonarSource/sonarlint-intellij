@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.callable
 
+import com.jetbrains.rd.util.concurrentMapOf
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import org.sonarlint.intellij.analysis.AnalysisCallback
@@ -26,7 +27,7 @@ import org.sonarlint.intellij.analysis.AnalysisResult
 
 class CheckInCallable : AnalysisCallback {
 
-    private var resultsPerAnalysis = mutableMapOf<UUID, AnalysisResult>()
+    private var resultsPerAnalysis = concurrentMapOf<UUID, AnalysisResult>()
     private val errored = AtomicBoolean(false)
 
     override fun onSuccess(analysisResult: AnalysisResult) {
