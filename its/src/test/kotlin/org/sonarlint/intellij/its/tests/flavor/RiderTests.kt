@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.its.tests.flavor
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
@@ -30,6 +31,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFileViaMenu
 @EnabledIf("isRider")
 class RiderTests : BaseUiTest() {
 
+    @Disabled("Disabled till SLI-2101 is implemented")
     @Test
     fun should_analyze_csharp() = uiTest {
         openExistingProject("sample-rider")
@@ -43,12 +45,12 @@ class RiderTests : BaseUiTest() {
         )
     }
 
+    @Disabled("Disabled till SLI-2101 is implemented")
     @Test
     fun should_analyze_complex_csharp() = uiTest {
         openExistingProject("sample-complex-rider")
 
         openFile("folder1/file1.cs")
-
         verifyCurrentFileTabContainsMessages(
             "Found 2 issues in 1 file",
             "file1.cs",

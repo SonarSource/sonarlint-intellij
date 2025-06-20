@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.its.tests
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
@@ -61,6 +62,7 @@ class StandaloneIdeaTests : BaseUiTest() {
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
     }
 
+    @Disabled("Disabled till the SLI-2056 is implemented for file exclusions")
     @Test
     fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
         openExistingProject("sli-java-issues")

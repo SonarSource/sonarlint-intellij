@@ -23,15 +23,12 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
-import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.util.DataKeys.ISSUE_DATA_KEY;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class DisableRuleAction extends AbstractSonarAction {
 
@@ -62,7 +59,6 @@ public class DisableRuleAction extends AbstractSonarAction {
     var issue = e.getData(ISSUE_DATA_KEY);
     if (issue != null) {
       disableRule(issue.getRuleKey());
-      runOnPooledThread(project, () -> getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.BINDING_UPDATE));
     }
   }
 
