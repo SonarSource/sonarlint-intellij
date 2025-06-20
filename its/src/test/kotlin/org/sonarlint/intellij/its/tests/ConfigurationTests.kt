@@ -86,6 +86,7 @@ class ConfigurationTests : BaseUiTest() {
             .addBundledPluginToKeep("sonar-scala")
             .addBundledPluginToKeep("sonar-php")
             .addBundledPluginToKeep("sonar-python")
+            .addBundledPluginToKeep("sonar-kotlin")
             .build()
 
         private lateinit var adminWsClient: WsClient
