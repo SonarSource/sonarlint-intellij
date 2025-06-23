@@ -244,6 +244,9 @@ class CodeFixTabPanel(
                     SonarLintRpcErrorCode.CONNECTION_NOT_FOUND -> errorLabel.text = "The current project is bound to an unknown connection"
                     SonarLintRpcErrorCode.CONNECTION_KIND_NOT_SUPPORTED -> errorLabel.text = "The current project is not bound to SonarQube Cloud"
                     SonarLintRpcErrorCode.FILE_NOT_FOUND -> errorLabel.text = "The file is considered unknown, reopen your project or modify the file"
+                    SonarLintRpcErrorCode.TOO_MANY_REQUESTS -> errorLabel.text = "Fix generation is currently unavailable. " +
+                        "Your organization has reached the monthly usage limit for AI CodeFix. " +
+                        "To continue using this feature, please contact your SonarQube Server instance (or Cloud organization) administrator."
                     else -> errorLabel.text = UNEXPECTED_ERROR
                 }
             }
