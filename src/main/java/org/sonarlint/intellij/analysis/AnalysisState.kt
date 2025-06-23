@@ -29,7 +29,6 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
-import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
@@ -119,20 +118,17 @@ class AnalysisState(
         })
 
         if (isAnalysisFinished()) {
-            runReadActionSafely(module.project) {
-                analysisCallback.onSuccess(
-                    AnalysisResult(
-                        analysisId,
-                        LiveFindings(liveIssues, liveHotspots),
-                        filesToAnalyze,
-                        triggerType,
-                        analysisDate
-                    )
+            analysisCallback.onSuccess(
+                AnalysisResult(
+                    analysisId,
+                    LiveFindings(liveIssues, liveHotspots),
+                    filesToAnalyze,
+                    triggerType,
+                    analysisDate
                 )
+            )
 
-                getService(module.project, RunningAnalysesTracker::class.java).finish(this)
-            }
-
+            getService(module.project, RunningAnalysesTracker::class.java).finish(this)
         } else {
             analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
         }

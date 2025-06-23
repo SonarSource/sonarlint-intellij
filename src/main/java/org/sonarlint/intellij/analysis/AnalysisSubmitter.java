@@ -28,7 +28,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,11 +54,11 @@ import org.sonarlint.intellij.tasks.TaskRunnerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.VirtualFileUtils;
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
+import static org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.visitAndAddAllFilesForProject;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThreadWithoutCatching;
 
@@ -125,41 +124,34 @@ public final class AnalysisSubmitter {
     var console = SonarLintUtils.getService(project, SonarLintConsole.class);
     var trigger = TriggerType.CHECK_IN;
     console.debug("Trigger: " + trigger);
-    if (shouldSkipAnalysis()) {
-      return null;
-    }
 
     var callback = new CheckInCallable();
-    var scope = AnalysisScope.defineFrom(project, files, trigger);
+    var filesByModule = getFilesByModule(files, project);
 
-    if (scope.isEmpty()) {
-      return Pair.of(callback, List.of());
-    }
-
-    List<UUID> analysisIds = new ArrayList<>();
+    var analysisIds = new ArrayList<UUID>();
 
     return TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, progressIndicator -> {
       progressIndicator.setIndeterminate(true);
       progressIndicator.setText("Running SonarQube for IDE Analysis for pre-commit");
 
-      return getCheckInCallableListPair(scope, console, callback, analysisIds, progressIndicator);
+      return getCheckInCallableListPair(filesByModule, console, callback, analysisIds, progressIndicator);
     });
   }
 
-  private @NotNull Pair<CheckInCallable, List<UUID>> getCheckInCallableListPair(AnalysisScope scope, SonarLintConsole console,
+  private @NotNull Pair<CheckInCallable, List<UUID>> getCheckInCallableListPair(Map<Module, Collection<VirtualFile>> scope, SonarLintConsole console,
     CheckInCallable callback, List<UUID> analysisIds, ProgressIndicator progressIndicator) {
-    for (var filesByModule : scope.getFilesByModule().entrySet()) {
+    for (var filesByModule : scope.entrySet()) {
       var module = filesByModule.getKey();
       var filesInModule = filesByModule.getValue();
 
-      List<URI> uris = filesInModule.stream()
+      var uris = filesInModule.stream()
         .map(VirtualFileUtils.INSTANCE::toURI)
         .filter(Objects::nonNull)
         .toList();
 
       if (!uris.isEmpty()) {
         try {
-          ForceAnalyzeResponse response = computeOnPooledThreadWithoutCatching("SonarLint Pre-commit Analysis",
+          var response = computeOnPooledThreadWithoutCatching("SonarQube for IDE Pre-commit Analysis",
             () -> waitForFuture(progressIndicator, getService(BackendService.class).analyzeFileList(module, uris)));
 
           if (response != null && response.getAnalysisId() != null) {
@@ -256,6 +248,22 @@ public final class AnalysisSubmitter {
       return true;
     }
     return false;
+  }
+
+  private static Map<Module, Collection<VirtualFile>> getFilesByModule(Collection<VirtualFile> files, Project project) {
+    var filesByModule = new HashMap<Module, Collection<VirtualFile>>();
+
+    for (var file : files) {
+      var module = findModuleForFile(file, project);
+      if (module != null) {
+        filesByModule.computeIfAbsent(module, k -> new ArrayList<>()).add(file);
+      } else {
+
+        filesByModule.computeIfAbsent(null, k -> new ArrayList<>()).add(file);
+      }
+    }
+
+    return filesByModule;
   }
 
 }

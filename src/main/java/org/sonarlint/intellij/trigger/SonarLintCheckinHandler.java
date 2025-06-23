@@ -54,7 +54,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
-import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
@@ -128,7 +127,6 @@ public class SonarLintCheckinHandler extends CheckinHandler {
               if (analyses.isEmpty()) {
                 cancel();
                 timer.cancel();
-                getService(project, AnalysisStatus.class).stopRun();
                 analysisCompleteLatch.countDown();
               }
             }
