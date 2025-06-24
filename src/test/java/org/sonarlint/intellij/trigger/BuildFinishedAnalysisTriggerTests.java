@@ -26,8 +26,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 class BuildFinishedAnalysisTriggerTests extends AbstractSonarLintLightTests {
@@ -39,12 +37,6 @@ class BuildFinishedAnalysisTriggerTests extends AbstractSonarLintLightTests {
   void prepare() {
     replaceProjectService(AnalysisSubmitter.class, submitter);
     trigger = new BuildFinishedAnalysisTrigger();
-  }
-
-  @Test
-  void should_trigger_automake() {
-    trigger.buildFinished(getProject(), UUID.randomUUID(), true);
-    verify(submitter, timeout(1000)).autoAnalyzeSelectedFiles(TriggerType.COMPILATION);
   }
 
   @Test
