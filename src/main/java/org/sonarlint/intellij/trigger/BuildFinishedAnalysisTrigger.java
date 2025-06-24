@@ -22,8 +22,8 @@ package org.sonarlint.intellij.trigger;
 import com.intellij.compiler.server.BuildManagerListener;
 import com.intellij.openapi.project.Project;
 import java.util.UUID;
-import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.ProjectUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -38,7 +38,7 @@ public class BuildFinishedAnalysisTrigger implements BuildManagerListener {
 
     runOnPooledThread(project, () -> {
       getService(project, SonarLintConsole.class).debug("build finished");
-      getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.COMPILATION);
+      ProjectUtils.forceAnalyzeOpenFiles(project);
     });
   }
 }

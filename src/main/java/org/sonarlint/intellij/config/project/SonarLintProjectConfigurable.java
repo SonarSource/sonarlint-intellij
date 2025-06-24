@@ -34,11 +34,11 @@ import org.jetbrains.concurrency.Promise;
 import org.jetbrains.concurrency.Promises;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
+import org.sonarlint.intellij.util.ProjectUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -100,7 +100,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
         project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
 
         if (exclusionsModified) {
-          getService(project, BackendService.class).analyzeOpenFilesForProject(project);
+          ProjectUtils.forceAnalyzeOpenFiles(project);
         }
       });
     }

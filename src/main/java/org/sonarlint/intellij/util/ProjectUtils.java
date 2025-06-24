@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -29,13 +31,18 @@ import com.intellij.psi.PsiManager;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.finding.TextRangeMatcher;
 
+import static com.intellij.openapi.module.ModuleUtilCore.findModuleForFile;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis;
 
 public class ProjectUtils {
@@ -62,6 +69,32 @@ public class ProjectUtils {
       }
       return relativePathPerFile;
     });
+  }
+
+  public static Map<Module, Collection<VirtualFile>> getFilesByModule(Collection<VirtualFile> files, Project project) {
+    var filesByModule = new HashMap<Module, Collection<VirtualFile>>();
+
+    for (var file : files) {
+      var module = findModuleForFile(file, project);
+      if (module != null) {
+        filesByModule.computeIfAbsent(module, k -> new ArrayList<>()).add(file);
+      } else {
+
+        filesByModule.computeIfAbsent(null, k -> new ArrayList<>()).add(file);
+      }
+    }
+
+    return filesByModule;
+  }
+
+  public static void forceAnalyzeOpenFiles(Project project) {
+    var openFiles = Arrays.stream(FileEditorManager.getInstance(project).getOpenFiles()).toList();
+    var filesByModule = getFilesByModule(openFiles, project);
+
+    for (var fileByModule : filesByModule.entrySet()) {
+      var module = fileByModule.getKey();
+      getService(BackendService.class).analyzeOpenFilesForModule(module);
+    }
   }
 
   @CheckForNull

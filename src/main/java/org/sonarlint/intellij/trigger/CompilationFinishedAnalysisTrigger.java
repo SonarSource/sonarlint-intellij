@@ -21,8 +21,8 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.compiler.CompilationStatusListener;
 import com.intellij.openapi.compiler.CompileContext;
-import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.ProjectUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -37,6 +37,8 @@ public class CompilationFinishedAnalysisTrigger implements CompilationStatusList
   public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
     var compiledProject = compileContext.getProject();
     getService(compiledProject, SonarLintConsole.class).debug("compilation finished");
-    runOnPooledThread(compiledProject, () -> getService(compiledProject, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.COMPILATION));
+    runOnPooledThread(compiledProject, () ->
+      ProjectUtils.forceAnalyzeOpenFiles(compiledProject)
+    );
   }
 }

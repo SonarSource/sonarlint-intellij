@@ -92,7 +92,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFiles
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeOpenFilesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeAutomaticAnalysisSettingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeClientNodeJsPathParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -1058,14 +1057,6 @@ class BackendService : Disposable {
 
         return notifyBackend {
             it.analysisService.analyzeOpenFiles(AnalyzeOpenFilesParams(moduleId))
-        }
-    }
-
-    fun analyzeOpenFilesForProject(project: Project): CompletableFuture<ForceAnalyzeResponse> {
-        val projectId = projectId(project)
-
-        return requestFromBackend {
-            it.analysisService.analyzeOpenFiles(AnalyzeOpenFilesParams(projectId))
         }
     }
 }
