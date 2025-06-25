@@ -31,7 +31,6 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.guessProjectForFile;
 
 @ThreadSafe
@@ -43,7 +42,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
 
   public EditorChangeTrigger(Project project) {
     myProject = project;
-    scheduler = new EventScheduler(myProject, "change", TriggerType.EDITOR_CHANGE, 1000, false);
+    scheduler = new EventScheduler(myProject, "change", 1000, false);
   }
 
   public void onProjectOpened() {
@@ -57,9 +56,6 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
 
   @Override
   public void documentChanged(DocumentEvent event) {
-    if (!getGlobalSettings().isAutoTrigger()) {
-      return;
-    }
     var file = FileDocumentManager.getInstance().getFile(event.getDocument());
     if (file == null) {
       return;
@@ -71,10 +67,7 @@ public final class EditorChangeTrigger implements DocumentListener, Disposable {
     }
 
     if (!FileEditorManager.getInstance(myProject).isFileOpen(file)) {
-      var findingsHolder = getService(myProject, AnalysisSubmitter.class).getOnTheFlyFindingsHolder();
-      if (findingsHolder != null) {
-        findingsHolder.clearNonDirtyAnalyzedFile(file);
-      }
+      getService(myProject, AnalysisSubmitter.class).getOnTheFlyFindingsHolder().clearNonDirtyAnalyzedFile(file);
       return;
     }
 

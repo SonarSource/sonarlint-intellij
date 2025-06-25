@@ -61,7 +61,7 @@ import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
+import org.sonarlint.intellij.analysis.AnalysisSubmitter.Companion.collectContributedLanguages
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -87,10 +87,13 @@ import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesAndTrackParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFilesResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFileListParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFullProjectParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeOpenFilesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeVCSChangedFilesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeAutomaticAnalysisSettingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeClientNodeJsPathParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -115,6 +118,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.G
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidCloseFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidOpenFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidUpdateFileSystemParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusParams
@@ -144,6 +148,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssuePara
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.progress.CancelTaskParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRuleDetailsParams
@@ -903,7 +908,7 @@ class BackendService : Disposable {
     }
 
     fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): List<VirtualFile> {
-        val filesByUri = files.associateBy { VirtualFileUtils.toURI(it) }
+        val filesByUri = files.associateBy { toURI(it) }
         return try {
             val moduleId = moduleId(module)
             requestFromBackend {
@@ -972,7 +977,7 @@ class BackendService : Disposable {
             val relativePath = getRelativePathForAnalysis(module, it.virtualFile) ?: return@mapNotNull null
             val moduleId = moduleId(module)
             val forcedLanguage = contributedLanguages[it.virtualFile]?.let { fl -> Language.valueOf(fl.name) }
-            VirtualFileUtils.toURI(it.virtualFile)?.let { uri ->
+            toURI(it.virtualFile)?.let { uri ->
                 computeReadActionSafely(it.virtualFile, module.project) {
                     ClientFileDto(
                         uri,
@@ -995,29 +1000,6 @@ class BackendService : Disposable {
         }
     }
 
-    fun analyzeFilesAndTrack(
-        module: Module,
-        analysisId: UUID,
-        filesToAnalyze: List<URI>,
-        extraProperties: Map<String, String>,
-        shouldFetchServerIssues: Boolean,
-        startTime: Long,
-    ): CompletableFuture<AnalyzeFilesResponse> {
-        val moduleId = moduleId(module)
-        return requestFromBackend {
-            it.analysisService.analyzeFilesAndTrack(
-                AnalyzeFilesAndTrackParams(
-                    moduleId,
-                    analysisId,
-                    filesToAnalyze,
-                    extraProperties,
-                    shouldFetchServerIssues,
-                    startTime
-                )
-            )
-        }
-    }
-
     fun changeAutomaticAnalysisSetting(analysisEnabled: Boolean) {
         return notifyBackend { it.analysisService.didChangeAutomaticAnalysisSetting(DidChangeAutomaticAnalysisSettingParams(analysisEnabled)) }
     }
@@ -1031,23 +1013,48 @@ class BackendService : Disposable {
         return sloop?.isAlive == true
     }
 
-    fun didOpenFileForProject(project: Project, file: VirtualFile) {
-        val uri = toURI(file)
+    fun didOpenFile(project: Project, file: VirtualFile) {
         val projectId = projectId(project)
-
-        if (uri != null) {
-            val params = DidOpenFileParams(projectId, uri)
-            return notifyBackend { it.fileService.didOpenFile(params) }
-        }
+        toURI(file)?.let { uri -> notifyBackend { it.fileService.didOpenFile(DidOpenFileParams(projectId, uri)) } }
     }
 
-    fun didOpenFileForModule(module: Module, file: VirtualFile) {
-        val uri = toURI(file)
+    fun didOpenFile(module: Module, file: VirtualFile) {
         val moduleId = moduleId(module)
+        toURI(file)?.let { uri -> notifyBackend { it.fileService.didOpenFile(DidOpenFileParams(moduleId, uri)) } }
+    }
 
-        if (uri != null) {
-            val params = DidOpenFileParams(moduleId, uri)
-            return notifyBackend { it.fileService.didOpenFile(params) }
-        }
+    fun didCloseFile(module: Module, file: VirtualFile) {
+        val moduleId = moduleId(module)
+        toURI(file)?.let { uri -> notifyBackend { it.fileService.didCloseFile(DidCloseFileParams(moduleId, uri)) } }
+    }
+
+    fun didCloseFile(project: Project, file: VirtualFile) {
+        val projectId = projectId(project)
+        toURI(file)?.let { uri -> notifyBackend { it.fileService.didCloseFile(DidCloseFileParams(projectId, uri)) } }
+    }
+
+    fun analyzeFileList(module: Module, files: List<VirtualFile>): CompletableFuture<ForceAnalyzeResponse> {
+        val moduleId = moduleId(module)
+        val filesURI = files.map { file -> toURI(file) }
+        return requestFromBackend { it.analysisService.analyzeFileList(AnalyzeFileListParams(moduleId, filesURI)) }
+    }
+
+    fun analyzeOpenFiles(module: Module): CompletableFuture<ForceAnalyzeResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.analysisService.analyzeOpenFiles(AnalyzeOpenFilesParams(moduleId)) }
+    }
+
+    fun analyzeFullProject(module: Module): CompletableFuture<ForceAnalyzeResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.analysisService.analyzeFullProject(AnalyzeFullProjectParams(moduleId, false)) }
+    }
+
+    fun analyzeVCSChangedFiles(module: Module): CompletableFuture<ForceAnalyzeResponse> {
+        val moduleId = moduleId(module)
+        return requestFromBackend { it.analysisService.analyzeVCSChangedFiles(AnalyzeVCSChangedFilesParams(moduleId)) }
+    }
+
+    fun cancelTask(taskId: String) {
+        return notifyBackend { it.taskProgressRpcService.cancelTask(CancelTaskParams(taskId)) }
     }
 }

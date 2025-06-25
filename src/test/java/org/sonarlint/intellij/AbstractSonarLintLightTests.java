@@ -49,7 +49,6 @@ import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
-import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -128,7 +127,6 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
       getService(BackendService.class).projectClosed(getProject());
       if (!getProject().isDisposed()) {
         AnalysisStatus.get(getProject()).stopRun();
-        getService(getProject(), RunningAnalysesTracker.class).cancelAll();
       }
       Disposer.dispose(disposable);
 

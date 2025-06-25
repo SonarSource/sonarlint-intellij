@@ -47,7 +47,7 @@ class CompilationFinishedAnalysisTriggerTests extends AbstractSonarLintLightTest
   @Test
   void should_trigger_on_compilation() {
     trigger.compilationFinished(false, 0, 0, context);
-    verify(submitter, timeout(1000)).autoAnalyzeSelectedFiles(TriggerType.COMPILATION);
+    verify(submitter, timeout(1000)).autoAnalyzeSelectedFiles();
   }
 
   @Test

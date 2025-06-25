@@ -33,13 +33,12 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
-import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
@@ -80,8 +79,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     var currentSettings = getGlobalSettings();
     var telemetry = getService(SonarLintTelemetry.class);
     final boolean exclusionsModified = exclusions.isModified(currentSettings);
-    final boolean rulesModified = rules.isModified(currentSettings);
-    final boolean globalSettingsModified = globalPanel.isModified(currentSettings);
+    final boolean autoTriggerModified = globalPanel.isAutoTriggerModified(currentSettings);
 
     var newSettings = new SonarLintGlobalSettings(currentSettings);
     connectionsPanel.save(newSettings);
@@ -94,23 +92,23 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     ApplicationManager.getApplication().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC)
       .applied(currentSettings, newSettings);
 
-    // Force reload of the node version and rules in case the nodejs path has been changed
+    // Force reload of the node version and rules in case the Node.js path has been changed
     reset();
 
     runOnPooledThread(() -> {
-      if (exclusionsModified || globalSettingsModified) {
-        analyzeOpenFiles(false);
+      if (exclusionsModified) {
+        triggerAnalysis();
+      }
+      if (autoTriggerModified) {
+        getService(BackendService.class).changeAutomaticAnalysisSetting(newSettings.isAutoTrigger());
       }
     });
   }
 
-  public static void analyzeOpenFiles(boolean unboundOnly) {
+  public static void triggerAnalysis() {
     var openProjects = ProjectManager.getInstance().getOpenProjects();
-
     for (var project : openProjects) {
-      if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
-        getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.CONFIG_CHANGE);
-      }
+      getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles();
     }
   }
 

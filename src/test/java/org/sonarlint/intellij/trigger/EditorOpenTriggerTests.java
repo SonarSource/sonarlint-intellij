@@ -25,7 +25,6 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -63,11 +62,6 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
     when(editorManager.getProject()).thenReturn(getProject());
     reset(analysisSubmitter);
     editorTrigger.onProjectOpened();
-  }
-
-  @AfterEach
-  void cleanup() {
-    editorTrigger.dispose();
   }
 
   @Test

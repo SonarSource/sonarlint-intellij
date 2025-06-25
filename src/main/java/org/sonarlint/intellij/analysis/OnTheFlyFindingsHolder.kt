@@ -30,14 +30,15 @@ import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
@@ -52,8 +53,6 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         project.messageBus.connect()
             .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
     }
-
-    fun clearNonDirtyAnalyzedFiles() = nonDirtyAnalyzedFiles.clear()
 
     fun clearNonDirtyAnalyzedFile(file: VirtualFile) = nonDirtyAnalyzedFiles.remove(file)
 
@@ -120,7 +119,7 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         val file = event.newFile
         selectedFile = file
         if (file != null && !nonDirtyAnalyzedFiles.contains(file)) {
-            getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles(TriggerType.SELECTION_CHANGED)
+            getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles()
             nonDirtyAnalyzedFiles.add(file)
         }
 
@@ -136,6 +135,12 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         updateSecurityHotspots()
         if (currentIssuesPerOpenFile.isEmpty()) {
             updateCurrentFileTab()
+        }
+
+        findModuleForFile(file, project)?.let {
+            getService(BackendService::class.java).didCloseFile(it, file)
+        } ?: run {
+            getService(BackendService::class.java).didCloseFile(project, file)
         }
     }
 

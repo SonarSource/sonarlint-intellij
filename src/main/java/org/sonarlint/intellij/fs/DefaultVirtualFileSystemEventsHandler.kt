@@ -71,7 +71,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
             val file = event.file ?: continue
             if (ProjectCoreUtil.isProjectOrWorkspaceFile(file)) continue
             val fileModule = findModule(file, openProjects) ?: continue
-            if (!FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks(file, fileModule.project)) continue
+            if (!FileUtils.isFileValidForSonarLintWithExtensiveChecks(file, fileModule.project)) continue
             val fileInvolved = if (event is VFileCopyEvent) event.findCreatedFile() else file
             fileInvolved ?: continue
             val type = eventTypeConverter(event) ?: continue

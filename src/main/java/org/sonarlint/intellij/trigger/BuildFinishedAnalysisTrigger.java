@@ -38,7 +38,7 @@ public class BuildFinishedAnalysisTrigger implements BuildManagerListener {
 
     runOnPooledThread(project, () -> {
       getService(project, SonarLintConsole.class).debug("build finished");
-      getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.COMPILATION);
+      getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles();
     });
   }
 }

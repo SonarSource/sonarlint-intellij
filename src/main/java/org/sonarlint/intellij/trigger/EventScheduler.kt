@@ -26,12 +26,10 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.Settings
 
 class EventScheduler(
     private val project: Project,
     private val schedulerName: String,
-    private val triggerType: TriggerType,
     private val timer: Long,
     // True -> Schedule tasks at specific intervals
     // False -> Cancel the scheduled task and reschedule a new one
@@ -50,16 +48,12 @@ class EventScheduler(
 
     private fun trigger() {
         if (filesToAnalyze.isNotEmpty()) {
-            getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(filesToAnalyze.toList(), triggerType)
+            getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(filesToAnalyze.toList())
         }
         filesToAnalyze.clear()
     }
 
     fun notify(file: VirtualFile) {
-        if (!Settings.getGlobalSettings().isAutoTrigger) {
-            return
-        }
-
         filesToAnalyze.add(file)
 
         // Remove the previously finished task
@@ -69,7 +63,7 @@ class EventScheduler(
 
         if (atInterval) {
             scheduledTask ?: let {
-                // Schedule new task only if no task currently scheduled
+                // Schedule a new task only if no task currently scheduled
                 scheduledTask = scheduler.schedule({ trigger() }, timer, TimeUnit.MILLISECONDS)
             }
         } else {

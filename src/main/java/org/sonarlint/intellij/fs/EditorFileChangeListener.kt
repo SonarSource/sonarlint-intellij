@@ -79,7 +79,7 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
         val filesToSendPerModule = HashMap<Module, MutableList<VirtualFileEvent>>()
 
         changedFiles
-            .filter { FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks(it, project) }
+            .filter { FileUtils.isFileValidForSonarLintWithExtensiveChecks(it, project) }
             .forEach { file ->
                 val module = findModuleForFile(file, project) ?: return@forEach
                 filesToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file))

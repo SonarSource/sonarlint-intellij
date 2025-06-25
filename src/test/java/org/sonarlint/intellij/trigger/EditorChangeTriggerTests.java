@@ -35,13 +35,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.analysis.Analysis;
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
@@ -78,7 +75,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
 
     underTest.documentChanged(createEvent(file));
 
-    verify(submitter, timeout(3000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE);
+    verify(submitter, timeout(3000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)));
     verifyNoMoreInteractions(submitter);
   }
 
@@ -91,7 +88,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
     underTest.documentChanged(createEvent(file2));
 
     ArgumentCaptor<List<VirtualFile>> captor = ArgumentCaptor.forClass(List.class);
-    verify(submitter, timeout(3000)).autoAnalyzeFiles(captor.capture(), eq(TriggerType.EDITOR_CHANGE));
+    verify(submitter, timeout(3000)).autoAnalyzeFiles(captor.capture());
     assertThat(captor.getValue()).containsExactlyInAnyOrder(file1, file2);
   }
 
@@ -100,10 +97,6 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
     var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
     clearInvocations(submitter);
 
-    var analysisTask = mock(Analysis.class);
-    when(submitter.autoAnalyzeFiles(any(), any())).thenReturn(analysisTask);
-    when(analysisTask.isFinished()).thenReturn(true);
-
     // Should not trigger immediately
     underTest.documentChanged(createEvent(file));
     verifyNoInteractions(submitter);
@@ -111,7 +104,7 @@ class EditorChangeTriggerTests extends AbstractSonarLintLightTests {
     verifyNoInteractions(submitter);
 
     // Two rapid changes should only lead to a single trigger
-    verify(submitter, timeout(3000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE);
+    verify(submitter, timeout(3000)).autoAnalyzeFiles(new ArrayList<>(Collections.singleton(file)));
     verifyNoMoreInteractions(submitter);
   }
 

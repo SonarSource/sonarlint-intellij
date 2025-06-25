@@ -37,6 +37,6 @@ public class CompilationFinishedAnalysisTrigger implements CompilationStatusList
   public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
     var compiledProject = compileContext.getProject();
     getService(compiledProject, SonarLintConsole.class).debug("compilation finished");
-    runOnPooledThread(compiledProject, () -> getService(compiledProject, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.COMPILATION));
+    runOnPooledThread(compiledProject, () -> getService(compiledProject, AnalysisSubmitter.class).autoAnalyzeSelectedFiles());
   }
 }

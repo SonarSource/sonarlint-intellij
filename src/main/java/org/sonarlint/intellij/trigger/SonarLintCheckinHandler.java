@@ -22,8 +22,8 @@ package org.sonarlint.intellij.trigger;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.UnnamedConfigurable;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -41,14 +41,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
@@ -65,21 +66,27 @@ import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.tasks.TaskRunnerKt.runModalTaskWithResult;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
   private static final String ACTIVATED_OPTION_NAME = "SONARLINT_PRECOMMIT_ANALYSIS";
+  private static final int PRE_COMMIT_TIMEOUT = 60_000;
 
   private final Project project;
   private final CheckinProjectPanel checkinPanel;
+  private final ScheduledExecutorService scheduledExecutor;
 
   private JCheckBox checkBox;
 
   public SonarLintCheckinHandler(Project project, CheckinProjectPanel checkinPanel) {
     this.project = project;
     this.checkinPanel = checkinPanel;
+    this.scheduledExecutor = newSingleThreadScheduledExecutor();
   }
 
   @Override
@@ -96,42 +103,65 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     }
 
     getService(SonarLintTelemetry.class).analysisReportingTriggered(AnalysisReportingType.PRE_COMMIT_ANALYSIS_TYPE);
-
-    // de-duplicate as the same file can be present several times in the panel (e.g. in several changelists)
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
-    // this will block EDT (modal)
+
     try {
       var analysisSubmitter = getService(project, AnalysisSubmitter.class);
       var analysisIdsByCallback = analysisSubmitter.analyzeFilesPreCommit(affectedFiles);
+
       if (analysisIdsByCallback == null) {
-        SonarLintConsole.get(project).debug("Pre commit analysis cancelled because analysis did not start");
+        SonarLintConsole.get(project).debug("Pre-commit analysis cancelled because analysis did not start");
         return ReturnResult.CANCEL;
       }
 
-      new Task.Modal(project, "Waiting for SonarQube for IDE Analysis", true) {
-        public void run(@NotNull final ProgressIndicator progressIndicator) {
-          new Timer().scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-              var analysis = analysisIdsByCallback.getRight().stream().map(id -> getService(project, RunningAnalysesTracker.class).getById(id)).filter(Objects::nonNull).toList();
-              if (analysis.isEmpty()) {
-                cancel();
-              }
-            }
-          }, 0, 100);
-        }
-      }.queue();
+      var analysisIds = analysisIdsByCallback.getRight();
 
-      if (!analysisIdsByCallback.getLeft().analysisSucceeded()) {
-        SonarLintConsole.get(project).debug("Pre commit analysis cancelled because analysis did not succeed");
+      var completed = runModalTaskWithResult(project, "Waiting for SonarQube for IDE Analysis", indicator -> {
+        var future = new CompletableFuture<Boolean>();
+        var startTime = System.currentTimeMillis();
+        var checkTask = runPreCommitAnalysis(future, indicator, analysisIds, startTime);
+        // Avoid busy-waiting
+        scheduledExecutor.scheduleAtFixedRate(checkTask, 0, 100, TimeUnit.MILLISECONDS);
+        return waitForFuture(indicator, future);
+      });
+
+      if (!completed || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
+        SonarLintConsole.get(project).debug("Pre-commit analysis failed");
         return ReturnResult.CANCEL;
       }
+
       var results = analysisIdsByCallback.getLeft().getResults();
       return processResults(results);
+    } catch (ProcessCanceledException e) {
+      SonarLintConsole.get(project).debug("Pre-commit analysis cancelled by user");
+      throw e;
     } catch (Exception e) {
       handleError(e, affectedFiles.size());
       return ReturnResult.CANCEL;
     }
+  }
+
+  private Runnable runPreCommitAnalysis(CompletableFuture<Boolean> future, ProgressIndicator indicator, List<UUID> analysisIds, long startTime) {
+    return () -> {
+      if (future.isDone()) return;
+      if (indicator.isCanceled()) {
+        future.cancel(true);
+        return;
+      }
+      var elapsed = System.currentTimeMillis() - startTime;
+      if (elapsed > PRE_COMMIT_TIMEOUT) {
+        future.complete(false);
+        return;
+      }
+
+      boolean anyRunning = analysisIds.stream()
+        .map(id -> getService(project, RunningAnalysesTracker.class).getById(id))
+        .anyMatch(Objects::nonNull);
+
+      if (!anyRunning) {
+        future.complete(true);
+      }
+    };
   }
 
   private void handleError(Exception e, int numFiles) {
@@ -200,7 +230,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
             return merged;
           }));
       var allFilesAnalyzed = results.stream().flatMap(result -> result.getAnalyzedFiles().stream()).toList();
-      var result = new AnalysisResult(null, new LiveFindings(issuesPerFile, hotspotsPerFile), allFilesAnalyzed, results.get(0).getTriggerType(), results.get(0).getAnalysisDate());
+      var result = new AnalysisResult(null, new LiveFindings(issuesPerFile, hotspotsPerFile), allFilesAnalyzed, results.get(0).getAnalysisDate());
       showChangedFilesTab(result);
     }
     return choice;

@@ -20,48 +20,30 @@
 package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.cayc.NewCodePeriodCache
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+
 
 @Service(Service.Level.PROJECT)
-class RunningAnalysesTracker {
+class RunningAnalysesTracker(private val project: Project) {
 
     private val analysisStateById: MutableMap<UUID, AnalysisState> = ConcurrentHashMap<UUID, AnalysisState>()
 
     fun track(analysisState: AnalysisState) {
-        analysisStateById[analysisState.id] = analysisState
+        analysisState.id.let { analysisStateById[it] = analysisState }
     }
 
     fun finish(analysisState: AnalysisState) {
+        getService(project, AnalysisStatus::class.java).stopRun(analysisState.id)
+        getService(project, NewCodePeriodCache::class.java).refreshAsync()
         analysisStateById.remove(analysisState.id)
     }
 
     fun getById(analysisId: UUID): AnalysisState? {
         return analysisStateById[analysisId]
-    }
-
-    fun cancel(analysisId: UUID) {
-        analysisStateById[analysisId]?.let {
-            it.cancel()
-            finish(it)
-        }
-    }
-
-    fun cancelAll() {
-        analysisStateById.values.forEach {
-            it.cancel()
-            finish(it)
-        }
-    }
-
-    fun cancelSimilarAnalysis(analysisState: AnalysisState, console: SonarLintConsole) {
-        for (analysis in analysisStateById.values) {
-            if (analysis.isRedundant(analysisState)) {
-                console.info("Cancelling analysis ${analysis.id}")
-                analysis.cancel()
-            }
-        }
     }
 
     fun isAnalysisRunning(): Boolean {

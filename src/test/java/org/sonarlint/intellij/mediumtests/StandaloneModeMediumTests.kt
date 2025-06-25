@@ -50,7 +50,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.fs.VirtualFileEvent
-import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -463,7 +462,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
         }
 
-        submitter.autoAnalyzeFiles(filesToAnalyze.toList(), TriggerType.EDITOR_CHANGE)
+        submitter.autoAnalyzeFiles(filesToAnalyze.toList())
         Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
         }

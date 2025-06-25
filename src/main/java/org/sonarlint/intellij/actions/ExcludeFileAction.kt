@@ -31,7 +31,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.project.ExclusionItem
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
-import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.runOnPooledThread
 
@@ -63,7 +62,7 @@ class ExcludeFileAction : AbstractSonarAction {
             if (newExclusions.isNotEmpty()) {
                 exclusions.addAll(newExclusions)
                 settings.fileExclusions = exclusions
-                getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles(TriggerType.CONFIG_CHANGE)
+                getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles()
                 val projectListener = project.messageBus.syncPublisher(ProjectConfigurationListener.TOPIC)
                 projectListener.changed(settings)
             }

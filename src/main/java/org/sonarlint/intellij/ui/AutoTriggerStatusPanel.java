@@ -21,9 +21,7 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
-import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkAdapter;
@@ -33,9 +31,7 @@ import com.intellij.util.ui.JBUI;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JLabel;
@@ -43,7 +39,6 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintIcons;
-import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
 
@@ -57,12 +52,8 @@ public class AutoTriggerStatusPanel {
 
   private static final String AUTO_TRIGGER_ENABLED = "AUTO_TRIGGER_ENABLED";
   private static final String FILE_DISABLED = "FILE_DISABLED";
-  private static final String POWER_SAVE_MODE_ENABLED = "POWER_SAVE_MODE_ENABLED";
   private static final String AUTO_TRIGGER_DISABLED = "AUTO_TRIGGER_DISABLED";
-
   private static final String TOOLTIP = "Some files are not automatically analyzed. Check the SonarQube for IDE debug logs for details.";
-
-  private static final String POWER_SAVE_MODE_TOOLTIP = "Disable power save mode for automatic analysis";
 
   private final Project project;
 
@@ -93,40 +84,24 @@ public class AutoTriggerStatusPanel {
 
     var selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
-      // Computing server exclusions may take time, so lets move from EDT to pooled thread
+      // Computing server exclusions may take time, so let's move from EDT to pooled thread
       runOnPooledThread(project, () -> {
         if (!getService(BackendService.class).isAlive()) {
           switchCard(AUTO_TRIGGER_DISABLED);
           return;
         }
-
-        if (PowerSaveMode.isEnabled()) {
-          switchCard(POWER_SAVE_MODE_ENABLED);
-        } else {
-          var localFileExclusions = getService(project, LocalFileExclusions.class);
-          var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> {
-          });
-
-          if (nonExcluded.isEmpty()) {
-            switchCard(FILE_DISABLED);
-          } else {
-            handleExcludedFiles(selectedFile, nonExcluded);
-          }
-        }
+        handleExcludedFiles(selectedFile);
       });
     } else {
       switchCard(AUTO_TRIGGER_ENABLED);
     }
   }
 
-  private void handleExcludedFiles(VirtualFile selectedFile, Map<Module, Collection<VirtualFile>> nonExcluded) {
+  private void handleExcludedFiles(VirtualFile selectedFile) {
     var module = findModuleForFile(selectedFile, project);
-    if (!nonExcluded.isEmpty() && module != null && nonExcluded.containsKey(module)) {
-      var files = nonExcluded.get(module);
-      var excludedFilesFromServer = getService(BackendService.class).getExcludedFiles(module, files);
-      files.removeAll(excludedFilesFromServer);
-
-      if (files.isEmpty()) {
+    if (module != null) {
+      var excludedFilesFromServer = getService(BackendService.class).getExcludedFiles(module, List.of(selectedFile));
+      if (!excludedFilesFromServer.isEmpty()) {
         switchCard(FILE_DISABLED);
         return;
       }
@@ -144,40 +119,32 @@ public class AutoTriggerStatusPanel {
     var enabledCard = new JPanel(new GridBagLayout());
     var disabledCard = new JPanel(new GridBagLayout());
     var notThisFileCard = new JPanel(new GridBagLayout());
-    var powerSaveModeCard = new JPanel(new GridBagLayout());
 
     var infoIcon = SonarLintIcons.INFO;
     var notThisFileLink = getHyperlinkLabel(infoIcon, TOOLTIP);
-    var powerSaveModeLink = getHyperlinkLabel(infoIcon, POWER_SAVE_MODE_TOOLTIP);
 
     disabledCard.add(new JLabel(SonarLintIcons.WARN), gc);
     notThisFileCard.add(notThisFileLink, gc);
-    powerSaveModeCard.add(powerSaveModeLink, gc);
 
     var enabledLabel = new JLabel("Automatic analysis is enabled");
     var disabledLabel = new JLabel("On-the-fly analysis is disabled - issues are not automatically displayed");
     var notThisFileLabel = new JLabel("This file is not automatically analyzed");
-    var powerSaveModeLabel = new JLabel("This file is not automatically analyzed because power save mode is enabled");
 
     notThisFileLabel.setToolTipText(TOOLTIP);
-    powerSaveModeLabel.setToolTipText(POWER_SAVE_MODE_TOOLTIP);
 
     enabledCard.add(enabledLabel, gc);
     disabledCard.add(disabledLabel, gc);
     notThisFileCard.add(notThisFileLabel, gc);
-    powerSaveModeCard.add(powerSaveModeLabel, gc);
 
     gc.fill = GridBagConstraints.HORIZONTAL;
     gc.weightx = 1;
     enabledCard.add(Box.createHorizontalBox(), gc);
     disabledCard.add(Box.createHorizontalBox(), gc);
     notThisFileCard.add(Box.createHorizontalBox(), gc);
-    powerSaveModeCard.add(Box.createHorizontalBox(), gc);
 
     panel.add(enabledCard, AUTO_TRIGGER_ENABLED);
     panel.add(disabledCard, AUTO_TRIGGER_DISABLED);
     panel.add(notThisFileCard, FILE_DISABLED);
-    panel.add(powerSaveModeCard, POWER_SAVE_MODE_ENABLED);
   }
 
   @NotNull

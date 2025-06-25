@@ -254,7 +254,6 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         if (!persisted.equals(possiblyModified)) {
           var dirtyRule = new SonarLintGlobalSettings.Rule(possiblyModified.getKey(), possiblyModified.isActivated());
           dirtyRule.setParams(possiblyModified.getCustomParams());
-
           dirtyRules.put(possiblyModified.getKey(), dirtyRule);
         }
       }

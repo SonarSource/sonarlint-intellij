@@ -20,13 +20,13 @@
 package org.sonarlint.intellij.common.analysis;
 
 import com.intellij.openapi.extensions.ExtensionPointName;
-import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
 public interface FileExclusionContributor {
   // Name is constructed from plugin-id.extension-point-name
   ExtensionPointName<FileExclusionContributor> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.fileExclusionContributor");
 
-  ExcludeResult shouldExclude(Module module, VirtualFile filesToAnalyze);
+  ExcludeResult shouldExclude(Project project, VirtualFile filesToAnalyze);
 
 }

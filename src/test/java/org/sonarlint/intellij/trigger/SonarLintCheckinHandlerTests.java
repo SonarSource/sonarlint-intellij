@@ -91,12 +91,12 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
   @Test
   void testNoUnresolvedIssues() {
-    var analysisState = new AnalysisState(analysisUuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
+    var analysisState = new AnalysisState(analysisUuid, checkInCallable, getModule());
     var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
-      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.now())));
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
@@ -109,12 +109,12 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
   @Test
   void testIssues() {
-    var analysisState = new AnalysisState(analysisUuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
+    var analysisState = new AnalysisState(analysisUuid, checkInCallable, getModule());
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("java:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
-      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.now())));
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
@@ -137,12 +137,12 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
   @Test
   void testSecretsIssues() {
-    var analysisState = new AnalysisState(analysisUuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
+    var analysisState = new AnalysisState(analysisUuid, checkInCallable, getModule());
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("secrets:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
-      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.now())));
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
@@ -168,12 +168,12 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
 
   @Test
   void testTelemetryIsSent() {
-    var analysisState = new AnalysisState(analysisUuid, checkInCallable, Collections.singleton(file), getModule(), TriggerType.CHECK_IN, null);
+    var analysisState = new AnalysisState(analysisUuid, checkInCallable, getModule());
     var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
-      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now())));
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.now())));
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
