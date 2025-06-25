@@ -115,6 +115,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.G
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidCloseFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidOpenFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidUpdateFileSystemParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.GetFilesStatusParams
@@ -1048,6 +1049,26 @@ class BackendService : Disposable {
         if (uri != null) {
             val params = DidOpenFileParams(moduleId, uri)
             return notifyBackend { it.fileService.didOpenFile(params) }
+        }
+    }
+
+    fun didCloseFileForModule(module: Module, file: VirtualFile) {
+        val uri = toURI(file)
+        val moduleId = moduleId(module)
+
+        if (uri != null) {
+            val params = DidCloseFileParams(moduleId, uri)
+            return notifyBackend { it.fileService.didCloseFile(params) }
+        }
+    }
+
+    fun didCloseFileForProject(project: Project, file: VirtualFile) {
+        val uri = toURI(file)
+        val projectId = projectId(project)
+
+        if (uri != null) {
+            val params = DidCloseFileParams(projectId, uri)
+            return notifyBackend { it.fileService.didCloseFile(params) }
         }
     }
 }

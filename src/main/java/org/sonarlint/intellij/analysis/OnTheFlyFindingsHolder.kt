@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.LiveFindings
@@ -38,6 +39,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
@@ -136,6 +138,16 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         updateSecurityHotspots()
         if (currentIssuesPerOpenFile.isEmpty()) {
             updateCurrentFileTab()
+        }
+
+        if (!project.isDisposed) {
+            val module = SonarLintAppUtils.findModuleForFile(file, project)
+
+            if(module != null) {
+                getService(BackendService::class.java).didCloseFileForModule(module, file)
+            } else {
+                getService(BackendService::class.java).didCloseFileForProject(project, file)
+            }
         }
     }
 
