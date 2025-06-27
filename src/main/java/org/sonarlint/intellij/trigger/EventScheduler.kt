@@ -19,48 +19,46 @@
  */
 package org.sonarlint.intellij.trigger
 
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import kotlinx.collections.immutable.toImmutableMap
+import org.sonarlint.intellij.common.util.FileUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.fs.VirtualFileEvent
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 class EventScheduler(
-    private val project: Project,
     private val schedulerName: String,
-    private val triggerType: TriggerType,
     private val timer: Long,
     // True -> Schedule tasks at specific intervals
     // False -> Cancel the scheduled task and reschedule a new one
     private val atInterval: Boolean
 ) {
 
-    private val filesToAnalyze = mutableSetOf<VirtualFile>()
-    private val scheduler = Executors.newScheduledThreadPool(1) { r -> Thread(r, "sonarlint-auto-trigger-$schedulerName-${project.name}") }
+    private val changedFiles = mutableSetOf<VirtualFile>()
+    private val scheduler = Executors.newScheduledThreadPool(1) { r -> Thread(r, "sonarlint-auto-trigger-$schedulerName") }
     private var scheduledTask: ScheduledFuture<*>? = null
 
     fun stopScheduler() {
         scheduledTask?.cancel(true)
-        filesToAnalyze.clear()
+        changedFiles.clear()
         scheduler.shutdownNow()
     }
 
     private fun trigger() {
-        if (filesToAnalyze.isNotEmpty()) {
-            getService(project, AnalysisSubmitter::class.java).autoAnalyzeFiles(filesToAnalyze.toList(), triggerType)
-        }
-        filesToAnalyze.clear()
+        groupByProject(changedFiles).forEach { (project, files) -> notifyFileChangesForProject(project, files) }
+        changedFiles.clear()
     }
 
     fun notify(file: VirtualFile) {
-        if (!Settings.getGlobalSettings().isAutoTrigger) {
-            return
-        }
-
-        filesToAnalyze.add(file)
+        changedFiles.add(file)
 
         // Remove the previously finished task
         if (scheduledTask?.isDone == true) {
@@ -69,13 +67,36 @@ class EventScheduler(
 
         if (atInterval) {
             scheduledTask ?: let {
-                // Schedule new task only if no task currently scheduled
+                // Schedule a new task only if no task currently scheduled
                 scheduledTask = scheduler.schedule({ trigger() }, timer, TimeUnit.MILLISECONDS)
             }
         } else {
             // Cancelling the scheduled task and postponing it later
             scheduledTask?.cancel(false)
             scheduledTask = scheduler.schedule({ trigger() }, timer, TimeUnit.MILLISECONDS)
+        }
+    }
+
+    private fun groupByProject(files: Set<VirtualFile>) =
+        files.fold(mutableMapOf<Project, MutableSet<VirtualFile>>()) { acc, file ->
+            ProjectLocator.getInstance().getProjectsForFile(file)
+                .filter { !it.isDisposed }
+                .forEach { project -> acc.computeIfAbsent(project) { mutableSetOf() }.add(file) }
+            acc
+        }.toImmutableMap()
+
+    private fun notifyFileChangesForProject(project: Project, changedFiles: Set<VirtualFile>) {
+        val filesToSendPerModule = HashMap<Module, MutableList<VirtualFileEvent>>()
+
+        changedFiles
+            .filter { FileUtils.isFileValidForSonarLintWithExtensiveChecks(it, project) }
+            .forEach { file ->
+                val module = findModuleForFile(file, project) ?: return@forEach
+                filesToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file))
+            }
+
+        if (filesToSendPerModule.isNotEmpty()) {
+            getService(BackendService::class.java).updateFileSystem(filesToSendPerModule, true)
         }
     }
 

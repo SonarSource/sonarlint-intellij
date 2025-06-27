@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -43,6 +44,7 @@ import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
+  private static final UUID RANDOM_UUID = UUID.randomUUID();
   private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private AnActionEvent event = mock(AnActionEvent.class);
 
@@ -66,7 +68,7 @@ class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     mockSelectedFiles(f1);
     editorFileAction.actionPerformed(event);
-    verify(analysisSubmitter).analyzeFilesOnUserAction(anyCollection(), eq(event));
+    verify(analysisSubmitter).analyzeFilesOnUserAction(anySet(), eq(event));
   }
 
   private void mockSelectedFiles(VirtualFile file) {
@@ -91,12 +93,12 @@ class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     mockSelectedFiles(f1);
 
-    AnalysisStatus.get(getProject()).tryRun();
+    AnalysisStatus.get(getProject()).tryRun(RANDOM_UUID);
 
     editorFileAction.update(event);
     assertThat(presentation.isEnabled()).isFalse();
 
-    AnalysisStatus.get(getProject()).stopRun();
+    AnalysisStatus.get(getProject()).stopRun(RANDOM_UUID);
     editorFileAction.update(event);
     assertThat(presentation.isEnabled()).isTrue();
   }

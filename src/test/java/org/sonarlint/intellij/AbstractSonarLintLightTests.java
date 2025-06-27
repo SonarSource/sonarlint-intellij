@@ -102,9 +102,8 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getProjectSettings().setVerboseEnabled(true);
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().clearBindingOverride();
-    getService(BackendService.class).moduleUnbound(getModule());
-    getService(BackendService.class).projectUnbound(getProject());
     getService(BackendService.class).connectionsUpdated(Collections.emptyList());
+    getService(BackendService.class).projectOpened(getProject());
     getService(BackendService.class).modulesAdded(getProject(), List.of(getModule()));
     PropertiesComponent.getInstance().unsetValue("SonarLint.lastPromotionNotificationDate");
   }
@@ -129,11 +128,10 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
       getService(BackendService.class).moduleRemoved(getModule());
       getService(BackendService.class).projectClosed(getProject());
       if (!getProject().isDisposed()) {
-        AnalysisStatus.get(getProject()).stopRun();
         getService(getProject(), RunningAnalysesTracker.class).cancelAll();
+        AnalysisStatus.get(getProject()).stopRun();
       }
       Disposer.dispose(disposable);
-
     } finally {
       super.tearDown();
     }

@@ -34,13 +34,13 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithSonarScanner
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateTokenNameAndValue
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
+import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.defaultBuilderEnv
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.executeBuildWithSonarScanner
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.generateTokenNameAndValue
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.newAdminWsClientWithUser
+import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnectionsAndAddSonarQubeConnection
 
 const val ANSIBLE_PROJECT_KEY = "sample-ansible"
 

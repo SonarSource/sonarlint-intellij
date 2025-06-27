@@ -37,158 +37,156 @@ import org.sonarlint.intellij.its.fixtures.preferencesDialog
 import org.sonarlint.intellij.its.fixtures.waitUntilLoaded
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
 
-class SettingsUtils {
+object SettingsUtils {
 
-    companion object {
-        fun sonarLintGlobalSettings(function: PreferencesDialog.() -> Unit) {
-            settings {
-                // let the dialog settle (if we type the search query too soon it might be cleared for no reason)
-                Pause.pause(3000)
+    fun sonarLintGlobalSettings(function: PreferencesDialog.() -> Unit) {
+        settings {
+            // let the dialog settle (if we type the search query too soon it might be cleared for no reason)
+            Pause.pause(3000)
 
-                // Search for SonarLint because sometimes it is off the screen
-                search("SonarQube for IDE")
+            // Search for SonarLint because sometimes it is off the screen
+            search("SonarQube for IDE")
 
-                tree {
-                    waitUntilLoaded()
-                    // little trick to check if the search has been applied
-                    waitFor(Duration.ofSeconds(10), Duration.ofSeconds(1)) { collectRows().size in 1..10 }
-                    Pause.pause(1000)
-                    clickPath("Tools", "SonarQube for IDE")
-                }
-
-                // let the SonarLint view settle (sometimes the UI thread blocks for a few seconds)
-                Pause.pause(4000)
-
-                function(this)
-            }
-        }
-
-        fun toggleRule(ruleKey: String, ruleText: String) {
-            sonarLintGlobalSettings {
-                findText("Rules").click()
-                searchRule(ruleKey)
-                findText(ruleText).click()
+            tree {
+                waitUntilLoaded()
+                // little trick to check if the search has been applied
+                waitFor(Duration.ofSeconds(10), Duration.ofSeconds(1)) { collectRows().size in 1..10 }
                 Pause.pause(1000)
-                findText(ruleText).doubleClick()
-                waitFor(Duration.ofSeconds(10)) {
-                    button("Apply").isEnabled()
-                }
-                button("Apply").click()
-                button("OK").clickWhenEnabled()
+                clickPath("Tools", "SonarQube for IDE")
             }
-        }
 
-        fun clearConnections() {
-            sonarLintGlobalSettings {
-                val removeButton = removeConnectionButton()
-                jList(JListFixture.byType()) {
-                    while (collectItems().isNotEmpty()) {
-                        removeButton.clickWhenEnabled()
-                        optionalStep {
-                            dialog("Connection In Use") {
-                                button("Yes").click()
-                            }
+            // let the SonarLint view settle (sometimes the UI thread blocks for a few seconds)
+            Pause.pause(4000)
+
+            function(this)
+        }
+    }
+
+    fun toggleRule(ruleKey: String, ruleText: String) {
+        sonarLintGlobalSettings {
+            findText("Rules").click()
+            searchRule(ruleKey)
+            findText(ruleText).click()
+            Pause.pause(1000)
+            findText(ruleText).doubleClick()
+            waitFor(Duration.ofSeconds(10)) {
+                button("Apply").isEnabled()
+            }
+            button("Apply").click()
+            button("OK").clickWhenEnabled()
+        }
+    }
+
+    fun clearConnections() {
+        sonarLintGlobalSettings {
+            val removeButton = removeConnectionButton()
+            jList(JListFixture.byType()) {
+                while (collectItems().isNotEmpty()) {
+                    removeButton.clickWhenEnabled()
+                    optionalStep {
+                        dialog("Connection In Use") {
+                            button("Yes").click()
                         }
                     }
                 }
-                pressOk()
             }
+            pressOk()
         }
+    }
 
-        fun clearConnectionsAndAddSonarQubeConnection(serverUrl: String, token: String) {
-            sonarLintGlobalSettings {
-                val removeButton = removeConnectionButton()
-                jList(JListFixture.byType()) {
-                    while (collectItems().isNotEmpty()) {
-                        removeButton.clickWhenEnabled()
-                        optionalStep {
-                            dialog("Connection In Use") {
-                                button("Yes").click()
-                            }
+    fun clearConnectionsAndAddSonarQubeConnection(serverUrl: String, token: String) {
+        sonarLintGlobalSettings {
+            val removeButton = removeConnectionButton()
+            jList(JListFixture.byType()) {
+                while (collectItems().isNotEmpty()) {
+                    removeButton.clickWhenEnabled()
+                    optionalStep {
+                        dialog("Connection In Use") {
+                            button("Yes").click()
                         }
                     }
                 }
-                addConnectionButton().clickWhenEnabled()
-                dialog("New Connection: Server Details") {
-                    keyboard { enterText("Orchestrator") }
-                    jRadioButtons()[1].select()
-                    jbTextFields()[1].text = serverUrl
-                    button("Next").click()
+            }
+            addConnectionButton().clickWhenEnabled()
+            dialog("New Connection: Server Details") {
+                keyboard { enterText("Orchestrator") }
+                jRadioButtons()[1].select()
+                jbTextFields()[1].text = serverUrl
+                button("Next").click()
+            }
+            dialog("New Connection: Authentication") {
+                jPasswordField().text = token
+                button("Next").click()
+            }
+            dialog("New Connection: Configure Notifications") {
+                button("Next").click()
+            }
+            dialog("New Connection: Configuration completed") {
+                pressCreate()
+            }
+            pressOk()
+        }
+    }
+
+    fun addSonarCloudConnection(token: String, connectionName: String) {
+        sonarLintGlobalSettings {
+            addConnectionButton().clickWhenEnabled()
+            dialog("New Connection: Server Details") {
+                keyboard { enterText(connectionName) }
+                button("Next").click()
+            }
+            dialog("New Connection: Authentication") {
+                jPasswordField().text = token
+                button("Next").click()
+            }
+            dialog("New Connection: Organization") {
+                button("Next").click()
+            }
+            dialog("New Connection: Configure Notifications") {
+                button("Next").click()
+            }
+            dialog("New Connection: Configuration completed") {
+                pressCreate()
+            }
+            pressOk()
+        }
+    }
+
+    fun clickPowerSaveMode() {
+        optionalIdeaFrame()?.apply {
+            actionMenu("File") {
+                open()
+                item("Power Save Mode") {
+                    click()
                 }
-                dialog("New Connection: Authentication") {
-                    jPasswordField().text = token
-                    button("Next").click()
-                }
-                dialog("New Connection: Configure Notifications") {
-                    button("Next").click()
-                }
-                dialog("New Connection: Configuration completed") {
-                    pressCreate()
-                }
-                pressOk()
             }
         }
+    }
 
-        fun addSonarCloudConnection(token: String, connectionName: String) {
-            sonarLintGlobalSettings {
-                addConnectionButton().clickWhenEnabled()
-                dialog("New Connection: Server Details") {
-                    keyboard { enterText(connectionName) }
-                    button("Next").click()
-                }
-                dialog("New Connection: Authentication") {
-                    jPasswordField().text = token
-                    button("Next").click()
-                }
-                dialog("New Connection: Organization") {
-                    button("Next").click()
-                }
-                dialog("New Connection: Configure Notifications") {
-                    button("Next").click()
-                }
-                dialog("New Connection: Configuration completed") {
-                    pressCreate()
-                }
-                pressOk()
+    fun optionalIdeaFrame(): IdeaFrame? {
+        var ideaFrame: IdeaFrame? = null
+        with(remoteRobot) {
+            optionalStep {
+                // we might be on the welcome screen
+                ideaFrame = idea(Duration.ofSeconds(1))
             }
         }
+        return ideaFrame
+    }
 
-        fun clickPowerSaveMode() {
-            optionalIdeaFrame()?.apply {
-                actionMenu("File") {
-                    open()
-                    item("Power Save Mode") {
-                        click()
-                    }
+    private fun settings(function: PreferencesDialog.() -> Unit) {
+        with(remoteRobot) {
+            try {
+                welcomeFrame {
+                    openPreferences()
+                }
+            } catch (e: Exception) {
+                idea {
+                    openSettings()
                 }
             }
-        }
-
-        fun optionalIdeaFrame(): IdeaFrame? {
-            var ideaFrame: IdeaFrame? = null
-            with(remoteRobot) {
-                optionalStep {
-                    // we might be on the welcome screen
-                    ideaFrame = idea(Duration.ofSeconds(1))
-                }
-            }
-            return ideaFrame
-        }
-
-        private fun settings(function: PreferencesDialog.() -> Unit) {
-            with(remoteRobot) {
-                try {
-                    welcomeFrame {
-                        openPreferences()
-                    }
-                } catch (e: Exception) {
-                    idea {
-                        openSettings()
-                    }
-                }
-                preferencesDialog {
-                    function(this)
-                }
+            preferencesDialog {
+                function(this)
             }
         }
     }

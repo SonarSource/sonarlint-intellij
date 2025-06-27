@@ -37,7 +37,6 @@ import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -57,7 +56,7 @@ class ClearCurrentFileIssuesActionTests extends AbstractSonarLintLightTests {
     findingsHolder = SonarLintUtils.getService(getProject(), AnalysisSubmitter.class).getOnTheFlyFindingsHolder();
     findingsHolder.clearCurrentFile();
     FileEditorManager.getInstance(getProject()).openFile(file, true);
-    findingsHolder.updateOnAnalysisResult(new AnalysisResult(null, new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()), List.of(file), TriggerType.CURRENT_FILE_ACTION, Instant.now()));
+    findingsHolder.updateOnAnalysisResult(new AnalysisResult(null, new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()), List.of(file), Instant.now()));
   }
 
   @Test

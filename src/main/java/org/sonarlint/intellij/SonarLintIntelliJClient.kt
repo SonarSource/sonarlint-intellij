@@ -60,6 +60,7 @@ import java.util.UUID
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeoutException
+import kotlinx.html.emptyMap
 import org.apache.commons.text.StringEscapeUtils
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
@@ -68,16 +69,20 @@ import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
-import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLanguages
+import org.sonarlint.intellij.analysis.AnalysisSubmitter.Companion.collectContributedLanguages
+import org.sonarlint.intellij.analysis.InferredAnalysisPropertiesProvider.collectContributedExtraProperties
+import org.sonarlint.intellij.analysis.InferredAnalysisPropertiesProvider.getConfigurationFromConfiguratorEP
+import org.sonarlint.intellij.analysis.LocalFileExclusions
 import org.sonarlint.intellij.analysis.OpenInIdeFindingCache
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.findOverriddenModules
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.getAutoShareConfigParams
 import org.sonarlint.intellij.binding.ClientBindingSuggestion
+import org.sonarlint.intellij.cayc.NewCodePeriodCache
 import org.sonarlint.intellij.common.analysis.FilesContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks
+import org.sonarlint.intellij.common.util.FileUtils.isFileValidForSonarLintWithExtensiveChecks
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.common.vcs.VcsRepo
@@ -115,7 +120,6 @@ import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.sharing.ConfigurationSharing
 import org.sonarlint.intellij.sharing.SharedConnectedModeUtils.Companion.findConnectedModeFile
 import org.sonarlint.intellij.sharing.SharedConnectedModeUtils.Companion.findSharedFolder
-import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
@@ -620,8 +624,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
                     if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
                         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
+                    } else {
+                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles()
                     }
-                    getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles(TriggerType.BINDING_UPDATE)
                 }
             }
         }
@@ -757,7 +762,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return findConnectedModeFile(sonarlintFolder, project, configScopeId)
     }
 
-    private fun listModuleFiles(module: Module, configScopeId: String): MutableList<ClientFileDto> {
+    private fun listModuleFiles(module: Module, configScopeId: String): List<ClientFileDto> {
         val filesInContentRoots = visitAndAddAllFilesForModule(module)
 
         FilesContributor.EP_NAME.extensionList.forEach {
@@ -805,10 +810,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     // useful for Rider where the files to find are not located in content roots
     private fun listFilesInProjectBaseDir(project: Project): Set<VirtualFile> {
         return project.guessProjectDir()?.children?.filter {
-            !it.isDirectory && isFileValidForSonarLintWithExtensiveChecks(
-                it,
-                project
-            )
+            !it.isDirectory && isFileValidForSonarLintWithExtensiveChecks(it, project)
         }?.toSet() ?: return emptySet()
     }
 
@@ -871,12 +873,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
+        getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
         if (runningAnalysis != null) {
             runningAnalysis.addRawIssues(analysisId, issuesByFileUri, isIntermediatePublication)
-            if (runningAnalysis.isAnalysisFinished()) {
-                getService(project, RunningAnalysesTracker::class.java).finish(runningAnalysis)
-            }
         } else if (module != null) {
             val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
             onTheFlyFindingsHolder.updateViewsWithNewIssues(module, issuesByFileUri)
@@ -892,13 +892,11 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
+        getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
         if (runningAnalysis != null) {
             runningAnalysis.addRawHotspots(analysisId, hotspotsByFileUri, isIntermediatePublication)
-            if (runningAnalysis.isAnalysisFinished()) {
-                getService(project, RunningAnalysesTracker::class.java).finish(runningAnalysis)
-            }
-        } else if (analysisId == null && module != null) {
+        } else if (module != null) {
             val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
             onTheFlyFindingsHolder.updateViewsWithNewSecurityHotspots(module, hotspotsByFileUri)
         }
@@ -942,8 +940,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 return Paths.get(it.path)
             }
         } else {
-            val module = findModule(configurationScopeId)
-            if (module != null) {
+            findModule(configurationScopeId)?.let { module ->
                 // If we don't find a base directory for the module, fallback on the base directory of the project
                 module.guessModuleDir()?.let {
                     return Paths.get(it.path)
@@ -969,6 +966,21 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 )
             }
         }
+    }
+
+    override fun getInferredAnalysisProperties(configurationScopeId: String, filesToAnalyze: List<URI>): Map<String, String> {
+        val module = findModule(configurationScopeId) ?: return emptyMap
+        val console = getService(module.project, SonarLintConsole::class.java)
+        val contributedConfigurations = getConfigurationFromConfiguratorEP(module, filesToAnalyze, console)
+        return collectContributedExtraProperties(module, console, contributedConfigurations)
+    }
+
+    override fun getFileExclusions(configurationScopeId: String): Set<String> {
+        return findModule(configurationScopeId)?.let { module ->
+            getService(module.project, LocalFileExclusions::class.java).projectExclusions + getGlobalSettings().fileExclusions.toSet()
+        } ?: findProject(configurationScopeId)?.let { project ->
+            getService(project, LocalFileExclusions::class.java).projectExclusions + getGlobalSettings().fileExclusions.toSet()
+        } ?: return getGlobalSettings().fileExclusions.toSet()
     }
 
 }

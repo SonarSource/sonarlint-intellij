@@ -32,10 +32,7 @@ import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
-
-import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarQube for IDE";
@@ -53,9 +50,6 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     addLogActions();
     addToolbar();
     addConsole();
-
-    project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC, (StatusListener) newStatus ->
-    runOnUiThread(project, mainToolbar::updateActionsImmediately));
   }
 
   private void addToolbar() {

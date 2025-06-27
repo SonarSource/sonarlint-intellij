@@ -170,7 +170,7 @@ public class SonarLintAppUtils {
         return false;
       }
 
-      if (!vFile.isDirectory() && FileUtils.Companion.isFileValidForSonarLint(vFile, module.getProject())) {
+      if (!vFile.isDirectory() && FileUtils.INSTANCE.isFileValidForSonarLint(vFile, module.getProject())) {
         filesToAdd.add(vFile);
         return true;
       }
@@ -188,7 +188,7 @@ public class SonarLintAppUtils {
         return false;
       }
 
-      if (!vFile.isDirectory() && FileUtils.Companion.isFileValidForSonarLint(vFile, project)) {
+      if (!vFile.isDirectory() && FileUtils.INSTANCE.isFileValidForSonarLint(vFile, project)) {
         filesToAdd.add(vFile);
         return true;
       }
@@ -203,7 +203,7 @@ public class SonarLintAppUtils {
     VfsUtilCore.visitChildrenRecursively(file, new VirtualFileVisitor<>(NO_FOLLOW_SYMLINKS) {
       @Override
       public boolean visitFile(VirtualFile file) {
-        if (!FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks(file, project)) {
+        if (!FileUtils.INSTANCE.isFileValidForSonarLintWithExtensiveChecks(file, project)) {
           return false;
         }
 

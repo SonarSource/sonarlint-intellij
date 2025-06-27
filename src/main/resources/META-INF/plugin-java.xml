@@ -23,11 +23,4 @@
     <extensions defaultExtensionNs="org.sonarlint.idea">
         <analysisConfiguration implementation="org.sonarlint.intellij.java.JavaAnalysisConfigurator"/>
     </extensions>
-
-    <applicationListeners>
-        <listener class="org.sonarlint.intellij.trigger.BuildFinishedAnalysisTrigger" topic="com.intellij.compiler.server.BuildManagerListener"/>
-        <listener class="org.sonarlint.intellij.trigger.CompilationFinishedAnalysisTrigger" topic="com.intellij.openapi.compiler.CompilationStatusListener"/>
-    </applicationListeners>
-
-
 </idea-plugin>

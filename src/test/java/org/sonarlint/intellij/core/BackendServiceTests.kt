@@ -646,7 +646,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(file.path).thenReturn("/test.java")
         `when`(file.isInLocalFileSystem).thenReturn(true)
 
-        service.didOpenFileForProject(project, file)
+        service.didOpenFile(project, file)
 
         val paramsCaptor = argumentCaptor<DidOpenFileParams>()
         verify(backendFileService, timeout(500)).didOpenFile(paramsCaptor.capture())
@@ -666,7 +666,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(file.path).thenReturn("/test.java")
         `when`(file.isInLocalFileSystem).thenReturn(true)
 
-        service.didOpenFileForModule(module, file)
+        service.didOpenFile(module, file)
 
         val paramsCaptor = argumentCaptor<DidOpenFileParams>()
         verify(backendFileService, timeout(500)).didOpenFile(paramsCaptor.capture())
