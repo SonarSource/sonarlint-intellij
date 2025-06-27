@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.common.util
 
+import io.ktor.http.URLBuilder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -27,6 +28,24 @@ class UrlUtils {
         @JvmStatic
         fun urlEncode(toEncode: String): String {
             return URLEncoder.encode(toEncode, StandardCharsets.UTF_8)
+        }
+
+        /**
+         * Combines a URL string with additional parameters.
+         *
+         * If this method will ever be used with any outside input make sure to double-check that
+         * no unsanitized parameters are passed here!
+         */
+        fun addParameters(url: String, params: Map<String, String>): String {
+            if (params.isEmpty()) {
+                return url
+            }
+
+            val urlBuilder = URLBuilder(url)
+            for (entry in params) {
+                urlBuilder.parameters.append(entry.key, entry.value)
+            }
+            return urlBuilder.build().toString()
         }
     }
 }

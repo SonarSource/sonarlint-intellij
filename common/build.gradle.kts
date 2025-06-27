@@ -13,3 +13,13 @@ intellij {
         version.set(intellijBuildVersion)
     }
 }
+
+dependencies {
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(libs.assertj.core)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
