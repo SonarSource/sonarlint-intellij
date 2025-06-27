@@ -31,7 +31,7 @@ class LocalFileExclusionsTest {
         val tempFile = tempDir.resolve("test.txt")
         val path = tempFile.absolutePath
 
-        val result = LocalFileExclusions.toGlobPattern(path)
+        val result = LocalFileExclusions.fileToGlobPattern(path)
 
         assertThat(result).endsWith("**${tempFile.path}")
         assertThat(result).doesNotEndWith("/**")
@@ -41,7 +41,7 @@ class LocalFileExclusionsTest {
     fun `should convert directory path to glob pattern`(@TempDir tempDir: File) {
         val path = tempDir.absolutePath
 
-        val result = LocalFileExclusions.toGlobPattern(path)
+        val result = LocalFileExclusions.directoryToGlobPattern(path)
 
         assertThat(result).endsWith("**${tempDir.path}/**")
     }
@@ -50,7 +50,7 @@ class LocalFileExclusionsTest {
     fun `should normalize backslashes and remove trailing slashes`() {
         val path = "foo\\bar\\baz////"
 
-        val result = LocalFileExclusions.toGlobPattern(path)
+        val result = LocalFileExclusions.directoryToGlobPattern(path)
 
         assertThat(result).contains("foo/bar/baz")
         assertThat(result).doesNotContain("//")
@@ -61,7 +61,7 @@ class LocalFileExclusionsTest {
     fun `should add leading slash if missing`() {
         val path = "foo/bar"
 
-        val result = LocalFileExclusions.toGlobPattern(path)
+        val result = LocalFileExclusions.directoryToGlobPattern(path)
 
         assertThat(result).contains("**/foo/bar")
     }
