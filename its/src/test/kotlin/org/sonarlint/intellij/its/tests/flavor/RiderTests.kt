@@ -19,19 +19,17 @@
  */
 package org.sonarlint.intellij.its.tests.flavor
 
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFileViaMenu
+import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
+import org.sonarlint.intellij.its.utils.OpeningUtils.openFileViaMenu
 
 @EnabledIf("isRider")
 class RiderTests : BaseUiTest() {
 
-    @Disabled("Disabled till SLI-2101 is implemented")
     @Test
     fun should_analyze_csharp() = uiTest {
         openExistingProject("sample-rider")
@@ -45,7 +43,6 @@ class RiderTests : BaseUiTest() {
         )
     }
 
-    @Disabled("Disabled till SLI-2101 is implemented")
     @Test
     fun should_analyze_complex_csharp() = uiTest {
         openExistingProject("sample-complex-rider")

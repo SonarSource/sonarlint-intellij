@@ -22,6 +22,7 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.TestDialog;
 import com.intellij.openapi.ui.TestDialogManager;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,8 @@ import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
+
+  private static final UUID RANDOM_UUID = UUID.randomUUID();
 
   private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private final AnActionEvent event = mock(AnActionEvent.class);
@@ -68,10 +71,10 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
     var anActionEvent = mock(AnActionEvent.class);
     when(anActionEvent.getPlace()).thenReturn("ANY");
     assertThat(action.isVisible(anActionEvent)).isTrue();
-    status.tryRun();
+    status.tryRun(RANDOM_UUID);
     assertThat(action.isEnabled(event, getProject(), status)).isFalse();
 
-    status.stopRun();
+    status.stopRun(RANDOM_UUID);
     assertThat(action.isEnabled(event, getProject(), status)).isTrue();
   }
 

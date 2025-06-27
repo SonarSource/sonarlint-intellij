@@ -24,6 +24,7 @@ import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -40,6 +41,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
+
+  private static final UUID RANDOM_UUID = UUID.randomUUID();
 
   private final AnActionEvent event = mock(AnActionEvent.class);
   private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
@@ -60,14 +63,14 @@ class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
 
   @Test
   void testEnabled() {
-    status.tryRun();
+    status.tryRun(RANDOM_UUID);
     assertThat(action.isEnabled(event, getProject(), status)).isFalse();
 
-    status.stopRun();
+    status.stopRun(RANDOM_UUID);
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.emptyList());
     assertThat(action.isEnabled(event, getProject(), status)).isFalse();
 
-    status.stopRun();
+    status.stopRun(RANDOM_UUID);
     when(changeListManager.getAffectedFiles()).thenReturn(List.of(mock(VirtualFile.class)));
     assertThat(action.isEnabled(event, getProject(), status)).isTrue();
   }

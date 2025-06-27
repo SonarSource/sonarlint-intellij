@@ -34,7 +34,7 @@ class ShowReportCallable(private val project: Project) : AnalysisCallback {
     override fun onSuccess(analysisResult: AnalysisResult) {
         results = analysisResult.let {
             val mergedLiveFindings = it.findings.merge(results?.findings)
-            AnalysisResult(it.analysisId, mergedLiveFindings, it.analyzedFiles, it.triggerType, it.analysisDate)
+            AnalysisResult(it.analysisId, mergedLiveFindings, it.analyzedFiles, it.analysisDate)
         }
         showReportTab()
     }

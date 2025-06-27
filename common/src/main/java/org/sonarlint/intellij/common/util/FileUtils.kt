@@ -27,48 +27,67 @@ import com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyF
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.common.analysis.FileExclusionContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 
-class FileUtils {
+object FileUtils {
 
-    companion object {
-        // To be used with iterateContent, because it already skips ignored and excluded files
-        fun isFileValidForSonarLint(file: VirtualFile, project: Project): Boolean {
-            try {
-                val toSkip = computeReadActionSafely(file, project) {
-                    (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
-                        || FileElement.isArchive(file)
-                        || ProjectCoreUtil.isProjectOrWorkspaceFile(file)
-                        || isGeneratedSourceByAnyFilter(file, project)
-                }
+    // To be used with iterateContent, because it already skips ignored and excluded files
+    fun isFileValidForSonarLint(file: VirtualFile, project: Project): Boolean {
+        try {
+            val toSkip = computeReadActionSafely(file, project) {
+                (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
+                    || FileElement.isArchive(file)
+                    || ProjectCoreUtil.isProjectOrWorkspaceFile(file)
+                    || isGeneratedSourceByAnyFilter(file, project)
+                    || isRazorFile(file)
+                    || ".idea" == file.parent.name
+                    || isExcludedFromEP(file, project)
+            }
 
-                return false == toSkip
-            } catch (e: Exception) {
-                SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.message)
-                return false
+            return false == toSkip
+        } catch (e: Exception) {
+            SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.message)
+            return false
+        }
+    }
+
+    // To be used when using iterating over all children
+    fun isFileValidForSonarLintWithExtensiveChecks(file: VirtualFile, project: Project): Boolean {
+        try {
+            val fileIndex = ProjectRootManager.getInstance(project).fileIndex
+            val toSkip = computeReadActionSafely(file, project) {
+                (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
+                    || FileElement.isArchive(file)
+                    || !fileIndex.isInContent(file)
+                    || fileIndex.isInLibrarySource(file)
+                    || ProjectCoreUtil.isProjectOrWorkspaceFile(file)
+                    || isGeneratedSourceByAnyFilter(file, project)
+                    || isRazorFile(file)
+                    || ".idea" == file.parent.name
+                    || isExcludedFromEP(file, project)
+            }
+
+            return false == toSkip
+        } catch (e: Exception) {
+            SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.message)
+            return false
+        }
+    }
+
+    private fun isRazorFile(file: VirtualFile): Boolean {
+        return file.getExtension() != null && (file.getExtension() == "razor" || file.name.endsWith("razor.cs"))
+    }
+
+    private fun isExcludedFromEP(file: VirtualFile, project: Project): Boolean {
+        for (fileExclusion in FileExclusionContributor.EP_NAME.getExtensionList()) {
+            val excludeResultFromEp = fileExclusion.shouldExclude(project, file)
+            if (excludeResultFromEp.isExcluded) {
+                true
             }
         }
-
-        // To be used when using iterating over all children
-        fun isFileValidForSonarLintWithExtensiveChecks(file: VirtualFile, project: Project): Boolean {
-            try {
-                val fileIndex = ProjectRootManager.getInstance(project).fileIndex
-                val toSkip = computeReadActionSafely(file, project) {
-                    (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
-                        || FileElement.isArchive(file)
-                        || !fileIndex.isInContent(file)
-                        || fileIndex.isInLibrarySource(file)
-                        || ProjectCoreUtil.isProjectOrWorkspaceFile(file)
-                        || isGeneratedSourceByAnyFilter(file, project)
-                }
-
-                return false == toSkip
-            } catch (e: Exception) {
-                SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.message)
-                return false
-            }
-        }
+        return false
     }
 
 }

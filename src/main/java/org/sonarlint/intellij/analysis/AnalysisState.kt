@@ -19,25 +19,20 @@
  */
 package org.sonarlint.intellij.analysis
 
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.vfs.VirtualFile
 import java.net.URI
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.trigger.TriggerType.Companion.analysisSnapshot
-import org.sonarlint.intellij.trigger.TriggerType.Companion.nonAnalysisSnapshot
 import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
@@ -45,35 +40,15 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 class AnalysisState(
     val id: UUID,
     private val analysisCallback: AnalysisCallback,
-    private val filesToAnalyze: MutableCollection<VirtualFile>,
-    private val module: Module,
-    private val triggerType: TriggerType,
-    private val progress: ProgressIndicator?
+    private val module: Module
 ) {
     private val modificationStampByFile = ConcurrentHashMap<VirtualFile, Long>()
     private val analysisDate: Instant = Instant.now()
     private val liveIssues = mutableMapOf<VirtualFile, Collection<LiveIssue>>()
     private val liveHotspots = mutableMapOf<VirtualFile, Collection<LiveSecurityHotspot>>()
-    private val shouldReceiveHotspot: Boolean
+    private val shouldReceiveHotspot: Boolean = Settings.getSettingsFor(module.project).isBound
     private var hasReceivedFinalIssues = false
     private var hasReceivedFinalHotspots = false
-
-    init {
-        this.initFiles(filesToAnalyze)
-        shouldReceiveHotspot = Settings.getSettingsFor(module.project).isBound
-    }
-
-    private fun initFiles(files: Collection<VirtualFile>) {
-        files.forEach { file: VirtualFile ->
-            computeReadActionSafely(file, module.project) {
-                FileDocumentManager.getInstance().getDocument(file)
-            }?.let { modificationStampByFile[file] = it.modificationStamp }
-        }
-    }
-
-    fun cancel() {
-        progress?.cancel()
-    }
 
     fun addRawHotspots(analysisId: UUID, hotspotsByFile: Map<URI, List<RaisedHotspotDto>>, isIntermediate: Boolean) {
         hasReceivedFinalHotspots = !isIntermediate
@@ -93,11 +68,11 @@ class AnalysisState(
                 AnalysisResult(
                     analysisId,
                     LiveFindings(liveIssues, liveHotspots),
-                    filesToAnalyze,
-                    triggerType,
+                    liveHotspots.keys,
                     analysisDate
                 )
             )
+            getService(module.project, RunningAnalysesTracker::class.java).finish(this)
         } else {
             analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
         }
@@ -121,11 +96,11 @@ class AnalysisState(
                 AnalysisResult(
                     analysisId,
                     LiveFindings(liveIssues, liveHotspots),
-                    filesToAnalyze,
-                    triggerType,
+                    liveIssues.keys,
                     analysisDate
                 )
             )
+            getService(module.project, RunningAnalysesTracker::class.java).finish(this)
         } else {
             analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
         }
@@ -169,14 +144,6 @@ class AnalysisState(
 
     fun isAnalysisFinished(): Boolean {
         return hasReceivedFinalIssues && (!shouldReceiveHotspot || hasReceivedFinalHotspots)
-    }
-
-    // Analysis are redundant if both are snapshots (report tab) or both are not snapshots, otherwise they should not cancel each other
-    // All the files of the redundant analysis should be contained in the new one, otherwise information might be lost
-    fun isRedundant(analysisState: AnalysisState): Boolean {
-        val bothSnapshot = triggerType in analysisSnapshot && analysisState.triggerType in analysisSnapshot
-        val bothNonSnapshot = triggerType in nonAnalysisSnapshot && analysisState.triggerType in nonAnalysisSnapshot
-        return (bothSnapshot || bothNonSnapshot) && analysisState.filesToAnalyze.containsAll(filesToAnalyze)
     }
 
 }

@@ -48,10 +48,6 @@ fun convert(
     return QuickFix(coreQuickFix.message(), virtualFileEdits.mapNotNull { it })
 }
 
-private fun log(project: Project, message: String) {
-    SonarLintConsole.get(project).debug(message)
-}
-
 private fun convert(fileEdit: FileEditDto, modificationStamp: Long?): VirtualFileEdit? {
     val virtualFile = uriToVirtualFile(fileEdit.target()) ?: return null
     val document = virtualFile.getDocument() ?: return null

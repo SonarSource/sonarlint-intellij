@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -26,6 +27,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AnalysisStatusTests extends AbstractSonarLintLightTests {
+  private static final UUID RANDOM_UUID = UUID.randomUUID();
   private AnalysisStatus status;
 
   @BeforeEach
@@ -35,62 +37,33 @@ class AnalysisStatusTests extends AbstractSonarLintLightTests {
 
   @Test
   void test_initial_status() {
-    assertStatus(false, false);
+    assertThat(status.isRunning()).isFalse();
   }
 
   @Test
   void test_run_once() {
-    assertThat(status.tryRun()).isTrue();
-    assertStatus(true, false);
+    assertThat(status.tryRun(RANDOM_UUID)).isTrue();
+    assertThat(status.isRunning()).isTrue();
   }
 
   @Test
   void test_run_twice() {
-    assertThat(status.tryRun()).isTrue();
-    assertThat(status.tryRun()).isFalse();
-    assertStatus(true, false);
-  }
-
-  @Test
-  void test_cancel_not_running() {
-    status.cancel();
-    assertStatus(false, false);
-  }
-
-  @Test
-  void test_cancel_running() {
-    status.tryRun();
-    status.cancel();
-    assertStatus(true, true);
-
-    status.cancel();
-    assertStatus(true, true);
+    assertThat(status.tryRun(RANDOM_UUID)).isTrue();
+    assertThat(status.tryRun(RANDOM_UUID)).isFalse();
+    assertThat(status.isRunning()).isTrue();
   }
 
   @Test
   void test_stop_not_running() {
-    status.stopRun();
-    assertStatus(false, false);
+    status.stopRun(RANDOM_UUID);
+    assertThat(status.isRunning()).isFalse();
   }
 
   @Test
   void test_stop_running() {
-    status.tryRun();
-    status.stopRun();
-    assertStatus(false, false);
-  }
-
-  @Test
-  void test_stop_cancel() {
-    status.tryRun();
-    status.cancel();
-    status.stopRun();
-    assertStatus(false, false);
-  }
-
-  private void assertStatus(boolean running, boolean canceled) {
-    assertThat(status.isRunning()).isEqualTo(running);
-    assertThat(status.isCanceled()).isEqualTo(canceled);
+    status.tryRun(RANDOM_UUID);
+    status.stopRun(RANDOM_UUID);
+    assertThat(status.isRunning()).isFalse();
   }
 
 }

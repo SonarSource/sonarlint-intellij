@@ -26,8 +26,8 @@ import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
+import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 import org.sonarlint.intellij.its.utils.optionalStep
 
 @EnabledIf("isCLion")

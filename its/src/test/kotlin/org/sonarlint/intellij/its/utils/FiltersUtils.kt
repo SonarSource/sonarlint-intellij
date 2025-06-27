@@ -23,45 +23,43 @@ import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.optionalIdeaFrame
+import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
-class FiltersUtils {
+object FiltersUtils {
 
-    companion object {
-        fun setFocusOnNewCode() {
-            setFocusOnNewCode(true)
-        }
+    fun setFocusOnNewCode() {
+        setFocusOnNewCode(true)
+    }
 
-        fun resetFocusOnNewCode() {
-            setFocusOnNewCode(false)
-        }
+    fun resetFocusOnNewCode() {
+        setFocusOnNewCode(false)
+    }
 
-        fun setFocusOnNewCode(focusOnNewCode: Boolean) {
-            optionalIdeaFrame()?.apply {
-                toolWindow("SonarQube for IDE") {
-                    ensureOpen()
-                    tabTitleContains("Current File") { select() }
-                    content("CurrentFilePanel") {
-                        val toolBarButton = focusOnNewCodeButton()
-                        val isFocusActivated =
-                            toolBarButton.popState() == ActionButtonFixture.PopState.SELECTED || toolBarButton.popState() == ActionButtonFixture.PopState.PUSHED
-                        if (focusOnNewCode != isFocusActivated) {
-                            toolBarButton.click()
-                        }
+    fun setFocusOnNewCode(focusOnNewCode: Boolean) {
+        optionalIdeaFrame()?.apply {
+            toolWindow("SonarQube for IDE") {
+                ensureOpen()
+                tabTitleContains("Current File") { select() }
+                content("CurrentFilePanel") {
+                    val toolBarButton = focusOnNewCodeButton()
+                    val isFocusActivated =
+                        toolBarButton.popState() == ActionButtonFixture.PopState.SELECTED || toolBarButton.popState() == ActionButtonFixture.PopState.PUSHED
+                    if (focusOnNewCode != isFocusActivated) {
+                        toolBarButton.click()
                     }
                 }
             }
         }
+    }
 
-        fun showResolvedIssues() {
-            with(BaseUiTest.remoteRobot) {
-                idea {
-                    toolWindow("SonarQube for IDE") {
-                        ensureOpen()
-                        tabTitleContains("Current File") { select() }
-                        content("CurrentFilePanel") {
-                            resolvedIssuesButton().click()
-                        }
+    fun showResolvedIssues() {
+        with(BaseUiTest.remoteRobot) {
+            idea {
+                toolWindow("SonarQube for IDE") {
+                    ensureOpen()
+                    tabTitleContains("Current File") { select() }
+                    content("CurrentFilePanel") {
+                        resolvedIssuesButton().click()
                     }
                 }
             }

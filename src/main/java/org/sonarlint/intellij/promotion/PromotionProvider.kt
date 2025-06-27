@@ -33,11 +33,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.EnabledLanguages.extraEnabledLanguagesInConnectedMode
-import org.sonarlint.intellij.messages.AnalysisListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
-import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.trigger.TriggerType.Companion.analysisSnapshot
-import org.sonarlint.intellij.trigger.TriggerType.Companion.nonAnalysisSnapshot
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
@@ -65,35 +61,27 @@ class PromotionProvider(private val project: Project) {
                     }
                 }
             })
-
-            subscribe<AnalysisListener>(AnalysisListener.TOPIC, object : AnalysisListener.Adapter() {
-                override fun started(files: Collection<VirtualFile>, triggerType: TriggerType) {
-                    val notifications = getSonarLintProjectNotifications()
-                    val wasAutoAnalyzed = PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L) != 0L
-
-                    if (isPromotionEnabled()) {
-                        processNotificationsByType(triggerType, wasAutoAnalyzed, notifications, files)
-                    }
-                }
-            })
         }
     }
 
-    private fun processNotificationsByType(
-        triggerType: TriggerType,
-        wasAutoAnalyzed: Boolean,
-        notifications: SonarLintProjectNotifications,
-        files: Collection<VirtualFile>,
-    ) {
-        if (triggerType in nonAnalysisSnapshot) {
+    fun handlePromotionOnAnalysis() {
+        if (isPromotionEnabled()) {
+            val notifications = getSonarLintProjectNotifications()
+            val wasAutoAnalyzed = PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L) != 0L
             processAutoAnalysisTriggers(wasAutoAnalyzed, notifications)
         }
+    }
 
-        if (triggerType in analysisSnapshot) {
+    fun handlePromotionOnAnalysisReport(files: List<VirtualFile>) {
+        if (isPromotionEnabled()) {
+            val notifications = getSonarLintProjectNotifications()
             processReportAnalysisTriggers(files, notifications)
         }
+    }
 
-        if (triggerType == TriggerType.CHECK_IN) {
+    fun handlePromotionOnPreCommitCheck() {
+        if (isPromotionEnabled()) {
+            val notifications = getSonarLintProjectNotifications()
             processCICDProjectAnalysisPromotion(notifications)
         }
     }

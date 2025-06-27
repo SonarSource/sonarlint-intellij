@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
@@ -59,7 +58,6 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
       }
     });
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, (ProjectConfigurationListener) s -> runnable.run());
-    busConnection.subscribe(PowerSaveMode.TOPIC, (PowerSaveMode.Listener) runnable::run);
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
       @Override
       public void selectionChanged(@NotNull FileEditorManagerEvent event) {

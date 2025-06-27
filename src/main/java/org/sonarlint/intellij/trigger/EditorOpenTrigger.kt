@@ -19,43 +19,37 @@
  */
 package org.sonarlint.intellij.trigger
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import javax.annotation.concurrent.ThreadSafe
-import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks
+import org.sonarlint.intellij.common.util.FileUtils.isFileValidForSonarLintWithExtensiveChecks
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.fs.VirtualFileEvent
-import org.sonarlint.intellij.util.SonarLintAppUtils
+import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.getOpenFiles
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-@ThreadSafe
 @Service(Service.Level.PROJECT)
-class EditorOpenTrigger(private val myProject: Project) : FileEditorManagerListener, Disposable {
-    private val scheduler = EventScheduler(myProject, "open", TriggerType.EDITOR_OPEN, 1000, true)
-
+class EditorOpenTrigger(private val myProject: Project) : FileEditorManagerListener {
     fun onProjectOpened() {
         myProject.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
 
         runOnPooledThread(myProject) {
-            for (file in myProject.getOpenFiles()) {
-                val module = SonarLintAppUtils.findModuleForFile(file, myProject)
-
-                if (module != null) {
+            myProject.getOpenFiles().forEach { file ->
+                findModuleForFile(file, myProject)?.let { module ->
                     if (SonarLintUtils.isRider()) {
-                        SonarLintUtils.getService(BackendService::class.java)
+                        getService(BackendService::class.java)
                             .updateFileSystem(mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))), true)
                     }
 
-                    SonarLintUtils.getService(BackendService::class.java).didOpenFileForModule(module, file)
-                } else {
-                    SonarLintUtils.getService(BackendService::class.java).didOpenFileForProject(myProject, file)
+                    getService(BackendService::class.java).didOpenFile(module, file)
+                } ?: run {
+                    getService(BackendService::class.java).didOpenFile(myProject, file)
                 }
             }
         }
@@ -63,17 +57,13 @@ class EditorOpenTrigger(private val myProject: Project) : FileEditorManagerListe
 
     override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
         runOnPooledThread(source.project) {
-            val module = SonarLintAppUtils.findModuleForFile(file, source.project)
-            if (module != null && isFileValidForSonarLintWithExtensiveChecks(file, source.project)) {
-                SonarLintUtils.getService(BackendService::class.java)
-                    .updateFileSystem(mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))), true)
-
-                SonarLintUtils.getService(BackendService::class.java).didOpenFileForModule(module, file)
+            findModuleForFile(file, source.project)?.let { module ->
+                if (isFileValidForSonarLintWithExtensiveChecks(file, source.project)) {
+                    getService(BackendService::class.java)
+                        .updateFileSystem(mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))), true)
+                }
+                getService(BackendService::class.java).didOpenFile(module, file)
             }
         }
-    }
-
-    override fun dispose() {
-        scheduler.stopScheduler()
     }
 }

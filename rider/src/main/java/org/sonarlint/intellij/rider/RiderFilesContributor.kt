@@ -26,7 +26,7 @@ import com.jetbrains.rider.projectView.workspace.ProjectModelEntityVisitor
 import com.jetbrains.rider.projectView.workspace.getVirtualFileAsContentRoot
 import com.jetbrains.rider.projectView.workspace.isProjectFile
 import org.sonarlint.intellij.common.analysis.FilesContributor
-import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks
+import org.sonarlint.intellij.common.util.FileUtils.isFileValidForSonarLintWithExtensiveChecks
 
 class RiderFilesContributor : FilesContributor {
 
