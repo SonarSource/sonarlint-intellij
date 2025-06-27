@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.lang.Language;
 import com.intellij.notification.Notification;
 import com.intellij.openapi.Disposable;
@@ -105,6 +106,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getService(BackendService.class).projectUnbound(getProject());
     getService(BackendService.class).connectionsUpdated(Collections.emptyList());
     getService(BackendService.class).modulesAdded(getProject(), List.of(getModule()));
+    PropertiesComponent.getInstance().unsetValue("SonarLint.lastPromotionNotificationDate");
   }
 
   @RegisterExtension

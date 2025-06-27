@@ -26,15 +26,17 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.notification.NotificationsManager
 import com.intellij.util.messages.MessageBusConnection
-import java.util.stream.Stream
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.promotion.Promotion
 import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
+import java.util.stream.Stream
 
 class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
 
@@ -82,7 +84,8 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
     fun should_notify_language_promotion() {
         val content = "content"
 
-        sonarLintProjectNotifications.notifyLanguagePromotion(content)
+        sonarLintProjectNotifications.notifyLanguagePromotion(content, Promotion.ENABLE_LANGUAGE_ANALYSIS)
+        val action = notifications[0].actions[0]
 
         Assertions.assertThat(notifications).hasSize(1)
         Assertions.assertThat(notifications[0].title).isEqualTo("<b>SonarQube for IDE suggestions</b>")
@@ -90,6 +93,8 @@ class SonarLintProjectNotificationsTests : AbstractSonarLintLightTests() {
         Assertions.assertThat(notifications[0].type).isEqualTo(NotificationType.INFORMATION)
         Assertions.assertThat(notifications[0].icon).isEqualTo(SonarLintIcons.SONARQUBE_FOR_INTELLIJ)
         Assertions.assertThat(notifications[0].actions.size).isEqualTo(4)
+        Assertions.assertThat(action).isInstanceOf(OpenTrackedLinkAction::class.java)
+        Assertions.assertThat((action as OpenTrackedLinkAction).promotion).isEqualTo(Promotion.ENABLE_LANGUAGE_ANALYSIS)
     }
 
     @Test
