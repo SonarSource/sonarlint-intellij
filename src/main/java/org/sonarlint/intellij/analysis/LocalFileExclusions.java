@@ -21,13 +21,13 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
-import java.io.File;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
@@ -45,23 +45,30 @@ public final class LocalFileExclusions {
   }
 
   /**
-   * Converts a file or directory path to an appropriate glob pattern.
-   * - If it's a directory: /path/dir → ** /path/dir/**
+   * Converts a file path to an appropriate glob pattern.
    * - If it's a file: /path/file.txt → ** /path/file.txt
    */
-  protected static String toGlobPattern(String pathStr) {
-    var file = new File(pathStr);
-    var normalized = pathStr.replace("\\", "/").replaceAll("/++$", "");
+  static String fileToGlobPattern(String pathStr) {
+    return getNormalized(pathStr);
+  }
+
+  /**
+   * Converts a directory path to an appropriate glob pattern.
+   * - If it's a directory: /path/dir → ** /path/dir/**
+   */
+  static String directoryToGlobPattern(String pathStr) {
+    var normalized = getNormalized(pathStr);
+
+    return normalized + "/**";
+  }
+
+  private static @NotNull String getNormalized(String pathStr) {
+    var normalized = pathStr.replace("\\", "/").replaceAll("/+$", "");
     if (!normalized.startsWith("/")) {
       normalized = "/" + normalized;
     }
     normalized = "**" + normalized;
-
-    if (file.isDirectory()) {
-      return normalized + "/**";
-    } else {
-      return normalized;
-    }
+    return normalized;
   }
 
   private static Set<String> getExclusionsOfType(Collection<ExclusionItem> exclusions, ExclusionItem.Type type) {
@@ -86,11 +93,11 @@ public final class LocalFileExclusions {
     var projectGlobExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.GLOB);
 
     var normalizedProjectFileExclusions = projectFileExclusions.stream()
-            .map(path -> toGlobPattern(Paths.get(path).toString()))
+            .map(path -> fileToGlobPattern(Paths.get(path).toString()))
             .collect(Collectors.toSet());
 
     var normalizedProjectDirExclusions = projectDirExclusions.stream()
-            .map(path -> toGlobPattern(Paths.get(path).toString()))
+            .map(path -> directoryToGlobPattern(Paths.get(path).toString()))
             .collect(Collectors.toSet());
 
     var allExclusions = new HashSet<String>();
