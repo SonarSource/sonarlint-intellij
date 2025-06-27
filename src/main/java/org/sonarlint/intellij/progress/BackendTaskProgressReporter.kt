@@ -103,7 +103,7 @@ private class AwaitingBackgroundTask(
                 synchronized(waitMonitor) {
                     waitMonitor.wait(60 * 1000)
                 }
-            } catch (e: InterruptedException) {
+            } catch (_: InterruptedException) {
                 complete.set(true)
             }
         }

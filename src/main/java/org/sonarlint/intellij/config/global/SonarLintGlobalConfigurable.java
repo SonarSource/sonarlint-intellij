@@ -108,7 +108,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   public static void triggerAnalysis() {
     var openProjects = ProjectManager.getInstance().getOpenProjects();
     for (var project : openProjects) {
-      getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles();
+      getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles();
     }
   }
 

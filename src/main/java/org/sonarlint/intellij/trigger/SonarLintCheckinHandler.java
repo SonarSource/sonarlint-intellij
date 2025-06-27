@@ -125,7 +125,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         return waitForFuture(indicator, future);
       });
 
-      if (!completed || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
+      if (Boolean.FALSE.equals(completed) || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
         SonarLintConsole.get(project).debug("Pre-commit analysis failed");
         return ReturnResult.CANCEL;
       }

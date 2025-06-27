@@ -25,24 +25,11 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectLocator
-import com.intellij.openapi.vfs.VirtualFile
-import java.time.Duration
-import org.sonarlint.intellij.common.util.FileUtils
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.util.Alarm
-import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
-import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
-
-const val DEBOUNCE_DELAY_MS = 1000L
+import org.sonarlint.intellij.trigger.EventScheduler
 
 @Service(Service.Level.APP)
 class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
-    private val triggerAlarm = Alarm("sonarlint-editor-changes-notifier", Duration.ofMillis(DEBOUNCE_DELAY_MS)) { notifyPendingChanges() }
-    private val changedFiles = LinkedHashSet<VirtualFile>()
+    private val scheduler = EventScheduler("editor-changes", 1000, false)
 
     fun startListening() {
         EditorFactory.getInstance().eventMulticaster.addDocumentListener(this, this)
@@ -50,48 +37,10 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
 
     override fun afterDocumentChange(document: Document) {
         val virtualFile = FileDocumentManager.getInstance().getFile(document) ?: return
-        synchronized(changedFiles) {
-            changedFiles.add(virtualFile)
-            triggerAlarm.reset()
-        }
-    }
-
-    private fun notifyPendingChanges() {
-        val changedFiles = synchronized(changedFiles) {
-            val list = changedFiles.toList()
-            changedFiles.clear()
-            list
-        }
-
-        groupByProject(changedFiles)
-            .forEach { (project, files) -> notifyFileChangesForProject(project, files) }
-    }
-
-    private fun groupByProject(files: List<VirtualFile>) =
-        files.fold(mutableMapOf<Project, MutableList<VirtualFile>>()) { acc, file ->
-            ProjectLocator.getInstance().getProjectsForFile(file)
-                .filter { !it.isDisposed }
-                .forEach { project -> acc.computeIfAbsent(project) { mutableListOf() }.add(file) }
-            acc
-        }.toMap()
-
-    private fun notifyFileChangesForProject(project: Project, changedFiles: List<VirtualFile>) {
-        val filesToSendPerModule = HashMap<Module, MutableList<VirtualFileEvent>>()
-
-        changedFiles
-            .filter { FileUtils.isFileValidForSonarLintWithExtensiveChecks(it, project) }
-            .forEach { file ->
-                val module = findModuleForFile(file, project) ?: return@forEach
-                filesToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file))
-            }
-
-        if (filesToSendPerModule.isNotEmpty()) {
-            getService(BackendService::class.java).updateFileSystem(filesToSendPerModule, true)
-        }
+        scheduler.notify(virtualFile)
     }
 
     override fun dispose() {
-        changedFiles.clear()
-        triggerAlarm.shutdown()
+        scheduler.stopScheduler()
     }
 }

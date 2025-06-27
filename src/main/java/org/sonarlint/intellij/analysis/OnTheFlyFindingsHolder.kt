@@ -45,7 +45,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
 class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerListener {
     private var selectedFile: VirtualFile? = null
-    private val nonDirtyAnalyzedFiles: MutableSet<VirtualFile> = ConcurrentHashMap.newKeySet()
     private val currentIssuesPerOpenFile: MutableMap<VirtualFile, Collection<LiveIssue>> = ConcurrentHashMap()
     private val currentSecurityHotspotsPerOpenFile: MutableMap<VirtualFile, Collection<LiveSecurityHotspot>> = ConcurrentHashMap()
 
@@ -53,8 +52,6 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         project.messageBus.connect()
             .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
     }
-
-    fun clearNonDirtyAnalyzedFile(file: VirtualFile) = nonDirtyAnalyzedFiles.remove(file)
 
     fun updateOnAnalysisResult(analysisResult: AnalysisResult) =
         updateViewsWithNewFindings(analysisResult.findings)
@@ -118,17 +115,11 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
     override fun selectionChanged(event: FileEditorManagerEvent) {
         val file = event.newFile
         selectedFile = file
-        if (file != null && !nonDirtyAnalyzedFiles.contains(file)) {
-            getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles()
-            nonDirtyAnalyzedFiles.add(file)
-        }
-
         updateCurrentFileTab()
         updateTaintTab()
     }
 
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
-        nonDirtyAnalyzedFiles.remove(file)
         currentIssuesPerOpenFile.remove(file)
         currentSecurityHotspotsPerOpenFile.remove(file)
         // update only Security Hotspots, issues will be updated in reaction to selectionChanged
@@ -186,7 +177,6 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
         if (selectedFile != null) {
             currentIssuesPerOpenFile.remove(selectedFile)
-            nonDirtyAnalyzedFiles.remove(selectedFile)
         }
         updateCurrentFileTab()
     }

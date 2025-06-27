@@ -23,8 +23,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import org.sonarlint.intellij.cayc.NewCodePeriodCache
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 
 
 @Service(Service.Level.PROJECT)
@@ -38,7 +38,6 @@ class RunningAnalysesTracker(private val project: Project) {
 
     fun finish(analysisState: AnalysisState) {
         getService(project, AnalysisStatus::class.java).stopRun(analysisState.id)
-        getService(project, NewCodePeriodCache::class.java).refreshAsync()
         analysisStateById.remove(analysisState.id)
     }
 
@@ -46,8 +45,16 @@ class RunningAnalysesTracker(private val project: Project) {
         return analysisStateById[analysisId]
     }
 
-    fun isAnalysisRunning(): Boolean {
-        return analysisStateById.isNotEmpty()
+    fun isEmpty(): Boolean {
+        return analysisStateById.isEmpty()
+    }
+
+    // Used for tests
+    fun cancelAll() {
+        analysisStateById.keys.forEach { uuid ->
+            getService(BackendService::class.java).cancelTask(uuid.toString())
+        }
+        analysisStateById.clear()
     }
 
 }

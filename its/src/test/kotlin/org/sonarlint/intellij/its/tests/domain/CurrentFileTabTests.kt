@@ -27,9 +27,9 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.disableConnectedMode
-import org.sonarlint.intellij.its.utils.ProjectBindingUtils.Companion.enableConnectedMode
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.optionalIdeaFrame
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.disableConnectedMode
+import org.sonarlint.intellij.its.utils.ProjectBindingUtils.enableConnectedMode
+import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
 class CurrentFileTabTests {
 

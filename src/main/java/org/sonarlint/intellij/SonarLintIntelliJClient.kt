@@ -78,6 +78,7 @@ import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.findOverriddenModules
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.getAutoShareConfigParams
 import org.sonarlint.intellij.binding.ClientBindingSuggestion
+import org.sonarlint.intellij.cayc.NewCodePeriodCache
 import org.sonarlint.intellij.common.analysis.FilesContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -623,6 +624,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
                     if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
                         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
+                    } else {
+                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles()
                     }
                 }
             }
@@ -759,7 +762,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return findConnectedModeFile(sonarlintFolder, project, configScopeId)
     }
 
-    private fun listModuleFiles(module: Module, configScopeId: String): MutableList<ClientFileDto> {
+    private fun listModuleFiles(module: Module, configScopeId: String): List<ClientFileDto> {
         val filesInContentRoots = visitAndAddAllFilesForModule(module)
 
         FilesContributor.EP_NAME.extensionList.forEach {
@@ -870,6 +873,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
+        getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
         if (runningAnalysis != null) {
             runningAnalysis.addRawIssues(analysisId, issuesByFileUri, isIntermediatePublication)
@@ -888,10 +892,11 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
+        getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
         if (runningAnalysis != null) {
             runningAnalysis.addRawHotspots(analysisId, hotspotsByFileUri, isIntermediatePublication)
-        } else if (analysisId == null && module != null) {
+        } else if (module != null) {
             val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
             onTheFlyFindingsHolder.updateViewsWithNewSecurityHotspots(module, hotspotsByFileUri)
         }

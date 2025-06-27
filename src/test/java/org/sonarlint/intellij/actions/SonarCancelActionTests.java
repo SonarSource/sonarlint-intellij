@@ -48,6 +48,7 @@ class SonarCancelActionTests extends AbstractSonarLintHeavyTests {
   void prepare() {
     event = SonarLintTestUtils.createAnActionEvent(getProject());
     when(event.getProject()).thenReturn(myProject);
+    when(event.getPresentation()).thenReturn(presentation);
   }
 
   @Test
@@ -61,7 +62,7 @@ class SonarCancelActionTests extends AbstractSonarLintHeavyTests {
 
     sonarCancelAction.actionPerformed(event);
 
-    assertThat(status.isRunning()).isTrue();
+    assertThat(status.isRunning()).isFalse();
   }
 
   @Test

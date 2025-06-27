@@ -57,11 +57,11 @@ class EditorOpenTrigger(private val myProject: Project) : FileEditorManagerListe
 
     override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
         runOnPooledThread(source.project) {
-            val module = findModuleForFile(file, source.project)
-            if (module != null && isFileValidForSonarLintWithExtensiveChecks(file, source.project)) {
-                getService(BackendService::class.java)
-                    .updateFileSystem(mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))), true)
-
+            findModuleForFile(file, source.project)?.let { module ->
+                if (isFileValidForSonarLintWithExtensiveChecks(file, source.project)) {
+                    getService(BackendService::class.java)
+                        .updateFileSystem(mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))), true)
+                }
                 getService(BackendService::class.java).didOpenFile(module, file)
             }
         }

@@ -100,7 +100,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
         project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
 
         if (exclusionsModified) {
-          getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles();
+          getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles();
         }
       });
     }

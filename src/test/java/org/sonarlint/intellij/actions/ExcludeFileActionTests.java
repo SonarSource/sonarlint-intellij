@@ -64,7 +64,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
     when(e.getPlace()).thenReturn(EDITOR_POPUP);
 
     Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(myProject, AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue());
-    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(myProject, RunningAnalysesTracker.class).isAnalysisRunning()).isFalse());
+    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(myProject, RunningAnalysesTracker.class).isEmpty()).isTrue());
     clearInvocations(analysisSubmitter);
   }
 

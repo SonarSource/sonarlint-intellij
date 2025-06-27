@@ -30,78 +30,74 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jbTextFieldsWithBrowseButton
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 
-class ExclusionUtils {
+object ExclusionUtils {
 
-    companion object {
+    fun excludeFile(fileName: String) {
+        openExclusionsTab()
+        excludeFileAndPressOk(fileName)
+    }
 
-        fun excludeFile(fileName: String) {
-            openExclusionsTab()
-            excludeFileAndPressOk(fileName)
-        }
+    fun removeFileExclusion(fileName: String) {
+        openExclusionsTab()
+        removeSpecificExclusion(fileName)
+    }
 
-        fun removeFileExclusion(fileName: String) {
-            openExclusionsTab()
-            removeSpecificExclusion(fileName)
-        }
-
-        private fun openExclusionsTab() {
-            with(remoteRobot) {
-                idea {
-                    toolWindow("SonarQube for IDE") {
-                        ensureOpen()
-                        tabTitleContains("Current File") { select() }
-                        content("CurrentFilePanel") {
-                            toolBarButton("Configure SonarQube for IDE").click()
-                        }
-                        selectExclusionTab()
+    private fun openExclusionsTab() {
+        with(remoteRobot) {
+            idea {
+                toolWindow("SonarQube for IDE") {
+                    ensureOpen()
+                    tabTitleContains("Current File") { select() }
+                    content("CurrentFilePanel") {
+                        toolBarButton("Configure SonarQube for IDE").click()
                     }
+                    selectExclusionTab()
                 }
             }
         }
+    }
 
-        private fun selectExclusionTab() {
-            with(remoteRobot) {
-                idea {
-                    dialog("Project Settings") {
-                        findText("File Exclusions").click()
-                    }
+    private fun selectExclusionTab() {
+        with(remoteRobot) {
+            idea {
+                dialog("Project Settings") {
+                    findText("File Exclusions").click()
                 }
             }
         }
+    }
 
-        private fun removeSpecificExclusion(fileName: String) {
-            with(remoteRobot) {
-                idea {
-                    dialog("Project Settings") {
-                        findText("File Exclusions").click()
-                        findText(fileName).click()
-                        actionButtons(ActionButtonFixture.byType())[1].clickWhenEnabled()
-                        button("OK").click()
-                    }
+    private fun removeSpecificExclusion(fileName: String) {
+        with(remoteRobot) {
+            idea {
+                dialog("Project Settings") {
+                    findText("File Exclusions").click()
+                    findText(fileName).click()
+                    actionButtons(ActionButtonFixture.byType())[1].clickWhenEnabled()
+                    button("OK").click()
                 }
             }
         }
+    }
 
-        private fun excludeFileAndPressOk(fileName: String) {
-            with(remoteRobot) {
-                idea {
-                    dialog("Project Settings") {
-                        findText("File Exclusions").click()
-                        actionButtons(ActionButtonFixture.byType())[0].clickWhenEnabled()
-                        dialog("Add SonarQube for IDE File Exclusion") {
-                            jbTextFieldsWithBrowseButton()[0].click()
-                            keyboard { enterText(fileName) }
-                            waitFor(Duration.ofSeconds(1)) {
-                                button("OK").isEnabled()
-                            }
-                            button("OK").click()
+    private fun excludeFileAndPressOk(fileName: String) {
+        with(remoteRobot) {
+            idea {
+                dialog("Project Settings") {
+                    findText("File Exclusions").click()
+                    actionButtons(ActionButtonFixture.byType())[0].clickWhenEnabled()
+                    dialog("Add SonarQube for IDE File Exclusion") {
+                        jbTextFieldsWithBrowseButton()[0].click()
+                        keyboard { enterText(fileName) }
+                        waitFor(Duration.ofSeconds(1)) {
+                            button("OK").isEnabled()
                         }
                         button("OK").click()
                     }
+                    button("OK").click()
                 }
             }
         }
-
     }
 
 }

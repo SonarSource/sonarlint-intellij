@@ -32,6 +32,8 @@ import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+
 @Service(Service.Level.PROJECT)
 public final class LocalFileExclusions {
 
@@ -39,16 +41,21 @@ public final class LocalFileExclusions {
 
   public LocalFileExclusions(Project project) {
     subscribeToSettingsChanges(project);
+    loadProjectExclusions(getSettingsFor(project));
   }
 
   /**
    * Converts a file or directory path to an appropriate glob pattern.
-   * - If it's a directory: /path/dir → glob:/path/dir/**
-   * - If it's a file: /path/file.txt → glob:/path/file.txt
+   * - If it's a directory: /path/dir → ** /path/dir/**
+   * - If it's a file: /path/file.txt → ** /path/file.txt
    */
-  private static String toGlobPattern(String pathStr) {
+  protected static String toGlobPattern(String pathStr) {
     var file = new File(pathStr);
-    var normalized = pathStr.replace("\\", "/").replaceAll("/+$", "");
+    var normalized = pathStr.replace("\\", "/").replaceAll("/++$", "");
+    if (!normalized.startsWith("/")) {
+      normalized = "/" + normalized;
+    }
+    normalized = "**" + normalized;
 
     if (file.isDirectory()) {
       return normalized + "/**";

@@ -61,6 +61,7 @@ import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.Companion.collectContributedLanguages
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -578,6 +579,8 @@ class BackendService : Disposable {
                 }
             }
             refreshTaintVulnerabilities(project)
+            // Workaround as SLCORE does not always trigger analysis when binding a project, if synchro is already done
+            getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles()
         }
     }
 
@@ -820,7 +823,10 @@ class BackendService : Disposable {
         // simplification as we ignore module bindings
         return requestFromBackend { it.newCodeService.getNewCodeDefinition(GetNewCodeDefinitionParams(projectId(project))) }
             .thenApplyAsync { response -> if (response.isSupported) response.description else "(unsupported new code definition)" }
-            .exceptionally { "(unknown code period)" }
+            .exceptionally { e ->
+                SonarLintConsole.get(project).error("Error while getting new code period", e)
+                "(unknown code period)"
+            }
     }
 
     fun triggerTelemetryForFocusOnNewCode() {
@@ -950,7 +956,7 @@ class BackendService : Disposable {
     fun updateFileSystem(filesByModule: Map<Module, List<VirtualFileEvent>>, includeFileContent: Boolean) {
         val deletedFileUris = filesByModule.values
             .flatMap { it.filter { event -> event.type == ModuleFileEvent.Type.DELETED } }
-            .mapNotNull { VirtualFileUtils.toURI(it.virtualFile) }
+            .mapNotNull { toURI(it.virtualFile) }
 
         val addedFiles = filesByModule.entries.flatMap { (module, events) ->
             gatherClientFiles(module, ModuleFileEvent.Type.CREATED, events, includeFileContent)

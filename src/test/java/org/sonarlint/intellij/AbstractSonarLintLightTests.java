@@ -49,6 +49,7 @@ import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
+import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -100,9 +101,8 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
     getProjectSettings().setVerboseEnabled(true);
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().clearBindingOverride();
-    getService(BackendService.class).moduleUnbound(getModule());
-    getService(BackendService.class).projectUnbound(getProject());
     getService(BackendService.class).connectionsUpdated(Collections.emptyList());
+    getService(BackendService.class).projectOpened(getProject());
     getService(BackendService.class).modulesAdded(getProject(), List.of(getModule()));
   }
 
@@ -126,10 +126,10 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
       getService(BackendService.class).moduleRemoved(getModule());
       getService(BackendService.class).projectClosed(getProject());
       if (!getProject().isDisposed()) {
+        getService(getProject(), RunningAnalysesTracker.class).cancelAll();
         AnalysisStatus.get(getProject()).stopRun();
       }
       Disposer.dispose(disposable);
-
     } finally {
       super.tearDown();
     }

@@ -34,7 +34,7 @@ import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -68,7 +68,7 @@ class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     mockSelectedFiles(f1);
     editorFileAction.actionPerformed(event);
-    verify(analysisSubmitter).analyzeFilesOnUserAction(anyCollection(), eq(event));
+    verify(analysisSubmitter).analyzeFilesOnUserAction(anySet(), eq(event));
   }
 
   private void mockSelectedFiles(VirtualFile file) {

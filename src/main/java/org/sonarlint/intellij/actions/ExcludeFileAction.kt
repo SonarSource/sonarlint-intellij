@@ -62,7 +62,7 @@ class ExcludeFileAction : AbstractSonarAction {
             if (newExclusions.isNotEmpty()) {
                 exclusions.addAll(newExclusions)
                 settings.fileExclusions = exclusions
-                getService(project, AnalysisSubmitter::class.java).autoAnalyzeSelectedFiles()
+                getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles()
                 val projectListener = project.messageBus.syncPublisher(ProjectConfigurationListener.TOPIC)
                 projectListener.changed(settings)
             }
