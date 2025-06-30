@@ -36,7 +36,7 @@ intellij {
 
 dependencies {
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.api)
+    testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
 }
 

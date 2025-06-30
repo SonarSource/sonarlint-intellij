@@ -240,7 +240,7 @@ dependencies {
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.api)
+    testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
