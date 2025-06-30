@@ -862,19 +862,20 @@ class BackendService : Disposable {
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
 
         fun moduleId(module: Module): String {
-            return if (isRider()) {
-                getSettingsFor(module.project).moduleMapping[module.name]?.let { "${it}_${module.project.name}" }
-                    ?: "${module.name}_${module.project.name}"
-            } else {
-                getSettingsFor(module.project).moduleMapping[module.name] ?: module.name
-            }
+            val moduleName = getSettingsFor(module.project).moduleMapping[module.name] ?: module.name
+            return "${projectId(module.project)}_${moduleName}"
         }
 
         fun findModule(configScopeId: String): Module? {
             return ProjectManager.getInstance().openProjects.firstNotNullOfOrNull { project ->
-                val mapping = getSettingsFor(project).moduleMapping.filterValues { scopeId -> scopeId == configScopeId }.keys
-                val currentModuleName = if (mapping.isNotEmpty()) mapping.first() else configScopeId
-                return@firstNotNullOfOrNull ModuleManager.getInstance(project).modules.firstOrNull { module -> moduleId(module) == currentModuleName }
+                val projectId = projectId(project)
+                if (configScopeId.startsWith(projectId + '_')) {
+                    val searchedModuleName = configScopeId.substring(projectId.length + 1)
+                    val mapping = getSettingsFor(project).moduleMapping.filterValues { scopeId -> scopeId == searchedModuleName }.keys
+                    val currentModuleName = if (mapping.isNotEmpty()) mapping.first() else searchedModuleName
+                    return@firstNotNullOfOrNull ModuleManager.getInstance(project).modules.firstOrNull { module -> module.name == currentModuleName }
+                }
+                return null
             }
         }
 
