@@ -36,14 +36,15 @@ class UrlUtils {
          * If this method will ever be used with any outside input make sure to double-check that
          * no unsanitized parameters are passed here!
          */
-        fun addParameters(url: String, params: Map<String, String>): String {
+        fun addParameters(url: String, nullableParams: Map<String, String>?): String {
+            val params = nullableParams ?: mapOf()
             if (params.isEmpty()) {
                 return url
             }
 
             val urlBuilder = URLBuilder(url)
-            for (entry in params) {
-                urlBuilder.parameters.append(entry.key, entry.value)
+            params.map {
+                (key, value) -> urlBuilder.parameters.append(key, value)
             }
             return urlBuilder.build().toString()
         }

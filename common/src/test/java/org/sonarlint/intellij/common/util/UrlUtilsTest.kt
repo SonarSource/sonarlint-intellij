@@ -27,14 +27,21 @@ private const val BASE_URL = "http://localhost:8080/url"
 class UrlUtilsTest {
 
     @Test
-    fun should_not_change_url_when_no_params() {
+    fun `should not change url when null map`() {
+        val same = UrlUtils.addParameters(BASE_URL, null)
+
+        Assertions.assertThat(same).isSameAs(BASE_URL)
+    }
+
+    @Test
+    fun `should not change url when no params`() {
         val same = UrlUtils.addParameters(BASE_URL, emptyMap())
 
         Assertions.assertThat(same).isSameAs(BASE_URL)
     }
 
     @Test
-    fun should_add_params_where_there_are_none() {
+    fun `should add params where there are none`() {
         val withParameters = UrlUtils.addParameters(
             "$BASE_URL?", mapOf(
                 "param1" to "value1",
@@ -46,7 +53,7 @@ class UrlUtilsTest {
     }
 
     @Test
-    fun should_preserve_existing_parameters() {
+    fun `should preserve existing parameters`() {
         val withParameters = UrlUtils.addParameters(
             "$BASE_URL?existingParam=existingValue", mapOf(
                 "param1" to "value1",
@@ -58,7 +65,7 @@ class UrlUtilsTest {
     }
 
     @Test
-    fun should_append_to_existing_parameters() {
+    fun `should append to existing parameters`() {
         val withParameters = UrlUtils.addParameters(
             "$BASE_URL?existingParam=existingValue", mapOf(
                 "existingParam" to "value1",

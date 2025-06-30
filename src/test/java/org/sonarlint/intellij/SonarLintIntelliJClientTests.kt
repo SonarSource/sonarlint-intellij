@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.promotion.Promotion
+import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
@@ -264,7 +264,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         val action = projectNotifications[0].actions[0]
 
         assertThat(action).isInstanceOf(OpenTrackedLinkAction::class.java)
-        org.assertj.core.api.Assertions.assertThat((action as OpenTrackedLinkAction).promotion).isEqualTo(Promotion.ENABLE_LANGUAGE_ANALYSIS)
+        assertThat((action as OpenTrackedLinkAction).utmParameters).isEqualTo(UtmParameters.ENABLE_LANGUAGE_ANALYSIS)
     }
 
     @Test

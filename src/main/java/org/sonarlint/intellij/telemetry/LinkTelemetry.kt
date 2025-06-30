@@ -31,7 +31,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.OPEN
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROUBLESHOOTING_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.USING_RULES_LINK
-import org.sonarlint.intellij.promotion.Promotion
+import org.sonarlint.intellij.promotion.UtmParameters
 
 enum class LinkTelemetry(
     private val linkId: String,
@@ -57,18 +57,14 @@ enum class LinkTelemetry(
         browseWithTelemetry(null)
     }
 
-    fun browseWithTelemetry(promotion: Promotion?) {
+    fun browseWithTelemetry(utmParameters: UtmParameters?) {
         SonarLintUtils.getService(SonarLintTelemetry::class.java).helpAndFeedbackLinkClicked(linkId)
 
-        BrowserUtil.browse(withParameters(promotion))
+        BrowserUtil.browse(withParameters(utmParameters))
     }
 
-    private fun withParameters(promotion: Promotion?): String {
-        var promotionParams = emptyMap<String, String>()
-        if (promotion != null) {
-            promotionParams = promotion.trackingParams
-        }
-        return UrlUtils.addParameters(url, promotionParams)
+    private fun withParameters(utmParameters: UtmParameters?): String {
+        return UrlUtils.addParameters(url, utmParameters?.trackingParams)
     }
 
 }

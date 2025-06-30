@@ -45,7 +45,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.promotion.Promotion;
+import org.sonarlint.intellij.promotion.UtmParameters;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
@@ -137,7 +137,7 @@ public class ServerStep extends AbstractWizardStepEx {
     editorPane.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
-        linkTelemetry.browseWithTelemetry(Promotion.NEW_CONNECTION_PANEL);
+        linkTelemetry.browseWithTelemetry(UtmParameters.NEW_CONNECTION_PANEL);
       }
     });
   }

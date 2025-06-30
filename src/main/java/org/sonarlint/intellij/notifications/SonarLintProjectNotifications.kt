@@ -44,7 +44,7 @@ import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.notifications.binding.ChooseBindingSuggestionAction
 import org.sonarlint.intellij.notifications.binding.DisableBindingSuggestionsAction
 import org.sonarlint.intellij.promotion.DontAskAgainAction
-import org.sonarlint.intellij.promotion.Promotion
+import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarlint.intellij.telemetry.LinkTelemetry
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
@@ -120,14 +120,14 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
-    fun notifyLanguagePromotion(content: String, promotion: Promotion) {
+    fun notifyLanguagePromotion(content: String, utmParameters: UtmParameters) {
         inContextPromotionGroup.createNotification(
             TITLE_SONARLINT_SUGGESTIONS,
             content,
             NotificationType.INFORMATION
         ).apply {
             addAction(OpenTrackedLinkAction("Try SonarQube Cloud for free", LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE,
-                promotion))
+                utmParameters))
             addAction(OpenTrackedLinkAction("Download SonarQube Server", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS))
             addAction(OpenInBrowserAction("Learn more", null, CONNECTED_MODE_BENEFITS_LINK))
             addAction(DontAskAgainAction())

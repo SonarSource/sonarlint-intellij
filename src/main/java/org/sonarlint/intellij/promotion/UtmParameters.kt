@@ -21,17 +21,21 @@ package org.sonarlint.intellij.promotion
 
 private val BASE_PARAMETERS = mapOf(
     "utm_medium" to "referral",
-    "utm_source" to "sq-ide-product-intellij"
+    "utm_source" to "sq-ide-product-intellij",
 )
 private val NOTIFICATION_PARAMETERS = BASE_PARAMETERS +
     ("utm_content" to "notification")
 
-enum class Promotion(val trackingParams: Map<String, String>) {
+/**
+ * Sets of parameters used by Google Analytics to track where the clicks are coming from.
+ * Each enum value corresponds to a place when a link can be clicked so that it has its own set of passed parameters.
+ */
+enum class UtmParameters(val trackingParams: Map<String, String>) {
 
     NEW_CONNECTION_PANEL(
         BASE_PARAMETERS + mapOf(
             "utm_content" to "create-new-connection-panel",
-            "utm_term" to "explore-sonarqube-cloud-free-tier"
+            "utm_term" to "explore-sonarqube-cloud-free-tier",
         )
     ),
     DETECT_PROJECT_ISSUES(
@@ -48,7 +52,7 @@ enum class Promotion(val trackingParams: Map<String, String>) {
     ),
     DETECT_SECURITY_ISSUES(
         NOTIFICATION_PARAMETERS +
-            ("utm_term" to "enable-project-analysis-signup-free")
+            ("utm_term" to "detect-security-issues-files-signup-free")
     ),
     ENABLE_LANGUAGE_ANALYSIS(
         NOTIFICATION_PARAMETERS +
