@@ -19,43 +19,59 @@
  */
 package org.sonarlint.intellij.promotion
 
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenParams
+
+private const val MEDIUM = "utm_medium"
+private const val SOURCE = "utm_source"
+private const val CONTENT = "utm_content"
+private const val TERM = "utm_term"
+
 private val BASE_PARAMETERS = mapOf(
-    "utm_medium" to "referral",
-    "utm_source" to "sq-ide-product-intellij",
+    MEDIUM to "referral",
+    SOURCE to "sq-ide-product-intellij",
 )
 private val NOTIFICATION_PARAMETERS = BASE_PARAMETERS +
-    ("utm_content" to "notification")
+    (CONTENT to "notification")
 
 /**
  * Sets of parameters used by Google Analytics to track where the clicks are coming from.
- * Each enum value corresponds to a place when a link can be clicked so that it has its own set of passed parameters.
+ * Each enum value corresponds to a place where a link can be clicked so that it has its own set of passed parameters.
  */
 enum class UtmParameters(val trackingParams: Map<String, String>) {
 
     NEW_CONNECTION_PANEL(
         BASE_PARAMETERS + mapOf(
-            "utm_content" to "create-new-connection-panel",
-            "utm_term" to "explore-sonarqube-cloud-free-tier",
+            CONTENT to "create-new-connection-panel",
+            TERM to "explore-sonarqube-cloud-free-tier",
         )
     ),
     DETECT_PROJECT_ISSUES(
         NOTIFICATION_PARAMETERS +
-            ("utm_term" to "detect-project-issues-signup-free")
+            (TERM to "detect-project-issues-signup-free")
     ),
     SPEED_UP_ANALYSIS(
         NOTIFICATION_PARAMETERS +
-            ("utm_term" to "speed-up-project-analysis-signup-free")
+            (TERM to "speed-up-project-analysis-signup-free")
     ),
     ANALYZE_CI_CD(
         NOTIFICATION_PARAMETERS +
-            ("utm_term" to "analyze-project-ci-cd-pipeline-downloads")
+            (TERM to "analyze-project-ci-cd-pipeline-downloads")
     ),
     DETECT_SECURITY_ISSUES(
         NOTIFICATION_PARAMETERS +
-            ("utm_term" to "detect-security-issues-files-signup-free")
+            (TERM to "detect-security-issues-files-signup-free")
     ),
     ENABLE_LANGUAGE_ANALYSIS(
         NOTIFICATION_PARAMETERS +
-            ("utm_term" to "enable-project-analysis-signup-free")
+            (TERM to "enable-project-analysis-signup-free")
     );
+
+    fun toDto(): HelpGenerateUserTokenParams.Utm {
+        return HelpGenerateUserTokenParams.Utm(
+            trackingParams[MEDIUM],
+            trackingParams[SOURCE],
+            trackingParams[CONTENT],
+            trackingParams[TERM]
+        )
+    }
 }
