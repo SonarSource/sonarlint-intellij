@@ -874,7 +874,7 @@ class BackendService : Disposable {
                     val currentModuleName = if (mapping.isNotEmpty()) mapping.first() else searchedModuleName
                     return@firstNotNullOfOrNull ModuleManager.getInstance(project).modules.firstOrNull { module -> module.name == currentModuleName }
                 }
-                return null
+                return@firstNotNullOfOrNull null
             }
         }
 
