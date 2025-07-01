@@ -40,6 +40,7 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.promotion.PromotionProvider
+import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
@@ -54,12 +55,15 @@ class AnalysisSubmitter(private val project: Project) {
     fun analyzeAllFiles() {
         runOnPooledThread(project) {
             val callback = ShowReportCallable(project)
-            ModuleManager.getInstance(project).modules.forEach { module ->
-                getService(BackendService::class.java).analyzeFullProject(module).thenAcceptAsync { response ->
+            val modules = ModuleManager.getInstance(project).modules
+            val taskState = createGlobalTaskIfNeeded("Analyzing All Projects Files", modules.size)
+            modules.forEach { module ->
+                getService(BackendService::class.java).analyzeFullProject(module).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
                         val analysisState = AnalysisState(analysisId, callback, module)
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
+                    taskState?.track(module, response.analysisId?.toString())
                 }
             }
         }
@@ -68,12 +72,15 @@ class AnalysisSubmitter(private val project: Project) {
     fun analyzeVcsChangedFiles() {
         runOnPooledThread(project) {
             val callback = ShowReportCallable(project)
-            ModuleManager.getInstance(project).modules.forEach { module ->
-                getService(BackendService::class.java).analyzeVCSChangedFiles(module).thenAcceptAsync { response ->
+            val modules = ModuleManager.getInstance(project).modules
+            val taskState = createGlobalTaskIfNeeded("Analyzing VCS Changed Files", modules.size)
+            modules.forEach { module ->
+                getService(BackendService::class.java).analyzeVCSChangedFiles(module).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
                         val analysisState = AnalysisState(analysisId, callback, module)
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
+                    taskState?.track(module, response.analysisId?.toString())
                 }
             }
         }
@@ -82,12 +89,15 @@ class AnalysisSubmitter(private val project: Project) {
     fun autoAnalyzeOpenFiles() {
         runOnPooledThread(project) {
             val callback = UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder)
-            ModuleManager.getInstance(project).modules.forEach { module ->
-                getService(BackendService::class.java).analyzeOpenFiles(module).thenAcceptAsync { response ->
+            val modules = ModuleManager.getInstance(project).modules
+            val taskState = createGlobalTaskIfNeeded("Analyzing Open Files", modules.size)
+            modules.forEach { module ->
+                getService(BackendService::class.java).analyzeOpenFiles(module).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
                         val analysisState = AnalysisState(analysisId, callback, module)
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
+                    taskState?.track(module, response.analysisId?.toString())
                 }
             }
         }
@@ -96,17 +106,20 @@ class AnalysisSubmitter(private val project: Project) {
     fun autoAnalyzeFiles(files: List<VirtualFile>) {
         runOnPooledThread(project) {
             val callback = UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder)
-            files.groupBy { selectedFile ->
+            val filesByModule = files.groupBy { selectedFile ->
                 findModuleForFile(selectedFile, project)
-            }.forEach { (module, files) ->
+            }
+            val taskState = createGlobalTaskIfNeeded("Analyzing Files", filesByModule.size)
+            filesByModule.forEach { (module, files) ->
                 module?.let {
                     getService(project, PromotionProvider::class.java).handlePromotionOnAnalysis()
-                    getService(BackendService::class.java).analyzeFileList(module, files).thenAcceptAsync { response ->
+                    getService(BackendService::class.java).analyzeFileList(module, files).thenAccept { response ->
                         response.analysisId?.let { analysisId ->
                             GlobalLogOutput.get().log("Triggered analysis '$analysisId'", ClientLogOutput.Level.DEBUG)
                             val analysisState = AnalysisState(analysisId, callback, module)
                             getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                         }
+                        taskState?.track(module, response.analysisId?.toString())
                     }
                 }
             }
@@ -142,17 +155,20 @@ class AnalysisSubmitter(private val project: Project) {
             } else {
                 ShowReportCallable(project)
             }
-            files.groupBy { file ->
+            val filesByModule = files.groupBy { file ->
                 findModuleForFile(file, project)
-            }.forEach { (module, files) ->
+            }
+            val taskState = createGlobalTaskIfNeeded("Analyzing Files", filesByModule.size)
+            filesByModule.forEach { (module, files) ->
                 module?.let {
                     getService(project, PromotionProvider::class.java).handlePromotionOnAnalysisReport(files)
-                    getService(BackendService::class.java).analyzeFileList(module, files).thenAcceptAsync { response ->
+                    getService(BackendService::class.java).analyzeFileList(module, files).thenAccept { response ->
                         response.analysisId?.let { analysisId ->
                             getService(project, AnalysisStatus::class.java).tryRun(analysisId)
                             val analysisState = AnalysisState(analysisId, callback, module)
                             getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                         }
+                        taskState?.track(module, response.analysisId?.toString())
                     }
                 }
             }
@@ -164,7 +180,7 @@ class AnalysisSubmitter(private val project: Project) {
             getService(project, OpenInIdeFindingCache::class.java).analysisQueued = true
             val callback = ShowFindingCallable(project, onTheFlyFindingsHolder, showFinding)
             findModuleForFile(showFinding.file, project)?.let { module ->
-                getService(BackendService::class.java).analyzeFileList(module, listOf(showFinding.file)).thenAcceptAsync { response ->
+                getService(BackendService::class.java).analyzeFileList(module, listOf(showFinding.file)).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
                         getService(project, OpenInIdeFindingCache::class.java).finding = null
                         getService(project, OpenInIdeFindingCache::class.java).analysisQueued = false
@@ -174,6 +190,15 @@ class AnalysisSubmitter(private val project: Project) {
                 }
             }
         }
+    }
+
+    private fun createGlobalTaskIfNeeded(title: String, moduleSize: Int): GlobalTaskState? {
+        return if (moduleSize > 1) {
+            val task = GlobalTaskProgressReporter(project, title)
+            task.queue()
+            getService(GlobalBackgroundTaskTracker::class.java).track(moduleSize, task)
+
+        } else null
     }
 
     companion object {
