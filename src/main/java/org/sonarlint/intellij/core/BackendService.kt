@@ -65,6 +65,7 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter.collectContributedLangu
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
@@ -376,15 +377,17 @@ class BackendService : Disposable {
         return capabilities
     }
 
-    private fun generateOmnisharpDto(): OmnisharpRequirementsDto {
-        val pluginPath = getService(SonarLintPlugin::class.java).path
-        return OmnisharpRequirementsDto(
-            pluginPath.resolve("omnisharp/mono"),
-            pluginPath.resolve("omnisharp/net6"),
-            pluginPath.resolve("omnisharp/net472"),
-            pluginPath.resolve("plugins/sonar-csharp-plugin.jar"),
-            pluginPath.resolve("plugins/sonar-csharp-enterprise-plugin.jar"),
-        )
+    private fun generateOmnisharpDto(): OmnisharpRequirementsDto? {
+        return if (isRider()) {
+            val pluginPath = getService(SonarLintPlugin::class.java).path
+            OmnisharpRequirementsDto(
+                pluginPath.resolve("omnisharp/mono"),
+                pluginPath.resolve("omnisharp/net6"),
+                pluginPath.resolve("omnisharp/net472"),
+                pluginPath.resolve("plugins/sonar-csharp-plugin.jar"),
+                pluginPath.resolve("plugins/sonar-csharp-enterprise-plugin.jar"),
+            )
+        } else null
     }
 
     private fun generateEslintBridgePath(): Path {
