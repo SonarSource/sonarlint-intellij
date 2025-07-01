@@ -30,6 +30,8 @@ private val BASE_PARAMETERS = mapOf(
     MEDIUM to "referral",
     SOURCE to "sq-ide-product-intellij",
 )
+private val CONNECTION_PANEL_PARAMETERS = BASE_PARAMETERS +
+    (CONTENT to "create-new-connection-panel")
 private val NOTIFICATION_PARAMETERS = BASE_PARAMETERS +
     (CONTENT to "notification")
 
@@ -40,10 +42,8 @@ private val NOTIFICATION_PARAMETERS = BASE_PARAMETERS +
 enum class UtmParameters(val trackingParams: Map<String, String>) {
 
     NEW_CONNECTION_PANEL(
-        BASE_PARAMETERS + mapOf(
-            CONTENT to "create-new-connection-panel",
-            TERM to "explore-sonarqube-cloud-free-tier",
-        )
+        CONNECTION_PANEL_PARAMETERS +
+            (TERM to "explore-sonarqube-cloud-free-tier")
     ),
     DETECT_PROJECT_ISSUES(
         NOTIFICATION_PARAMETERS +
@@ -64,6 +64,10 @@ enum class UtmParameters(val trackingParams: Map<String, String>) {
     ENABLE_LANGUAGE_ANALYSIS(
         NOTIFICATION_PARAMETERS +
             (TERM to "enable-project-analysis-signup-free")
+    ),
+    CREATE_SQC_TOKEN(
+        CONNECTION_PANEL_PARAMETERS +
+            (TERM to "create-sqc-token")
     );
 
     fun toDto(): HelpGenerateUserTokenParams.Utm {

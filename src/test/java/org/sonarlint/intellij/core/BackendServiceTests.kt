@@ -23,11 +23,6 @@ import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.testFramework.replaceService
-import java.nio.file.Path
-import java.time.Duration
-import java.util.UUID
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility.await
@@ -58,6 +53,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpd
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidAddConfigurationScopesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidRemoveConfigurationScopeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.ConnectionRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidChangeCredentialsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationParams
@@ -79,6 +75,11 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRul
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RulesRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityTrackingRpcService
+import java.nio.file.Path
+import java.time.Duration
+import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
@@ -438,6 +439,29 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val paramsCaptor = argumentCaptor<GetSharedConnectedModeConfigFileParams>()
         verify(backendBindingService, timeout(500)).getSharedConnectedModeConfigFileContents(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.configScopeId).isEqualTo(projectBackendId(project))
+    }
+
+    @Test
+    fun test_help_generate_user_token() {
+        val serverUrl = "http://localhost:1234"
+
+        service.helpGenerateUserToken(serverUrl)
+
+        val paramsCaptor = argumentCaptor<HelpGenerateUserTokenParams>()
+        verify(backendConnectionService, timeout(500)).helpGenerateUserToken(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue).extracting(
+            "serverUrl",
+            "utm.medium",
+            "utm.source",
+            "utm.content",
+            "utm.term",
+        ).containsExactly(
+            serverUrl,
+            "referral",
+            "sq-ide-product-intellij",
+            "create-new-connection-panel",
+            "create-sqc-token"
+        )
     }
 
     @Test

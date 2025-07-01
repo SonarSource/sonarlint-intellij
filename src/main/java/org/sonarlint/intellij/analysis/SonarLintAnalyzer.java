@@ -59,7 +59,6 @@ public final class SonarLintAnalyzer {
   public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, AnalysisState analysisState, ProgressIndicator indicator,
     boolean shouldFetchServerIssues) {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
-    var start = System.currentTimeMillis();
     var console = getService(myProject, SonarLintConsole.class);
 
     var contributedConfigurations = getConfigurationFromConfiguratorEP(module, filesToAnalyze, console);
@@ -79,7 +78,7 @@ public final class SonarLintAnalyzer {
       var what = filesToAnalyze.size() == 1 ? String.format("'%s'", filesToAnalyze.iterator().next().getName()) : String.format("%d files", filesToAnalyze.size());
       console.info("Analysing " + what + " (ID " + analysisState.getId() + ")...");
 
-      var analysisTask = getService(BackendService.class).analyzeFilesAndTrack(module, analysisState.getId(), inputFiles, contributedProperties, shouldFetchServerIssues, start);
+      var analysisTask = getService(BackendService.class).analyzeFilesAndTrack(module, analysisState.getId(), inputFiles, contributedProperties, shouldFetchServerIssues);
 
       AnalyzeFilesResponse result = null;
       try {
