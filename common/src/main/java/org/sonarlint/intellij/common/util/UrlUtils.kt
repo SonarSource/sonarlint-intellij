@@ -43,7 +43,7 @@ class UrlUtils {
             }
 
             val urlBuilder = URLBuilder(url)
-            params.map {
+            params.forEach {
                 (key, value) -> urlBuilder.parameters.append(key, value)
             }
             return urlBuilder.build().toString()
