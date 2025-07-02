@@ -138,23 +138,23 @@ class PromotionProvider(private val project: Project) {
         val wasReportEverUsed = PropertiesComponent.getInstance().getBoolean(WAS_REPORT_EVER_USED, false)
 
         if (!wasReportEverUsed && firstAutoAnalysis.isBefore(Instant.now().minus(FULL_PROJECT_PROMOTION_DURATION))) {
-            showPromotion(notifications, "Detect issues in your whole project")
+            showPromotion(notifications, "Detect issues in your whole project", UtmParameters.DETECT_PROJECT_ISSUES)
         }
     }
 
     private fun processFasterProjectAnalysisPromotion(notifications: SonarLintProjectNotifications) {
-        showPromotion(notifications, "Speed up the project-wide analysis")
+        showPromotion(notifications, "Speed up the project-wide analysis", UtmParameters.SPEED_UP_ANALYSIS)
     }
 
     private fun processCICDProjectAnalysisPromotion(notifications: SonarLintProjectNotifications) {
-        showPromotion(notifications, "Analyze your project in your CI/CD pipeline")
+        showPromotion(notifications, "Analyze your project in your CI/CD pipeline", UtmParameters.ANALYZE_CI_CD)
     }
 
     private fun processAdvancedLanguagePromotion(notifications: SonarLintProjectNotifications, extension: String) {
         val language = findLanguage(extension, languagesHavingAdvancedRules)
 
         if (language != null) {
-            showPromotion(notifications, "Detect more security issues in your " + language.label + " files")
+            showPromotion(notifications, "Detect more security issues in your ${language.label} files", UtmParameters.DETECT_SECURITY_ISSUES)
         }
     }
 
@@ -168,7 +168,7 @@ class PromotionProvider(private val project: Project) {
         if (languages.isEmpty()) return
 
         val languagesText = languages.joinToString(" / ")
-        showPromotion(notifications, "Enable $languagesText analysis by connecting your project")
+        showPromotion(notifications, "Enable $languagesText analysis by connecting your project", UtmParameters.ENABLE_LANGUAGE_ANALYSIS)
     }
 
     private fun findLanguage(extension: String, languages: Set<Language>): org.sonarsource.sonarlint.core.client.utils.Language? {
@@ -187,12 +187,12 @@ class PromotionProvider(private val project: Project) {
         }.toList()
     }
 
-    private fun showPromotion(notifications: SonarLintProjectNotifications, content: String) {
+    private fun showPromotion(notifications: SonarLintProjectNotifications, content: String, utmParameters: UtmParameters) {
         synchronized(this) {
             val lastModifiedDate: Instant? = getLastModifiedDate()
 
             if (shouldNotify(lastModifiedDate)) {
-                notifications.notifyLanguagePromotion(content)
+                notifications.notifyLanguagePromotion(content, utmParameters)
                 PropertiesComponent.getInstance().setValue(LAST_PROMOTION_NOTIFICATION_DATE, Instant.now().toEpochMilli().toString())
             }
         }

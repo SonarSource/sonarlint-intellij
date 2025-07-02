@@ -21,6 +21,7 @@ package org.sonarlint.intellij.telemetry
 
 import com.intellij.ide.BrowserUtil
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.UrlUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Community.COMMUNITY_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.AI_FIX_SUGGESTIONS_LINK
@@ -30,6 +31,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.OPEN
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE_SECTION_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROUBLESHOOTING_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.USING_RULES_LINK
+import org.sonarlint.intellij.promotion.UtmParameters
 
 enum class LinkTelemetry(
     private val linkId: String,
@@ -52,8 +54,17 @@ enum class LinkTelemetry(
     SUGGEST_FEATURE_HELP("suggestfeature", SonarLintDocumentation.Marketing.SONARQUBE_FOR_IDE_ROADMAP_LINK);
 
     fun browseWithTelemetry() {
+        browseWithTelemetry(null)
+    }
+
+    fun browseWithTelemetry(utmParameters: UtmParameters?) {
         SonarLintUtils.getService(SonarLintTelemetry::class.java).helpAndFeedbackLinkClicked(linkId)
-        BrowserUtil.browse(url)
+
+        BrowserUtil.browse(withParameters(utmParameters))
+    }
+
+    private fun withParameters(utmParameters: UtmParameters?): String {
+        return UrlUtils.addParameters(url, utmParameters?.trackingParams)
     }
 
 }

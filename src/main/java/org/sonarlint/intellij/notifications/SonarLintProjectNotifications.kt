@@ -27,9 +27,6 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import java.util.Arrays
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.stream.Stream
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
@@ -47,10 +44,14 @@ import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.notifications.binding.ChooseBindingSuggestionAction
 import org.sonarlint.intellij.notifications.binding.DisableBindingSuggestionsAction
 import org.sonarlint.intellij.promotion.DontAskAgainAction
+import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarlint.intellij.telemetry.LinkTelemetry
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
+import java.util.Arrays
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.stream.Stream
 
 
 @Service(Service.Level.PROJECT)
@@ -119,13 +120,14 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         }
     }
 
-    fun notifyLanguagePromotion(content: String) {
+    fun notifyLanguagePromotion(content: String, utmParameters: UtmParameters) {
         inContextPromotionGroup.createNotification(
             TITLE_SONARLINT_SUGGESTIONS,
             content,
             NotificationType.INFORMATION
         ).apply {
-            addAction(OpenTrackedLinkAction("Try SonarQube Cloud for free", LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE))
+            addAction(OpenTrackedLinkAction("Try SonarQube Cloud for free", LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE,
+                utmParameters))
             addAction(OpenTrackedLinkAction("Download SonarQube Server", LinkTelemetry.SONARQUBE_EDITIONS_DOWNLOADS))
             addAction(OpenInBrowserAction("Learn more", null, CONNECTED_MODE_BENEFITS_LINK))
             addAction(DontAskAgainAction())

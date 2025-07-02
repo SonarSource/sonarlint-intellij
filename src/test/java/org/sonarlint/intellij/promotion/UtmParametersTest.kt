@@ -18,28 +18,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 
-val intellijBuildVersion: String by project
-val ideaHome: String? = System.getenv("IDEA_HOME")
+package org.sonarlint.intellij.promotion
 
-plugins {
-    kotlin("jvm")
-}
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
-intellij {
-    if (!ideaHome.isNullOrBlank()) {
-        localPath.set(ideaHome)
-        localSourcesPath.set(ideaHome)
-    } else {
-        version.set(intellijBuildVersion)
+class UtmParametersTest {
+
+    @Test
+    fun should_transfer_fields_to_dto() {
+        val dto = UtmParameters.CREATE_SQC_TOKEN.toDto()
+
+        assertThat(dto).extracting(
+            "medium",
+            "source",
+            "content",
+            "term",
+        ).containsExactly(
+            "referral",
+            "sq-ide-product-intellij",
+            "create-new-connection-panel",
+            "create-sqc-token",
+        )
     }
-}
-
-dependencies {
-    testImplementation(platform(libs.junit.bom))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(libs.assertj.core)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

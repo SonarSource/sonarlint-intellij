@@ -21,20 +21,22 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
-import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
+import java.nio.file.Paths
 
 
 class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
@@ -254,6 +256,15 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
                 "Enable Ansible / Scala analysis by connecting your project"
             )
         )
+    }
+
+    @Test
+    fun should_promote_languages_with_utm_params() {
+        client.promoteExtraEnabledLanguagesInConnectedMode(projectBackendId, setOf(Language.ANSIBLE, Language.SCALA))
+        val action = projectNotifications[0].actions[0]
+
+        assertThat(action).isInstanceOf(OpenTrackedLinkAction::class.java)
+        assertThat((action as OpenTrackedLinkAction).utmParameters).isEqualTo(UtmParameters.ENABLE_LANGUAGE_ANALYSIS)
     }
 
     @Test

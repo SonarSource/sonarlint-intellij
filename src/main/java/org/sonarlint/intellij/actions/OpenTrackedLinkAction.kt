@@ -20,14 +20,15 @@
 package org.sonarlint.intellij.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarlint.intellij.telemetry.LinkTelemetry
 
-class OpenTrackedLinkAction(text: String, private val link: LinkTelemetry) : AbstractSonarAction(
+class OpenTrackedLinkAction(text: String, private val link: LinkTelemetry, val utmParameters: UtmParameters? = null) : AbstractSonarAction(
     text, null, null
 ) {
 
     override fun actionPerformed(e: AnActionEvent) {
-        link.browseWithTelemetry()
+        link.browseWithTelemetry(utmParameters)
     }
 
 }

@@ -75,6 +75,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMa
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
+import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
@@ -696,7 +697,11 @@ class BackendService : Disposable {
     }
 
     fun helpGenerateUserToken(serverUrl: String): CompletableFuture<HelpGenerateUserTokenResponse> {
-        return requestFromBackend { it.connectionService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl)) }
+        return requestFromBackend {
+            it.connectionService.helpGenerateUserToken(
+                HelpGenerateUserTokenParams(serverUrl, UtmParameters.CREATE_SQC_TOKEN.toDto())
+            )
+        }
     }
 
     fun openHotspotInBrowser(module: Module, hotspotKey: String) {
@@ -1003,7 +1008,6 @@ class BackendService : Disposable {
         filesToAnalyze: List<URI>,
         extraProperties: Map<String, String>,
         shouldFetchServerIssues: Boolean,
-        startTime: Long,
     ): CompletableFuture<AnalyzeFilesResponse> {
         val moduleId = moduleId(module)
         return requestFromBackend {
@@ -1013,8 +1017,7 @@ class BackendService : Disposable {
                     analysisId,
                     filesToAnalyze,
                     extraProperties,
-                    shouldFetchServerIssues,
-                    startTime
+                    shouldFetchServerIssues
                 )
             )
         }
