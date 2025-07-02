@@ -43,7 +43,7 @@ class UrlUtilsTests {
     @Test
     fun `should add params where there are none`() {
         val withParameters = UrlUtils.addParameters(
-            "$BASE_URL?", mapOf(
+            BASE_URL, mapOf(
                 "param1" to "value1",
                 "param2" to "value2"
             )
