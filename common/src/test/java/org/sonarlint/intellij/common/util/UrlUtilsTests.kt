@@ -19,25 +19,25 @@
  */
 package org.sonarlint.intellij.common.util
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 private const val BASE_URL = "http://localhost:8080/url"
 
-class UrlUtilsTest {
+class UrlUtilsTests {
 
     @Test
     fun `should not change url when null map`() {
         val same = UrlUtils.addParameters(BASE_URL, null)
 
-        Assertions.assertThat(same).isSameAs(BASE_URL)
+        assertThat(same).isSameAs(BASE_URL)
     }
 
     @Test
     fun `should not change url when no params`() {
         val same = UrlUtils.addParameters(BASE_URL, emptyMap())
 
-        Assertions.assertThat(same).isSameAs(BASE_URL)
+        assertThat(same).isSameAs(BASE_URL)
     }
 
     @Test
@@ -49,7 +49,7 @@ class UrlUtilsTest {
             )
         )
 
-        Assertions.assertThat(withParameters).isEqualTo("$BASE_URL?param1=value1&param2=value2")
+        assertThat(withParameters).isEqualTo("$BASE_URL?param1=value1&param2=value2")
     }
 
     @Test
@@ -61,7 +61,7 @@ class UrlUtilsTest {
             )
         )
 
-        Assertions.assertThat(withParameters).isEqualTo("$BASE_URL?existingParam=existingValue&param1=value1&param2=value2")
+        assertThat(withParameters).isEqualTo("$BASE_URL?existingParam=existingValue&param1=value1&param2=value2")
     }
 
     @Test
@@ -73,6 +73,6 @@ class UrlUtilsTest {
             )
         )
 
-        Assertions.assertThat(withParameters).isEqualTo("$BASE_URL?existingParam=existingValue&existingParam=value1&param2=value2")
+        assertThat(withParameters).isEqualTo("$BASE_URL?existingParam=existingValue&existingParam=value1&param2=value2")
     }
 }

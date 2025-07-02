@@ -39,6 +39,22 @@ import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
+import java.io.IOException
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.Duration
+import java.time.format.DateTimeParseException
+import java.util.UUID
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Filter
+import java.util.logging.Level
+import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
@@ -144,26 +160,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
-import java.io.IOException
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.Duration
-import java.time.format.DateTimeParseException
-import java.util.UUID
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Filter
-import java.util.logging.Level
-import java.util.logging.Logger
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
-
-private val UTM = UtmParameters.CREATE_SQC_TOKEN.toDto()
 
 @Service(Service.Level.APP)
 class BackendService : Disposable {
@@ -696,7 +694,11 @@ class BackendService : Disposable {
     }
 
     fun helpGenerateUserToken(serverUrl: String): CompletableFuture<HelpGenerateUserTokenResponse> {
-        return requestFromBackend { it.connectionService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl, UTM)) }
+        return requestFromBackend {
+            it.connectionService.helpGenerateUserToken(
+                HelpGenerateUserTokenParams(serverUrl, UtmParameters.CREATE_SQC_TOKEN.toDto())
+            )
+        }
     }
 
     fun openHotspotInBrowser(module: Module, hotspotKey: String) {
