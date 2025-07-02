@@ -270,6 +270,9 @@ public class SonarLintProjectBindPanel {
           if (dialog.showAndGet()) {
             projectKeyTextField.setText(dialog.getSelectedProjectKey() != null ? dialog.getSelectedProjectKey() : "");
           }
+        } else {
+          var msg = "Failed to download project list, make sure your token is still valid.";
+          Messages.showErrorDialog(rootPanel, msg, "Error Downloading Project List");
         }
       }
     });
