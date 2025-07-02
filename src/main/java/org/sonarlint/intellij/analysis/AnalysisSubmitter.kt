@@ -63,7 +63,7 @@ class AnalysisSubmitter(private val project: Project) {
                         val analysisState = AnalysisState(analysisId, callback, module)
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
-                    taskState?.track(module, response.analysisId?.toString())
+                    taskState?.trackTask(module, response.analysisId?.toString())
                 }
             }
         }
@@ -80,7 +80,7 @@ class AnalysisSubmitter(private val project: Project) {
                         val analysisState = AnalysisState(analysisId, callback, module)
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
-                    taskState?.track(module, response.analysisId?.toString())
+                    taskState?.trackTask(module, response.analysisId?.toString())
                 }
             }
         }
@@ -97,7 +97,7 @@ class AnalysisSubmitter(private val project: Project) {
                         val analysisState = AnalysisState(analysisId, callback, module)
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
-                    taskState?.track(module, response.analysisId?.toString())
+                    taskState?.trackTask(module, response.analysisId?.toString())
                 }
             }
         }
@@ -119,7 +119,7 @@ class AnalysisSubmitter(private val project: Project) {
                             val analysisState = AnalysisState(analysisId, callback, module)
                             getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                         }
-                        taskState?.track(module, response.analysisId?.toString())
+                        taskState?.trackTask(module, response.analysisId?.toString())
                     }
                 }
             }
@@ -168,7 +168,7 @@ class AnalysisSubmitter(private val project: Project) {
                             val analysisState = AnalysisState(analysisId, callback, module)
                             getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                         }
-                        taskState?.track(module, response.analysisId?.toString())
+                        taskState?.trackTask(module, response.analysisId?.toString())
                     }
                 }
             }
@@ -180,7 +180,7 @@ class AnalysisSubmitter(private val project: Project) {
             getService(project, OpenInIdeFindingCache::class.java).analysisQueued = true
             val callback = ShowFindingCallable(project, onTheFlyFindingsHolder, showFinding)
             findModuleForFile(showFinding.file, project)?.let { module ->
-                getService(BackendService::class.java).analyzeFileList(module, listOf(showFinding.file)).thenAccept { response ->
+                getService(BackendService::class.java).analyzeFileList(module, listOf(showFinding.file)).thenAcceptAsync { response ->
                     response.analysisId?.let { analysisId ->
                         getService(project, OpenInIdeFindingCache::class.java).finding = null
                         getService(project, OpenInIdeFindingCache::class.java).analysisQueued = false
@@ -192,12 +192,12 @@ class AnalysisSubmitter(private val project: Project) {
         }
     }
 
-    private fun createGlobalTaskIfNeeded(title: String, moduleSize: Int): GlobalTaskState? {
+    private fun createGlobalTaskIfNeeded(title: String, moduleSize: Int): GlobalTaskProgressReporter? {
         return if (moduleSize > 1) {
-            val task = GlobalTaskProgressReporter(project, title)
+            val task = GlobalTaskProgressReporter(project, title, moduleSize)
             task.queue()
-            getService(GlobalBackgroundTaskTracker::class.java).track(moduleSize, task)
-
+            getService(GlobalBackgroundTaskTracker::class.java).track(task)
+            task
         } else null
     }
 

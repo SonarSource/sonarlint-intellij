@@ -19,20 +19,64 @@
  */
 package org.sonarlint.intellij.tasks
 
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.GlobalBackgroundTaskTracker
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 
-class GlobalTaskProgressReporter(project: Project?, title: String)
-    : TaskProgressReporter(project, title, true, true) {
+class GlobalTaskProgressReporter(
+    project: Project?,
+    title: String,
+    private val totalTasks: Int
+) : TaskProgressReporter(project, title, true, true) {
+
+    private val modulesPerTaskId = mutableMapOf<String, Module>()
+    private val modulesDone = mutableListOf<Module>()
+    private var isCancelled = false
 
     override fun onCancel() {
-        getService(GlobalBackgroundTaskTracker::class.java).findBackgroundTask(this)?.cancel()
+        isCancelled = true
+        modulesPerTaskId.keys.forEach { id ->
+            getService(BackendService::class.java).cancelTask(id)
+        }
         super.onCancel()
     }
 
-    fun update(text: String) {
+    fun updateText(text: String) {
         this.progressIndicator?.text = text
+    }
+
+    fun trackTask(module: Module, taskId: String?) {
+        taskId?.let { modulesPerTaskId[taskId] = module } ?: modulesDone.add(module)
+        checkIfGloballyFinished()
+    }
+
+    fun hasTaskId(taskId: String): Boolean {
+        return modulesPerTaskId.contains(taskId)
+    }
+
+    fun taskFinished(taskId: String) {
+        val module = modulesPerTaskId[taskId] ?: return
+        modulesPerTaskId.remove(taskId)
+        modulesDone.add(module)
+        updateText("SonarQube: Analysis ${modulesDone.size} Out Of $totalTasks")
+        checkIfGloballyFinished()
+    }
+
+    fun getCancelledTaskIds(): Set<String> {
+        return if (isCancelled) {
+            modulesPerTaskId.keys
+        } else {
+            emptySet()
+        }
+    }
+
+    private fun checkIfGloballyFinished() {
+        if (modulesDone.size == totalTasks) {
+            complete()
+            getService(GlobalBackgroundTaskTracker::class.java).untrackGlobalTask(this)
+        }
     }
 
 }

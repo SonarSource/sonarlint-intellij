@@ -25,6 +25,7 @@ import com.intellij.openapi.project.Project
 import java.util.concurrent.atomic.AtomicBoolean
 import org.sonarlint.intellij.analysis.GlobalBackgroundTaskTracker
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.ProgressUpdateNotification
 
 open class TaskProgressReporter(
@@ -57,12 +58,16 @@ open class TaskProgressReporter(
                 complete.set(true)
             }
         }
-        if (project != null && taskId != null) {
-            getService(GlobalBackgroundTaskTracker::class.java).findBackgroundTask(taskId)?.finish(taskId)
-        }
         onCompletion()
     }
 
+    override fun onCancel() {
+        taskId?.let {
+            getService(BackendService::class.java).cancelTask(it)
+            getService(GlobalBackgroundTaskTracker::class.java).finishTask(it)
+        }
+        super.onCancel()
+    }
 
     fun updateProgress(notification: ProgressUpdateNotification) {
         synchronized(waitMonitor) {

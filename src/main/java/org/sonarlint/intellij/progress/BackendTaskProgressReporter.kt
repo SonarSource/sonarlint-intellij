@@ -45,17 +45,19 @@ class BackendTaskProgressReporter {
         if (getService(GlobalBackgroundTaskTracker::class.java).isTaskIdCancelled(taskId)) {
             val errorMessage = "Task with ID $taskId was cancelled"
             GlobalLogOutput.get().log(errorMessage, ClientLogOutput.Level.DEBUG)
-            getService(GlobalBackgroundTaskTracker::class.java).findBackgroundTask(taskId)?.finish(taskId)
+            getService(BackendService::class.java).cancelTask(taskId)
+            getService(GlobalBackgroundTaskTracker::class.java).finishTask(taskId)
             return
         }
         val project = params.configurationScopeId?.let {
             BackendService.findModule(it)?.project
                 ?: BackendService.findProject(it)
         }
-        val task = TaskProgressReporter(project, params.title, params.isCancellable,
+        val task = TaskProgressReporter(
+            project, params.title, params.isCancellable,
             params.isIndeterminate, params.message, taskId, onCompletion = {
-            taskPool.remove(taskId)
-        })
+                taskPool.remove(taskId)
+            })
         taskPool[taskId] = task
         if (ApplicationManager.getApplication().isUnitTestMode) {
             // in headless mode the task is run on the same thread, run on a pooled thread instead
@@ -81,6 +83,7 @@ class BackendTaskProgressReporter {
             return
         }
         task.complete()
-        getService(GlobalBackgroundTaskTracker::class.java).findBackgroundTask(taskId)?.finish(taskId)
+        // The task may be included as part of a Global Background Task
+        getService(GlobalBackgroundTaskTracker::class.java).finishTask(taskId)
     }
 }

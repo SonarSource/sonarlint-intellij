@@ -26,28 +26,22 @@ import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
 @Service(Service.Level.APP)
 class GlobalBackgroundTaskTracker() {
 
-    private val backgroundTasks = ConcurrentLinkedQueue<GlobalTaskState>()
+    private val backgroundTasks = ConcurrentLinkedQueue<GlobalTaskProgressReporter>()
 
-    fun track(totalTasks: Int, backgroundTask: GlobalTaskProgressReporter): GlobalTaskState {
-        val backgroundTaskState = GlobalTaskState(totalTasks, backgroundTask)
-        backgroundTasks.add(backgroundTaskState)
-        return backgroundTaskState
+    fun track(backgroundTask: GlobalTaskProgressReporter) {
+        backgroundTasks.add(backgroundTask)
     }
 
-    fun findBackgroundTask(taskId: String): GlobalTaskState? {
-        return backgroundTasks.find { it.hasTaskId(taskId) }
+    fun finishTask(taskId: String) {
+        backgroundTasks.find { it.hasTaskId(taskId) }?.taskFinished(taskId)
     }
 
-    fun findBackgroundTask(taskReporter: GlobalTaskProgressReporter): GlobalTaskState? {
-        return backgroundTasks.find { it.hasTaskReporter(taskReporter) }
-    }
-
-    fun finish(backgroundTaskState: GlobalTaskState) {
+    fun untrackGlobalTask(backgroundTaskState: GlobalTaskProgressReporter) {
         backgroundTasks.remove(backgroundTaskState)
     }
 
     fun isTaskIdCancelled(taskId: String): Boolean {
-        return backgroundTasks.any { it.getCancelledIds().contains(taskId) }
+        return backgroundTasks.any { it.getCancelledTaskIds().contains(taskId) }
     }
 
 }
