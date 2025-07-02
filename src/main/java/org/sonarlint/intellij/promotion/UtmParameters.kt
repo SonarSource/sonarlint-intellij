@@ -21,61 +21,39 @@ package org.sonarlint.intellij.promotion
 
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenParams
 
-private const val MEDIUM = "utm_medium"
-private const val SOURCE = "utm_source"
-private const val CONTENT = "utm_content"
-private const val TERM = "utm_term"
+private data class UtmParamSet(
+    val medium: String = "referral",
+    val source: String = "sq-ide-product-intellij",
+    val content: String,
+    val term: String
+) {
+    fun toMap() = mapOf(
+        "utm_medium" to medium,
+        "utm_source" to source,
+        "utm_content" to content,
+        "utm_term" to term,
+    )
+}
 
-private val BASE_PARAMETERS = mapOf(
-    MEDIUM to "referral",
-    SOURCE to "sq-ide-product-intellij",
-)
-private val CONNECTION_PANEL_PARAMETERS = BASE_PARAMETERS +
-    (CONTENT to "create-new-connection-panel")
-private val NOTIFICATION_PARAMETERS = BASE_PARAMETERS +
-    (CONTENT to "notification")
+private const val CREATE_NEW_CONNECTION_PANEL = "create-new-connection-panel"
+private const val NOTIFICATION = "notification"
 
-/**
- * Sets of parameters used by Google Analytics to track where the clicks are coming from.
- * Each enum value corresponds to a place where a link can be clicked so that it has its own set of passed parameters.
- */
-enum class UtmParameters(val trackingParams: Map<String, String>) {
+enum class UtmParameters(
+    private val content: String,
+    private val term: String
+) {
+    NEW_CONNECTION_PANEL(CREATE_NEW_CONNECTION_PANEL, "explore-sonarqube-cloud-free-tier"),
+    DETECT_PROJECT_ISSUES(NOTIFICATION, "detect-project-issues-signup-free"),
+    SPEED_UP_ANALYSIS(NOTIFICATION, "speed-up-project-analysis-signup-free"),
+    ANALYZE_CI_CD(NOTIFICATION, "analyze-project-ci-cd-pipeline-downloads"),
+    DETECT_SECURITY_ISSUES(NOTIFICATION, "detect-security-issues-files-signup-free"),
+    ENABLE_LANGUAGE_ANALYSIS(NOTIFICATION, "enable-project-analysis-signup-free"),
+    CREATE_SQC_TOKEN(CREATE_NEW_CONNECTION_PANEL, "create-sqc-token");
 
-    NEW_CONNECTION_PANEL(
-        CONNECTION_PANEL_PARAMETERS +
-            (TERM to "explore-sonarqube-cloud-free-tier")
-    ),
-    DETECT_PROJECT_ISSUES(
-        NOTIFICATION_PARAMETERS +
-            (TERM to "detect-project-issues-signup-free")
-    ),
-    SPEED_UP_ANALYSIS(
-        NOTIFICATION_PARAMETERS +
-            (TERM to "speed-up-project-analysis-signup-free")
-    ),
-    ANALYZE_CI_CD(
-        NOTIFICATION_PARAMETERS +
-            (TERM to "analyze-project-ci-cd-pipeline-downloads")
-    ),
-    DETECT_SECURITY_ISSUES(
-        NOTIFICATION_PARAMETERS +
-            (TERM to "detect-security-issues-files-signup-free")
-    ),
-    ENABLE_LANGUAGE_ANALYSIS(
-        NOTIFICATION_PARAMETERS +
-            (TERM to "enable-project-analysis-signup-free")
-    ),
-    CREATE_SQC_TOKEN(
-        CONNECTION_PANEL_PARAMETERS +
-            (TERM to "create-sqc-token")
-    );
+    private val params = UtmParamSet(content = content, term = term)
+    val trackingParams get() = params.toMap()
 
-    fun toDto(): HelpGenerateUserTokenParams.Utm {
-        return HelpGenerateUserTokenParams.Utm(
-            trackingParams[MEDIUM],
-            trackingParams[SOURCE],
-            trackingParams[CONTENT],
-            trackingParams[TERM]
-        )
-    }
+    fun toDto(): HelpGenerateUserTokenParams.Utm = HelpGenerateUserTokenParams.Utm(
+        params.medium, params.source, params.content, params.term
+    )
 }
