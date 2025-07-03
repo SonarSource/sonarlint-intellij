@@ -187,8 +187,13 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
     ): Map<String, SonarProjectDto>? {
         val downloadTask = ServerDownloadProjectTask(project, selectedConnection)
         return try {
-            ProgressManager.getInstance().run(downloadTask)
-            downloadTask.result
+            val result = ProgressManager.getInstance().run(downloadTask)
+            if (result.isSuccess) {
+                result.projects
+            } else {
+                Messages.showErrorDialog(rootPanel, result.errorMessage, "Error Downloading Project List")
+                null
+            }
         } catch (e: Exception) {
             val msg = if (e.message != null) e.message else "Failed to download list of projects"
             Messages.showErrorDialog(rootPanel, msg, "Error Downloading Project List")

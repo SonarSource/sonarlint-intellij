@@ -157,15 +157,14 @@ public class SonarLintProjectBindPanel {
    */
   @CheckForNull
   private Map<String, SonarProjectDto> downloadProjectList(ServerConnection selectedConnection) {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-
     var downloadTask = new ServerDownloadProjectTask(project, selectedConnection);
-    try {
-      return ProgressManager.getInstance().run(downloadTask);
-    } catch (Exception e) {
-      var msg = "Failed to download list of projects. Reason: " + e.getMessage();
-      getService(project, SonarLintConsole.class).error(e.getMessage());
-      Messages.showErrorDialog(rootPanel, msg, "Error Downloading Project List");
+
+    var result = ProgressManager.getInstance().run(downloadTask);
+    if (result.isSuccess()) {
+      return result.getProjects();
+    } else {
+      getService(project, SonarLintConsole.class).error(result.getErrorMessage());
+      Messages.showErrorDialog(rootPanel, result.getErrorMessage(), "Error Downloading Project List");
       return null;
     }
   }
