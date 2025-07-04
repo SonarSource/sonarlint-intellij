@@ -40,10 +40,12 @@ object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
         return try {
             // Should follow RFC-8089
-            // We encode what's between the separators
+            // Characters between separators is encoded
+            // URI constructor cannot be used to encode as it does not work on most custom schemes
             if (file.isInLocalFileSystem) {
                 val encodedPath = file.path.split("/")
                     .joinToString("/") { URLEncoder.encode(it, StandardCharsets.UTF_8.toString()) }
+                    .replace("+", "%20")
                 val separator = if (file.path.startsWith("/")) "/" else "//"
                 val fullUri = "${file.fileSystem.protocol}:$separator/$encodedPath"
                 URI(fullUri)
