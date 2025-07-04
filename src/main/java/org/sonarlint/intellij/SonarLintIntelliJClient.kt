@@ -30,7 +30,6 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.progress.PerformInBackgroundOption
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -655,7 +654,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             project,
             "Matching project branch…",
             true,
-            PerformInBackgroundOption.ALWAYS_BACKGROUND
+            ALWAYS_BACKGROUND
         ) {
             override fun run(indicator: ProgressIndicator) {
                 try {

@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 
-
 @Service(Service.Level.PROJECT)
 class RunningAnalysesTracker(private val project: Project) {
 
