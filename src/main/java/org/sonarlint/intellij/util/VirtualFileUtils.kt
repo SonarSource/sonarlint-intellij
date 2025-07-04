@@ -29,6 +29,7 @@ import io.ktor.utils.io.charsets.name
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
+import java.net.URLEncoder
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -39,9 +40,13 @@ object VirtualFileUtils {
     fun toURI(file: VirtualFile): URI? {
         return try {
             // Should follow RFC-8089
+            // We encode what's between the separators
             if (file.isInLocalFileSystem) {
-                val path = if (file.path.startsWith("/")) "//${file.path}" else "///${file.path}"
-                URI(file.fileSystem.protocol, null, path, null)
+                val encodedPath = file.path.split("/")
+                    .joinToString("/") { URLEncoder.encode(it, StandardCharsets.UTF_8.toString()) }
+                val separator = if (file.path.startsWith("/")) "/" else "//"
+                val fullUri = "${file.fileSystem.protocol}:$separator/$encodedPath"
+                URI(fullUri)
             } else {
                 null
             }
