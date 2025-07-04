@@ -29,14 +29,34 @@ import java.nio.file.Path
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.vcs.VcsRepo
 
+private data class CacheKey(
+    val currentBranch: String?,
+    val head: String?,
+    val repoBaseDir: Path?,
+    val mainBranchName: String,
+    val allBranchNames: Set<String>
+)
+
+private var cache: Pair<CacheKey, String?>? = null
+
 class GitRepo(private val repo: GitRepository, private val project: Project) : VcsRepo {
     override fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>): String? {
-        return try {
-            val currentBranch = repo.currentBranchName
+        val currentBranch = repo.currentBranchName
+        val head = repo.currentRevision ?: return null // Could be the case if no commit has been made in the repo
+        val repoBaseDir = getGitDir()
+
+        val cacheKey = CacheKey(currentBranch, head, repoBaseDir, mainBranchName, allBranchNames)
+
+        cache?.let { (cachedKey, cachedResult) ->
+            if (cachedKey == cacheKey) {
+                return cachedResult
+            }
+        }
+
+        val result = try {
             if (currentBranch != null && currentBranch in allBranchNames) {
                 return currentBranch
             }
-            val head = repo.currentRevision ?: return null // Could be the case if no commit has been made in the repo
 
             val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
             for (serverBranchName in allBranchNames) {
@@ -54,6 +74,9 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
             SonarLintConsole.get(project).error("Couldn't find best matching branch", e)
             null
         }
+
+        cache = Pair(cacheKey, result)
+        return result
     }
 
     override fun getGitDir(): Path? {
