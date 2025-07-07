@@ -128,6 +128,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private final Map<String, RulesTreeNode.LanguageNode> languageNodesByName = new HashMap<>();
   private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
   private final AtomicBoolean isDirty = new AtomicBoolean(false);
+  private final Map<String, SonarLintGlobalSettings.Rule> dirtyRules = new HashMap<>();
   private final Project project = ProjectManager.getInstance().getDefaultProject();
   private RulesTreeTable table;
   private RuleDescriptionPanel ruleDescription;
@@ -246,19 +247,22 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
             loadNonDefaultRuleParams(getGlobalSettings(), ruleDefinitionDto)))
           .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
 
-        for (var persisted : persistedRules.values()) {
-          final var possiblyModified = allRulesStateByKey.get(persisted.getKey());
-          if (!persisted.equals(possiblyModified)) {
-            this.isDirty.lazySet(true);
-            return;
-          }
+      dirtyRules.clear();
+
+      for (var persisted : persistedRules.values()) {
+        final var possiblyModified = allRulesStateByKey.get(persisted.getKey());
+        if (!persisted.equals(possiblyModified)) {
+          var dirtyRule = new SonarLintGlobalSettings.Rule(possiblyModified.getKey(), possiblyModified.isActivated());
+          dirtyRule.setParams(possiblyModified.getCustomParams());
+          dirtyRules.put(possiblyModified.getKey(), dirtyRule);
         }
-        this.isDirty.lazySet(false);
-      })
-      .exceptionally(error -> {
-        SonarLintConsole.get(project).error("Could not recompute rules: " + error.getMessage());
-        return null;
-      }));
+      }
+
+      this.isDirty.lazySet(!dirtyRules.isEmpty());
+    }).exceptionally(error -> {
+      SonarLintConsole.get(project).error("Could not recompute rules: " + error.getMessage());
+      return null;
+    }));
   }
 
   @Override
@@ -272,7 +276,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
         return rule;
       }));
     settings.setRulesByKey(nonDefaultRulesConfigurationByKey);
-    runOnPooledThread(project, () -> getService(BackendService.class).updateStandaloneRulesConfiguration(nonDefaultRulesConfigurationByKey));
+    runOnPooledThread(project, () -> getService(BackendService.class).updateStandaloneRulesConfiguration(dirtyRules));
   }
 
   @Override

@@ -25,6 +25,7 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.impl.ProjectManagerImpl;
 import com.intellij.openapi.util.io.FileUtil;
 import java.io.IOException;
+import java.util.UUID;
 import org.jdom.JDOMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,13 +39,15 @@ import static org.mockito.Mockito.when;
 
 // Heavy because of the need to close the project
 class SonarCancelActionTests extends AbstractSonarLintHeavyTests {
-  private SonarCancelAction sonarCancelAction = new SonarCancelAction();
-  private Presentation presentation = new Presentation();
+  private static final UUID RANDOM_UUID = UUID.randomUUID();
+  private final SonarCancelAction sonarCancelAction = new SonarCancelAction();
+  private final Presentation presentation = new Presentation();
   private AnActionEvent event;
 
   @BeforeEach
   void prepare() {
     event = SonarLintTestUtils.createAnActionEvent(getProject());
+    when(event.getProject()).thenReturn(myProject);
     when(event.getPresentation()).thenReturn(presentation);
   }
 
@@ -52,15 +55,14 @@ class SonarCancelActionTests extends AbstractSonarLintHeavyTests {
   void testCancel() {
     var status = AnalysisStatus.get(getProject());
 
-    status.stopRun();
-    status.tryRun();
+    status.stopRun(RANDOM_UUID);
+    status.tryRun(RANDOM_UUID);
+
     assertThat(status.isRunning()).isTrue();
-    assertThat(status.isCanceled()).isFalse();
 
     sonarCancelAction.actionPerformed(event);
 
-    assertThat(status.isRunning()).isTrue();
-    assertThat(status.isCanceled()).isTrue();
+    assertThat(status.isRunning()).isFalse();
   }
 
   @Test
@@ -70,7 +72,7 @@ class SonarCancelActionTests extends AbstractSonarLintHeavyTests {
     assertThat(presentation.isEnabled()).isFalse();
 
     var status = AnalysisStatus.get(getProject());
-    status.tryRun();
+    status.tryRun(RANDOM_UUID);
     sonarCancelAction.update(event);
     assertThat(presentation.isEnabled()).isTrue();
 
@@ -93,21 +95,12 @@ class SonarCancelActionTests extends AbstractSonarLintHeavyTests {
     sonarCancelAction.actionPerformed(event);
 
     assertThat(AnalysisStatus.get(getProject()).isRunning()).isFalse();
-    assertThat(AnalysisStatus.get(getProject()).isCanceled()).isFalse();
   }
 
   @Test
   void testDisableIfNotRunning() {
     var status = mock(AnalysisStatus.class);
     when(status.isRunning()).thenReturn(false);
-    assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
-  }
-
-  @Test
-  void testDisableIfCanceled() {
-    var status = mock(AnalysisStatus.class);
-    when(status.isRunning()).thenReturn(true);
-    when(status.isCanceled()).thenReturn(true);
     assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
   }
 

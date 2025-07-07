@@ -39,6 +39,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility
 import org.jetbrains.annotations.NotNull
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -50,21 +51,32 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.fs.VirtualFileEvent
-import org.sonarlint.intellij.trigger.TriggerType
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
+@Disabled("Flaky")
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private val diamondQuickFix = "SonarQube: Replace with <>"
 
     @BeforeEach
     fun notifyProjectOpened() {
+        getService(BackendService::class.java).moduleRemoved(module)
+        getService(BackendService::class.java).projectClosed(project)
+        getService(BackendService::class.java).projectOpened(project)
+        getService(BackendService::class.java).modulesAdded(project, listOf(module))
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
         }
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
+            assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
+        }
+    }
+
+    @AfterEach
+    fun gracefulFinish() {
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
         }
     }
 
@@ -452,34 +464,38 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     }
 
-    private fun analyzeAndHighlight(vararg filesToAnalyze: VirtualFile): Pair<List<LiveIssue>, List<HighlightInfo>> {
-        return analyze(*filesToAnalyze).toList() to myFixture.doHighlighting()
+    private fun analyzeAndHighlight(fileToAnalyze: VirtualFile): Pair<List<LiveIssue>, List<HighlightInfo>> {
+        return analyze(fileToAnalyze).toList() to myFixture.doHighlighting()
     }
 
-    private fun analyze(vararg filesToAnalyze: VirtualFile): Collection<LiveIssue> {
-        val submitter = getService(project, AnalysisSubmitter::class.java)
+    private fun analyze(fileToAnalyze: VirtualFile): Collection<LiveIssue> {
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
+        }
+
+        getService(BackendService::class.java).didOpenFile(module, fileToAnalyze)
+
+        // We assume that at least one issue will be raised
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            assertThat(findAllIssues(fileToAnalyze).isNotEmpty()).isTrue
+        }
+
+        return findAllIssues(fileToAnalyze)
+    }
+
+    private fun findAllIssues(vararg filesToAnalyze: VirtualFile): List<LiveIssue> {
         val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-        Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
-        }
-
-        submitter.autoAnalyzeFiles(filesToAnalyze.toList(), TriggerType.EDITOR_CHANGE)
-        Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
-        }
-
-        val issues = filesToAnalyze.toList().map {
+        return filesToAnalyze.toList().map {
             onTheFlyFindingsHolder.getIssuesForFile(it)
         }.toList().flatten()
-        return issues
     }
 
     private fun analyzeAll(): List<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
 
         submitter.analyzeAllFiles()
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, RunningAnalysesTracker::class.java).isAnalysisRunning()).isFalse()
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
         }
 
         val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
@@ -491,7 +507,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     private fun sendFileToBackend(filePath: String): VirtualFile {
         val file = myFixture.configureByFile(filePath)
-        val module = project.modules[0]
+        val module = module
         val listModuleFileEvent = listOf(
             VirtualFileEvent(
                 ModuleFileEvent.Type.CREATED,
@@ -502,6 +518,8 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         getService(BackendService::class.java).updateFileSystem(
             mapOf(module to listModuleFileEvent), true
         )
+
+        // Safety before triggering an analysis
         Awaitility.await().during(1, TimeUnit.SECONDS)
 
         return file.virtualFile

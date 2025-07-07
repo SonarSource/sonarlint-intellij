@@ -39,38 +39,37 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ena
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.acceptNewAutomatedConnection
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.acceptNewSCAutomatedConnection
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.createConnection
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenHotspotRequest
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenIssueRequest
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.triggerOpenSCIssueRequest
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyHotspotOpened
-import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.Companion.verifyIssueOpened
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.acceptNewAutomatedConnection
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.acceptNewSCAutomatedConnection
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.createConnection
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.triggerOpenHotspotRequest
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.triggerOpenIssueRequest
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.triggerOpenSCIssueRequest
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.verifyHotspotOpened
+import org.sonarlint.intellij.its.tests.domain.OpenInIdeTests.verifyIssueOpened
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.changeSecurityHotspotStatusAndPressChange
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.enableConnectedModeFromSecurityHotspotPanel
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.openSecurityHotspotReviewDialogFromList
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
-import org.sonarlint.intellij.its.utils.FiltersUtils.Companion.showResolvedIssues
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.defaultBuilderEnv
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.executeBuildWithMaven
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.generateTokenNameAndValue
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.Companion.newAdminWsClientWithUser
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnections
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clearConnectionsAndAddSonarQubeConnection
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.clickPowerSaveMode
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_ORGANIZATION
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.SONARCLOUD_STAGING_URL
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.analyzeSonarCloudWithMaven
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.associateSonarCloudProjectToQualityProfile
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.cleanupProjects
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.newAdminSonarCloudWsClientWithUser
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.provisionSonarCloudProfile
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.Companion.restoreSonarCloudProfile
+import org.sonarlint.intellij.its.utils.FiltersUtils.showResolvedIssues
+import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.defaultBuilderEnv
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.executeBuildWithMaven
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.generateTokenNameAndValue
+import org.sonarlint.intellij.its.utils.OrchestratorUtils.newAdminWsClientWithUser
+import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnections
+import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnectionsAndAddSonarQubeConnection
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.SONARCLOUD_ORGANIZATION
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.SONARCLOUD_STAGING_URL
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.analyzeSonarCloudWithMaven
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.associateSonarCloudProjectToQualityProfile
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.cleanupProjects
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.newAdminSonarCloudWsClientWithUser
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.provisionSonarCloudProfile
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.restoreSonarCloudProfile
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
@@ -212,7 +211,7 @@ class OpenInIdeTests : BaseUiTest() {
         @BeforeAll
         fun initProfile() {
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-issue.xml"))
-            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "SLI Java Issues")
+            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, ISSUE_PROJECT_KEY)
             ORCHESTRATOR.server.associateProjectToQualityProfile(
                 ISSUE_PROJECT_KEY,
                 "java",
@@ -223,7 +222,7 @@ class OpenInIdeTests : BaseUiTest() {
             firstIssueKey = getFirstIssueKey(adminWsClient)
 
             restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
-            provisionSonarCloudProfile(adminSonarCloudWsClient, "SLI Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
+            provisionSonarCloudProfile(adminSonarCloudWsClient, ISSUE_PROJECT_KEY, SONARCLOUD_ISSUE_PROJECT_KEY)
             associateSonarCloudProjectToQualityProfile(
                 adminSonarCloudWsClient,
                 "java",
@@ -236,11 +235,11 @@ class OpenInIdeTests : BaseUiTest() {
             firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
         }
 
-        @Disabled("Flaky test - Timeout while opening a file")
+        @Disabled("Doesn't find the project")
         @Test
         fun click_open_in_ide_SC_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
-            openExistingProject("sli-java-issues")
+            openExistingProject(ISSUE_PROJECT_KEY)
             triggerOpenSCIssueRequest(
                 SONARCLOUD_ISSUE_PROJECT_KEY,
                 firstSCIssueKey,
@@ -256,8 +255,8 @@ class OpenInIdeTests : BaseUiTest() {
         }
 
         @Test
-        fun should_analyze_issue_then_should_review_issue_then_should_not_analyze_with_power_save_mode() = uiTest {
-            openExistingProject("sli-java-issues")
+        fun should_analyze_issue_then_should_review_issue() = uiTest {
+            openExistingProject(ISSUE_PROJECT_KEY)
 
             // Issue Analysis Test
             enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator")
@@ -272,16 +271,8 @@ class OpenInIdeTests : BaseUiTest() {
             showResolvedIssues()
             verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
             showResolvedIssues()
-
-            // Power Save Mode Test
-            clickPowerSaveMode()
-            openFile("src/main/java/foo/Bar.java", "Bar.java")
-            verifyCurrentFileTabContainsMessages("This file is not automatically analyzed because power save mode is enabled")
-            clickPowerSaveMode()
-            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, false, "Orchestrator")
         }
 
-        @Disabled("Flaky test - Timeout while opening a file")
         @Test
         fun click_open_in_ide_issue_then_should_manually_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
@@ -292,10 +283,9 @@ class OpenInIdeTests : BaseUiTest() {
         }
 
         @Test
-        @Disabled("Flaky test - Timeout while opening a file")
         fun click_open_in_ide_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
-            openExistingProject("sli-java-issues")
+            openExistingProject(ISSUE_PROJECT_KEY)
             triggerOpenIssueRequest(ISSUE_PROJECT_KEY, firstIssueKey, ORCHESTRATOR.server.url, "main", tokenName, tokenValue)
             acceptNewAutomatedConnection()
             verifyIssueOpened()

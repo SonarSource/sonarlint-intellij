@@ -39,7 +39,6 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -101,7 +100,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
         project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
 
         if (exclusionsModified) {
-          getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.CONFIG_CHANGE);
+          getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles();
         }
       });
     }

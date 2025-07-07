@@ -133,6 +133,11 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     return optionsPanel;
   }
 
+  public boolean isAutoTriggerModified(SonarLintGlobalSettings model) {
+    getComponent();
+    return model.isAutoTrigger() != autoTrigger.isSelected();
+  }
+
   @Override
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();

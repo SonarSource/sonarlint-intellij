@@ -33,16 +33,15 @@ import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
-import org.sonarlint.intellij.its.utils.SettingsUtils.Companion.optionalIdeaFrame
+import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
-class OpeningUtils {
+object OpeningUtils {
 
-    companion object {
-        fun openFile(filePath: String, fileName: String = filePath) {
-            with(remoteRobot) {
-                idea {
-                    runJs(
-                        """
+    fun openFile(filePath: String, fileName: String = filePath) {
+        with(remoteRobot) {
+            idea {
+                runJs(
+                    """
                         const file = component.project.getBaseDir().findFileByRelativePath("$filePath");
                         if (file) {
                             const openDescriptor = new com.intellij.openapi.fileEditor.OpenFileDescriptor(component.project, file);
@@ -52,105 +51,104 @@ class OpeningUtils {
                             throw "Cannot open file '" + $filePath +"': not found";
                         }
         """, true
-                    )
-                    waitBackgroundTasksFinished()
-                }
+                )
+                waitBackgroundTasksFinished()
             }
         }
+    }
 
-        fun openFileViaMenu(fileName: String) {
-            with(remoteRobot) {
-                idea {
-                    actionMenu("Navigate") {
-                        open()
-                        item("File...") {
-                            click()
-                        }
-                        keyboard {
-                            enterText(fileName)
-                            enter()
+    fun openFileViaMenu(fileName: String) {
+        with(remoteRobot) {
+            idea {
+                actionMenu("Navigate") {
+                    open()
+                    item("File...") {
+                        click()
+                    }
+                    keyboard {
+                        enterText(fileName)
+                        enter()
+                    }
+                }
+                waitBackgroundTasksFinished()
+            }
+        }
+    }
+
+    fun openExistingProject(projectName: String, copyProjectFiles: Boolean = true) {
+        if (copyProjectFiles) {
+            copyProjectFiles(projectName)
+        }
+        with(remoteRobot) {
+            welcomeFrame {
+                // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
+                openProjectButton().click(Point(10, 10))
+            }
+            if (remoteRobot.isRider()) {
+                openSolutionBrowserDialog {
+                    selectProjectFile(projectName)
+                }
+            } else {
+                openProjectFileBrowserDialog {
+                    selectProjectFile(projectName)
+                }
+            }
+            if (!remoteRobot.isCLion()) {
+                optionalStep {
+                    // from 2020.3.4+
+                    dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
+                        button("Trust Project").click()
+                    }
+                }
+            }
+            if (remoteRobot.isRider()) {
+                optionalStep {
+                    dialog("Select a Solution to Open") {
+                        jList(JListFixture.byType()) {
+                            clickItemAtIndex(0)
+                            button("Open").click()
                         }
                     }
-                    waitBackgroundTasksFinished()
                 }
+            }
+            idea {
+                waitBackgroundTasksFinished()
+            }
+            if (remoteRobot.isCLion()) {
+                optionalStep {
+                    dialog("Open Project Wizard") {
+                        button("OK").click()
+                    }
+                }
+            }
+            idea {
+                // corresponding system property has been introduced around middle of 2020
+                // removable at some point when raising minimal version
+                closeTipOfTheDay()
             }
         }
+    }
 
-        fun openExistingProject(projectName: String, copyProjectFiles: Boolean = true) {
-            if (copyProjectFiles) {
-                copyProjectFiles(projectName)
-            }
-            with(remoteRobot) {
-                welcomeFrame {
-                    // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
-                    openProjectButton().click(Point(10, 10))
-                }
-                if (remoteRobot.isRider()) {
-                    openSolutionBrowserDialog {
-                        selectProjectFile(projectName)
+    fun closeProject() {
+        optionalIdeaFrame()?.apply {
+            actionMenu("File") {
+                open()
+                if (isRider()) {
+                    item("Close Solution") {
+                        click()
                     }
                 } else {
-                    openProjectFileBrowserDialog {
-                        selectProjectFile(projectName)
-                    }
-                }
-                if (!remoteRobot.isCLion()) {
-                    optionalStep {
-                        // from 2020.3.4+
-                        dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
-                            button("Trust Project").click()
-                        }
-                    }
-                }
-                if (remoteRobot.isRider()) {
-                    optionalStep {
-                        dialog("Select a Solution to Open") {
-                            jList(JListFixture.byType()) {
-                                clickItemAtIndex(0)
-                                button("Open").click()
-                            }
-                        }
-                    }
-                }
-                idea {
-                    waitBackgroundTasksFinished()
-                }
-                if (remoteRobot.isCLion()) {
-                    optionalStep {
-                        dialog("Open Project Wizard") {
-                            button("OK").click()
-                        }
-                    }
-                }
-                idea {
-                    // corresponding system property has been introduced around middle of 2020
-                    // removable at some point when raising minimal version
-                    closeTipOfTheDay()
-                }
-            }
-        }
-
-        fun closeProject() {
-            optionalIdeaFrame()?.apply {
-                actionMenu("File") {
-                    open()
-                    if (isRider()) {
-                        item("Close Solution") {
-                            click()
-                        }
-                    } else {
-                        item("Close Project") {
-                            click()
-                        }
+                    item("Close Project") {
+                        click()
                     }
                 }
             }
         }
+    }
 
-        private fun copyProjectFiles(projectName: String) {
-            File("projects/$projectName-tmp").deleteRecursively()
-            File("projects/$projectName").copyRecursively(File("projects/$projectName-tmp"))
-        }
+    private fun copyProjectFiles(projectName: String) {
+        File("projects/$projectName-tmp").deleteRecursively()
+        File("projects/$projectName").copyRecursively(File("projects/$projectName-tmp"))
     }
 
 }

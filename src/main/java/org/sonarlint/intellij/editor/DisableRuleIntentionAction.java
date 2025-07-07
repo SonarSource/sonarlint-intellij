@@ -29,9 +29,7 @@ import com.intellij.psi.PsiFile;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -62,7 +60,6 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
     var rulesByKey = getGlobalSettings().getRulesByKey();
     runOnPooledThread(project, () -> {
       getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey);
-      getService(project, AnalysisSubmitter.class).autoAnalyzeSelectedFiles(TriggerType.BINDING_UPDATE);
     });
   }
 

@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.clion;
 
-import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
@@ -31,15 +31,15 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.isCLion;
 public class CFamilyFileExclusionContributor implements FileExclusionContributor {
 
   @Override
-  public ExcludeResult shouldExclude(Module module, VirtualFile fileToAnalyze) {
+  public ExcludeResult shouldExclude(Project project, VirtualFile fileToAnalyze) {
     if (!isCLion()) {
       return ExcludeResult.notExcluded();
     }
-    var psiFile = PsiManager.getInstance(module.getProject()).findFile(fileToAnalyze);
+    var psiFile = PsiManager.getInstance(project).findFile(fileToAnalyze);
     if (!(psiFile instanceof OCPsiFile)) {
       return ExcludeResult.notExcluded();
     }
-    var configurationResult = new CLionAnalyzerConfiguration(module.getProject()).getConfiguration(fileToAnalyze);
+    var configurationResult = new CLionAnalyzerConfiguration(project).getConfiguration(fileToAnalyze);
     if (configurationResult.hasConfiguration()) {
       return ExcludeResult.notExcluded();
     }

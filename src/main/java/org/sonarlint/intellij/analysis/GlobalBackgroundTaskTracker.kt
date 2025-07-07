@@ -19,6 +19,29 @@
  */
 package org.sonarlint.intellij.analysis
 
-interface Cancelable {
-    fun cancel()
+import com.intellij.openapi.components.Service
+import java.util.concurrent.ConcurrentLinkedQueue
+import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
+
+@Service(Service.Level.APP)
+class GlobalBackgroundTaskTracker() {
+
+    private val backgroundTasks = ConcurrentLinkedQueue<GlobalTaskProgressReporter>()
+
+    fun track(backgroundTask: GlobalTaskProgressReporter) {
+        backgroundTasks.add(backgroundTask)
+    }
+
+    fun finishTask(taskId: String) {
+        backgroundTasks.find { it.hasTaskId(taskId) }?.taskFinished(taskId)
+    }
+
+    fun untrackGlobalTask(backgroundTaskState: GlobalTaskProgressReporter) {
+        backgroundTasks.remove(backgroundTaskState)
+    }
+
+    fun isTaskIdCancelled(taskId: String): Boolean {
+        return backgroundTasks.any { it.getCancelledTaskIds().contains(taskId) }
+    }
+
 }

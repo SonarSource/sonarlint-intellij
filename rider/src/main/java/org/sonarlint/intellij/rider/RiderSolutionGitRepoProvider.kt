@@ -28,7 +28,7 @@ import com.jetbrains.rider.projectView.workspace.isProjectFile
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryManager
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.common.util.FileUtils.Companion.isFileValidForSonarLintWithExtensiveChecks
+import org.sonarlint.intellij.common.util.FileUtils.isFileValidForSonarLintWithExtensiveChecks
 import org.sonarlint.intellij.common.vcs.VcsRepo
 import org.sonarlint.intellij.common.vcs.VcsRepoProvider
 import org.sonarlint.intellij.git.GitRepo

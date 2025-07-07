@@ -56,8 +56,6 @@ import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.messages.StatusListener;
-import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.tree.IssueTree;
@@ -110,9 +108,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     handleListener();
 
     initPanel();
-
-    // Subscribe to events
-    subscribeToEvents();
   }
 
   public void updateFindings(AnalysisResult analysisResult) {
@@ -233,10 +228,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     }
   }
 
-  private void refreshToolbar() {
-    mainToolbar.updateActionsImmediately();
-  }
-
   private void setTrees(boolean isFocusOnNewCode) {
     runOnUiThread(project, () -> {
       tree.setShowsRootHandles(true);
@@ -327,13 +318,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   }
 
   private String whatAnalyzed(AnalysisResult analysisResult) {
-    var trigger = analysisResult.getTriggerType();
-    if (TriggerType.ALL.equals(trigger)) {
-      return "all project files";
-    }
-    if (TriggerType.CHANGED_FILES.equals(trigger)) {
-      return "SCM changed files";
-    }
     var filesCount = analysisResult.getAnalyzedFiles().size();
     if (filesCount == 1) {
       return "1 file";
@@ -398,12 +382,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
       }
     });
     tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-  }
-
-  private void subscribeToEvents() {
-    var busConnection = project.getMessageBus().connect();
-    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
-      (StatusListener) newStatus -> runOnUiThread(project, this::refreshToolbar));
   }
 
   public void clear() {

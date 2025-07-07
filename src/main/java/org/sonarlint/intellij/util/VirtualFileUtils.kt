@@ -29,6 +29,7 @@ import io.ktor.utils.io.charsets.name
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
+import java.net.URLEncoder
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -38,14 +39,26 @@ object VirtualFileUtils {
 
     fun toURI(file: VirtualFile): URI? {
         return try {
-            // Should follow RFC-8089
             if (file.isInLocalFileSystem) {
-                val path = if (file.path.startsWith("/")) "//${file.path}" else "///${file.path}"
-                URI(file.fileSystem.protocol, null, path, null)
+                val segments = file.path.split("/")
+
+                val encodedSegments = segments.mapIndexed { index, segment ->
+                    // Don't encode drive letter (like "C:") in first segment
+                    if (index == 0 && segment.matches(Regex("[A-Za-z]:"))) {
+                        segment
+                    } else {
+                        URLEncoder.encode(segment, StandardCharsets.UTF_8.toString()).replace("+", "%20")
+                    }
+                }
+
+                val encodedPath = encodedSegments.joinToString("/")
+                val separator = if (file.path.startsWith("/")) "/" else "//"
+                val fullUri = "${file.fileSystem.protocol}:$separator/$encodedPath"
+                URI(fullUri)
             } else {
                 null
             }
-        } catch (_: URISyntaxException) {
+        } catch (e: URISyntaxException) {
             getService(GlobalLogOutput::class.java).log("Could not transform ${file.url} to URI", ClientLogOutput.Level.DEBUG)
             null
         }
@@ -54,7 +67,7 @@ object VirtualFileUtils {
     fun uriToVirtualFile(fileUri: URI): VirtualFile? {
         return try {
             VirtualFileManager.getInstance().findFileByUrl(URLDecoder.decode(fileUri.toString(), StandardCharsets.UTF_8))
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             getService(GlobalLogOutput::class.java).log("Could not find file for URI $fileUri", ClientLogOutput.Level.DEBUG)
             null
         }

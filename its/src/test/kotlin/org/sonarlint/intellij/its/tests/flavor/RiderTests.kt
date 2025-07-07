@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFile
-import org.sonarlint.intellij.its.utils.OpeningUtils.Companion.openFileViaMenu
+import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
+import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
+import org.sonarlint.intellij.its.utils.OpeningUtils.openFileViaMenu
 
 @EnabledIf("isRider")
 class RiderTests : BaseUiTest() {
@@ -48,7 +48,6 @@ class RiderTests : BaseUiTest() {
         openExistingProject("sample-complex-rider")
 
         openFile("folder1/file1.cs")
-
         verifyCurrentFileTabContainsMessages(
             "Found 2 issues in 1 file",
             "file1.cs",

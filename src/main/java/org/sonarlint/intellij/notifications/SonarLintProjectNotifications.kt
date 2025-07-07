@@ -91,7 +91,6 @@ class SonarLintProjectNotifications(private val myProject: Project) {
         NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IDE: Open in IDE")
     private val secretDetectionGroup =
         NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IDE: Secrets detection")
-    private val taintGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IDE: Taint vulnerabilities")
     private val analyzerRequirementGroup =
         NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IDE: Analyzer Requirement")
     private val sonarlintGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IDE")

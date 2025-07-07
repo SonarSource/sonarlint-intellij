@@ -21,26 +21,30 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
-
+import java.util.UUID;
 import javax.annotation.concurrent.ThreadSafe;
-
-import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.messages.StatusListener;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 @ThreadSafe
 @Service(Service.Level.PROJECT)
 public final class AnalysisStatus {
   private final StatusListener statusListener;
+  private final Project project;
   private Status status = Status.STOPPED;
+  private UUID analysisId;
 
   public AnalysisStatus(Project project) {
     this.statusListener = project.getMessageBus().syncPublisher(StatusListener.SONARLINT_STATUS_TOPIC);
+    this.project = project;
   }
 
-  public enum Status {RUNNING, STOPPED, CANCELLING}
+  public enum Status {RUNNING, STOPPED}
 
   public static AnalysisStatus get(Project p) {
-    return SonarLintUtils.getService(p, AnalysisStatus.class);
+    return getService(p, AnalysisStatus.class);
   }
 
   /**
@@ -48,11 +52,13 @@ public final class AnalysisStatus {
    * Used, for example, to enable/disable task-related actions (run, stop).
    */
   public synchronized boolean isRunning() {
-    return status == Status.RUNNING || status == Status.CANCELLING;
+    return status == Status.RUNNING;
   }
 
-  public synchronized boolean isCanceled() {
-    return status == Status.CANCELLING;
+  public void stopRun(UUID analysisId) {
+    if (this.analysisId == analysisId) {
+      stopRun();
+    }
   }
 
   public void stopRun() {
@@ -62,42 +68,29 @@ public final class AnalysisStatus {
         status = Status.STOPPED;
         callback = status;
       }
-    }
-
-    //don't lock while calling listeners
-    if (callback != null) {
-      statusListener.changed(callback);
-    }
-  }
-
-  /**
-   * Cancel the task currently running
-   */
-  public void cancel() {
-    Status callback = null;
-    synchronized (this) {
-      if (status == Status.RUNNING) {
-        status = Status.CANCELLING;
-        callback = Status.CANCELLING;
+      if (analysisId != null) {
+        getService(BackendService.class).cancelTask(analysisId.toString());
       }
+      this.analysisId = null;
     }
 
-    //don't lock while calling listeners
+    // don't lock while calling listeners
     if (callback != null) {
       statusListener.changed(callback);
     }
   }
 
-  public boolean tryRun() {
+  public boolean tryRun(UUID analysisId) {
     Status callback = null;
     synchronized (this) {
       if (!isRunning()) {
         status = Status.RUNNING;
         callback = Status.RUNNING;
+        this.analysisId = analysisId;
       }
     }
 
-    //don't lock while calling listeners
+    // don't lock while calling listeners
     if (callback != null) {
       statusListener.changed(callback);
       return true;
