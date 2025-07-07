@@ -56,7 +56,7 @@ class AnalysisSubmitter(private val project: Project) {
         runOnPooledThread(project) {
             val callback = ShowReportCallable(project)
             val modules = ModuleManager.getInstance(project).modules
-            val taskState = createGlobalTaskIfNeeded("Analyzing all projects files", modules.size)
+            val taskState = createGlobalTaskIfNeeded("Analyzing all projects files", modules.size, true)
             modules.forEach { module ->
                 getService(BackendService::class.java).analyzeFullProject(module).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
@@ -73,7 +73,7 @@ class AnalysisSubmitter(private val project: Project) {
         runOnPooledThread(project) {
             val callback = ShowReportCallable(project)
             val modules = ModuleManager.getInstance(project).modules
-            val taskState = createGlobalTaskIfNeeded("Analyzing VCS changed files", modules.size)
+            val taskState = createGlobalTaskIfNeeded("Analyzing VCS changed files", modules.size, false)
             modules.forEach { module ->
                 getService(BackendService::class.java).analyzeVCSChangedFiles(module).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
@@ -90,7 +90,7 @@ class AnalysisSubmitter(private val project: Project) {
         runOnPooledThread(project) {
             val callback = UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder)
             val modules = ModuleManager.getInstance(project).modules
-            val taskState = createGlobalTaskIfNeeded("Analyzing open files", modules.size)
+            val taskState = createGlobalTaskIfNeeded("Analyzing open files", modules.size, false)
             modules.forEach { module ->
                 getService(BackendService::class.java).analyzeOpenFiles(module).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
@@ -109,7 +109,7 @@ class AnalysisSubmitter(private val project: Project) {
             val filesByModule = files.groupBy { selectedFile ->
                 findModuleForFile(selectedFile, project)
             }
-            val taskState = createGlobalTaskIfNeeded("Analyzing files", filesByModule.size)
+            val taskState = createGlobalTaskIfNeeded("Analyzing files", filesByModule.size, true)
             filesByModule.forEach { (module, files) ->
                 module?.let {
                     getService(project, PromotionProvider::class.java).handlePromotionOnAnalysis()
@@ -158,7 +158,7 @@ class AnalysisSubmitter(private val project: Project) {
             val filesByModule = files.groupBy { file ->
                 findModuleForFile(file, project)
             }
-            val taskState = createGlobalTaskIfNeeded("Analyzing files", filesByModule.size)
+            val taskState = createGlobalTaskIfNeeded("Analyzing files", filesByModule.size, true)
             filesByModule.forEach { (module, files) ->
                 module?.let {
                     getService(project, PromotionProvider::class.java).handlePromotionOnAnalysisReport(files)
@@ -192,9 +192,9 @@ class AnalysisSubmitter(private val project: Project) {
         }
     }
 
-    private fun createGlobalTaskIfNeeded(title: String, moduleSize: Int): GlobalTaskProgressReporter? {
+    private fun createGlobalTaskIfNeeded(title: String, moduleSize: Int, withTextUpdate: Boolean): GlobalTaskProgressReporter? {
         return if (moduleSize > 1) {
-            val task = GlobalTaskProgressReporter(project, title, moduleSize)
+            val task = GlobalTaskProgressReporter(project, title, moduleSize, withTextUpdate)
             task.updateText("SonarQube: Analysis 1 out of $moduleSize modules")
             task.queue()
             getService(GlobalBackgroundTaskTracker::class.java).track(task)

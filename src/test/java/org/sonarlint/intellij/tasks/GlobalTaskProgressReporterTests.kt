@@ -38,7 +38,7 @@ class GlobalTaskProgressReporterTests : AbstractSonarLintLightTests() {
     fun initialization() {
         module1 = mock(Module::class.java)
         module2 = mock(Module::class.java)
-        reporter = GlobalTaskProgressReporter(project, "Test Global Task", totalTasks)
+        reporter = GlobalTaskProgressReporter(project, "Test Global Task", totalTasks, true)
         val indicator = mock(ProgressIndicator::class.java)
         reporter.progressIndicator = indicator
     }

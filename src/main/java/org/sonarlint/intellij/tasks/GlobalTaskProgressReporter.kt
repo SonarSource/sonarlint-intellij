@@ -28,7 +28,8 @@ import org.sonarlint.intellij.core.BackendService
 class GlobalTaskProgressReporter(
     project: Project?,
     title: String,
-    private val totalTasks: Int
+    private val totalTasks: Int,
+    private val withTextUpdate: Boolean
 ) : TaskProgressReporter(project, title, true, true) {
 
     private val modulesPerTaskId = mutableMapOf<String, Module>()
@@ -44,7 +45,9 @@ class GlobalTaskProgressReporter(
     }
 
     fun updateText(text: String) {
-        this.progressIndicator?.text = text
+        if (withTextUpdate) {
+            this.progressIndicator?.text = text
+        }
     }
 
     fun trackTask(module: Module, taskId: String?) {
