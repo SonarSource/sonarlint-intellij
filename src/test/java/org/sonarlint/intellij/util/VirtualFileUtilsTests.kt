@@ -87,6 +87,23 @@ class VirtualFileUtilsTests : AbstractSonarLintHeavyTests() {
         assertThat(decodedUri).isEqualTo("file:///home/test/{}[] |.java")
     }
 
+    @Test
+    fun test_should_correctly_encode_file_with_special_characters_in_path() {
+        val virtualFile = mock(VirtualFile::class.java)
+        `when`(virtualFile.isInLocalFileSystem).thenReturn(true)
+        `when`(virtualFile.path).thenReturn("/home/test/中文字符/{}[] |.java")
+        val fileSystem = mock(VirtualFileSystem::class.java)
+        `when`(fileSystem.protocol).thenReturn("file")
+        `when`(virtualFile.fileSystem).thenReturn(fileSystem)
+
+        val uri = VirtualFileUtils.toURI(virtualFile)
+        val decodedUri = URLDecoder.decode(uri.toString(), StandardCharsets.UTF_8)
+
+        assertThat(uri).isNotNull()
+        assertThat(uri.toString()).isEqualTo("file:///home/test/%E4%B8%AD%E6%96%87%E5%AD%97%E7%AC%A6/%7B%7D%5B%5D%20%7C.java")
+        assertThat(decodedUri).isEqualTo("file:///home/test/中文字符/{}[] |.java")
+    }
+
     private fun generateVirtualFileWithName(fileName: String): VirtualFile {
         val virtualFile = mock(VirtualFile::class.java)
         `when`(virtualFile.isInLocalFileSystem).thenReturn(true)

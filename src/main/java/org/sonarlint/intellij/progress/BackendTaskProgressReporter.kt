@@ -21,38 +21,43 @@ package org.sonarlint.intellij.progress
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.EmptyProgressIndicator
-import com.intellij.openapi.progress.PerformInBackgroundOption
-import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
-import com.intellij.openapi.project.Project
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
+import org.sonarlint.intellij.analysis.GlobalBackgroundTaskTracker
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.tasks.TaskProgressReporter
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.ProgressUpdateNotification
 import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.StartProgressParams
 
 class BackendTaskProgressReporter {
-    private val taskPool = ConcurrentHashMap<String, AwaitingBackgroundTask>()
+    private val taskPool = ConcurrentHashMap<String, TaskProgressReporter>()
 
-    fun startTask(params: StartProgressParams): CompletableFuture<Void> {
+    fun startTask(params: StartProgressParams) {
         val taskId = params.taskId
         if (taskPool.containsKey(taskId)) {
             val errorMessage = "Task with ID $taskId is already active, skip reporting it"
             GlobalLogOutput.get().log(errorMessage, ClientLogOutput.Level.DEBUG)
-            return CompletableFuture.failedFuture(IllegalArgumentException(errorMessage))
+            return
+        }
+        if (getService(GlobalBackgroundTaskTracker::class.java).isTaskIdCancelled(taskId)) {
+            val errorMessage = "Task with ID $taskId was cancelled"
+            GlobalLogOutput.get().log(errorMessage, ClientLogOutput.Level.DEBUG)
+            getService(BackendService::class.java).cancelTask(taskId)
+            getService(GlobalBackgroundTaskTracker::class.java).finishTask(taskId)
+            return
         }
         val project = params.configurationScopeId?.let {
             BackendService.findModule(it)?.project
                 ?: BackendService.findProject(it)
         }
-        val taskStartedFuture = CompletableFuture<Void>()
-        val task = AwaitingBackgroundTask(project, params, taskStartedFuture, onCompletion = {
-            taskPool.remove(taskId)
-        })
+        val task = TaskProgressReporter(
+            project, params.title, params.isCancellable,
+            params.isIndeterminate, params.message, taskId, onCompletion = {
+                taskPool.remove(taskId)
+            })
         taskPool[taskId] = task
         if (ApplicationManager.getApplication().isUnitTestMode) {
             // in headless mode the task is run on the same thread, run on a pooled thread instead
@@ -60,7 +65,6 @@ class BackendTaskProgressReporter {
         } else {
             task.queue()
         }
-        return taskStartedFuture
     }
 
     fun updateProgress(taskId: String, notification: ProgressUpdateNotification) {
@@ -79,57 +83,7 @@ class BackendTaskProgressReporter {
             return
         }
         task.complete()
-    }
-}
-
-private class AwaitingBackgroundTask(
-    project: Project?,
-    private val params: StartProgressParams,
-    private val taskStartedFuture: CompletableFuture<Void>,
-    private val onCompletion: () -> Unit,
-) :
-    Task.Backgroundable(project, params.title, params.isCancellable, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
-    var progressIndicator: ProgressIndicator? = null
-    private val waitMonitor = Object()
-    private val complete = AtomicBoolean(false)
-
-    override fun run(indicator: ProgressIndicator) {
-        progressIndicator = indicator
-        progressIndicator!!.isIndeterminate = params.isIndeterminate
-        params.message?.let { progressIndicator!!.text = it }
-        taskStartedFuture.complete(null)
-        while (!complete.get()) {
-            try {
-                synchronized(waitMonitor) {
-                    waitMonitor.wait(60 * 1000)
-                }
-            } catch (_: InterruptedException) {
-                complete.set(true)
-            }
-        }
-        onCompletion()
-    }
-
-
-    fun updateProgress(notification: ProgressUpdateNotification) {
-        synchronized(waitMonitor) {
-            waitMonitor.notify()
-        }
-        notification.percentage?.let { percentage ->
-            progressIndicator?.let {
-                if (it.isIndeterminate) {
-                    it.isIndeterminate = false
-                }
-                it.fraction = percentage.toDouble()
-            }
-        }
-        notification.message?.let { message -> progressIndicator?.text = message }
-    }
-
-    fun complete() {
-        complete.set(true)
-        synchronized(waitMonitor) {
-            waitMonitor.notify()
-        }
+        // The task may be included as part of a Global Background Task
+        getService(GlobalBackgroundTaskTracker::class.java).finishTask(taskId)
     }
 }
