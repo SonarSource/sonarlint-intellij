@@ -104,16 +104,6 @@ class VirtualFileUtilsTests : AbstractSonarLintHeavyTests() {
         assertThat(decodedUri).isEqualTo("file:///home/test/中文字符/{}[] |.java")
     }
 
-    private fun generateVirtualFileWithName(fileName: String): VirtualFile {
-        val virtualFile = mock(VirtualFile::class.java)
-        `when`(virtualFile.isInLocalFileSystem).thenReturn(true)
-        `when`(virtualFile.path).thenReturn("/home/test/$fileName")
-        val fileSystem = mock(VirtualFileSystem::class.java)
-        `when`(fileSystem.protocol).thenReturn("file")
-        `when`(virtualFile.fileSystem).thenReturn(fileSystem)
-        return virtualFile
-    }
-
     @Test
     fun should_remove_markdown_cells_from_notebook() {
         val fileContent = """
@@ -135,6 +125,33 @@ class VirtualFileUtilsTests : AbstractSonarLintHeavyTests() {
             #%%
             t = 2""".trimIndent()
         )
+    }
+
+    @Test
+    fun test_should_correctly_encode_windows_path() {
+        val virtualFile = mock(VirtualFile::class.java)
+        `when`(virtualFile.isInLocalFileSystem).thenReturn(true)
+        `when`(virtualFile.path).thenReturn("C:/Users/test/中文字符/file.java")
+        val fileSystem = mock(VirtualFileSystem::class.java)
+        `when`(fileSystem.protocol).thenReturn("file")
+        `when`(virtualFile.fileSystem).thenReturn(fileSystem)
+
+        val uri = VirtualFileUtils.toURI(virtualFile)
+        val decodedUri = URLDecoder.decode(uri.toString(), StandardCharsets.UTF_8)
+
+        assertThat(uri).isNotNull()
+        assertThat(uri.toString()).isEqualTo("file:///C:/Users/test/%E4%B8%AD%E6%96%87%E5%AD%97%E7%AC%A6/file.java")
+        assertThat(decodedUri).isEqualTo("file:///C:/Users/test/中文字符/file.java")
+    }
+
+    private fun generateVirtualFileWithName(fileName: String): VirtualFile {
+        val virtualFile = mock(VirtualFile::class.java)
+        `when`(virtualFile.isInLocalFileSystem).thenReturn(true)
+        `when`(virtualFile.path).thenReturn("/home/test/$fileName")
+        val fileSystem = mock(VirtualFileSystem::class.java)
+        `when`(fileSystem.protocol).thenReturn("file")
+        `when`(virtualFile.fileSystem).thenReturn(fileSystem)
+        return virtualFile
     }
 
 }

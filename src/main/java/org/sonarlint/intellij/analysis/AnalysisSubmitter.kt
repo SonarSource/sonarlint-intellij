@@ -42,10 +42,8 @@ import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
-import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.runOnPooledThread
-import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 @Service(Service.Level.PROJECT)
 class AnalysisSubmitter(private val project: Project) {
@@ -98,29 +96,6 @@ class AnalysisSubmitter(private val project: Project) {
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
                     taskState?.trackTask(module, response.analysisId?.toString())
-                }
-            }
-        }
-    }
-
-    fun autoAnalyzeFiles(files: List<VirtualFile>) {
-        runOnPooledThread(project) {
-            val callback = UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder)
-            val filesByModule = files.groupBy { selectedFile ->
-                findModuleForFile(selectedFile, project)
-            }
-            val taskState = createGlobalTaskIfNeeded("Analyzing files", filesByModule.size, true)
-            filesByModule.forEach { (module, files) ->
-                module?.let {
-                    getService(project, PromotionProvider::class.java).handlePromotionOnAnalysis()
-                    getService(BackendService::class.java).analyzeFileList(module, files).thenAccept { response ->
-                        response.analysisId?.let { analysisId ->
-                            GlobalLogOutput.get().log("Triggered analysis '$analysisId'", ClientLogOutput.Level.DEBUG)
-                            val analysisState = AnalysisState(analysisId, callback, module)
-                            getService(project, RunningAnalysesTracker::class.java).track(analysisState)
-                        }
-                        taskState?.trackTask(module, response.analysisId?.toString())
-                    }
                 }
             }
         }

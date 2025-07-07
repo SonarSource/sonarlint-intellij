@@ -39,20 +39,26 @@ object VirtualFileUtils {
 
     fun toURI(file: VirtualFile): URI? {
         return try {
-            // Should follow RFC-8089
-            // Characters between separators is encoded
-            // URI constructor cannot be used to encode as it does not work on most custom schemes
             if (file.isInLocalFileSystem) {
-                val encodedPath = file.path.split("/")
-                    .joinToString("/") { URLEncoder.encode(it, StandardCharsets.UTF_8.toString()) }
-                    .replace("+", "%20")
+                val segments = file.path.split("/")
+
+                val encodedSegments = segments.mapIndexed { index, segment ->
+                    // Don't encode drive letter (like "C:") in first segment
+                    if (index == 0 && segment.matches(Regex("[A-Za-z]:"))) {
+                        segment
+                    } else {
+                        URLEncoder.encode(segment, StandardCharsets.UTF_8.toString()).replace("+", "%20")
+                    }
+                }
+
+                val encodedPath = encodedSegments.joinToString("/")
                 val separator = if (file.path.startsWith("/")) "/" else "//"
                 val fullUri = "${file.fileSystem.protocol}:$separator/$encodedPath"
                 URI(fullUri)
             } else {
                 null
             }
-        } catch (_: URISyntaxException) {
+        } catch (e: URISyntaxException) {
             getService(GlobalLogOutput::class.java).log("Could not transform ${file.url} to URI", ClientLogOutput.Level.DEBUG)
             null
         }
@@ -61,7 +67,7 @@ object VirtualFileUtils {
     fun uriToVirtualFile(fileUri: URI): VirtualFile? {
         return try {
             VirtualFileManager.getInstance().findFileByUrl(URLDecoder.decode(fileUri.toString(), StandardCharsets.UTF_8))
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             getService(GlobalLogOutput::class.java).log("Could not find file for URI $fileUri", ClientLogOutput.Level.DEBUG)
             null
         }

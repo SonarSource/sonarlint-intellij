@@ -464,23 +464,23 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     }
 
-    private fun analyzeAndHighlight(vararg filesToAnalyze: VirtualFile): Pair<List<LiveIssue>, List<HighlightInfo>> {
-        return analyze(*filesToAnalyze).toList() to myFixture.doHighlighting()
+    private fun analyzeAndHighlight(fileToAnalyze: VirtualFile): Pair<List<LiveIssue>, List<HighlightInfo>> {
+        return analyze(fileToAnalyze).toList() to myFixture.doHighlighting()
     }
 
-    private fun analyze(vararg filesToAnalyze: VirtualFile): Collection<LiveIssue> {
-        val submitter = getService(project, AnalysisSubmitter::class.java)
-
+    private fun analyze(fileToAnalyze: VirtualFile): Collection<LiveIssue> {
         Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
         }
-        submitter.autoAnalyzeFiles(filesToAnalyze.toList())
+
+        getService(BackendService::class.java).didOpenFile(module, fileToAnalyze)
+
         // We assume that at least one issue will be raised
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
-            assertThat(findAllIssues(*filesToAnalyze).isNotEmpty()).isTrue
+            assertThat(findAllIssues(fileToAnalyze).isNotEmpty()).isTrue
         }
 
-        return findAllIssues(*filesToAnalyze)
+        return findAllIssues(fileToAnalyze)
     }
 
     private fun findAllIssues(vararg filesToAnalyze: VirtualFile): List<LiveIssue> {

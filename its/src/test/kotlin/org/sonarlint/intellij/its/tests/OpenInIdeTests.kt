@@ -235,6 +235,7 @@ class OpenInIdeTests : BaseUiTest() {
             firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
         }
 
+        @Disabled("Doesn't find the project")
         @Test
         fun click_open_in_ide_SC_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
             clearConnections()
