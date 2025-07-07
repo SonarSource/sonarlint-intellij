@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.27 - 4 new rules and 1 new QuickFix for Java.</li>
+        <li>10.27 - Fix an issue where analysis would never finish. Internal refactoring of the analysis workflow. 4 new rules and 1 new QuickFix for Java.</li>
         <li>10.26 - Support IAR compiler for C++. Allow sharing connected mode information for overridden modules. Add 33 new rules and 9 quick fixes for Python. 1 new rule about secrets and fewer FPs for C#.</li>
         <li>10.25 - Add 2 new rules for Java 23. Improve consistency when opening an issue from SonarQube Server or Cloud. Bug fixes and fewer FPs for Go and JS/TS.</li>
         <li>10.24 - Introduce AI CodeFix when connected to SonarQube Server, starting from 2025.3. Fixed an issue where SonarQube for IDE would not use the Node.js path saved in the settings upon restart. Bug fixes, fewer FPs and improvements for many languages.</li>
