@@ -60,7 +60,7 @@ class GlobalTaskProgressReporter(
         val module = modulesPerTaskId[taskId] ?: return
         modulesPerTaskId.remove(taskId)
         modulesDone.add(module)
-        updateText("SonarQube: Analysis ${modulesDone.size} Out Of $totalTasks")
+        updateText("SonarQube: Analysis ${modulesDone.size} out of $totalTasks modules")
         checkIfGloballyFinished()
     }
 
