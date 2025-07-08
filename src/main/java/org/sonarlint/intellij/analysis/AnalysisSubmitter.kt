@@ -168,7 +168,6 @@ class AnalysisSubmitter(private val project: Project) {
     private fun createGlobalTaskIfNeeded(title: String, moduleSize: Int, withTextUpdate: Boolean): GlobalTaskProgressReporter? {
         return if (moduleSize > 1) {
             val task = GlobalTaskProgressReporter(project, title, moduleSize, withTextUpdate)
-            task.updateText("SonarQube: Analysis 1 out of $moduleSize modules")
             task.queue()
             getService(GlobalBackgroundTaskTracker::class.java).track(task)
             task
