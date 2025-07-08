@@ -42,7 +42,7 @@ private var cache: Pair<CacheKey, String?>? = null
 class GitRepo(private val repo: GitRepository, private val project: Project) : VcsRepo {
     override fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>): String? {
         val currentBranch = repo.currentBranchName
-        val head = repo.currentRevision ?: return null // Could be the case if no commit has been made in the repo
+        val head = repo.currentRevision
         val repoBaseDir = getGitDir()
 
         val cacheKey = CacheKey(currentBranch, head, repoBaseDir, mainBranchName, allBranchNames)
@@ -53,11 +53,17 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
             }
         }
 
-        val result = try {
-            if (currentBranch != null && currentBranch in allBranchNames) {
-                return currentBranch
-            }
+        if (currentBranch != null && currentBranch in allBranchNames) {
+            cache = Pair(cacheKey, currentBranch)
+            return currentBranch
+        }
 
+        if (head == null) {
+            cache = Pair(cacheKey, null)
+            return null // Could be the case if no commit has been made in the repo
+        }
+
+        val result = try {
             val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
             for (serverBranchName in allBranchNames) {
                 val localBranch = repo.branches.findLocalBranch(serverBranchName) ?: continue
