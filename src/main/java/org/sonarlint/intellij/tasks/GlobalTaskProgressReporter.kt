@@ -36,6 +36,10 @@ class GlobalTaskProgressReporter(
     private val modulesDone = mutableListOf<Module>()
     private var isCancelled = false
 
+    init {
+        updateText("SonarQube: Analysis 1 out of $totalTasks modules")
+    }
+
     override fun onCancel() {
         isCancelled = true
         modulesPerTaskId.keys.forEach { id ->

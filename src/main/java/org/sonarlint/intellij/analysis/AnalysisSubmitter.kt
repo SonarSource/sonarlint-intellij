@@ -88,14 +88,12 @@ class AnalysisSubmitter(private val project: Project) {
         runOnPooledThread(project) {
             val callback = UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder)
             val modules = ModuleManager.getInstance(project).modules
-            val taskState = createGlobalTaskIfNeeded("Analyzing open files", modules.size, false)
             modules.forEach { module ->
                 getService(BackendService::class.java).analyzeOpenFiles(module).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
                         val analysisState = AnalysisState(analysisId, callback, module)
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
-                    taskState?.trackTask(module, response.analysisId?.toString())
                 }
             }
         }
@@ -170,7 +168,6 @@ class AnalysisSubmitter(private val project: Project) {
     private fun createGlobalTaskIfNeeded(title: String, moduleSize: Int, withTextUpdate: Boolean): GlobalTaskProgressReporter? {
         return if (moduleSize > 1) {
             val task = GlobalTaskProgressReporter(project, title, moduleSize, withTextUpdate)
-            task.updateText("SonarQube: Analysis 1 out of $moduleSize modules")
             task.queue()
             getService(GlobalBackgroundTaskTracker::class.java).track(task)
             task
