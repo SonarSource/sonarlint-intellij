@@ -43,6 +43,7 @@ import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.PROJECT)
@@ -103,7 +104,7 @@ class AnalysisSubmitter(private val project: Project) {
         val callback = CheckInCallable()
         val analysisIds = mutableListOf<UUID>()
         files.groupBy { file ->
-            findModuleForFile(file, project)
+            computeOnPooledThread(project, "Find Module For File") { findModuleForFile(file, project) }
         }.forEach { (module, files) ->
             module?.let {
                 getService(project, PromotionProvider::class.java).handlePromotionOnPreCommitCheck()

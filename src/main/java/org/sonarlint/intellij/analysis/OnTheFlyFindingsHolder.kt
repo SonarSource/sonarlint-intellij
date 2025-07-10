@@ -40,6 +40,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
@@ -128,10 +129,12 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             updateCurrentFileTab()
         }
 
-        findModuleForFile(file, project)?.let {
-            getService(BackendService::class.java).didCloseFile(it, file)
-        } ?: run {
-            getService(BackendService::class.java).didCloseFile(project, file)
+        runOnPooledThread(project) {
+            findModuleForFile(file, project)?.let {
+                getService(BackendService::class.java).didCloseFile(it, file)
+            } ?: run {
+                getService(BackendService::class.java).didCloseFile(project, file)
+            }
         }
     }
 
