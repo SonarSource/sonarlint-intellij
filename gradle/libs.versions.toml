@@ -20,7 +20,7 @@ sonar-dotnet = "10.14.0.120626"
 sonarqube = "4.4.1.3373"
 
 kotlin-plugin = "2.1.10"
-intellij-plugin = "2.6.0"
+intellij-plugin = "2.6.1-SNAPSHOT"
 license-plugin = "0.16.1"
 artifactory-plugin = "4.33.1"
 cyclonedx-plugin = "1.10.0"
