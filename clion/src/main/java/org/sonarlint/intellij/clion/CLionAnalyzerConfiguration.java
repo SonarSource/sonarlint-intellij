@@ -61,10 +61,10 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
   public ConfigurationResult getConfigurationAction(VirtualFile file) {
     var psiFile = PsiManager.getInstance(project).findFile(file);
     if (!(psiFile instanceof OCPsiFile ocFile)) {
-      return new ConfigurationResult(psiFile + " not an OCPsiFile");
+      return ConfigurationResult.skip(psiFile + " not an OCPsiFile");
     }
     if (!ocFile.isInProjectSources()) {
-      return new ConfigurationResult(ocFile + " not in project sources");
+      return ConfigurationResult.skip(ocFile + " not in project sources");
     }
     OCResolveConfiguration configuration = null;
     OCLanguageKind languageKind = null;
@@ -112,6 +112,8 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     } else if ("iar".equals(cFamilyCompiler)) {
       // For IAR, we are interested in all headers. This is necessary to support the C_INCLUDE environment variable (as it is a user header).
       collectDefinesAndIncludes(compilerSettings, properties, h -> true);
+    } else {
+      SonarLintConsole.get(project).debug("Did not collect any properties for " + compilerKind.getDisplayName() + " compiler");
     }
 
     var sonarLanguage = getSonarLanguage(languageKind);

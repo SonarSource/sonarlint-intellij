@@ -84,6 +84,7 @@ object FileUtils {
         for (fileExclusion in FileExclusionContributor.EP_NAME.getExtensionList()) {
             val excludeResultFromEp = fileExclusion.shouldExclude(project, file)
             if (excludeResultFromEp.isExcluded) {
+                SonarLintConsole.get(project).debug("File ${file.name} is excluded, reason: ${excludeResultFromEp.excludeReason()}")
                 true
             }
         }
