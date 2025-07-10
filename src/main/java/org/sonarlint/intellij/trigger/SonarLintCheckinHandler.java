@@ -106,8 +106,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
 
     try {
-      var analysisSubmitter = getService(project, AnalysisSubmitter.class);
-      var analysisIdsByCallback = analysisSubmitter.analyzeFilesPreCommit(affectedFiles);
+      var analysisIdsByCallback = getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
 
       if (analysisIdsByCallback == null) {
         SonarLintConsole.get(project).debug("Pre-commit analysis cancelled because analysis did not start");
