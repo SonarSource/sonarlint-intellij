@@ -56,7 +56,7 @@ public abstract class AnalyzerConfiguration {
       this.skipReason = null;
     }
 
-    public ConfigurationResult(@Nullable String skipReason) {
+    private ConfigurationResult(@Nullable String skipReason) {
       this.skipReason = skipReason;
       this.configuration = null;
     }

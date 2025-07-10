@@ -44,7 +44,7 @@ import org.sonarlint.intellij.clion.common.AnalyzerConfiguration;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
-import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafelyInSmartMode;
 
 public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
 
@@ -59,7 +59,7 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
   }
 
   public ConfigurationResult getConfiguration(VirtualFile file) {
-    var configuration = computeReadActionSafely(file, project, () -> getConfigurationAction(file));
+    var configuration = computeReadActionSafelyInSmartMode(file, project, () -> getConfigurationAction(file));
     return configuration != null ? configuration : ConfigurationResult.skip("The file is invalid or the project is being closed");
   }
 
@@ -69,10 +69,10 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
   public ConfigurationResult getConfigurationAction(VirtualFile file) {
     var psiFile = PsiManager.getInstance(project).findFile(file);
     if (!(psiFile instanceof CppFile cppFile)) {
-      return new ConfigurationResult(psiFile + " not a CppFile");
+      return ConfigurationResult.skip(psiFile + " not a CppFile");
     }
     if (!ProjectFileIndex.getInstance(cppFile.getProject()).isInSource(file)) {
-      return new ConfigurationResult(cppFile + " not in project sources");
+      return ConfigurationResult.skip(cppFile + " not in project sources");
     }
     var configuration = getConfiguration(project, file);
 
@@ -109,6 +109,8 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
     } else if ("iar".equals(cFamilyCompiler)) {
       // For IAR, we are interested in all headers. This is necessary to support the C_INCLUDE environment variable (as it is a user header).
       collectDefinesAndIncludes(compilerSettings, properties, h -> true);
+    } else {
+      SonarLintConsole.get(project).debug("Did not collect any properties for " + compilerKind.getDisplayName() + " compiler");
     }
 
     var sonarLanguage = getSonarLanguage(cLanguageKind);
