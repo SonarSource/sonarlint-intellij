@@ -25,6 +25,11 @@ import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
 import com.intellij.testFramework.replaceService
+import java.nio.file.Path
+import java.time.Duration
+import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility.await
@@ -36,6 +41,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
@@ -79,11 +85,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRul
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RulesRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityTrackingRpcService
-import java.nio.file.Path
-import java.time.Duration
-import java.util.UUID
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
@@ -152,6 +153,84 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             .containsExactly(tuple("id", "url"))
         assertThat(paramsCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
             .containsExactly(tuple("id", "org"))
+    }
+
+    @Test
+    fun test_initialize_params_focus_and_auto_analysis() {
+        verify(backend, timeout(2000)).initialize(any())
+        clearInvocations(backend)
+        globalSettings.isFocusOnNewCode = true
+        globalSettings.isAutoTrigger = false
+        service.restartBackendService()
+        val paramsCaptor = argumentCaptor<InitializeParams>()
+
+        verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
+
+        val params = paramsCaptor.firstValue
+        assertThat(params.isFocusOnNewCode).isTrue()
+        assertThat(params.isAutomaticAnalysisEnabled).isFalse()
+    }
+
+    @Test
+    fun test_initialize_params_http_configuration() {
+        verify(backend, timeout(2000)).initialize(any())
+        clearInvocations(backend)
+        System.setProperty("sonarlint.ssl.trustStorePath", "/tmp/truststore")
+        System.setProperty("sonarlint.ssl.trustStorePassword", "trustpass")
+        System.setProperty("sonarlint.ssl.trustStoreType", "JKS")
+        System.setProperty("sonarlint.ssl.keyStorePath", "/tmp/keystore")
+        System.setProperty("sonarlint.ssl.keyStorePassword", "keypass")
+        System.setProperty("sonarlint.ssl.keyStoreType", "PKCS12")
+        System.setProperty("sonarlint.http.connectTimeout", "5")
+        System.setProperty("sonarlint.http.socketTimeout", "PT10S")
+        System.setProperty("sonarlint.http.connectionRequestTimeout", "PT15S")
+        System.setProperty("sonarlint.http.responseTimeout", "PT20S")
+        service.restartBackendService()
+        val paramsCaptor = argumentCaptor<InitializeParams>()
+
+        verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
+
+        val httpConfig = paramsCaptor.firstValue.httpConfiguration
+        assertThat(httpConfig.sslConfiguration.trustStorePath?.toString()).isEqualTo("/tmp/truststore")
+        assertThat(httpConfig.sslConfiguration.trustStorePassword).isEqualTo("trustpass")
+        assertThat(httpConfig.sslConfiguration.trustStoreType).isEqualTo("JKS")
+        assertThat(httpConfig.sslConfiguration.keyStorePath?.toString()).isEqualTo("/tmp/keystore")
+        assertThat(httpConfig.sslConfiguration.keyStorePassword).isEqualTo("keypass")
+        assertThat(httpConfig.sslConfiguration.keyStoreType).isEqualTo("PKCS12")
+        assertThat(httpConfig.connectTimeout).isEqualTo(Duration.ofMinutes(5))
+        assertThat(httpConfig.socketTimeout).isEqualTo(Duration.parse("PT10S"))
+        assertThat(httpConfig.connectionRequestTimeout).isEqualTo(Duration.parse("PT15S"))
+        assertThat(httpConfig.responseTimeout).isEqualTo(Duration.parse("PT20S"))
+        System.clearProperty("sonarlint.ssl.trustStorePath")
+        System.clearProperty("sonarlint.ssl.trustStorePassword")
+        System.clearProperty("sonarlint.ssl.trustStoreType")
+        System.clearProperty("sonarlint.ssl.keyStorePath")
+        System.clearProperty("sonarlint.ssl.keyStorePassword")
+        System.clearProperty("sonarlint.ssl.keyStoreType")
+        System.clearProperty("sonarlint.http.connectTimeout")
+        System.clearProperty("sonarlint.http.socketTimeout")
+        System.clearProperty("sonarlint.http.connectionRequestTimeout")
+        System.clearProperty("sonarlint.http.responseTimeout")
+    }
+
+    @Test
+    fun test_initialize_params_backend_capabilities() {
+        verify(backend, timeout(2000)).initialize(any())
+        clearInvocations(backend)
+        System.setProperty("sonarlint.telemetry.disabled", "true")
+        System.setProperty("sonarlint.monitoring.disabled", "true")
+        service.restartBackendService()
+        val paramsCaptor = argumentCaptor<InitializeParams>()
+
+        verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
+
+        val params = paramsCaptor.firstValue
+        assertThat(params.backendCapabilities).doesNotContain(
+            org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability.TELEMETRY,
+            org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability.MONITORING
+        )
+        System.clearProperty("sonarlint.telemetry.disabled")
+        System.clearProperty("sonarlint.monitoring.disabled")
     }
 
     @Test

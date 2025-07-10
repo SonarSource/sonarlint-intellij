@@ -337,6 +337,7 @@ class BackendService : Disposable {
         val omnisharpRequirementsDto = generateOmnisharpDto()
         // e.g. IntelliJ IDEA 2024.3.2
         val host = "${ApplicationInfo.getInstance().versionName} ${ApplicationInfo.getInstance().fullVersion}"
+        val automaticAnalysisEnabled = getGlobalSettings().isAutoTrigger
         return rpcServer.initialize(
             InitializeParams(
                 ClientConstantInfoDto(
@@ -360,7 +361,7 @@ class BackendService : Disposable {
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
                 LanguageSpecificRequirements(jsTsRequirements, omnisharpRequirementsDto),
-                true,
+                automaticAnalysisEnabled,
                 null
             )
         )
