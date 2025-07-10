@@ -191,10 +191,12 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
 
         val httpConfig = paramsCaptor.firstValue.httpConfiguration
-        assertThat(httpConfig.sslConfiguration.trustStorePath?.toString()).isEqualTo("/tmp/truststore")
+        val trustStorePath = httpConfig.sslConfiguration.trustStorePath?.toString()?.replace('\\', '/')
+        val keyStorePath = httpConfig.sslConfiguration.keyStorePath?.toString()?.replace('\\', '/')
+        assertThat(trustStorePath).endsWith("/tmp/truststore")
         assertThat(httpConfig.sslConfiguration.trustStorePassword).isEqualTo("trustpass")
         assertThat(httpConfig.sslConfiguration.trustStoreType).isEqualTo("JKS")
-        assertThat(httpConfig.sslConfiguration.keyStorePath?.toString()).isEqualTo("/tmp/keystore")
+        assertThat(keyStorePath).endsWith("/tmp/keystore")
         assertThat(httpConfig.sslConfiguration.keyStorePassword).isEqualTo("keypass")
         assertThat(httpConfig.sslConfiguration.keyStoreType).isEqualTo("PKCS12")
         assertThat(httpConfig.connectTimeout).isEqualTo(Duration.ofMinutes(5))
