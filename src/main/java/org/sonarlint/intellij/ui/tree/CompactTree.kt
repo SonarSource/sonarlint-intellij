@@ -19,9 +19,10 @@
  */
 package org.sonarlint.intellij.ui.tree
 
-class CompactTree(private val nodesByParent: Map<Any, List<Any>>) {
+class CompactTree(val nodesByParent: Map<Any, List<Any>>) {
     fun getChild(parent: Any, index: Int) = nodesByParent[parent]?.getOrNull(index)
     fun getChildCount(parent: Any) = nodesByParent[parent]?.size ?: 0
+    fun getCountForType(type: Class<out Any>) = nodesByParent.values.flatten().count { type.isInstance(it) }
 
     fun getIndexOfChild(parent: Any?, child: Any?): Int {
         if (parent == null || child == null) {

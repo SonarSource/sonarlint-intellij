@@ -28,8 +28,8 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.ui.CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.currentfile.CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile
 import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpText
 import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpTextNotConnected
 import org.sonarlint.intellij.util.runOnPooledThread

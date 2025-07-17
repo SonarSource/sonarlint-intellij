@@ -70,10 +70,11 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.CardPanel
-import org.sonarlint.intellij.ui.CurrentFilePanel
 import org.sonarlint.intellij.ui.SonarLintRulePanel
+import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.TreeContentKind
 import org.sonarlint.intellij.ui.tree.TreeSummary
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
@@ -110,8 +111,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private val cards = CardPanel()
     private val noVulnerabilitiesPanel: JBPanelWithEmptyText
 
-    private val taintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(treeSummary)
-    private val oldTaintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(oldTreeSummary)
+    private val taintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(treeSummary, SummaryNode(treeSummary))
+    private val oldTaintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(oldTreeSummary, SummaryNode(treeSummary))
 
     init {
         val globalSettings = getGlobalSettings()
@@ -174,7 +175,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
                 ActionUtil.invokeAction(
                     action,
                     labelPanel,
-                    CurrentFilePanel.SONARLINT_TOOLWINDOW_ID,
+                    TOOL_WINDOW_ID,
                     null,
                     null
                 )

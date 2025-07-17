@@ -85,7 +85,7 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
         file: VirtualFile,
         ruleKey: String,
         range: RangeMarker,
-        flows: MutableList<Flow>,
+        flows: List<Flow>,
         flowMessage: String
     ) {
         rulePanel.setSelectedFinding(module, ruleKey)
@@ -93,6 +93,17 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
         SonarLintUtils.getService(project, EditorDecorator::class.java).highlightRange(range)
         flowsTree.emptyText.text = "Selected $findingKindText doesn't have flows"
         flowsTree.expandAll()
+    }
+
+    fun show(taint: org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability, openOnCodeFixTab: Boolean) {
+        val module = taint.module
+        if (module != null) {
+            rulePanel.setSelectedFinding(module, taint, taint.getId(), openOnCodeFixTab)
+        } else {
+            rulePanel.clear()
+        }
+        flowsTreeBuilder.clearFlows()
+        flowsTree.emptyText.text = "No flows for this taint vulnerability"
     }
 
     fun clear() {

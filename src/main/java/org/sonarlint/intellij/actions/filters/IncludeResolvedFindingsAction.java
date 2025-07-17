@@ -60,6 +60,9 @@ public class IncludeResolvedFindingsAction<T extends Finding> extends AbstractSo
       } else if (type == LocalTaintVulnerability.class) {
         isResolved = flag;
         getService(p, SonarLintToolWindow.class).filterTaintVulnerabilityTab(isResolved);
+      } else if (type == Finding.class) {
+        isResolved = flag;
+        getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
       }
     }
   }

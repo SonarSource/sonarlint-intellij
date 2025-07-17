@@ -74,6 +74,7 @@ import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK;
+import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
@@ -272,7 +273,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     text.setText(textLabel);
     if (action != null && actionText != null) {
       text.appendLine(actionText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-        ignore -> ActionUtil.invokeAction(action, labelPanel, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        ignore -> ActionUtil.invokeAction(action, labelPanel, TOOL_WINDOW_ID, null, null));
     }
     return labelPanel;
   }
@@ -282,7 +283,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     text.setText(newText);
     if (sonarConfigureProject != null) {
       text.appendLine("Configure Binding", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-        ignore -> ActionUtil.invokeAction(sonarConfigureProject, notSupportedPanel, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        ignore -> ActionUtil.invokeAction(sonarConfigureProject, notSupportedPanel, TOOL_WINDOW_ID, null, null));
     }
   }
 

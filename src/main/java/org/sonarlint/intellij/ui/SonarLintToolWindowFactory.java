@@ -35,6 +35,7 @@ import javax.swing.JComponent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildTabName;

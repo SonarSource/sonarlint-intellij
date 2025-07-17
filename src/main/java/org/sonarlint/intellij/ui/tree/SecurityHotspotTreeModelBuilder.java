@@ -66,7 +66,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private static final Comparator<LiveSecurityHotspotNode> SECURITY_HOTSPOT_WITHOUT_FILE_COMPARATOR = new LiveSecurityHotspotNodeComparator();
 
   protected SecurityHotspotFilters currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
-  protected boolean shouldIncludeResolvedHotspots = false;
+  public boolean shouldIncludeResolvedHotspots = false;
   private final FindingTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summaryNode;
