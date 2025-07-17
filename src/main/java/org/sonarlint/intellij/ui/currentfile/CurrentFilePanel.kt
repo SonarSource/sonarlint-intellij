@@ -474,9 +474,9 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                 }
             }
             if (idx != -1) {
-                filtersPanel.add(Box.createRigidArea(Dimension(4, 0)), idx + 3)
+                filtersPanel.add(Box.createRigidArea(Dimension(4, 0)), idx + 1)
                 filtersPanel.add(filtersPanel.statusLabel, idx + 2)
-                filtersPanel.add(Box.createRigidArea(Dimension(4, 0)), idx + 5)
+                filtersPanel.add(Box.createRigidArea(Dimension(4, 0)), idx + 3)
                 filtersPanel.add(filtersPanel.statusCombo, idx + 4)
             } else {
                 filtersPanel.add(Box.createRigidArea(Dimension(4, 0)))
