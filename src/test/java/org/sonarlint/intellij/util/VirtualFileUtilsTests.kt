@@ -24,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
 import com.intellij.util.application
 import java.net.URLDecoder
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -142,6 +143,45 @@ class VirtualFileUtilsTests : AbstractSonarLintHeavyTests() {
         assertThat(uri).isNotNull()
         assertThat(uri.toString()).isEqualTo("file:///C:/Users/test/%E4%B8%AD%E6%96%87%E5%AD%97%E7%AC%A6/file.java")
         assertThat(decodedUri).isEqualTo("file:///C:/Users/test/中文字符/file.java")
+    }
+
+    @Test
+    fun test_getEncoding_when_virtual_file_has_charset_set() {
+        val virtualFile = mock(VirtualFile::class.java)
+        val mockCharset = mock(Charset::class.java)
+        `when`(virtualFile.isCharsetSet).thenReturn(true)
+        `when`(virtualFile.charset).thenReturn(mockCharset)
+        `when`(mockCharset.name()).thenReturn("UTF-8")
+
+        val result = VirtualFileUtils.getEncoding(virtualFile, project)
+
+        assertThat(result).isEqualTo("UTF-8")
+    }
+
+    @Test
+    fun test_getEncoding_when_virtual_file_no_charset_but_project_manager_returns_encoding() {
+        val virtualFile = mock(VirtualFile::class.java)
+        `when`(virtualFile.isCharsetSet).thenReturn(false)
+        val testFile = createTestFile("test.txt", "test content")
+        
+        val result = VirtualFileUtils.getEncoding(testFile, project)
+
+        // The result should be the default charset name since the file doesn't have a charset set
+        // and the project manager will return null
+        assertThat(result).isEqualTo(Charset.defaultCharset().name())
+    }
+
+    private fun createTestFile(fileName: String, content: String): VirtualFile {
+        val module = createModule("test-module")
+        val contentRoot = createTestProjectStructure()
+        ModuleRootModificationUtil.addContentRoot(module, contentRoot)
+        
+        lateinit var testFile: VirtualFile
+        application.runWriteAction {
+            testFile = contentRoot.createChildData(project, fileName)
+            testFile.setBinaryContent(content.toByteArray())
+        }
+        return testFile
     }
 
     private fun generateVirtualFileWithName(fileName: String): VirtualFile {

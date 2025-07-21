@@ -38,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.common.util.UrlUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.connected.SonarProjectBranchCache;
 import org.sonarlint.intellij.connected.SonarProjectBranchListener;
@@ -46,6 +45,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 import org.sonarlint.intellij.util.SonarLintActions;
+import org.sonarlint.intellij.util.UrlBuilder;
 
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -201,10 +201,13 @@ public class CurrentFileConnectedModePanel {
   }
 
   private static String buildTooltipHtml(ServerConnection serverConnection, String projectKey, @Nullable String branchName) {
-    var projectOverviewUrl = String.format("%s/dashboard?id=%s", withoutTrailingSlash(serverConnection.getHostUrl()), UrlUtils.urlEncode(projectKey));
+    var path = withoutTrailingSlash(serverConnection.getHostUrl()) + "/dashboard";
+    var projectOverviewUrl = new UrlBuilder(path)
+      .addParam("id", projectKey)
+      .addParam("branch", branchName)
+      .build();
     var branchParagraph = "<p>Synchronized with the project's main branch</p>";
     if (branchName != null) {
-      projectOverviewUrl += String.format("&branch=%s", UrlUtils.urlEncode(branchName));
       branchParagraph = String.format("<p>Synchronized with branch '%s'</p>", escapeHtml4(branchName));
     }
     return String.format(
