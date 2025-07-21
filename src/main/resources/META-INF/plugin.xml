@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.28 - Add detection for 102 new secret patterns, and enable support of secret detection for the Kotlin language. Mitigate a performance regression on the .NET analyzer. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>10.28 - Minimal supported Node.js version needed for JS/TS/CSS analysis is 18.20.0, 20.12.0, or 21.4.0. Add detection for 102 new secret patterns, and enable support of secret detection for the Kotlin language. Mitigate a performance regression on the .NET analyzer. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.27.1 - Fix an issue where disabling automatic analysis would not be taken into account upon restart.</li>
         <li>10.27 - Fix an issue where analysis would never finish. Internal refactoring of the analysis workflow. 4 new rules and 1 new QuickFix for Java.</li>
         <li>10.26 - Support IAR compiler for C++. Allow sharing connected mode information for overridden modules. Add 33 new rules and 9 quick fixes for Python. 1 new rule about secrets and fewer FPs for C#.</li>
