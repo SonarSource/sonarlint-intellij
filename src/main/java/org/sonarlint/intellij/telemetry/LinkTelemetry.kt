@@ -21,7 +21,6 @@ package org.sonarlint.intellij.telemetry
 
 import com.intellij.ide.BrowserUtil
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.common.util.UrlUtils
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Community.COMMUNITY_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.AI_FIX_SUGGESTIONS_LINK
@@ -32,6 +31,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.RULE
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROUBLESHOOTING_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.USING_RULES_LINK
 import org.sonarlint.intellij.promotion.UtmParameters
+import org.sonarlint.intellij.util.UrlBuilder
 
 enum class LinkTelemetry(
     private val linkId: String,
@@ -63,8 +63,12 @@ enum class LinkTelemetry(
         BrowserUtil.browse(withParameters(utmParameters))
     }
 
-    private fun withParameters(utmParameters: UtmParameters?): String {
-        return UrlUtils.addParameters(url, utmParameters?.trackingParams)
+    fun withParameters(utmParameters: UtmParameters?): String {
+        val builder = UrlBuilder(url)
+        utmParameters?.trackingParams?.forEach { key, value ->
+            builder.addParam(key, value)
+        }
+        return builder.build()
     }
 
 }

@@ -50,7 +50,6 @@ import javax.swing.text.DefaultCaret
 import org.apache.commons.text.StringEscapeUtils
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.common.util.UrlUtils.Companion.urlEncode
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
@@ -64,6 +63,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
+import org.sonarlint.intellij.util.UrlBuilder
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.EffectiveIssueDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRuleDetailsDto
@@ -353,11 +353,11 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         serverFindingKey: String,
     ): String {
         val prefixPath = if (serverConnection.isSonarCloud) "project/" else ""
-        return "${serverConnection.hostUrl}/${prefixPath}security_hotspots?id=${urlEncode(projectKey)}&hotspots=${
-            urlEncode(
-                serverFindingKey
-            )
-        }"
+        val path = "${serverConnection.hostUrl}/${prefixPath}security_hotspots"
+        return UrlBuilder(path)
+            .addParam("id", projectKey)
+            .addParam("hotspots", serverFindingKey)
+            .build()
     }
 
     private fun securityHotspotsDocLink() = externalLink("Security Hotspot", SECURITY_HOTSPOTS_LINK)

@@ -25,7 +25,6 @@ import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager
-import io.ktor.utils.io.charsets.name
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
@@ -116,11 +115,11 @@ object VirtualFileUtils {
 
     fun getEncoding(virtualFile: VirtualFile, project: Project): String {
         if (virtualFile.isCharsetSet) {
-            return virtualFile.charset.name
+            return virtualFile.charset.name()
         }
         val encodingProjectManager = EncodingProjectManager.getInstance(project)
         val encoding = encodingProjectManager.getEncoding(virtualFile, true)
-        return encoding?.name ?: Charset.defaultCharset().name
+        return encoding?.name() ?: Charset.defaultCharset().name()
     }
 
 }

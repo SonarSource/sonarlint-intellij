@@ -24,13 +24,13 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.common.util.UrlUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.util.DataKeys.Companion.TAINT_VULNERABILITY_DATA_KEY
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
+import org.sonarlint.intellij.util.UrlBuilder
 
 class OpenIssueInBrowserAction : AbstractSonarAction(
   "Open In Browser",
@@ -61,9 +61,11 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
   }
 
   private fun buildLink(serverUrl: String, projectKey: String, issueKey: String): String {
-    val urlEncodedProjectKey = UrlUtils.urlEncode(projectKey)
-    val urlEncodedIssueKey = UrlUtils.urlEncode(issueKey)
-    return "$serverUrl/project/issues?id=$urlEncodedProjectKey&open=$urlEncodedIssueKey"
+    val path = "$serverUrl/project/issues"
+    return UrlBuilder(path)
+      .addParam("id", projectKey)
+      .addParam("open", issueKey)
+      .build()
   }
 
   private fun serverConnection(project: Project): ServerConnection? = getService(project, ProjectBindingManager::class.java).tryGetServerConnection().orElse(null)
