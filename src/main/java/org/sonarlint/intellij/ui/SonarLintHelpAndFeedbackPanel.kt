@@ -82,7 +82,7 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
         topLabel.apply {
             text = """
             Having issues with SonarQube for IDE? Open the <a href="#LogTab">Log tab</a>, 
-            then <a href="#Verbose">enable the Analysis logs and Verbose output</a>.<br>
+            then <a href="#Verbose">enable the Verbose output</a>.<br>
             Share your verbose logs with us in a post on the Community Forum. We are happy to help you debug!
         """.trimIndent()
 

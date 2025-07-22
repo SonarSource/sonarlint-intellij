@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 class ToolWindowVerboseModeActionTests extends AbstractSonarLintLightTests {
-  private ToolWindowVerboseModeAction action = new ToolWindowVerboseModeAction();
+  private final ToolWindowVerboseModeAction action = new ToolWindowVerboseModeAction();
   private AnActionEvent event;
 
   @BeforeEach
@@ -38,30 +38,52 @@ class ToolWindowVerboseModeActionTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void testSelected() {
-    getProjectSettings().setVerboseEnabled(true);
-    assertThat(action.isSelected(event)).isTrue();
-
-    getProjectSettings().setVerboseEnabled(false);
-    assertThat(action.isSelected(event)).isFalse();
-
+  void test_selected_when_project_is_null() {
     when(event.getProject()).thenReturn(null);
-    assertThat(action.isSelected(event)).isFalse();
+    
+    var result = action.isSelected(event);
+    assertThat(result).isFalse();
   }
 
   @Test
-  void testSetSelected() {
+  void test_set_selected_to_true() {
+    getProjectSettings().setVerboseEnabled(false);
+
+    action.setSelected(event, true);
+    
+    assertThat(getProjectSettings().isVerboseEnabled()).isTrue();
+  }
+
+  @Test
+  void test_set_selected_to_false() {
     getProjectSettings().setVerboseEnabled(true);
+
+    action.setSelected(event, false);
+    
+    assertThat(getProjectSettings().isVerboseEnabled()).isFalse();
+  }
+
+  @Test
+  void test_set_selected_when_project_is_null() {
+    getProjectSettings().setVerboseEnabled(true);
+    when(event.getProject()).thenReturn(null);
+    
+    action.setSelected(event, false);
+    
+    assertThat(getProjectSettings().isVerboseEnabled()).isTrue();
+  }
+
+  @Test
+  void test_set_selected_multiple_times() {
+    getProjectSettings().setVerboseEnabled(false);
+
+    action.setSelected(event, true);
+    assertThat(getProjectSettings().isVerboseEnabled()).isTrue();
 
     action.setSelected(event, false);
     assertThat(getProjectSettings().isVerboseEnabled()).isFalse();
 
     action.setSelected(event, true);
-    assertThat(getProjectSettings().isVerboseEnabled()).isTrue();
-
-    // do nothing if there is no project
-    when(event.getProject()).thenReturn(null);
-    action.setSelected(event, false);
     assertThat(getProjectSettings().isVerboseEnabled()).isTrue();
   }
 }
