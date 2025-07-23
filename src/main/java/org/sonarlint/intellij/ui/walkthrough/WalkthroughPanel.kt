@@ -204,7 +204,7 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
                 <a href="${WalkthroughActions.RULE_LINK.id}">Learn more</a>.<br><br>
                 Detect issues on the fly in your open file while you code in the code editor. And run an analysis on multiple 
                 files from the <a href="${WalkthroughActions.REPORT_VIEW.id}">Report tab</a>.<br><br>
-                Open a file to start your Clean Code journey.
+                Open a file to start your high-quality and secure code journey.
             """.trimIndent(),
             SonarLintIcons.WALKTHROUGH_WELCOME,
             null
