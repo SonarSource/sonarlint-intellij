@@ -56,6 +56,10 @@ class SonarLintDocumentationTests {
         SonarLintDocumentation.Intellij.TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK,
         SonarLintDocumentation.Intellij.RULE_SECTION_LINK,
         SonarLintDocumentation.Intellij.FILE_EXCLUSION_LINK,
+        SonarLintDocumentation.Intellij.AI_FIX_SUGGESTIONS_LINK,
+        SonarLintDocumentation.Intellij.INVESTIGATING_ISSUES_LINK,
+        SonarLintDocumentation.Intellij.OPEN_IN_IDE_LINK,
+        SonarLintDocumentation.Intellij.AI_CAPABILITIES,
 
         SonarLintDocumentation.SonarQube.SMART_NOTIFICATIONS,
 
@@ -64,6 +68,7 @@ class SonarLintDocumentationTests {
         SonarLintDocumentation.Marketing.SONARQUBE_EDITIONS_DOWNLOADS_LINK,
         SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_LINK,
         SonarLintDocumentation.Marketing.SONARCLOUD_PRODUCT_SIGNUP_LINK,
+        SonarLintDocumentation.Marketing.SONARQUBE_FOR_IDE_ROADMAP_LINK
     )
 
 }
