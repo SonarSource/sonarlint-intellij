@@ -39,7 +39,7 @@ public class AnalysisLogOutput implements ClientLogOutput, AutoCloseable {
     if (currentProject == null || currentProject.isDisposed()) {
       return;
     }
-    if (!getSettingsFor(currentProject).isAnalysisLogsEnabled()) {
+    if (!getSettingsFor(currentProject).isVerboseEnabled()) {
       return;
     }
     var console = SonarLintUtils.getService(currentProject, SonarLintConsole.class);

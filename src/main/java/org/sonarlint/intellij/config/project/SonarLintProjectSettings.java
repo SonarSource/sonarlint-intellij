@@ -33,7 +33,6 @@ public final class SonarLintProjectSettings {
 
   private final Map<String, String> moduleMapping = new LinkedHashMap<>();
   private boolean verboseEnabled = false;
-  private boolean analysisLogsEnabled = false;
   private Map<String, String> additionalProperties = new LinkedHashMap<>();
   private boolean bindingEnabled = false;
   // For backward compatibility
@@ -83,14 +82,6 @@ public final class SonarLintProjectSettings {
 
   public void setBindingEnabled(boolean bindingEnabled) {
     this.bindingEnabled = bindingEnabled;
-  }
-
-  public boolean isAnalysisLogsEnabled() {
-    return analysisLogsEnabled || "true".equals(System.getProperty("sonarlint.logs.verbose"));
-  }
-
-  public void setAnalysisLogsEnabled(boolean analysisLogsEnabled) {
-    this.analysisLogsEnabled = analysisLogsEnabled;
   }
 
   public List<String> getFileExclusions() {
