@@ -58,8 +58,8 @@ dependencies {
     testImplementation(libs.bundles.its.remote)
     testImplementation(libs.junit.api)
     testImplementation(libs.assertj.core)
-    testRuntimeOnly(libs.junit.four)
-    testRuntimeOnly(libs.junit.engine)
+    testImplementation(libs.junit.four)
+    testImplementation(libs.junit.engine)
 }
 
 tasks {

@@ -115,7 +115,7 @@ dependencies {
     runtimeOnly(project(":nodejs"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
-    testRuntimeOnly(libs.junit.four)
+    testImplementation(libs.junit.four)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj.core)

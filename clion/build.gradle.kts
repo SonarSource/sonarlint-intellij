@@ -46,6 +46,6 @@ dependencies {
     implementation(project(":clion-common"))
     testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)
-    testRuntimeOnly(libs.junit.four)
-    testRuntimeOnly(libs.junit.engine)
+    testImplementation(libs.junit.four)
+    testImplementation(libs.junit.engine)
 }
