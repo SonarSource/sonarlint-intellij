@@ -20,6 +20,7 @@ dependencies {
     testImplementation(project(":test-common"))
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
 }
 

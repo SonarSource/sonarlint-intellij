@@ -34,7 +34,7 @@ private data class CacheKey(
     val head: String?,
     val repoBaseDir: Path?,
     val mainBranchName: String,
-    val allBranchNames: Set<String>
+    val allBranchNames: Set<String>,
 )
 
 private var cache: Pair<CacheKey, String?>? = null
@@ -65,9 +65,10 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
 
         val result = try {
             val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
+            val branches = repo.branches
             for (serverBranchName in allBranchNames) {
-                val localBranch = repo.branches.findLocalBranch(serverBranchName) ?: continue
-                val localBranchHash = repo.branches.getHash(localBranch) ?: continue
+                val localBranch = branches.findLocalBranch(serverBranchName) ?: continue
+                val localBranchHash = branches.getHash(localBranch) ?: continue
                 val distance = distance(project, repo, head, localBranchHash.asString()) ?: continue
                 branchesPerDistance.computeIfAbsent(distance) { HashSet() }.add(serverBranchName)
             }
@@ -95,8 +96,8 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
 
     private fun distance(project: Project, repository: GitRepository, from: String, to: String): Int? {
         val mergeBase = GitHistoryUtils.getMergeBase(project, repository.root, from, to) ?: return null
-        val aheadCount = getNumberOfCommitsBetween(repository, from, mergeBase.asString()) ?: return null
-        val behindCount = getNumberOfCommitsBetween(repository, to, mergeBase.asString()) ?: return null
+        val aheadCount = getNumberOfCommitsBetween(repository, mergeBase.asString(), from) ?: return null
+        val behindCount = getNumberOfCommitsBetween(repository, mergeBase.asString(), to) ?: return null
         return aheadCount + behindCount
     }
 
