@@ -44,6 +44,6 @@ dependencies {
     implementation(project(":common"))
     testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)
-    testRuntimeOnly(libs.junit.engine)
+    testImplementation(libs.junit.engine)
     compileOnly(libs.findbugs.jsr305)
 }
