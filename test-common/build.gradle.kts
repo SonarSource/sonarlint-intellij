@@ -12,18 +12,12 @@ intellij {
     } else {
         version.set(intellijBuildVersion)
     }
-    plugins.set(listOf("Git4Idea"))
 }
+
 
 dependencies {
     implementation(project(":common"))
-    testImplementation(project(":test-common"))
-    testImplementation(platform(libs.junit.bom))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.mockito.core)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    implementation(platform(libs.junit.bom))
+    implementation("org.junit.jupiter:junit-jupiter")
+    implementation(libs.mockito.core)
 }

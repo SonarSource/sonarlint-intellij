@@ -31,9 +31,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
-import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,9 +43,7 @@ import org.apache.commons.io.file.PathUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
@@ -60,14 +56,14 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ProjectBinding;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.test.AbstractLightTests;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-@ExtendWith(RunInEdtInterceptor.class)
-public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
+public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   private Disposable disposable;
   protected static final Path storageRoot = Paths.get(PathManager.getSystemPath()).resolve("sonarlint").resolve("storage");
@@ -85,10 +81,7 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
   }
 
   @BeforeEach
-  final void beforeEachLightTest(TestInfo testInfo) throws Exception {
-    // explicitly call TestCase.setName as IntelliJ relies on it for the setup
-    setName(testInfo.getTestMethod().map(Method::getName).orElse("test"));
-    super.setUp();
+  final void beforeEach() {
     disposable = Disposer.newDisposable();
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
@@ -122,18 +115,14 @@ public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
   };
 
   @AfterEach
-  final void afterEachLightTest() throws Exception {
-    try {
-      getService(BackendService.class).moduleRemoved(getModule());
-      getService(BackendService.class).projectClosed(getProject());
-      if (!getProject().isDisposed()) {
-        getService(getProject(), RunningAnalysesTracker.class).cancelAll();
-        AnalysisStatus.get(getProject()).stopRun();
-      }
-      Disposer.dispose(disposable);
-    } finally {
-      super.tearDown();
+  final void afterEach() {
+    getService(BackendService.class).moduleRemoved(getModule());
+    getService(BackendService.class).projectClosed(getProject());
+    if (!getProject().isDisposed()) {
+      getService(getProject(), RunningAnalysesTracker.class).cancelAll();
+      AnalysisStatus.get(getProject()).stopRun();
     }
+    Disposer.dispose(disposable);
   }
 
   protected void clearNotifications() {
