@@ -45,6 +45,8 @@ val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
 val runIdeBuildVersion: String by project
 
+val verifierVersions: String by project
+
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
 val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
@@ -71,8 +73,6 @@ repositories {
         defaultRepositories()
     }
 }
-
-val verifierVersions: String by project
 
 configurations {
     val sqplugins = create("sqplugins") { isTransitive = false }
