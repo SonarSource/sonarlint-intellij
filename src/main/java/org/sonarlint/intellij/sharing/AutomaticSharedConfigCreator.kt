@@ -205,7 +205,7 @@ class AutomaticSharedConfigCreator(
 
         val sqOrScMessage = if (isSQ) "SonarQube Server" else "SonarQube Cloud"
         connectedModeDescriptionLabel.text =
-            "Connect SonarQube for IDE with $sqOrScMessage to apply the same Clean Code standards as your team, analyze more languages, " +
+            "Connect SonarQube for IDE with $sqOrScMessage to apply the same code quality and security standards as your team, analyze more languages, " +
                 "detect more issues, and receive notifications about the quality gate status."
         connectedModeDescriptionLabel.addHyperlinkListener(object : HyperlinkAdapter() {
             override fun hyperlinkActivated(e: HyperlinkEvent) {

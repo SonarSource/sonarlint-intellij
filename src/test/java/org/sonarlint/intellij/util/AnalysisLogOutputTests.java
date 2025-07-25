@@ -21,11 +21,15 @@ package org.sonarlint.intellij.util;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -36,44 +40,92 @@ class AnalysisLogOutputTests extends AbstractSonarLintLightTests {
   @BeforeEach
   void prepare() {
     replaceProjectService(SonarLintConsole.class, mockConsole);
-    getProjectSettings().setAnalysisLogsEnabled(true);
+    getProjectSettings().setVerboseEnabled(true);
     logOutput = new AnalysisLogOutput(getProject());
+    reset(mockConsole);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "DEBUG, debug",
+    "INFO,  info",
+    "ERROR, error",
+    "WARN,  info",
+    "TRACE, debug"
+  })
+  void test_log_levels(ClientLogOutput.Level level, String expectedMethod) {
+    logOutput.log("test", level);
+    
+    switch (expectedMethod) {
+      case "debug" -> verify(mockConsole).debug("test");
+      case "info" -> verify(mockConsole).info("test");
+      case "error" -> verify(mockConsole).error("test");
+      default -> throw new IllegalArgumentException("Unexpected value: " + expectedMethod);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "test message", "null"})
+  void test_log_with_different_messages(String message) {
+    var actualMessage = "null".equals(message) ? null : message;
+    logOutput.log(actualMessage, ClientLogOutput.Level.INFO);
+    verify(mockConsole).info(actualMessage);
   }
 
   @Test
-  void testDebug() {
-    logOutput.log("test", ClientLogOutput.Level.DEBUG);
-    verify(mockConsole).debug("test");
-  }
-
-  @Test
-  void testNoLogAnalysis() {
-    getProjectSettings().setAnalysisLogsEnabled(false);
+  void test_no_log_when_project_is_null() {
+    logOutput = new AnalysisLogOutput(null);
+    
     logOutput.log("test", ClientLogOutput.Level.INFO);
     verifyNoInteractions(mockConsole);
   }
 
   @Test
-  void testInfo() {
+  void test_all_log_levels_when_enabled() {
+    getProjectSettings().setVerboseEnabled(true);
+
+    logOutput.log("debug msg", ClientLogOutput.Level.DEBUG);
+    logOutput.log("info msg", ClientLogOutput.Level.INFO);
+    logOutput.log("warn msg", ClientLogOutput.Level.WARN);
+    logOutput.log("error msg", ClientLogOutput.Level.ERROR);
+    logOutput.log("trace msg", ClientLogOutput.Level.TRACE);
+    
+    verify(mockConsole).debug("debug msg");
+    verify(mockConsole).info("info msg");
+    verify(mockConsole).info("warn msg");
+    verify(mockConsole).error("error msg");
+    verify(mockConsole).debug("trace msg");
+  }
+
+  @Test
+  void test_all_log_levels_when_disabled() {
+    getProjectSettings().setVerboseEnabled(false);
+    
+    logOutput.log("debug msg", ClientLogOutput.Level.DEBUG);
+    logOutput.log("info msg", ClientLogOutput.Level.INFO);
+    logOutput.log("warn msg", ClientLogOutput.Level.WARN);
+    logOutput.log("error msg", ClientLogOutput.Level.ERROR);
+    logOutput.log("trace msg", ClientLogOutput.Level.TRACE);
+    
+    verifyNoInteractions(mockConsole);
+  }
+
+  @Test
+  void test_close() {
+    logOutput.close();
+    
     logOutput.log("test", ClientLogOutput.Level.INFO);
-    verify(mockConsole).info("test");
+    verifyNoInteractions(mockConsole);
   }
 
   @Test
-  void testError() {
-    logOutput.log("test", ClientLogOutput.Level.ERROR);
-    verify(mockConsole).error("test");
-  }
-
-  @Test
-  void testWarn() {
-    logOutput.log("test", ClientLogOutput.Level.WARN);
-    verify(mockConsole).info("test");
-  }
-
-  @Test
-  void testTrace() {
-    logOutput.log("test", ClientLogOutput.Level.TRACE);
-    verify(mockConsole).debug("test");
+  void test_multiple_log_calls() {
+    logOutput.log("first", ClientLogOutput.Level.INFO);
+    logOutput.log("second", ClientLogOutput.Level.ERROR);
+    logOutput.log("third", ClientLogOutput.Level.DEBUG);
+    
+    verify(mockConsole).info("first");
+    verify(mockConsole).error("second");
+    verify(mockConsole).debug("third");
   }
 }

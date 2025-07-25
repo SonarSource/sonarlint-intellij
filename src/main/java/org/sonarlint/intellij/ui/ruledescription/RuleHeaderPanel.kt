@@ -218,7 +218,7 @@ class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>
             JBLabel("<html><b>" + cleanCapitalized(cleanCodeAttribute.category.label) + " issue</b> | " + cleanCodeAttribute.label + "<br></html>")
         attributePanel.apply {
             add(attributeLabel)
-            toolTipText = "Clean Code attributes are characteristics code needs to have to be considered clean."
+            toolTipText = "Code attributes are characteristics that, when followed, ensure strong code quality and security."
         }
         impacts.forEach {
             val impactSeverity = ImpactSeverity.fromDto(it.impactSeverity)

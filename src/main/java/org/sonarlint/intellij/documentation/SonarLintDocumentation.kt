@@ -27,7 +27,7 @@ object SonarLintDocumentation {
         const val CONNECTED_MODE_SETUP_LINK = "$BASE_DOCS_URL/team-features/connected-mode-setup"
         const val SECURITY_HOTSPOTS_LINK = "$BASE_DOCS_URL/using/security-hotspots"
         const val TAINT_VULNERABILITIES_LINK = "$BASE_DOCS_URL/using/taint-vulnerabilities"
-        const val CLEAN_CODE_LINK = "$BASE_DOCS_URL/concepts/clean-code/introduction"
+        const val CLEAN_CODE_LINK = "$BASE_DOCS_URL/using/software-qualities"
         const val SUPPORT_POLICY_LINK = "$CONNECTED_MODE_SETUP_LINK/#sonarlint-sonarqube-version-support-policy"
         const val FOCUS_ON_NEW_CODE_LINK = "$BASE_DOCS_URL/using/investigating-issues/#focusing-on-new-code"
         const val CONNECTED_MODE_BENEFITS_LINK = "$CONNECTED_MODE_LINK/#benefits"
@@ -59,8 +59,8 @@ object SonarLintDocumentation {
         private const val BASE_MARKETING_URL = "https://www.sonarsource.com"
         const val SONARQUBE_EDITIONS_DOWNLOADS_LINK = "$BASE_MARKETING_URL/products/sonarqube/downloads"
         const val SONARCLOUD_PRODUCT_LINK = "$BASE_MARKETING_URL/products/sonarcloud"
-        const val SONARCLOUD_PRODUCT_SIGNUP_LINK = "$BASE_MARKETING_URL/products/sonarcloud/signup-free/"
-        const val SONARQUBE_FOR_IDE_ROADMAP_LINK = "$BASE_MARKETING_URL/products/sonarlint/roadmap/"
+        const val SONARCLOUD_PRODUCT_SIGNUP_LINK = "$BASE_MARKETING_URL/products/sonarcloud/signup-free"
+        const val SONARQUBE_FOR_IDE_ROADMAP_LINK = "$BASE_MARKETING_URL/products/sonarlint/roadmap"
     }
 
 }

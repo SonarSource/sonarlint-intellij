@@ -98,12 +98,12 @@ public class ServerStep extends AbstractWizardStepEx {
 
     sonarCloudUrl.setText("<html><b>Choose your region</b></html>");
 
-    var sqMainText = "An <b>open-source, self-managed</b> tool that easily integrates into the developers' " +
-      "CI/CD pipeline and DevOps platform to systematically help developers and organizations deliver Clean Code.";
+    var sqMainText = "A <b>self-managed</b> tool that easily integrates into your " +
+      "CI/CD pipelines and DevOps platforms to systematically help you deliver <b>good quality and secure code</b>.";
     sonarQubeDescription.setText(sqMainText);
 
-    var cloudMainText = "A <b>Software-as-a-Service (SaaS)</b> tool that easily integrates into the cloud DevOps platforms " +
-      "and extends the CI/CD workflow to systematically help developers and organizations deliver Clean Code.";
+    var cloudMainText = "A <b>Software-as-a-Service (SaaS)</b> tool that easily integrates into cloud DevOps platforms, " +
+      "extending the CI/CD workflow to systematically help you deliver <b>good quality and secure code</b>.";
     sonarCloudDescription.setText(cloudMainText);
 
     initEditorPane(compareProducts, "Explore SonarQube Cloud with our <a href=\"" + SONARCLOUD_FREE_SIGNUP_PAGE.getUrl() + "\">free tier</a>",

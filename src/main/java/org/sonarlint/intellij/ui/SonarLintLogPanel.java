@@ -28,7 +28,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import javax.swing.Box;
-import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -73,7 +72,6 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
 
   private void addLogActions() {
     var group = new DefaultActionGroup();
-    group.add(new ToolWindowLogAnalysisAction());
     group.add(new ToolWindowVerboseModeAction());
     toolWindow.setAdditionalGearActions(group);
   }
