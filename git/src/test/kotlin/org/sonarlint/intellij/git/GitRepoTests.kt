@@ -81,7 +81,7 @@ class GitRepoTests : AbstractLightTests() {
     }
 
     @Test
-    fun `should return current branch if it's in allBranchNames`() {
+    fun `should return current branch if it's known`() {
         val gitRepository = initRepoWithCommit()
         gitRepository.update()
         val tested = GitRepo(gitRepository, this.project)
@@ -92,7 +92,7 @@ class GitRepoTests : AbstractLightTests() {
     }
 
     @Test
-    fun `should return current non-main branch if it's in allBranchNames`() {
+    fun `should return current non-main branch if it's known`() {
         val gitRepository = initRepoWithCommit()
         newBranch(EXPECTED)
         gitRepository.update()
