@@ -5,8 +5,6 @@ val resharperHome: String? = System.getenv("RESHARPER_HOME")
 
 plugins {
     id("org.jetbrains.intellij.platform.module")
-    java
-    idea
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
 }
@@ -46,7 +44,7 @@ dependencies {
             local(resharperHome)
         } else {
             println("No local installation of CLion found, using version $clionResharperBuildVersion")
-            rider(clionResharperBuildVersion, useInstaller = false)
+            rider(clionResharperBuildVersion) { useInstaller = false }
         }
         testFramework(TestFrameworkType.Platform)
     }

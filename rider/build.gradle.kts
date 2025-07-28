@@ -3,8 +3,6 @@ val riderHome: String? = System.getenv("RIDER_HOME")
 
 plugins {
     id("org.jetbrains.intellij.platform.module")
-    java
-    idea
     kotlin("jvm")
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
