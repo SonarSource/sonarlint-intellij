@@ -2,7 +2,7 @@ val riderBuildVersion: String by project
 val riderHome: String? = System.getenv("RIDER_HOME")
 
 plugins {
-    alias(libs.plugins.intellij)
+    id("org.jetbrains.intellij.platform.module")
     java
     idea
     kotlin("jvm")

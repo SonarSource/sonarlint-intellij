@@ -2,7 +2,7 @@ val intellijUltimateBuildVersion: String by project
 val ultimateHome: String? = System.getenv("ULTIMATE_HOME")
 
 plugins {
-    alias(libs.plugins.intellij)
+    id("org.jetbrains.intellij.platform.module")
     kotlin("jvm")
     java
     idea
