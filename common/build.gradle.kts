@@ -23,8 +23,6 @@ val ideaHome: String? = System.getenv("IDEA_HOME")
 
 plugins {
     id("org.jetbrains.intellij.platform.module")
-    java
-    idea
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
     kotlin("jvm")

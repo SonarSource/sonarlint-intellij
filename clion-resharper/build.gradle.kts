@@ -5,8 +5,6 @@ val resharperHome: String? = System.getenv("RESHARPER_HOME")
 
 plugins {
     id("org.jetbrains.intellij.platform.module")
-    java
-    idea
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
 }
