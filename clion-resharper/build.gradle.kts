@@ -4,7 +4,7 @@ val clionResharperBuildVersion: String by project
 val resharperHome: String? = System.getenv("RESHARPER_HOME")
 
 plugins {
-    id("org.jetbrains.intellij.platform.module")
+    alias(libs.plugins.intellij)
     java
     idea
     alias(libs.plugins.cyclonedx)

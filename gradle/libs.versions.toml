@@ -20,8 +20,7 @@ sonar-dotnet = "10.14.0.120626"
 sonarqube = "4.4.1.3373"
 
 kotlin-plugin = "2.2.0"
-intellij-plugin = "2.6.1-SNAPSHOT"
-intellij-module-plugin = "2.6.0"
+intellij-plugin = "2.7.0"
 license-plugin = "0.16.1"
 artifactory-plugin = "4.33.1"
 cyclonedx-plugin = "1.10.0"
@@ -81,7 +80,7 @@ its-remote = ["its-remote-robot", "its-remote-fixtures"]
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-plugin" }
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij-plugin" }
-intellij-module = { id = "org.jetbrains.intellij.platform.module", version.ref = "intellij-module-plugin" }
+intellij-module = { id = "org.jetbrains.intellij.platform.module", version.ref = "intellij-plugin" }
 license = { id = "com.github.hierynomus.license", version.ref = "license-plugin" }
 artifactory = { id = "com.jfrog.artifactory", version.ref = "artifactory-plugin" }
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-plugin" }

@@ -4,7 +4,7 @@ val clionBuildVersion: String by project
 val clionHome: String? = System.getenv("CLION_HOME")
 
 plugins {
-    id("org.jetbrains.intellij.platform.module")
+    alias(libs.plugins.intellij)
     java
     idea
     alias(libs.plugins.cyclonedx)

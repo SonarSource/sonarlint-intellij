@@ -22,7 +22,7 @@ val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
 plugins {
-    id("org.jetbrains.intellij.platform.module")
+    alias(libs.plugins.intellij)
     java
     idea
     alias(libs.plugins.cyclonedx)
