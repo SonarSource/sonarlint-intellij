@@ -116,8 +116,7 @@ dependencies {
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation(libs.junit.four)
-    testImplementation(platform(libs.junit.bom))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
@@ -165,7 +164,7 @@ intellijPlatform {
         }
         name = "sonarlint-intellij"
     }
-
+    buildSearchableOptions = true
     pluginVerification {
         failureLevel = listOf(
             // these are the only issues we tolerate

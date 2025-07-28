@@ -28,9 +28,11 @@ cyclonedx-plugin = "1.10.0"
 commons-lang3 = "3.17.0"
 commons-text = "1.13.0"
 findbugs-jsr305 = "3.0.2"
-junit-bom = "5.11.3"
+junit-five = "5.9.2"
 junit-four = "4.13.2"
 mockito-kotlin = "5.4.0"
+mockito = "3.10.0"
+assertj = "3.23.1"
 awaitility = "4.3.0"
 
 its-remote = "0.11.23"
@@ -62,9 +64,11 @@ sonar-dotnet-enterprise = { module = "com.sonarsource.dotnet:sonar-csharp-enterp
 commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
-junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-five" }
 junit-four = { module = "junit:junit", version.ref = "junit-four" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito"}
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj"}
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 
 its-sonar-scala = { module = "org.sonarsource.slang:sonar-scala-plugin", version.ref = "its-sonar-scala" }

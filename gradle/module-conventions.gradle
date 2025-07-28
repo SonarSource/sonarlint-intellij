@@ -25,10 +25,6 @@ java {
     }
 }
 
-intellijPlatform {
-    buildSearchableOptions = false
-}
-
 configurations.archives.canBeResolved = true
 
 tasks.cyclonedxBom {

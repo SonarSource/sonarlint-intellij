@@ -14,18 +14,6 @@ plugins {
     id("com.gradle.common-custom-user-data-gradle-plugin") version "2.2.1"
 }
 
-dependencyResolutionManagement {
-    versionCatalogs {
-        create("libs") {
-            val junit5 = version("junit5", "5.9.2")
-            library("junit-api", "org.junit.jupiter", "junit-jupiter-api").versionRef(junit5)
-            library("junit-engine", "org.junit.jupiter", "junit-jupiter-engine").versionRef(junit5)
-            library("assertj-core", "org.assertj:assertj-core:3.23.1")
-            library("mockito-core", "org.mockito:mockito-core:3.10.0")
-        }
-    }
-}
-
 val isCiServer = System.getenv("CI") != null
 
 buildCache {
