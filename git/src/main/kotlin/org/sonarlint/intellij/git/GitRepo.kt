@@ -103,16 +103,16 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
 
     private fun getNumberOfCommitsBetween(
         repository: GitRepository,
-        from: String,
-        to: String,
+        base: String,
+        branchedOut: String,
     ): Int? {
         val handler = GitLineHandler(repository.project, repository.root, GitCommand.REV_LIST)
-        handler.addParameters("--count", "$from..$to")
+        handler.addParameters("--count", "$base..$branchedOut")
         handler.setSilent(true)
         return try {
             Integer.parseInt(Git.getInstance().runCommand(handler).getOutputOrThrow().trim())
         } catch (e: Exception) {
-            throw Exception("Cannot get number of commits between '$from' and '$to'", e)
+            throw Exception("Cannot get number of commits between '$base' and '$branchedOut'", e)
         }
     }
 }

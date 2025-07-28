@@ -66,14 +66,14 @@ class GitRepoTests : AbstractLightTests() {
     @AfterEach
     override fun tearDown() {
         vcsManager.unregisterVcs(GitVcs.getInstance(project))
-        Files.list(root).forEach { child: Path -> child.toFile().deleteRecursively() }
+        Files.list(root).forEach { child -> child.toFile().deleteRecursively() }
     }
 
     @Test
     fun `should return null for empty repo`() {
         val gitRepository = initRepo()
         gitRepository.update()
-        val tested = GitRepo(gitRepository, this.project)
+        val tested = GitRepo(gitRepository, project)
 
         val result = tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, setOf())
 
@@ -260,8 +260,7 @@ class GitRepoTests : AbstractLightTests() {
     private fun newGitRepository(): GitRepository {
         vcsManager.setDirectoryMapping(root.toString(), GitVcs.NAME)
         val file = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(root)
-        val repository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(file)!!
-        return repository
+        return GitUtil.getRepositoryManager(this.project).getRepositoryForRoot(file)!!
     }
 
     private fun git(command: GitCommand, vararg params: String): String {
