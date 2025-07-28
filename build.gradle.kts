@@ -11,7 +11,6 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
-import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -44,7 +43,7 @@ description = "SonarLint for IntelliJ IDEA"
 
 val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
-val runIdeBuildVersion: String by project
+val runIdeDirectory: String by project
 
 val verifierVersions: String by project
 
@@ -236,35 +235,11 @@ intellijPlatform {
     }
 }
 
-val ides = listOf(
-    "runIdeaUltimate" to IntelliJPlatformType.IntellijIdeaUltimate,
-    "runGoLand" to IntelliJPlatformType.GoLand,
-    "runPyCharmCommunity" to IntelliJPlatformType.PyCharmCommunity,
-    "runPyCharmProfessional" to IntelliJPlatformType.PyCharmProfessional,
-    "runWebStorm" to IntelliJPlatformType.WebStorm,
-    "runCLion" to IntelliJPlatformType.CLion,
-    "runRider" to IntelliJPlatformType.Rider,
-    "runPhpStorm" to IntelliJPlatformType.PhpStorm,
-    "runAqua" to IntelliJPlatformType.Aqua,
-    "runAndroidStudio" to IntelliJPlatformType.AndroidStudio,
-    "runRubyMine" to IntelliJPlatformType.RubyMine,
-    "runDataGrip" to IntelliJPlatformType.DataGrip,
-    "runIdeaCommunity" to IntelliJPlatformType.IntellijIdeaCommunity
-)
-
 intellijPlatformTesting {
     runIde {
-        ides.forEach { (name, type) ->
-            register(name) {
-                this.type = type
-                if (project.hasProperty("runIdeBuildVersion")) {
-                    version = runIdeBuildVersion
-                }
-                prepareSandboxTask {
-                    doLast {
-                        setupSandbox(destinationDir, pluginName)
-                    }
-                }
+        register("runLocalIde") {
+            if (project.hasProperty("runIdeDirectory")) {
+                localPath = file(runIdeDirectory)
             }
         }
     }
