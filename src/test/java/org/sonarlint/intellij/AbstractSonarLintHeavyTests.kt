@@ -22,12 +22,6 @@ package org.sonarlint.intellij
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.ComponentManagerImpl
-import com.intellij.testFramework.HeavyPlatformTestCase
-import java.lang.reflect.Method
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.TestInfo
-import org.junit.jupiter.api.extension.ExtendWith
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -35,9 +29,9 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.test.AbstractHeavyTests
 
-@ExtendWith(RunInEdtInterceptor::class)
-abstract class AbstractSonarLintHeavyTests : HeavyPlatformTestCase() {
+abstract class AbstractSonarLintHeavyTests : AbstractHeavyTests() {
 
     val globalSettings: SonarLintGlobalSettings
         get() {
@@ -48,18 +42,6 @@ abstract class AbstractSonarLintHeavyTests : HeavyPlatformTestCase() {
         get() {
             return Settings.getSettingsFor(project)
         }
-
-    @BeforeEach
-    fun beforeEachHeavyTest(testInfo: TestInfo) {
-        // explicitly call TestCase.setName as IntelliJ relies on it for the setup
-        name = testInfo.testMethod.map(Method::getName).orElseGet { "test" }
-        super.setUp()
-    }
-
-    @AfterEach
-    fun afterEachHeavyTest() {
-        super.tearDown()
-    }
 
     protected fun connectModuleTo(projectKey: String) {
         connectModuleTo(module, projectKey)
