@@ -19,8 +19,10 @@
  */
 package org.sonarlint.intellij.util
 
+import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
+import com.intellij.util.application
 import java.net.URLDecoder
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
