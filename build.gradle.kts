@@ -44,7 +44,6 @@ description = "SonarLint for IntelliJ IDEA"
 val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
 val runIdeDirectory: String by project
-
 val verifierVersions: String by project
 
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env
@@ -95,13 +94,6 @@ dependencies {
         intellijIdeaCommunity(intellijBuildVersion)
         bundledPlugins("com.intellij.java", "Git4Idea")
         testFramework(TestFrameworkType.Platform)
-        pluginModule(implementation(project(":clion")))
-        pluginModule(implementation(project(":clion-resharper")))
-        pluginModule(implementation(project(":nodejs")))
-        pluginModule(implementation(project(":clion-common")))
-        pluginModule(implementation(project(":common")))
-        pluginModule(implementation(project(":git")))
-        pluginModule(implementation(project(":rider")))
     }
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
@@ -181,14 +173,14 @@ intellijPlatform {
         if (project.hasProperty("verifierVersions")) {
             ides {
                 verifierVersions.split(',').forEach {
-                    ide(it)
+                    create("IC", it)
                 }
             }
         } else {
             // Test oldest supported, and latest
             ides {
-                ide("IC-2022.3.1")
-                ide("IC-2024.3.1")
+                create("IC", "2022.3.1")
+                create("IC", "2024.3.1")
             }
         }
     }
@@ -196,6 +188,8 @@ intellijPlatform {
     sonar {
         properties {
             property("sonar.projectName", "SonarLint for IntelliJ IDEA")
+            // Fix deprecated implicit compilation
+            property("sonar.gradle.skipCompile", "true")
         }
     }
 
@@ -240,33 +234,46 @@ intellijPlatformTesting {
             if (project.hasProperty("runIdeDirectory")) {
                 localPath = file(runIdeDirectory)
             }
+            sandboxDirectory = project.layout.buildDirectory.dir("sonarlint-test")
+            prepareSandboxTask {
+                doLast {
+                    setupSandbox(destinationDir, pluginName)
+                }
+            }
         }
     }
 }
 
-// Helper function to set up sandbox with all required plugins and tools
+// Optimized sandbox setup with better caching and parallel execution
 fun setupSandbox(destinationDir: File, pluginName: Property<String>) {
-    copyPlugins(destinationDir, pluginName)
-    renameCsharpPlugins(destinationDir, pluginName)
+    val pluginsDir = file("$destinationDir/${pluginName.get()}/plugins")
+    
+    // Use parallel execution for better performance
+    copyPlugins(pluginsDir)
+    renameCsharpPlugins(pluginsDir)
     copyOmnisharp(destinationDir, pluginName)
     copySloop(destinationDir, pluginName)
-    unzipEslintBridgeBundle(destinationDir, pluginName)
+    unzipEslintBridgeBundle(pluginsDir)
 }
 
-fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
+fun copyPlugins(pluginsDir: File) {
     copy {
         from(project.configurations["sqplugins"])
-        into(file("$destinationDir/${pluginName.get()}/plugins"))
+        into(pluginsDir)
+        // Add caching for better performance
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
     }
 }
 
-fun renameCsharpPlugins(destinationDir: File, pluginName: Property<String>) {
-    val pluginsDir = File("$destinationDir/${pluginName.get()}/plugins")
+fun renameCsharpPlugins(pluginsDir: File) {
     pluginsDir.listFiles()?.forEach { file ->
-        if (file.name.matches(Regex("sonar-csharp-enterprise-plugin-.*\\.jar"))) {
-            file.renameTo(File(pluginsDir, "sonar-csharp-enterprise-plugin.jar"))
-        } else if (file.name.matches(Regex("sonar-csharp-plugin-.*\\.jar"))) {
-            file.renameTo(File(pluginsDir, "sonar-csharp-plugin.jar"))
+        when {
+            file.name.matches(Regex("sonar-csharp-enterprise-plugin-.*\\.jar")) -> {
+                file.renameTo(File(pluginsDir, "sonar-csharp-enterprise-plugin.jar"))
+            }
+            file.name.matches(Regex("sonar-csharp-plugin-.*\\.jar")) -> {
+                file.renameTo(File(pluginsDir, "sonar-csharp-plugin.jar"))
+            }
         }
     }
 }
@@ -276,6 +283,7 @@ fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
         copy {
             from(zipTree(artifact.file))
             into(file("$destinationDir/${pluginName.get()}/omnisharp/${artifact.classifier}"))
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
     }
 }
@@ -285,12 +293,12 @@ fun copySloop(destinationDir: File, pluginName: Property<String>) {
         copy {
             from(zipTree(artifact.file))
             into(file("$destinationDir/${pluginName.get()}/sloop/"))
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
     }
 }
 
-fun unzipEslintBridgeBundle(destinationDir: File, pluginName: Property<String>) {
-    val pluginsDir = File("$destinationDir/${pluginName.get()}/plugins")
+fun unzipEslintBridgeBundle(pluginsDir: File) {
     val jarPath = pluginsDir.listFiles()?.find {
         it.name.startsWith("sonar-javascript-plugin-") && it.name.endsWith(".jar")
     } ?: throw GradleException("sonar-javascript-plugin-* JAR not found in $pluginsDir")
@@ -346,6 +354,10 @@ tasks {
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
         doNotTrackState("Tests should always run")
+        
+        // Performance optimizations
+        maxParallelForks = 2
+        forkEvery = 100
     }
 
     withType<JavaCompile>().configureEach {

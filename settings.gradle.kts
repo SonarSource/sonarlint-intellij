@@ -1,12 +1,5 @@
 rootProject.name = "sonarlint-intellij"
-include("its", "clion", "clion-resharper", "nodejs", "clion-common", "common", "git", "rider")
-
-pluginManagement {
-    repositories {
-        maven("https://oss.sonatype.org/content/repositories/snapshots/")
-        gradlePluginPortal()
-    }
-}
+include(":its", ":clion", ":clion-resharper", ":nodejs", ":clion-common", ":common", ":git", ":rider")
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version ("0.9.0")
