@@ -7,9 +7,13 @@ tasks.withType(JavaCompile).configureEach {
 
 plugins.withId("org.jetbrains.kotlin.jvm") {
     tasks.matching { task -> task.name.endsWith("KotlinCompile") }.configureEach { task ->
-        task.kotlinOptions.apiVersion = "1.7"
-        task.kotlinOptions.jvmTarget = "17"
-        task.kotlinOptions.freeCompilerArgs = ["-opt-in=kotlin.RequiresOptIn"]
+        task.compilerOptions {
+            apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_7)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.addAll(listOf("-opt-in=kotlin.RequiresOptIn"))
+            // Performance optimizations
+            useK2.set(true)
+        }
     }
 }
 
@@ -17,6 +21,11 @@ tasks.withType(Test).configureEach {
     useJUnitPlatform()
     // Disable test task tracking to ensure tests always run
     doNotTrackState("Tests should always run")
+    
+    // Performance optimizations
+    maxParallelForks = 2
+    forkEvery = 100
+    maxHeapSize = "1g"
 }
 
 java {

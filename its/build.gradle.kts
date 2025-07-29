@@ -3,8 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.intellij)
-    java
-    idea
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
     kotlin("jvm")
@@ -20,7 +18,6 @@ val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
     ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 repositories {
-    maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
     maven("https://repox.jfrog.io/repox/sonarsource") {
         if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
             credentials {
@@ -46,6 +43,7 @@ group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
 intellijPlatform {
+    projectName = "sonarlint-intellij"
     buildSearchableOptions = false
 }
 
@@ -55,9 +53,6 @@ dependencies {
             create(ijVersion)
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
-        }
-        if (!project.hasProperty("slPluginDirectory")) {
-            localPlugin(project(":"))
         }
         testFramework(TestFrameworkType.JUnit5)
     }
@@ -98,6 +93,10 @@ tasks {
 
         // Disable test task tracking to ensure tests always run
         doNotTrackState("Tests should always run")
+        
+        // Performance optimizations
+        maxParallelForks = 2
+        forkEvery = 100
     }
 }
 
