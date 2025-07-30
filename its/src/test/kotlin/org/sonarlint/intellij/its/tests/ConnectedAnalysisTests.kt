@@ -196,6 +196,8 @@ class ConnectedAnalysisTests : BaseUiTest() {
                 "No new issues from last 1 days",
                 "Found 2 older issues in 1 file",
             )
+
+            // todo add DR?
             resetFocusOnNewCode()
 
             // Taint Vulnerability Test

@@ -105,6 +105,7 @@ import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.risks.LocalDependencyRisk
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.fix.ShowFixSuggestion
@@ -135,6 +136,7 @@ import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
@@ -861,6 +863,23 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             addedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) } to updatedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
         } ?: return
         getService(project, SonarLintToolWindow::class.java).updateTaintVulnerabilities(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
+    }
+
+    // todo temp
+    override fun didChangeDependencyRisks(
+        configurationScopeId: String,
+        closedDependencyRiskIds: Set<UUID?>,
+        addedDependencyRisks: List<DependencyRiskDto?>,
+        updatedDependencyRisks: List<DependencyRiskDto?>,
+    ) {
+        val project = findProject(configurationScopeId) ?: return
+        getService(project, SonarLintToolWindow::class.java)
+            .populateDependencyRisksTab(
+                listOf(addedDependencyRisks, updatedDependencyRisks)
+                    .flatten()
+                    .filterNotNull()
+                    .map { LocalDependencyRisk(it) }
+            )
     }
 
     override fun raiseIssues(
