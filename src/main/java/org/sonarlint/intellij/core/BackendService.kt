@@ -72,6 +72,7 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.finding.issue.risks.LocalDependencyRisk
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
@@ -377,7 +378,8 @@ class BackendService : Disposable {
             BackendCapability.FULL_SYNCHRONIZATION,
             BackendCapability.PROJECT_SYNCHRONIZATION,
             BackendCapability.SMART_NOTIFICATIONS,
-            BackendCapability.ISSUE_STREAMING
+            BackendCapability.ISSUE_STREAMING,
+            BackendCapability.SCA_SYNCHRONIZATION
         )
         if (!System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()) {
             capabilities.add(BackendCapability.TELEMETRY)
@@ -929,6 +931,19 @@ class BackendService : Disposable {
                     getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(localTaintVulnerabilities)
                 }
             }
+
+        refreshDependencyRisks(project)
+    }
+
+    private fun refreshDependencyRisks(project: Project) {
+        // todo ~stub~ OK just project bound/unbound for now
+        requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId(project), true)) }
+            .thenApplyAsync {
+                it.dependencyRisks.map { risk -> LocalDependencyRisk(risk) }
+            }
+            .thenApply { runOnUiThread(project) {
+                getService(project, SonarLintToolWindow::class.java).populateDependencyRisksTab(it)
+            } }
     }
 
     fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): List<VirtualFile> {

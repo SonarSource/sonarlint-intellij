@@ -17,22 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions
+@ParametersAreNonnullByDefault
+package org.sonarlint.intellij.ui.risks;
 
-import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.core.BackendService
-
-const val RESTART_ACTION_TEXT = "Restart SonarQube for IDE Service"
-
-class RestartBackendAction : AbstractSonarAction(RESTART_ACTION_TEXT) {
-
-    companion object {
-        const val SONARLINT_ERROR_MSG = "SonarQube for IDE service encountered an issue and has stopped working"
-    }
-
-    override fun actionPerformed(e: AnActionEvent) {
-        SonarLintUtils.getService(BackendService::class.java).restartBackendService()
-    }
-
-}
+import javax.annotation.ParametersAreNonnullByDefault;
