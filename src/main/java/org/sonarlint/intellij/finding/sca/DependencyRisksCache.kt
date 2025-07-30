@@ -1,0 +1,55 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015-2025 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
+package org.sonarlint.intellij.finding.sca
+
+import com.intellij.openapi.components.Service
+import java.util.UUID
+
+@Service(Service.Level.PROJECT)
+class DependencyRisksCache() {
+
+    private var isResolvedState = false
+    var dependencyRisks: List<LocalDependencyRisk> = emptyList()
+
+    fun update(dependencyRiskIdsToRemove: Set<UUID>, dependencyRisksToAdd: List<LocalDependencyRisk>, dependencyRisksToUpdate: List<LocalDependencyRisk>) {
+        val currentDependencyRisks = dependencyRisks.toMutableList()
+        currentDependencyRisks.removeAll { it.id in dependencyRiskIdsToRemove }
+        currentDependencyRisks.addAll(dependencyRisksToAdd)
+        val updatedDependencyRiskKeys = dependencyRisksToUpdate.map { it.id }
+        currentDependencyRisks.removeAll { it.id in updatedDependencyRiskKeys }
+        currentDependencyRisks.addAll(dependencyRisksToUpdate)
+        dependencyRisks = currentDependencyRisks
+    }
+
+    fun remove(dependencyRiskToRemove: LocalDependencyRisk): Boolean {
+        val currentDependencyRisks = dependencyRisks.toMutableList()
+        val removed = currentDependencyRisks.removeIf { currentRisk -> currentRisk.id == dependencyRiskToRemove.id }
+        if (removed) {
+            dependencyRisks = currentDependencyRisks
+        }
+        return removed
+    }
+
+    fun getFocusAwareCount(isResolved: Boolean? = null): Int {
+        isResolved?.let { isResolvedState = it }
+        return dependencyRisks.count { isResolvedState || !it.isResolved }
+    }
+
+}
