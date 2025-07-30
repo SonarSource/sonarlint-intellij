@@ -28,6 +28,7 @@ import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.argThat
@@ -349,8 +350,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         val addedRisks = listOf(aDependencyRiskDto(DependencyRiskDto.Status.OPEN))
         val updatedRisks = emptyList<DependencyRiskDto>()
 
-        // Should not throw exception for unknown project
-        client.didChangeDependencyRisks("unknown-project-id", closedRiskIds, addedRisks, updatedRisks)
+        assertDoesNotThrow { client.didChangeDependencyRisks("unknown-project-id", closedRiskIds, addedRisks, updatedRisks) }
     }
 
     @Test
