@@ -52,6 +52,7 @@ import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupp
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
@@ -289,6 +290,15 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
       content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
         SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
+  }
+
+  public void populateDependencyRisksTab(List<LocalDependencyRisk> dependencyRisks) {
+    // TODO
+  }
+
+  public void updateDependencyRisks(Set<UUID> closedDependencyRiskIds, List<LocalDependencyRisk> addedDependencyRisks,
+    List<LocalDependencyRisk> updatedDependencyRisks) {
+    // TODO
   }
 
   public void refreshTaintCodeFix() {

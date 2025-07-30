@@ -107,6 +107,7 @@ import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
 import org.sonarlint.intellij.notifications.OpenLinkAction
@@ -135,6 +136,7 @@ import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
@@ -861,6 +863,18 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             addedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) } to updatedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
         } ?: return
         getService(project, SonarLintToolWindow::class.java).updateTaintVulnerabilities(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
+    }
+
+    override fun didChangeDependencyRisks(
+        configurationScopeId: String,
+        closedDependencyRiskIds: Set<UUID>,
+        addedDependencyRisks: List<DependencyRiskDto>,
+        updatedDependencyRisks: List<DependencyRiskDto>
+    ) {
+        val project = findProject(configurationScopeId) ?: return
+        val added = addedDependencyRisks.map { LocalDependencyRisk(it) }
+        val updated = updatedDependencyRisks.map { LocalDependencyRisk(it) }
+        getService(project, SonarLintToolWindow::class.java).updateDependencyRisks(closedDependencyRiskIds, added, updated)
     }
 
     override fun raiseIssues(
