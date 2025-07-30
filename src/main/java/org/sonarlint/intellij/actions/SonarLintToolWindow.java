@@ -50,6 +50,7 @@ import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.risks.LocalDependencyRisk;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk;
@@ -62,6 +63,7 @@ import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
+import org.sonarlint.intellij.ui.risks.DependencyRiskPanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
@@ -76,6 +78,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   private final Project project;
   private Content taintVulnerabilitiesContent;
   private Content securityHotspotsContent;
+  private Content dependenciesRisksContent;
 
   public SonarLintToolWindow(Project project) {
     this.project = project;
@@ -314,6 +317,18 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
       hotspotsPanel.populate(status);
+    }
+  }
+
+  // todo on event
+  public void populateDependencyRisksTab(List<LocalDependencyRisk> dependencyRisks) {
+    var content = getDependenciesRisksContent();
+    if (content != null) {
+      var dependencyRiskPanel = (DependencyRiskPanel) content.getComponent();
+      dependencyRiskPanel.populate(dependencyRisks);
+//      todo
+//      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
+//        SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
   }
 
@@ -571,6 +586,15 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
         .findContent(buildTabName(0, SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
     return taintVulnerabilitiesContent;
+  }
+
+  private Content getDependenciesRisksContent() {
+    var toolWindow = getToolWindow();
+    if (dependenciesRisksContent == null && toolWindow != null) {
+      dependenciesRisksContent = toolWindow.getContentManager()
+        .findContent(buildTabName(0, SonarLintToolWindowFactory.DEPENDENCY_RISKS_TAB_TITLE));
+    }
+    return dependenciesRisksContent;
   }
 
   @Override

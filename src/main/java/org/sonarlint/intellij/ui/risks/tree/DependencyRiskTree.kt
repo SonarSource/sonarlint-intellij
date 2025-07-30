@@ -17,22 +17,14 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions
+package org.sonarlint.intellij.ui.risks.tree
 
-import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.core.BackendService
+import com.intellij.ui.treeStructure.Tree
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer
 
-const val RESTART_ACTION_TEXT = "Restart SonarQube for IDE Service"
+class DependencyRiskTree(private val updater: DependencyRiskTreeUpdater) : Tree(updater.model) {
 
-class RestartBackendAction : AbstractSonarAction(RESTART_ACTION_TEXT) {
-
-    companion object {
-        const val SONARLINT_ERROR_MSG = "SonarQube for IDE service encountered an issue and has stopped working"
+    init {
+        setCellRenderer(TreeCellRenderer(updater.renderer))
     }
-
-    override fun actionPerformed(e: AnActionEvent) {
-        SonarLintUtils.getService(BackendService::class.java).restartBackendService()
-    }
-
 }
