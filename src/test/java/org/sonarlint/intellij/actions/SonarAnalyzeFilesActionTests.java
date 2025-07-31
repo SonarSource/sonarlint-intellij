@@ -56,11 +56,12 @@ class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
     Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
       assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue()
     );
-    clearInvocations(analysisSubmitter);
 
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     when(event.getProject()).thenReturn(getProject());
     when(event.getPresentation()).thenReturn(presentation);
+
+    clearInvocations(analysisSubmitter);
   }
 
   @Test

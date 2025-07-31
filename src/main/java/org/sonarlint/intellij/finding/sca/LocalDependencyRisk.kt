@@ -25,6 +25,19 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRi
 class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
 
     val id: UUID = serverDependencyRisk.id
-    val isResolved = serverDependencyRisk.status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT)
+    val type: DependencyRiskDto.Type = serverDependencyRisk.type
+    val severity: DependencyRiskDto.Severity = serverDependencyRisk.severity
+    val status: DependencyRiskDto.Status = serverDependencyRisk.status
+    val message: String = serverDependencyRisk.packageName
+    val transitions: List<DependencyRiskDto.Transition> = serverDependencyRisk.transitions
+    var isResolved = serverDependencyRisk.status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT)
+
+    fun canChangeStatus(): Boolean {
+        return transitions.isNotEmpty() && !isResolved
+    }
+
+    fun resolve() {
+        isResolved = true
+    }
 
 }
