@@ -32,30 +32,34 @@ import org.apache.commons.text.StringEscapeUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.options.OptionPanel
 import org.sonarlint.intellij.ui.options.addComponents
-import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
+import org.sonarsource.sonarlint.core.client.utils.DependencyRiskTransitionStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
 
 
-class MarkAsResolvedPanel(
+class ChangeDependencyRiskStatusPanel(
     private val connection: ServerConnection,
-    allowedStatuses: List<ResolutionStatus>,
+    allowedTransitions: List<DependencyRiskTransitionStatus>,
     private val callbackForButton: (Boolean) -> Unit,
 ) : JPanel(), ActionListener {
-    var selectedStatus: IssueResolutionStatus? by Delegates.observable(null) { _, _, newValue -> callbackForButton(newValue != null) }
-    private lateinit var commentTextArea: JBTextArea
+    var selectedStatus: DependencyRiskTransition? by Delegates.observable(null) { _, _, newValue -> callbackForButton(newValue != null) }
+    private lateinit var commentTextArea : JBTextArea
 
     init {
         layout = verticalLayout()
-        display(allowedStatuses)
+        display(allowedTransitions)
     }
 
-    fun display(allowedStatuses: List<ResolutionStatus>) {
+    fun display(allowedTransitions: List<DependencyRiskTransitionStatus>) {
         val buttonGroup = ButtonGroup()
-        allowedStatuses.forEach { status ->
-            val richStatus = IssueResolutionStatus.fromDto(status)
-            val statusPanel = OptionPanel(richStatus.name, richStatus.title, richStatus.description)
+        allowedTransitions.forEach { transition ->
+            val statusPanel = OptionPanel(
+                transition.name,
+                transition.title,
+                transition.description
+            )
             addComponents(buttonGroup, statusPanel)
             statusPanel.statusRadioButton.addActionListener(this)
+            statusPanel.statusRadioButton.actionCommand = transition.name
             add(statusPanel)
         }
         add(commentPanel())
@@ -84,6 +88,7 @@ class MarkAsResolvedPanel(
 
     override fun actionPerformed(e: ActionEvent?) {
         e ?: return
-        selectedStatus = IssueResolutionStatus.valueOf(e.actionCommand)
+        selectedStatus = DependencyRiskTransition.valueOf(e.actionCommand)
     }
-}
+
+} 

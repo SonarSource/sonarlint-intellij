@@ -160,6 +160,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRu
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ListAllStandaloneRulesDefinitionsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.StandaloneRuleConfigDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.UpdateStandaloneRulesConfigurationParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.ChangeDependencyRiskStatusParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
@@ -785,6 +787,13 @@ class BackendService : Disposable {
             it.issueService.checkStatusChangePermitted(
                 issueCheckStatusChangePermittedParams(connectionId, issueKey)
             )
+        }
+    }
+
+    fun changeStatusForDependencyRisk(project: Project, dependencyRiskKey: UUID, transition: DependencyRiskTransition, comment: String?): CompletableFuture<Void> {
+        val projectId = projectId(project)
+        return requestFromBackend { it.dependencyRiskService
+            .changeStatus(ChangeDependencyRiskStatusParams(projectId, dependencyRiskKey, transition, comment))
         }
     }
 
