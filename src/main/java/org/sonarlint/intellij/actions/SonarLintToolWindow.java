@@ -50,9 +50,9 @@ import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.finding.issue.risks.LocalDependencyRisk;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
+import org.sonarlint.intellij.finding.sca.DependencyRisksCache;
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
@@ -296,12 +296,24 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void populateDependencyRisksTab(List<LocalDependencyRisk> dependencyRisks) {
-    // TODO
+    var content = getDependenciesRisksContent();
+    if (content != null) {
+      var dependencyRiskPanel = (DependencyRiskPanel) content.getComponent();
+      dependencyRiskPanel.populate(dependencyRisks);
+      content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
+        SonarLintToolWindowFactory.DEPENDENCY_RISKS_TAB_TITLE));
+    }
   }
 
   public void updateDependencyRisks(Set<UUID> closedDependencyRiskIds, List<LocalDependencyRisk> addedDependencyRisks,
     List<LocalDependencyRisk> updatedDependencyRisks) {
-    // TODO
+    var content = getDependenciesRisksContent();
+    if (content != null) {
+      var dependencyRiskPanel = (DependencyRiskPanel) content.getComponent();
+      dependencyRiskPanel.update(closedDependencyRiskIds, addedDependencyRisks, updatedDependencyRisks);
+      content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
+        SonarLintToolWindowFactory.DEPENDENCY_RISKS_TAB_TITLE));
+    }
   }
 
   public void refreshTaintCodeFix() {
@@ -317,18 +329,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
       hotspotsPanel.populate(status);
-    }
-  }
-
-  // todo on event
-  public void populateDependencyRisksTab(List<LocalDependencyRisk> dependencyRisks) {
-    var content = getDependenciesRisksContent();
-    if (content != null) {
-      var dependencyRiskPanel = (DependencyRiskPanel) content.getComponent();
-      dependencyRiskPanel.populate(dependencyRisks);
-//      todo
-//      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
-//        SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE));
     }
   }
 

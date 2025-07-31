@@ -72,8 +72,8 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.finding.issue.risks.LocalDependencyRisk
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
@@ -921,7 +921,8 @@ class BackendService : Disposable {
     }
 
     fun refreshTaintVulnerabilities(project: Project) {
-        requestFromBackend { it.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId(project), true)) }
+        val projectId = projectId(project)
+        requestFromBackend { it.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId, true)) }
             .thenApplyAsync { response ->
                 val localTaintVulnerabilities = computeReadActionSafely(project) {
                     val taintVulnerabilityMatcher = TaintVulnerabilityMatcher(project)
@@ -931,19 +932,19 @@ class BackendService : Disposable {
                     getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(localTaintVulnerabilities)
                 }
             }
-
+        // TODO: Remove
         refreshDependencyRisks(project)
     }
 
     private fun refreshDependencyRisks(project: Project) {
-        // todo ~stub~ OK just project bound/unbound for now
-        requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId(project), true)) }
-            .thenApplyAsync {
-                it.dependencyRisks.map { risk -> LocalDependencyRisk(risk) }
+        val projectId = projectId(project)
+        requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId, true)) }
+            .thenApplyAsync { response ->
+                val localDependencyRisks = response.dependencyRisks.map { LocalDependencyRisk(it) }
+                runOnUiThread(project) {
+                    getService(project, SonarLintToolWindow::class.java).populateDependencyRisksTab(localDependencyRisks)
+                }
             }
-            .thenApply { runOnUiThread(project) {
-                getService(project, SonarLintToolWindow::class.java).populateDependencyRisksTab(it)
-            } }
     }
 
     fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): List<VirtualFile> {

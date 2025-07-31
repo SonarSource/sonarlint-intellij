@@ -71,8 +71,8 @@ import org.sonarlint.intellij.ui.SonarLintRulePanel
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.centeredLabel
+import org.sonarlint.intellij.ui.tree.FindingTreeSummary
 import org.sonarlint.intellij.ui.tree.TreeContentKind
-import org.sonarlint.intellij.ui.tree.TreeSummary
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTreeUpdater
 import org.sonarlint.intellij.ui.vulnerabilities.tree.filter.FocusFilter
@@ -99,8 +99,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private lateinit var tree: TaintVulnerabilityTree
     private lateinit var oldTree: TaintVulnerabilityTree
-    private val treeSummary = TreeSummary(project, TreeContentKind.ISSUES, false)
-    private val oldTreeSummary = TreeSummary(project, TreeContentKind.ISSUES, true)
+    private val treeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, false)
+    private val oldTreeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, true)
     private lateinit var treeListeners: Map<TaintVulnerabilityTree, List<TreeSelectionListener>>
     private val treePanel: JBPanel<TaintVulnerabilitiesPanel>
     private val rulePanel = SonarLintRulePanel(project, this)

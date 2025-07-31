@@ -54,7 +54,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String REPORT_TAB_TITLE = "Report";
   public static final String TAINT_VULNERABILITIES_TAB_TITLE = "Taint Vulnerabilities";
   public static final String SECURITY_HOTSPOTS_TAB_TITLE = "Security Hotspots";
-  public static final String DEPENDENCY_RISKS_TAB_TITLE = "Dependency risks";
+  public static final String DEPENDENCY_RISKS_TAB_TITLE = "Dependency Risks";
   public static final String HELP_AND_FEEDBACK_TAB_TITLE = "Help & Feedback";
 
   @Override

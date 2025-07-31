@@ -47,6 +47,7 @@ class DependencyRisksCache() {
         return removed
     }
 
+    @JvmOverloads
     fun getFocusAwareCount(isResolved: Boolean? = null): Int {
         isResolved?.let { isResolvedState = it }
         return dependencyRisks.count { isResolvedState || !it.isResolved }
