@@ -320,12 +320,12 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         val addedRiskId1 = UUID.randomUUID()
         val addedRiskId2 = UUID.randomUUID()
-        val addedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, addedRiskId1)
-        val addedRisk2 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, addedRiskId2)
+        val addedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), addedRiskId1)
+        val addedRisk2 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), addedRiskId2)
         val addedRisks = listOf(addedRisk1, addedRisk2)
 
         val updatedRiskId1 = UUID.randomUUID()
-        val updatedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.SAFE, updatedRiskId1)
+        val updatedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.SAFE, listOf(), updatedRiskId1)
         val updatedRisks = listOf(updatedRisk1)
 
         client.didChangeDependencyRisks(projectBackendId, closedRiskIds, addedRisks, updatedRisks)
@@ -347,7 +347,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     @Test
     fun should_not_handle_dependency_risks_changes_for_unknown_project() {
         val closedRiskIds = setOf(UUID.randomUUID())
-        val addedRisks = listOf(aDependencyRiskDto(DependencyRiskDto.Status.OPEN))
+        val addedRisks = listOf(aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf()))
         val updatedRisks = emptyList<DependencyRiskDto>()
 
         assertDoesNotThrow { client.didChangeDependencyRisks("unknown-project-id", closedRiskIds, addedRisks, updatedRisks) }

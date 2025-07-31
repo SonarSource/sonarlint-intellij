@@ -300,9 +300,12 @@
         <notificationGroup id="SonarQube for IDE: Security Hotspot Review"
                            displayType="BALLOON"/>
         <notificationGroup id="SonarQube for IDE: Mark Issue as Resolved"
-                           displayType="BALLOON"/>
+                               displayType="BALLOON"/>
+        <notificationGroup id="SonarQube for IDE: Change Dependency Risk Status"
+                       displayType="BALLOON"/>
         <pluginRepositoryAuthProvider implementation="org.sonarlint.intellij.dogfood.DogfoodPluginRepositoryAuthProvider"/>
-        <fileType name="SonarQube for IDE Properties" implementationClass="org.sonarlint.intellij.type.SonarLintPropertiesFileType" fileNames=".sonarcloud.properties;sonar-project.properties"/>
+        <fileType name="SonarQube for IDE Properties" implementationClass="org.sonarlint.intellij.type.SonarLintPropertiesFileType"
+                  fileNames=".sonarcloud.properties;sonar-project.properties"/>
         <fileType name="JSON" patterns="*.sonarlint/*.json" fileNames="connectedMode.json"/>
     </extensions>
 

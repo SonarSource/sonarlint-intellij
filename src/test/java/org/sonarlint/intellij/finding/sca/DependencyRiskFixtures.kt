@@ -24,15 +24,20 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRi
 
 fun aDependencyRisk(status: DependencyRiskDto.Status) = aDependencyRisk(UUID.randomUUID(), status)
 
-fun aDependencyRisk(id: UUID, status: DependencyRiskDto.Status) =
-    LocalDependencyRisk(aDependencyRiskDto(status, id))
+fun aDependencyRisk(status: DependencyRiskDto.Status, transitions: List<DependencyRiskDto.Transition>) =
+    aDependencyRisk(UUID.randomUUID(), status)
 
-fun aDependencyRiskDto(status: DependencyRiskDto.Status, id: UUID = UUID.randomUUID()) = DependencyRiskDto(
-    id,
-    DependencyRiskDto.Type.VULNERABILITY,
-    DependencyRiskDto.Severity.HIGH,
-    status,
-    "test-rule-key",
-    "High",
-    listOf(DependencyRiskDto.Transition.CONFIRM)
-)
+fun aDependencyRisk(id: UUID, status: DependencyRiskDto.Status) =
+    LocalDependencyRisk(aDependencyRiskDto(status, listOf(), id))
+
+fun aDependencyRiskDto(status: DependencyRiskDto.Status, transition: List<DependencyRiskDto.Transition>, id: UUID = UUID.randomUUID()) =
+    DependencyRiskDto(
+        id,
+        DependencyRiskDto.Type.VULNERABILITY,
+        DependencyRiskDto.Severity.HIGH,
+        DependencyRiskDto.SoftwareQuality.SECURITY,
+        status,
+        "test-rule-key",
+        "High",
+        transition
+    )
