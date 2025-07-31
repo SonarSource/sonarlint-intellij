@@ -119,11 +119,8 @@ class ChangeDependencyRiskStatusAction() : AbstractSonarAction(
         private fun updateUI(project: Project, dependencyRisk: LocalDependencyRisk) {
             runOnUiThread(project) {
                 dependencyRisk.resolve()
-
+                getService(project, SonarLintToolWindow::class.java).changeDependencyRiskStatus(dependencyRisk)
                 getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-                
-                // TODO: Update tool window when dependency risk UI is implemented
-                // getService(project, SonarLintToolWindow::class.java).updateDependencyRiskStatus(dependencyRisk)
             }
         }
 

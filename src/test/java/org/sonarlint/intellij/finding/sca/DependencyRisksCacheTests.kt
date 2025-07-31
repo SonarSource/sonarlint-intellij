@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.finding.sca
 
+import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -63,25 +64,26 @@ class DependencyRisksCacheTests {
     }
 
     @Test
-    fun should_remove_dependency_risk_by_id() {
-        val riskToRemove = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val otherRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        cache.dependencyRisks = listOf(riskToRemove, otherRisk)
+    fun should_update_dependency_risk_by_id() {
+        val uuid = UUID.randomUUID()
+        val riskToUpdate = aDependencyRisk(uuid, DependencyRiskDto.Status.OPEN)
+        val newRisk = aDependencyRisk(uuid, DependencyRiskDto.Status.SAFE)
+        cache.dependencyRisks = listOf(riskToUpdate)
 
-        val removed = cache.remove(riskToRemove)
+        val updated = cache.update(newRisk)
 
-        assertThat(removed).isTrue()
+        assertThat(updated).isTrue()
         assertThat(cache.dependencyRisks).hasSize(1)
-        assertThat(cache.dependencyRisks.first().id).isEqualTo(otherRisk.id)
+        assertThat(cache.dependencyRisks.first().status).isEqualTo(DependencyRiskDto.Status.SAFE)
     }
 
     @Test
-    fun should_return_false_when_removing_non_existing_dependency_risk() {
+    fun should_return_false_when_updating_non_existing_dependency_risk() {
         val existingRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
         cache.dependencyRisks = listOf(existingRisk)
 
         val nonExistingRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val removed = cache.remove(nonExistingRisk)
+        val removed = cache.update(nonExistingRisk)
 
         assertThat(removed).isFalse()
         assertThat(cache.dependencyRisks).hasSize(1)

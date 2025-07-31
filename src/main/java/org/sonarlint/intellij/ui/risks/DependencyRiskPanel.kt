@@ -145,6 +145,14 @@ class DependencyRiskPanel(private val project: Project) : SimpleToolWindowPanel(
         return cardsPanel
     }
 
+    fun changeStatus(risk: LocalDependencyRisk) {
+        val cache = getService(project, DependencyRisksCache::class.java)
+        val removed = cache.update(risk)
+        if (removed) {
+            updateTrees(cache.dependencyRisks)
+        }
+    }
+
     fun populate(dependencyRisks: List<LocalDependencyRisk>) {
         val cache = getService(project, DependencyRisksCache::class.java)
         cache.dependencyRisks = dependencyRisks
