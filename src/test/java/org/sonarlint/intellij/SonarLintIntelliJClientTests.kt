@@ -21,23 +21,31 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
+import java.nio.file.Paths
+import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.eq
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
+import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.finding.sca.aDependencyRiskDto
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
-import java.nio.file.Paths
-
 
 class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     lateinit var client: SonarLintIntelliJClient
@@ -300,4 +308,59 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
             )
         )
     }
+
+    @Test
+    fun should_handle_dependency_risks_changes() {
+        val toolWindow = mock(SonarLintToolWindow::class.java)
+        replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
+
+        val closedRiskId1 = UUID.randomUUID()
+        val closedRiskId2 = UUID.randomUUID()
+        val closedRiskIds = setOf(closedRiskId1, closedRiskId2)
+
+        val addedRiskId1 = UUID.randomUUID()
+        val addedRiskId2 = UUID.randomUUID()
+        val addedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), addedRiskId1)
+        val addedRisk2 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), addedRiskId2)
+        val addedRisks = listOf(addedRisk1, addedRisk2)
+
+        val updatedRiskId1 = UUID.randomUUID()
+        val updatedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.SAFE, listOf(), updatedRiskId1)
+        val updatedRisks = listOf(updatedRisk1)
+
+        client.didChangeDependencyRisks(projectBackendId, closedRiskIds, addedRisks, updatedRisks)
+
+        verify(toolWindow).updateDependencyRisks(
+            eq(closedRiskIds),
+            argThat { addedLocal ->
+                addedLocal.size == 2 &&
+                addedLocal[0].id == addedRiskId1 && !addedLocal[0].isResolved &&
+                addedLocal[1].id == addedRiskId2 && !addedLocal[1].isResolved
+            },
+            argThat { updatedLocal ->
+                updatedLocal.size == 1 &&
+                updatedLocal[0].id == updatedRiskId1 && updatedLocal[0].isResolved
+            }
+        )
+    }
+
+    @Test
+    fun should_not_handle_dependency_risks_changes_for_unknown_project() {
+        val closedRiskIds = setOf(UUID.randomUUID())
+        val addedRisks = listOf(aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf()))
+        val updatedRisks = emptyList<DependencyRiskDto>()
+
+        assertDoesNotThrow { client.didChangeDependencyRisks("unknown-project-id", closedRiskIds, addedRisks, updatedRisks) }
+    }
+
+    @Test
+    fun should_handle_empty_dependency_risks_changes() {
+        val toolWindow = mock(SonarLintToolWindow::class.java)
+        replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
+
+        client.didChangeDependencyRisks(projectBackendId, emptySet(), emptyList(), emptyList())
+
+        verify(toolWindow).updateDependencyRisks(emptySet(), emptyList(), emptyList())
+    }
+
 }

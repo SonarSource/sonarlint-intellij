@@ -72,8 +72,8 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.finding.issue.risks.LocalDependencyRisk
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
@@ -161,6 +161,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetStandaloneRu
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ListAllStandaloneRulesDefinitionsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.StandaloneRuleConfigDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.UpdateStandaloneRulesConfigurationParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.ChangeDependencyRiskStatusParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
@@ -790,6 +792,13 @@ class BackendService : Disposable {
         }
     }
 
+    fun changeStatusForDependencyRisk(project: Project, dependencyRiskKey: UUID, transition: DependencyRiskTransition, comment: String?): CompletableFuture<Void> {
+        val projectId = projectId(project)
+        return requestFromBackend { it.dependencyRiskService
+            .changeStatus(ChangeDependencyRiskStatusParams(projectId, dependencyRiskKey, transition, comment))
+        }
+    }
+
     fun didVcsRepoChange(project: Project) {
         notifyBackend { it.sonarProjectBranchService.didVcsRepositoryChange(DidVcsRepositoryChangeParams(projectId(project))) }
     }
@@ -912,7 +921,8 @@ class BackendService : Disposable {
     }
 
     fun refreshTaintVulnerabilities(project: Project) {
-        requestFromBackend { it.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId(project), true)) }
+        val projectId = projectId(project)
+        requestFromBackend { it.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId, true)) }
             .thenApplyAsync { response ->
                 val localTaintVulnerabilities = computeReadActionSafely(project) {
                     val taintVulnerabilityMatcher = TaintVulnerabilityMatcher(project)
@@ -922,19 +932,19 @@ class BackendService : Disposable {
                     getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(localTaintVulnerabilities)
                 }
             }
-
+        // TODO: Remove
         refreshDependencyRisks(project)
     }
 
     private fun refreshDependencyRisks(project: Project) {
-        // todo ~stub~ OK just project bound/unbound for now
-        requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId(project), true)) }
-            .thenApplyAsync {
-                it.dependencyRisks.map { risk -> LocalDependencyRisk(risk) }
+        val projectId = projectId(project)
+        requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId, true)) }
+            .thenApplyAsync { response ->
+                val localDependencyRisks = response.dependencyRisks.map { LocalDependencyRisk(it) }
+                runOnUiThread(project) {
+                    getService(project, SonarLintToolWindow::class.java).populateDependencyRisksTab(localDependencyRisks)
+                }
             }
-            .thenApply { runOnUiThread(project) {
-                getService(project, SonarLintToolWindow::class.java).populateDependencyRisksTab(it)
-            } }
     }
 
     fun getExcludedFiles(module: Module, files: Collection<VirtualFile>): List<VirtualFile> {

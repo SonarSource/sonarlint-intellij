@@ -101,7 +101,7 @@ class MarkAsResolvedAction(
                     ).chooseResolution() ?: return@runOnUiThread
                     if (confirm(project, connection.productName, resolution.newStatus)) {
                         runOnPooledThread(project) {
-                            markAsResolved(project, module, issue, resolution, serverKey)
+                            markAsResolved(module, issue, resolution, serverKey)
                         }
                     }
                 }
@@ -124,7 +124,6 @@ class MarkAsResolvedAction(
         }
 
         private fun markAsResolved(
-            project: Project,
             module: Module,
             issue: Issue,
             resolution: MarkAsResolvedDialog.Resolution,
@@ -132,16 +131,16 @@ class MarkAsResolvedAction(
         ) {
             getService(BackendService::class.java).markAsResolved(module, issueKey, resolution.newStatus, issue is LocalTaintVulnerability)
                 .thenAcceptAsync {
-                    updateUI(project, issue)
-                    val comment = resolution.comment ?: return@thenAcceptAsync SonarLintProjectNotifications.get(project)
+                    updateUI(module.project, issue)
+                    val comment = resolution.comment ?: return@thenAcceptAsync SonarLintProjectNotifications.get(module.project)
                         .displaySuccessfulNotification(
                             CONTENT,
                             NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_ISSUE_GROUP)
                         )
-                    addComment(project, module, issueKey, comment)
+                    addComment(module.project, module, issueKey, comment)
                 }.exceptionally { error ->
-                    SonarLintConsole.get(project).error("Error while marking the issue as resolved", error)
-                    SonarLintProjectNotifications.get(project)
+                    SonarLintConsole.get(module.project).error("Error while marking the issue as resolved", error)
+                    SonarLintProjectNotifications.get(module.project)
                         .displayErrorNotification(
                             "Could not mark the issue as resolved",
                             NotificationGroupManager.getInstance().getNotificationGroup(REVIEW_ISSUE_GROUP)

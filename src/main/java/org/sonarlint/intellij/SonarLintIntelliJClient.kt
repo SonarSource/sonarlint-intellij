@@ -108,6 +108,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.risks.LocalDependencyRisk
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
 import org.sonarlint.intellij.notifications.OpenLinkAction
@@ -865,21 +866,16 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         getService(project, SonarLintToolWindow::class.java).updateTaintVulnerabilities(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
     }
 
-    // todo temp
     override fun didChangeDependencyRisks(
         configurationScopeId: String,
-        closedDependencyRiskIds: Set<UUID?>,
-        addedDependencyRisks: List<DependencyRiskDto?>,
-        updatedDependencyRisks: List<DependencyRiskDto?>,
+        closedDependencyRiskIds: Set<UUID>,
+        addedDependencyRisks: List<DependencyRiskDto>,
+        updatedDependencyRisks: List<DependencyRiskDto>
     ) {
         val project = findProject(configurationScopeId) ?: return
-        getService(project, SonarLintToolWindow::class.java)
-            .populateDependencyRisksTab(
-                listOf(addedDependencyRisks, updatedDependencyRisks)
-                    .flatten()
-                    .filterNotNull()
-                    .map { LocalDependencyRisk(it) }
-            )
+        val added = addedDependencyRisks.map { LocalDependencyRisk(it) }
+        val updated = updatedDependencyRisks.map { LocalDependencyRisk(it) }
+        getService(project, SonarLintToolWindow::class.java).updateDependencyRisks(closedDependencyRiskIds, added, updated)
     }
 
     override fun raiseIssues(

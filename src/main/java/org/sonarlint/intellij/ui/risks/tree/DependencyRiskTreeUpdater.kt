@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.ui.risks.tree
 
 import com.intellij.openapi.application.ModalityState
-import org.sonarlint.intellij.finding.issue.risks.LocalDependencyRisk
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.CompactTree
@@ -36,7 +36,7 @@ class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary) {
         when (node) {
             is SummaryNode -> node.render(renderer)
             is LocalDependencyRisk -> {
-                renderer.append(node.getRuleKey())
+                LocalDependencyRiskRenderer.render(renderer, node)
             }
         }
     }
@@ -47,10 +47,16 @@ class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary) {
             updated = true
             // todo filtering
             filteredDependencyRisks = value
-            runOnUiThread(ModalityState.defaultModalityState()) { model.setCompactTree(
-                CompactTree(mutableMapOf(model.root to value)))}
+            runOnUiThread(ModalityState.defaultModalityState()) { model.setCompactTree(createCompactTree(dependencyRisks)) }
             treeSummary.refresh(0, value.size)
         }
+
+    private fun createCompactTree(dependencyRisks: List<LocalDependencyRisk>): CompactTree {
+        val sortedDependencyRisks =
+            dependencyRisks.sortedWith(compareByDescending<LocalDependencyRisk> { it.severity }.thenBy { it.packageName })
+        val nodes: MutableMap<Any, List<Any>> = mutableMapOf(model.root to sortedDependencyRisks)
+        return CompactTree(nodes)
+    }
 
     var filteredDependencyRisks: List<LocalDependencyRisk> = emptyList()
 }
