@@ -82,7 +82,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
    * Creates the model with a basic root
    */
   public DefaultTreeModel createModel(Project project, boolean holdsOldHotspots) {
-    treeSummary = new TreeSummary(project, TreeContentKind.SECURITY_HOTSPOTS, holdsOldHotspots);
+    treeSummary = new FindingTreeSummary(project, TreeContentKind.SECURITY_HOTSPOTS, holdsOldHotspots);
     summaryNode = new SummaryNode(treeSummary);
     model = new DefaultTreeModel(summaryNode);
     model.setRoot(summaryNode);

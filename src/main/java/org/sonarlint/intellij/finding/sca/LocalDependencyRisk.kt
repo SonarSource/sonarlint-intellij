@@ -27,8 +27,9 @@ class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
     val id: UUID = serverDependencyRisk.id
     val type: DependencyRiskDto.Type = serverDependencyRisk.type
     val severity: DependencyRiskDto.Severity = serverDependencyRisk.severity
+    val quality: DependencyRiskDto.SoftwareQuality = serverDependencyRisk.quality
     val status: DependencyRiskDto.Status = serverDependencyRisk.status
-    val message: String = serverDependencyRisk.packageName
+    val packageName: String = serverDependencyRisk.packageName
     val transitions: List<DependencyRiskDto.Transition> = serverDependencyRisk.transitions
     var isResolved = serverDependencyRisk.status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT)
 

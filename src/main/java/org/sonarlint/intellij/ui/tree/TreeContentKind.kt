@@ -20,5 +20,5 @@
 package org.sonarlint.intellij.ui.tree
 
 enum class TreeContentKind(val displayName: String) {
-    ISSUES("issue"), SECURITY_HOTSPOTS("Security Hotspot")
+    ISSUES("issue"), SECURITY_HOTSPOTS("Security Hotspot"), DEPENDENCY_RISKS("Dependency Risk")
 }

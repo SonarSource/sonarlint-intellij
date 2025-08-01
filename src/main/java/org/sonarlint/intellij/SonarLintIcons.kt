@@ -26,6 +26,7 @@ import java.awt.Color
 import javax.swing.Icon
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 
@@ -239,6 +240,17 @@ object SonarLintIcons {
     @JvmStatic
     fun impact(impact: ImpactSeverity): Icon {
         return IMPACT_ICONS[impact]!!
+    }
+
+    @JvmStatic
+    fun riskSeverity(severity: DependencyRiskDto.Severity): Icon {
+        return when (severity) {
+            DependencyRiskDto.Severity.INFO -> IMPACT_ICONS[ImpactSeverity.INFO]!!
+            DependencyRiskDto.Severity.LOW -> IMPACT_ICONS[ImpactSeverity.LOW]!!
+            DependencyRiskDto.Severity.MEDIUM -> IMPACT_ICONS[ImpactSeverity.MEDIUM]!!
+            DependencyRiskDto.Severity.HIGH -> IMPACT_ICONS[ImpactSeverity.HIGH]!!
+            DependencyRiskDto.Severity.BLOCKER -> IMPACT_ICONS[ImpactSeverity.BLOCKER]!!
+        }
     }
 
     @JvmStatic

@@ -23,7 +23,6 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
@@ -40,9 +39,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTra
 
 private const val SKIP_CONFIRM_DIALOG_PROPERTY = "SonarLint.markScaAsResolved.hideConfirmation"
 
-class ChangeDependencyRiskStatusAction(
-    private var dependencyRisk: LocalDependencyRisk? = null,
-) : AbstractSonarAction(
+class ChangeDependencyRiskStatusAction() : AbstractSonarAction(
     "Change Dependency Risk Status\u2026", "Change the dependency risk status", null
 ) {
 
@@ -122,11 +119,8 @@ class ChangeDependencyRiskStatusAction(
         private fun updateUI(project: Project, dependencyRisk: LocalDependencyRisk) {
             runOnUiThread(project) {
                 dependencyRisk.resolve()
-
+                getService(project, SonarLintToolWindow::class.java).changeDependencyRiskStatus(dependencyRisk)
                 getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-                
-                // TODO: Update tool window when dependency risk UI is implemented
-                // getService(project, SonarLintToolWindow::class.java).updateDependencyRiskStatus(dependencyRisk)
             }
         }
 

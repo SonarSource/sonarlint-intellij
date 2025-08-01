@@ -27,9 +27,9 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
+import org.sonarlint.intellij.ui.tree.FindingTreeSummary;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.ui.tree.TreeContentKind;
-import org.sonarlint.intellij.ui.tree.TreeSummary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -51,7 +51,7 @@ class AbstractNodeTests extends AbstractSonarLintLightTests {
 
   @Test
   void testInsertion() {
-    var summaryNode = new SummaryNode(new TreeSummary(getProject(), TreeContentKind.ISSUES, false));
+    var summaryNode = new SummaryNode(new FindingTreeSummary(getProject(), TreeContentKind.ISSUES, false));
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("name"), false), nameComparator)).isZero();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("file"), false), nameComparator)).isZero();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("test"), false), nameComparator)).isEqualTo(2);

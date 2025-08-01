@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.nodes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.ui.tree.FindingTreeSummary;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.ui.tree.TreeContentKind;
 import org.sonarlint.intellij.ui.tree.TreeSummary;
@@ -37,9 +38,9 @@ class SummaryNodeTests extends AbstractSonarLintLightTests {
 
   @BeforeEach
   void prepare() {
-    treeSummary = new TreeSummary(getProject(), TreeContentKind.ISSUES, false);
+    treeSummary = new FindingTreeSummary(getProject(), TreeContentKind.ISSUES, false);
     node = new SummaryNode(treeSummary);
-    hotspotsTreeSummary = new TreeSummary(getProject(), TreeContentKind.SECURITY_HOTSPOTS, false);
+    hotspotsTreeSummary = new FindingTreeSummary(getProject(), TreeContentKind.SECURITY_HOTSPOTS, false);
     nodeForSecurityHotspot = new SummaryNode(hotspotsTreeSummary);
   }
 

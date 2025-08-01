@@ -27,5 +27,6 @@
       <key>S2095</key>
       <priority>BLOCKER</priority>
     </rule>
+<!--    TODO create one like this -->
   </rules>
 </profile>

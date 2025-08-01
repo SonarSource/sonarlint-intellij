@@ -19,68 +19,12 @@
  */
 package org.sonarlint.intellij.ui.tree
 
-import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.cayc.CleanAsYouCodeService
-import org.sonarlint.intellij.cayc.NewCodePeriodCache
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+interface TreeSummary {
 
-class TreeSummary(private val project: Project, private val treeContentKind: TreeContentKind, private val holdsOldFindings: Boolean) {
-    private var emptyText = DEFAULT_EMPTY_TEXT
-    var text: String = emptyText
-        private set
+    fun refresh(filesCount: Int, findingsCount: Int)
 
-    fun refresh(filesCount: Int, findingsCount: Int) {
-        val newCodePeriod = getService(project, NewCodePeriodCache::class.java).periodAsString
-        emptyText = computeEmptyText(newCodePeriod)
-        text = computeText(filesCount, findingsCount, newCodePeriod)
-    }
+    fun reset()
 
-    fun reset() {
-        emptyText = DEFAULT_EMPTY_TEXT
-        text = emptyText
-    }
+    fun getText(): String
 
-    private fun computeText(filesCount: Int, findingsCount: Int, newCodePeriod: String): String {
-        if (findingsCount == 0) {
-            return emptyText
-        }
-
-        var sinceText = ""
-        var newOrOldOrNothing = ""
-        if (isFocusOnNewCode()) {
-            sinceText = if (holdsOldFindings) "" else " $newCodePeriod"
-            newOrOldOrNothing = if (holdsOldFindings) "older " else "new "
-        }
-
-        return FORMAT.format(
-            findingsCount,
-            newOrOldOrNothing,
-            pluralize(treeContentKind.displayName, findingsCount),
-            filesCount,
-            pluralize("file", filesCount),
-            sinceText
-        )
-    }
-
-    private fun computeEmptyText(newCodePeriod: String): String {
-        if (isFocusOnNewCode()) {
-            return if (holdsOldFindings) {
-                "No older ${treeContentKind.displayName}s"
-            } else {
-                "No new ${treeContentKind.displayName}s $newCodePeriod"
-            }
-        }
-        return "No ${treeContentKind.displayName}s to display"
-    }
-
-    private fun isFocusOnNewCode() = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
-
-    companion object {
-        private const val DEFAULT_EMPTY_TEXT = "No analysis done"
-        private const val FORMAT = "Found %d %s%s in %d %s%s"
-
-        private fun pluralize(word: String, count: Int): String {
-            return if (count == 1) word else word + "s"
-        }
-    }
 }

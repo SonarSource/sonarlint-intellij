@@ -38,15 +38,17 @@ class DependencyRisksCache() {
         dependencyRisks = currentDependencyRisks
     }
 
-    fun remove(dependencyRiskToRemove: LocalDependencyRisk): Boolean {
+    fun update(risk: LocalDependencyRisk): Boolean {
         val currentDependencyRisks = dependencyRisks.toMutableList()
-        val removed = currentDependencyRisks.removeIf { currentRisk -> currentRisk.id == dependencyRiskToRemove.id }
+        val removed = currentDependencyRisks.removeIf { currentRisk -> currentRisk.id == risk.id }
         if (removed) {
+            currentDependencyRisks.add(risk)
             dependencyRisks = currentDependencyRisks
         }
         return removed
     }
 
+    @JvmOverloads
     fun getFocusAwareCount(isResolved: Boolean? = null): Int {
         isResolved?.let { isResolvedState = it }
         return dependencyRisks.count { isResolvedState || !it.isResolved }
