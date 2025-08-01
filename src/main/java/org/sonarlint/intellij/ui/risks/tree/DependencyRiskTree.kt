@@ -32,7 +32,7 @@ import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
 import org.sonarlint.intellij.util.DataKeys.Companion.DEPENDENCY_RISK_DATA_KEY
 
-class DependencyRiskTree(private val updater: DependencyRiskTreeUpdater) : Tree(updater.model), DataProvider {
+class DependencyRiskTree(updater: DependencyRiskTreeUpdater) : Tree(updater.model), DataProvider {
 
     init {
         setShowsRootHandles(false)

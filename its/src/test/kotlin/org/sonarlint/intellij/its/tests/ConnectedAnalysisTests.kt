@@ -121,7 +121,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
 
         @JvmStatic
         @BeforeAll
-        fun createSonarLintUser() {
+        fun createSonarLintUser() { // todo optimise the heavy tests?
             adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
             val token = generateTokenNameAndValue(adminWsClient, "sonarlintUser")
             tokenName = token.first
@@ -199,6 +199,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
             )
 
             // todo add DR?
+
             resetFocusOnNewCode()
 
             // Taint Vulnerability Test

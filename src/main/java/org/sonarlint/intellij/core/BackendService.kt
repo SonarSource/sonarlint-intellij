@@ -163,6 +163,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.StandaloneRuleC
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.UpdateStandaloneRulesConfigurationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.ChangeDependencyRiskStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.OpenDependencyRiskInBrowserParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
@@ -730,6 +731,15 @@ class BackendService : Disposable {
         }
     }
 
+    fun openDependencyRiskInBrowser(module: Module, riskId: UUID) {
+        val configScopeId = moduleId(module)
+        notifyBackend {
+            it.dependencyRiskService.openDependencyRiskInBrowser(
+                OpenDependencyRiskInBrowserParams(configScopeId, riskId)
+            )
+        }
+    }
+
     fun checkLocalSecurityHotspotDetectionSupported(project: Project): CompletableFuture<CheckLocalDetectionSupportedResponse> {
         return requestFromBackend {
             it.hotspotService.checkLocalDetectionSupported(
@@ -932,11 +942,9 @@ class BackendService : Disposable {
                     getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(localTaintVulnerabilities)
                 }
             }
-        // TODO: Remove
-        refreshDependencyRisks(project)
     }
 
-    private fun refreshDependencyRisks(project: Project) {
+    fun refreshDependencyRisks(project: Project) {
         val projectId = projectId(project)
         requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId, true)) }
             .thenApplyAsync { response ->

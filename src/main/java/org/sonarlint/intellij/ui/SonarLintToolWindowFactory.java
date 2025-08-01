@@ -36,7 +36,7 @@ import javax.swing.JComponent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.ui.risks.DependencyRiskPanel;
+import org.sonarlint.intellij.ui.risks.DependencyRisksPanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildTabName;
@@ -131,7 +131,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addDependencyRiskTab(Project project, ContentManager contentManager) {
-    var dependencyRisksPanel = new DependencyRiskPanel(project);
+    var dependencyRisksPanel = new DependencyRisksPanel(project);
     addTab(dependencyRisksPanel, contentManager, buildTabName(0, DEPENDENCY_RISKS_TAB_TITLE));
   }
 
