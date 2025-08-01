@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.modules
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.ScrollPaneFactory
@@ -35,7 +36,7 @@ import javax.swing.JPanel
 import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.TreePath
 import org.sonarlint.intellij.actions.RESTART_ACTION_TEXT
-import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
+import org.sonarlint.intellij.actions.RefreshDependencyRisksAction
 import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.SonarConfigureProject
@@ -50,10 +51,10 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.centeredLabel
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTree
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTreeUpdater
-import org.sonarlint.intellij.ui.tree.CompactTree
 import org.sonarlint.intellij.ui.tree.DependencyRiskTreeSummary
 import org.sonarlint.intellij.ui.tree.TreeContentKind
 import org.sonarlint.intellij.util.SonarLintActions
+import org.sonarlint.intellij.util.runOnPooledThread
 
 private const val ERROR_CARD_ID = "ERROR_CARD"
 private const val NO_BINDING_CARD_ID = "NO_BINDING_CARD"
@@ -63,7 +64,7 @@ private const val TREE_CARD_ID = "TREE_CARD"
 private const val WAITING_FOR_UPDATES_ID = "WAITING_FOR_UPDATES"
 private const val TOOLBAR_GROUP_ID = "DependencyRisks"
 
-class DependencyRiskPanel(private val project: Project) : SimpleToolWindowPanel(false, true) {
+class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel(false, true) {
 
     private val treeSummary = DependencyRiskTreeSummary(TreeContentKind.DEPENDENCY_RISKS)
     private val tree: DependencyRiskTree
@@ -74,19 +75,17 @@ class DependencyRiskPanel(private val project: Project) : SimpleToolWindowPanel(
 
 
     init {
-        // todo cards!
-        treeUpdater.model.setCompactTree(CompactTree(mapOf(
-//            SummaryNode()
-        )))
-
         tree = DependencyRiskTree(treeUpdater)
-        val treePanel = JBPanel<DependencyRiskPanel>(VerticalFlowLayout(0, 0))
+        val treePanel = JBPanel<DependencyRisksPanel>(VerticalFlowLayout(0, 0))
         treePanel.add(tree)
 
         treeListener = TreeSelectionListener {
             val selectedNode = tree.getSelectedNodes(LocalDependencyRisk::class.java, null)
             if (selectedNode.isNotEmpty()) {
-                // TODO: Browse to SQ:S
+                runOnPooledThread {
+                    getService(BackendService::class.java)
+                        .openDependencyRiskInBrowser(project.modules[0], selectedNode.first().id)
+                }
             }
         }
 
@@ -99,7 +98,7 @@ class DependencyRiskPanel(private val project: Project) : SimpleToolWindowPanel(
 
         val sonarLintActions = SonarLintActions.getInstance()
         setupToolbar(listOf(
-            RefreshTaintVulnerabilitiesAction(),
+            RefreshDependencyRisksAction(),
             sonarLintActions.configure()
         ))
     }
@@ -115,7 +114,7 @@ class DependencyRiskPanel(private val project: Project) : SimpleToolWindowPanel(
         toolbar.component.isVisible = true
     }
 
-    private fun initCards(treePanel: JBPanel<DependencyRiskPanel>): CardPanel {
+    private fun initCards(treePanel: JBPanel<DependencyRisksPanel>): CardPanel {
         val cardsPanel = CardPanel()
         cardsPanel.add(
             centeredLabel(SONARLINT_ERROR_MSG, RESTART_ACTION_TEXT, RestartBackendAction()),
@@ -130,7 +129,7 @@ class DependencyRiskPanel(private val project: Project) : SimpleToolWindowPanel(
             INVALID_BINDING_CARD_ID
         )
         cardsPanel.add(
-            centeredLabel("No vulnerabilities found in the latest analysis"),
+            centeredLabel("No dependency risks found in the latest analysis"),
             NO_ISSUES_CARD_ID
         )
         cardsPanel.add(

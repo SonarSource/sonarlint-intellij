@@ -63,7 +63,7 @@ import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
-import org.sonarlint.intellij.ui.risks.DependencyRiskPanel;
+import org.sonarlint.intellij.ui.risks.DependencyRisksPanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
@@ -298,7 +298,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   public void populateDependencyRisksTab(List<LocalDependencyRisk> dependencyRisks) {
     var content = getDependenciesRisksContent();
     if (content != null) {
-      var dependencyRiskPanel = (DependencyRiskPanel) content.getComponent();
+      var dependencyRiskPanel = (DependencyRisksPanel) content.getComponent();
       dependencyRiskPanel.populate(dependencyRisks);
       content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
         SonarLintToolWindowFactory.DEPENDENCY_RISKS_TAB_TITLE));
@@ -309,7 +309,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     List<LocalDependencyRisk> updatedDependencyRisks) {
     var content = getDependenciesRisksContent();
     if (content != null) {
-      var dependencyRiskPanel = (DependencyRiskPanel) content.getComponent();
+      var dependencyRiskPanel = (DependencyRisksPanel) content.getComponent();
       dependencyRiskPanel.update(closedDependencyRiskIds, addedDependencyRisks, updatedDependencyRisks);
       content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
         SonarLintToolWindowFactory.DEPENDENCY_RISKS_TAB_TITLE));
@@ -318,8 +318,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void changeDependencyRiskStatus(LocalDependencyRisk risk) {
     var content = getDependenciesRisksContent();
-    ((DependencyRiskPanel) content.getComponent()).changeStatus(risk);
-    ((DependencyRiskPanel) content.getComponent()).switchCard();
+    ((DependencyRisksPanel) content.getComponent()).changeStatus(risk);
+    ((DependencyRisksPanel) content.getComponent()).switchCard();
   }
 
   public void refreshTaintCodeFix() {

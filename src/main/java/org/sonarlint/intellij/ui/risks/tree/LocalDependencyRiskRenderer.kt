@@ -44,7 +44,7 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
         )
 
         renderer.setIconToolTip(toolTipText)
-        renderer.toolTipText = "Double click to open in the browser"
+        renderer.toolTipText = "Click to open in the browser"
         renderer.append(node.packageName)
     }
 
