@@ -45,7 +45,7 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
 
         renderer.setIconToolTip(toolTipText)
         renderer.toolTipText = "Click to open in the browser"
-        renderer.append(node.packageName)
+        renderer.append("${node.packageName} ${node.packageVersion}")
     }
 
     private fun setIcon(renderer: TreeCellRenderer, icon: Icon) {

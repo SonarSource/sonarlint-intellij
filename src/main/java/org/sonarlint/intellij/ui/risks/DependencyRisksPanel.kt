@@ -26,14 +26,15 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.tree.TreeUtil
 import java.awt.BorderLayout
+import java.awt.event.MouseEvent
 import java.util.UUID
 import javax.swing.Box
 import javax.swing.JPanel
-import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.TreePath
 import org.sonarlint.intellij.actions.RESTART_ACTION_TEXT
 import org.sonarlint.intellij.actions.RefreshDependencyRisksAction
@@ -70,7 +71,6 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
     private val tree: DependencyRiskTree
     private val cards: CardPanel
 
-    private var treeListener: TreeSelectionListener
     private val treeUpdater = DependencyRiskTreeUpdater(treeSummary)
 
 
@@ -79,15 +79,19 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
         val treePanel = JBPanel<DependencyRisksPanel>(VerticalFlowLayout(0, 0))
         treePanel.add(tree)
 
-        treeListener = TreeSelectionListener {
-            val selectedNode = tree.getSelectedNodes(LocalDependencyRisk::class.java, null)
-            if (selectedNode.isNotEmpty()) {
-                runOnPooledThread {
-                    getService(BackendService::class.java)
-                        .openDependencyRiskInBrowser(project.modules[0], selectedNode.first().id)
+        object : DoubleClickListener() {
+            override fun onDoubleClick(event: MouseEvent): Boolean {
+                val selectedNode = tree.getSelectedNodes(LocalDependencyRisk::class.java, null)
+                val notEmpty = selectedNode.isNotEmpty()
+                if (notEmpty) {
+                    runOnPooledThread {
+                        getService(BackendService::class.java)
+                            .openDependencyRiskInBrowser(project.modules[0], selectedNode.first().id)
+                    }
                 }
+                return notEmpty
             }
-        }
+        }.installOn(tree)
 
         cards = initCards(treePanel)
         switchCard() // todo remove?
@@ -174,19 +178,13 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
     private fun populateSubTree(tree: DependencyRiskTree, updater: DependencyRiskTreeUpdater, dependencyRisks: List<LocalDependencyRisk>) {
         val expandedPaths = TreeUtil.collectExpandedPaths(tree)
         val selectionPath: TreePath? = tree.selectionPath
-        // Temporarily remove the listener to avoid transient selection events while changing the model
-        tree.removeTreeSelectionListener(treeListener)
-        try {
-            updater.dependencyRisks = dependencyRisks
-            tree.showsRootHandles = dependencyRisks.isNotEmpty()
-            TreeUtil.restoreExpandedPaths(tree, expandedPaths)
-            if (selectionPath != null) {
-                TreeUtil.selectPath(tree, selectionPath)
-            } else {
-                tree.expandRow(0)
-            }
-        } finally {
-            tree.addTreeSelectionListener(treeListener)
+        updater.dependencyRisks = dependencyRisks
+        tree.showsRootHandles = dependencyRisks.isNotEmpty()
+        TreeUtil.restoreExpandedPaths(tree, expandedPaths)
+        if (selectionPath != null) {
+            TreeUtil.selectPath(tree, selectionPath)
+        } else {
+            tree.expandRow(0)
         }
     }
 

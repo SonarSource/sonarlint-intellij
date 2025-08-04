@@ -62,7 +62,6 @@ class ChangeDependencyRiskStatusDialog(
 
     private fun getStatus() = centerPanel.selectedStatus
     private fun getComment() = centerPanel.getComment()
-
     override fun createCenterPanel() = centerPanel
 
     override fun createActions() = arrayOf(changeStatusAction, cancelAction)
