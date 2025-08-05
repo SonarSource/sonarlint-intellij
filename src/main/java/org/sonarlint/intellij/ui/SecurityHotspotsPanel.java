@@ -73,6 +73,7 @@ import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERRO
 import static org.sonarlint.intellij.actions.RestartBackendActionKt.RESTART_ACTION_TEXT;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.factory.PanelFactory.centeredLabel;
 import static org.sonarlint.intellij.ui.factory.PanelFactory.createSplitter;
 
@@ -272,7 +273,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     text.setText(newText);
     if (sonarConfigureProject != null) {
       text.appendLine("Configure Binding", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-        ignore -> ActionUtil.invokeAction(sonarConfigureProject, notSupportedPanel, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        ignore -> ActionUtil.invokeAction(sonarConfigureProject, notSupportedPanel, TOOL_WINDOW_ID, null, null));
     }
   }
 

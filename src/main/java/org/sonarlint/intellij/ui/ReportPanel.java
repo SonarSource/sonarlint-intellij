@@ -68,6 +68,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.ui.factory.PanelFactory.createSplitter;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -207,7 +208,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     if (!backendIsAlive) {
       statusText.setText(SONARLINT_ERROR_MSG);
       statusText.appendLine("Restart SonarQube for IDE Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-        ignore -> ActionUtil.invokeAction(restartSonarLintAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        ignore -> ActionUtil.invokeAction(restartSonarLintAction, this, TOOL_WINDOW_ID, null, null));
     } else {
       var sonarLintActions = SonarLintActions.getInstance();
       var analyzeChangedFiles = sonarLintActions.analyzeChangedFiles();
@@ -216,14 +217,14 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
       statusText.appendLine("");
       if (analyzeChangedFiles.getTemplateText() != null) {
         statusText.appendText(analyzeChangedFiles.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-          ignore -> ActionUtil.invokeAction(analyzeChangedFiles, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+          ignore -> ActionUtil.invokeAction(analyzeChangedFiles, this, TOOL_WINDOW_ID, null, null));
         if (analyzeAllFiles.getTemplateText() != null) {
           statusText.appendText(" or ");
         }
       }
       if (analyzeAllFiles.getTemplateText() != null) {
         statusText.appendText(analyzeAllFiles.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-          ignore -> ActionUtil.invokeAction(analyzeAllFiles, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+          ignore -> ActionUtil.invokeAction(analyzeAllFiles, this, TOOL_WINDOW_ID, null, null));
       }
     }
   }

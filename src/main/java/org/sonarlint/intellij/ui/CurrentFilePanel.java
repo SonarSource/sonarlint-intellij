@@ -63,12 +63,12 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.ui.factory.PanelFactory.createSplitter;
 
 public class CurrentFilePanel extends AbstractIssuesPanel {
 
-  public static final String SONARLINT_TOOLWINDOW_ID = "SonarQube for IDE";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final JBPanelWithEmptyText issuesPanel;
   private final JScrollPane treeScrollPane;
@@ -140,7 +140,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     if (!backendIsAlive) {
       statusText.setText(SONARLINT_ERROR_MSG);
       statusText.appendLine("Restart SonarQube for IDE Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-        ignore -> ActionUtil.invokeAction(restartSonarLintAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        ignore -> ActionUtil.invokeAction(restartSonarLintAction, this, TOOL_WINDOW_ID, null, null));
       enableEmptyDisplay();
       populateSubTree(tree, treeBuilder, Map.of());
       populateSubTree(oldTree, oldTreeBuilder, Map.of());
@@ -211,7 +211,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
   }
 
   private void updateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues) {
-    var toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARLINT_TOOLWINDOW_ID);
+    var toolWindow = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID);
     if (toolWindow != null) {
       var isEmpty = issues.stream().filter(i -> !i.isResolved()).collect(Collectors.toSet()).isEmpty();
       doUpdateIcon(file, isEmpty, toolWindow);
@@ -292,7 +292,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
     emptyText.setText("No analysis done on the current opened file");
     if (templateText != null) {
       emptyText.appendLine(templateText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-        ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        ignore -> ActionUtil.invokeAction(analyzeCurrentFileAction, this, TOOL_WINDOW_ID, null, null));
     }
   }
 }

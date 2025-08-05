@@ -21,7 +21,6 @@ package org.sonarlint.intellij.its.tests
 
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
-import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
@@ -66,11 +65,6 @@ class ScaTests : BaseUiTest() {
 
         lateinit var tokenName: String
         lateinit var tokenValue: String
-
-        private fun projectKey(key: String): String {
-            val randomPositiveInt = Random.nextInt(Int.MAX_VALUE)
-            return "sli-its-$key-$randomPositiveInt"
-        }
 
         @JvmStatic
         @BeforeAll

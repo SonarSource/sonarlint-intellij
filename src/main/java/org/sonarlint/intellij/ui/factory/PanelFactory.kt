@@ -35,7 +35,6 @@ import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
 import java.awt.event.ActionEvent
 import javax.swing.JComponent
-import org.sonarlint.intellij.ui.CurrentFilePanel
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 
 private const val LAYOUT_GAP = 5
@@ -56,7 +55,7 @@ class PanelFactory {
                     ActionUtil.invokeAction(
                         action,
                         labelPanel,
-                        CurrentFilePanel.SONARLINT_TOOLWINDOW_ID,
+                        TOOL_WINDOW_ID,
                         null,
                         null
                     )
