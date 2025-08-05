@@ -63,8 +63,8 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
+import static org.sonarlint.intellij.ui.factory.PanelFactory.createSplitter;
 
 public class CurrentFilePanel extends AbstractIssuesPanel {
 

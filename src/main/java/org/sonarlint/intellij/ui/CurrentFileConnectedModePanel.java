@@ -50,6 +50,8 @@ import org.sonarlint.intellij.util.UrlBuilder;
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.withoutTrailingSlash;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -126,9 +128,9 @@ public class CurrentFileConnectedModePanel {
           @Override
           protected void hyperlinkActivated(HyperlinkEvent e) {
             var contentManager = ToolWindowManager.getInstance(project)
-              .getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID)
+              .getToolWindow(TOOL_WINDOW_ID)
               .getContentManager();
-            contentManager.setSelectedContent(contentManager.findContent(SonarLintToolWindowFactory.LOG_TAB_TITLE));
+            contentManager.setSelectedContent(contentManager.findContent(LOG_TAB_TITLE));
           }
         });
       IdeTooltipManager.getInstance().setCustomTooltip(this, errorTooltip);

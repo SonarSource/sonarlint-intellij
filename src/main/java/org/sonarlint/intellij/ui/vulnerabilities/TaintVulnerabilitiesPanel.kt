@@ -68,9 +68,9 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilities
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.CardPanel
 import org.sonarlint.intellij.ui.SonarLintRulePanel
-import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.centeredLabel
+import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.createSplitter
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
 import org.sonarlint.intellij.ui.tree.TreeContentKind
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree

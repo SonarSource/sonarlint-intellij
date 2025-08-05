@@ -190,7 +190,11 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
         switchCard()
     }
 
-    fun switchCard() {
+    fun refreshView(): Int {
+        return switchCard()
+    }
+
+    fun switchCard(): Int {
         when {
             !getService(BackendService::class.java).isAlive() -> {
                 showCard(ERROR_CARD_ID)
@@ -209,9 +213,11 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
                     showCard(NO_FILTERED_ISSUES_CARD_ID)
                 } else {
                     showCard(TREE_CARD_ID)
+                    return treeUpdater.dependencyRisks.count()
                 }
             }
         }
+        return 0
     }
 
     private fun showNoDependencyRisksLabel() {

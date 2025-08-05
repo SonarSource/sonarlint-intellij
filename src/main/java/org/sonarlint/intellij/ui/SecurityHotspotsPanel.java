@@ -73,8 +73,8 @@ import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERRO
 import static org.sonarlint.intellij.actions.RestartBackendActionKt.RESTART_ACTION_TEXT;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK;
-import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 import static org.sonarlint.intellij.ui.factory.PanelFactory.centeredLabel;
+import static org.sonarlint.intellij.ui.factory.PanelFactory.createSplitter;
 
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
   private static final String SONARLINT_ERROR_CARD_ID = "SONARLINT_ERROR_CARD_ID";

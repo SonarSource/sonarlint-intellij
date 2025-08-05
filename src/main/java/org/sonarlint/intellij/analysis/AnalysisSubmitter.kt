@@ -41,7 +41,7 @@ import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
-import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
+import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
@@ -124,7 +124,7 @@ class AnalysisSubmitter(private val project: Project) {
 
     fun analyzeFilesOnUserAction(files: Set<VirtualFile>, actionEvent: AnActionEvent) {
         runOnPooledThread(project) {
-            val callback = if (SonarLintToolWindowFactory.TOOL_WINDOW_ID == actionEvent.place) {
+            val callback = if (TOOL_WINDOW_ID == actionEvent.place) {
                 ShowUpdatedCurrentFileCallable(project, onTheFlyFindingsHolder)
             } else {
                 ShowReportCallable(project)

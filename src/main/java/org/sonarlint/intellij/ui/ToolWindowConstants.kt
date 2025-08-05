@@ -17,21 +17,17 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.walkthrough
+package org.sonarlint.intellij.ui
 
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
-import com.intellij.ui.content.ContentManagerListener
+object ToolWindowConstants {
 
-@Service(Service.Level.PROJECT)
-class SonarLintWalkthroughToolWindow(private val project: Project) : ContentManagerListener {
-
-    fun hide() {
-        getSonarLintWalkthroughToolWindow(project)?.hide()
-    }
-
-    fun openWelcomePage() {
-        getSonarLintWalkthroughToolWindow(project)?.show()
-    }
+    const val TOOL_WINDOW_ID: String = "SonarQube for IDE"
+    const val LOG_TAB_TITLE: String = "Log"
+    const val CURRENT_FILE_TAB_TITLE: String = "Current File"
+    const val REPORT_TAB_TITLE: String = "Report"
+    const val TAINT_VULNERABILITIES_TAB_TITLE: String = "Taint Vulnerabilities"
+    const val SECURITY_HOTSPOTS_TAB_TITLE: String = "Security Hotspots"
+    const val DEPENDENCY_RISKS_TAB_TITLE: String = "Dependency Risks"
+    const val HELP_AND_FEEDBACK_TAB_TITLE: String = "Help & Feedback"
 
 }

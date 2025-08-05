@@ -19,13 +19,24 @@
  */
 package org.sonarlint.intellij.ui.factory
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.wm.ToolWindow
+import com.intellij.openapi.wm.ToolWindowAnchor
+import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener
+import com.intellij.ui.JBSplitter
+import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.panels.HorizontalLayout
 import java.awt.event.ActionEvent
+import javax.swing.JComponent
 import org.sonarlint.intellij.ui.CurrentFilePanel
+import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 
 private const val LAYOUT_GAP = 5
 
@@ -53,6 +64,47 @@ class PanelFactory {
             }
             return labelPanel
         }
-    }
 
+        @JvmStatic
+        fun createSplitter(
+            project: Project,
+            parentComponent: JComponent,
+            parentDisposable: Disposable,
+            c1: JComponent,
+            c2: JComponent,
+            proportionProperty: String,
+            defaultSplit: Float,
+        ): JBSplitter {
+            val splitter = OnePixelSplitter(splitVertically(project), proportionProperty, defaultSplit)
+            splitter.setFirstComponent(c1)
+            splitter.setSecondComponent(c2)
+            splitter.setHonorComponentsMinimumSize(true)
+
+            val listener: ToolWindowManagerListener? = object : ToolWindowManagerListener {
+                override fun stateChanged(toolWindowManager: ToolWindowManager) {
+                    splitter.setOrientation(splitVertically(project))
+                    parentComponent.revalidate()
+                    parentComponent.repaint()
+                }
+            }
+            project.messageBus.connect(parentDisposable)
+                .subscribe(ToolWindowManagerListener.TOPIC!!, listener!!)
+            Disposer.register(parentDisposable) {
+                parentComponent.remove(splitter)
+                splitter.dispose()
+            }
+
+            return splitter
+        }
+
+        private fun splitVertically(project: Project): Boolean {
+            val toolWindow: ToolWindow? = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)
+            var splitVertically = false
+            if (toolWindow != null) {
+                val anchor = toolWindow.anchor
+                splitVertically = anchor == ToolWindowAnchor.LEFT || anchor == ToolWindowAnchor.RIGHT
+            }
+            return splitVertically
+        }
+    }
 }
