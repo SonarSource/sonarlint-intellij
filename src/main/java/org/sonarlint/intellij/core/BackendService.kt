@@ -73,6 +73,7 @@ import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
@@ -162,6 +163,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.StandaloneRuleC
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.UpdateStandaloneRulesConfigurationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.ChangeDependencyRiskStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.OpenDependencyRiskInBrowserParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
@@ -377,7 +379,8 @@ class BackendService : Disposable {
             BackendCapability.FULL_SYNCHRONIZATION,
             BackendCapability.PROJECT_SYNCHRONIZATION,
             BackendCapability.SMART_NOTIFICATIONS,
-            BackendCapability.ISSUE_STREAMING
+            BackendCapability.ISSUE_STREAMING,
+            BackendCapability.SCA_SYNCHRONIZATION
         )
         if (!System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()) {
             capabilities.add(BackendCapability.TELEMETRY)
@@ -728,6 +731,15 @@ class BackendService : Disposable {
         }
     }
 
+    fun openDependencyRiskInBrowser(module: Module, riskId: UUID) {
+        val configScopeId = moduleId(module)
+        notifyBackend {
+            it.dependencyRiskService.openDependencyRiskInBrowser(
+                OpenDependencyRiskInBrowserParams(configScopeId, riskId)
+            )
+        }
+    }
+
     fun checkLocalSecurityHotspotDetectionSupported(project: Project): CompletableFuture<CheckLocalDetectionSupportedResponse> {
         return requestFromBackend {
             it.hotspotService.checkLocalDetectionSupported(
@@ -919,7 +931,8 @@ class BackendService : Disposable {
     }
 
     fun refreshTaintVulnerabilities(project: Project) {
-        requestFromBackend { it.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId(project), true)) }
+        val projectId = projectId(project)
+        requestFromBackend { it.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId, true)) }
             .thenApplyAsync { response ->
                 val localTaintVulnerabilities = computeReadActionSafely(project) {
                     val taintVulnerabilityMatcher = TaintVulnerabilityMatcher(project)
@@ -927,6 +940,17 @@ class BackendService : Disposable {
                 } ?: return@thenApplyAsync
                 runOnUiThread(project) {
                     getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(localTaintVulnerabilities)
+                }
+            }
+    }
+
+    fun refreshDependencyRisks(project: Project) {
+        val projectId = projectId(project)
+        requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId, true)) }
+            .thenApplyAsync { response ->
+                val localDependencyRisks = response.dependencyRisks.map { LocalDependencyRisk(it) }
+                runOnUiThread(project) {
+                    getService(project, SonarLintToolWindow::class.java).populateDependencyRisksTab(localDependencyRisks)
                 }
             }
     }

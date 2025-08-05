@@ -71,31 +71,11 @@ class LocalDependencyRiskTests {
     }
 
     @Test
-    fun `should not allow status change when already resolved`() {
-        val dto = aDependencyRiskDto(DependencyRiskDto.Status.SAFE, listOf(DependencyRiskDto.Transition.CONFIRM))
-        val localRisk = LocalDependencyRisk(dto)
-
-        assertThat(localRisk.canChangeStatus()).isFalse()
-    }
-
-    @Test
     fun `should not allow status change when no transitions available`() {
         val dto = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf())
         val localRisk = LocalDependencyRisk(dto)
 
         assertThat(localRisk.canChangeStatus()).isFalse()
-    }
-
-    @Test
-    fun `should mark as resolved when resolve is called`() {
-        val dto = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf())
-        val localRisk = LocalDependencyRisk(dto)
-
-        assertThat(localRisk.isResolved).isFalse()
-
-        localRisk.resolve()
-
-        assertThat(localRisk.isResolved).isTrue()
     }
 
 } 

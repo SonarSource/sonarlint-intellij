@@ -17,22 +17,24 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions
+package org.sonarlint.intellij.actions.filters
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.core.BackendService
+import javax.swing.Icon
+import org.sonarlint.intellij.actions.AbstractSonarToggleAction
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
-const val RESTART_ACTION_TEXT = "Restart SonarQube for IDE Service"
+class IncludeResolvedDependencyRisksAction(text: String?, description: String?, icon: Icon?) : AbstractSonarToggleAction(text, description, icon) {
 
-class RestartBackendAction : AbstractSonarAction(RESTART_ACTION_TEXT) {
+    private var isResolved = false
 
-    companion object {
-        const val SONARLINT_ERROR_MSG = "SonarQube for IDE service encountered an issue and has stopped working"
-    }
+    override fun isSelected(e: AnActionEvent) = isResolved
 
-    override fun actionPerformed(e: AnActionEvent) {
-        SonarLintUtils.getService(BackendService::class.java).restartBackendService()
+    override fun setSelected(e: AnActionEvent, state: Boolean) {
+        val p = e.project ?: return
+        isResolved = state
+        getService(p, SonarLintToolWindow::class.java).filterDependencyRiskTab(isResolved)
     }
 
 }

@@ -23,12 +23,10 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -38,11 +36,7 @@ import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.DependencyRiskTransitionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
 
-private const val SKIP_CONFIRM_DIALOG_PROPERTY = "SonarLint.markScaAsResolved.hideConfirmation"
-
-class ChangeDependencyRiskStatusAction(
-    private var dependencyRisk: LocalDependencyRisk? = null,
-) : AbstractSonarAction(
+class ChangeDependencyRiskStatusAction() : AbstractSonarAction(
     "Change Dependency Risk Status\u2026", "Change the dependency risk status", null
 ) {
 
@@ -52,9 +46,6 @@ class ChangeDependencyRiskStatusAction(
         private const val SUCCESS_CONTENT = "The dependency risk status was successfully changed"
 
         fun canChangeStatus(project: Project, dependencyRisk: LocalDependencyRisk): Boolean {
-            if (dependencyRisk.isResolved) {
-                return false
-            }
             val serverConnection = serverConnection(project)
             return dependencyRisk.canChangeStatus() && serverConnection != null
         }
@@ -103,7 +94,7 @@ class ChangeDependencyRiskStatusAction(
         ) {
             getService(BackendService::class.java).changeStatusForDependencyRisk(project, dependencyRisk.id, statusChange, comment)
                 .thenAcceptAsync {
-                    updateUI(project, dependencyRisk)
+                    updateUI(project, statusChange, dependencyRisk)
                     SonarLintProjectNotifications.get(project).displaySuccessfulNotification(
                         SUCCESS_CONTENT,
                         NotificationGroupManager.getInstance().getNotificationGroup(CHANGE_STATUS_GROUP)
@@ -119,14 +110,10 @@ class ChangeDependencyRiskStatusAction(
                 }
         }
 
-        private fun updateUI(project: Project, dependencyRisk: LocalDependencyRisk) {
+        private fun updateUI(project: Project, newStatus: DependencyRiskTransition, dependencyRisk: LocalDependencyRisk) {
             runOnUiThread(project) {
-                dependencyRisk.resolve()
-
-                getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-                
-                // TODO: Update tool window when dependency risk UI is implemented
-                // getService(project, SonarLintToolWindow::class.java).updateDependencyRiskStatus(dependencyRisk)
+                dependencyRisk.changeStatus(newStatus)
+                getService(project, SonarLintToolWindow::class.java).changeDependencyRiskStatus(dependencyRisk)
             }
         }
 

@@ -17,22 +17,17 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions
+package org.sonarlint.intellij.ui
 
-import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.core.BackendService
+object ToolWindowConstants {
 
-const val RESTART_ACTION_TEXT = "Restart SonarQube for IDE Service"
-
-class RestartBackendAction : AbstractSonarAction(RESTART_ACTION_TEXT) {
-
-    companion object {
-        const val SONARLINT_ERROR_MSG = "SonarQube for IDE service encountered an issue and has stopped working"
-    }
-
-    override fun actionPerformed(e: AnActionEvent) {
-        SonarLintUtils.getService(BackendService::class.java).restartBackendService()
-    }
+    const val TOOL_WINDOW_ID: String = "SonarQube for IDE"
+    const val LOG_TAB_TITLE: String = "Log"
+    const val CURRENT_FILE_TAB_TITLE: String = "Current File"
+    const val REPORT_TAB_TITLE: String = "Report"
+    const val TAINT_VULNERABILITIES_TAB_TITLE: String = "Taint Vulnerabilities"
+    const val SECURITY_HOTSPOTS_TAB_TITLE: String = "Security Hotspots"
+    const val DEPENDENCY_RISKS_TAB_TITLE: String = "Dependency Risks"
+    const val HELP_AND_FEEDBACK_TAB_TITLE: String = "Help & Feedback"
 
 }

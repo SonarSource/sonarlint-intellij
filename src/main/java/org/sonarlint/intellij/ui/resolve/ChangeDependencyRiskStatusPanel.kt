@@ -20,13 +20,16 @@
 package org.sonarlint.intellij.ui.resolve
 
 import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
+import java.util.EnumSet
 import javax.swing.ButtonGroup
 import javax.swing.JPanel
 import javax.swing.JScrollPane
+import javax.swing.event.DocumentEvent
 import kotlin.properties.Delegates
 import org.apache.commons.text.StringEscapeUtils
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -34,15 +37,23 @@ import org.sonarlint.intellij.ui.options.OptionPanel
 import org.sonarlint.intellij.ui.options.addComponents
 import org.sonarsource.sonarlint.core.client.utils.DependencyRiskTransitionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition.CONFIRM
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition.REOPEN
 
+val TRANSITIONS_WITH_OPTIONAL_COMMENT: EnumSet<DependencyRiskTransition> = EnumSet.of(CONFIRM, REOPEN)
+
+private const val ADD_COMMENT_TEXT = "Add a comment"
+private const val ADD_REQUIRED_COMMENT_TEXT = "$ADD_COMMENT_TEXT (Required)"
 
 class ChangeDependencyRiskStatusPanel(
     private val connection: ServerConnection,
     allowedTransitions: List<DependencyRiskTransitionStatus>,
     private val callbackForButton: (Boolean) -> Unit,
 ) : JPanel(), ActionListener {
-    var selectedStatus: DependencyRiskTransition? by Delegates.observable(null) { _, _, newValue -> callbackForButton(newValue != null) }
+    var selectedStatus: DependencyRiskTransition? by Delegates.observable(null) { _, _, newValue -> callbackForButton(isReady(newValue)) }
+
     private lateinit var commentTextArea : JBTextArea
+    private lateinit var commentLabel: JBLabel
 
     init {
         layout = verticalLayout()
@@ -71,8 +82,14 @@ class ChangeDependencyRiskStatusPanel(
 
     private fun commentPanel(): JPanel {
         commentTextArea = JBTextArea()
+        commentTextArea.document.addDocumentListener(object : DocumentAdapter() {
+            override fun textChanged(e: DocumentEvent) {
+                callbackForButton(isReady())
+            }
+        })
+        commentLabel = JBLabel(ADD_COMMENT_TEXT)
         return JPanel(verticalLayout()).apply {
-            add(JBLabel("Add a comment (optional)"))
+            add(commentLabel)
             add(
                 JScrollPane(
                     commentTextArea.apply {
@@ -83,12 +100,23 @@ class ChangeDependencyRiskStatusPanel(
             add(JBLabel("<a href=\"$link\">Formatting Help</a>:  *Bold*  ``Code``  * Bulleted point").apply { setCopyable(true) })
         }
     }
+    private fun isReady(newValue: DependencyRiskTransition?) = newValue != null && isReady()
+
+    private fun isReady() = isCommentOptional() || getComment() != null
+
+    fun isCommentOptional() = TRANSITIONS_WITH_OPTIONAL_COMMENT.contains(selectedStatus)
 
     private fun verticalLayout() = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, true, false)
 
-    override fun actionPerformed(e: ActionEvent?) {
-        e ?: return
+    override fun actionPerformed(e: ActionEvent) {
         selectedStatus = DependencyRiskTransition.valueOf(e.actionCommand)
+        commentLabel.text = chooseLabelText()
     }
 
-} 
+    private fun chooseLabelText(): String {
+        return if (isCommentOptional())
+            ADD_COMMENT_TEXT
+        else
+            ADD_REQUIRED_COMMENT_TEXT
+    }
+}

@@ -27,19 +27,15 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.ScrollPaneFactory
-import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
-import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
 import java.awt.BorderLayout
 import java.awt.Dimension
-import java.awt.event.ActionEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.util.UUID
@@ -50,6 +46,7 @@ import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.actions.AbstractSonarAction
 import org.sonarlint.intellij.actions.OpenInBrowserAction
+import org.sonarlint.intellij.actions.RESTART_ACTION_TEXT
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
@@ -70,12 +67,12 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.CardPanel
-import org.sonarlint.intellij.ui.CurrentFilePanel
 import org.sonarlint.intellij.ui.SonarLintRulePanel
-import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.centeredLabel
+import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.createSplitter
+import org.sonarlint.intellij.ui.tree.FindingTreeSummary
 import org.sonarlint.intellij.ui.tree.TreeContentKind
-import org.sonarlint.intellij.ui.tree.TreeSummary
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTreeUpdater
 import org.sonarlint.intellij.ui.vulnerabilities.tree.filter.FocusFilter
@@ -102,8 +99,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     private lateinit var tree: TaintVulnerabilityTree
     private lateinit var oldTree: TaintVulnerabilityTree
-    private val treeSummary = TreeSummary(project, TreeContentKind.ISSUES, false)
-    private val oldTreeSummary = TreeSummary(project, TreeContentKind.ISSUES, true)
+    private val treeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, false)
+    private val oldTreeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, true)
     private lateinit var treeListeners: Map<TaintVulnerabilityTree, List<TreeSelectionListener>>
     private val treePanel: JBPanel<TaintVulnerabilitiesPanel>
     private val rulePanel = SonarLintRulePanel(project, this)
@@ -116,7 +113,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     init {
         val globalSettings = getGlobalSettings()
         cards.add(
-            centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarQube for IDE Service", RestartBackendAction()),
+            centeredLabel(SONARLINT_ERROR_MSG, RESTART_ACTION_TEXT, RestartBackendAction()),
             ERROR_CARD_ID
         )
         cards.add(
@@ -126,7 +123,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         cards.add(centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()), INVALID_BINDING_CARD_ID)
         cards.add(centeredLabel("No taint vulnerabilities shown due to the current filtering", "Show Resolved Taint Vulnerabilities",
             SonarLintActions.getInstance().includeResolvedTaintVulnerabilitiesAction()), NO_FILTERED_TAINT_VULNERABILITIES_CARD_ID)
-        noVulnerabilitiesPanel = centeredLabel("", "", null)
+        noVulnerabilitiesPanel = centeredLabel("")
         cards.add(noVulnerabilitiesPanel, NO_ISSUES_CARD_ID)
         rulePanel.minimumSize = Dimension(350, 200)
 
@@ -161,26 +158,6 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             )
         ))
         applyFocusOnNewCodeSettings()
-    }
-
-    private fun centeredLabel(textLabel: String, actionText: String?, action: AnAction?): JBPanelWithEmptyText {
-        val labelPanel = JBPanelWithEmptyText(HorizontalLayout(5))
-        val text = labelPanel.emptyText
-        text.text = textLabel
-        if (action != null && actionText != null) {
-            text.appendLine(
-                actionText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES
-            ) { _: ActionEvent? ->
-                ActionUtil.invokeAction(
-                    action,
-                    labelPanel,
-                    CurrentFilePanel.SONARLINT_TOOLWINDOW_ID,
-                    null,
-                    null
-                )
-            }
-        }
-        return labelPanel
     }
 
     private fun taintTreeSelectionChanged(tree: TaintVulnerabilityTree, secondTree: TaintVulnerabilityTree) {
