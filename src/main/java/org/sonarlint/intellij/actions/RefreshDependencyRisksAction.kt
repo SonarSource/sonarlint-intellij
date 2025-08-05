@@ -19,20 +19,19 @@
  */
 package org.sonarlint.intellij.actions
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.util.runOnPooledThread
 
-const val RESTART_ACTION_TEXT = "Restart SonarQube for IDE Service"
-
-class RestartBackendAction : AbstractSonarAction(RESTART_ACTION_TEXT) {
-
-    companion object {
-        const val SONARLINT_ERROR_MSG = "SonarQube for IDE service encountered an issue and has stopped working"
-    }
+class RefreshDependencyRisksAction(text: String = "Refresh") : AbstractSonarAction(text, "Refresh Dependency Risks", AllIcons.Actions.Refresh) {
 
     override fun actionPerformed(e: AnActionEvent) {
-        SonarLintUtils.getService(BackendService::class.java).restartBackendService()
-    }
+        val project = e.project ?: return
 
+        runOnPooledThread {
+            getService(BackendService::class.java).refreshDependencyRisks(project)
+        }
+    }
 }

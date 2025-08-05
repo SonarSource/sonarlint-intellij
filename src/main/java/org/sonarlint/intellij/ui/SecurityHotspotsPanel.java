@@ -34,7 +34,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBPanelWithEmptyText;
-import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
@@ -45,7 +44,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -72,9 +70,12 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 
 import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
+import static org.sonarlint.intellij.actions.RestartBackendActionKt.RESTART_ACTION_TEXT;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK;
-import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
+import static org.sonarlint.intellij.ui.factory.PanelFactory.centeredLabel;
+import static org.sonarlint.intellij.ui.factory.PanelFactory.createSplitter;
 
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
   private static final String SONARLINT_ERROR_CARD_ID = "SONARLINT_ERROR_CARD_ID";
@@ -84,6 +85,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private static final String SECURITY_HOTSPOTS_LIST_CARD_ID = "SECURITY_HOTSPOTS_LIST_CARD_ID";
   private static final String TOOLBAR_GROUP_ID = "SecurityHotspot";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
+
   protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
   protected SecurityHotspotTreeModelBuilder oldSecurityHotspotTreeBuilder;
   protected Tree securityHotspotTree;
@@ -128,10 +130,10 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
 
     sonarConfigureProject = new SonarConfigureProject();
     notSupportedPanel = centeredLabel("Security Hotspots are currently not supported", "Configure Binding", sonarConfigureProject);
-    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, "Restart SonarQube for IDE Service", new RestartBackendAction()), SONARLINT_ERROR_CARD_ID);
+    cardPanel.add(centeredLabel(SONARLINT_ERROR_MSG, RESTART_ACTION_TEXT, new RestartBackendAction()), SONARLINT_ERROR_CARD_ID);
     cardPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID);
-    cardPanel.add(centeredLabel("No Security Hotspots found for currently opened files in the latest analysis", null, null), NO_SECURITY_HOTSPOT_CARD_ID);
-    cardPanel.add(centeredLabel("No Security Hotspots shown due to the current filtering", null, null), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
+    cardPanel.add(centeredLabel("No Security Hotspots found for currently opened files in the latest analysis"), NO_SECURITY_HOTSPOT_CARD_ID);
+    cardPanel.add(centeredLabel("No Security Hotspots shown due to the current filtering"), NO_SECURITY_HOTSPOT_FILTERED_CARD_ID);
     cardPanel.add(findingsPanel, SECURITY_HOTSPOTS_LIST_CARD_ID);
 
     setupToolbar(createActionGroup());
@@ -266,23 +268,12 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return mainPanel;
   }
 
-  private static JBPanelWithEmptyText centeredLabel(String textLabel, @Nullable String actionText, @Nullable AnAction action) {
-    var labelPanel = new JBPanelWithEmptyText(new HorizontalLayout(5));
-    var text = labelPanel.getEmptyText();
-    text.setText(textLabel);
-    if (action != null && actionText != null) {
-      text.appendLine(actionText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-        ignore -> ActionUtil.invokeAction(action, labelPanel, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
-    }
-    return labelPanel;
-  }
-
   private void updateNotSupportedText(String newText) {
     var text = notSupportedPanel.getEmptyText();
     text.setText(newText);
     if (sonarConfigureProject != null) {
       text.appendLine("Configure Binding", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
-        ignore -> ActionUtil.invokeAction(sonarConfigureProject, notSupportedPanel, CurrentFilePanel.SONARLINT_TOOLWINDOW_ID, null, null));
+        ignore -> ActionUtil.invokeAction(sonarConfigureProject, notSupportedPanel, TOOL_WINDOW_ID, null, null));
     }
   }
 

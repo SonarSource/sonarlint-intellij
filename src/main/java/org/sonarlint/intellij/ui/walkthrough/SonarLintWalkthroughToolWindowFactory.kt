@@ -39,7 +39,7 @@ class SonarLintWalkthroughToolWindowFactory : ToolWindowFactory {
 
 }
 
-fun getSonarLintToolWindow(project: Project): ToolWindow? {
+fun getSonarLintWalkthroughToolWindow(project: Project): ToolWindow? {
     val toolWindowManager: ToolWindowManager = ToolWindowManager.getInstance(project)
     return toolWindowManager.getToolWindow(WALKTHROUGH_SONARQUBE_FOR_IDE)
 }
