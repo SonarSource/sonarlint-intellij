@@ -21,6 +21,7 @@ package org.sonarlint.intellij.finding.sca
 
 import com.intellij.openapi.components.Service
 import java.util.UUID
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 
 @Service(Service.Level.PROJECT)
 class DependencyRisksCache() {
@@ -29,19 +30,22 @@ class DependencyRisksCache() {
     var dependencyRisks: List<LocalDependencyRisk> = emptyList()
 
     fun update(dependencyRiskIdsToRemove: Set<UUID>, dependencyRisksToAdd: List<LocalDependencyRisk>, dependencyRisksToUpdate: List<LocalDependencyRisk>) {
+        val dependencyRisksToAddFiltered = dependencyRisksToAdd.filter { it.status != DependencyRiskDto.Status.FIXED }
+        val dependencyRisksToUpdateFiltered = dependencyRisksToUpdate.filter { it.status != DependencyRiskDto.Status.FIXED }
+
         val currentDependencyRisks = dependencyRisks.toMutableList()
         currentDependencyRisks.removeAll { it.id in dependencyRiskIdsToRemove }
-        currentDependencyRisks.addAll(dependencyRisksToAdd)
-        val updatedDependencyRiskKeys = dependencyRisksToUpdate.map { it.id }
+        currentDependencyRisks.addAll(dependencyRisksToAddFiltered)
+        val updatedDependencyRiskKeys = dependencyRisksToUpdateFiltered.map { it.id }
         currentDependencyRisks.removeAll { it.id in updatedDependencyRiskKeys }
-        currentDependencyRisks.addAll(dependencyRisksToUpdate)
+        currentDependencyRisks.addAll(dependencyRisksToUpdateFiltered)
         dependencyRisks = currentDependencyRisks
     }
 
     fun update(risk: LocalDependencyRisk): Boolean {
         val currentDependencyRisks = dependencyRisks.toMutableList()
         val removed = currentDependencyRisks.removeIf { currentRisk -> currentRisk.id == risk.id }
-        if (removed) {
+        if (removed && risk.status != DependencyRiskDto.Status.FIXED) {
             currentDependencyRisks.add(risk)
             dependencyRisks = currentDependencyRisks
         }
