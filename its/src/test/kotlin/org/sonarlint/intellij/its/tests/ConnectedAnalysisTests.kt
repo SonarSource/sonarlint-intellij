@@ -121,7 +121,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
 
         @JvmStatic
         @BeforeAll
-        fun createSonarLintUser() { // todo optimise the heavy tests?
+        fun createSonarLintUser() {
             adminWsClient = newAdminWsClientWithUser(ORCHESTRATOR.server)
             val token = generateTokenNameAndValue(adminWsClient, "sonarlintUser")
             tokenName = token.first
@@ -197,8 +197,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
                 "No new issues from last 1 days",
                 "Found 2 older issues in 1 file",
             )
-
-            // todo add DR?
 
             resetFocusOnNewCode()
 
