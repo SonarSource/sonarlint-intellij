@@ -50,7 +50,11 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
         renderer.toolTipText = "Double-click to open in the browser"
 
         renderer.append("(${node.quality.name.lowercase().capitalize()}) ", SimpleTextAttributes.GRAY_ATTRIBUTES)
-        renderer.append("${node.packageName}:${node.packageVersion}")
+        if (node.isResolved) {
+            renderer.append("${node.packageName}:${node.packageVersion}", SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, null))
+        } else {
+            renderer.append("${node.packageName}:${node.packageVersion}")
+        }
         val typeText = if (node.type == DependencyRiskDto.Type.PROHIBITED_LICENSE) {
             " Prohibited License"
         } else {

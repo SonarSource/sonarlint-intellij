@@ -17,21 +17,24 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions
+package org.sonarlint.intellij.actions.filters
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
+import javax.swing.Icon
+import org.sonarlint.intellij.actions.AbstractSonarToggleAction
+import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.util.runOnPooledThread
 
-class RefreshDependencyRisksAction(text: String = "Refresh") : AbstractSonarAction(text, "Refresh Dependency Risks", AllIcons.Actions.Refresh) {
+class IncludeResolvedDependencyRisksAction(text: String?, description: String?, icon: Icon?) : AbstractSonarToggleAction(text, description, icon) {
 
-    override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
+    private var isResolved = false
 
-        runOnPooledThread {
-            getService(BackendService::class.java).refreshDependencyRisks(project)
-        }
+    override fun isSelected(e: AnActionEvent) = isResolved
+
+    override fun setSelected(e: AnActionEvent, state: Boolean) {
+        val p = e.project ?: return
+        isResolved = state
+        getService(p, SonarLintToolWindow::class.java).filterDependencyRiskTab(isResolved)
     }
+
 }

@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.finding.sca
 
 import java.util.UUID
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 
 class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
@@ -28,18 +29,23 @@ class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
     val type: DependencyRiskDto.Type = serverDependencyRisk.type
     val severity: DependencyRiskDto.Severity = serverDependencyRisk.severity
     val quality: DependencyRiskDto.SoftwareQuality = serverDependencyRisk.quality
-    val status: DependencyRiskDto.Status = serverDependencyRisk.status
+    var status: DependencyRiskDto.Status = serverDependencyRisk.status
     val packageName: String = serverDependencyRisk.packageName
     val packageVersion: String = serverDependencyRisk.packageVersion
     val transitions: List<DependencyRiskDto.Transition> = serverDependencyRisk.transitions
-    var isResolved = serverDependencyRisk.status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT)
+    val isResolved = status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT, DependencyRiskDto.Status.FIXED)
 
     fun canChangeStatus(): Boolean {
-        return transitions.isNotEmpty() && !isResolved
+        return transitions.isNotEmpty()
     }
 
-    fun resolve() {
-        isResolved = true
+    fun changeStatus(newStatus: DependencyRiskTransition) {
+        status = when (newStatus) {
+            DependencyRiskTransition.SAFE -> DependencyRiskDto.Status.SAFE
+            DependencyRiskTransition.ACCEPT -> DependencyRiskDto.Status.ACCEPT
+            DependencyRiskTransition.REOPEN -> DependencyRiskDto.Status.OPEN
+            DependencyRiskTransition.CONFIRM -> DependencyRiskDto.Status.CONFIRM
+        }
     }
 
 }

@@ -35,6 +35,7 @@ import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
+import org.sonarlint.intellij.actions.filters.IncludeResolvedDependencyRisksAction;
 import org.sonarlint.intellij.actions.filters.IncludeResolvedFindingsAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
@@ -60,6 +61,7 @@ public final class SonarLintActions {
   private final IncludeResolvedFindingsAction<LiveSecurityHotspot> includeResolvedHotspotsAction;
   private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
   private final IncludeResolvedFindingsAction<LocalTaintVulnerability> includeResolvedTaintVulnerabilitiesAction;
+  private final IncludeResolvedDependencyRisksAction includeResolvedDependencyRisksAction;
   private final AnAction analyzeCurrentFileAction;
   private final AnAction restartSonarLintAction;
 
@@ -109,6 +111,9 @@ public final class SonarLintActions {
       "Include resolved taint vulnerabilities",
       SonarLintIcons.RESOLVED,
       LocalTaintVulnerability.class);
+    includeResolvedDependencyRisksAction = new IncludeResolvedDependencyRisksAction("Include Resolved Dependency Risks",
+      "Include resolved dependency risks",
+      SonarLintIcons.RESOLVED);
     analyzeCurrentFileAction = new SonarAnalyzeFilesAction("Analyze Current File",
       "Run SonarQube for IDE analysis on the current file",
       SonarLintIcons.PLAY);
@@ -161,6 +166,10 @@ public final class SonarLintActions {
 
   public IncludeResolvedFindingsAction<LocalTaintVulnerability> includeResolvedTaintVulnerabilitiesAction() {
     return includeResolvedTaintVulnerabilitiesAction;
+  }
+
+  public IncludeResolvedDependencyRisksAction includeResolvedDependencyRisksAction() {
+    return includeResolvedDependencyRisksAction;
   }
 
   public AnAction analyzeCurrentFileAction() {
