@@ -19,7 +19,9 @@
  */
 package org.sonarlint.intellij.ui.risks.tree
 
+import ai.grazie.utils.capitalize
 import com.intellij.openapi.util.text.StringUtil
+import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.scale.JBUIScale
 import javax.swing.Icon
 import org.sonarlint.intellij.SonarLintIcons
@@ -27,6 +29,7 @@ import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.tree.NodeRenderer
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
 import org.sonarlint.intellij.util.CompoundIcon
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 
 object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
 
@@ -44,8 +47,20 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
         )
 
         renderer.setIconToolTip(toolTipText)
-        renderer.toolTipText = "Click to open in the browser"
-        renderer.append("${node.packageName} ${node.packageVersion}")
+        renderer.toolTipText = "Double-click to open in the browser"
+
+        renderer.append("(${node.quality.name.lowercase().capitalize()}) ", SimpleTextAttributes.GRAY_ATTRIBUTES)
+        if (node.isResolved) {
+            renderer.append("${node.packageName}:${node.packageVersion}", SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, null))
+        } else {
+            renderer.append("${node.packageName}:${node.packageVersion}")
+        }
+        val typeText = if (node.type == DependencyRiskDto.Type.PROHIBITED_LICENSE) {
+            " Prohibited License"
+        } else {
+            " Vulnerability"
+        }
+        renderer.append(typeText, SimpleTextAttributes.GRAY_ATTRIBUTES)
     }
 
     private fun setIcon(renderer: TreeCellRenderer, icon: Icon) {

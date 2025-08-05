@@ -17,21 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions
+package org.sonarlint.intellij.ui.risks.tree
 
-import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.util.runOnPooledThread
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 
-class RefreshDependencyRisksAction(text: String = "Refresh") : AbstractSonarAction(text, "Refresh Dependency Risks", AllIcons.Actions.Refresh) {
+enum class DependencyRiskResolvedFilter {
+    OPEN_ONLY, ALL;
 
-    override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
-
-        runOnPooledThread {
-            getService(BackendService::class.java).refreshDependencyRisks(project)
-        }
-    }
+    fun filter(risk: LocalDependencyRisk) = this == ALL || this == OPEN_ONLY && !risk.isResolved
 }

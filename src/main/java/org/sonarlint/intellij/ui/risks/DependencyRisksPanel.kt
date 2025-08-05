@@ -50,6 +50,7 @@ import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.CardPanel
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.centeredLabel
+import org.sonarlint.intellij.ui.risks.tree.DependencyRiskResolvedFilter
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTree
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTreeUpdater
 import org.sonarlint.intellij.ui.tree.DependencyRiskTreeSummary
@@ -59,11 +60,10 @@ import org.sonarlint.intellij.util.runOnPooledThread
 
 private const val ERROR_CARD_ID = "ERROR_CARD"
 private const val NO_BINDING_CARD_ID = "NO_BINDING_CARD"
-private const val NO_FILTERED_DEPENDENCY_RISKS_CARD_ID = "NO_FILTERED_DEPENDENCY_RISKS_CARD_ID"
 private const val INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD"
+private const val NO_FILTERED_ISSUES_CARD_ID = "NO_FILTERED_ISSUES_CARD"
 private const val NO_ISSUES_CARD_ID = "NO_ISSUES_CARD"
 private const val TREE_CARD_ID = "TREE_CARD"
-private const val WAITING_FOR_UPDATES_ID = "WAITING_FOR_UPDATES"
 private const val TOOLBAR_GROUP_ID = "DependencyRisks"
 
 class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel(false, true) {
@@ -71,7 +71,7 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
     private val treeSummary = DependencyRiskTreeSummary(TreeContentKind.DEPENDENCY_RISKS)
     private val tree: DependencyRiskTree
     private val cards: CardPanel
-
+    private val noDependencyRisksPanel = centeredLabel("")
     private val treeUpdater = DependencyRiskTreeUpdater(treeSummary)
 
 
@@ -95,8 +95,6 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
         }.installOn(tree)
 
         cards = initCards(treePanel)
-        switchCard() // todo remove?
-
 
         val issuesPanel = JPanel(BorderLayout())
         issuesPanel.add(cards.container, BorderLayout.CENTER)
@@ -105,6 +103,7 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
         val sonarLintActions = SonarLintActions.getInstance()
         setupToolbar(listOf(
             RefreshDependencyRisksAction(),
+            sonarLintActions.includeResolvedDependencyRisksAction(),
             sonarLintActions.configure()
         ))
     }
@@ -127,7 +126,7 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
             ERROR_CARD_ID
         )
         cardsPanel.add(
-            centeredLabel("The project is not bound to SonarQube (Server, Cloud)", "Configure Binding", SonarConfigureProject()),
+            centeredLabel("The project is not bound to SonarQube Server", "Configure Binding", SonarConfigureProject()),
             NO_BINDING_CARD_ID
         )
         cardsPanel.add(
@@ -135,18 +134,14 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
             INVALID_BINDING_CARD_ID
         )
         cardsPanel.add(
-            centeredLabel("No dependency risks found in the latest analysis"),
-            NO_ISSUES_CARD_ID
-        )
-        cardsPanel.add(
-            centeredLabel("Waiting for analysis updates"),
-            WAITING_FOR_UPDATES_ID
+            centeredLabel("No dependency risks shown due to the current filtering", "Show Resolved Dependency Risks",
+                SonarLintActions.getInstance().includeResolvedDependencyRisksAction()), NO_FILTERED_ISSUES_CARD_ID
         )
         cardsPanel.add(
             ScrollPaneFactory.createScrollPane(treePanel, true),
             TREE_CARD_ID
         )
-        // todo NO_FILTERED_DEPENDENCY_RISKS_CARD_ID
+        cardsPanel.add(noDependencyRisksPanel, NO_ISSUES_CARD_ID)
         return cardsPanel
     }
 
@@ -181,13 +176,18 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
         val expandedPaths = TreeUtil.collectExpandedPaths(tree)
         val selectionPath: TreePath? = tree.selectionPath
         updater.dependencyRisks = dependencyRisks
-        tree.showsRootHandles = dependencyRisks.isNotEmpty()
+        tree.showsRootHandles = updater.filteredDependencyRisks.isNotEmpty()
         TreeUtil.restoreExpandedPaths(tree, expandedPaths)
         if (selectionPath != null) {
             TreeUtil.selectPath(tree, selectionPath)
         } else {
             tree.expandRow(0)
         }
+    }
+
+    fun allowResolvedDependencyRisks(includeResolved: Boolean) {
+        treeUpdater.resolutionFilter = if (includeResolved) DependencyRiskResolvedFilter.ALL else DependencyRiskResolvedFilter.OPEN_ONLY
+        switchCard()
     }
 
     fun switchCard() {
@@ -202,16 +202,22 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
                 showCard(INVALID_BINDING_CARD_ID)
             }
             treeUpdater.dependencyRisks.isEmpty() -> {
-                showCard(if (treeUpdater.updated) NO_ISSUES_CARD_ID else WAITING_FOR_UPDATES_ID)
+                showNoDependencyRisksLabel()
             }
             else -> {
                 if (treeUpdater.filteredDependencyRisks.isEmpty()) {
-                    showCard(NO_FILTERED_DEPENDENCY_RISKS_CARD_ID)
+                    showCard(NO_FILTERED_ISSUES_CARD_ID)
                 } else {
                     showCard(TREE_CARD_ID)
                 }
             }
         }
+    }
+
+    private fun showNoDependencyRisksLabel() {
+        val serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
+        noDependencyRisksPanel.withEmptyText("No dependency risks found for currently opened files in the latest analysis on ${serverConnection.productName}")
+        showCard(NO_ISSUES_CARD_ID)
     }
 
     private fun showCard(id: String) {

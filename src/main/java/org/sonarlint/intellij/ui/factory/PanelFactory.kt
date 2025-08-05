@@ -30,9 +30,8 @@ import org.sonarlint.intellij.ui.CurrentFilePanel
 private const val LAYOUT_GAP = 5
 
 class PanelFactory {
-    
-    companion object {
 
+    companion object {
         @JvmOverloads
         @JvmStatic
         fun centeredLabel(textLabel: String, actionText: String? = null, action: AnAction? = null): JBPanelWithEmptyText {
@@ -42,7 +41,7 @@ class PanelFactory {
             if (action != null && actionText != null) {
                 text.appendLine(
                     actionText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES
-                ) { _: ActionEvent? ->
+                ) { _: ActionEvent ->
                     ActionUtil.invokeAction(
                         action,
                         labelPanel,
@@ -55,4 +54,5 @@ class PanelFactory {
             return labelPanel
         }
     }
+
 }

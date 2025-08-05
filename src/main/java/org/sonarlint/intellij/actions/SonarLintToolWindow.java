@@ -185,6 +185,16 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
+  public void filterDependencyRiskTab(boolean isResolved) {
+    var content = getDependenciesRisksContent();
+    if (content != null) {
+      var riskPanel = (DependencyRisksPanel) content.getComponent();
+      riskPanel.allowResolvedDependencyRisks(isResolved);
+      content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(isResolved),
+        SonarLintToolWindowFactory.DEPENDENCY_RISKS_TAB_TITLE));
+    }
+  }
+
   /**
    * Must run in EDT
    */

@@ -40,7 +40,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTra
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition.CONFIRM
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition.REOPEN
 
-val TRANSITIONS_WITH_OPTIONAL_COMMENT = EnumSet.of(CONFIRM, REOPEN)!!
+val TRANSITIONS_WITH_OPTIONAL_COMMENT: EnumSet<DependencyRiskTransition> = EnumSet.of(CONFIRM, REOPEN)
 
 private const val ADD_COMMENT_TEXT = "Add a comment"
 private const val ADD_REQUIRED_COMMENT_TEXT = "$ADD_COMMENT_TEXT (Required)"
@@ -100,16 +100,15 @@ class ChangeDependencyRiskStatusPanel(
             add(JBLabel("<a href=\"$link\">Formatting Help</a>:  *Bold*  ``Code``  * Bulleted point").apply { setCopyable(true) })
         }
     }
-    private fun isReady(newValue: DependencyRiskTransition?): Boolean = newValue != null && isReady()
+    private fun isReady(newValue: DependencyRiskTransition?) = newValue != null && isReady()
 
-    private fun isReady(): Boolean = isCommentOptional() || getComment() != null
+    private fun isReady() = isCommentOptional() || getComment() != null
 
     fun isCommentOptional() = TRANSITIONS_WITH_OPTIONAL_COMMENT.contains(selectedStatus)
 
     private fun verticalLayout() = VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 15, true, false)
 
-    override fun actionPerformed(e: ActionEvent?) {
-        e ?: return
+    override fun actionPerformed(e: ActionEvent) {
         selectedStatus = DependencyRiskTransition.valueOf(e.actionCommand)
         commentLabel.text = chooseLabelText()
     }

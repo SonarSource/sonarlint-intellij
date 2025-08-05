@@ -38,6 +38,7 @@ import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -69,7 +70,7 @@ class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     mockSelectedFiles(f1);
     editorFileAction.actionPerformed(event);
-    verify(analysisSubmitter).analyzeFilesOnUserAction(anySet(), eq(event));
+    verify(analysisSubmitter, timeout(2000)).analyzeFilesOnUserAction(anySet(), eq(event));
   }
 
   private void mockSelectedFiles(VirtualFile file) {
