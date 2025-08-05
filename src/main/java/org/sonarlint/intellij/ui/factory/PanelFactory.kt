@@ -24,7 +24,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
@@ -75,11 +74,13 @@ class PanelFactory {
             defaultSplit: Float,
         ): JBSplitter {
             val splitter = OnePixelSplitter(splitVertically(project), proportionProperty, defaultSplit)
-            splitter.setFirstComponent(c1)
-            splitter.setSecondComponent(c2)
-            splitter.setHonorComponentsMinimumSize(true)
+                .apply {
+                    firstComponent = c1
+                    secondComponent = c2
+                    setHonorComponentsMinimumSize(true)
+                }
 
-            val listener: ToolWindowManagerListener? = object : ToolWindowManagerListener {
+            val listener = object : ToolWindowManagerListener {
                 override fun stateChanged(toolWindowManager: ToolWindowManager) {
                     splitter.setOrientation(splitVertically(project))
                     parentComponent.revalidate()
@@ -87,7 +88,7 @@ class PanelFactory {
                 }
             }
             project.messageBus.connect(parentDisposable)
-                .subscribe(ToolWindowManagerListener.TOPIC!!, listener!!)
+                .subscribe(ToolWindowManagerListener.TOPIC, listener)
             Disposer.register(parentDisposable) {
                 parentComponent.remove(splitter)
                 splitter.dispose()
@@ -97,7 +98,7 @@ class PanelFactory {
         }
 
         private fun splitVertically(project: Project): Boolean {
-            val toolWindow: ToolWindow? = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)
+            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)
             var splitVertically = false
             if (toolWindow != null) {
                 val anchor = toolWindow.anchor
