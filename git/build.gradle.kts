@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
@@ -44,11 +46,12 @@ dependencies {
             intellijIdeaCommunity(intellijBuildVersion)
         }
         bundledPlugins("Git4Idea")
+        testFramework(TestFrameworkType.Platform)
     }
     implementation(project(":common"))
-    testImplementation(project(":test-common"))
-    testImplementation(platform(libs.junit.bom))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(testFixtures(project(":test-common")))
+    testImplementation(libs.junit.four)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
 }

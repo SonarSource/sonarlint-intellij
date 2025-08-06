@@ -29,7 +29,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.test.AbstractHeavyTests
+import org.sonarlint.intellij.git.AbstractHeavyTests
 
 abstract class AbstractSonarLintHeavyTests : AbstractHeavyTests() {
 

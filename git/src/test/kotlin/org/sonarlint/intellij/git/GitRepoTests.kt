@@ -42,7 +42,6 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
-import org.sonarlint.intellij.test.AbstractLightTests
 
 private const val MAIN_BRANCH = "main"
 private const val EXPECTED = "expected-branch"
