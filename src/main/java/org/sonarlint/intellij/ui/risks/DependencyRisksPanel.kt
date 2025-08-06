@@ -126,11 +126,11 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
             ERROR_CARD_ID
         )
         cardsPanel.add(
-            centeredLabel("The project is not bound to SonarQube Server", "Configure Binding", SonarConfigureProject()),
+            centeredLabel("The project is not bound to SonarQube Server 2025 Release 3 Enterprise or higher", "Configure Binding", SonarConfigureProject()),
             NO_BINDING_CARD_ID
         )
         cardsPanel.add(
-            centeredLabel("The project binding is invalid", "Edit Binding", SonarConfigureProject()),
+            centeredLabel("The project binding is invalid (requires SonarQube Server 2025 Release 3 Enterprise or higher)", "Edit Binding", SonarConfigureProject()),
             INVALID_BINDING_CARD_ID
         )
         cardsPanel.add(
@@ -202,7 +202,7 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
             !getSettingsFor(project).isBound -> {
                 showCard(NO_BINDING_CARD_ID)
             }
-            !getService(project, ProjectBindingManager::class.java).isBindingValid -> {
+            !getService(project, ProjectBindingManager::class.java).isBindingValid || !getService(project, ProjectBindingManager::class.java).serverConnection.isSonarQube -> {
                 showCard(INVALID_BINDING_CARD_ID)
             }
             treeUpdater.dependencyRisks.isEmpty() -> {
