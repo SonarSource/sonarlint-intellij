@@ -57,7 +57,6 @@ class CLionAnalyzerConfigurationTest {
     assertEquals("clang-cl", CLionAnalyzerConfiguration.mapToCFamilyCompiler(ClangClCompilerKind.INSTANCE));
     assertEquals("msvc-cl", CLionAnalyzerConfiguration.mapToCFamilyCompiler(MSVCCompilerKind.INSTANCE));
     assertEquals("clang", CLionAnalyzerConfiguration.mapToCFamilyCompiler(AppleClangCompilerKind.INSTANCE));
-    //assertEquals("iar", CLionAnalyzerConfiguration.mapToCFamilyCompiler(IarCompilerKind.INSTANCE));
   }
 
   @Test

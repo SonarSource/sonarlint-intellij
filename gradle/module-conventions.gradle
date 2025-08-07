@@ -1,18 +1,10 @@
 // Apply common logic to all module build files
 
-tasks.withType(JavaCompile).configureEach {
-    options.fork = true
-    options.incremental = true
-}
-
 plugins.withId("org.jetbrains.kotlin.jvm") {
     tasks.matching { task -> task.name.endsWith("KotlinCompile") }.configureEach { task ->
         task.compilerOptions {
             apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_7)
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-            freeCompilerArgs.addAll(listOf("-opt-in=kotlin.RequiresOptIn"))
-            // Performance optimizations
-            useK2.set(true)
         }
     }
 }

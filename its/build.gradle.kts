@@ -158,11 +158,3 @@ license {
     excludes(listOf("**/*.jar", "**/*.png", "**/README", "**.xml"))
     strictCheck = true
 }
-
-configurations {
-    testRuntimeClasspath {
-        resolutionStrategy {
-            disableDependencyVerification()
-        }
-    }
-}

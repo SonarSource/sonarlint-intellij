@@ -261,8 +261,6 @@ fun copyPlugins(pluginsDir: File) {
     copy {
         from(project.configurations["sqplugins"])
         into(pluginsDir)
-        // Add caching for better performance
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
     }
 }
 
@@ -284,7 +282,6 @@ fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
         copy {
             from(zipTree(artifact.file))
             into(file("$destinationDir/${pluginName.get()}/omnisharp/${artifact.classifier}"))
-            duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
     }
 }
@@ -294,7 +291,6 @@ fun copySloop(destinationDir: File, pluginName: Property<String>) {
         copy {
             from(zipTree(artifact.file))
             into(file("$destinationDir/${pluginName.get()}/sloop/"))
-            duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
     }
 }
@@ -347,7 +343,6 @@ tasks {
         systemProperty("sonarlint.monitoring.disabled", "true")
         // uncomment to customize the SonarCloud URL
         //systemProperty("sonarlint.internal.sonarcloud.url", "https://sonarcloud.io/")
-        maxHeapSize = "2g"
     }
 
     test {
