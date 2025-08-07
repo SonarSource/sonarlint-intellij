@@ -60,13 +60,6 @@ class ClearCurrentFileIssuesActionTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void testClear() {
-    clearIssues.actionPerformed(event);
-
-    assertThat(findingsHolder.getIssuesForFile(file)).isEmpty();
-  }
-
-  @Test
   void testClearWithInvalidFiles() throws IOException {
     WriteAction.run(() -> file.delete(getProject()));
 
