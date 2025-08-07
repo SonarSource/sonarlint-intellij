@@ -69,6 +69,11 @@ open class OptionPanel (
     fun setSelected(isSelected: Boolean){
         statusRadioButton.isSelected = isSelected
     }
+
+    override fun setEnabled(enabled: Boolean) {
+        components.forEach { it.isEnabled = enabled }
+        super.setEnabled(enabled)
+    }
 }
 
 fun addComponents(buttonGroup: ButtonGroup, statusPanel: OptionPanel) {

@@ -37,17 +37,28 @@ import org.sonarlint.intellij.ui.options.OptionPanel
 import org.sonarlint.intellij.ui.options.addComponents
 import org.sonarsource.sonarlint.core.client.utils.DependencyRiskTransitionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition.ACCEPT
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition.CONFIRM
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition.REOPEN
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition.SAFE
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 
 val TRANSITIONS_WITH_OPTIONAL_COMMENT: EnumSet<DependencyRiskTransition> = EnumSet.of(CONFIRM, REOPEN)
 
 private const val ADD_COMMENT_TEXT = "Add a comment"
 private const val ADD_REQUIRED_COMMENT_TEXT = "$ADD_COMMENT_TEXT (Required)"
 
+private val possibleOptions = listOf(
+    DependencyRiskTransitionStatus.REOPEN,
+    DependencyRiskTransitionStatus.CONFIRM,
+    DependencyRiskTransitionStatus.ACCEPT,
+    DependencyRiskTransitionStatus.SAFE,
+)
+
 class ChangeDependencyRiskStatusPanel(
     private val connection: ServerConnection,
-    allowedTransitions: List<DependencyRiskTransitionStatus>,
+    initialStatus: DependencyRiskDto.Status,
+    private val allowedTransitions: List<DependencyRiskTransitionStatus>,
     private val callbackForButton: (Boolean) -> Unit,
 ) : JPanel(), ActionListener {
     var selectedStatus: DependencyRiskTransition? by Delegates.observable(null) { _, _, newValue -> callbackForButton(isReady(newValue)) }
@@ -55,25 +66,47 @@ class ChangeDependencyRiskStatusPanel(
     private lateinit var commentTextArea : JBTextArea
     private lateinit var commentLabel: JBLabel
 
-    init {
-        layout = verticalLayout()
-        display(allowedTransitions)
+    private val initialSelection: DependencyRiskTransitionStatus = when (initialStatus) {
+        DependencyRiskDto.Status.FIXED -> DependencyRiskTransitionStatus.FIXED
+        DependencyRiskDto.Status.OPEN -> DependencyRiskTransitionStatus.REOPEN
+        DependencyRiskDto.Status.CONFIRM -> DependencyRiskTransitionStatus.CONFIRM
+        DependencyRiskDto.Status.ACCEPT -> DependencyRiskTransitionStatus.ACCEPT
+        DependencyRiskDto.Status.SAFE -> DependencyRiskTransitionStatus.SAFE
     }
 
-    fun display(allowedTransitions: List<DependencyRiskTransitionStatus>) {
+    init {
+        layout = verticalLayout()
+        display()
+    }
+
+    fun display() {
         val buttonGroup = ButtonGroup()
-        allowedTransitions.forEach { transition ->
-            val statusPanel = OptionPanel(
-                transition.name,
-                transition.title,
-                transition.description
-            )
-            addComponents(buttonGroup, statusPanel)
-            statusPanel.statusRadioButton.addActionListener(this)
-            statusPanel.statusRadioButton.actionCommand = transition.name
-            add(statusPanel)
+        possibleOptions.forEach { transition ->
+            addNewStatus(transition, buttonGroup)
         }
         add(commentPanel())
+    }
+
+    private fun addNewStatus(
+        transition: DependencyRiskTransitionStatus,
+        buttonGroup: ButtonGroup,
+    ) {
+        val statusPanel = buildStatusPanel(transition)
+        add(statusPanel)
+        addComponents(buttonGroup, statusPanel)
+    }
+
+    private fun buildStatusPanel(transition: DependencyRiskTransitionStatus): OptionPanel {
+        return OptionPanel(
+            transition.name,
+            transition.title,
+            transition.description
+        ).also {
+            it.statusRadioButton.addActionListener(this)
+            it.statusRadioButton.actionCommand = transition.name
+            it.isEnabled = transition in allowedTransitions
+            it.setSelected(transition == initialSelection)
+        }
     }
 
     fun getComment() : String? {
@@ -100,7 +133,20 @@ class ChangeDependencyRiskStatusPanel(
             add(JBLabel("<a href=\"$link\">Formatting Help</a>:  *Bold*  ``Code``  * Bulleted point").apply { setCopyable(true) })
         }
     }
-    private fun isReady(newValue: DependencyRiskTransition?) = newValue != null && isReady()
+    private fun isReady(newValue: DependencyRiskTransition?): Boolean {
+        return toTransitionChangeEnum(newValue) in allowedTransitions
+            && isReady()
+    }
+
+    private fun toTransitionChangeEnum(value: DependencyRiskTransition?): DependencyRiskTransitionStatus? {
+        return when (value) {
+            REOPEN -> DependencyRiskTransitionStatus.REOPEN
+            CONFIRM -> DependencyRiskTransitionStatus.CONFIRM
+            ACCEPT -> DependencyRiskTransitionStatus.ACCEPT
+            SAFE -> DependencyRiskTransitionStatus.SAFE
+            else -> null
+        }
+    }
 
     private fun isReady() = isCommentOptional() || getComment() != null
 
