@@ -4,8 +4,7 @@ SonarQube for IntelliJ Plugin
 [![Build Status](https://api.cirrus-ci.com/github/SonarSource/sonarlint-intellij.svg?branch=master)](https://cirrus-ci.com/github/SonarSource/sonarlint-intellij)
 [![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
 
-SonarQube for IntelliJ is an IDE extension that supports you in writing [high-quality and secure code](https://docs.sonarsource.com/sonarqube-for-ide/intellij/) by
-detecting and helping you fix issues as you type.
+SonarQube for IDE is an IDE extension that helps you detect and fix quality issues, ensuring you deliever [integrated code quality and security](https://www.sonarsource.com/solutions/for-developers/).
 Like a spell checker, SonarQube for IntelliJ squiggles flaws so they can be fixed before committing code.
 
 Useful links
