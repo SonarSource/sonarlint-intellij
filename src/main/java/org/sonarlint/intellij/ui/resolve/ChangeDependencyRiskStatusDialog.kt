@@ -27,10 +27,12 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.ui.UiUtils
 import org.sonarsource.sonarlint.core.client.utils.DependencyRiskTransitionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 
 class ChangeDependencyRiskStatusDialog(
     project: Project,
     connection: ServerConnection,
+    initialStatus: DependencyRiskDto.Status,
     availableTransitions: List<DependencyRiskTransitionStatus>,
 ) : DialogWrapper(false) {
 
@@ -54,7 +56,7 @@ class ChangeDependencyRiskStatusDialog(
                 }
             }
         }
-        centerPanel = ChangeDependencyRiskStatusPanel(connection, availableTransitions) { changeStatusAction.isEnabled = it }
+        centerPanel = ChangeDependencyRiskStatusPanel(connection, initialStatus, availableTransitions) { changeStatusAction.isEnabled = it }
         init()
     }
 

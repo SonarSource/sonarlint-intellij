@@ -69,6 +69,7 @@ class ChangeDependencyRiskStatusAction() : AbstractSonarAction(
                 val statusChange = ChangeDependencyRiskStatusDialog(
                     project,
                     connection,
+                    dependencyRisk.status,
                     availableTransitions,
                 ).chooseStatusChange() ?: return@runOnUiThread
 
