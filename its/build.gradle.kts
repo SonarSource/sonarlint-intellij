@@ -89,14 +89,9 @@ tasks {
             }
         }
         testLogging.showStandardStreams = true
-        maxHeapSize = "1g"
 
         // Disable test task tracking to ensure tests always run
         doNotTrackState("Tests should always run")
-        
-        // Performance optimizations
-        maxParallelForks = 2
-        forkEvery = 100
     }
 }
 

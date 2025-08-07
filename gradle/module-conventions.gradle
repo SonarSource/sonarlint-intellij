@@ -21,11 +21,6 @@ tasks.withType(Test).configureEach {
     useJUnitPlatform()
     // Disable test task tracking to ensure tests always run
     doNotTrackState("Tests should always run")
-    
-    // Performance optimizations
-    maxParallelForks = 2
-    forkEvery = 100
-    maxHeapSize = "1g"
 }
 
 java {
