@@ -94,7 +94,6 @@ class ChangeDependencyRiskStatusAction() : AbstractSonarAction(
         ) {
             getService(BackendService::class.java).changeStatusForDependencyRisk(project, dependencyRisk.id, statusChange, comment)
                 .thenAcceptAsync {
-                    updateUI(project, statusChange, dependencyRisk)
                     SonarLintProjectNotifications.get(project).displaySuccessfulNotification(
                         SUCCESS_CONTENT,
                         NotificationGroupManager.getInstance().getNotificationGroup(CHANGE_STATUS_GROUP)
@@ -108,13 +107,6 @@ class ChangeDependencyRiskStatusAction() : AbstractSonarAction(
                     )
                     null
                 }
-        }
-
-        private fun updateUI(project: Project, newStatus: DependencyRiskTransition, dependencyRisk: LocalDependencyRisk) {
-            runOnUiThread(project) {
-                dependencyRisk.changeStatus(newStatus)
-                getService(project, SonarLintToolWindow::class.java).changeDependencyRiskStatus(dependencyRisk)
-            }
         }
 
         private fun serverConnection(project: Project): ServerConnection? = getService(
