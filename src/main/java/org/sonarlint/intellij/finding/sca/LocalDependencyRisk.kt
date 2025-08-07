@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.finding.sca
 
 import java.util.UUID
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 
 class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
@@ -38,14 +37,4 @@ class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
     fun canChangeStatus(): Boolean {
         return transitions.isNotEmpty()
     }
-
-    fun changeStatus(newStatus: DependencyRiskTransition) {
-        status = when (newStatus) {
-            DependencyRiskTransition.SAFE -> DependencyRiskDto.Status.SAFE
-            DependencyRiskTransition.ACCEPT -> DependencyRiskDto.Status.ACCEPT
-            DependencyRiskTransition.REOPEN -> DependencyRiskDto.Status.OPEN
-            DependencyRiskTransition.CONFIRM -> DependencyRiskDto.Status.CONFIRM
-        }
-    }
-
 }
