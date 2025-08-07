@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisResult;
@@ -42,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Disabled("Error: To reindex this file IDEA has to be restarted")
 class ClearCurrentFileIssuesActionTests extends AbstractSonarLintLightTests {
 
   private final ClearCurrentFileIssuesAction clearIssues = new ClearCurrentFileIssuesAction(null, null, null);
@@ -57,6 +59,13 @@ class ClearCurrentFileIssuesActionTests extends AbstractSonarLintLightTests {
     findingsHolder.clearCurrentFile();
     FileEditorManager.getInstance(getProject()).openFile(file, true);
     findingsHolder.updateOnAnalysisResult(new AnalysisResult(null, new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()), List.of(file), Instant.now()));
+  }
+
+  @Test
+  void testClear() {
+    clearIssues.actionPerformed(event);
+
+    assertThat(findingsHolder.getIssuesForFile(file)).isEmpty();
   }
 
   @Test
