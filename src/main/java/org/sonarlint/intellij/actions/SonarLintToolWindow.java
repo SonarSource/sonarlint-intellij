@@ -342,12 +342,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void changeDependencyRiskStatus(LocalDependencyRisk risk) {
-    var content = getDependenciesRisksContent();
-    ((DependencyRisksPanel) content.getComponent()).changeStatus(risk);
-    ((DependencyRisksPanel) content.getComponent()).switchCard();
-  }
-
   public void refreshTaintCodeFix() {
     var content = getTaintVulnerabilitiesContent();
     if (content != null) {
