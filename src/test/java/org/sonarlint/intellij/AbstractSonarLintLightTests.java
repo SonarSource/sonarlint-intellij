@@ -74,7 +74,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   }
 
   @BeforeAll
-  static void clearStorageRoot() throws IOException {
+  static void clearStorageRoot() {
     if (Files.exists(storageRoot)) {
       try {
         PathUtils.deleteDirectory(storageRoot);

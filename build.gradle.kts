@@ -114,6 +114,9 @@ dependencies {
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.awaitility)
     testImplementation(testFixtures(project("test-common")))
+    // Workaround for IJPL-159134: JUnit5 Test Framework refers to JUnit4
+    // See: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-faq.html#junit5-test-framework-refers-to-junit4
+    testRuntimeOnly(libs.junit.four)
     "sqplugins"(libs.bundles.sonar.analyzers)
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"(libs.sonar.cfamily)
