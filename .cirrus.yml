@@ -49,7 +49,7 @@ orchestrator_monthly_cache_template: &ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
     fingerprint_script: echo ${THIS_MONTH}
 
 container_definition: &CONTAINER_DEFINITION
-  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j17-g7-latest
+  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j21-latest
   region: eu-central-1
   cluster_name: ${CIRRUS_CLUSTER_NAME}
   namespace: default
@@ -153,7 +153,7 @@ validate_windows_task:
   #  name: "Run unit tests on Windows"
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
-    JDK_VERSION: "17"
+    JDK_VERSION: "21"
     IDEA_HOME: "/C/Program Files/intellij"
     RIDER_HOME: "/C/Program Files/rider"
     RESHARPER_HOME: "/C/Program Files/resharper"
@@ -183,7 +183,7 @@ plugin_verifier_task:
     - build_plugin
   <<: *ONLY_IF_NIGHTLY
   env:
-    JDK_VERSION: "17"
+    JDK_VERSION: "21"
     ALLOWED_IDE: "AS|CL|DG|GO|IIU|IIC|IIE|PS|PCP|PCC|PCE|RDCPPP|RD|RM|WS"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
@@ -240,7 +240,7 @@ qa_task:
     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
     GITHUB_TOKEN: VAULT[development/github/token/licenses-ro token]
     DISPLAY: :10
-    JDK_VERSION: "17"
+    JDK_VERSION: "21"
     SONARCLOUD_IT_TOKEN: VAULT[development/team/sonarlint/kv/data/sonarcloud-it data.token]
   clionKey_file:
     path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/clion.key.b64
@@ -462,7 +462,7 @@ promote_task:
   env:
     ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
-    JDK_VERSION: "17"
+    JDK_VERSION: "21"
     IDEA_HOME: ""
     RIDER_HOME: ""
     RESHARPER_HOME: ""
@@ -489,7 +489,7 @@ dogfood_task:
     memory: 2G
   env:
     ARTIFACTORY_API_KEY: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
-    JDK_VERSION: "17"
+    JDK_VERSION: "21"
   dogfood_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
