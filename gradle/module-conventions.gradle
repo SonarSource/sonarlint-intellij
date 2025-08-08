@@ -1,18 +1,19 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
 // Apply common logic to all module build files
 
 plugins.withId("org.jetbrains.kotlin.jvm") {
     tasks.matching { task -> task.name.endsWith("KotlinCompile") }.configureEach { task ->
         task.compilerOptions {
-            apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_7)
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            apiVersion.set(KotlinVersion.KOTLIN_1_7)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 }
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
-    // Disable test task tracking to ensure tests always run
-    doNotTrackState("Tests should always run")
 }
 
 java {

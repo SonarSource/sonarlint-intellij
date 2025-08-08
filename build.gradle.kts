@@ -349,7 +349,7 @@ tasks {
         useJUnitPlatform()
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
-        doNotTrackState("Tests should always run")
+        outputs.cacheIf { false }
     }
 
     withType<KotlinCompile>().configureEach {

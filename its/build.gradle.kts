@@ -89,9 +89,7 @@ tasks {
             }
         }
         testLogging.showStandardStreams = true
-
-        // Disable test task tracking to ensure tests always run
-        doNotTrackState("Tests should always run")
+        outputs.cacheIf { false }
     }
 }
 
