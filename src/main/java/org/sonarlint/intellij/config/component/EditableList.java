@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.swing.JPanel;
 
 public class EditableList<T> {

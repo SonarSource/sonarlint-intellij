@@ -9,7 +9,7 @@ env:
   DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${DEVELOCITY_TOKEN}
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
   SLACK_CHANNEL: squad-ide-intellij-family-bots
-  GRADLE_VERSION: "8.14.1"
+  GRADLE_VERSION: "8.14.3"
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
   IDEA_HOME: "/opt/intellij"
   RIDER_HOME: "/opt/rider"
@@ -98,7 +98,7 @@ build_plugin_task:
   env:
     SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
     SONAR_TOKEN: VAULT[development/kv/data/next data.token]
-    JDK_VERSION: "17"
+    JDK_VERSION: "21"
     ARTIFACTORY_DEPLOY_REPO: sonarsource-public-qa
     ARTIFACTORY_DEPLOY_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer
     ARTIFACTORY_DEPLOY_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
@@ -127,7 +127,7 @@ validate_task:
   env:
     SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
     SONAR_TOKEN: VAULT[development/kv/data/next data.token]
-    JDK_VERSION: "17"
+    JDK_VERSION: "21"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 7
@@ -191,9 +191,9 @@ plugin_verifier_task:
     memory: 10G
   matrix:
     - env:
-        IDEA_VERSION: '2022.3.1'
+        IDEA_VERSION: '2024.2'
     - env:
-        IDEA_VERSION: '2025.1'
+        IDEA_VERSION: '2025.2'
     - env:
         # It automatically retrieves the latest version available for the given year (likely to be the EAP)
         IDEA_VERSION: '2025'
@@ -271,78 +271,78 @@ qa_task:
     variable_name: WEBSTORM_KEY
   matrix:
     - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'OpenInIdeTests'
-    - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'ConnectedAnalysisTests'
-    - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'ConfigurationTests'
-    - env:
-        IDEA_VERSION: 'IC-2022.3.1'
-        QA_CATEGORY: 'Idea2022'
-        TEST_SUITE: 'Standalone'
-    - env:
-        IDEA_VERSION: 'IC-2024.1.4'
+        IDEA_VERSION: 'IC-2024.2'
         QA_CATEGORY: 'Idea2024'
         TEST_SUITE: 'OpenInIdeTests'
     - env:
-        IDEA_VERSION: 'IC-2024.1.4'
+        IDEA_VERSION: 'IC-2024.2'
         QA_CATEGORY: 'Idea2024'
         TEST_SUITE: 'ConnectedAnalysisTests'
     - env:
-        IDEA_VERSION: 'IC-2024.1.4'
+        IDEA_VERSION: 'IC-2024.2'
         QA_CATEGORY: 'Idea2024'
         TEST_SUITE: 'ConfigurationTests'
     - env:
-        IDEA_VERSION: 'IC-2024.1.4'
+        IDEA_VERSION: 'IC-2024.2'
         QA_CATEGORY: 'Idea2024'
         TEST_SUITE: 'Standalone'
     - env:
-        IDEA_VERSION: 'IU-2022.3.1'
-        QA_CATEGORY: 'IdeaUltimate2022'
+        IDEA_VERSION: 'IC-2025.2'
+        QA_CATEGORY: 'Idea2025'
+        TEST_SUITE: 'OpenInIdeTests'
     - env:
-        IDEA_VERSION: 'IU-2024.1.4'
+        IDEA_VERSION: 'IC-2025.2'
+        QA_CATEGORY: 'Idea2025'
+        TEST_SUITE: 'ConnectedAnalysisTests'
+    - env:
+        IDEA_VERSION: 'IC-2025.2'
+        QA_CATEGORY: 'Idea2025'
+        TEST_SUITE: 'ConfigurationTests'
+    - env:
+        IDEA_VERSION: 'IC-2025.2'
+        QA_CATEGORY: 'Idea2025'
+        TEST_SUITE: 'Standalone'
+    - env:
+        IDEA_VERSION: 'IU-2024.2'
         QA_CATEGORY: 'IdeaUltimate2024'
     - env:
-        IDEA_VERSION: 'PY-2022.3.1'
-        QA_CATEGORY: 'PyCharmProfessional2022'
+        IDEA_VERSION: 'IU-2025.2'
+        QA_CATEGORY: 'IdeaUltimate2025'
     - env:
-        IDEA_VERSION: 'PY-2024.1.4'
+        IDEA_VERSION: 'PY-2024.2'
         QA_CATEGORY: 'PyCharmProfessional2024'
     - env:
-        IDEA_VERSION: 'PC-2022.3.1'
-        QA_CATEGORY: 'PyCharmCommunity2022'
+        IDEA_VERSION: 'PY-2025.2'
+        QA_CATEGORY: 'PyCharmProfessional2025'
     - env:
-        IDEA_VERSION: 'PC-2024.1.4'
+        IDEA_VERSION: 'PC-2024.2'
         QA_CATEGORY: 'PyCharmCommunity2024'
     - env:
-        IDEA_VERSION: 'RD-2022.3.1'
-        QA_CATEGORY: 'Rider2022'
+        IDEA_VERSION: 'PC-2025.2'
+        QA_CATEGORY: 'PyCharmCommunity2025'
     - env:
-        IDEA_VERSION: 'RD-2024.1.4'
+        IDEA_VERSION: 'RD-2024.2'
         QA_CATEGORY: 'Rider2024'
     - env:
-        IDEA_VERSION: 'PS-2022.3.1'
-        QA_CATEGORY: 'PhpStorm2022'
+        IDEA_VERSION: 'RD-2025.2'
+        QA_CATEGORY: 'Rider2025'
     - env:
-        IDEA_VERSION: 'PS-2024.1.4'
+        IDEA_VERSION: 'PS-2024.2'
         QA_CATEGORY: 'PhpStorm2024'
     - env:
-        IDEA_VERSION: 'GO-2022.3.1'
-        QA_CATEGORY: 'GoLand2022'
+        IDEA_VERSION: 'PS-2025.2'
+        QA_CATEGORY: 'PhpStorm2025'
     - env:
-        IDEA_VERSION: 'GO-2024.1.4'
+        IDEA_VERSION: 'GO-2024.2'
         QA_CATEGORY: 'GoLand2024'
     - env:
-        IDEA_VERSION: 'CL-2022.3.1'
-        QA_CATEGORY: 'CLion2022'
+        IDEA_VERSION: 'GO-2025.2'
+        QA_CATEGORY: 'GoLand2025'
     - env:
-        IDEA_VERSION: 'CL-2024.1.4'
+        IDEA_VERSION: 'CL-2024.2'
+        QA_CATEGORY: 'CLion2024'
+    - env:
+        IDEA_VERSION: 'CL-2025.2'
         QA_CATEGORY: 'CLion2024'
   <<: *SETUP_GRADLE_CACHE
   xvfb_background_script: |

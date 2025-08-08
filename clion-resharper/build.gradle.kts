@@ -1,7 +1,7 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
-val clionResharperBuildVersion: String by project
-val resharperHome: String? = System.getenv("RESHARPER_HOME")
+val clionBuildVersion: String by project
+val clionHome: String? = System.getenv("CLION_HOME")
 
 plugins {
     id("org.jetbrains.intellij.platform.module")
@@ -39,16 +39,17 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        if (!resharperHome.isNullOrBlank()) {
-            println("Using local installation of Rider: $resharperHome")
-            local(resharperHome)
+        if (!clionHome.isNullOrBlank()) {
+            println("Using local installation of Rider: $clionHome")
+            local(clionHome)
         } else {
-            println("No local installation of Rider found, using version $clionResharperBuildVersion")
-            rider(clionResharperBuildVersion, useInstaller = false)
+            println("No local installation of Rider found, using version $clionBuildVersion")
+            clion(clionBuildVersion)
         }
+        bundledPlugins("org.jetbrains.plugins.clion.radler", "com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang")
         testFramework(TestFrameworkType.Platform)
     }
-    implementation(project(":clion-common"))
+    implementation(project(":common"))
     testImplementation(libs.mockito.core)
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)

@@ -70,13 +70,13 @@ dependencies {
 tasks {
     compileKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
     compileTestKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
@@ -136,7 +136,7 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "223.8214.6"
+            sinceBuild = "242.20224.300"
         }
         name = "sonarlint-intellij-its"
     }

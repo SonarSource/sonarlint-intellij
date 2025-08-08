@@ -33,7 +33,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;

@@ -177,7 +177,7 @@ class AnalysisSubmitter(private val project: Project) {
 
     companion object {
         fun collectContributedLanguages(module: Module, listFiles: List<VirtualFile>): Map<VirtualFile, ForcedLanguage> {
-            val contributedConfigurations = AnalysisConfigurator.EP_NAME.getExtensionList().stream()
+            val contributedConfigurations = AnalysisConfigurator.EP_NAME.extensionList.stream()
                 .map { config -> config.configure(module, listFiles) }
 
             val contributedLanguages = HashMap<VirtualFile, ForcedLanguage>()

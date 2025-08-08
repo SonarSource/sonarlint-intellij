@@ -1,5 +1,5 @@
 rootProject.name = "sonarlint-intellij"
-include("its", "clion", "clion-resharper", "nodejs", "clion-common", "common", "git", "rider", "test-common")
+include("its", "clion", "clion-resharper", "nodejs", "common", "git", "rider", "test-common")
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version ("0.9.0")

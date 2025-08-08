@@ -85,7 +85,7 @@ configurations {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -152,7 +152,7 @@ license {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "223.8214.6"
+            sinceBuild = "242.20224.300"
             untilBuild = provider { null }
         }
         name = "sonarlint-intellij"
@@ -180,8 +180,8 @@ intellijPlatform {
         } else {
             // Test oldest supported, and latest
             ides {
-                create("IC", "2022.3.1")
-                create("IC", "2024.3.1")
+                create("IC", "2024.2")
+                create("IC", "2025.2")
             }
         }
     }
@@ -354,7 +354,7 @@ tasks {
 
     withType<KotlinCompile>().configureEach {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 

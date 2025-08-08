@@ -33,7 +33,7 @@ import com.intellij.ui.components.JBTextField;
 import java.awt.event.ActionListener;
 import java.io.File;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;

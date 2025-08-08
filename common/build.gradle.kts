@@ -44,4 +44,5 @@ dependencies {
             intellijIdeaCommunity(intellijBuildVersion)
         }
     }
+    compileOnly(libs.findbugs.jsr305)
 }
