@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.intellij)
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
-    kotlin("jvm")
+    alias(libs.plugins.kotlin)
 }
 
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
@@ -54,7 +54,7 @@ dependencies {
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
         }
-        testFramework(TestFrameworkType.JUnit5)
+        testFramework(TestFrameworkType.Platform)
     }
     testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:5.1.0.2254") {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")

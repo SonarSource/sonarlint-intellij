@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.compiler.CompilerConfiguration;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
@@ -231,7 +232,7 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
 
   private static Sdk addRtJarTo(@NotNull Sdk jdk) {
     try {
-      jdk = (Sdk) jdk.clone();
+      jdk = jdk.clone();
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
     }
@@ -239,7 +240,7 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
     sdkModificator.setHomePath(FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toString());
     sdkModificator.addRoot(findJar("jdk1.8/lib/rt.jar"), OrderRootType.CLASSES);
     sdkModificator.addRoot(findJar("jdk1.8/lib/another.jar"), OrderRootType.CLASSES);
-    sdkModificator.commitChanges();
+    ApplicationManager.getApplication().runWriteAction(sdkModificator::commitChanges);
     return jdk;
   }
 

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
@@ -63,13 +64,13 @@ class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLintLight
 
   private static Sdk addJrtFsJarTo(@NotNull Sdk jdk) {
     try {
-      jdk = (Sdk) jdk.clone();
+      jdk = jdk.clone();
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
     }
     var sdkModificator = jdk.getSdkModificator();
     sdkModificator.setHomePath(FAKE_JDK_ROOT_PATH.resolve("jdk9").toString());
-    sdkModificator.commitChanges();
+    ApplicationManager.getApplication().runWriteAction(sdkModificator::commitChanges);
     return jdk;
   }
 
