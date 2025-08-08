@@ -13,7 +13,6 @@ env:
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
   IDEA_HOME: "/opt/intellij"
   RIDER_HOME: "/opt/rider"
-  RESHARPER_HOME: "/opt/resharper"
   CLION_HOME: "/opt/clion"
   ULTIMATE_HOME: "/opt/ultimate"
 
@@ -156,7 +155,6 @@ validate_windows_task:
     JDK_VERSION: "21"
     IDEA_HOME: "/C/Program Files/intellij"
     RIDER_HOME: "/C/Program Files/rider"
-    RESHARPER_HOME: "/C/Program Files/resharper"
     CLION_HOME: "/C/Program Files/clion"
     ULTIMATE_HOME: "/C/Program Files/ultimate"
   ec2_instance:
@@ -429,7 +427,6 @@ mend_scan_task:
     WS_APIKEY: VAULT[development/kv/data/mend data.apikey]
     IDEA_HOME: ""
     RIDER_HOME: ""
-    RESHARPER_HOME: ""
     CLION_HOME: ""
     ULTIMATE_HOME: ""
   <<: *SETUP_GRADLE_CACHE
@@ -465,7 +462,6 @@ promote_task:
     JDK_VERSION: "21"
     IDEA_HOME: ""
     RIDER_HOME: ""
-    RESHARPER_HOME: ""
     CLION_HOME: ""
     ULTIMATE_HOME: ""
   <<: *SETUP_GRADLE_CACHE
