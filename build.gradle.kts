@@ -152,7 +152,7 @@ license {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "242.20224.300"
+            sinceBuild = "242"
             untilBuild = provider { null }
         }
         name = "sonarlint-intellij"

@@ -47,7 +47,7 @@ dependencies {
             clion(clionBuildVersion)
         }
         bundledPlugins("org.jetbrains.plugins.clion.radler", "com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang")
-        testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.JUnit5)
     }
     implementation(project(":common"))
     testImplementation(libs.mockito.core)
