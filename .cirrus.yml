@@ -164,8 +164,9 @@ validate_windows_task:
   <<: *SETUP_GRADLE_CACHE
   # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
   build_script: |
+    source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    ./gradlew :check
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
