@@ -21,7 +21,7 @@ package org.sonarlint.intellij.dogfood;
 
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.Tag;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.annotation.concurrent.Immutable;
 
 @Immutable

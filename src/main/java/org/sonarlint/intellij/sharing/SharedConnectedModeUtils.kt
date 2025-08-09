@@ -25,9 +25,9 @@ import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.io.exists
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.exists
 import org.sonarlint.intellij.SonarLintIntelliJClient.toClientFileDto
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService

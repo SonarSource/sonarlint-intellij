@@ -32,7 +32,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Set;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;

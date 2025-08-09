@@ -80,8 +80,8 @@ class EventScheduler(
     private fun groupByProject(files: Set<VirtualFile>) =
         files.fold(mutableMapOf<Project, MutableSet<VirtualFile>>()) { acc, file ->
             ProjectLocator.getInstance().getProjectsForFile(file)
-                .filter { !it.isDisposed }
-                .forEach { project -> acc.computeIfAbsent(project) { mutableSetOf() }.add(file) }
+                .filter { it != null && !it.isDisposed }
+                .forEach { project -> acc.computeIfAbsent(project!!) { mutableSetOf() }.add(file) }
             acc
         }.toImmutableMap()
 

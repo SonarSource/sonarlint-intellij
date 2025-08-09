@@ -22,7 +22,6 @@ package org.sonarlint.intellij.common.analysis;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +31,6 @@ public interface AnalysisConfigurator {
   ExtensionPointName<AnalysisConfigurator> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.analysisConfiguration");
 
   AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze);
-
 
   class AnalysisConfiguration {
     /**

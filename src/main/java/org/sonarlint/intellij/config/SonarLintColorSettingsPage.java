@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintIcons;
@@ -92,13 +92,13 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
 
   @NotNull
   @Override
-  public AttributesDescriptor @NotNull [] getAttributeDescriptors() {
+  public AttributesDescriptor [] getAttributeDescriptors() {
     return DESCRIPTORS;
   }
 
   @NotNull
   @Override
-  public ColorDescriptor @NotNull [] getColorDescriptors() {
+  public ColorDescriptor [] getColorDescriptors() {
     return ColorDescriptor.EMPTY_ARRAY;
   }
 

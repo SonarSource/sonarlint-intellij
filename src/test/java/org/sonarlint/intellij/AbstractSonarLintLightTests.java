@@ -55,8 +55,8 @@ import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ProjectBinding;
+import org.sonarlint.intellij.git.AbstractLightTests;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.test.AbstractLightTests;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
@@ -74,9 +74,13 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   }
 
   @BeforeAll
-  static void clearStorageRoot() throws IOException {
+  static void clearStorageRoot() {
     if (Files.exists(storageRoot)) {
-      PathUtils.deleteDirectory(storageRoot);
+      try {
+        PathUtils.deleteDirectory(storageRoot);
+      } catch (IOException e) {
+        // Ignore, this is just a cleanup
+      }
     }
   }
 
