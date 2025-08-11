@@ -133,7 +133,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
 
     fun openSettings() {
         actionMenu("File") {
-            item("Settings...") {
+            item("Settings\u2026") {
                 click()
             }
         }

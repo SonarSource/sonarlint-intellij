@@ -62,7 +62,7 @@ object OpeningUtils {
             idea {
                 actionMenu("Navigate") {
                     open()
-                    item("File...") {
+                    item("File\u2026") {
                         click()
                     }
                     keyboard {
