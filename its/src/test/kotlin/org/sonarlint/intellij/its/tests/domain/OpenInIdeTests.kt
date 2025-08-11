@@ -120,7 +120,7 @@ object OpenInIdeTests {
         projectKey: String, issueKey: String?, serverUrl: String, branch: String
     ) {
         handleRequest(
-            "http://localhost:64120/sonarlint/api/issues/show" +
+            "http://localhost:64123/sonarlint/api/issues/show" +
                 "?project=$projectKey" +
                 "&issue=$issueKey" +
                 "&server=$serverUrl" +
@@ -149,7 +149,7 @@ object OpenInIdeTests {
         tokenValue: String,
     ) {
         handleRequest(
-            "http://localhost:64120/sonarlint/api/issues/show" +
+            "http://localhost:64123/sonarlint/api/issues/show" +
                 "?project=$projectKey" +
                 "&issue=$issueKey" +
                 "&server=$serverUrl" +
