@@ -49,7 +49,7 @@ class ToolWindowBarFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComp
 
   fun ensureOpen() {
     //stripeButton(title).open()
-    sonarqubeIdeIcon(title).open()
+    sonarqubeIdeIcon().open()
   }
 
 }
