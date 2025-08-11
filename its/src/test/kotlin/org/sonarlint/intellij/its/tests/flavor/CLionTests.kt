@@ -19,11 +19,15 @@
  */
 package org.sonarlint.intellij.its.tests.flavor
 
+import com.intellij.remoterobot.fixtures.ComponentFixture
+import com.intellij.remoterobot.search.locators.byXpath
+import java.awt.Point
 import java.time.Duration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -51,6 +55,15 @@ class CLionTests : BaseUiTest() {
                 dialog("Open Project Wizard", Duration.ofSeconds(5)) {
                     button("OK").click()
                 }
+            }
+        }
+
+        optionalStep {
+            idea {
+                actionHyperLink("Fix\u2026") {
+                    click()
+                }
+                findElement<ComponentFixture>(byXpath("//div[@class='MyList']")).click(Point(10, 10))
             }
         }
 

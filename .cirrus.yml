@@ -341,7 +341,7 @@ qa_task:
         QA_CATEGORY: 'CLion2024'
     - env:
         IDEA_VERSION: 'CL-2025.2'
-        QA_CATEGORY: 'CLion2024'
+        QA_CATEGORY: 'CLion2025'
   <<: *SETUP_GRADLE_CACHE
   xvfb_background_script: |
     /etc/init.d/xvfb start
