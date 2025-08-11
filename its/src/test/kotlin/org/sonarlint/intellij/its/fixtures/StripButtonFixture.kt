@@ -25,8 +25,8 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.search.locators.byXpath
 
-fun ContainerFixture.stripeButton(text: String) =
-    find(StripeButtonFixture::class.java, byXpath("//div[@class='StripeButton' and @text='$text']"))
+fun ContainerFixture.sonarqubeIdeIcon(text: String) =
+    find(StripeButtonFixture::class.java, byXpath("//div[@tooltiptext='SonarQube for IDE']"))
 
 class StripeButtonFixture(
     remoteRobot: RemoteRobot,

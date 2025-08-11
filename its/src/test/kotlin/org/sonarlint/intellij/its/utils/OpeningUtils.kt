@@ -132,7 +132,6 @@ object OpeningUtils {
     fun closeProject() {
         optionalIdeaFrame()?.apply {
             actionMenu("File") {
-                open()
                 if (isRider()) {
                     item("Close Solution") {
                         click()

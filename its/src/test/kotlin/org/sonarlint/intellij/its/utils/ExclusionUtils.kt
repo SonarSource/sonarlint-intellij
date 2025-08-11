@@ -29,6 +29,7 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jbTextFieldsWithBrowseButton
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.fixtures.tool.window.toolWindowBar
 
 object ExclusionUtils {
 
@@ -45,8 +46,10 @@ object ExclusionUtils {
     private fun openExclusionsTab() {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarQube for IDE") {
+                toolWindowBar("SonarQube for IDE") {
                     ensureOpen()
+                }
+                toolWindow {
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
                         toolBarButton("Configure SonarQube for IDE").click()
