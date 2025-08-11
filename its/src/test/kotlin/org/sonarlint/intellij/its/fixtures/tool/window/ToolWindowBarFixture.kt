@@ -29,7 +29,7 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import java.time.Duration
 import org.sonarlint.intellij.its.fixtures.findElement
-import org.sonarlint.intellij.its.fixtures.sonarqubeIdeIcon
+import org.sonarlint.intellij.its.fixtures.stripButton
 
 fun ContainerFixture.toolWindowBar(
   title: String,
@@ -48,8 +48,7 @@ class ToolWindowBarFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComp
     findElement<TabContentFixture>(byXpath("tab with content of type $classType", "//div[@class='$classType']")).apply(function)
 
   fun ensureOpen() {
-    //stripeButton(title).open()
-    sonarqubeIdeIcon().open()
+    stripButton(title).open()
   }
 
 }

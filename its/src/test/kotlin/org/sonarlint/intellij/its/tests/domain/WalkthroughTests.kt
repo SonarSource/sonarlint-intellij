@@ -49,7 +49,7 @@ class WalkthroughTests {
                         if (walkthroughComponent().isShowing) {
                             fail("Walkthrough is showing")
                         }
-                    } catch (e: WaitForConditionTimeoutException) {
+                    } catch (_: WaitForConditionTimeoutException) {
                         // If the walkthrough is not showing, it should pass
                     }
                 }

@@ -77,12 +77,12 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
                 ideStatusBar.backgroundTaskPendingIcon
                 println("Task running")
                 return true
-            } catch (timeoutException: WaitForConditionTimeoutException) {
+            } catch (_: WaitForConditionTimeoutException) {
                 try {
                     ideStatusBar.pauseButton
                     println("Task running")
                     return true
-                } catch (timeoutException: WaitForConditionTimeoutException) {
+                } catch (_: WaitForConditionTimeoutException) {
                     try {
                         // could be between 2 background tasks, wait and retry
                         Thread.sleep(1000)
