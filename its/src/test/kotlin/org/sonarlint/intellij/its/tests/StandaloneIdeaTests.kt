@@ -29,6 +29,7 @@ import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.closeW
 import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.verifyWalkthroughIsNotShowing
 import org.sonarlint.intellij.its.utils.ExclusionUtils.excludeFile
 import org.sonarlint.intellij.its.utils.ExclusionUtils.removeFileExclusion
+import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.closeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -59,6 +60,7 @@ class StandaloneIdeaTests : BaseUiTest() {
             "No older issues",
         )
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
+        resetFocusOnNewCode()
     }
 
     @Test
