@@ -322,7 +322,7 @@ qa_task:
         IDEA_VERSION: 'RD-2024.2'
         QA_CATEGORY: 'Rider2024'
     - env:
-        IDEA_VERSION: 'RD-2025.2'
+        IDEA_VERSION: 'RD-2025.1.5'
         QA_CATEGORY: 'Rider2025'
     - env:
         IDEA_VERSION: 'PS-2024.2'

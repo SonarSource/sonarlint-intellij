@@ -179,7 +179,7 @@ object SettingsUtils {
                 welcomeFrame {
                     openPreferences()
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 idea {
                     openSettings()
                 }

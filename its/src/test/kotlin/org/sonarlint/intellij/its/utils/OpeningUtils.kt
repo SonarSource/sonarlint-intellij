@@ -61,7 +61,7 @@ object OpeningUtils {
         with(remoteRobot) {
             idea {
                 actionMenu("Navigate") {
-                    open()
+                    moveMouse()
                     item("File\u2026") {
                         click()
                     }

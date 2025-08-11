@@ -133,9 +133,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
 
     fun openSettings() {
         actionMenu("File") {
-            item("Settings\u2026") {
-                click()
-            }
+            findElement<ComponentFixture>(byXpath("//div[@text='File']//div[@text='Settings...']")).click()
         }
     }
 
