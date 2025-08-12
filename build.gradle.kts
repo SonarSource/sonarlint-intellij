@@ -93,11 +93,11 @@ dependencies {
     intellijPlatform {
         intellijIdeaCommunity(intellijBuildVersion)
         pluginComposedModule(implementation(project(":common")))
-        pluginComposedModule(implementation(project(":clion")))
-        pluginComposedModule(implementation(project(":clion-resharper")))
-        pluginComposedModule(implementation(project(":nodejs")))
-        pluginComposedModule(implementation(project(":rider")))
-        pluginComposedModule(implementation(project(":git")))
+        pluginComposedModule(runtimeOnly(project(":clion")))
+        pluginComposedModule(runtimeOnly(project(":clion-resharper")))
+        pluginComposedModule(runtimeOnly(project(":nodejs")))
+        pluginComposedModule(runtimeOnly(project(":rider")))
+        pluginComposedModule(runtimeOnly(project(":git")))
         bundledPlugins("com.intellij.java", "Git4Idea")
         testFramework(TestFrameworkType.Platform)
     }
