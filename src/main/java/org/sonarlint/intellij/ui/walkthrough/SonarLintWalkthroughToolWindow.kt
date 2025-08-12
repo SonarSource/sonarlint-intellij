@@ -22,16 +22,23 @@ package org.sonarlint.intellij.ui.walkthrough
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.content.ContentManagerListener
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
 @Service(Service.Level.PROJECT)
 class SonarLintWalkthroughToolWindow(private val project: Project) : ContentManagerListener {
 
     fun hide() {
-        getSonarLintWalkthroughToolWindow(project)?.hide()
+        val toolWindow = getSonarLintWalkthroughToolWindow(project)
+        runOnUiThread(project) {
+            toolWindow?.hide()
+        }
     }
 
     fun openWelcomePage() {
-        getSonarLintWalkthroughToolWindow(project)?.show()
+        val toolWindow = getSonarLintWalkthroughToolWindow(project)
+        runOnUiThread(project) {
+            toolWindow?.show()
+        }
     }
 
 }
