@@ -13,8 +13,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
@@ -254,11 +252,9 @@ intellijPlatformTesting {
     }
 }
 
-// Optimized sandbox setup with better caching and parallel execution
 fun setupSandbox(destinationDir: File, pluginName: Property<String>) {
     val pluginsDir = file("$destinationDir/${pluginName.get()}/plugins")
-    
-    // Use parallel execution for better performance
+
     copyPlugins(pluginsDir)
     renameCsharpPlugins(pluginsDir)
     copyOmnisharp(destinationDir, pluginName)
@@ -358,13 +354,6 @@ tasks {
         useJUnitPlatform()
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
-        outputs.cacheIf { false }
-    }
-
-    withType<KotlinCompile>().configureEach {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
-        }
     }
 
     prepareSandbox {

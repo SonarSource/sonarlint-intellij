@@ -96,7 +96,7 @@ Finally, close the IDE.
 To test against a specific version of IntelliJ, the `ijVersion` property can be used, e.g.:
 
 ```bash
-./gradlew :its:runIdeForUiTests -PijVersion=IC-2024.1 &
+./gradlew :its:runIdeForUiTests -PijVersion=IC-2025.2 &
 ```
 
 Please note that the IDE must be in the foreground while tests are executed.
@@ -118,7 +118,7 @@ How to debug SLOOP
 
 If you want to debug SLOOP:
 
-* open the Run configuration you are using to launch the IDE (`runIde` or `its:runIdeForUiTests`)
+* open the Run configuration you are using to launch the IDE (`runLocalIde` or `its:runIdeForUiTests`)
 * Add an environment variable: `SONARLINT_JVM_OPTS` with the value `-agentlib:jdwp=transport=dt_socket,address=8080,server=y,suspend=n`
 * Run the task
 * Open the SLCORE project and click `Run` > `Attach to process`
@@ -135,50 +135,20 @@ Import the project as a Gradle project.
 Note: whenever you change a Gradle setting (for example in `build.gradle.kts`),
 remember to **Refresh all Gradle projects** in the **Gradle** toolbar.
 
-To run an IntelliJ instance with the plugin installed, execute the Gradle task `runIde` using the command line,
-or the **Gradle** toolbar in IntelliJ, under `Tasks/intellij`.
-The instance files are stored under `build/idea-sandbox`.
+To run an IntelliJ instance with the plugin installed, execute the Gradle task `runLocalide` using the command line,
+or the **Gradle** toolbar in IntelliJ, under `Tasks/intellij platform`.
+The instance files are stored under `build/sonarlint-test`.
 
-To run against a specific IDE, the following custom `runIde` commands can be used:
-
-| Command                |
-|------------------------|
-| `runIdeaUltimate`        |
-| `runGoLand`              |
-| `runPyCharmCommunity`    |
-| `runPyCharmProfessional` |
-| `runWebStorm`            |
-| `runCLion`               |
-| `runRider`               |
-| `runPhpStorm`            |
-| `runAqua`                |
-| `runAndroidStudio`       |
-| `runRubyMine`            |
-| `runDataGrip`            |
-| `runIdeaCommunity`       |
+To run against a specific IDE, you can use the `runIdeDirectory` property to point to the directory of the IDE you want to run.
 
 For example:
 
 ```bash
-./gradlew :runPhpStorm
+./gradlew :runLocalIde -runIdeDirectory=<path_to_ide>
 ```
 
-By default, it will run with the minimal version supported. You can override the version used by using the property `runIdeBuildVersion`, as such:
-
-```bash
-./gradlew :runPhpStormy -PrunIdeBuildVersion=2025.1.1.1
-```
-
-Keep in mind that the `clean` task will wipe out the content of `build/idea-sandbox`,
+Keep in mind that the `clean` task will wipe out the content of `build/`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
-
-Whenever you change the dependency version, the previous versions are not deleted from the sandbox, and the JVM might not load the version
-that you expect.
-As the `clean` task may be inconvenient, an easier workaround is to delete the jars in the sandbox, for example, with:
-
-```bash
-find build/idea-sandbox/ -name '*.jar' -delete
-```
 
 License
 -------

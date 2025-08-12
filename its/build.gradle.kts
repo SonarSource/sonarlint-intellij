@@ -91,7 +91,6 @@ tasks {
             }
         }
         testLogging.showStandardStreams = true
-        outputs.cacheIf { false }
     }
 }
 
