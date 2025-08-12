@@ -17,33 +17,30 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij
+package org.sonarlint.intellij;
 
-import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.config.Settings.getGlobalSettings
-import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
+import org.sonarlint.intellij.fs.EditorFileChangeListener
+import org.sonarlint.intellij.promotion.PromotionProvider
+import org.sonarlint.intellij.trigger.EditorOpenTrigger
+import org.sonarlint.intellij.util.runOnPooledThread
 
-private const val HAS_WALKTHROUGH_RUN_ONCE: String = "hasWalkthroughRunOnce"
+class StartServicesOnProjectOpened : ProjectActivity {
 
-class OpenWelcomePageOnceOneProjectOpened : ProjectActivity {
-
-    override suspend fun execute(project: Project) {
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            return
-        }
-
-        val properties = PropertiesComponent.getInstance()
-
-        if (!properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false) && !getGlobalSettings().hasWalkthroughRunOnce()) {
-            SonarLintUtils.getService(project, SonarLintWalkthroughToolWindow::class.java).openWelcomePage()
-        }
-
-        properties.setValue(HAS_WALKTHROUGH_RUN_ONCE, true)
-        getGlobalSettings().setHasWalkthroughRunOnce(true)
+  override suspend fun execute(project: Project) {
+    if (ApplicationManager.getApplication().isUnitTestMode) {
+      return
     }
+    runOnPooledThread(project) {
+      getService(EditorFileChangeListener::class.java).startListening()
+      getService(project, EditorOpenTrigger::class.java).onProjectOpened()
+      getService(project, SecurityHotspotsRefreshTrigger::class.java).subscribeToTriggeringEvents()
+      getService(project, PromotionProvider::class.java).subscribeToTriggeringEvents()
+    }
+  }
 
 }
