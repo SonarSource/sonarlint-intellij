@@ -47,10 +47,10 @@ dependencies {
             println("No local installation of CLion found, using version $clionBuildVersion")
             clion(clionBuildVersion)
         }
+        pluginComposedModule(implementation(project(":common")))
         bundledPlugins("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang")
         testFramework(TestFrameworkType.Platform)
     }
-    implementation(project(":common"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.junit.four)

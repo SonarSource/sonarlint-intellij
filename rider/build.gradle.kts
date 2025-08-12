@@ -45,9 +45,9 @@ dependencies {
             println("No local installation of Rider found, using version $riderBuildVersion")
             rider(riderBuildVersion, useInstaller = false)
         }
+        pluginComposedModule(implementation(project(":common")))
+        pluginComposedModule(implementation(project(":git")))
         bundledPlugins("Git4Idea")
     }
-    implementation(project(":common"))
-    implementation(project(":git"))
     compileOnly(libs.findbugs.jsr305)
 }

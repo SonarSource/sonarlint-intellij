@@ -45,7 +45,7 @@ dependencies {
             println("No local installation of Ultimate found, using version $intellijUltimateBuildVersion")
             intellijIdeaUltimate(intellijUltimateBuildVersion)
         }
+        pluginComposedModule(implementation(project(":common")))
         bundledPlugins("JavaScript")
     }
-    implementation(project(":common"))
 }

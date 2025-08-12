@@ -45,10 +45,10 @@ dependencies {
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
         }
+        pluginComposedModule(implementation(project(":common")))
         bundledPlugins("Git4Idea")
         testFramework(TestFrameworkType.Platform)
     }
-    implementation(project(":common"))
     testImplementation(testFixtures(project(":test-common")))
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)

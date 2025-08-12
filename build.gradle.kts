@@ -92,6 +92,12 @@ java {
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity(intellijBuildVersion)
+        pluginComposedModule(implementation(project(":common")))
+        pluginComposedModule(implementation(project(":clion")))
+        pluginComposedModule(implementation(project(":clion-resharper")))
+        pluginComposedModule(implementation(project(":nodejs")))
+        pluginComposedModule(implementation(project(":rider")))
+        pluginComposedModule(implementation(project(":git")))
         bundledPlugins("com.intellij.java", "Git4Idea")
         testFramework(TestFrameworkType.Platform)
     }
@@ -100,13 +106,7 @@ dependencies {
     implementation(libs.sonarlint.rpc.impl)
     implementation(libs.commons.langs3)
     implementation(libs.commons.text)
-    implementation(project(":common"))
     compileOnly(libs.findbugs.jsr305)
-    runtimeOnly(project(":clion"))
-    runtimeOnly(project(":clion-resharper"))
-    runtimeOnly(project(":nodejs"))
-    runtimeOnly(project(":rider"))
-    runtimeOnly(project(":git"))
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

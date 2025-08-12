@@ -46,9 +46,9 @@ dependencies {
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
         }
+        pluginComposedModule(implementation(project(":common")))
         testFramework(TestFrameworkType.Platform)
     }
-    implementation(project(":common"))
     testFixturesImplementation(libs.junit.jupiter)
     testFixturesImplementation(libs.junit.four)
     testFixturesImplementation(libs.mockito.core)
