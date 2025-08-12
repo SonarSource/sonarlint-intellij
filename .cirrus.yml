@@ -366,7 +366,7 @@ qa_task:
 
     metacity --sm-disable --replace &
     sleep 10 # give metacity some time to start
-    gradle :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
+    ./gradlew :its:runIdeForUiTests --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin > ${CIRRUS_WORKING_DIR}/runIdeGradle.log &
   wait_ide_script: |
     echo "Wait for IDE to start"
     .cirrus/wait-for-endpoint.sh http://127.0.0.1:8082 -t 2000
@@ -376,7 +376,7 @@ qa_task:
   run_its_script: |
     echo "Run ITs on ${IDEA_VERSION}"
     source .cirrus/use-gradle-wrapper.sh
-    gradle :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin --dependency-verification lenient build
+    ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${CIRRUS_WORKING_DIR}/staged-plugin --dependency-verification lenient build
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     stop_recording_script: |
