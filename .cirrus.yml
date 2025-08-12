@@ -93,7 +93,7 @@ build_plugin_task:
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 9
-    memory: 12G
+    memory: 14G
   env:
     SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
     SONAR_TOKEN: VAULT[development/kv/data/next data.token]
@@ -130,7 +130,7 @@ validate_task:
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 7
-    memory: 12G
+    memory: 14G
   <<: *SETUP_GRADLE_CACHE
   build_script: |
     source cirrus-env QA
