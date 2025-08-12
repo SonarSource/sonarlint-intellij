@@ -53,7 +53,3 @@ dependencies {
     testFixturesImplementation(libs.junit.four)
     testFixturesImplementation(libs.mockito.core)
 }
-
-tasks.test {
-    useJUnitPlatform()
-}

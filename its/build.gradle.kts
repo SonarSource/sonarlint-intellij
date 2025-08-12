@@ -50,7 +50,9 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         if (project.hasProperty("ijVersion")) {
-            create(ijVersion)
+            val type = ijVersion.split('-')[0]
+            val version = ijVersion.split('-')[1]
+            create(type, version)
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
         }

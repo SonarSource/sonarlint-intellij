@@ -42,6 +42,7 @@ group = "org.sonarsource.sonarlint.intellij"
 description = "SonarLint for IntelliJ IDEA"
 
 val intellijBuildVersion: String by project
+val ideaHome: String? = System.getenv("IDEA_HOME")
 val omnisharpVersion: String by project
 val runIdeDirectory: String by project
 val verifierVersions: String by project
@@ -89,9 +90,17 @@ java {
     }
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity(intellijBuildVersion)
+        if (!ideaHome.isNullOrBlank()) {
+            local(ideaHome)
+        } else {
+            intellijIdeaCommunity(intellijBuildVersion)
+        }
         pluginComposedModule(implementation(project(":common")))
         pluginComposedModule(runtimeOnly(project(":clion")))
         pluginComposedModule(runtimeOnly(project(":clion-resharper")))

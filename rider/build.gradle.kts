@@ -43,7 +43,7 @@ dependencies {
             local(riderHome)
         } else {
             println("No local installation of Rider found, using version $riderBuildVersion")
-            rider(riderBuildVersion, useInstaller = false)
+            rider(riderBuildVersion) { useInstaller = false }
         }
         pluginComposedModule(implementation(project(":common")))
         pluginComposedModule(implementation(project(":git")))

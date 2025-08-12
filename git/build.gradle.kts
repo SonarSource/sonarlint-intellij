@@ -55,7 +55,3 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
 }
-
-tasks.test {
-    useJUnitPlatform()
-}
