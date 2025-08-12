@@ -19,9 +19,12 @@
  */
 package org.sonarlint.intellij.clion;
 
+import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
+import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
+import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
@@ -30,6 +33,7 @@ import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
+import com.jetbrains.cidr.project.workspace.CidrWorkspace;
 import java.util.HashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -99,7 +103,9 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
       properties.put("isHeaderFile", "true");
     }
 
-    if (compilerKind instanceof MSVCCompilerKind) {
+    if (usingRemoteOrWslToolchain(configuration)) {
+      collectPropertiesForRemoteToolchain(compilerSettings, properties);
+    } else if (compilerKind instanceof MSVCCompilerKind) {
       // For MSVC, we collect built-in headers only, and the driver on CFamily side still handles '/external:I' arguments.
       collectDefinesAndIncludes(compilerSettings, properties, HeadersSearchPath::isBuiltInHeaders);
     } else if ("iar".equals(cFamilyCompiler)) {
@@ -119,14 +125,41 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
 
   @Nullable
   static ForcedLanguage getSonarLanguage(@Nullable OCLanguageKind languageKind) {
-    if (CLanguageKind.C.equals(languageKind)) {
-      return ForcedLanguage.C;
-    } else if (CLanguageKind.CPP.equals(languageKind)) {
-      return ForcedLanguage.CPP;
-    } else if (CLanguageKind.OBJ_C.equals(languageKind)) {
-      return ForcedLanguage.OBJC;
-    } else {
+    return switch (languageKind) {
+      case CLanguageKind.C -> ForcedLanguage.C;
+      case CLanguageKind.CPP -> ForcedLanguage.CPP;
+      case CLanguageKind.OBJ_C -> ForcedLanguage.OBJC;
+      case null, default -> null;
+    };
+  }
+
+  private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
+    final var initializedWorkspaces = CidrWorkspace.getInitializedWorkspaces(project);
+    CPPEnvironment cppEnvironment = null;
+    for (var initializedWorkspace : initializedWorkspaces) {
+      if (initializedWorkspace instanceof CMakeWorkspace cMakeWorkspace) {
+        cppEnvironment = getCMakeCppEnvironment(cMakeWorkspace, configuration);
+      } else {
+        cppEnvironment = tryReflection(initializedWorkspace, project);
+        if (cppEnvironment != null) {
+          break;
+        }
+      }
+    }
+    return cppEnvironment != null && (cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker() || cppEnvironment.getToolSet().isRemote());
+  }
+
+  @Nullable
+  private CPPEnvironment getCMakeCppEnvironment(CMakeWorkspace cMakeWorkspace, OCResolveConfiguration configuration) {
+    var cMakeConfiguration = cMakeWorkspace.getCMakeConfigurationFor(configuration);
+    if (cMakeConfiguration == null) {
+      SonarLintConsole.get(project).debug("cMakeConfiguration is null");
       return null;
+    }
+    try {
+      return cMakeWorkspace.getProfileInfoFor(cMakeConfiguration).getEnvironment();
+    } catch (ExecutionException e) {
+      throw new IllegalStateException(e);
     }
   }
 
