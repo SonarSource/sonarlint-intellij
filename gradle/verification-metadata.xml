@@ -11,6 +11,7 @@
          <trust group="localIde" reason="JetBrains artifacts for local development"/>
          <trust group="python" reason="JetBrains artifacts for local development"/>
          <trust group="rider" reason="JetBrains artifacts for local development"/>
+         <trust group="idea" reason="JetBrains artifacts for local development"/>
          <trust group="unzipped.com.jetbrains.plugins" reason="Plugin verifier"/>
          <trust group="webide" reason="JetBrains artifacts for local development"/>
          <trust file=".*-javadoc[.]jar" regex="true" reason="https://docs.gradle.org/8.14.3/userguide/dependency_verification.html#sec:skipping-javadocs"/>
