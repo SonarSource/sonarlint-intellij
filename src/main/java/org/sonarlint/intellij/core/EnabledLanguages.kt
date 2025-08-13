@@ -55,7 +55,7 @@ object EnabledLanguages {
         Language.CLOUDFORMATION,
         Language.DOCKER,
         Language.KUBERNETES,
-        Language.TERRAFORM,
+        Language.TERRAFORM
     )
     private val EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE = listOf(
         EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
@@ -66,7 +66,7 @@ object EnabledLanguages {
         EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"),
         EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-text-plugin-*.jar"),
         EmbeddedPlugin(Language.GO, "Go", "sonar-go-plugin-*.jar"),
-        EmbeddedPlugin(org.sonarsource.sonarlint.core.commons.api.SonarLanguage.valueOf(Language.CLOUDFORMATION.name).pluginKey, "IaC", "sonar-iac-plugin-*.jar"),
+        EmbeddedPlugin(org.sonarsource.sonarlint.core.commons.api.SonarLanguage.valueOf(Language.CLOUDFORMATION.name).pluginKey, "IaC", "sonar-iac-plugin-*.jar")
     )
 
     @JvmStatic
@@ -115,7 +115,7 @@ object EnabledLanguages {
     @JvmStatic
     val extraEnabledLanguagesInConnectedMode: Set<Language>
         get() {
-            val extraEnabledLanguages = EnumSet.of(Language.ANSIBLE)
+            val extraEnabledLanguages = EnumSet.of(Language.ANSIBLE, Language.TEXT)
 
             return when {
                 isIdeModuleEnabled(RIDER_MODULE_ID) -> {

@@ -1,4 +1,3 @@
-
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
