@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>10.30 - Fewer FPs for PHP.</li>
+        <li>10.30 - Fewer FPs for PHP and secrets.</li>
         <li>10.29 - Introduction of a new 'Dependency Risks' tab for displaying dependency risks in connected mode (requires SonarQube Server 2025 Release 3 Enterprise or higher). Improved reliability of binding suggestions. Reduced the number of IDE notifications. Early access for MISRA rules. Less FPs and FNs for Java.</li>
         <li>10.28 - Minimal supported Node.js version needed for JS/TS/CSS analysis is 18.20.0, 20.12.0, or 21.4.0. Add detection for 102 new secret patterns, and enable support of secret detection for the Kotlin language. Mitigate a performance regression on the .NET analyzer. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>10.27.1 - Fix an issue where disabling automatic analysis would not be taken into account upon restart.</li>
