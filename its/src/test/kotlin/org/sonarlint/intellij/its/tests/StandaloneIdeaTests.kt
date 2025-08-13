@@ -66,10 +66,10 @@ class StandaloneIdeaTests : BaseUiTest() {
     @Test
     fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
         openExistingProject("sli-java-issues")
-        excludeFile("src/main/java/foo/Foo.java")
-        openFile("src/main/java/foo/Foo.java", "Foo.java")
+        excludeFile("src/main/java/foo/Bar.java")
+        openFile("src/main/java/foo/Bar.java", "Bar.java")
         verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
-        removeFileExclusion("src/main/java/foo/Foo.java")
+        removeFileExclusion("src/main/java/foo/Bar.java")
     }
 
     @Test

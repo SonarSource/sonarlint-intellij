@@ -117,7 +117,6 @@ object OpeningUtils {
             }
             if (!remoteRobot.isCLion()) {
                 optionalStep {
-                    // from 2020.3.4+
                     dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
                         button("Trust Project").click()
                     }
@@ -143,25 +142,15 @@ object OpeningUtils {
                     }
                 }
             }
-            idea {
-                // corresponding system property has been introduced around middle of 2020
-                // removable at some point when raising minimal version
-                closeTipOfTheDay()
-            }
         }
     }
 
     fun closeProject() {
         optionalIdeaFrame()?.apply {
             actionMenu("File") {
-                if (isRider()) {
-                    item("Close Solution") {
-                        click()
-                    }
-                } else {
-                    item("Close Project") {
-                        click()
-                    }
+                val name = if (isRider()) "Close Solution" else "Close Project"
+                item(name) {
+                    click()
                 }
             }
         }
