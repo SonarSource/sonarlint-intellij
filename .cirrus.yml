@@ -163,11 +163,11 @@ validate_windows_task:
   # skip unit tests from submodules to allow caching (else cache is too big for Cirrus)
   build_script: |
     source .cirrus/use-gradle-wrapper.sh
-    ./gradlew :check --no-daemon --info --stacktrace --console plain
+    ./gradlew :check
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   always:
     reports_artifacts:
-      path: "**/reports/profile/**"
+      path: "**/reports/**/**"
     junit_artifacts:
       path: "**/test-results/**/*.xml"
       format: junit

@@ -209,6 +209,9 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
   @Test
   void testClasspath() throws IOException {
     final var props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
+    var expectedJdkHome = FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toRealPath().toString();
+    expectedJdkHome = expectedJdkHome.replace('/', File.separatorChar).replace('\\', File.separatorChar);
+
     assertThat(props)
       .containsEntry("sonar.java.binaries", "\"" + compilerOutputDirPath.toRealPath() + "\"")
       .containsEntry("sonar.java.libraries", String.join(",",
@@ -227,8 +230,9 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
         dependentModCompilerOutputDirPath.toRealPath().toString(),
         exportedLibInDependentModulePath.toRealPath().toString(),
         testDependentModCompilerOutputDirPath.toRealPath().toString(),
-        exportedLibInTestDependentModulePath.toRealPath().toString()))
-      .containsEntry("sonar.java.jdkHome", FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toRealPath().toString().replace('/', File.separatorChar));
+        exportedLibInTestDependentModulePath.toRealPath().toString()));
+    assertThat(props.get("sonar.java.jdkHome").replace('/', File.separatorChar).replace('\\', File.separatorChar))
+      .isEqualTo(expectedJdkHome);
   }
 
   private static Sdk addRtJarTo(@NotNull Sdk jdk) {
