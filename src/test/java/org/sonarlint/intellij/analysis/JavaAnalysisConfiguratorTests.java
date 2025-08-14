@@ -41,6 +41,7 @@ import com.intellij.pom.java.LanguageLevel;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.PsiTestUtil;
 import com.intellij.testFramework.VfsTestUtil;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -227,7 +228,7 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
         exportedLibInDependentModulePath.toRealPath().toString(),
         testDependentModCompilerOutputDirPath.toRealPath().toString(),
         exportedLibInTestDependentModulePath.toRealPath().toString()))
-      .containsEntry("sonar.java.jdkHome", FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toRealPath().toString());
+      .containsEntry("sonar.java.jdkHome", FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toRealPath().toString().replace('/', File.separatorChar));
   }
 
   private static Sdk addRtJarTo(@NotNull Sdk jdk) {
