@@ -66,8 +66,8 @@ class DependencyRisksCacheTests {
     @Test
     fun should_update_dependency_risk_by_id() {
         val uuid = UUID.randomUUID()
-        val riskToUpdate = aDependencyRisk(uuid, DependencyRiskDto.Status.OPEN)
-        val newRisk = aDependencyRisk(uuid, DependencyRiskDto.Status.SAFE)
+        val riskToUpdate = aDependencyRisk(uuid, DependencyRiskDto.Status.OPEN, DependencyRiskDto.Severity.HIGH, listOf(DependencyRiskDto.Transition.ACCEPT))
+        val newRisk = aDependencyRisk(uuid, DependencyRiskDto.Status.SAFE, DependencyRiskDto.Severity.HIGH, listOf(DependencyRiskDto.Transition.ACCEPT))
         cache.dependencyRisks = listOf(riskToUpdate)
 
         val updated = cache.update(newRisk)
@@ -168,7 +168,7 @@ class DependencyRisksCacheTests {
         val existingRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
         cache.dependencyRisks = listOf(existingRisk)
 
-        val updatedRisk = aDependencyRisk(existingRisk.id, DependencyRiskDto.Status.SAFE)
+        val updatedRisk = aDependencyRisk(existingRisk.id, DependencyRiskDto.Status.SAFE, DependencyRiskDto.Severity.HIGH, emptyList())
         cache.update(emptySet(), emptyList(), listOf(updatedRisk))
 
         assertThat(cache.dependencyRisks).hasSize(1)
@@ -184,7 +184,7 @@ class DependencyRisksCacheTests {
         cache.dependencyRisks = listOf(existingRisk1, existingRisk2, existingRisk3)
 
         val newRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val updatedRisk2 = aDependencyRisk(existingRisk2.id, DependencyRiskDto.Status.SAFE)
+        val updatedRisk2 = aDependencyRisk(existingRisk2.id, DependencyRiskDto.Status.SAFE, DependencyRiskDto.Severity.HIGH, emptyList())
 
         cache.update(setOf(existingRisk1.id), listOf(newRisk), listOf(updatedRisk2))
 

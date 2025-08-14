@@ -63,7 +63,7 @@ class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary) {
 
     private fun createCompactTree(dependencyRisks: List<LocalDependencyRisk>): CompactTree {
         val sortedDependencyRisks =
-            dependencyRisks.sortedWith(compareByDescending<LocalDependencyRisk> { it.severity }.thenBy { it.packageName })
+            dependencyRisks.sortedWith(compareByDescending<LocalDependencyRisk> { it.severity }.thenByDescending { it.cvssScore }.thenBy { it.packageName })
         val nodes: Map<Any, List<Any>> = mapOf(model.root to sortedDependencyRisks)
         return CompactTree(nodes)
     }

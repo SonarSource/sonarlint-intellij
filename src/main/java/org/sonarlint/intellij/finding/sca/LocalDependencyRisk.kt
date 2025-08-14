@@ -31,6 +31,8 @@ class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
     var status: DependencyRiskDto.Status = serverDependencyRisk.status
     val packageName: String = serverDependencyRisk.packageName
     val packageVersion: String = serverDependencyRisk.packageVersion
+    val vulnerabilityId = serverDependencyRisk.vulnerabilityId
+    val cvssScore = serverDependencyRisk.cvssScore
     val transitions: List<DependencyRiskDto.Transition> = serverDependencyRisk.transitions
     val isResolved = status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT, DependencyRiskDto.Status.FIXED)
 
