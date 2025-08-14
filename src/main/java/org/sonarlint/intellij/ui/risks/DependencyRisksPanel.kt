@@ -74,7 +74,6 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
     private val noDependencyRisksPanel = centeredLabel("")
     private val treeUpdater = DependencyRiskTreeUpdater(treeSummary)
 
-
     init {
         tree = DependencyRiskTree(treeUpdater)
         val treePanel = JBPanel<DependencyRisksPanel>(VerticalFlowLayout(0, 0))
@@ -106,6 +105,7 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
             sonarLintActions.includeResolvedDependencyRisksAction(),
             sonarLintActions.configure()
         ))
+        updateTrees(getService(project, DependencyRisksCache::class.java).dependencyRisks)
     }
 
     private fun setupToolbar(actions: List<AnAction>) {
