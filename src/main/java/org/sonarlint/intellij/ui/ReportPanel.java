@@ -116,7 +116,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
       return;
     }
 
-    var currentFocus = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
+    var currentFocus = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
     lastAnalysisResult = analysisResult;
 
     lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));

@@ -21,7 +21,6 @@ package org.sonarlint.intellij.cayc
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -32,7 +31,7 @@ import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.APP)
 class CleanAsYouCodeService {
-    fun shouldFocusOnNewCode(project: Project): Boolean {
+    fun shouldFocusOnNewCode(): Boolean {
         return getGlobalSettings().isFocusOnNewCode
     }
 

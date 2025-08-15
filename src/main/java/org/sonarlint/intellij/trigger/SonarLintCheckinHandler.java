@@ -185,7 +185,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
           return merged;
         }));
 
-    var shouldFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
+    var shouldFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
 
     var numIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())

@@ -190,7 +190,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   static TextAttributesKey getTextAttrsKey(Project project, @Nullable ImpactSeverity impact, @Nullable IssueSeverity severity, boolean isOnNewCode) {
-    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) && !isOnNewCode) {
+    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode() && !isOnNewCode) {
       return SonarLintTextAttributes.OLD_CODE;
     }
 
