@@ -162,6 +162,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ListAllStandalo
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.StandaloneRuleConfigDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.UpdateStandaloneRulesConfigurationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.ChangeDependencyRiskStatusParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.CheckDependencyRiskSupportedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.CheckDependencyRiskSupportedResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTransition
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.OpenDependencyRiskInBrowserParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
@@ -731,8 +733,8 @@ class BackendService : Disposable {
         }
     }
 
-    fun openDependencyRiskInBrowser(module: Module, riskId: UUID) {
-        val configScopeId = moduleId(module)
+    fun openDependencyRiskInBrowser(project: Project, riskId: UUID) {
+        val configScopeId = projectId(project)
         notifyBackend {
             it.dependencyRiskService.openDependencyRiskInBrowser(
                 OpenDependencyRiskInBrowserParams(configScopeId, riskId)
@@ -1105,4 +1107,10 @@ class BackendService : Disposable {
     fun cancelTask(taskId: String) {
         return notifyBackend { it.taskProgressRpcService.cancelTask(CancelTaskParams(taskId)) }
     }
+
+    fun checkIfDependencyRiskSupported(project: Project): CompletableFuture<CheckDependencyRiskSupportedResponse> {
+        val projectId = projectId(project)
+        return requestFromBackend { it.dependencyRiskService.checkSupported(CheckDependencyRiskSupportedParams(projectId)) }
+    }
+
 }
