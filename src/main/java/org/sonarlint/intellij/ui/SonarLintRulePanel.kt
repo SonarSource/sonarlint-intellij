@@ -71,6 +71,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.EffectiveRulePa
 
 
 private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
+private const val LOADING_TEXT = "Loading rule description\u2026"
 
 class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBLoadingPanel(BorderLayout(), parent) {
 
@@ -116,7 +117,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         }, BorderLayout.SOUTH)
 
         add(mainPanel)
-        setLoadingText("Loading rule description\u2026")
+        setLoadingText(LOADING_TEXT)
         clear()
 
         ApplicationManager.getApplication().messageBus.connect(parent)
@@ -155,7 +156,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             }
             state = newState
             startLoading()
-            ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description\u2026", false) {
+            ProgressManager.getInstance().run(object : Task.Backgroundable(project, LOADING_TEXT, false) {
                 override fun run(progressIndicator: ProgressIndicator) {
                     runOnPooledThread(project) {
                         SonarLintUtils.getService(BackendService::class.java)
@@ -193,7 +194,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             }
             state = newState
             startLoading()
-            ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description\u2026", false) {
+            ProgressManager.getInstance().run(object : Task.Backgroundable(project, LOADING_TEXT, false) {
                 override fun run(progressIndicator: ProgressIndicator) {
                     runOnPooledThread(project) {
                         SonarLintUtils.getService(BackendService::class.java)
@@ -314,8 +315,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         when (finding) {
             null -> headerPanel.updateForServerIssue(issueDetails)
             is LiveSecurityHotspot -> {
-                val serverConnection =
-                    SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
+                val serverConnection = SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
                 val htmlStringBuilder = StringBuilder(
                     """
                 A ${securityHotspotsDocLink()} highlights a security-sensitive piece of code that the developer <b>needs to review</b>.

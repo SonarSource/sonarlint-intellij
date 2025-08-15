@@ -107,6 +107,7 @@ import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.finding.sca.DependencyRisksRefreshTrigger
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
@@ -521,6 +522,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
             val module = findModule(configScopeId)
             getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh(module)
+            getService(project, DependencyRisksRefreshTrigger::class.java).triggerRefresh()
             AssistBindingResponse(BackendService.projectId(project))
         }
     }
