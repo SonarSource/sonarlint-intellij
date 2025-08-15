@@ -42,7 +42,7 @@ class EditorOpenTrigger(private val myProject: Project) : FileEditorManagerListe
         runOnPooledThread(myProject) {
             myProject.getOpenFiles().forEach { file ->
                 findModuleForFile(file, myProject)?.let { module ->
-                    if (SonarLintUtils.isRider()) {
+                    if (SonarLintUtils.isRider() && isFileValidForSonarLintWithExtensiveChecks(file, myProject)) {
                         getService(BackendService::class.java)
                             .updateFileSystem(mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))), true)
                     }
