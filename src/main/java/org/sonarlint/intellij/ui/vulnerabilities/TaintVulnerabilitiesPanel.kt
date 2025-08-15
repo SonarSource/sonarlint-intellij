@@ -303,7 +303,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     fun setSelectedVulnerability(vulnerability: LocalTaintVulnerability) {
-        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project) && !vulnerability.isOnNewCode()) {
+        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode() && !vulnerability.isOnNewCode()) {
             oldTree.setSelectedVulnerability(vulnerability)
         } else {
             tree.setSelectedVulnerability(vulnerability)
@@ -359,7 +359,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     fun applyFocusOnNewCodeSettings() {
-        val shouldFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+        val shouldFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
         taintVulnerabilityTreeUpdater.focusFilter = if (shouldFocusOnNewCode) FocusFilter.NEW_CODE else FocusFilter.ALL_CODE
         oldTaintVulnerabilityTreeUpdater.focusFilter = if (shouldFocusOnNewCode) FocusFilter.OLD_CODE else FocusFilter.ALL_CODE
         oldTree.isVisible = shouldFocusOnNewCode
