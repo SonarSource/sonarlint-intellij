@@ -56,7 +56,7 @@ class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAct
         e.getData(CommonDataKeys.VIRTUAL_FILE)?.let { file ->
             val isAlive = getService(BackendService::class.java).isAlive()
             val presentation = e.presentation
-            val isFocusOnNewCode = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+            val isFocusOnNewCode = getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
             val relevantIssues = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder.getIssuesForFile(file)
                 .filter { !it.isResolved() && (!isFocusOnNewCode || it.isOnNewCode()) }
             val relevantSecurityHotspots =

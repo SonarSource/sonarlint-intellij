@@ -28,7 +28,7 @@ import org.sonarlint.intellij.util.runOnPooledThread
 
 class SonarFocusOnNewCode : AbstractSonarToggleAction() {
 
-    override fun isSelected(e: AnActionEvent): Boolean = e.project?.let { getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(it) }
+    override fun isSelected(e: AnActionEvent): Boolean = e.project?.let { getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode() }
             ?: false
 
     override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
@@ -36,7 +36,7 @@ class SonarFocusOnNewCode : AbstractSonarToggleAction() {
     }
 
     override fun updatePresentation(project: Project, presentation: Presentation) {
-        val shouldFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+        val shouldFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
         val scope = if (shouldFocusOnNewCode) "Overall" else "New"
         presentation.text = "Set Focus on $scope Code"
     }
