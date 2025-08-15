@@ -22,12 +22,13 @@ package org.sonarlint.intellij.ui.risks
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.modules
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.tree.TreeUtil
 import java.awt.BorderLayout
@@ -42,12 +43,15 @@ import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.exception.InvalidBindingException
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
+import org.sonarlint.intellij.finding.sca.DependencyRisksDetectionSupport
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
+import org.sonarlint.intellij.finding.sca.NotSupported
 import org.sonarlint.intellij.ui.CardPanel
+import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.centeredLabel
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskResolvedFilter
@@ -59,8 +63,7 @@ import org.sonarlint.intellij.util.SonarLintActions
 import org.sonarlint.intellij.util.runOnPooledThread
 
 private const val ERROR_CARD_ID = "ERROR_CARD"
-private const val NO_BINDING_CARD_ID = "NO_BINDING_CARD"
-private const val INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD"
+private const val NOT_SUPPORTED_CARD_ID = "NOT_SUPPORTED_CARD"
 private const val NO_FILTERED_ISSUES_CARD_ID = "NO_FILTERED_ISSUES_CARD"
 private const val NO_ISSUES_CARD_ID = "NO_ISSUES_CARD"
 private const val TREE_CARD_ID = "TREE_CARD"
@@ -73,6 +76,9 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
     private val cards: CardPanel
     private val noDependencyRisksPanel = centeredLabel("")
     private val treeUpdater = DependencyRiskTreeUpdater(treeSummary)
+    private val sonarConfigureProject = SonarConfigureProject()
+    private val notSupportedPanel = centeredLabel("Dependency risks are currently not supported", "Configure Binding", sonarConfigureProject)
+    private var status: DependencyRisksDetectionSupport? = null
 
     init {
         tree = DependencyRiskTree(treeUpdater)
@@ -82,14 +88,13 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
         object : DoubleClickListener() {
             override fun onDoubleClick(event: MouseEvent): Boolean {
                 val selectedNode = tree.getSelectedNodes(LocalDependencyRisk::class.java, null)
-                val notEmpty = selectedNode.isNotEmpty()
-                if (notEmpty) {
+                if (selectedNode.isNotEmpty()) {
                     runOnPooledThread {
-                        getService(BackendService::class.java)
-                            .openDependencyRiskInBrowser(project.modules[0], selectedNode.first().id)
+                        getService(BackendService::class.java).openDependencyRiskInBrowser(project, selectedNode.first().id)
                     }
+                    return true
                 }
-                return notEmpty
+                return false
             }
         }.installOn(tree)
 
@@ -125,14 +130,7 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
             centeredLabel(SONARLINT_ERROR_MSG, RESTART_ACTION_TEXT, RestartBackendAction()),
             ERROR_CARD_ID
         )
-        cardsPanel.add(
-            centeredLabel("The project is not bound to SonarQube Server 2025.4 Enterprise or higher", "Configure Binding", SonarConfigureProject()),
-            NO_BINDING_CARD_ID
-        )
-        cardsPanel.add(
-            centeredLabel("The project binding is invalid (requires SonarQube Server 2025.4 Enterprise or higher)", "Edit Binding", SonarConfigureProject()),
-            INVALID_BINDING_CARD_ID
-        )
+        cardsPanel.add(notSupportedPanel, NOT_SUPPORTED_CARD_ID)
         cardsPanel.add(
             centeredLabel("No dependency risks shown due to the current filtering", "Show Resolved Dependency Risks",
                 SonarLintActions.getInstance().includeResolvedDependencyRisksAction()), NO_FILTERED_ISSUES_CARD_ID
@@ -155,6 +153,28 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
         val cache = getService(project, DependencyRisksCache::class.java)
         cache.update(closedDependencyRiskIds, addedDependencyRisks, updatedDependencyRisks)
         updateTrees(cache.dependencyRisks)
+    }
+
+    fun populate(status: DependencyRisksDetectionSupport) {
+        this.status = status
+        if (status is NotSupported) {
+            updateNotSupportedText(status.reason)
+        }
+        refreshView()
+    }
+
+    private fun updateNotSupportedText(newText: String) {
+        val text = notSupportedPanel.emptyText
+        text.text = newText
+            text.appendLine("Configure binding", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { _ ->
+                ActionUtil.invokeAction(
+                    sonarConfigureProject,
+                    notSupportedPanel,
+                    TOOL_WINDOW_ID,
+                    null,
+                    null
+                )
+            }
     }
 
     private fun updateTrees(newDependencyRisks: List<LocalDependencyRisk>) {
@@ -191,11 +211,8 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
             !getService(BackendService::class.java).isAlive() -> {
                 showCard(ERROR_CARD_ID)
             }
-            !getSettingsFor(project).isBound -> {
-                showCard(NO_BINDING_CARD_ID)
-            }
-            !getService(project, ProjectBindingManager::class.java).isBindingValid || !getService(project, ProjectBindingManager::class.java).serverConnection.isSonarQube -> {
-                showCard(INVALID_BINDING_CARD_ID)
+            status is NotSupported -> {
+                showCard(NOT_SUPPORTED_CARD_ID)
             }
             treeUpdater.dependencyRisks.isEmpty() -> {
                 showNoDependencyRisksLabel()
@@ -213,8 +230,12 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
     }
 
     private fun showNoDependencyRisksLabel() {
-        val serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
-        noDependencyRisksPanel.withEmptyText("No dependency risks found for currently opened files in the latest analysis on ${serverConnection.productName}")
+        val productName = try {
+            " on ${getService(project, ProjectBindingManager::class.java).serverConnection.productName}"
+        } catch (_: InvalidBindingException) {
+            ""
+        }
+        noDependencyRisksPanel.withEmptyText("No dependency risks found in the latest analysis$productName")
         showCard(NO_ISSUES_CARD_ID)
     }
 
