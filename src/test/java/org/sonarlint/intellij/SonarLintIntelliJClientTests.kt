@@ -320,12 +320,12 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         val addedRiskId1 = UUID.randomUUID()
         val addedRiskId2 = UUID.randomUUID()
-        val addedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), addedRiskId1)
-        val addedRisk2 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), addedRiskId2)
+        val addedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), DependencyRiskDto.Severity.HIGH, addedRiskId1)
+        val addedRisk2 = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), DependencyRiskDto.Severity.HIGH, addedRiskId2)
         val addedRisks = listOf(addedRisk1, addedRisk2)
 
         val updatedRiskId1 = UUID.randomUUID()
-        val updatedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.SAFE, listOf(), updatedRiskId1)
+        val updatedRisk1 = aDependencyRiskDto(DependencyRiskDto.Status.SAFE, listOf(), DependencyRiskDto.Severity.HIGH, updatedRiskId1)
         val updatedRisks = listOf(updatedRisk1)
 
         client.didChangeDependencyRisks(projectBackendId, closedRiskIds, addedRisks, updatedRisks)

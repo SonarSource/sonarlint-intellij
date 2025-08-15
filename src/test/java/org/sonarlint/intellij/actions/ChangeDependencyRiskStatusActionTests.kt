@@ -73,7 +73,7 @@ class ChangeDependencyRiskStatusActionTests : AbstractSonarLintLightTests() {
 
     @Test
     fun `canChangeStatus should return false when no server connection`() {
-        val openRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN, listOf(DependencyRiskDto.Transition.CONFIRM))
+        val openRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
         `when`(mockProjectBindingManager.tryGetServerConnection()).thenReturn(Optional.empty())
 
         val canChange = ChangeDependencyRiskStatusAction.canChangeStatus(project, openRisk)
@@ -83,7 +83,7 @@ class ChangeDependencyRiskStatusActionTests : AbstractSonarLintLightTests() {
 
     @Test
     fun `canChangeStatus should return false when no transitions available`() {
-        val riskWithoutTransitions = aDependencyRisk(DependencyRiskDto.Status.OPEN, emptyList())
+        val riskWithoutTransitions = aDependencyRisk(emptyList())
         `when`(mockProjectBindingManager.tryGetServerConnection()).thenReturn(Optional.of(mockServerConnection))
 
         val canChange = ChangeDependencyRiskStatusAction.canChangeStatus(project, riskWithoutTransitions)

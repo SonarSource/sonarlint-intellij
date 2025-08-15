@@ -22,22 +22,26 @@ package org.sonarlint.intellij.finding.sca
 import java.util.UUID
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 
-fun aDependencyRisk(status: DependencyRiskDto.Status) = aDependencyRisk(UUID.randomUUID(), status)
+fun aDependencyRisk(status: DependencyRiskDto.Status) = aDependencyRisk(UUID.randomUUID(), status, DependencyRiskDto.Severity.HIGH, listOf(
+    DependencyRiskDto.Transition.ACCEPT))
 
-fun aDependencyRisk(status: DependencyRiskDto.Status, transitions: List<DependencyRiskDto.Transition>) =
-    aDependencyRisk(UUID.randomUUID(), status)
+fun aDependencyRisk(transitions: List<DependencyRiskDto.Transition>) = aDependencyRisk(UUID.randomUUID(), DependencyRiskDto.Status.OPEN,
+    DependencyRiskDto.Severity.HIGH, transitions)
 
-fun aDependencyRisk(id: UUID, status: DependencyRiskDto.Status) =
-    LocalDependencyRisk(aDependencyRiskDto(status, listOf(), id))
+fun aDependencyRisk(id: UUID, status: DependencyRiskDto.Status, severity: DependencyRiskDto.Severity, transition: List<DependencyRiskDto.Transition>) =
+    LocalDependencyRisk(aDependencyRiskDto(status, listOf(), severity, id))
 
-fun aDependencyRiskDto(status: DependencyRiskDto.Status, transition: List<DependencyRiskDto.Transition>, id: UUID = UUID.randomUUID()) =
+fun aDependencyRiskDto(status: DependencyRiskDto.Status, transition: List<DependencyRiskDto.Transition>,
+                       severity: DependencyRiskDto.Severity = DependencyRiskDto.Severity.HIGH, id: UUID = UUID.randomUUID()) =
     DependencyRiskDto(
         id,
         DependencyRiskDto.Type.VULNERABILITY,
-        DependencyRiskDto.Severity.HIGH,
+        severity,
         DependencyRiskDto.SoftwareQuality.SECURITY,
         status,
         "test-rule-key",
         "High",
+        "CVE-1234",
+        "7.5",
         transition
     )
