@@ -60,6 +60,7 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TAINT_VULNERABILITIES_LINK
 import org.sonarlint.intellij.editor.EditorDecorator
+import org.sonarlint.intellij.exception.InvalidBindingException
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.TextRangeMatcher
@@ -292,13 +293,17 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     private fun showNoVulnerabilitiesLabel() {
-        val serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
-        noVulnerabilitiesPanel.withEmptyText("No vulnerabilities found for currently opened files in the latest analysis on ${serverConnection.productName}")
+        val productName = try {
+            " on ${getService(project, ProjectBindingManager::class.java).serverConnection.productName}"
+        } catch (_: InvalidBindingException) {
+            ""
+        }
+        noVulnerabilitiesPanel.withEmptyText("No vulnerabilities found for currently opened files in the latest analysis$productName")
         showCard(NO_ISSUES_CARD_ID)
     }
 
     fun setSelectedVulnerability(vulnerability: LocalTaintVulnerability) {
-        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project) && !vulnerability.isOnNewCode()) {
+        if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode() && !vulnerability.isOnNewCode()) {
             oldTree.setSelectedVulnerability(vulnerability)
         } else {
             tree.setSelectedVulnerability(vulnerability)
@@ -354,7 +359,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
 
     fun applyFocusOnNewCodeSettings() {
-        val shouldFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+        val shouldFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
         taintVulnerabilityTreeUpdater.focusFilter = if (shouldFocusOnNewCode) FocusFilter.NEW_CODE else FocusFilter.ALL_CODE
         oldTaintVulnerabilityTreeUpdater.focusFilter = if (shouldFocusOnNewCode) FocusFilter.OLD_CODE else FocusFilter.ALL_CODE
         oldTree.isVisible = shouldFocusOnNewCode

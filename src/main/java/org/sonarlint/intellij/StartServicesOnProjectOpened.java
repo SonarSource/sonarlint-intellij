@@ -24,6 +24,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger;
+import org.sonarlint.intellij.finding.sca.DependencyRisksRefreshTrigger;
 import org.sonarlint.intellij.fs.EditorFileChangeListener;
 import org.sonarlint.intellij.promotion.PromotionProvider;
 import org.sonarlint.intellij.trigger.EditorOpenTrigger;
@@ -42,6 +43,7 @@ public class StartServicesOnProjectOpened implements StartupActivity {
       getService(EditorFileChangeListener.class).startListening();
       getService(project, EditorOpenTrigger.class).onProjectOpened();
       getService(project, SecurityHotspotsRefreshTrigger.class).subscribeToTriggeringEvents();
+      getService(project, DependencyRisksRefreshTrigger.class).subscribeToTriggeringEvents();
       getService(project, PromotionProvider.class).subscribeToTriggeringEvents();
     });
   }

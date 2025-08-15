@@ -56,7 +56,7 @@ class TaintVulnerabilitiesCache(val project: Project) {
 
     @JvmOverloads
     fun getFocusAwareCount(isResolved: Boolean? = null): Int {
-        val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode(project)
+        val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
         isResolved?.let { isResolvedState = it }
         return taintVulnerabilities.count { (isResolvedState || !it.isResolved()) && (!isFocusOnNewCode || it.isOnNewCode()) }
     }

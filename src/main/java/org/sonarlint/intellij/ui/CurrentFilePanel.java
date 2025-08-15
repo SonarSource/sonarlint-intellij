@@ -165,7 +165,7 @@ public class CurrentFilePanel extends AbstractIssuesPanel {
       issuesToProceed = Collections.emptyList();
     }
 
-    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project)) {
+    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode()) {
       var oldIssues = issuesToProceed.stream().filter(not(LiveFinding::isOnNewCode)).toList();
       var newIssues = issuesToProceed.stream().filter(LiveFinding::isOnNewCode).toList();
       populateSubTree(tree, treeBuilder, Map.of(file, newIssues));

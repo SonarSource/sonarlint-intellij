@@ -54,6 +54,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache;
+import org.sonarlint.intellij.finding.sca.DependencyRisksDetectionSupport;
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
@@ -326,6 +327,16 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     if (content != null) {
       var dependencyRiskPanel = (DependencyRisksPanel) content.getComponent();
       dependencyRiskPanel.populate(dependencyRisks);
+      content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
+        DEPENDENCY_RISKS_TAB_TITLE));
+    }
+  }
+
+  public void populateDependencyRisksTab(DependencyRisksDetectionSupport status) {
+    var content = getDependenciesRisksContent();
+    if (content != null) {
+      var dependencyRiskPanel = (DependencyRisksPanel) content.getComponent();
+      dependencyRiskPanel.populate(status);
       content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
         DEPENDENCY_RISKS_TAB_TITLE));
     }

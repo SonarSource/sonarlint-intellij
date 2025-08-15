@@ -163,7 +163,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     }
 
     if (status instanceof Supported) {
-      var isFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project);
+      var isFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
       if (isFocusOnNewCode) {
         var oldHotspots = hotspots.entrySet().stream()
           .map(e -> Map.entry(e.getKey(), e.getValue().stream().filter(not(LiveFinding::isOnNewCode)).toList()))
@@ -347,7 +347,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var newHotspotsAfterFiltering = securityHotspotTreeBuilder.updateStatusAndApplyCurrentFiltering(project, securityHotspotKey, status);
     var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
     var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
-    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     return anyDisplayed ? focusedCount : 0;
   }
 
@@ -360,7 +360,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     var newHotspotsAfterFiltering = securityHotspotTreeBuilder.filterSecurityHotspots(project, filter);
     var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
     var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
-    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     return anyDisplayed ? focusedCount : 0;
   }
 
@@ -372,7 +372,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     adjustRows(isOldTreeExpanded, isTreeExpanded);
     var hotspotsAfterFiltering = oldHotspotsAfterFiltering + newHotspotsAfterFiltering;
     var anyDisplayed = displaySecurityHotspotsAfterFiltering(hotspotsAfterFiltering);
-    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode(project) ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
+    var focusedCount = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode() ? newHotspotsAfterFiltering : hotspotsAfterFiltering;
     return anyDisplayed ? focusedCount : 0;
   }
 
