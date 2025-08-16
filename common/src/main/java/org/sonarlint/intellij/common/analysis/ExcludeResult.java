@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.common.analysis;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class ExcludeResult {
   private final boolean excluded;

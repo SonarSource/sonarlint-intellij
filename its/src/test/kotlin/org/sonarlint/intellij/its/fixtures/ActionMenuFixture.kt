@@ -43,6 +43,6 @@ class ActionMenuFixture(
   }
 
   fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-    return findElement<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
+    return findAll<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and contains(@text, '$label')]"))[0].apply(function)
   }
 }

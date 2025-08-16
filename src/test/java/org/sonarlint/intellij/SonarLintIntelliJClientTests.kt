@@ -200,7 +200,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_returns_host_info() {
-        assertThat(client.clientLiveDescription).isEqualTo("2022.3.1 (Community Edition) - " + project.name)
+        assertThat(client.clientLiveDescription).isEqualTo("2024.2 (Community Edition) - " + project.name)
     }
 
     @Test

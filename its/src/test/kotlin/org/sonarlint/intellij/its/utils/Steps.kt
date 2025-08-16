@@ -22,7 +22,7 @@ package org.sonarlint.intellij.its.utils
 fun optionalStep(step: () -> Unit) {
     try {
         step()
-    } catch (ignore: Throwable) {
+    } catch (_: Throwable) {
         // ignore as optional
     }
 }

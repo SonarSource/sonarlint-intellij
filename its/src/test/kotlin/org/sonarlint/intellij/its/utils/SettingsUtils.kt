@@ -155,7 +155,6 @@ object SettingsUtils {
     fun clickPowerSaveMode() {
         optionalIdeaFrame()?.apply {
             actionMenu("File") {
-                open()
                 item("Power Save Mode") {
                     click()
                 }
@@ -180,7 +179,7 @@ object SettingsUtils {
                 welcomeFrame {
                     openPreferences()
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 idea {
                     openSettings()
                 }

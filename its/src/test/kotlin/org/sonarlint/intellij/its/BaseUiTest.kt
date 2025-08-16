@@ -38,6 +38,7 @@ import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.isSQLPlugin
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.fixtures.tool.window.toolWindowBar
 import org.sonarlint.intellij.its.utils.OpeningUtils.closeProject
 import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
@@ -103,7 +104,6 @@ open class BaseUiTest {
         }
     }
 
-
     fun uiTest(test: RemoteRobot.() -> Unit) {
         try {
             remoteRobot.apply(test)
@@ -157,8 +157,10 @@ open class BaseUiTest {
     private fun sonarlintLogPanel(function: TabContentFixture.() -> Unit = {}) {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarQube for IDE") {
+                toolWindowBar("SonarQube for IDE") {
                     ensureOpen()
+                }
+                toolWindow {
                     tabTitleContains("Log") { select() }
                     content("SonarLintLogPanel") {
                         this.apply(function)
@@ -171,8 +173,10 @@ open class BaseUiTest {
     private fun cmakePanel(function: TabContentFixture.() -> Unit = {}) {
         with(remoteRobot) {
             idea {
-                toolWindow("CMake") {
+                toolWindowBar("SonarQube for IDE") {
                     ensureOpen()
+                }
+                toolWindow {
                     tabTitleContains("Debug") { select() }
                     content("DataProviderPanel") {
                         this.apply(function)

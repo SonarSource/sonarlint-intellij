@@ -1,0 +1,45 @@
+// Apply common logic to all module build files
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+
+configurations.archives.canBeResolved = true
+
+tasks.cyclonedxBom {
+    setIncludeConfigs(List.of("runtimeClasspath"))
+    inputs.files(configurations.named("runtimeClasspath").get(), configurations.archives)
+    mustRunAfter(getTasksByName("buildPluginBlockmap", true))
+}
+
+var bomFile = layout.buildDirectory.file("reports/bom.json")
+artifacts.add("archives", bomFile.get().asFile) {
+    name = "sonarlint-intellij"
+    type = "json"
+    classifier = "cyclonedx"
+    builtBy("cyclonedxBom")
+}
+
+license {
+    header = rootProject.file("HEADER")
+    mapping(
+      Map.of(
+        "java", "SLASHSTAR_STYLE",
+        "kt", "SLASHSTAR_STYLE",
+        "svg", "XML_STYLE",
+        "form", "XML_STYLE"
+      )
+    )
+    excludes(List.of("**/*.jar", "**/*.png", "**/README"))
+    strictCheck = true
+}

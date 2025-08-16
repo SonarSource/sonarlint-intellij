@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.fixtures
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
@@ -32,15 +33,15 @@ import java.time.Duration
 import org.sonarlint.intellij.its.utils.optionalStep
 
 fun RemoteRobot.idea(duration: Duration = Duration.ofSeconds(20), function: IdeaFrame.() -> Unit = {}): IdeaFrame {
-  return find<IdeaFrame>(duration).apply(function)
+    return find<IdeaFrame>(duration).apply(function)
 }
 
 @FixtureName("Idea frame")
 @DefaultXpath("IdeFrameImpl type", "//div[@class='IdeFrameImpl']")
 class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
 
-  private val ideStatusBar
-    get() = find(IdeStatusBarFixture::class.java)
+    private val ideStatusBar
+        get() = find(IdeStatusBarFixture::class.java)
 
     private fun dumbAware(timeout: Duration = Duration.ofMinutes(5), function: () -> Unit) {
         step("Wait for smart mode") {
@@ -70,43 +71,44 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-  private fun isBackgroundTaskRunning(): Boolean {
-      for (i in 0..2) {
-      try {
-        ideStatusBar.backgroundTaskPendingIcon
-        println("Task running")
-        return true
-      } catch (timeoutException: WaitForConditionTimeoutException) {
-        try {
-          ideStatusBar.pauseButton
-          println("Task running")
-          return true
-        } catch (timeoutException: WaitForConditionTimeoutException) {
-          try {
-            // could be between 2 background tasks, wait and retry
-              Thread.sleep(1000)
-          } catch (e: InterruptedException) {
-            e.printStackTrace()
-          }
+    private fun isBackgroundTaskRunning(): Boolean {
+        for (i in 0..2) {
+            try {
+                ideStatusBar.backgroundTaskPendingIcon
+                println("Task running")
+                return true
+            } catch (_: WaitForConditionTimeoutException) {
+                try {
+                    ideStatusBar.pauseButton
+                    println("Task running")
+                    return true
+                } catch (_: WaitForConditionTimeoutException) {
+                    try {
+                        // could be between 2 background tasks, wait and retry
+                        Thread.sleep(1000)
+                    } catch (e: InterruptedException) {
+                        e.printStackTrace()
+                    }
+                }
+            }
         }
-      }
+        println("No tasks running")
+        return false
     }
-    println("No tasks running")
-    return false
-  }
 
-  fun waitBackgroundTasksFinished() {
-    println("Check background tasks")
-    waitFor(Duration.ofMinutes(5), Duration.ofSeconds(1), "Some background tasks are still running") {
-      !isBackgroundTaskRunning()
+    fun waitBackgroundTasksFinished() {
+        println("Check background tasks")
+        waitFor(Duration.ofMinutes(5), Duration.ofSeconds(1), "Some background tasks are still running") {
+            !isBackgroundTaskRunning()
+        }
+        println("Check background tasks - done")
     }
-    println("Check background tasks - done")
-  }
 
-  fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
-    return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
-  }
-    
+    fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
+        findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
+        return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
+    }
+
     fun IdeaFrame.analyzeFile() {
         editorComponent().rightClick()
         actionMenuItem("Analyze with SonarQube for IDE") {
@@ -115,7 +117,9 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     }
 
     fun actionMenuItem(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-        return findElement<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
+        return findElement<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(
+            function
+        )
     }
 
     fun actionHyperLink(accessiblename: String, function: ActionHyperLinkFixture.() -> Unit): ActionHyperLinkFixture {
@@ -129,8 +133,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
 
     fun openSettings() {
         actionMenu("File") {
-            open()
-            item("Settings...") {
+            item("Settings") {
                 click()
             }
         }

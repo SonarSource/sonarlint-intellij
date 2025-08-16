@@ -19,7 +19,9 @@
  */
 package org.sonarlint.intellij.its.utils
 
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
+import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import java.awt.Point
 import java.io.File
@@ -27,11 +29,15 @@ import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
+import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
+import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.fixtures.tool.window.toolWindowBar
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
@@ -61,8 +67,8 @@ object OpeningUtils {
         with(remoteRobot) {
             idea {
                 actionMenu("Navigate") {
-                    open()
-                    item("File...") {
+                    moveMouse()
+                    item("File") {
                         click()
                     }
                     keyboard {
@@ -80,9 +86,25 @@ object OpeningUtils {
             copyProjectFiles(projectName)
         }
         with(remoteRobot) {
-            welcomeFrame {
-                // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
-                openProjectButton().click(Point(10, 10))
+            try {
+                welcomeFrame {
+                    // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
+                    openProjectButton().click(Point(10, 10))
+                }
+            } catch (e: Throwable) {
+                // Starting from 2025.2+ there's no welcome frame
+                if (isGoLand()) {
+                    idea {
+                        toolWindowBar("Project") {
+                            ensureOpen()
+                        }
+                        toolWindow {
+                            findElement<ComponentFixture>(byXpath("//div[@text='Open…']")).click()
+                        }
+                    }
+                } else {
+                    throw e
+                }
             }
             if (remoteRobot.isRider()) {
                 openSolutionBrowserDialog {
@@ -95,7 +117,6 @@ object OpeningUtils {
             }
             if (!remoteRobot.isCLion()) {
                 optionalStep {
-                    // from 2020.3.4+
                     dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
                         button("Trust Project").click()
                     }
@@ -121,26 +142,15 @@ object OpeningUtils {
                     }
                 }
             }
-            idea {
-                // corresponding system property has been introduced around middle of 2020
-                // removable at some point when raising minimal version
-                closeTipOfTheDay()
-            }
         }
     }
 
     fun closeProject() {
         optionalIdeaFrame()?.apply {
             actionMenu("File") {
-                open()
-                if (isRider()) {
-                    item("Close Solution") {
-                        click()
-                    }
-                } else {
-                    item("Close Project") {
-                        click()
-                    }
+                val name = if (isRider()) "Close Solution" else "Close Project"
+                item(name) {
+                    click()
                 }
             }
         }

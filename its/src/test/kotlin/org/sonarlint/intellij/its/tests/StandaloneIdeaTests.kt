@@ -29,6 +29,7 @@ import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.closeW
 import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.verifyWalkthroughIsNotShowing
 import org.sonarlint.intellij.its.utils.ExclusionUtils.excludeFile
 import org.sonarlint.intellij.its.utils.ExclusionUtils.removeFileExclusion
+import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.closeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -59,19 +60,20 @@ class StandaloneIdeaTests : BaseUiTest() {
             "No older issues",
         )
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
+        resetFocusOnNewCode()
     }
 
     @Test
     fun should_exclude_file_and_analyze_file_and_no_issues_found() = uiTest {
         openExistingProject("sli-java-issues")
-        excludeFile("src/main/java/foo/Foo.java")
-        openFile("src/main/java/foo/Foo.java", "Foo.java")
+        excludeFile("src/main/java/foo/Bar.java")
+        openFile("src/main/java/foo/Bar.java", "Bar.java")
         verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
-        removeFileExclusion("src/main/java/foo/Foo.java")
+        removeFileExclusion("src/main/java/foo/Bar.java")
     }
 
     @Test
-    fun chart() = uiTest {
+    fun should_analyze_ansible() = uiTest {
         openExistingProject("DuplicatedEnvsChart")
         openFile("templates/memory_limit_pod2.yml", "memory_limit_pod2.yml")
         verifyCurrentFileTabContainsMessages("Bind this resource's automounted service account to RBAC or disable automounting.")

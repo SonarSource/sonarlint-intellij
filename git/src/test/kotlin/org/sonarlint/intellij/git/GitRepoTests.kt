@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.git
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -42,7 +43,6 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
-import org.sonarlint.intellij.test.AbstractLightTests
 
 private const val MAIN_BRANCH = "main"
 private const val EXPECTED = "expected-branch"
@@ -72,7 +72,9 @@ class GitRepoTests : AbstractLightTests() {
     @Test
     fun `should return null for empty repo`() {
         val gitRepository = initRepo()
-        gitRepository.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            gitRepository.update()
+        }.get()
         val tested = GitRepo(gitRepository, project)
 
         val result = tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, setOf())
@@ -83,7 +85,9 @@ class GitRepoTests : AbstractLightTests() {
     @Test
     fun `should return current branch if it's known`() {
         val gitRepository = initRepoWithCommit()
-        gitRepository.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            gitRepository.update()
+        }.get()
         val tested = GitRepo(gitRepository, this.project)
 
         val result = tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, setOf(MAIN_BRANCH))
@@ -95,7 +99,9 @@ class GitRepoTests : AbstractLightTests() {
     fun `should return current non-main branch if it's known`() {
         val gitRepository = initRepoWithCommit()
         newBranch(EXPECTED)
-        gitRepository.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            gitRepository.update()
+        }.get()
         val tested = GitRepo(gitRepository, this.project)
 
         val result = tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, setOf(MAIN_BRANCH, EXPECTED))
@@ -107,7 +113,9 @@ class GitRepoTests : AbstractLightTests() {
     fun `should return null when no remote branches match local ones`() {
         val gitRepository = initRepoWithCommit()
         newBranch("branch-1")
-        gitRepository.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            gitRepository.update()
+        }.get()
         val tested = GitRepo(gitRepository, this.project)
 
         val result = tested.electBestMatchingServerBranchForCurrentHead("otherMain", setOf("otherMain", "otherBranch-1"))
@@ -123,7 +131,9 @@ class GitRepoTests : AbstractLightTests() {
         newBranch(EXPECTED)
         commitNewFile("2.txt")
         newBranch("branch-3")
-        gitRepository.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            gitRepository.update()
+        }.get()
         val tested = GitRepo(gitRepository, this.project)
 
         val result = tested.electBestMatchingServerBranchForCurrentHead(
@@ -141,7 +151,9 @@ class GitRepoTests : AbstractLightTests() {
         newBranch("branch-2")
         newBranch("local")
         commitNewFile("1.txt")
-        gitRepository.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            gitRepository.update()
+        }.get()
         val tested = GitRepo(gitRepository, this.project)
 
         val result = tested.electBestMatchingServerBranchForCurrentHead(
@@ -160,7 +172,9 @@ class GitRepoTests : AbstractLightTests() {
         newBranch(EXPECTED)
         commitNewFile("2.txt")
         newBranch("branch-3")
-        repoSpy.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repoSpy.update()
+        }.get()
         val tested = GitRepo(repoSpy, this.project)
 
         tested.electBestMatchingServerBranchForCurrentHead(
@@ -188,14 +202,18 @@ class GitRepoTests : AbstractLightTests() {
         newBranch(EXPECTED)
         commitNewFile("2.txt")
         newBranch("branch-3")
-        repoSpy.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repoSpy.update()
+        }.get()
         val tested = GitRepo(repoSpy, this.project)
 
         tested.electBestMatchingServerBranchForCurrentHead(
             MAIN_BRANCH,
             setOf(MAIN_BRANCH, "branch-1", EXPECTED))
         newBranch("new-branch")
-        repoSpy.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repoSpy.update()
+        }.get()
         tested.electBestMatchingServerBranchForCurrentHead(
             MAIN_BRANCH,
             setOf(MAIN_BRANCH, "branch-1", EXPECTED))
@@ -215,7 +233,9 @@ class GitRepoTests : AbstractLightTests() {
         newBranch(EXPECTED)
         commitNewFile("2.txt")
         newBranch("branch-3")
-        repoSpy.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repoSpy.update()
+        }.get()
         val tested = GitRepo(repoSpy, this.project)
 
         tested.electBestMatchingServerBranchForCurrentHead(
@@ -240,7 +260,9 @@ class GitRepoTests : AbstractLightTests() {
         newBranch(EXPECTED)
         commitNewFile("2.txt")
         newBranch("branch-3")
-        repoSpy.update()
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repoSpy.update()
+        }.get()
         val tested = GitRepo(repoSpy, this.project)
 
         tested.electBestMatchingServerBranchForCurrentHead(
@@ -260,7 +282,9 @@ class GitRepoTests : AbstractLightTests() {
     private fun newGitRepository(): GitRepository {
         vcsManager.setDirectoryMapping(root.toString(), GitVcs.NAME)
         val file = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(root)
-        return GitUtil.getRepositoryManager(this.project).getRepositoryForRoot(file)!!
+        return ApplicationManager.getApplication().executeOnPooledThread<GitRepository> {
+            GitUtil.getRepositoryManager(this.project).getRepositoryForRoot(file)!!
+        }.get()
     }
 
     private fun git(command: GitCommand, vararg params: String): String {

@@ -26,7 +26,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.treeStructure.Tree
-import org.jetbrains.annotations.NonNls
 import org.sonarlint.intellij.actions.ChangeDependencyRiskStatusAction
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
@@ -43,7 +42,7 @@ class DependencyRiskTree(updater: DependencyRiskTreeUpdater) : Tree(updater.mode
         PopupHandler.installPopupMenu(this, group, ActionPlaces.TODO_VIEW_POPUP)
     }
 
-    override fun getData(dataId: @NonNls String): Any? {
+    override fun getData(dataId: String): Any? {
         return when {
             PlatformDataKeys.TREE_EXPANDER.`is`(dataId) -> DefaultTreeExpander(this)
             DEPENDENCY_RISK_DATA_KEY.`is`(dataId) -> getSelectedDependencyRisk()

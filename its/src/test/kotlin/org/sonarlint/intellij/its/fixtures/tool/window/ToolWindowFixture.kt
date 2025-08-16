@@ -28,20 +28,16 @@ import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import org.sonarlint.intellij.its.fixtures.findElement
-import org.sonarlint.intellij.its.fixtures.stripeButton
 import java.time.Duration
+import org.sonarlint.intellij.its.fixtures.findElement
 
 fun ContainerFixture.toolWindow(
-  title: String,
-  function: ToolWindowFixture.() -> Unit = {}): ToolWindowFixture = step("Search for tool window with title $title") {
+  function: ToolWindowFixture.() -> Unit = {}): ToolWindowFixture = step("Search for tool window") {
   val toolWindowPane = find<ToolWindowFixture>(Duration.ofSeconds(5))
-  toolWindowPane.title = title
   toolWindowPane.apply(function)
 }
 
-// Panel class name changed from ToolWindowsPane to ToolWindowPane in 2022.x
-@DefaultXpath(by = "ToolWindow type", xpath = "//div[@class='ToolWindowsPane' or @class='ToolWindowPane']")
+@DefaultXpath(by = "ToolWindow type", xpath = "//div[@class='ToolWindowPane']")
 @FixtureName(name = "Tool Window")
 class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
   lateinit var title: String
@@ -58,9 +54,5 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
 
   fun findCard(classType: String) =
     findElement<ComponentFixture>(byXpath("card with type $classType", "//div[@class='$classType']"))
-
-  fun ensureOpen() {
-    stripeButton(title).open()
-  }
 
 }

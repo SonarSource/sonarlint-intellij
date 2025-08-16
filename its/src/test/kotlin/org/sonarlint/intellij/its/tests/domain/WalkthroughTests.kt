@@ -21,12 +21,12 @@ package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
 import com.intellij.remoterobot.utils.keyboard
+import java.awt.event.KeyEvent
 import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.fixtures.walkthroughComponent
-import java.awt.event.KeyEvent
 
 class WalkthroughTests {
 
@@ -34,7 +34,7 @@ class WalkthroughTests {
         fun closeWalkthrough() {
             with(remoteRobot) {
                 idea {
-                    toolWindow("Welcome to SonarQube for IDE") {
+                    toolWindow {
                         findText("Next: Learn as You Code").click()
                         keyboard { hotKey(KeyEvent.VK_SHIFT, KeyEvent.VK_ESCAPE) }
                     }
@@ -49,7 +49,7 @@ class WalkthroughTests {
                         if (walkthroughComponent().isShowing) {
                             fail("Walkthrough is showing")
                         }
-                    } catch (e: WaitForConditionTimeoutException) {
+                    } catch (_: WaitForConditionTimeoutException) {
                         // If the walkthrough is not showing, it should pass
                     }
                 }

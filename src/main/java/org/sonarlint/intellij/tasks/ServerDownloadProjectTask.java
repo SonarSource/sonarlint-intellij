@@ -24,7 +24,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
