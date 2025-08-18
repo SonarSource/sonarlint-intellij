@@ -16,7 +16,7 @@ import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 plugins {
     java
     alias(libs.plugins.kotlin)
-    alias(libs.plugins.intellij)
+    id("org.jetbrains.intellij.platform")
     alias(libs.plugins.sonarqube)
     jacoco
     alias(libs.plugins.license)
@@ -50,26 +50,6 @@ val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
     ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
 val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
     ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
-
-repositories {
-    maven("https://repox.jfrog.io/repox/sonarsource") {
-        if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-            credentials {
-                username = artifactoryUsername
-                password = artifactoryPassword
-            }
-        }
-    }
-    mavenCentral {
-        content {
-            // avoid dependency confusion
-            excludeGroupByRegex("com\\.sonarsource.*")
-        }
-    }
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
 
 configurations {
     val sqplugins = create("sqplugins") { isTransitive = false }
