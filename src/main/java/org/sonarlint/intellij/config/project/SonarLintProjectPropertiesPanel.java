@@ -28,7 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.table.AbstractTableModel;

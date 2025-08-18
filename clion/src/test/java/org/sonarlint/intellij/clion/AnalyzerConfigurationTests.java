@@ -17,13 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion.common;
+package org.sonarlint.intellij.clion;
 
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class AnalyzerConfigurationTest {
+class AnalyzerConfigurationTests {
+
   @Test
   void testPreprocessorDefines() {
     var compilerSettings = mock(OCCompilerSettings.class);
@@ -84,7 +84,7 @@ class AnalyzerConfigurationTest {
 
     when(compilerSettings.getHeadersSearchPaths()).thenReturn(List.of(builtinHeader, userHeader, systemHeader));
 
-    Map<String, String> properties = new HashMap<>();
+    var properties = new HashMap<String, String>();
     Predicate<HeadersSearchPath> builtinHeadersFilter = HeadersSearchPath::isBuiltInHeaders;
 
     AnalyzerConfiguration.collectDefinesAndIncludes(compilerSettings, properties, builtinHeadersFilter);
@@ -103,7 +103,7 @@ class AnalyzerConfigurationTest {
 
     when(compilerSettings.getHeadersSearchPaths()).thenReturn(List.of(header));
 
-    Map<String, String> properties = new HashMap<>();
+    var properties = new HashMap<String, String>();
     Predicate<HeadersSearchPath> noMatchFilter = h -> false;
 
     AnalyzerConfiguration.collectDefinesAndIncludes(compilerSettings, properties, noMatchFilter);
@@ -118,7 +118,7 @@ class AnalyzerConfigurationTest {
     when(compilerSettings.getPreprocessorDefines()).thenReturn(List.of("#define MINIMAL"));
     when(compilerSettings.getHeadersSearchPaths()).thenReturn(List.of());
 
-    Map<String, String> properties = new HashMap<>();
+    var properties = new HashMap<String, String>();
     Predicate<HeadersSearchPath> anyFilter = h -> true;
 
     AnalyzerConfiguration.collectDefinesAndIncludes(compilerSettings, properties, anyFilter);
@@ -137,7 +137,7 @@ class AnalyzerConfigurationTest {
 
     when(compilerSettings.getHeadersSearchPaths()).thenReturn(List.of(header));
 
-    Map<String, String> properties = new HashMap<>();
+    var properties = new HashMap<String, String>();
     properties.put("existingKey", "existingValue");
     Predicate<HeadersSearchPath> allFilter = h -> true;
 

@@ -77,11 +77,11 @@ object FileUtils {
     }
 
     private fun isRazorFile(file: VirtualFile): Boolean {
-        return file.getExtension() != null && (file.getExtension() == "razor" || file.name.endsWith("razor.cs"))
+        return file.extension != null && (file.extension == "razor" || file.name.endsWith("razor.cs"))
     }
 
     private fun isExcludedFromEP(file: VirtualFile, project: Project): Boolean {
-        for (fileExclusion in FileExclusionContributor.EP_NAME.getExtensionList()) {
+        for (fileExclusion in FileExclusionContributor.EP_NAME.extensionList) {
             val excludeResultFromEp = fileExclusion.shouldExclude(project, file)
             if (excludeResultFromEp.isExcluded) {
                 SonarLintConsole.get(project).debug("File ${file.name} is excluded, reason: ${excludeResultFromEp.excludeReason()}")

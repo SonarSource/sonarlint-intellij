@@ -22,8 +22,8 @@ package org.sonarlint.intellij.clion.resharper;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import org.sonarlint.intellij.clion.common.AnalyzerConfiguration;
-import org.sonarlint.intellij.clion.common.BuildWrapperJsonGenerator;
+import org.sonarlint.intellij.clion.AnalyzerConfiguration;
+import org.sonarlint.intellij.clion.BuildWrapperJsonGenerator;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 

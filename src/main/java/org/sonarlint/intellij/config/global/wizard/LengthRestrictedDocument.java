@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;

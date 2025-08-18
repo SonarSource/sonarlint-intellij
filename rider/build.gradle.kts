@@ -2,23 +2,52 @@ val riderBuildVersion: String by project
 val riderHome: String? = System.getenv("RIDER_HOME")
 
 plugins {
-    kotlin("jvm")
+    id("org.jetbrains.intellij.platform.module")
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.cyclonedx)
+    alias(libs.plugins.license)
 }
 
-intellij {
-    if (!riderHome.isNullOrBlank()) {
-        println("Using local installation of Rider: $riderHome")
-        localPath.set(riderHome)
-        localSourcesPath.set(riderHome)
-    } else {
-        println("No local installation of Rider found, using version $riderBuildVersion")
-        version.set(riderBuildVersion)
+apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
+
+// The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env
+// On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
+val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
+    ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
+    ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
+
+repositories {
+    maven("https://repox.jfrog.io/repox/sonarsource") {
+        if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+            credentials {
+                username = artifactoryUsername
+                password = artifactoryPassword
+            }
+        }
     }
-    plugins.set(listOf("Git4Idea"))
+    mavenCentral {
+        content {
+            excludeGroupByRegex("com\\.sonarsource.*")
+        }
+    }
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 dependencies {
-    implementation(project(":common"))
-    implementation(project(":git"))
+    intellijPlatform {
+        if (!riderHome.isNullOrBlank()) {
+            println("Using local installation of Rider: $riderHome")
+            local(riderHome)
+        } else {
+            println("No local installation of Rider found, using version $riderBuildVersion")
+            rider(riderBuildVersion) { useInstaller = false }
+        }
+        pluginComposedModule(implementation(project(":common")))
+        pluginComposedModule(implementation(project(":git")))
+        bundledPlugins("Git4Idea")
+    }
     compileOnly(libs.findbugs.jsr305)
 }

@@ -23,7 +23,7 @@ import com.intellij.openapi.module.Module;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class JavaModuleClasspath {
 

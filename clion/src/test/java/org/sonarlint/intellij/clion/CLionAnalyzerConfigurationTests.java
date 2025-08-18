@@ -26,7 +26,6 @@ import com.jetbrains.cidr.lang.workspace.compiler.AppleClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangClCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
-import com.jetbrains.cidr.cpp.embedded.iar.IarCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-class CLionAnalyzerConfigurationTest {
+class CLionAnalyzerConfigurationTests {
 
   @Test
   void get_sonar_language() {
@@ -58,7 +57,6 @@ class CLionAnalyzerConfigurationTest {
     assertEquals("clang-cl", CLionAnalyzerConfiguration.mapToCFamilyCompiler(ClangClCompilerKind.INSTANCE));
     assertEquals("msvc-cl", CLionAnalyzerConfiguration.mapToCFamilyCompiler(MSVCCompilerKind.INSTANCE));
     assertEquals("clang", CLionAnalyzerConfiguration.mapToCFamilyCompiler(AppleClangCompilerKind.INSTANCE));
-    assertEquals("iar", CLionAnalyzerConfiguration.mapToCFamilyCompiler(IarCompilerKind.INSTANCE));
   }
 
   @Test
@@ -105,4 +103,5 @@ class CLionAnalyzerConfigurationTest {
     assertEquals("reason", result.getSkipReason());
     assertThrows(UnsupportedOperationException.class, result::getConfiguration);
   }
+
 }

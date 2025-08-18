@@ -24,7 +24,6 @@ import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.testFramework.LightProjectDescriptor;
-import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -35,11 +34,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLintLightTests {
 
-  private JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
+  private final JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
 
   @Override
   protected LightProjectDescriptor getProjectDescriptor() {
-    return new DefaultLightProjectDescriptor() {
+    return new LightProjectDescriptor() {
       @Override
       public Sdk getSdk() {
         return null;
