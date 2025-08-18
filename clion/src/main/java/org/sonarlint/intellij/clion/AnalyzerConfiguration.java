@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion.common;
+package org.sonarlint.intellij.clion;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -112,7 +112,7 @@ public abstract class AnalyzerConfiguration {
   private static Object unWrapList(Object result) {
     if (result instanceof List<?> list) {
       // getEnvironment returns a singleton list
-      result = list.get(0);
+      result = list.getFirst();
     }
     return result;
   }

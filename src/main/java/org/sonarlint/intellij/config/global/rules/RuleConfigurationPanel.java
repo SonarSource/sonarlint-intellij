@@ -79,7 +79,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -343,7 +343,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     table.getTree().setSelectionPaths(selectionPaths);
   }
 
-  private RulesTreeNode.@NotNull LanguageNode getOrCreateLanguageNode(Language language) {
+  private @NotNull RulesTreeNode.LanguageNode getOrCreateLanguageNode(Language language) {
     var languageLabel = org.sonarsource.sonarlint.core.client.utils.Language.fromDto(language).getLabel();
     return languageNodesByName.computeIfAbsent(languageLabel, RulesTreeNode.LanguageNode::new);
   }

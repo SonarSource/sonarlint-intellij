@@ -17,7 +17,27 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-@ParametersAreNonnullByDefault
-package org.sonarlint.intellij.clion.common;
+package org.sonarlint.intellij.git
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import java.lang.reflect.Method
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInfo
+import org.junit.jupiter.api.extension.ExtendWith
+
+@ExtendWith(RunInEdtInterceptor::class)
+abstract class AbstractLightTests : BasePlatformTestCase() {
+
+  @BeforeEach
+  fun beforeEachLightTest(testInfo: TestInfo) {
+    // explicitly call TestCase.setName as IntelliJ relies on it for the setup
+    name = testInfo.testMethod.map(Method::getName).orElseGet { "test" }
+    super.setUp()
+  }
+
+  @AfterEach
+  fun afterEachLightTest() {
+    super.tearDown()
+  }
+}

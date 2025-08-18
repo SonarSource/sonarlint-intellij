@@ -32,7 +32,7 @@ import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.swing.Box;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;

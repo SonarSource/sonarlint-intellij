@@ -58,15 +58,21 @@ that all tests are passing.
 How to build
 ------------
 
-    ./gradlew buildPlugin
+```bash
+./gradlew buildPlugin
+```
 
 Note that the above won't run tests and checks. To do that too, run:
 
-    ./gradlew check buildPlugin
+```bash
+./gradlew check buildPlugin
+```
 
 For the complete list of tasks, see:
 
-    ./gradlew tasks
+```bash
+./gradlew tasks
+```
 
 For external contributors, the project should be guaranteed to build from any specific tag. During the development phase, some
 unreleased dependencies not accessible to the public could be used, preventing you from building the project.
@@ -74,21 +80,23 @@ unreleased dependencies not accessible to the public could be used, preventing y
 How to run UI tests
 -------------------
 
-    ./gradlew :its:runIdeForUiTests &
+```bash
+./gradlew :its:runIdeForUiTests &
+```
 
 The above will start an IDE instance with the SonarQube for IntelliJ plugin. Wait for the UI robot server to start, then run the ITs:
 
-    ./gradlew :its:check
+```bash
+./gradlew :its:check
+```
 
 Finally, close the IDE.
 
 To test against a specific version of IntelliJ, the `ijVersion` property can be used, e.g.:
 
-    ./gradlew :its:runIdeForUiTests  -PijVersion=IC-2019.3 &
-
-To test against a specific IDE, the `runIdeDirectory` property can be used as such:
-
-    ./gradlew :its:runIdeForUiTests -PrunIdeDirectory=<IDE_PATH> &
+```bash
+./gradlew :its:runIdeForUiTests -PijVersion=IC-2025.2 &
+```
 
 Please note that the IDE must be in the foreground while tests are executed.
 
@@ -98,10 +106,10 @@ password management tool).
 How to debug UI tests
 ---------------------
 
-If you want to debug what happens on the test side, you can simply launch the test in debug mode from the IDE.
+If you want to debug what happens on the test side, you can launch the test in debug mode from the IDE.
 
 If you want to debug what happens in the SonarQube for IntelliJ plugin, you can open the project in IntelliJ, and run the
-`its:runIdeForUiTests` task in debug mode (for example from the Gradle panel on the right).
+`its:runIdeForUiTests` task in debug mode (for example, from the Gradle panel on the right).
 
 
 How to debug SLOOP
@@ -109,7 +117,7 @@ How to debug SLOOP
 
 If you want to debug SLOOP:
 
-* open the Run configuration you are using to launch the IDE (`runIde` or `its:runIdeForUiTests`)
+* open the Run configuration you are using to launch the IDE (`runLocalIde` or `its:runIdeForUiTests`)
 * Add an environment variable: `SONARLINT_JVM_OPTS` with the value `-agentlib:jdwp=transport=dt_socket,address=8080,server=y,suspend=n`
 * Run the task
 * Open the SLCORE project and click `Run` > `Attach to process`
@@ -124,24 +132,22 @@ How to develop in IntelliJ
 Import the project as a Gradle project.
 
 Note: whenever you change a Gradle setting (for example in `build.gradle.kts`),
-don't forget to **Refresh all Gradle projects** in the **Gradle** toolbar.
+remember to **Refresh all Gradle projects** in the **Gradle** toolbar.
 
-To run an IntelliJ instance with the plugin installed, execute the Gradle task `runIde` using the command line,
-or the **Gradle** toolbar in IntelliJ, under `Tasks/intellij`.
-The instance files are stored under `build/idea-sandbox`.
+To run an IntelliJ instance with the plugin installed, execute the Gradle task `runLocalide` using the command line,
+or the **Gradle** toolbar in IntelliJ, under `Tasks/intellij platform`.
+The instance files are stored under `build/sonarlint-test`.
 
-To run against a specific IDE, the `runIdeDirectory` property can be used as such:
+To run against a specific IDE, you can use the `runIdeDirectory` property to point to the directory of the IDE you want to run.
 
-    ./gradlew :runIde -PrunIdeDirectory=<IDE_PATH>
+For example:
 
-Keep in mind that the `clean` task will wipe out the content of `build/idea-sandbox`,
+```bash
+./gradlew :runLocalIde -PrunIdeDirectory=<path_to_ide>
+```
+
+Keep in mind that the `clean` task will wipe out the content of `build/`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
-
-Whenever you change the dependency version, the previous versions are not deleted from the sandbox, and the JVM might not load the version
-that you expect.
-As the `clean` task may be inconvenient, an easier workaround is to delete the jars in the sandbox, for example with:
-
-    find build/idea-sandbox/ -name '*.jar' -delete
 
 License
 -------

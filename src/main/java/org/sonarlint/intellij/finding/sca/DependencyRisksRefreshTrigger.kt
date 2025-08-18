@@ -29,6 +29,7 @@ import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.PROJECT)
 class DependencyRisksRefreshTrigger(private val project: Project) {
+
   fun subscribeToTriggeringEvents() {
     val busConnection = project.messageBus.connect()
     with(busConnection) {

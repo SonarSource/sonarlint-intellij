@@ -27,15 +27,10 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.isCLion;
-
 public class CFamilyFileExclusionContributor implements FileExclusionContributor {
 
   @Override
   public ExcludeResult shouldExclude(@NotNull Project project, @NotNull VirtualFile fileToAnalyze) {
-    if (!isCLion()) {
-      return ExcludeResult.notExcluded();
-    }
     var psiFile = PsiManager.getInstance(project).findFile(fileToAnalyze);
     if (!(psiFile instanceof CppFile)) {
       return ExcludeResult.notExcluded();

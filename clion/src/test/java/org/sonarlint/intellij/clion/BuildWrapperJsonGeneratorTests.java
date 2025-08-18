@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.clion.common;
+package org.sonarlint.intellij.clion;
 
 import com.intellij.mock.MockLocalFileSystem;
 import java.io.File;
@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class BuildWrapperJsonGeneratorTest {
+class BuildWrapperJsonGeneratorTests {
 
   @Test
   void empty() {
@@ -155,4 +155,5 @@ class BuildWrapperJsonGeneratorTest {
   private static String quote(File file) {
     return BuildWrapperJsonGenerator.quote(file.getAbsoluteFile().toString());
   }
+
 }

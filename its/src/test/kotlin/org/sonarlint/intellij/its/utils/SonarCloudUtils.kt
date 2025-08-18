@@ -133,7 +133,7 @@ object SonarCloudUtils {
         request.setParam("tokenValue", tokenValue)
         request.setParam("organizationKey", organizationKey)
         request.setHeader("Origin", SONARCLOUD_STAGING_URL)
-        wsClient.wsConnector().call(request)
+        wsClient.wsConnector().call(request).close()
     }
 
     @Throws(IOException::class)

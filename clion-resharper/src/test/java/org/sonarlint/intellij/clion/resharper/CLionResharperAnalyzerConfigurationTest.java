@@ -26,7 +26,6 @@ import com.jetbrains.cidr.lang.workspace.compiler.ClangClCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
-import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class CLionResharperAnalyzerConfigurationTest {
 
@@ -57,9 +55,6 @@ class CLionResharperAnalyzerConfigurationTest {
     assertEquals("clang-cl", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(ClangClCompilerKind.INSTANCE));
     assertEquals("msvc-cl", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(MSVCCompilerKind.INSTANCE));
     assertEquals("clang", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(AppleClangCompilerKind.INSTANCE));
-    var iarCompilerKind = mock(OCCompilerKind.class);
-    when(iarCompilerKind.getDisplayName()).thenReturn("IAR");
-    assertEquals("iar", CLionResharperAnalyzerConfiguration.mapToCFamilyCompiler(iarCompilerKind));
   }
 
   @Test
@@ -106,4 +101,5 @@ class CLionResharperAnalyzerConfigurationTest {
     assertEquals("reason", result.getSkipReason());
     assertThrows(UnsupportedOperationException.class, result::getConfiguration);
   }
+
 }

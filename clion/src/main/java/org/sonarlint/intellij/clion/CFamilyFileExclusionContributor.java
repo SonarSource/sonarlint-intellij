@@ -26,15 +26,10 @@ import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.isCLion;
-
 public class CFamilyFileExclusionContributor implements FileExclusionContributor {
 
   @Override
   public ExcludeResult shouldExclude(Project project, VirtualFile fileToAnalyze) {
-    if (!isCLion()) {
-      return ExcludeResult.notExcluded();
-    }
     var psiFile = PsiManager.getInstance(project).findFile(fileToAnalyze);
     if (!(psiFile instanceof OCPsiFile)) {
       return ExcludeResult.notExcluded();

@@ -23,6 +23,7 @@ import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.fixtures.tool.window.toolWindowBar
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
 object FiltersUtils {
@@ -37,8 +38,10 @@ object FiltersUtils {
 
     fun setFocusOnNewCode(focusOnNewCode: Boolean) {
         optionalIdeaFrame()?.apply {
-            toolWindow("SonarQube for IDE") {
+            toolWindowBar("SonarQube for IDE") {
                 ensureOpen()
+            }
+            toolWindow {
                 tabTitleContains("Current File") { select() }
                 content("CurrentFilePanel") {
                     val toolBarButton = focusOnNewCodeButton()
@@ -55,8 +58,10 @@ object FiltersUtils {
     fun showResolvedIssues() {
         with(BaseUiTest.remoteRobot) {
             idea {
-                toolWindow("SonarQube for IDE") {
+                toolWindowBar("SonarQube for IDE") {
                     ensureOpen()
+                }
+                toolWindow {
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
                         resolvedIssuesButton().click()

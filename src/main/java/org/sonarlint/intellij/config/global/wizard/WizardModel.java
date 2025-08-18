@@ -23,7 +23,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;

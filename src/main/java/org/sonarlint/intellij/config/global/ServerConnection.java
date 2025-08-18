@@ -24,7 +24,7 @@ import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Tag;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
 import org.sonarlint.intellij.SonarLintIcons;

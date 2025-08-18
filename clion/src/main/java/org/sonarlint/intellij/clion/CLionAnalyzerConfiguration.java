@@ -35,9 +35,8 @@ import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
 import java.util.HashMap;
-import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.clion.common.AnalyzerConfiguration;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
@@ -126,30 +125,25 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
 
   @Nullable
   static ForcedLanguage getSonarLanguage(@Nullable OCLanguageKind languageKind) {
-    if (CLanguageKind.C.equals(languageKind)) {
-      return ForcedLanguage.C;
-    } else if (CLanguageKind.CPP.equals(languageKind)) {
-      return ForcedLanguage.CPP;
-    } else if (CLanguageKind.OBJ_C.equals(languageKind)) {
-      return ForcedLanguage.OBJC;
-    } else {
-      return null;
-    }
+    return switch (languageKind) {
+      case CLanguageKind.C -> ForcedLanguage.C;
+      case CLanguageKind.CPP -> ForcedLanguage.CPP;
+      case CLanguageKind.OBJ_C -> ForcedLanguage.OBJC;
+      case null, default -> null;
+    };
   }
 
   private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
     final var initializedWorkspaces = CidrWorkspace.getInitializedWorkspaces(project);
     for (var initializedWorkspace : initializedWorkspaces) {
+      CPPEnvironment cppEnvironment;
       if (initializedWorkspace instanceof CMakeWorkspace) {
-        var cppEnvironment = getCMakeCppEnvironment(initializedWorkspace, configuration);
-        if (cppEnvironment != null) {
-          return cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker();
-        }
+        cppEnvironment = getCMakeCppEnvironment(initializedWorkspace, configuration);
       } else {
-        var cppEnvironment = tryReflection(initializedWorkspace, project);
-        if (cppEnvironment != null) {
-          return cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker();
-        }
+        cppEnvironment = tryReflection(initializedWorkspace, project);
+      }
+      if (cppEnvironment != null) {
+        return cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker();
       }
     }
     SonarLintConsole.get(project).debug("Not using remote or WSL toolchain");

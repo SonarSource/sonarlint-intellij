@@ -17,27 +17,27 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.test
+package org.sonarlint.intellij.analysis
 
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import java.lang.reflect.Method
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.TestInfo
-import org.junit.jupiter.api.extension.ExtendWith
+import com.intellij.openapi.module.LanguageLevelUtil
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.roots.LanguageLevelModuleExtension
+import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.roots.ModuleRootModificationUtil
+import com.intellij.pom.java.LanguageLevel
 
-@ExtendWith(RunInEdtInterceptor::class)
-abstract class AbstractLightTests : BasePlatformTestCase() {
+object IdeaJdkTestUtils {
 
-  @BeforeEach
-  fun beforeEachLightTest(testInfo: TestInfo) {
-    // explicitly call TestCase.setName as IntelliJ relies on it for the setup
-    name = testInfo.testMethod.map(Method::getName).orElseGet { "test" }
-    super.setUp()
-  }
+    fun setModuleLanguageLevel(module: Module, level: LanguageLevel?): LanguageLevel? {
+        val prev = LanguageLevelUtil.getCustomLanguageLevel(module)
+        ModuleRootModificationUtil.updateModel(
+            module
+        ) { model: ModifiableRootModel ->
+            model.getModuleExtension(
+                LanguageLevelModuleExtension::class.java
+            ).languageLevel = level
+        }
+        return prev
+    }
 
-  @AfterEach
-  fun afterEachLightTest() {
-    super.tearDown()
-  }
 }
