@@ -12,6 +12,7 @@ apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 
 val intellijBuildVersion: String by project
 val ijVersion: String by project
+val runIdeDirectory: String by project
 group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
@@ -68,6 +69,10 @@ tasks {
 }
 
 val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
+    if (project.hasProperty("runIdeDirectory")) {
+        localPath = file(runIdeDirectory)
+    }
+
     task {
         jvmArgumentProviders += CommandLineArgumentProvider {
             listOf(

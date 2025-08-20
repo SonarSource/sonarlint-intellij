@@ -98,6 +98,12 @@ To test against a specific version of IntelliJ, the `ijVersion` property can be 
 ./gradlew :its:runIdeForUiTests -PijVersion=IC-2025.2 &
 ```
 
+If you want to use a local installation, you can use the `runIdeDirectory` property to point to the directory of the IDE you want to run:
+
+```bash
+./gradlew :its:runIdeForUiTests -PrunIdeDirectory=<path_to_ide> &
+```
+
 Please note that the IDE must be in the foreground while tests are executed.
 
 Because some ITs are leveraging SonarCloud, make sure the `SONARCLOUD_IT_TOKEN` env var is defined (you can find the value in our
