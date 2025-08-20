@@ -19,6 +19,11 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.credentialStore.CredentialAttributes;
+import com.intellij.credentialStore.CredentialAttributesKt;
+import com.intellij.credentialStore.Credentials;
+import com.intellij.ide.passwordSafe.PasswordSafe;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Tag;
@@ -26,7 +31,7 @@ import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import javax.swing.Icon;
+import javax.swing.*;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.server.ServerLinks;
@@ -34,15 +39,32 @@ import org.sonarlint.intellij.core.server.SonarCloudLinks;
 import org.sonarlint.intellij.core.server.SonarQubeLinks;
 
 /**
- * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
+ * Represents a connection configuration for SonarQube Server or SonarQube Cloud.
+ * 
+ * <h3>Security and Credential Storage</h3>
+ * <p>This class implements secure credential storage using IntelliJ's {@link com.intellij.ide.passwordSafe.PasswordSafe} API.
+ * Sensitive data (tokens and passwords) are stored in the operating system's native credential store.</p>
+ * 
+ * <h3>Migration and Backward Compatibility</h3>
+ * <p>The class automatically migrates credentials from the legacy {@link com.intellij.openapi.util.PasswordUtil}
+ * encoding to secure storage. For existing configurations:</p>
+ * <ul>
+ *   <li>Old base64-encoded credentials in XML are automatically migrated on first access</li>
+ *   <li>After migration, only metadata is stored in XML; credentials remain in secure storage</li>
+ *   <li>Fallback support maintains compatibility with test environments</li>
+ * </ul>
+ * 
+ * <h3>XML Serialization</h3>
+ * <p>This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
  * By default, it will serialize data when there are public setters and getters for a field or when the field is public.
  * As this class is immutable, there are no setters and the fields are private, so nothing will be serialized by default.
  * Therefore, we must add the appropriate annotations for the fields we want to annotate.
  * Note that we use both {@link OptionTag} and {@link Tag} (which will result in 2 different ways of serializing the fields) to remain
- * backward-compatible with existing serialized configurations.
+ * backward-compatible with existing serialized configurations.</p>
  *
  * @see com.intellij.util.xmlb.annotations.Tag
  * @see com.intellij.util.xmlb.annotations.OptionTag
+ * @see com.intellij.ide.passwordSafe.PasswordSafe
  */
 @Immutable
 // Don't change annotation, used for backward compatibility
@@ -81,6 +103,104 @@ public class ServerConnection {
     this.organizationKey = builder.organizationKey;
     this.disableNotifications = builder.disableNotifications;
     this.region = builder.region;
+  }
+
+  private static boolean isApplicationContextAvailable() {
+    return ApplicationManager.getApplication() != null;
+  }
+
+  private static CredentialAttributes createCredentialAttributes(String key) {
+    return new CredentialAttributes(
+      CredentialAttributesKt.generateServiceName("SonarLint", key)
+    );
+  }
+
+  private static String getTokenKeyFor(String name) {
+    return "server:" + name + ":token";
+  }
+
+  private static String getPasswordKeyFor(String name) {
+    return "server:" + name + ":password";
+  }
+
+  private String getPasswordFromCredentialStore() {
+    if (name == null || !isApplicationContextAvailable()) return null;
+    try {
+      var attributes = createCredentialAttributes(getPasswordKeyFor(name));
+      var credentials = PasswordSafe.getInstance().get(attributes);
+      return credentials != null ? credentials.getPasswordAsString() : null;
+    } catch (Exception e) {
+      // Fall back gracefully if PasswordSafe is not available
+      return null;
+    }
+  }
+
+  private String getTokenFromCredentialStore() {
+    if (name == null || !isApplicationContextAvailable()) return null;
+    try {
+      var attributes = createCredentialAttributes(getTokenKeyFor(name));
+      return PasswordSafe.getInstance().getPassword(attributes);
+    } catch (Exception e) {
+      // Fall back gracefully if PasswordSafe is not available
+      return null;
+    }
+  }
+
+  private void storePasswordInCredentialStore(@Nullable String password) {
+    if (name == null || !isApplicationContextAvailable()) return;
+    try {
+      var attributes = createCredentialAttributes(getPasswordKeyFor(name));
+      if (password == null) {
+        PasswordSafe.getInstance().set(attributes, null);
+      } else {
+        var credentials = new Credentials(login, password);
+        PasswordSafe.getInstance().set(attributes, credentials);
+      }
+    } catch (Exception e) {
+      // Fall back gracefully if PasswordSafe is not available
+    }
+  }
+
+  private void storeTokenInCredentialStore(@Nullable String token) {
+    if (name == null || !isApplicationContextAvailable()) return;
+    try {
+      var attributes = createCredentialAttributes(getTokenKeyFor(name));
+      PasswordSafe.getInstance().setPassword(attributes, token);
+    } catch (Exception e) {
+      // Fall back gracefully if PasswordSafe is not available
+    }
+  }
+
+  /**
+   * Migrates credentials from the old PasswordUtil-encoded format to the new PasswordSafe format.
+   * This method should be called during loading to ensure backward compatibility.
+   */
+  private void migrateCredentialsIfNeeded() {
+    if (name == null || !isApplicationContextAvailable()) return;
+    
+    // Migrate token if it exists in old format
+    if (token != null && getTokenFromCredentialStore() == null) {
+      try {
+        var decodedToken = PasswordUtil.decodePassword(token);
+        storeTokenInCredentialStore(decodedToken);
+        // Clear the old encoded token from XML
+        this.token = null;
+      } catch (NumberFormatException e) {
+        // Ignore if decoding fails
+      }
+    }
+    
+    // Migrate password if it exists in old format
+    if (password != null && getPasswordFromCredentialStore() == null) {
+      try {
+        var decodedPassword = PasswordUtil.decodePassword(password);
+        storePasswordInCredentialStore(decodedPassword);
+        // Clear the old encoded password from XML
+        this.password = null;
+      } catch (NumberFormatException e) {
+        // Ignore if decoding fails
+      }
+    }
   }
 
   @Override
@@ -129,6 +249,15 @@ public class ServerConnection {
 
   @CheckForNull
   public String getToken() {
+    migrateCredentialsIfNeeded();
+    
+    // Try to get from secure credential store first
+    var tokenFromStore = getTokenFromCredentialStore();
+    if (tokenFromStore != null) {
+      return tokenFromStore;
+    }
+    
+    // Fallback to old format for backward compatibility
     if (token == null) {
       return null;
     }
@@ -160,6 +289,15 @@ public class ServerConnection {
 
   @CheckForNull
   public String getPassword() {
+    migrateCredentialsIfNeeded();
+    
+    // Try to get from secure credential store first
+    var passwordFromStore = getPasswordFromCredentialStore();
+    if (passwordFromStore != null) {
+      return passwordFromStore;
+    }
+    
+    // Fallback to old format for backward compatibility
     if (password == null) {
       return null;
     }
@@ -210,7 +348,31 @@ public class ServerConnection {
     }
 
     public ServerConnection build() {
-      return new ServerConnection(this);
+      var connection = new ServerConnection(this);
+      
+      // Store credentials in secure credential store for new connections when application context is available
+      if (connection.name != null && isApplicationContextAvailable()) {
+        if (this.token != null) {
+          connection.storeTokenInCredentialStore(this.token);
+          // Clear the plain token from the connection object to avoid storing it in XML
+          connection.token = null;
+        }
+        if (this.password != null) {
+          connection.storePasswordInCredentialStore(this.password);
+          // Clear the plain password from the connection object to avoid storing it in XML
+          connection.password = null;
+        }
+      } else {
+        // In test environments or when application context is not available, fall back to the old encoding
+        if (this.token != null) {
+          connection.token = PasswordUtil.encodePassword(this.token);
+        }
+        if (this.password != null) {
+          connection.password = PasswordUtil.encodePassword(this.password);
+        }
+      }
+      
+      return connection;
     }
 
     public Builder setLogin(@Nullable String login) {
@@ -244,20 +406,12 @@ public class ServerConnection {
     }
 
     public Builder setToken(@Nullable String token) {
-      if (token == null) {
-        this.token = null;
-      } else {
-        this.token = PasswordUtil.encodePassword(token);
-      }
+      this.token = token;
       return this;
     }
 
     public Builder setPassword(@Nullable String password) {
-      if (password == null) {
-        this.password = null;
-      } else {
-        this.password = PasswordUtil.encodePassword(password);
-      }
+      this.password = password;
       return this;
     }
 
