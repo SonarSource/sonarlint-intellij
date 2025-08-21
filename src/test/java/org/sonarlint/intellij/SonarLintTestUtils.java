@@ -75,7 +75,7 @@ public class SonarLintTestUtils {
     }
   }
 
-  private static void clearCredentialsForConnection(String connectionName) {
+  public static void clearCredentialsForConnection(String connectionName) {
     try {
       var passwordSafe = PasswordSafe.getInstance();
 

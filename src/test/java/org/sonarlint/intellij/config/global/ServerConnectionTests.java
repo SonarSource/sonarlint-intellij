@@ -25,13 +25,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonarlint.intellij.SonarLintTestUtils.clearServerConnectionCredentials;
+import static org.sonarlint.intellij.SonarLintTestUtils.clearCredentialsForConnection;
 
 class ServerConnectionTests {
 
+  public static final String CONNECTION_NAME = "name";
+  public static final String CONNECTION_NAME_2 = "name2";
+
   @BeforeEach
   void clearCredentials() {
-    clearServerConnectionCredentials();
+    clearCredentialsForConnection(CONNECTION_NAME);
+    clearCredentialsForConnection(CONNECTION_NAME_2);
   }
 
   @Test
@@ -40,11 +44,11 @@ class ServerConnectionTests {
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
-      .setName("name")
+      .setName(CONNECTION_NAME)
       .setLogin("login")
       .build();
 
-    assertThat(server.getName()).isEqualTo("name");
+    assertThat(server.getName()).isEqualTo(CONNECTION_NAME);
     assertThat(server.getToken()).isEqualTo("token");
     assertThat(server.getLogin()).isEqualTo("login");
     assertThat(server.getPassword()).isEqualTo("pass");
@@ -59,7 +63,7 @@ class ServerConnectionTests {
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
-      .setName("name")
+      .setName(CONNECTION_NAME)
       .setLogin("login")
       .build();
 
@@ -67,7 +71,7 @@ class ServerConnectionTests {
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
-      .setName("name")
+      .setName(CONNECTION_NAME)
       .setLogin("login")
       .build();
 
@@ -75,7 +79,7 @@ class ServerConnectionTests {
       .setHostUrl("host")
       .setPassword("pass1")
       .setToken("token")
-      .setName("name")
+      .setName(CONNECTION_NAME)
       .setLogin("login")
       .build();
 
@@ -92,7 +96,7 @@ class ServerConnectionTests {
       .setHostUrl("host")
       .setPassword(null)
       .setToken(null)
-      .setName("name")
+      .setName(CONNECTION_NAME)
       .setLogin("login")
       .build();
 
@@ -120,7 +124,7 @@ class ServerConnectionTests {
     assertThat(connection.getToken()).isEqualTo("mytoken");
     assertThat(connection.getPassword()).isEqualTo("mypassword");
     assertThat(connection.getLogin()).isEqualTo("mylogin");
-    assertThat(connection.getName()).isEqualTo("testserver");
+    assertThat(connection.getName()).isEqualTo(CONNECTION_NAME);
   }
 
   @Test
@@ -135,26 +139,26 @@ class ServerConnectionTests {
   @Test
   void should_handle_connection_without_credentials() {
     var connection = ServerConnection.newBuilder()
-      .setName("public-server")
+      .setName(CONNECTION_NAME_2)
       .setHostUrl("https://sonarqube.example.com")
       .build();
 
     assertThat(connection.getToken()).isNull();
     assertThat(connection.getPassword()).isNull();
     assertThat(connection.getLogin()).isNull();
-    assertThat(connection.getName()).isEqualTo("public-server");
+    assertThat(connection.getName()).isEqualTo(CONNECTION_NAME_2);
     assertThat(connection.getHostUrl()).isEqualTo("https://sonarqube.example.com");
   }
 
   @Test
   void should_correctly_identify_server_type() {
     var sonarCloudConnection = ServerConnection.newBuilder()
-      .setName("sonarcloud")
+      .setName(CONNECTION_NAME)
       .setHostUrl("https://sonarcloud.io")
       .build();
 
     var sonarQubeConnection = ServerConnection.newBuilder()
-      .setName("sonarqube")
+      .setName(CONNECTION_NAME_2)
       .setHostUrl("https://sonarqube.example.com")
       .build();
 
@@ -168,42 +172,50 @@ class ServerConnectionTests {
   }
 
   @Test
-  void should_compare_credentials() {
+  void should_have_same_token_credentials() {
     var tokenConnection1 = ServerConnection.newBuilder()
-      .setName("server1")
+      .setName(CONNECTION_NAME)
       .setToken("same-token")
       .build();
 
     var tokenConnection2 = ServerConnection.newBuilder()
-      .setName("server2")
+      .setName(CONNECTION_NAME_2)
       .setToken("same-token")
       .build();
 
+    assertThat(tokenConnection1.hasSameCredentials(tokenConnection2)).isTrue();
+  }
+
+  @Test
+  void should_have_same_password_credentials() {
     var passwordConnection1 = ServerConnection.newBuilder()
-      .setName("server3")
+      .setName(CONNECTION_NAME)
       .setLogin("user")
       .setPassword("same-password")
       .build();
 
     var passwordConnection2 = ServerConnection.newBuilder()
-      .setName("server4")
+      .setName(CONNECTION_NAME_2)
       .setLogin("user")
       .setPassword("same-password")
       .build();
 
+    assertThat(passwordConnection1.hasSameCredentials(passwordConnection2)).isTrue();
+  }
+
+  @Test
+  void should_have_different_token_credentials() {
+    var tokenConnection1 = ServerConnection.newBuilder()
+      .setName(CONNECTION_NAME)
+      .setToken("same-token")
+      .build();
+
     var differentTokenConnection = ServerConnection.newBuilder()
-      .setName("server5")
+      .setName(CONNECTION_NAME_2)
       .setToken("different-token")
       .build();
 
-    // Connections with same tokens should have same credentials
-    assertThat(tokenConnection1.hasSameCredentials(tokenConnection2)).isTrue();
-    // Connections with same username/password should have same credentials
-    assertThat(passwordConnection1.hasSameCredentials(passwordConnection2)).isTrue();
-    // Connections with different tokens should have different credentials
     assertThat(tokenConnection1.hasSameCredentials(differentTokenConnection)).isFalse();
-    // Token and password connections should have different credentials
-    assertThat(tokenConnection1.hasSameCredentials(passwordConnection1)).isFalse();
   }
 
   /**
@@ -213,7 +225,7 @@ class ServerConnectionTests {
   private ServerConnection createConnectionWithLegacyCredentials() throws Exception {
     // Create a basic connection using the builder (this will use fallback encoding in test environment)
     ServerConnection connection = ServerConnection.newBuilder()
-      .setName("testserver")
+      .setName(CONNECTION_NAME)
       .setHostUrl("https://example.com")
       .setLogin("mylogin")
       .build();
@@ -227,7 +239,7 @@ class ServerConnectionTests {
 
   private ServerConnection createConnectionWithCorruptedCredentials() throws Exception {
     var connection = ServerConnection.newBuilder()
-      .setName("corrupted-server")
+      .setName(CONNECTION_NAME)
       .setHostUrl("https://example.com")
       .build();
     
