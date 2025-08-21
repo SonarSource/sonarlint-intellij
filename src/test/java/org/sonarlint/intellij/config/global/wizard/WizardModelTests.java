@@ -19,12 +19,20 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.config.global.ServerConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.sonarlint.intellij.SonarLintTestUtils.clearServerConnectionCredentials;
 
 class WizardModelTests {
+  
+  @BeforeEach
+  void clearCredentials() {
+    clearServerConnectionCredentials();
+  }
+  
   @Test
   void testCreateFromConfig() {
     var server = ServerConnection.newBuilder()
@@ -99,4 +107,5 @@ class WizardModelTests {
     assertThat(server.enableProxy()).isTrue();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
   }
+
 }

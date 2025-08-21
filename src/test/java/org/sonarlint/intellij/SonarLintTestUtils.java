@@ -19,9 +19,13 @@
  */
 package org.sonarlint.intellij;
 
+import com.intellij.credentialStore.CredentialAttributes;
+import com.intellij.credentialStore.CredentialAttributesKt;
+import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
@@ -31,8 +35,10 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.StandardModeDetails;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintTestUtils {
+
   static {
     System.out.println("headless mode: " + GraphicsEnvironment.isHeadless());
   }
@@ -54,4 +60,41 @@ public class SonarLintTestUtils {
     when(issue.getSeverityMode()).thenReturn(Either.forLeft(new StandardModeDetails(IssueSeverity.MAJOR, RuleType.BUG)));
     return issue;
   }
+
+  public static void clearServerConnectionCredentials() {
+    if (ApplicationManager.getApplication() == null) {
+      return;
+    }
+
+    try {
+      for (var connectionName : getGlobalSettings().getServerNames()) {
+        clearCredentialsForConnection(connectionName);
+      }
+    } catch (Exception e) {
+      // Ignore exceptions during cleanup - PasswordSafe might not be available in all test environments
+    }
+  }
+
+  private static void clearCredentialsForConnection(String connectionName) {
+    try {
+      var passwordSafe = PasswordSafe.getInstance();
+
+      // Clear token
+      var tokenKey = "server:" + connectionName + ":token";
+      var tokenAttributes = new CredentialAttributes(
+        CredentialAttributesKt.generateServiceName("SonarLint", tokenKey)
+      );
+      passwordSafe.setPassword(tokenAttributes, null);
+
+      // Clear password
+      var passwordKey = "server:" + connectionName + ":password";
+      var passwordAttributes = new CredentialAttributes(
+        CredentialAttributesKt.generateServiceName("SonarLint", passwordKey)
+      );
+      passwordSafe.set(passwordAttributes, null);
+    } catch (Exception e) {
+      // Ignore exceptions - credential might not exist or PasswordSafe might not be available
+    }
+  }
+
 }

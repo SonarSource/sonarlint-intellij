@@ -60,6 +60,7 @@ import org.sonarlint.intellij.test.AbstractLightTests;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
+import static org.sonarlint.intellij.SonarLintTestUtils.clearServerConnectionCredentials;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -83,6 +84,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   @BeforeEach
   final void beforeEach() {
     disposable = Disposer.newDisposable();
+    clearServerConnectionCredentials();
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
     getGlobalSettings().setFocusOnNewCode(false);
@@ -210,4 +212,5 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   protected String getProjectBackendId() {
     return getProject().getProjectFilePath();
   }
+
 }
