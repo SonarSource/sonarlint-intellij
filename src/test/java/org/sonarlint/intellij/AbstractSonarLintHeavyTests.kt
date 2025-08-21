@@ -22,6 +22,8 @@ package org.sonarlint.intellij
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.ComponentManagerImpl
+import org.junit.jupiter.api.BeforeEach
+import org.sonarlint.intellij.SonarLintTestUtils.clearServerConnectionCredentials
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -32,6 +34,11 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.test.AbstractHeavyTests
 
 abstract class AbstractSonarLintHeavyTests : AbstractHeavyTests() {
+    
+    @BeforeEach
+    open fun clearCredentials() {
+        clearServerConnectionCredentials()
+    }
 
     val globalSettings: SonarLintGlobalSettings
         get() {
@@ -66,5 +73,6 @@ abstract class AbstractSonarLintHeavyTests : AbstractHeavyTests() {
 
     protected fun projectBackendId(project: Project) = project.projectFilePath!!
     protected fun moduleBackendId(module: Module) = BackendService.moduleId(module)
+
 }
 

@@ -19,16 +19,26 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.config.global.ServerConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.sonarlint.intellij.SonarLintTestUtils.clearCredentialsForConnection;
 
 class WizardModelTests {
+
+  private static final String CONNECTION_NAME = "name";
+
+  @BeforeEach
+  void clearCredentials() {
+    clearCredentialsForConnection(CONNECTION_NAME);
+  }
+  
   @Test
   void testCreateFromConfig() {
     var server = ServerConnection.newBuilder()
-      .setName("name")
+      .setName(CONNECTION_NAME)
       .setToken("token")
       .setOrganizationKey("org")
       .setEnableProxy(true)
@@ -41,14 +51,14 @@ class WizardModelTests {
     assertThat(model.getToken()).isEqualTo("token");
     assertThat(model.getOrganizationKey()).isEqualTo("org");
     assertThat(model.getOrganizationList()).isEmpty();
-    assertThat(model.getName()).isEqualTo("name");
+    assertThat(model.getName()).isEqualTo(CONNECTION_NAME);
     assertThat(model.getServerUrl()).isEqualTo("url");
   }
 
   @Test
   void testExportToConfig() {
     var model = new WizardModel();
-    model.setName("name");
+    model.setName(CONNECTION_NAME);
     model.setOrganizationKey("org");
     model.setServerUrl("url");
     model.setLogin("login");
@@ -69,7 +79,7 @@ class WizardModelTests {
   @Test
   void testExportSonarCloud() {
     var model = new WizardModel();
-    model.setName("name");
+    model.setName(CONNECTION_NAME);
     model.setOrganizationKey("org");
     model.setToken("token");
     model.setPassword(new char[] {'p', 'a', 's', 's'});
@@ -87,7 +97,7 @@ class WizardModelTests {
   @Test
   void testMigrationSonarCloud() {
     var server = ServerConnection.newBuilder()
-      .setName("name")
+      .setName(CONNECTION_NAME)
       .setToken("token")
       .setOrganizationKey("org")
       .setEnableProxy(true)
@@ -99,4 +109,5 @@ class WizardModelTests {
     assertThat(server.enableProxy()).isTrue();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
   }
+
 }
