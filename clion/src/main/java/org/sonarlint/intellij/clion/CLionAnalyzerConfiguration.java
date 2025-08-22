@@ -125,12 +125,15 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
 
   @Nullable
   static ForcedLanguage getSonarLanguage(@Nullable OCLanguageKind languageKind) {
-    return switch (languageKind) {
-      case CLanguageKind.C -> ForcedLanguage.C;
-      case CLanguageKind.CPP -> ForcedLanguage.CPP;
-      case CLanguageKind.OBJ_C -> ForcedLanguage.OBJC;
-      case null, default -> null;
-    };
+    if (languageKind == CLanguageKind.C) {
+      return ForcedLanguage.C;
+    } else if (languageKind == CLanguageKind.CPP) {
+      return ForcedLanguage.CPP;
+    } else if (languageKind == CLanguageKind.OBJ_C) {
+      return ForcedLanguage.OBJC;
+    } else {
+      return null;
+    }
   }
 
   private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {

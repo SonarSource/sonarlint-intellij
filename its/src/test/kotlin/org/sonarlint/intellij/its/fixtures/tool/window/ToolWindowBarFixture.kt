@@ -27,28 +27,28 @@ import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import java.time.Duration
 import org.sonarlint.intellij.its.fixtures.findElement
-import org.sonarlint.intellij.its.fixtures.stripButton
+import org.sonarlint.intellij.its.fixtures.stripeButton
+import java.time.Duration
 
 fun ContainerFixture.toolWindowBar(
-  title: String,
-  function: ToolWindowBarFixture.() -> Unit = {}): ToolWindowBarFixture = step("Search for tool window with title $title") {
-  val toolWindowPane = find<ToolWindowBarFixture>(Duration.ofSeconds(5))
-  toolWindowPane.title = title
-  toolWindowPane.apply(function)
+    title: String,
+    function: ToolWindowBarFixture.() -> Unit = {},
+): ToolWindowBarFixture = step("Search for tool window with title $title") {
+    val toolWindowPane = find<ToolWindowBarFixture>(Duration.ofSeconds(5))
+    toolWindowPane.title = title
+    toolWindowPane.apply(function)
 }
 
 @DefaultXpath(by = "ToolWindow type", xpath = "//div[@class='ToolWindowLeftToolbar']")
 @FixtureName(name = "Tool Window")
 class ToolWindowBarFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
-  lateinit var title: String
+    lateinit var title: String
 
-  fun content(classType: String, function: TabContentFixture.() -> Unit = {}) =
-    findElement<TabContentFixture>(byXpath("tab with content of type $classType", "//div[@class='$classType']")).apply(function)
+    fun content(classType: String, function: TabContentFixture.() -> Unit = {}) =
+        findElement<TabContentFixture>(byXpath("tab with content of type $classType", "//div[@class='$classType']")).apply(function)
 
-  fun ensureOpen() {
-    stripButton(title).open()
-  }
-
+    fun ensureOpen() {
+        stripeButton(title).open()
+    }
 }

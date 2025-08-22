@@ -17,27 +17,27 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.git
+package org.sonarlint.intellij.fixtures
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import java.lang.reflect.Method
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.extension.ExtendWith
+import java.lang.reflect.Method
 
 @ExtendWith(RunInEdtInterceptor::class)
 abstract class AbstractLightTests : BasePlatformTestCase() {
 
-  @BeforeEach
-  fun beforeEachLightTest(testInfo: TestInfo) {
-    // explicitly call TestCase.setName as IntelliJ relies on it for the setup
-    name = testInfo.testMethod.map(Method::getName).orElseGet { "test" }
-    super.setUp()
-  }
+    @BeforeEach
+    fun beforeEachLightTest(testInfo: TestInfo) {
+        // explicitly call TestCase.setName as IntelliJ relies on it for the setup
+        name = testInfo.testMethod.map(Method::getName).orElseGet { "test" }
+        super.setUp()
+    }
 
-  @AfterEach
-  fun afterEachLightTest() {
-    super.tearDown()
-  }
+    @AfterEach
+    fun afterEachLightTest() {
+        super.tearDown()
+    }
 }

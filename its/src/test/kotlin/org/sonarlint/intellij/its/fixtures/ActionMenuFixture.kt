@@ -26,23 +26,28 @@ import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.attempt
-import java.time.Duration
 
 @FixtureName("Action Menu")
 class ActionMenuFixture(
-  remoteRobot: RemoteRobot,
-  remoteComponent: RemoteComponent
+    remoteRobot: RemoteRobot,
+    remoteComponent: RemoteComponent,
 ) : CommonContainerFixture(remoteRobot, remoteComponent) {
 
-  fun open() {
-    // sometimes the menu list does not appear after the click
-    attempt(tries = 3) {
-      click()
-      find<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']"), timeout = Duration.ofSeconds(1))
+    fun open() {
+        if (findAll<ContainerFixture>(byXpath("//div[@class='JBPopupMenu']")).isEmpty()) {
+            // sometimes the menu list does not appear after the click
+            attempt(tries = 3) {
+                click()
+            }
+        }
     }
-  }
 
-  fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-    return findAll<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and contains(@text, '$label')]"))[0].apply(function)
-  }
+    fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
+        return findAll<ActionMenuItemFixture>(
+            byXpath(
+                "menu item $label",
+                "//div[@class='ActionMenuItem' and contains(@text, '$label')]"
+            )
+        )[0].apply(function)
+    }
 }

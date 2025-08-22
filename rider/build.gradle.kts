@@ -24,4 +24,5 @@ dependencies {
         bundledPlugins("Git4Idea")
     }
     compileOnly(libs.findbugs.jsr305)
+    testImplementation(libs.junit.four)
 }

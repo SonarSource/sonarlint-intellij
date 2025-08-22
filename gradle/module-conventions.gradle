@@ -6,20 +6,22 @@ tasks.withType(Test).configureEach {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 configurations.archives.canBeResolved = true
 
-tasks.cyclonedxBom {
+tasks {
+  cyclonedxBom {
     setIncludeConfigs(List.of("runtimeClasspath"))
     inputs.files(configurations.named("runtimeClasspath").get(), configurations.archives)
     mustRunAfter(getTasksByName("buildPluginBlockmap", true))
+  }
 }
 
 var bomFile = layout.buildDirectory.file("reports/bom.json")

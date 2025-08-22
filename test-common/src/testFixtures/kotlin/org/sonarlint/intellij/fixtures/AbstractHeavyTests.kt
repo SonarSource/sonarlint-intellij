@@ -17,14 +17,14 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.git
+package org.sonarlint.intellij.fixtures
 
 import com.intellij.testFramework.HeavyPlatformTestCase
-import java.lang.reflect.Method
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.extension.ExtendWith
+import java.lang.reflect.Method
 
 @ExtendWith(RunInEdtInterceptor::class)
 abstract class AbstractHeavyTests : HeavyPlatformTestCase() {

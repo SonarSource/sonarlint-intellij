@@ -64,7 +64,7 @@ class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLintLight
 
   private static Sdk addJrtFsJarTo(@NotNull Sdk jdk) {
     try {
-      jdk = jdk.clone();
+      jdk = (Sdk) jdk.clone();
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
     }

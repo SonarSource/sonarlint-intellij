@@ -17,14 +17,14 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.git
+package org.sonarlint.intellij.fixtures
 
 import com.intellij.testFramework.UITestUtil
 import com.intellij.testFramework.runInEdtAndWait
-import java.lang.reflect.Method
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.InvocationInterceptor
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext
+import java.lang.reflect.Method
 
 class RunInEdtInterceptor : InvocationInterceptor {
     companion object {

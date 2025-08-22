@@ -13,6 +13,7 @@ env:
   GRADLE_USER_HOME: ${CIRRUS_WORKING_DIR}/.gradle_cache
   IDEA_HOME: "/opt/intellij"
   RIDER_HOME: "/opt/rider"
+  RESHARPER_HOME: "/opt/resharper"
   CLION_HOME: "/opt/clion"
   ULTIMATE_HOME: "/opt/ultimate"
 
@@ -48,7 +49,7 @@ orchestrator_monthly_cache_template: &ORCHESTRATOR_MONTHLY_CACHE_TEMPLATE
     fingerprint_script: echo ${THIS_MONTH}
 
 container_definition: &CONTAINER_DEFINITION
-  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j21-latest
+  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j17-g7-latest
   region: eu-central-1
   cluster_name: ${CIRRUS_CLUSTER_NAME}
   namespace: default
@@ -67,7 +68,7 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
 ec2_instance_definition: &WINVM_DEFINITION
   region: eu-central-1
   type: c5.9xlarge
-  image: pr-72-sonarlint-intellij-v20250813074102
+  image: pr-72-sonarlint-intellij-v20250821155253
   platform: windows
 
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
@@ -97,7 +98,7 @@ build_plugin_task:
   env:
     SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
     SONAR_TOKEN: VAULT[development/kv/data/next data.token]
-    JDK_VERSION: "21"
+    JDK_VERSION: "17"
     ARTIFACTORY_DEPLOY_REPO: sonarsource-public-qa
     ARTIFACTORY_DEPLOY_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer
     ARTIFACTORY_DEPLOY_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
@@ -126,7 +127,7 @@ validate_task:
   env:
     SONAR_HOST_URL: VAULT[development/kv/data/next data.url]
     SONAR_TOKEN: VAULT[development/kv/data/next data.token]
-    JDK_VERSION: "21"
+    JDK_VERSION: "17"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
     cpu: 7
@@ -152,9 +153,10 @@ validate_windows_task:
   #  name: "Run unit tests on Windows"
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   env:
-    JDK_VERSION: "21"
+    JDK_VERSION: "17"
     IDEA_HOME: "/C/Program Files/intellij"
     RIDER_HOME: "/C/Program Files/rider"
+    RESHARPER_HOME: "/C/Program Files/resharper"
     CLION_HOME: "/C/Program Files/clion"
     ULTIMATE_HOME: "/C/Program Files/ultimate"
   ec2_instance:
@@ -181,7 +183,7 @@ plugin_verifier_task:
     - build_plugin
   <<: *ONLY_IF_NIGHTLY
   env:
-    JDK_VERSION: "21"
+    JDK_VERSION: "17"
     ALLOWED_IDE: "AS|CL|DG|GO|IIU|IIC|IIE|PS|PCP|PCC|PCE|RDCPPP|RD|RM|WS"
   eks_container:
     <<: *BUILDER_CONTAINER_DEFINITION
@@ -189,7 +191,7 @@ plugin_verifier_task:
     memory: 10G
   matrix:
     - env:
-        IDEA_VERSION: '2024.2'
+        IDEA_VERSION: '2023.1.7'
     - env:
         IDEA_VERSION: '2025.2'
     - env:
@@ -238,7 +240,7 @@ qa_task:
     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
     GITHUB_TOKEN: VAULT[development/github/token/licenses-ro token]
     DISPLAY: :10
-    JDK_VERSION: "21"
+    JDK_VERSION: "17"
     SONARCLOUD_IT_TOKEN: VAULT[development/team/sonarlint/kv/data/sonarcloud-it data.token]
   clionKey_file:
     path: ${CIRRUS_WORKING_DIR}/its/build/idea-sandbox/config-uiTest/clion.key.b64
@@ -269,20 +271,20 @@ qa_task:
     variable_name: WEBSTORM_KEY
   matrix:
     - env:
-        IDEA_VERSION: 'IC-2024.2'
-        QA_CATEGORY: 'Idea2024'
+        IDEA_VERSION: 'IC-2023.1.7'
+        QA_CATEGORY: 'Idea2023'
         TEST_SUITE: 'OpenInIdeTests'
     - env:
-        IDEA_VERSION: 'IC-2024.2'
-        QA_CATEGORY: 'Idea2024'
+        IDEA_VERSION: 'IC-2023.1.7'
+        QA_CATEGORY: 'Idea2023'
         TEST_SUITE: 'ConnectedAnalysisTests'
     - env:
-        IDEA_VERSION: 'IC-2024.2'
-        QA_CATEGORY: 'Idea2024'
+        IDEA_VERSION: 'IC-2023.1.7'
+        QA_CATEGORY: 'Idea2023'
         TEST_SUITE: 'ConfigurationTests'
     - env:
-        IDEA_VERSION: 'IC-2024.2'
-        QA_CATEGORY: 'Idea2024'
+        IDEA_VERSION: 'IC-2023.1.7'
+        QA_CATEGORY: 'Idea2023'
         TEST_SUITE: 'Standalone'
     - env:
         IDEA_VERSION: 'IC-2025.2'
@@ -301,44 +303,44 @@ qa_task:
         QA_CATEGORY: 'Idea2025'
         TEST_SUITE: 'Standalone'
     - env:
-        IDEA_VERSION: 'IU-2024.2'
-        QA_CATEGORY: 'IdeaUltimate2024'
+        IDEA_VERSION: 'IU-2023.1.7'
+        QA_CATEGORY: 'IdeaUltimate2023'
     - env:
         IDEA_VERSION: 'IU-2025.2'
         QA_CATEGORY: 'IdeaUltimate2025'
     - env:
-        IDEA_VERSION: 'PY-2024.2'
-        QA_CATEGORY: 'PyCharmProfessional2024'
+        IDEA_VERSION: 'PY-2023.1.6'
+        QA_CATEGORY: 'PyCharmProfessional2023'
     - env:
         IDEA_VERSION: 'PY-2025.2'
         QA_CATEGORY: 'PyCharmProfessional2025'
     - env:
-        IDEA_VERSION: 'PC-2024.2'
-        QA_CATEGORY: 'PyCharmCommunity2024'
+        IDEA_VERSION: 'PC-2023.1.6'
+        QA_CATEGORY: 'PyCharmCommunity2023'
     - env:
         IDEA_VERSION: 'PC-2025.2'
         QA_CATEGORY: 'PyCharmCommunity2025'
     - env:
-        IDEA_VERSION: 'RD-2024.2'
-        QA_CATEGORY: 'Rider2024'
+        IDEA_VERSION: 'RD-2023.3.6'
+        QA_CATEGORY: 'Rider2023'
     - env:
         IDEA_VERSION: 'RD-2025.1.5'
         QA_CATEGORY: 'Rider2025'
     - env:
-        IDEA_VERSION: 'PS-2024.2'
-        QA_CATEGORY: 'PhpStorm2024'
+        IDEA_VERSION: 'PS-2023.1.6'
+        QA_CATEGORY: 'PhpStorm2023'
     - env:
         IDEA_VERSION: 'PS-2025.2'
         QA_CATEGORY: 'PhpStorm2025'
     - env:
-        IDEA_VERSION: 'GO-2024.2'
-        QA_CATEGORY: 'GoLand2024'
+        IDEA_VERSION: 'GO-2023.3.8'
+        QA_CATEGORY: 'GoLand2023'
     - env:
         IDEA_VERSION: 'GO-2025.2'
         QA_CATEGORY: 'GoLand2025'
     - env:
-        IDEA_VERSION: 'CL-2024.2'
-        QA_CATEGORY: 'CLion2024'
+        IDEA_VERSION: 'CL-2023.1.7'
+        QA_CATEGORY: 'CLion2023'
     - env:
         IDEA_VERSION: 'CL-2025.2'
         QA_CATEGORY: 'CLion2025'
@@ -427,6 +429,7 @@ mend_scan_task:
     WS_APIKEY: VAULT[development/kv/data/mend data.apikey]
     IDEA_HOME: ""
     RIDER_HOME: ""
+    RESHARPER_HOME: ""
     CLION_HOME: ""
     ULTIMATE_HOME: ""
   <<: *SETUP_GRADLE_CACHE
@@ -459,9 +462,10 @@ promote_task:
   env:
     ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
-    JDK_VERSION: "21"
+    JDK_VERSION: "17"
     IDEA_HOME: ""
     RIDER_HOME: ""
+    RESHARPER_HOME: ""
     CLION_HOME: ""
     ULTIMATE_HOME: ""
   <<: *SETUP_GRADLE_CACHE
@@ -485,7 +489,7 @@ dogfood_task:
     memory: 2G
   env:
     ARTIFACTORY_API_KEY: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
-    JDK_VERSION: "21"
+    JDK_VERSION: "17"
   dogfood_script: |
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh

@@ -19,16 +19,18 @@
  */
 package org.sonarlint.intellij.its.utils
 
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
+import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
-import java.time.Duration
 import org.assertj.swing.timing.Pause
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.IdeaFrame
 import org.sonarlint.intellij.its.fixtures.PreferencesDialog
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.jRadioButtons
@@ -36,6 +38,7 @@ import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.fixtures.preferencesDialog
 import org.sonarlint.intellij.its.fixtures.waitUntilLoaded
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
+import java.time.Duration
 
 object SettingsUtils {
 
@@ -154,7 +157,13 @@ object SettingsUtils {
 
     fun clickPowerSaveMode() {
         optionalIdeaFrame()?.apply {
+            optionalStep {
+                findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
+            }
             actionMenu("File") {
+                optionalStep {
+                    open()
+                }
                 item("Power Save Mode") {
                     click()
                 }
