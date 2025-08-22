@@ -22,7 +22,6 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import java.util.List;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -46,7 +45,7 @@ public class GetOrganizationsTask extends Task.Modal {
   }
 
   @Override
-  public void run(@NotNull ProgressIndicator indicator) {
+  public void run(ProgressIndicator indicator) {
     indicator.setText("Searching organizations");
     indicator.setIndeterminate(true);
     try {

@@ -28,14 +28,9 @@ import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.JBUI;
-import java.awt.CardLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.*;
 import java.util.List;
-import javax.swing.Box;
-import javax.swing.Icon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintIcons;
@@ -121,7 +116,7 @@ public class AutoTriggerStatusPanel {
     var notThisFileCard = new JPanel(new GridBagLayout());
 
     var infoIcon = SonarLintIcons.INFO;
-    var notThisFileLink = getHyperlinkLabel(infoIcon, TOOLTIP);
+    var notThisFileLink = getHyperlinkLabel(infoIcon);
 
     disabledCard.add(new JLabel(SonarLintIcons.WARN), gc);
     notThisFileCard.add(notThisFileLink, gc);
@@ -148,14 +143,14 @@ public class AutoTriggerStatusPanel {
   }
 
   @NotNull
-  private static HyperlinkLabel getHyperlinkLabel(Icon infoIcon, String tooltip) {
+  private static HyperlinkLabel getHyperlinkLabel(Icon infoIcon) {
     var link = new HyperlinkLabel("");
     link.setIcon(infoIcon);
     link.setUseIconAsLink(true);
     link.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
-        final var label = new JLabel("<html>" + tooltip + "</html>");
+        final var label = new JLabel("<html>" + AutoTriggerStatusPanel.TOOLTIP + "</html>");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.getInformationColor());
         label.setOpaque(true);

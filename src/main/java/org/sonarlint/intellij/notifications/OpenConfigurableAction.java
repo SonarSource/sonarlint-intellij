@@ -25,7 +25,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
 
 class OpenConfigurableAction extends NotificationAction {
   private final Project project;
@@ -38,7 +37,7 @@ class OpenConfigurableAction extends NotificationAction {
   }
 
   @Override
-  public final void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
+  public final void actionPerformed(AnActionEvent e, Notification notification) {
     var closeNotification = true;
     if (!project.isDisposed()) {
       closeNotification = ShowSettingsUtil.getInstance().editConfigurable(project, configurable);

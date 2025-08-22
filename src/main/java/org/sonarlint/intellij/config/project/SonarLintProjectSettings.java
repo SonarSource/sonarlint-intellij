@@ -25,8 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.CheckForNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.global.ServerConnection;
 
 public final class SonarLintProjectSettings {
@@ -100,7 +99,7 @@ public final class SonarLintProjectSettings {
     return isBindingEnabled() && connection.getName().equals(connectionName);
   }
 
-  public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey) {
+  public void bindTo(ServerConnection connection, String projectKey) {
     bindingEnabled = true;
     connectionName = connection.getName();
     this.projectKey = projectKey;

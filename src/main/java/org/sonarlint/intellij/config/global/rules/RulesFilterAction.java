@@ -27,7 +27,6 @@ import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.AbstractSonarAction;
 import org.sonarlint.intellij.actions.AbstractSonarCheckboxAction;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
@@ -76,7 +75,7 @@ class RulesFilterAction extends DefaultActionGroup implements Toggleable, DumbAw
     }
 
     @Override
-    public void actionPerformed(@NotNull AnActionEvent e) {
+    public void actionPerformed(AnActionEvent e) {
       model.reset(true);
     }
   }

@@ -25,7 +25,7 @@ import com.intellij.util.ui.JBUI;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.time.Instant;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.Timer;
 import org.sonarlint.intellij.util.DateUtils;

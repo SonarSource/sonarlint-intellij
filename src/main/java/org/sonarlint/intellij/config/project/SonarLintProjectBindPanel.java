@@ -49,7 +49,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.CheckForNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import javax.swing.AbstractAction;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;

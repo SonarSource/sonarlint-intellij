@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.stream.Stream;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.java.JavaAnalysisConfigurator;
@@ -62,7 +61,7 @@ class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLintLight
     assertThat(Paths.get(props.get("sonar.java.jdkHome"))).isEqualTo(FAKE_JDK_ROOT_PATH.resolve("jdk9"));
   }
 
-  private static Sdk addJrtFsJarTo(@NotNull Sdk jdk) {
+  private static Sdk addJrtFsJarTo(Sdk jdk) {
     try {
       jdk = (Sdk) jdk.clone();
     } catch (CloneNotSupportedException e) {

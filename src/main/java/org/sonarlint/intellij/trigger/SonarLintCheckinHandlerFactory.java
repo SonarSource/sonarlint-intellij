@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class SonarLintCheckinHandlerFactory extends CheckinHandlerFactory {
 
-  @NotNull @Override public CheckinHandler createHandler(@NotNull CheckinProjectPanel panel, @NotNull CommitContext commitContext) {
+  @NotNull @Override public CheckinHandler createHandler(CheckinProjectPanel panel, CommitContext commitContext) {
     var project = panel.getProject();
     return new SonarLintCheckinHandler(project, panel);
   }

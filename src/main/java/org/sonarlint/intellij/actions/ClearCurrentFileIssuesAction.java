@@ -30,7 +30,7 @@ import com.intellij.psi.PsiManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import javax.swing.Icon;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 

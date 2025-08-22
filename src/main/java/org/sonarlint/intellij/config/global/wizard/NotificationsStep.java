@@ -27,7 +27,7 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 
 public class NotificationsStep extends AbstractWizardStepEx {

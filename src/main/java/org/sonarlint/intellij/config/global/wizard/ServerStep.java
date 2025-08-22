@@ -42,7 +42,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.MouseInputAdapter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.promotion.UtmParameters;

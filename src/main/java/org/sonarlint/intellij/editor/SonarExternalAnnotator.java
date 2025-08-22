@@ -32,8 +32,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Set;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
@@ -62,7 +61,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   private static final Set<String> SILENCED_QUICK_FIXABLE_RULE_KEYS = Set.of("java:S1068", "java:S1144", "java:S1172");
 
   @Override
-  public void apply(@NotNull PsiFile psiFile, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
+  public void apply(PsiFile psiFile, AnnotationContext annotationResult, AnnotationHolder holder) {
     if (shouldSkip(psiFile)) {
       return;
     }
@@ -100,18 +99,18 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
   }
 
-  private static boolean shouldSkip(@NotNull PsiFile file) {
+  private static boolean shouldSkip(PsiFile file) {
     // A php file is annotated twice, once by HTML and once by PHP plugin. We want to avoid duplicate annotation
     return isPhpLanguageRegistered() && isPhpFile(file);
   }
 
   @Override
-  public AnnotationContext collectInformation(@NotNull PsiFile file, @NotNull Editor editor, boolean hasErrors) {
+  public AnnotationContext collectInformation(PsiFile file, Editor editor, boolean hasErrors) {
     return collectInformation(file);
   }
 
   @Override
-  public AnnotationContext collectInformation(@NotNull PsiFile file) {
+  public AnnotationContext collectInformation(PsiFile file) {
     return new AnnotationContext();
   }
 

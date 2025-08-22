@@ -45,7 +45,7 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;

@@ -24,7 +24,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotAction;
 import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotSettings;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;

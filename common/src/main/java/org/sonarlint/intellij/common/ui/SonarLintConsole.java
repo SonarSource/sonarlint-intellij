@@ -21,13 +21,12 @@ package org.sonarlint.intellij.common.ui;
 
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public interface SonarLintConsole {
 
-  static SonarLintConsole get(@NotNull Project p) {
+  static SonarLintConsole get(Project p) {
     return SonarLintUtils.getService(p, SonarLintConsole.class);
   }
 

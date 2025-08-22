@@ -25,7 +25,6 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.ContentManager;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.ui.risks.DependencyRisksPanel;
@@ -67,22 +66,22 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     });
   }
 
-  private static void addCurrentFileTab(Project project, @NotNull ContentManager contentManager) {
+  private static void addCurrentFileTab(Project project, ContentManager contentManager) {
     var currentFilePanel = new CurrentFilePanel(project);
     addTab(currentFilePanel, contentManager, CURRENT_FILE_TAB_TITLE);
   }
 
-  private static void addReportTab(Project project, @NotNull ContentManager contentManager) {
+  private static void addReportTab(Project project, ContentManager contentManager) {
     var reportPanel = new ReportPanel(project);
     addTab(reportPanel, contentManager, REPORT_TAB_TITLE);
   }
 
-  private static void addTaintVulnerabilitiesTab(Project project, @NotNull ContentManager contentManager) {
+  private static void addTaintVulnerabilitiesTab(Project project, ContentManager contentManager) {
     var taintVulnerabilitiesPanel = new TaintVulnerabilitiesPanel(project);
     addTab(taintVulnerabilitiesPanel, contentManager, buildTabName(0, TAINT_VULNERABILITIES_TAB_TITLE));
   }
 
-  private static void addSecurityHotspotsTab(Project project, @NotNull ContentManager contentManager) {
+  private static void addSecurityHotspotsTab(Project project, ContentManager contentManager) {
     var securityHotspotsPanel = new SecurityHotspotsPanel(project);
     addTab(securityHotspotsPanel, contentManager, buildTabName(0, SECURITY_HOTSPOTS_TAB_TITLE));
   }

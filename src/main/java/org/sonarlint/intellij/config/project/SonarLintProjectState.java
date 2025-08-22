@@ -29,7 +29,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import javax.annotation.CheckForNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 
 @Service(Service.Level.PROJECT)
 @State(name = "SonarLintProjectState", storages = {@Storage("sonarlint-state.xml")})

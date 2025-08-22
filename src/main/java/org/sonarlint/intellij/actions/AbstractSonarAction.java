@@ -26,9 +26,9 @@ import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.stream.Stream;
-import javax.swing.Icon;
+import javax.annotation.Nullable;
+import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 public abstract class AbstractSonarAction extends AnAction implements DumbAware {

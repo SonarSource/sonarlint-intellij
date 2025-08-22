@@ -24,7 +24,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 
 public class ConfirmStep extends AbstractWizardStepEx {
   private static final String TEXT1 = "Connection successfully created.";

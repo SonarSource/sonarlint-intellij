@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.finding.Flow;
 import org.sonarlint.intellij.finding.Location;
 

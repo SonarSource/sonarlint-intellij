@@ -35,8 +35,7 @@ import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
 import java.util.HashMap;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
@@ -45,7 +44,7 @@ import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadAction
 public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
   private final Project project;
 
-  public CLionAnalyzerConfiguration(@NotNull Project project) {
+  public CLionAnalyzerConfiguration(Project project) {
     this.project = project;
   }
 

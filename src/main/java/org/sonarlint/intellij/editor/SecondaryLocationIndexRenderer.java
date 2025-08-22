@@ -27,11 +27,7 @@ import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.GraphicsUtil;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Rectangle;
-import org.jetbrains.annotations.NotNull;
+import java.awt.*;
 import org.sonarlint.intellij.finding.Location;
 
 @SuppressWarnings("UseJBColor")
@@ -57,13 +53,13 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
   private final String index;
   private final boolean selected;
 
-  public SecondaryLocationIndexRenderer(@NotNull Location location, int index, boolean selected) {
+  public SecondaryLocationIndexRenderer(Location location, int index, boolean selected) {
     this.location = location;
     this.index = Integer.toString(index);
     this.selected = selected;
   }
 
-  private static FontInfo getFontInfo(@NotNull Editor editor) {
+  private static FontInfo getFontInfo(Editor editor) {
     var colorsScheme = editor.getColorsScheme();
     var fontPreferences = colorsScheme.getFontPreferences();
     return ComplementaryFontsRegistry.getFontAbleToDisplay('a', Font.PLAIN, fontPreferences,
@@ -71,13 +67,13 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
   }
 
   @Override
-  public int calcWidthInPixels(@NotNull Inlay inlay) {
+  public int calcWidthInPixels(Inlay inlay) {
     var fontInfo = getFontInfo(inlay.getEditor());
     return fontInfo.fontMetrics().stringWidth(index) + 2 * (HORIZONTAL_PADDING + HORIZONTAL_MARGIN);
   }
 
   @Override
-  public void paint(@NotNull Inlay inlay, @NotNull Graphics g, @NotNull Rectangle targetRegion, @NotNull TextAttributes textAttributes) {
+  public void paint(Inlay inlay, Graphics g, Rectangle targetRegion, TextAttributes textAttributes) {
     GraphicsUtil.setupRoundedBorderAntialiasing(g);
     g.setColor(getInlayColor(location, selected));
     g.fillRoundRect(

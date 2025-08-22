@@ -23,8 +23,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
-import java.awt.BorderLayout;
-import org.jetbrains.annotations.NotNull;
+import java.awt.*;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
@@ -60,7 +59,7 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, (ProjectConfigurationListener) s -> runnable.run());
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
       @Override
-      public void selectionChanged(@NotNull FileEditorManagerEvent event) {
+      public void selectionChanged(FileEditorManagerEvent event) {
         runnable.run();
       }
     });
