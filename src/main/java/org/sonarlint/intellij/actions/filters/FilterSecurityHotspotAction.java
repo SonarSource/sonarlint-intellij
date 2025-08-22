@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.actions.filters;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 
@@ -41,7 +40,7 @@ public class FilterSecurityHotspotAction extends AbstractSonarToggleAction {
   }
 
   @Override
-  public void update(@NotNull AnActionEvent e) {
+  public void update(AnActionEvent e) {
     var project = e.getProject();
     if (project == null) {
       return;
@@ -51,12 +50,12 @@ public class FilterSecurityHotspotAction extends AbstractSonarToggleAction {
   }
 
   @Override
-  public boolean isSelected(@NotNull AnActionEvent e) {
+  public boolean isSelected(AnActionEvent e) {
     return settings.getCurrentlySelectedFilter() == filter;
   }
 
   @Override
-  public void setSelected(@NotNull AnActionEvent e, boolean enabled) {
+  public void setSelected(AnActionEvent e, boolean enabled) {
     var project = e.getProject();
     if (project == null) {
       return;

@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import javax.annotation.CheckForNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 
 public class RulesFilterModel {
   private final Runnable onChange;

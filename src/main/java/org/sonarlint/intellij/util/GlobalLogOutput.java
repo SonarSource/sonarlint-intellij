@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 

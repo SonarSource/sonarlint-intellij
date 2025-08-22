@@ -38,9 +38,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
-import javax.swing.SwingUtilities;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
+import javax.swing.*;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
@@ -554,7 +553,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void updateOnTheFlySecurityHotspots(@NotNull Map<VirtualFile, Collection<LiveSecurityHotspot>> currentSecurityHotspotsPerOpenFile) {
+  public void updateOnTheFlySecurityHotspots(Map<VirtualFile, Collection<LiveSecurityHotspot>> currentSecurityHotspotsPerOpenFile) {
     var content = getSecurityHotspotContent();
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
@@ -602,7 +601,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   @Override
-  public void selectionChanged(@NotNull ContentManagerEvent event) {
+  public void selectionChanged(ContentManagerEvent event) {
     // Introduced in the context of Security Hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
     getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
   }

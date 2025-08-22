@@ -38,8 +38,7 @@ import com.jetbrains.cidr.project.workspace.CidrWorkspace;
 import com.jetbrains.rider.cpp.fileType.psi.CppFile;
 import java.util.HashMap;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.clion.AnalyzerConfiguration;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -54,7 +53,7 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
     CLanguageKind.OBJ_C, ForcedLanguage.OBJC);
   private final Project project;
 
-  public CLionResharperAnalyzerConfiguration(@NotNull Project project) {
+  public CLionResharperAnalyzerConfiguration(Project project) {
     this.project = project;
   }
 

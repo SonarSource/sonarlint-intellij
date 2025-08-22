@@ -46,9 +46,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
@@ -69,7 +68,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static final char SEPARATOR = ',';
 
   @Override
-  public AnalysisConfiguration configure(@NotNull Module ijModule, Collection<VirtualFile> filesToAnalyze) {
+  public AnalysisConfiguration configure(Module ijModule, Collection<VirtualFile> filesToAnalyze) {
     var config = new AnalysisConfiguration();
     var moduleClasspath = new JavaModuleClasspath();
     moduleClasspath.dependentModules().add(ijModule);
@@ -170,7 +169,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     return !scope.isForProductionRuntime() && !scope.isForProductionCompile();
   }
 
-  private static void processCompilerOutput(JavaModuleClasspath moduleClasspath, @NotNull Module module, boolean topLevel, boolean testModule) {
+  private static void processCompilerOutput(JavaModuleClasspath moduleClasspath, Module module, boolean topLevel, boolean testModule) {
     var output = getCompilerOutputPath(module);
     if (output != null) {
       final var outputPath = VfsUtilCore.virtualToIoFile(output).getAbsolutePath();

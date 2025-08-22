@@ -29,7 +29,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;

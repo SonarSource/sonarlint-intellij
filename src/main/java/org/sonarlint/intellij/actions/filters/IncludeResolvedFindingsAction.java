@@ -21,7 +21,7 @@ package org.sonarlint.intellij.actions.filters;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import javax.swing.Icon;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.finding.Finding;

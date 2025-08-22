@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.clion;
 
 import java.util.Map;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 
 public class BuildWrapperJsonGenerator {
   private final StringBuilder builder;

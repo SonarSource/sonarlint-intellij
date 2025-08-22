@@ -24,8 +24,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.BackendService;
@@ -46,7 +45,7 @@ public class ServerDownloadProjectTask extends Task.WithResult<ServerDownloadPro
   }
 
   @Override
-  protected DownloadResult compute(@NotNull ProgressIndicator indicator) {
+  protected DownloadResult compute(ProgressIndicator indicator) {
     try {
       indicator.setIndeterminate(true);
       indicator.setText("Downloading projects");

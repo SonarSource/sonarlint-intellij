@@ -24,7 +24,6 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.serviceContainer.NonInjectable;
-import org.jetbrains.annotations.NotNull;
 
 @State(name = "SonarLintModuleSettings", storages = @Storage(StoragePathMacros.MODULE_FILE))
 public final class SonarLintModuleSettingsStore implements PersistentStateComponent<SonarLintModuleSettings> {
@@ -45,7 +44,7 @@ public final class SonarLintModuleSettingsStore implements PersistentStateCompon
   }
 
   @Override
-  public void loadState(@NotNull SonarLintModuleSettings settings) {
+  public void loadState(SonarLintModuleSettings settings) {
     this.settings = settings;
   }
 

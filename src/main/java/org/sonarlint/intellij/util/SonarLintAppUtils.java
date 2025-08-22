@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.annotation.CheckForNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.util.FileUtils;
 
 import static com.intellij.openapi.vfs.VirtualFileVisitor.NO_FOLLOW_SYMLINKS;

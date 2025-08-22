@@ -21,8 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.ui.ColoredTreeCellRenderer;
 import java.awt.event.MouseEvent;
-import javax.swing.JTree;
-import org.jetbrains.annotations.NotNull;
+import javax.swing.*;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 
 /**
@@ -43,7 +42,7 @@ public class TreeCellRenderer extends ColoredTreeCellRenderer {
   private String iconToolTip = null;
 
   @Override
-  public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+  public void customizeCellRenderer(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
     if (nodeRenderer != null) {
       nodeRenderer.render(this, value);
     } else {

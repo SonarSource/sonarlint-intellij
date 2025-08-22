@@ -24,7 +24,7 @@ import com.intellij.openapi.actionSystem.ex.CheckboxAction;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.util.NlsActions;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 
 public abstract class AbstractSonarCheckboxAction extends CheckboxAction implements DumbAware {
 

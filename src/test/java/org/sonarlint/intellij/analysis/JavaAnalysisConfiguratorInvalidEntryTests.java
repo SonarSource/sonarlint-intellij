@@ -25,7 +25,6 @@ import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.testFramework.LightProjectDescriptor;
 import java.util.Collections;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.java.JavaAnalysisConfigurator;
@@ -45,7 +44,7 @@ class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLintLightTe
       }
 
       @Override
-      public void configureModule(@NotNull Module module, @NotNull ModifiableRootModel model, @NotNull ContentEntry contentEntry) {
+      public void configureModule(Module module, ModifiableRootModel model, ContentEntry contentEntry) {
         super.configureModule(module, model, contentEntry);
         // Inheriting a null JDK entry
         model.inheritSdk();

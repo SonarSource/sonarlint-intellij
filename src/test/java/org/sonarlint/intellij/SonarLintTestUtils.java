@@ -22,7 +22,7 @@ package org.sonarlint.intellij;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import java.awt.GraphicsEnvironment;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;

@@ -25,15 +25,15 @@ import com.intellij.openapi.diagnostic.ErrorReportSubmitter;
 import com.intellij.openapi.diagnostic.IdeaLoggingEvent;
 import com.intellij.openapi.diagnostic.SubmittedReportInfo;
 import com.intellij.util.Consumer;
-import java.awt.Component;
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.util.UrlUtils;
@@ -57,10 +57,10 @@ public class BlameSonarSource extends ErrorReportSubmitter {
   }
 
   @Override
-  public boolean submit(@NotNull IdeaLoggingEvent[] events,
+  public boolean submit(IdeaLoggingEvent[] events,
     @Nullable String additionalInfo,
-    @NotNull Component parentComponent,
-    @NotNull Consumer<? super SubmittedReportInfo> consumer) {
+    Component parentComponent,
+    Consumer<? super SubmittedReportInfo> consumer) {
     String body = buildBody(events, additionalInfo);
     BrowserUtil.browse(getReportWithBodyUrl(body));
     consumer.consume(new SubmittedReportInfo(COMMUNITY_FAULT_CATEGORY_URL, "community support thread", SubmittedReportInfo.SubmissionStatus.NEW_ISSUE));
@@ -82,7 +82,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
   }
 
   @NotNull
-  String buildBody(@NotNull IdeaLoggingEvent[] events, @Nullable String additionalInfo) {
+  String buildBody(IdeaLoggingEvent[] events, @Nullable String additionalInfo) {
     var abbreviations = getAbbreviations();
     var body = new StringBuilder();
     body.append("Environment:\n");

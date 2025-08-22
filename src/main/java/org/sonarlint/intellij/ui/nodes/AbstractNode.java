@@ -29,7 +29,7 @@ import com.intellij.util.ui.UIUtil;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;

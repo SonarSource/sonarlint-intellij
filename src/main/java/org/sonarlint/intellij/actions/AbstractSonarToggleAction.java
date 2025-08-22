@@ -26,9 +26,9 @@ import com.intellij.openapi.actionSystem.ToggleAction;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.NlsActions;
-import javax.swing.Icon;
+import javax.annotation.Nullable;
+import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public abstract class AbstractSonarToggleAction extends ToggleAction implements DumbAware {
 
@@ -52,7 +52,7 @@ public abstract class AbstractSonarToggleAction extends ToggleAction implements 
   }
 
   @Override
-  public void update(@NotNull AnActionEvent e) {
+  public void update(AnActionEvent e) {
     super.update(e);
     var p = e.getProject();
     var presentation = e.getPresentation();

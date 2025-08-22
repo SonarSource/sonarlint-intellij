@@ -30,8 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
@@ -90,7 +89,7 @@ public final class ProjectBindingManager {
     return null;
   }
 
-  public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides,
+  public void bindTo(ServerConnection connection, String projectKey, Map<Module, String> moduleBindingsOverrides,
     BindingMode bindingMode) {
     var previousBinding = getProjectBinding(connection, projectKey, moduleBindingsOverrides);
 
@@ -103,7 +102,7 @@ public final class ProjectBindingManager {
     }
   }
 
-  public void bindToManually(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides) {
+  public void bindToManually(ServerConnection connection, String projectKey, Map<Module, String> moduleBindingsOverrides) {
     var previousBinding = getProjectBinding(connection, projectKey, moduleBindingsOverrides);
 
     SonarLintProjectNotifications.Companion.get(myProject).reset();
@@ -126,7 +125,7 @@ public final class ProjectBindingManager {
   }
 
   @Nullable
-  private ProjectBinding getProjectBinding(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides) {
+  private ProjectBinding getProjectBinding(ServerConnection connection, String projectKey, Map<Module, String> moduleBindingsOverrides) {
     var previousBinding = getBinding();
 
     var projectSettings = getSettingsFor(myProject);

@@ -22,7 +22,6 @@ package org.sonarlint.intellij.dogfood;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import org.jetbrains.annotations.NotNull;
 
 @State(
   name = "SonarLintDogfoodCredentials",
@@ -41,7 +40,7 @@ public final class DogfoodCredentialsStore implements PersistentStateComponent<D
   }
 
   @Override
-  public void loadState(@NotNull DogfoodCredentials state) {
+  public void loadState(DogfoodCredentials state) {
     this.credentials = state;
   }
 

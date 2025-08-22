@@ -21,7 +21,7 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import javax.swing.Icon;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class SonarCleanConsoleAction extends AbstractSonarAction {

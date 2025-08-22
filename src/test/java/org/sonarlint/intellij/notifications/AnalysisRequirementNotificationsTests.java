@@ -61,7 +61,7 @@ class AnalysisRequirementNotificationsTests extends AbstractSonarLintLightTests 
     busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(Notifications.TOPIC, new Notifications() {
       @Override
-      public void notify(@NotNull Notification notification) {
+      public void notify(Notification notification) {
         notifications.add(notification);
       }
     });

@@ -23,7 +23,7 @@ import com.intellij.notification.NotificationAction;
 import com.intellij.openapi.project.Project;
 import java.util.HashSet;
 import java.util.Set;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.client.utils.Language;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams;
 
