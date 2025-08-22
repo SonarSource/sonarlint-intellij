@@ -90,7 +90,7 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
       }
 
       @Override
-      public void configureModule(@NotNull Module module, @NotNull ModifiableRootModel model, @NotNull ContentEntry contentEntry) {
+      public void configureModule(Module module, ModifiableRootModel model, ContentEntry contentEntry) {
         super.configureModule(module, model, contentEntry);
         compilerOutputDirPath = createDirectory(tempDirPath.resolve("compiler,OutputDir"));
         compilerTestOutputDirPath = createDirectory(tempDirPath.resolve("compilerTestOutputDir"));
@@ -165,7 +165,7 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
     }
   }
 
-  private static void setCompilerOutputs(@NotNull ModifiableRootModel model, Path compilerOutputDirPath, @Nullable Path compilerTestOutputDirPath) {
+  private static void setCompilerOutputs(ModifiableRootModel model, Path compilerOutputDirPath, @Nullable Path compilerTestOutputDirPath) {
     final var compilerOutputDir = LocalFileSystem.getInstance().refreshAndFindFileByPath(compilerOutputDirPath.toString());
     model.getModuleExtension(CompilerModuleExtension.class).setCompilerOutputPath(compilerOutputDir);
     if (compilerTestOutputDirPath != null) {
@@ -235,9 +235,9 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
       .isEqualTo(expectedJdkHome);
   }
 
-  private static Sdk addRtJarTo(@NotNull Sdk jdk) {
+  private static Sdk addRtJarTo(Sdk jdk) {
     try {
-      jdk = jdk.clone();
+      jdk = (Sdk) jdk.clone();
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
     }
@@ -250,7 +250,7 @@ class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
   }
 
   @NotNull
-  private static VirtualFile findJar(@NotNull String name) {
+  private static VirtualFile findJar(String name) {
     var path = FAKE_JDK_ROOT_PATH.resolve(name);
     var file = VfsTestUtil.findFileByCaseSensitivePath(path.toString());
     var jar = JarFileSystem.getInstance().getJarRootForLocalFile(file);

@@ -29,8 +29,8 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
 import com.intellij.remoterobot.utils.waitFor
-import java.time.Duration
 import org.sonarlint.intellij.its.utils.optionalStep
+import java.time.Duration
 
 fun RemoteRobot.idea(duration: Duration = Duration.ofSeconds(20), function: IdeaFrame.() -> Unit = {}): IdeaFrame {
     return find<IdeaFrame>(duration).apply(function)
@@ -105,7 +105,6 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     }
 
     fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
-        findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
         return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
     }
 
@@ -132,7 +131,13 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     }
 
     fun openSettings() {
+        optionalStep {
+            findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
+        }
         actionMenu("File") {
+            optionalStep {
+                open()
+            }
             item("Settings") {
                 click()
             }

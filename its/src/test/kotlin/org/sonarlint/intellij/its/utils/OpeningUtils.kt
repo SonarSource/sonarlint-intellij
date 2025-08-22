@@ -23,9 +23,6 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
-import java.awt.Point
-import java.io.File
-import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -36,10 +33,11 @@ import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindowBar
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
+import java.awt.Point
+import java.io.File
+import java.time.Duration
 
 object OpeningUtils {
 
@@ -63,11 +61,32 @@ object OpeningUtils {
         }
     }
 
+    fun openFileSelector() {
+        with(remoteRobot) {
+            idea {
+                optionalStep {
+                    findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
+                }
+                actionMenu("File") {
+                    item("Open") {
+                        click(Point(10, 10)) // Force the click on the left
+                    }
+                }
+            }
+        }
+    }
+
     fun openFileViaMenu(fileName: String) {
         with(remoteRobot) {
             idea {
+                optionalStep {
+                    findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
+                }
                 actionMenu("Navigate") {
                     moveMouse()
+                    optionalStep {
+                        open()
+                    }
                     item("File") {
                         click()
                     }
@@ -94,14 +113,7 @@ object OpeningUtils {
             } catch (e: Throwable) {
                 // Starting from 2025.2+ there's no welcome frame
                 if (isGoLand()) {
-                    idea {
-                        toolWindowBar("Project") {
-                            ensureOpen()
-                        }
-                        toolWindow {
-                            findElement<ComponentFixture>(byXpath("//div[@text='Open…']")).click()
-                        }
-                    }
+                    openFileSelector()
                 } else {
                     throw e
                 }
@@ -147,7 +159,13 @@ object OpeningUtils {
 
     fun closeProject() {
         optionalIdeaFrame()?.apply {
+            optionalStep {
+                findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
+            }
             actionMenu("File") {
+                optionalStep {
+                    open()
+                }
                 val name = if (isRider()) "Close Solution" else "Close Project"
                 item(name) {
                     click()

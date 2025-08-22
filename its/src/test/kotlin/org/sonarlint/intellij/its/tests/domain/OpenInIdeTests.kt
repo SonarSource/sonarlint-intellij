@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.keyboard
-import java.time.Duration
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
@@ -35,6 +34,8 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.openInIde
+import org.sonarlint.intellij.its.utils.optionalStep
+import java.time.Duration
 
 object OpenInIdeTests {
     fun createConnection(token: String) {
@@ -98,8 +99,10 @@ object OpenInIdeTests {
         }
         with(remoteRobot) {
             idea {
-                toolWindowBar("SonarQube for IDE") {
-                    ensureOpen()
+                optionalStep {
+                    toolWindowBar("SonarQube for IDE") {
+                        ensureOpen()
+                    }
                 }
             }
         }

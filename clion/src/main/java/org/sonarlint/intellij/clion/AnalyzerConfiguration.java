@@ -112,7 +112,7 @@ public abstract class AnalyzerConfiguration {
   private static Object unWrapList(Object result) {
     if (result instanceof List<?> list) {
       // getEnvironment returns a singleton list
-      result = list.getFirst();
+      result = list.get(0);
     }
     return result;
   }

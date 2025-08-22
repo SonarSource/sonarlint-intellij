@@ -1,6 +1,6 @@
 ARG CIRRUS_AWS_ACCOUNT=275878209202
-ARG JDK_VERSION=21
-FROM ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j${JDK_VERSION}-latest
+ARG JDK_VERSION=17
+FROM ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j${JDK_VERSION}-g7-latest
 
 USER root
 
@@ -18,9 +18,9 @@ RUN export DOTNET_ROOT=$(pwd)/.dotnet &&\
     tar zxf "dotnet.tar.gz" -C "$DOTNET_ROOT"
 
 # Download and extract IntelliJ sources
-RUN curl -L -o intellij.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/2024.2/ideaIC-2024.2.zip && \
+RUN curl -L -o intellij.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/2023.1.7/ideaIC-2023.1.7.zip && \
     mkdir -p /opt/intellij && \
-    curl -L -o /opt/intellij/ideaIC-2024.2.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/2024.2/ideaIC-2024.2.pom && \
+    curl -L -o /opt/intellij/ideaIC-2023.1.7.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/2023.1.7/ideaIC-2023.1.7.pom && \
     unzip intellij.zip -d /opt/intellij && \
     chown sonarsource: /opt/intellij && \
     chmod -R 755 /opt/intellij && \
@@ -28,19 +28,29 @@ RUN curl -L -o intellij.zip https://cache-redirector.jetbrains.com/www.jetbrains
     ls /opt/intellij
 
 # Download and extract Rider sources
-RUN curl -L -o rider.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/rider/riderRD/2024.2/riderRD-2024.2.zip && \
+RUN curl -L -o rider.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/rider/riderRD/2023.1.7/riderRD-2023.1.7.zip && \
     mkdir -p /opt/rider && \
-    curl -L -o /opt/rider/riderRD-2024.2.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/rider/riderRD/2024.2/riderRD-2024.2.pom && \
+    curl -L -o /opt/rider/riderRD-2023.1.7.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/rider/riderRD/2023.1.7/riderRD-2023.1.7.pom && \
     unzip rider.zip -d /opt/rider && \
     chown sonarsource: /opt/rider && \
     chmod -R 755 /opt/rider && \
     rm rider.zip && \
     ls /opt/rider
 
+# Download and extract ReSharper sources
+RUN curl -L -o resharper.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/clion/clion/2024.1/clion-2024.1.zip && \
+    mkdir -p /opt/resharper && \
+    curl -L -o /opt/resharper/clion-2024.1.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/clion/clion/2024.1/clion-2024.1.pom && \
+    unzip resharper.zip -d /opt/resharper && \
+    chown sonarsource: /opt/resharper && \
+    chmod -R 755 /opt/resharper && \
+    rm resharper.zip && \
+    ls /opt/resharper
+
 # Download and extract CLion sources
-RUN curl -L -o clion.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/clion/clion/2024.2/clion-2024.2.zip && \
+RUN curl -L -o clion.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/clion/clion/2023.1.7/clion-2023.1.7.zip && \
     mkdir -p /opt/clion && \
-    curl -L -o /opt/clion/clion-2024.2.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/clion/clion/2024.2/clion-2024.2.pom && \
+    curl -L -o /opt/clion/clion-2023.1.7.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/clion/clion/2023.1.7/clion-2023.1.7.pom && \
     unzip clion.zip -d /opt/clion && \
     chown sonarsource: /opt/clion && \
     chmod -R 755 /opt/clion && \
@@ -48,9 +58,9 @@ RUN curl -L -o clion.zip https://cache-redirector.jetbrains.com/www.jetbrains.co
     ls /opt/clion
 
 # Download and extract Ultimate sources
-RUN curl -L -o ultimate.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIU/2024.2/ideaIU-2024.2.zip && \
+RUN curl -L -o ultimate.zip https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIU/2023.1.7/ideaIU-2023.1.7.zip && \
     mkdir -p /opt/ultimate && \
-    curl -L -o /opt/ultimate/ideaIU-2024.2.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIU/2024.2/ideaIU-2024.2.pom && \
+    curl -L -o /opt/ultimate/ideaIU-2023.1.7.pom https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIU/2023.1.7/ideaIU-2023.1.7.pom && \
     unzip ultimate.zip -d /opt/ultimate && \
     chown sonarsource: /opt/ultimate && \
     chmod -R 755 /opt/ultimate && \

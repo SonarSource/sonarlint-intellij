@@ -1,7 +1,7 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
-val clionBuildVersion: String by project
-val clionHome: String? = System.getenv("CLION_HOME")
+val resharperBuildVersion: String by project
+val resharperHome: String? = System.getenv("RESHARPER_HOME")
 
 plugins {
     id("org.jetbrains.intellij.platform.module")
@@ -14,12 +14,12 @@ apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 
 dependencies {
     intellijPlatform {
-        if (!clionHome.isNullOrBlank()) {
-            println("Using local installation of CLion: $clionHome")
-            local(clionHome)
+        if (!resharperHome.isNullOrBlank()) {
+            println("Using local installation of CLion: $resharperHome")
+            local(resharperHome)
         } else {
-            println("No local installation of CLion found, using version $clionBuildVersion")
-            clion(clionBuildVersion)
+            println("No local installation of CLion found, using version $resharperBuildVersion")
+            clion(resharperBuildVersion)
         }
         pluginComposedModule(implementation(project(":common")))
         pluginComposedModule(implementation(project(":clion")))
@@ -30,5 +30,6 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     compileOnly(libs.findbugs.jsr305)
 }

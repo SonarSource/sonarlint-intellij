@@ -21,8 +21,6 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
-import java.nio.file.Paths
-import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Assertions
@@ -46,6 +44,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
+import java.nio.file.Paths
+import java.util.UUID
 
 class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     lateinit var client: SonarLintIntelliJClient
@@ -200,7 +200,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_returns_host_info() {
-        assertThat(client.clientLiveDescription).isEqualTo("2024.2 (Community Edition) - " + project.name)
+        assertThat(client.clientLiveDescription).isEqualTo("2023.1.7 (Community Edition) - " + project.name)
     }
 
     @Test

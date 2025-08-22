@@ -23,7 +23,6 @@ import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
-import java.time.Duration
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
@@ -32,7 +31,6 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindowBar
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -42,6 +40,7 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.executeBuildWithSonarS
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.generateTokenNameAndValue
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnectionsAndAddSonarQubeConnection
+import java.time.Duration
 
 const val ANSIBLE_PROJECT_KEY = "sample-ansible"
 
@@ -67,9 +66,6 @@ class AnsibleTests : BaseUiTest() {
     private fun verifyIssueTreeContainsMessages() {
         with(remoteRobot) {
             idea {
-                toolWindowBar("SonarQube for IDE") {
-                    ensureOpen()
-                }
                 toolWindow {
                     tabTitleContains("Current File") { select() }
                     // the synchronization can take a while to happen

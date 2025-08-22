@@ -31,6 +31,7 @@ dependencies {
             intellijIdeaCommunity(intellijBuildVersion)
         }
         testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.Bundled)
     }
     testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:5.1.0.2254") {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
@@ -41,18 +42,19 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.four)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks {
     compileKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
     compileTestKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -90,6 +92,7 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
                 "-Dsonarlint.logs.verbose=true",
                 "-Didea.trust.all.projects=true",
                 "-Dide.show.tips.on.startup.default.value=false",
+                "-Dide.experimental.ui.navbar.scroll=true",
                 "-Djb.privacy.policy.text=<!--999.999-->",
                 "-Djb.consents.confirmation.enabled=false",
                 "-Deap.require.license=true"
@@ -118,7 +121,7 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "242"
+            sinceBuild = "231.9423.4"
         }
         name = "sonarlint-intellij-its"
     }

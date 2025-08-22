@@ -55,7 +55,7 @@ import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ProjectBinding;
-import org.sonarlint.intellij.git.AbstractLightTests;
+import org.sonarlint.intellij.fixtures.AbstractLightTests;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 

@@ -25,8 +25,11 @@ dependencies {
         // nativeDebug: https://youtrack.jetbrains.com/issue/CPP-43231/Cannot-extend-cidr.runConfigurationExtension
         bundledPlugins("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang", "com.intellij.nativeDebug")
         testFramework(TestFrameworkType.Platform)
+        // test-framework is not published as an artifact
+        testFramework(TestFrameworkType.Bundled)
     }
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.junit.four)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

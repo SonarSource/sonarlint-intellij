@@ -32,9 +32,6 @@ import git4idea.commands.Git
 import git4idea.commands.GitCommand
 import git4idea.commands.GitLineHandler
 import git4idea.repo.GitRepository
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -43,6 +40,10 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.sonarlint.intellij.fixtures.AbstractLightTests
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 
 private const val MAIN_BRANCH = "main"
 private const val EXPECTED = "expected-branch"
