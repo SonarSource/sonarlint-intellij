@@ -27,7 +27,7 @@ import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.NlsActions;
 import javax.annotation.Nullable;
-import javax.swing.*;
+import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractSonarToggleAction extends ToggleAction implements DumbAware {

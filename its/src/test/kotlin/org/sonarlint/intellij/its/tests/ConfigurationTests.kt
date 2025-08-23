@@ -22,10 +22,8 @@ package org.sonarlint.intellij.its.tests
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
-import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -70,6 +68,7 @@ import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
+import kotlin.random.Random
 
 @Tag("ConfigurationTests")
 @EnabledIf("isIdeaCommunity")
@@ -152,7 +151,6 @@ class ConfigurationTests : BaseUiTest() {
         }
     }
 
-    @Disabled("Flaky - excluded files from server are not always taken into account")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SampleScalaTests : BaseUiTest() {

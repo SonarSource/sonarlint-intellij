@@ -26,7 +26,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
-import javax.swing.*;
+import javax.swing.Icon;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.BackendService;
@@ -58,9 +58,7 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
   @Override public void invoke(Project project, Editor editor, PsiFile file) {
     getGlobalSettings().disableRule(ruleKey);
     var rulesByKey = getGlobalSettings().getRulesByKey();
-    runOnPooledThread(project, () -> {
-      getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey);
-    });
+    runOnPooledThread(project, () -> getService(BackendService.class).updateStandaloneRulesConfiguration(rulesByKey));
   }
 
   @Override public boolean startInWriteAction() {

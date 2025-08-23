@@ -25,7 +25,7 @@ import com.intellij.openapi.diagnostic.ErrorReportSubmitter;
 import com.intellij.openapi.diagnostic.IdeaLoggingEvent;
 import com.intellij.openapi.diagnostic.SubmittedReportInfo;
 import com.intellij.util.Consumer;
-import java.awt.*;
+import java.awt.Component;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.LinkedHashMap;
@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -115,7 +116,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
       .map(line -> {
         var abbreviated = line;
         for (var entry : packageAbbreviation.entrySet()) {
-          abbreviated = StringUtils.replace(abbreviated, entry.getKey(), entry.getValue());
+          abbreviated = Strings.CS.replace(abbreviated, entry.getKey(), entry.getValue());
         }
         return abbreviated;
       }).collect(Collectors.joining("\n"));

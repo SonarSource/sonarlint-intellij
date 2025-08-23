@@ -55,7 +55,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-@Disabled("Flaky")
+@Disabled("Flaky tests")
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     private val diamondQuickFix = "SonarQube: Replace with <>"
 
@@ -430,6 +430,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    @Disabled("Flaky test for years, needs investigation")
     fun should_apply_multiple_quick_fixes_on_same_line() {
         val virtualFile = sendFileToBackend("src/quick_fixes/multiple_quick_fixes_on_same_line.input.java")
 
