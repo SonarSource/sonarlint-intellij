@@ -334,12 +334,12 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
             eq(closedRiskIds),
             argThat { addedLocal ->
                 addedLocal.size == 2 &&
-                addedLocal[0].id == addedRiskId1 && !addedLocal[0].isResolved &&
-                addedLocal[1].id == addedRiskId2 && !addedLocal[1].isResolved
+                addedLocal[0].getId() == addedRiskId1 && !addedLocal[0].isResolved() &&
+                addedLocal[1].getId() == addedRiskId2 && !addedLocal[1].isResolved()
             },
             argThat { updatedLocal ->
                 updatedLocal.size == 1 &&
-                updatedLocal[0].id == updatedRiskId1 && updatedLocal[0].isResolved
+                updatedLocal[0].getId() == updatedRiskId1 && updatedLocal[0].isResolved()
             }
         )
     }

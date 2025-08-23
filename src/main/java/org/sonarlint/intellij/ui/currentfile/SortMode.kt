@@ -17,17 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.tree
+package org.sonarlint.intellij.ui.currentfile
 
-class CompactTree(val nodesByParent: Map<Any, List<Any>>) {
-    fun getChild(parent: Any, index: Int) = nodesByParent[parent]?.getOrNull(index)
-    fun getChildCount(parent: Any) = nodesByParent[parent]?.size ?: 0
-    fun getCountForType(type: Class<out Any>) = nodesByParent.values.flatten().count { type.isInstance(it) }
-
-    fun getIndexOfChild(parent: Any?, child: Any?): Int {
-        if (parent == null || child == null) {
-            return -1
-        }
-        return nodesByParent[parent]?.indexOf(child) ?: -1
-    }
-}
+enum class SortMode { LINE, IMPACT, DATE, RULE_KEY }

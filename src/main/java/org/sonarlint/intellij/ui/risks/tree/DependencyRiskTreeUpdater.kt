@@ -28,9 +28,9 @@ import org.sonarlint.intellij.ui.tree.CompactTreeModel
 import org.sonarlint.intellij.ui.tree.NodeRenderer
 import org.sonarlint.intellij.ui.tree.TreeSummary
 
-class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary) {
+class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary, summaryNode: SummaryNode? = null) {
 
-    val model = CompactTreeModel(SummaryNode(treeSummary))
+    val model = CompactTreeModel(summaryNode ?: SummaryNode(treeSummary))
 
     val renderer = NodeRenderer<Any> { renderer, node ->
         when (node) {
@@ -55,13 +55,17 @@ class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary) {
 
     var filteredDependencyRisks: List<LocalDependencyRisk> = emptyList()
 
+    fun getNumberOfDependencyRisks(): Int {
+        return filteredDependencyRisks.size
+    }
+
     private fun applyFiltering() {
         filteredDependencyRisks = dependencyRisks.filter { risk -> resolutionFilter.filter(risk) }
         runOnUiThread(ModalityState.defaultModalityState()) { model.setCompactTree(createCompactTree(filteredDependencyRisks)) }
         treeSummary.refresh(0, filteredDependencyRisks.size)
     }
 
-    private fun createCompactTree(dependencyRisks: List<LocalDependencyRisk>): CompactTree {
+    fun createCompactTree(dependencyRisks: List<LocalDependencyRisk>): CompactTree {
         val sortedDependencyRisks =
             dependencyRisks.sortedWith(compareByDescending<LocalDependencyRisk> { it.severity }.thenByDescending { it.cvssScore }.thenBy { it.packageName })
         val nodes: Map<Any, List<Any>> = mapOf(model.root to sortedDependencyRisks)

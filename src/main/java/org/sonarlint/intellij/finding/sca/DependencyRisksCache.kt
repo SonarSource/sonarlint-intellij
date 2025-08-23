@@ -34,17 +34,17 @@ class DependencyRisksCache() {
         val dependencyRisksToUpdateFiltered = dependencyRisksToUpdate.filter { it.status != DependencyRiskDto.Status.FIXED }
 
         val currentDependencyRisks = dependencyRisks.toMutableList()
-        currentDependencyRisks.removeAll { it.id in dependencyRiskIdsToRemove }
+        currentDependencyRisks.removeAll { it.getId() in dependencyRiskIdsToRemove }
         currentDependencyRisks.addAll(dependencyRisksToAddFiltered)
-        val updatedDependencyRiskKeys = dependencyRisksToUpdateFiltered.map { it.id }
-        currentDependencyRisks.removeAll { it.id in updatedDependencyRiskKeys }
+        val updatedDependencyRiskKeys = dependencyRisksToUpdateFiltered.map { it.getId() }
+        currentDependencyRisks.removeAll { it.getId() in updatedDependencyRiskKeys }
         currentDependencyRisks.addAll(dependencyRisksToUpdateFiltered)
         dependencyRisks = currentDependencyRisks
     }
 
     fun update(risk: LocalDependencyRisk): Boolean {
         val currentDependencyRisks = dependencyRisks.toMutableList()
-        val removed = currentDependencyRisks.removeIf { currentRisk -> currentRisk.id == risk.id }
+        val removed = currentDependencyRisks.removeIf { currentRisk -> currentRisk.getId() == risk.getId() }
         if (removed && risk.status != DependencyRiskDto.Status.FIXED) {
             currentDependencyRisks.add(risk)
             dependencyRisks = currentDependencyRisks
@@ -55,7 +55,7 @@ class DependencyRisksCache() {
     @JvmOverloads
     fun getFocusAwareCount(isResolved: Boolean? = null): Int {
         isResolved?.let { isResolvedState = it }
-        return dependencyRisks.count { isResolvedState || !it.isResolved }
+        return dependencyRisks.count { isResolvedState || !it.isResolved() }
     }
 
 }

@@ -59,9 +59,9 @@ import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
+import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.risks.DependencyRisksPanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
@@ -179,7 +179,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void filterCurrentFileTab(boolean isResolved) {
-    this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE, panel -> panel.allowResolvedIssues(isResolved));
+    this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE, panel -> panel.allowResolvedFindings(isResolved));
   }
 
   public void filterTaintVulnerabilityTab(boolean isResolved) {
@@ -390,9 +390,9 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, @Nullable Collection<LiveIssue> issues) {
+  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile) {
     this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE,
-      panel -> runOnUiThread(project, () -> panel.update(selectedFile, issues)));
+      panel -> runOnUiThread(project, () -> panel.update(selectedFile)));
   }
 
   private void showIssue(LiveIssue liveIssue, Consumer<CurrentFilePanel> selectTab) {

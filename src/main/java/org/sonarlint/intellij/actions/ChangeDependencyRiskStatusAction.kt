@@ -93,7 +93,7 @@ class ChangeDependencyRiskStatusAction() : AbstractSonarAction(
             statusChange: DependencyRiskTransition,
             comment: String?
         ) {
-            getService(BackendService::class.java).changeStatusForDependencyRisk(project, dependencyRisk.id, statusChange, comment)
+            getService(BackendService::class.java).changeStatusForDependencyRisk(project, dependencyRisk.getId(), statusChange, comment)
                 .thenAcceptAsync {
                     SonarLintProjectNotifications.get(project).displaySuccessfulNotification(
                         SUCCESS_CONTENT,

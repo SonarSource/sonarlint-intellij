@@ -72,6 +72,7 @@ import org.sonarlint.intellij.ui.SonarLintRulePanel
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.centeredLabel
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.createSplitter
+import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
 import org.sonarlint.intellij.ui.tree.TreeContentKind
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
@@ -108,8 +109,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private val cards = CardPanel()
     private val noVulnerabilitiesPanel: JBPanelWithEmptyText
 
-    private val taintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(treeSummary)
-    private val oldTaintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(oldTreeSummary)
+    private val taintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(treeSummary, SummaryNode(treeSummary))
+    private val oldTaintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(oldTreeSummary, SummaryNode(treeSummary))
 
     init {
         val globalSettings = getGlobalSettings()

@@ -25,29 +25,39 @@ import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.SonarLintIcons.impact
 import org.sonarlint.intellij.SonarLintIcons.loadingCodeFixIcon
+import org.sonarlint.intellij.SonarLintIcons.riskSeverity
 import org.sonarlint.intellij.SonarLintIcons.severity
 import org.sonarlint.intellij.SonarLintIcons.toDisabled
+import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 
 class SonarLintIconsTest {
     @Test
-    fun testSeverities() {
+    fun `test severities`() {
         for (value in IssueSeverity.values()) {
             assertThat(severity(value)).isNotNull
         }
     }
 
     @Test
-    fun testImpacts() {
-        for (value in org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.values()) {
+    fun `test impacts`() {
+        for (value in ImpactSeverity.values()) {
             assertThat(impact(value)).isNotNull
         }
     }
 
     @Test
-    fun testTypes() {
+    fun `test risk severities`() {
+        for (value in DependencyRiskDto.Severity.values()) {
+            assertThat(riskSeverity (value)).isNotNull
+        }
+    }
+
+    @Test
+    fun `test types`() {
         for (type in RuleType.values()) {
             for (severity in IssueSeverity.values()) {
                 if (type != RuleType.SECURITY_HOTSPOT) {
@@ -61,12 +71,12 @@ class SonarLintIconsTest {
     }
 
     @Test
-    fun testLoadingCodeFix() {
+    fun `test loading code fix`() {
         assertThat(loadingCodeFixIcon()).isNotNull
     }
 
     @Test
-    fun testIcons() {
+    fun `test icons`() {
         assertThat(SonarLintIcons.ICON_SONARQUBE_SERVER).isNotNull
         assertThat(SonarLintIcons.ICON_SONARQUBE_CLOUD).isNotNull
         assertThat(SonarLintIcons.ICON_SONARQUBE_SERVER_16).isNotNull
@@ -100,7 +110,7 @@ class SonarLintIconsTest {
     }
 
     @Test
-    fun testDisabled() {
+    fun `test disabled`() {
         assertThat(toDisabled(SonarLintIcons.WARN)).isNotNull
     }
 }
