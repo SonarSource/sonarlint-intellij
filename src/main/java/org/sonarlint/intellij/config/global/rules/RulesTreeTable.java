@@ -28,12 +28,16 @@ import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.table.IconTableCellRenderer;
-import java.awt.*;
+import java.awt.Component;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Locale;
-import javax.swing.*;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.tree.TreePath;
 
 public class RulesTreeTable extends TreeTable {

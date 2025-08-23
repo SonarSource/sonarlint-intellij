@@ -321,6 +321,7 @@ qa_task:
         IDEA_VERSION: 'PC-2025.2'
         QA_CATEGORY: 'PyCharmCommunity2025'
     - env:
+        # Higher because of JUnit problems on 2023.1.6
         IDEA_VERSION: 'RD-2023.3.6'
         QA_CATEGORY: 'Rider2023'
     - env:
@@ -333,6 +334,7 @@ qa_task:
         IDEA_VERSION: 'PS-2025.2'
         QA_CATEGORY: 'PhpStorm2025'
     - env:
+        # Higher because of JUnit problems on 2023.1.6
         IDEA_VERSION: 'GO-2023.3.8'
         QA_CATEGORY: 'GoLand2023'
     - env:

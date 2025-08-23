@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import javax.swing.*;
+import javax.swing.SwingUtilities;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
