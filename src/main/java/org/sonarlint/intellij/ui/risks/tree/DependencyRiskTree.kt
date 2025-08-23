@@ -20,13 +20,16 @@
 package org.sonarlint.intellij.ui.risks.tree
 
 import com.intellij.ide.DefaultTreeExpander
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.treeStructure.Tree
 import org.sonarlint.intellij.actions.ChangeDependencyRiskStatusAction
+import org.sonarlint.intellij.actions.OpenDependencyRiskInBrowserAction
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
 import org.sonarlint.intellij.util.DataKeys.Companion.DEPENDENCY_RISK_DATA_KEY
@@ -37,8 +40,12 @@ class DependencyRiskTree(updater: DependencyRiskTreeUpdater) : Tree(updater.mode
         setShowsRootHandles(false)
         setCellRenderer(TreeCellRenderer(updater.renderer))
         expandRow(0)
+        
         val group = DefaultActionGroup()
+        group.add(OpenDependencyRiskInBrowserAction())
         group.add(ChangeDependencyRiskStatusAction())
+        group.addSeparator()
+        group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL))
         PopupHandler.installPopupMenu(this, group, ActionPlaces.TODO_VIEW_POPUP)
     }
 

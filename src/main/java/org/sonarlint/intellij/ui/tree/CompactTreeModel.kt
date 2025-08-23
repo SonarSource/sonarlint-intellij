@@ -44,6 +44,8 @@ class CompactTreeModel(private val rootNode: SummaryNode) : TreeModel {
 
     override fun getChildCount(parent: Any) = compactTree.getChildCount(parent)
 
+    fun getCountForType(type: Class<out Any>) = compactTree.getCountForType(type)
+
     override fun getIndexOfChild(parent: Any?, child: Any?) = compactTree.getIndexOfChild(parent, child)
 
     override fun addTreeModelListener(listener: TreeModelListener) {

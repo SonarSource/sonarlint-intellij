@@ -54,7 +54,7 @@ class SummaryNodeTests extends AbstractSonarLintLightTests {
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
-    verify(renderer).append("Found 3 issues in 1 file");
+    verify(renderer).append("Found 3 issues");
   }
 
   @Test
@@ -67,7 +67,7 @@ class SummaryNodeTests extends AbstractSonarLintLightTests {
     var renderer = mock(TreeCellRenderer.class);
     nodeForSecurityHotspot.render(renderer);
 
-    verify(renderer).append("Found 3 Security Hotspots in 1 file");
+    verify(renderer).append("Found 3 Security Hotspots");
   }
 
   @Test

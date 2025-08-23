@@ -90,7 +90,7 @@ class DependencyRisksPanel(private val project: Project) : SimpleToolWindowPanel
                 val selectedNode = tree.getSelectedNodes(LocalDependencyRisk::class.java, null)
                 if (selectedNode.isNotEmpty()) {
                     runOnPooledThread {
-                        getService(BackendService::class.java).openDependencyRiskInBrowser(project, selectedNode.first().id)
+                        getService(BackendService::class.java).openDependencyRiskInBrowser(project, selectedNode.first().getId())
                     }
                     return true
                 }

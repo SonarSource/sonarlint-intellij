@@ -20,9 +20,13 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.ui.ColoredTreeCellRenderer;
+import com.intellij.ui.SimpleTextAttributes;
 import java.awt.event.MouseEvent;
 import javax.swing.JTree;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 
 /**
  * Can't unit test this because the parent uses a service, depending on a pico container with a method
@@ -48,6 +52,24 @@ public class TreeCellRenderer extends ColoredTreeCellRenderer {
     } else {
       var node = (AbstractNode) value;
       node.render(this);
+      // Issue node
+      if (node instanceof IssueNode issueNode) {
+        var issue = issueNode.issue();
+        var severity = issue.getUserSeverity();
+        var impact = issue.getHighestImpact();
+        if (severity != null && issue.getType() != null) {
+          setIcon(SonarLintIcons.getIconForTypeAndSeverity(issue.getType(), severity));
+        } else if (impact != null) {
+          setIcon(SonarLintIcons.impact(impact));
+        } else {
+          setIcon(null); // fallback
+        }
+        append("  " + issue.getRuleKey(), SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES);
+      } else if (node instanceof LiveSecurityHotspotNode hsNode) {
+        var hs = hsNode.getHotspot();
+        setIcon(SonarLintIcons.hotspotTypeWithProbability(hs.getVulnerabilityProbability()));
+        append("  " + hs.getRuleKey(), SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES);
+      }
     }
   }
 

@@ -20,11 +20,14 @@
 package org.sonarlint.intellij.finding.sca
 
 import java.util.UUID
+import org.sonarlint.intellij.finding.Finding
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.ImpactSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality
 
-class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
+class LocalDependencyRisk(private val serverDependencyRisk: DependencyRiskDto) : Finding {
 
-    val id: UUID = serverDependencyRisk.id
     val type: DependencyRiskDto.Type = serverDependencyRisk.type
     val severity: DependencyRiskDto.Severity = serverDependencyRisk.severity
     val quality: DependencyRiskDto.SoftwareQuality = serverDependencyRisk.quality
@@ -34,9 +37,64 @@ class LocalDependencyRisk(serverDependencyRisk: DependencyRiskDto) {
     val vulnerabilityId = serverDependencyRisk.vulnerabilityId
     val cvssScore = serverDependencyRisk.cvssScore
     val transitions: List<DependencyRiskDto.Transition> = serverDependencyRisk.transitions
-    val isResolved = status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT, DependencyRiskDto.Status.FIXED)
 
     fun canChangeStatus(): Boolean {
         return transitions.isNotEmpty()
     }
+
+    override fun getId(): UUID = serverDependencyRisk.id
+
+    override fun getCleanCodeAttribute() = null
+
+    override fun getImpacts(): List<ImpactDto> {
+        val impact = when (quality) {
+            DependencyRiskDto.SoftwareQuality.SECURITY -> SoftwareQuality.SECURITY
+            DependencyRiskDto.SoftwareQuality.RELIABILITY -> SoftwareQuality.RELIABILITY
+            DependencyRiskDto.SoftwareQuality.MAINTAINABILITY -> SoftwareQuality.MAINTAINABILITY
+        }
+        val impactSeverity = when (severity) {
+            DependencyRiskDto.Severity.BLOCKER -> ImpactSeverity.BLOCKER
+            DependencyRiskDto.Severity.HIGH -> ImpactSeverity.HIGH
+            DependencyRiskDto.Severity.MEDIUM -> ImpactSeverity.MEDIUM
+            DependencyRiskDto.Severity.LOW -> ImpactSeverity.LOW
+            DependencyRiskDto.Severity.INFO -> ImpactSeverity.INFO
+        }
+        return listOf(ImpactDto(impact, impactSeverity))
+    }
+
+    override fun getHighestQuality(): org.sonarsource.sonarlint.core.client.utils.SoftwareQuality {
+        return when (quality) {
+            DependencyRiskDto.SoftwareQuality.SECURITY -> org.sonarsource.sonarlint.core.client.utils.SoftwareQuality.SECURITY
+            DependencyRiskDto.SoftwareQuality.RELIABILITY -> org.sonarsource.sonarlint.core.client.utils.SoftwareQuality.RELIABILITY
+            DependencyRiskDto.SoftwareQuality.MAINTAINABILITY -> org.sonarsource.sonarlint.core.client.utils.SoftwareQuality.MAINTAINABILITY
+        }
+    }
+
+    override fun getHighestImpact(): org.sonarsource.sonarlint.core.client.utils.ImpactSeverity {
+        return when (severity) {
+            DependencyRiskDto.Severity.BLOCKER -> org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.BLOCKER
+            DependencyRiskDto.Severity.HIGH -> org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.HIGH
+            DependencyRiskDto.Severity.MEDIUM -> org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.MEDIUM
+            DependencyRiskDto.Severity.LOW -> org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.LOW
+            DependencyRiskDto.Severity.INFO -> org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.INFO
+        }
+    }
+
+    override fun getServerKey() = serverDependencyRisk.vulnerabilityId
+
+    override fun getRuleKey() = "dependency-risk:${serverDependencyRisk.type.name.lowercase()}"
+
+    override fun getType() = null
+
+    override fun getRuleDescriptionContextKey() = null
+
+    override fun file() = null
+
+    override fun isValid() = true
+
+    override fun isOnNewCode() = true
+
+    override fun isResolved() = status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT, DependencyRiskDto.Status.FIXED)
+
+    override fun isAiCodeFixable() = false
 }

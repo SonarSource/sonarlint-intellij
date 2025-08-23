@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui;
+package org.sonarlint.intellij.ui.currentfile;
 
 import com.intellij.ide.IdeTooltipManager;
 import com.intellij.openapi.actionSystem.ActionManager;
@@ -44,6 +44,7 @@ import org.sonarlint.intellij.connected.SonarProjectBranchListener;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.documentation.SonarLintDocumentation;
+import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.UrlBuilder;
 
