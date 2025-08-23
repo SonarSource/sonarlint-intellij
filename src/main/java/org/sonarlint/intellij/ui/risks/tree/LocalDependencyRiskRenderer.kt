@@ -49,7 +49,7 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
         renderer.toolTipText = "Double-click to open in the browser"
 
         val text = "${node.packageName}:${node.packageVersion}"
-        if (node.isResolved) {
+        if (node.isResolved()) {
             renderer.append(text, SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, null))
         } else {
             renderer.append(text)

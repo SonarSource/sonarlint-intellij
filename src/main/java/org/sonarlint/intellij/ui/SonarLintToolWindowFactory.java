@@ -27,6 +27,7 @@ import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.ContentManager;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 import org.sonarlint.intellij.ui.risks.DependencyRisksPanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 

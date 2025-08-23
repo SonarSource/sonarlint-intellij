@@ -20,9 +20,10 @@
 package org.sonarlint.intellij.util
 
 import com.intellij.ui.IdeBorderFactory
-import com.intellij.ui.JBColor
 import com.intellij.util.ui.GraphicsUtil
 import com.intellij.util.ui.JBInsets
+import com.intellij.util.ui.UIUtil
+import java.awt.Color
 import java.awt.Cursor
 import java.awt.Graphics
 import java.awt.Graphics2D
@@ -31,8 +32,8 @@ import java.awt.geom.RoundRectangle2D
 import javax.swing.JPanel
 
 open class RoundedPanelWithBackgroundColor(
-    backgroundColor: JBColor? = null,
-    borderColor: JBColor? = null,
+    backgroundColor: Color? = null,
+    borderColor: Color? = null,
     private val cornerAngle: Float = 20f
 ) : JPanel() {
 
@@ -40,10 +41,18 @@ open class RoundedPanelWithBackgroundColor(
         isOpaque = false
         cursor = Cursor.getDefaultCursor()
         super.updateUI()
-        background = backgroundColor
-        borderColor?.let {
+        updateBackgroundColor(backgroundColor)
+        updateBorderColor(borderColor)
+    }
+
+    fun updateBackgroundColor(newBackgroundColor: Color?) {
+        this.background = newBackgroundColor
+    }
+
+    fun updateBorderColor(newBorderColor: Color?) {
+        newBorderColor?.let {
             val customBorder = IdeBorderFactory.createRoundedBorder(cornerAngle.toInt(), 1)
-            customBorder.setColor(borderColor)
+            customBorder.setColor(it)
             border = customBorder
         }
     }
@@ -58,7 +67,8 @@ open class RoundedPanelWithBackgroundColor(
             rect.width.toFloat() - 1f, rect.height.toFloat() - 1f,
             cornerAngle, cornerAngle
         )
-        g2.color = background
+        val fillColor = background ?: UIUtil.getPanelBackground()
+        g2.color = fillColor
         g2.fill(rectangle2d)
     }
 

@@ -54,6 +54,10 @@ class TaintVulnerabilitiesCache(val project: Project) {
         return taintVulnerabilities.filter { it.file() == file }
     }
 
+    fun getAllTaintVulnerabilities() : List<LocalTaintVulnerability> {
+        return taintVulnerabilities
+    }
+
     @JvmOverloads
     fun getFocusAwareCount(isResolved: Boolean? = null): Int {
         val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()

@@ -24,5 +24,5 @@ import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 enum class DependencyRiskResolvedFilter {
     OPEN_ONLY, ALL;
 
-    fun filter(risk: LocalDependencyRisk) = this == ALL || this == OPEN_ONLY && !risk.isResolved
+    fun filter(risk: LocalDependencyRisk) = this == ALL || this == OPEN_ONLY && !risk.isResolved()
 }

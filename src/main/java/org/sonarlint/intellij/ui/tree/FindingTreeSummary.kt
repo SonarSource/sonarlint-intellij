@@ -55,14 +55,25 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
             newOrOldOrNothing = if (holdsOldFindings) "older " else "new "
         }
 
-        return FORMAT.format(
-            findingsCount,
-            newOrOldOrNothing,
-            pluralize(treeContentKind.displayName, findingsCount),
-            filesCount,
-            pluralize("file", filesCount),
-            sinceText
-        )
+        return if (filesCount <= 1) {
+            // Single file context - don't show file count
+            SINGLE_FILE_FORMAT.format(
+                findingsCount,
+                newOrOldOrNothing,
+                pluralize(treeContentKind.displayName, findingsCount),
+                sinceText
+            )
+        } else {
+            // Multiple files context - show file count
+            MULTI_FILE_FORMAT.format(
+                findingsCount,
+                newOrOldOrNothing,
+                pluralize(treeContentKind.displayName, findingsCount),
+                filesCount,
+                pluralize("file", filesCount),
+                sinceText
+            )
+        }
     }
 
     private fun computeEmptyText(newCodePeriod: String): String {
@@ -80,7 +91,8 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
 
     companion object {
         private const val DEFAULT_EMPTY_TEXT = "No analysis done"
-        private const val FORMAT = "Found %d %s%s in %d %s%s"
+        private const val SINGLE_FILE_FORMAT = "Found %d %s%s%s"
+        private const val MULTI_FILE_FORMAT = "Found %d %s%s in %d %s%s"
 
         private fun pluralize(word: String, count: Int): String {
             return if (count == 1) word else word + "s"

@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui;
+package org.sonarlint.intellij.ui.currentfile;
 
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -27,6 +27,7 @@ import java.awt.BorderLayout;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.ui.WhatsInThisViewPanel;
 
 public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
 
@@ -48,7 +49,7 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
     add(new CurrentFileConnectedModePanel(project).getPanel(), BorderLayout.EAST);
   }
 
-  static void subscribeToEventsThatAffectCurrentFile(Project project, Runnable runnable) {
+  public static void subscribeToEventsThatAffectCurrentFile(Project project, Runnable runnable) {
     var busConnection = project.getMessageBus().connect();
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override

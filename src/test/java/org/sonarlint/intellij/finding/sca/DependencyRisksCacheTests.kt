@@ -48,7 +48,7 @@ class DependencyRisksCacheTests {
         cache.update(emptySet(), risksToAdd, emptyList())
 
         assertThat(cache.dependencyRisks).hasSize(2)
-        assertThat(cache.dependencyRisks.map { it.id }).containsExactly(risk1.id, risk2.id)
+        assertThat(cache.dependencyRisks.map { it.getId() }).containsExactly(risk1.getId(), risk2.getId())
     }
 
     @Test
@@ -60,7 +60,7 @@ class DependencyRisksCacheTests {
         cache.update(emptySet(), listOf(newRisk), emptyList())
 
         assertThat(cache.dependencyRisks).hasSize(2)
-        assertThat(cache.dependencyRisks.map { it.id }).containsExactlyInAnyOrder(existingRisk.id, newRisk.id)
+        assertThat(cache.dependencyRisks.map { it.getId() }).containsExactlyInAnyOrder(existingRisk.getId(), newRisk.getId())
     }
 
     @Test
@@ -87,7 +87,7 @@ class DependencyRisksCacheTests {
 
         assertThat(removed).isFalse()
         assertThat(cache.dependencyRisks).hasSize(1)
-        assertThat(cache.dependencyRisks.first().id).isEqualTo(existingRisk.id)
+        assertThat(cache.dependencyRisks.first().getId()).isEqualTo(existingRisk.getId())
     }
 
     @Test
@@ -147,7 +147,7 @@ class DependencyRisksCacheTests {
         cache.update(emptySet(), emptyList(), emptyList())
 
         assertThat(cache.dependencyRisks).hasSize(1)
-        assertThat(cache.dependencyRisks.first().id).isEqualTo(existingRisk.id)
+        assertThat(cache.dependencyRisks.first().getId()).isEqualTo(existingRisk.getId())
     }
 
     @Test
@@ -157,10 +157,10 @@ class DependencyRisksCacheTests {
         val risk3 = aDependencyRisk(DependencyRiskDto.Status.SAFE)
         cache.dependencyRisks = listOf(risk1, risk2, risk3)
 
-        cache.update(setOf(risk1.id, risk3.id), emptyList(), emptyList())
+        cache.update(setOf(risk1.getId(), risk3.getId()), emptyList(), emptyList())
 
         assertThat(cache.dependencyRisks).hasSize(1)
-        assertThat(cache.dependencyRisks.first().id).isEqualTo(risk2.id)
+        assertThat(cache.dependencyRisks.first().getId()).isEqualTo(risk2.getId())
     }
 
     @Test
@@ -168,12 +168,12 @@ class DependencyRisksCacheTests {
         val existingRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
         cache.dependencyRisks = listOf(existingRisk)
 
-        val updatedRisk = aDependencyRisk(existingRisk.id, DependencyRiskDto.Status.SAFE, DependencyRiskDto.Severity.HIGH, emptyList())
+        val updatedRisk = aDependencyRisk(existingRisk.getId(), DependencyRiskDto.Status.SAFE, DependencyRiskDto.Severity.HIGH, emptyList())
         cache.update(emptySet(), emptyList(), listOf(updatedRisk))
 
         assertThat(cache.dependencyRisks).hasSize(1)
-        assertThat(cache.dependencyRisks.first().id).isEqualTo(existingRisk.id)
-        assertThat(cache.dependencyRisks.first().isResolved).isTrue()
+        assertThat(cache.dependencyRisks.first().getId()).isEqualTo(existingRisk.getId())
+        assertThat(cache.dependencyRisks.first().isResolved()).isTrue()
     }
 
     @Test
@@ -184,17 +184,17 @@ class DependencyRisksCacheTests {
         cache.dependencyRisks = listOf(existingRisk1, existingRisk2, existingRisk3)
 
         val newRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val updatedRisk2 = aDependencyRisk(existingRisk2.id, DependencyRiskDto.Status.SAFE, DependencyRiskDto.Severity.HIGH, emptyList())
+        val updatedRisk2 = aDependencyRisk(existingRisk2.getId(), DependencyRiskDto.Status.SAFE, DependencyRiskDto.Severity.HIGH, emptyList())
 
-        cache.update(setOf(existingRisk1.id), listOf(newRisk), listOf(updatedRisk2))
+        cache.update(setOf(existingRisk1.getId()), listOf(newRisk), listOf(updatedRisk2))
 
         assertThat(cache.dependencyRisks).hasSize(3)
-        val riskIds = cache.dependencyRisks.map { it.id }
-        assertThat(riskIds).containsExactlyInAnyOrder(existingRisk3.id, newRisk.id, existingRisk2.id)
+        val riskIds = cache.dependencyRisks.map { it.getId() }
+        assertThat(riskIds).containsExactlyInAnyOrder(existingRisk3.getId(), newRisk.getId(), existingRisk2.getId())
         
         // Verify the updated risk has the new status
-        val updatedRiskInCache = cache.dependencyRisks.find { it.id == existingRisk2.id }
-        assertThat(updatedRiskInCache?.isResolved).isTrue()
+        val updatedRiskInCache = cache.dependencyRisks.find { it.getId() == existingRisk2.getId() }
+        assertThat(updatedRiskInCache?.isResolved()).isTrue()
     }
 
 } 

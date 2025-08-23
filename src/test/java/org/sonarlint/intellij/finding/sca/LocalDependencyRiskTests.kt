@@ -31,7 +31,7 @@ class LocalDependencyRiskTests {
 
         val localRisk = LocalDependencyRisk(dto)
 
-        assertThat(localRisk.id).isEqualTo(dto.id)
+        assertThat(localRisk.getId()).isEqualTo(dto.id)
         assertThat(localRisk.type).isEqualTo(dto.type)
         assertThat(localRisk.severity).isEqualTo(dto.severity)
         assertThat(localRisk.status).isEqualTo(dto.status)
@@ -43,7 +43,7 @@ class LocalDependencyRiskTests {
         val dto = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf())
         val localRisk = LocalDependencyRisk(dto)
 
-        assertThat(localRisk.isResolved).isFalse()
+        assertThat(localRisk.isResolved()).isFalse()
     }
 
     @Test
@@ -51,7 +51,7 @@ class LocalDependencyRiskTests {
         val dto = aDependencyRiskDto(DependencyRiskDto.Status.SAFE, listOf())
         val localRisk = LocalDependencyRisk(dto)
 
-        assertThat(localRisk.isResolved).isTrue()
+        assertThat(localRisk.isResolved()).isTrue()
     }
 
     @Test
@@ -59,7 +59,7 @@ class LocalDependencyRiskTests {
         val dto = aDependencyRiskDto(DependencyRiskDto.Status.ACCEPT, listOf())
         val localRisk = LocalDependencyRisk(dto)
 
-        assertThat(localRisk.isResolved).isTrue()
+        assertThat(localRisk.isResolved()).isTrue()
     }
 
     @Test
