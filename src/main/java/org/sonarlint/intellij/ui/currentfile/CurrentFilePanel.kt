@@ -32,6 +32,9 @@ import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.tree.TreeUtil
+import java.awt.BorderLayout
+import java.awt.Dimension
+import javax.swing.JScrollPane
 import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
@@ -51,9 +54,6 @@ import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.util.SonarLintActions
 import org.sonarlint.intellij.util.runOnPooledThread
-import java.awt.BorderLayout
-import java.awt.Dimension
-import javax.swing.JScrollPane
 
 class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
@@ -71,7 +71,6 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     private var displayManager: CurrentFileDisplayManager
 
     init {
-
         filtersPanel = FiltersPanel(
             { refreshView() },
             { sortMode -> treeConfigs.values.forEach { it.builder.setSortMode(SortMode.valueOf(sortMode.name)) } },
@@ -101,6 +100,9 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         
         // Initialize checkbox state
         filtersPanel.focusOnNewCodeCheckBox.isSelected = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
+        
+        // Initialize status filter visibility based on connected mode
+        filtersPanel.setStatusFilterVisible(Settings.getSettingsFor(project).isBound)
 
         // Set up toolbar and listeners
         setupToolbar()
@@ -196,7 +198,10 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         // Populate trees
         populateTreesWithNewCodeFilter(TreeType.ISSUES, filteredFindings.issues) { !summaryPanel.areIssuesEnabled() }
         
-        if (Settings.getSettingsFor(project).isBound) {
+        val isBound = Settings.getSettingsFor(project).isBound
+        filtersPanel.setStatusFilterVisible(isBound)
+        
+        if (isBound) {
             populateTreesWithNewCodeFilter(TreeType.HOTSPOTS, filteredFindings.hotspots) { !summaryPanel.areHotspotsEnabled() }
             populateTreesWithNewCodeFilter(TreeType.TAINTS, filteredFindings.taints) { !summaryPanel.areTaintsEnabled() }
             populateTreesWithNewCodeFilter(TreeType.DEPENDENCY_RISKS, filteredFindings.dependencyRisks) { !summaryPanel.areDependencyRisksEnabled() }
@@ -261,10 +266,10 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         val builder = getBuilder<Finding>(treeType, isOld = false)
         val oldBuilder = getBuilder<Finding>(treeType, isOld = true)
         
-        // Only show tree if not collapsed AND has findings
-        tree.isVisible = !selected && !builder.isEmpty()
+        // Only show tree if not collapsed AND has displayed findings (after filtering)
+        tree.isVisible = !selected && builder.numberOfDisplayedFindings() > 0
         if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
-            oldTree.isVisible = !selected && !oldBuilder.isEmpty()
+            oldTree.isVisible = !selected && oldBuilder.numberOfDisplayedFindings() > 0
         }
         
         // Update display status to show proper empty messages when trees are hidden
@@ -288,11 +293,6 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                 }
             }
         }
-    }
-
-    fun remove(issue: LiveIssue) {
-        getBuilder<LiveIssue>(TreeType.ISSUES, isOld = false).removeFinding(issue)
-        getBuilder<LiveIssue>(TreeType.ISSUES, isOld = true).removeFinding(issue)
     }
 
     fun getIssueFiltered(issueKey: String): LiveIssue? {
@@ -334,18 +334,18 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             populateSubTree(tree, treeBuilder, newFindings)
             populateSubTree(oldTree, oldTreeBuilder, oldFindings)
             
-            // Show tree only if summary panel allows it AND it has findings
+            // Show tree only if summary panel allows it AND it has displayed findings (after filtering)
             val summaryAllowsTree = treeVisibilityCheck?.invoke() ?: true
-            oldTree.isVisible = summaryAllowsTree && oldFindings.isNotEmpty()
+            oldTree.isVisible = summaryAllowsTree && oldTreeBuilder.numberOfDisplayedFindings() > 0
         } else {
             populateSubTree(tree, treeBuilder, findings)
             populateSubTree(oldTree, oldTreeBuilder, listOf())
             oldTree.isVisible = false
         }
         
-        // Show tree only if summary panel allows it AND it has findings
+        // Show tree only if summary panel allows it AND it has displayed findings (after filtering)
         val summaryAllowsTree = treeVisibilityCheck?.invoke() ?: true
-        tree.isVisible = summaryAllowsTree && findings.isNotEmpty()
+        tree.isVisible = summaryAllowsTree && treeBuilder.numberOfDisplayedFindings() > 0
         
         tree.showsRootHandles = findings.isNotEmpty()
         oldTree.showsRootHandles = findings.isNotEmpty()
@@ -369,7 +369,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         val hasDisplayedFindings = isDisplayingFindings()
         
         if (!hasActiveFindings) {
-            emptyText.text = "No findings found"
+            emptyText.text = "No findings to display"
             enableEmptyDisplay()
         } else if (!hasDisplayedFindings) {
             emptyText.text = "No findings displayed due to current filtering"
@@ -425,17 +425,6 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         summaryPanel.setDependencyRisksEnabled(isBound)
 
         runOnUiThread(project) { handleDisplayStatus() }
-    }
-
-    fun allowResolvedFindings(allowResolved: Boolean) {
-        treeConfigs.values.forEach { it.builder.allowResolvedFindings(allowResolved) }
-        refreshModel()
-        runOnUiThread(project) { handleDisplayStatus() }
-    }
-
-    fun refreshModel() {
-        treeConfigs.values.forEach { it.builder.refreshModel() }
-        runOnUiThread(project) { TreeUtil.expandAll(getTree(TreeType.ISSUES, isOld = false)) }
     }
 
     fun trySelectIssueForCodeFix(issue: LiveIssue) {

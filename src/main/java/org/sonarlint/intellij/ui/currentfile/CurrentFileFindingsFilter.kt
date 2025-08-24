@@ -24,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import java.util.Locale
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
@@ -184,8 +185,8 @@ class CurrentFileFindingsFilter(private val project: Project) {
         return !criteria.quickFixFilter || risk.isAiCodeFixable()
     }
 
-    private fun filterByStatus(finding: org.sonarlint.intellij.finding.Finding, criteria: FilterCriteria): Boolean {
-        return criteria.statusFilter == "All" || (criteria.statusFilter == "Open" != finding.isResolved())
+    private fun filterByStatus(finding: Finding, criteria: FilterCriteria): Boolean {
+        return criteria.statusFilter == "All" || (criteria.statusFilter == "Open" && !finding.isResolved()) || (criteria.statusFilter == "Resolved" && finding.isResolved())
     }
 
 }

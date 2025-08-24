@@ -23,6 +23,7 @@ import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
+import java.time.Duration
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
@@ -40,7 +41,6 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.executeBuildWithSonarS
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.generateTokenNameAndValue
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnectionsAndAddSonarQubeConnection
-import java.time.Duration
 
 const val ANSIBLE_PROJECT_KEY = "sample-ansible"
 
@@ -52,7 +52,7 @@ class AnsibleTests : BaseUiTest() {
     fun should_display_issue() = uiTest {
         openExistingProject("sample-ansible")
         openFile("HostNamespacesCheck/tasks/HostNamespacesCheck.yaml")
-        verifyCurrentFileTabContainsMessages("No issues to display")
+        verifyCurrentFileTabContainsMessages("No findings to display")
 
         enableConnectedModeFromCurrentFilePanel(ANSIBLE_PROJECT_KEY, true, "Orchestrator")
 

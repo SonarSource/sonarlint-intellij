@@ -82,7 +82,7 @@ class CurrentFileTabTests {
                     notification("The issue was successfully marked as resolved")
                     toolWindow {
                         content("CurrentFilePanel") {
-                            hasText("No issues found in the current opened file")
+                            hasText("No findings to display")
                         }
                     }
                 }

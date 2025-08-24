@@ -200,25 +200,19 @@ class ConfigurationTests : BaseUiTest() {
                 }
             }
             verifyCurrentFileShowsCard("ConnectedCard")
-            verifyCurrentFileTabContainsMessages(
-                "Found 1 issue in 1 file",
-                "HelloProject.scala",
-            )
+            verifyCurrentFileTabContainsMessages("Found 1 issue")
             clickCurrentFileIssue("Remove or correct this useless self-assignment.")
             verifyCurrentFileRuleDescriptionTabContains("Variables should not be self-assigned")
 
             openFile("mod/src/HelloModule.scala", "HelloModule.scala")
 
-            verifyCurrentFileTabContainsMessages(
-                "Found 1 issue in 1 file",
-                "HelloModule.scala",
-            )
+            verifyCurrentFileTabContainsMessages("Found 1 issue")
             clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
             verifyCurrentFileRuleDescriptionTabContains("Methods should not be empty")
 
             openFile("mod/src/Excluded.scala", "Excluded.scala")
             verifyCurrentFileTabContainsMessages(
-                "No analysis done on the current opened file",
+                "No findings to display",
                 "This file is not automatically analyzed",
             )
             enableConnectedModeFromCurrentFilePanel(SCALA_PROJECT_KEY, false, "Orchestrator")

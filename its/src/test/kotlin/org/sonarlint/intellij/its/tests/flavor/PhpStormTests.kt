@@ -36,8 +36,7 @@ class PhpStormTests : BaseUiTest() {
         openFile("file.php")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.php",
+            "Found 1 issue",
             "Replace the \"var\" keyword with the modifier \"public\"."
         )
     }

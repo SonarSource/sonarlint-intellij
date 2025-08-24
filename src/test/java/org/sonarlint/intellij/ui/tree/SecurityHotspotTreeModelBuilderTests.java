@@ -67,7 +67,7 @@ class SecurityHotspotTreeModelBuilderTests extends AbstractSonarLintLightTests {
     treeBuilder = new SecurityHotspotTreeModelBuilder();
     model = treeBuilder.createModel(getProject(), true);
     treeBuilder.currentFilter = SecurityHotspotFilters.DEFAULT_FILTER;
-    treeBuilder.shouldIncludeResolvedHotspots = false;
+    treeBuilder.filterSecurityHotspots(getProject(), false);
     replaceProjectService(CodeAnalyzerRestarter.class, codeAnalyzerRestarter);
   }
 

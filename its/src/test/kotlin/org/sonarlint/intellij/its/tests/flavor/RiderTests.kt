@@ -37,8 +37,7 @@ class RiderTests : BaseUiTest() {
         openFile("file.cs")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.cs",
+            "Found 1 issue",
             "Either remove or fill this block of code."
         )
     }
@@ -49,8 +48,7 @@ class RiderTests : BaseUiTest() {
 
         openFile("folder1/file1.cs")
         verifyCurrentFileTabContainsMessages(
-            "Found 2 issues in 1 file",
-            "file1.cs",
+            "Found 2 issues",
             "Remove this empty class, write its code or make it an \"interface\".",
             "Rename class 'file1' to match pascal case naming rules, consider using 'File1'."
         )
@@ -58,8 +56,7 @@ class RiderTests : BaseUiTest() {
         openFileViaMenu("file2.cs")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 2 issues in 1 file",
-            "file2.cs",
+            "Found 2 issues",
             "Remove this empty class, write its code or make it an \"interface\".",
             "Rename class 'file2' to match pascal case naming rules, consider using 'File2'."
         )

@@ -56,7 +56,6 @@ class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: 
 
     var model: DefaultTreeModel
     var summaryNode: SummaryNode
-    private var includeLocallyResolvedIssues = false
     private var latestIssues = mutableListOf<LiveIssue>()
     private var currentFile: VirtualFile? = null
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, isOldIssue).also {
@@ -100,7 +99,7 @@ class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: 
 
         val filteredIssues = findings.filter { accept(it) }
         val sortedIssues = when (sortMode) {
-            SortMode.IMPACT -> filteredIssues.sortedWith(compareByDescending<LiveIssue> { it.getHighestImpact() })
+            SortMode.IMPACT -> filteredIssues.sortedWith(compareByDescending { it.getHighestImpact() })
             SortMode.DATE -> filteredIssues.sortedByDescending { it.introductionDate }
             SortMode.RULE_KEY -> filteredIssues.sortedBy { it.getRuleKey() }
             else -> filteredIssues.sortedBy { it.validTextRange?.startOffset }
@@ -129,10 +128,6 @@ class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: 
         runOnUiThread(project) {
             updateModel(null, emptyList())
         }
-    }
-
-    override fun allowResolvedFindings(shouldIncludeResolvedFindings: Boolean) {
-        this.includeLocallyResolvedIssues = shouldIncludeResolvedFindings
     }
 
     override fun setSortMode(mode: SortMode) {
@@ -177,7 +172,7 @@ class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: 
     }
 
     private fun accept(issue: LiveIssue): Boolean {
-        return (!issue.isResolved() && issue.isValid()) || includeLocallyResolvedIssues
+        return issue.isValid()
     }
 
 }
