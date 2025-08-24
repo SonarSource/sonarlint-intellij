@@ -25,7 +25,6 @@ import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.riskSeverity
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskResolvedFilter
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTreeUpdater
@@ -82,12 +81,6 @@ class SingleFileDependencyRiskTreeModelBuilder(private val project: Project, isO
         return latestRisks.isEmpty()
     }
 
-    override fun removeFinding(finding: LocalDependencyRisk) {
-        if (latestRisks.remove(finding)) {
-            updateModel(currentFile, latestRisks)
-        }
-    }
-
     override fun updateModel(file: VirtualFile?, findings: List<LocalDependencyRisk>) {
         latestRisks = findings.toMutableList()
         currentFile = file
@@ -108,18 +101,8 @@ class SingleFileDependencyRiskTreeModelBuilder(private val project: Project, isO
         treeSummary.refresh(1, sortedRisks.size)
     }
 
-    override fun refreshModel() {
-        runOnUiThread(project) { updateModel(currentFile, latestRisks) }
-    }
-
     override fun findFindingByKey(key: String): LocalDependencyRisk? {
         return null
-    }
-
-    override fun clear() {
-        runOnUiThread(project) {
-            updateModel(null, emptyList())
-        }
     }
 
     override fun getSummaryUiModel(): SummaryUiModel {

@@ -33,6 +33,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.tree.TreeUtil
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import java.awt.event.MouseEvent
+import javax.swing.Box
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreePath
+import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -57,13 +64,6 @@ import org.sonarlint.intellij.ui.tree.IssueTree
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
 import org.sonarlint.intellij.util.runOnPooledThread
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import java.awt.event.MouseEvent
-import javax.swing.Box
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.TreePath
-import javax.swing.tree.TreeSelectionModel
 
 enum class TreeType {
     ISSUES, HOTSPOTS, TAINTS, DEPENDENCY_RISKS
@@ -74,6 +74,14 @@ data class TreeConfig<T : Finding, B : SingleFileTreeModelBuilder<T>>(
     var builder: B
 )
 
+/**
+ * Base panel class for displaying findings in tree structures with common functionality and infrastructure.
+ * 
+ * <h3>Design & Architecture:</h3>
+ * <p>This abstract base class provides the foundation for displaying findings in tree-based UI components.
+ * It implements a factory pattern for creating different types of tree configurations and manages the 
+ * common infrastructure needed by all findings display panels.</p>
+ */
 open class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindowPanel(false, false), Disposable, DataProvider {
 
     private lateinit var mainToolbar: ActionToolbar

@@ -23,14 +23,26 @@ import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.TreeModel
 import org.sonarlint.intellij.finding.Finding
 
+/**
+ * Interface defining the contract for building and managing tree models for findings within a single file.
+ * 
+ * <h3>Design & Architecture:</h3>
+ * <p>This interface establishes a common contract for all tree model builders in the Current File panel.</p>
+ * 
+ * <h3>Core Responsibilities:</h3>
+ * <p>Implementations of this interface are responsible for:</p>
+ * <ul>
+ *   <li><strong>Model Management:</strong> Creating and updating tree models based on finding data</li>
+ *   <li><strong>Filtering Integration:</strong> Applying filters and displaying only relevant findings</li>
+ *   <li><strong>Sorting Support:</strong> Organizing findings according to user-selected sort criteria</li>
+ *   <li><strong>State Tracking:</strong> Maintaining model state and providing metadata about displayed content</li>
+ * </ul>
+ */
 interface SingleFileTreeModelBuilder<T: Finding> {
 
     fun updateModel(file: VirtualFile?, findings: List<T>)
-    fun refreshModel()
     fun getTreeModel(): TreeModel
     fun findFindingByKey(key: String): T?
-    fun removeFinding(finding: T)
-    fun clear()
     fun isEmpty(): Boolean
     fun numberOfDisplayedFindings(): Int
     fun setSortMode(mode: SortMode)

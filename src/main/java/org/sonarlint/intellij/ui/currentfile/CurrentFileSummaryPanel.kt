@@ -33,6 +33,27 @@ import javax.swing.BorderFactory
 import javax.swing.JSeparator
 import javax.swing.JToggleButton
 
+/**
+ * Summary panel component that displays finding counts and provides collapse/expand controls for each finding type.
+ * 
+ * <h3>Design & Architecture:</h3>
+ * <p>This panel serves as the main control header for the Current File tab, implementing a dashboard-style interface
+ * with interactive summary buttons and a filter toggle. It follows a delegation pattern where each summary button
+ * can independently control the visibility of its corresponding tree section.</p>
+ * 
+ * <h3>Summary Buttons:</h3>
+ * <p>Each finding type (Issues, Security Hotspots, Taint Vulnerabilities, Dependency Risks) has its own 
+ * {@link SummaryButton} that displays:</p>
+ * <ul>
+ *   <li>Current count of findings</li>
+ *   <li>Appropriate icon and color based on finding's highest severity/type</li>
+ *   <li>Toggle functionality to show/hide the corresponding tree</li>
+ * </ul>
+ * 
+ * <h3>Connected Mode Awareness:</h3>
+ * <p>Summary buttons for server-side findings (hotspots, taints, dependency risks) are automatically
+ * enabled/disabled based on connection status. Only Issues are always available in standalone mode.</p>
+ */
 class CurrentFileSummaryPanel(
     issuesSelectionChanged: (Boolean) -> Unit,
     hotspotsSelectionChanged: (Boolean) -> Unit,

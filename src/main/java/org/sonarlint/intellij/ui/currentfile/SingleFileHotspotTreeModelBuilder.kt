@@ -22,15 +22,11 @@ package org.sonarlint.intellij.ui.currentfile
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.util.Collections
 import javax.swing.tree.DefaultTreeModel
 import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -69,15 +65,6 @@ class SingleFileHotspotTreeModelBuilder(private val project: Project, isOldHotsp
         return latestHotspots.isEmpty()
     }
 
-    override fun removeFinding(finding: LiveSecurityHotspot) {
-        findHotspotNode(finding.getId().toString())?.let {
-            latestHotspots.remove(finding)
-            summaryNode.remove(it)
-            treeSummary.refresh(1, latestHotspots.size)
-            model.nodeStructureChanged(summaryNode)
-        }
-    }
-
     override fun updateModel(file: VirtualFile?, findings: List<LiveSecurityHotspot>) {
         latestHotspots = findings.toMutableList()
         currentFile = file
@@ -100,21 +87,8 @@ class SingleFileHotspotTreeModelBuilder(private val project: Project, isOldHotsp
         model.nodeStructureChanged(summaryNode)
     }
 
-    override fun refreshModel() {
-        runOnUiThread(project) { updateModel(currentFile, latestHotspots) }
-        currentFile?.let {
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(Collections.singleton(it))
-        }
-    }
-
     override fun findFindingByKey(key: String): LiveSecurityHotspot? {
         return findHotspotNode(key)?.hotspot
-    }
-
-    override fun clear() {
-        runOnUiThread(project) {
-            updateModel(null, emptyList())
-        }
     }
 
     override fun getSummaryUiModel(): SummaryUiModel {

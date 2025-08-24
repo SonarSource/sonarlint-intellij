@@ -57,7 +57,21 @@ data class FilteredFindings(
 }
 
 /**
- * Service responsible for filtering all types of findings based on user criteria.
+ * Service responsible for filtering all types of findings based on user-defined criteria.
+ * 
+ * <h3>Design & Architecture:</h3>
+ * <p>This service implements a comprehensive filtering system that applies multiple filter types
+ * across different finding categories. It follows a clean separation of concerns where filtering 
+ * logic is centralized and independent of UI components.</p>
+ * 
+ * <h3>Filtering Strategy:</h3>
+ * <p>Uses a multi-stage filtering approach:</p>
+ * <ul>
+ *   <li><strong>Data Loading:</strong> Retrieves raw findings from various caches and holders</li>
+ *   <li><strong>Type-Specific Filtering:</strong> Applies filters appropriate to each finding type</li>
+ *   <li><strong>Unified Criteria:</strong> Uses {@link FilterCriteria} for consistent filter application</li>
+ *   <li><strong>Result Aggregation:</strong> Returns filtered results in a structured {@link FilteredFindings} container</li>
+ * </ul>
  */
 class CurrentFileFindingsFilter(private val project: Project) {
 
