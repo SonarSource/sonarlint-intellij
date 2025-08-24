@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.currentfile
+package org.sonarlint.intellij.ui.currentfile.tree
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -30,6 +30,8 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.ui.currentfile.SortMode
+import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -110,16 +112,22 @@ class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: 
 
     override fun getSummaryUiModel(): SummaryUiModel {
         return getIssueWithHighestImpact()?.let {
-            it.getHighestImpact()?.let { highestImpact -> SummaryUiModel(impact(highestImpact),
-                backgroundColorsByImpact[highestImpact],
-                borderColorsByImpact[highestImpact])}
+            it.getHighestImpact()?.let { highestImpact ->
+                SummaryUiModel(
+                    impact(highestImpact),
+                    backgroundColorsByImpact[highestImpact],
+                    borderColorsByImpact[highestImpact]
+                )
+            }
         } ?: getIssueWithHighestSeverity()?.let {
             val type = it.getType()
             val severity = it.userSeverity
             if (type != null && severity != null) {
-                SummaryUiModel(getIconForTypeAndSeverity(type, severity),
+                SummaryUiModel(
+                    getIconForTypeAndSeverity(type, severity),
                     backgroundColorsBySeverity[severity],
-                    borderColorsBySeverity[severity])
+                    borderColorsBySeverity[severity]
+                )
             } else {
                 SummaryUiModel()
             }

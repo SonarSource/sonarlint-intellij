@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.currentfile
+package org.sonarlint.intellij.ui.currentfile.tree
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -27,6 +27,8 @@ import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByVulnerabilityProb
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.ui.currentfile.SortMode
+import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -96,9 +98,11 @@ class SingleFileHotspotTreeModelBuilder(private val project: Project, isOldHotsp
             .map { it.vulnerabilityProbability }
             .minByOrNull { VULNERABILITY_PROBABILITIES.indexOf(it) }
         return severity?.let {
-            SummaryUiModel(hotspotTypeWithProbability(it),
+            SummaryUiModel(
+                hotspotTypeWithProbability(it),
                 backgroundColorsByVulnerabilityProbability[it],
-                borderColorsByVulnerabilityProbability[it])
+                borderColorsByVulnerabilityProbability[it]
+            )
         } ?: SummaryUiModel()
     }
 
