@@ -35,6 +35,7 @@ import com.intellij.util.ui.tree.TreeUtil
 import java.awt.BorderLayout
 import java.awt.Dimension
 import javax.swing.JScrollPane
+import javax.swing.tree.TreePath
 import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
@@ -234,7 +235,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         
         // Handle display status and expand trees
         handleDisplayStatus()
-        TreeUtil.expandAll(getTree(TreeType.ISSUES, isOld = false))
+        expandTrees()
         updateSummaryButtons()
     }
 
@@ -445,6 +446,27 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         summaryPanel.setDependencyRisksEnabled(isBound)
 
         runOnUiThread(project) { handleDisplayStatus() }
+    }
+
+    private fun expandTrees() {
+        TreeUtil.expandAll(getTree(TreeType.ISSUES, isOld = false))
+        TreeUtil.expandAll(getTree(TreeType.HOTSPOTS, isOld = false))
+        TreeUtil.expandAll(getTree(TreeType.DEPENDENCY_RISKS, isOld = false))
+        
+        // For taint trees, expand only file nodes (not the full tree as it can be very deep)
+        expandTaintFileNodes(getTree(TreeType.TAINTS, isOld = false))
+    }
+    
+    private fun expandTaintFileNodes(tree: Tree) {
+        val root = tree.model.root
+        if (root != null) {
+            tree.expandPath(TreePath(root))
+
+            for (i in 0 until tree.model.getChildCount(root)) {
+                val fileNode = tree.model.getChild(root, i)
+                tree.expandPath(TreePath(arrayOf(root, fileNode)))
+            }
+        }
     }
 
     fun trySelectIssueForCodeFix(issue: LiveIssue) {
