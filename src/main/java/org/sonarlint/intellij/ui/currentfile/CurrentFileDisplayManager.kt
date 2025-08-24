@@ -23,17 +23,29 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
+import javax.swing.DefaultComboBoxModel
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.ToolWindowConstants
-import javax.swing.DefaultComboBoxModel
 
 /**
- * Manages display state, icons, and UI updates for CurrentFilePanel.
- * Handles MQR mode detection, empty states, and tree visibility.
+ * Manages display state, UI updates, and visual feedback for the Current File panel.
+ * 
+ * <h3>Design & Architecture:</h3>
+ * <p>This service acts as a coordinator between the UI components and the underlying data state,
+ * managing visual feedback elements like icons, filter controls, and display modes. It implements
+ * a reactive pattern where display updates are triggered by data changes.</p>
+ * 
+ * <h3>Core Responsibilities:</h3>
+ * <ul>
+ *   <li><strong>MQR Mode Management:</strong> Automatically detects and switches between MQR and standard severity modes</li>
+ *   <li><strong>Filter Control Updates:</strong> Dynamically updates filter panel controls based on current context</li>
+ *   <li><strong>Icon Management:</strong> Updates tool window and editor gutter icons based on finding states</li>
+ *   <li><strong>Visual State Coordination:</strong> Ensures UI consistency across different components</li>
+ * </ul>
  */
 class CurrentFileDisplayManager(
     private val project: Project,
