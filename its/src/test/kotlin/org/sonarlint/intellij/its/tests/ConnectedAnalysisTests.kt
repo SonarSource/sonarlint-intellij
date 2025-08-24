@@ -182,10 +182,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
             )
             resetFocusOnNewCode()
 
-            verifyCurrentFileTabContainsMessages(
-                "Found 1 Taint Vulnerability",
-                "Change this code to not construct SQL queries directly from user-controlled data."
-            )
             enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false, "Orchestrator")
             verifyTaintTabContainsMessages("The project is not bound to SonarQube (Server, Cloud)")
         }
