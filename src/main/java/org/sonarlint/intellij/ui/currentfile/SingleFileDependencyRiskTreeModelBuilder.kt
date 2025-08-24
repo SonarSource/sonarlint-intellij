@@ -46,7 +46,6 @@ val DEPENDENCY_RISK_SEVERITY_ORDER = listOf(
 class SingleFileDependencyRiskTreeModelBuilder(private val project: Project, isOldRisk: Boolean) : SingleFileTreeModelBuilder<LocalDependencyRisk> {
 
     var summaryNode: SummaryNode
-    private var includeLocallyResolvedRisks = false
     private var latestRisks = mutableListOf<LocalDependencyRisk>()
     private var currentFile: VirtualFile? = null
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.DEPENDENCY_RISKS, isOldRisk).also {
@@ -121,13 +120,6 @@ class SingleFileDependencyRiskTreeModelBuilder(private val project: Project, isO
         runOnUiThread(project) {
             updateModel(null, emptyList())
         }
-    }
-
-    override fun allowResolvedFindings(shouldIncludeResolvedFindings: Boolean) {
-        this.includeLocallyResolvedRisks = shouldIncludeResolvedFindings
-        this.resolutionFilter = if (shouldIncludeResolvedFindings) DependencyRiskResolvedFilter.ALL else DependencyRiskResolvedFilter.OPEN_ONLY
-        // Update the tree updater's resolution filter to ensure counts stay in sync
-        dependencyRiskTreeUpdater.resolutionFilter = resolutionFilter
     }
 
     override fun getSummaryUiModel(): SummaryUiModel {

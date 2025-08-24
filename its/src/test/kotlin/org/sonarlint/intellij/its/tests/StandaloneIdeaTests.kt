@@ -46,18 +46,17 @@ class StandaloneIdeaTests : BaseUiTest() {
         openExistingProject("sli-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         toggleRule("java:S2094", "Classes should not be empty")
-        verifyCurrentFileTabContainsMessages("No issues to display")
+        verifyCurrentFileTabContainsMessages("No findings to display")
         toggleRule("java:S2094", "Classes should not be empty")
         setFocusOnNewCode()
         analyzeAndVerifyReportTabContainsMessages(
-            "Found 1 new issue in 1 file from last 30 days",
+            "Found 1 new issue from last 30 days",
             "No new Security Hotspots from last 30 days",
             "No older issues",
             "No older Security Hotspots"
         )
         verifyCurrentFileTabContainsMessages(
-            "Found 1 new issue in 1 file from last 30 days",
-            "No older issues",
+            "Found 1 new issue from last 30 days",
         )
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
         resetFocusOnNewCode()
@@ -68,7 +67,7 @@ class StandaloneIdeaTests : BaseUiTest() {
         openExistingProject("sli-java-issues")
         excludeFile("src/main/java/foo/Bar.java")
         openFile("src/main/java/foo/Bar.java", "Bar.java")
-        verifyCurrentFileTabContainsMessages("No analysis done on the current opened file")
+        verifyCurrentFileTabContainsMessages("No findings to display")
         removeFileExclusion("src/main/java/foo/Bar.java")
     }
 

@@ -19,9 +19,10 @@
  */
 package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.fixtures.ActionButtonFixture
+import java.awt.Point
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.tool.window.filterButton
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
@@ -40,11 +41,15 @@ object FiltersUtils {
             toolWindow {
                 tabTitleContains("Current File") { select() }
                 content("CurrentFilePanel") {
-                    val toolBarButton = focusOnNewCodeButton()
-                    val isFocusActivated =
-                        toolBarButton.popState() == ActionButtonFixture.PopState.SELECTED || toolBarButton.popState() == ActionButtonFixture.PopState.PUSHED
-                    if (focusOnNewCode != isFocusActivated) {
-                        toolBarButton.click()
+                    filterButton {
+                        ensureOpen()
+                    }
+                    val newCodeCheckbox = focusOnNewCodeCheckbox()
+                    if ((focusOnNewCode && !newCodeCheckbox.isSelected()) || (!focusOnNewCode && newCodeCheckbox.isSelected())) {
+                        newCodeCheckbox.click()
+                    }
+                    filterButton {
+                        ensureClosed()
                     }
                 }
             }
@@ -57,7 +62,36 @@ object FiltersUtils {
                 toolWindow {
                     tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
-                        resolvedIssuesButton().click()
+                        filterButton {
+                            ensureOpen()
+                        }
+                        val statusLabel = statusLabel()
+                        statusLabel.click(Point(60, 10))
+                        statusLabel.click(Point(60, 80))
+                        filterButton {
+                            ensureClosed()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun showOpenIssues() {
+        with(BaseUiTest.remoteRobot) {
+            idea {
+                toolWindow {
+                    tabTitleContains("Current File") { select() }
+                    content("CurrentFilePanel") {
+                        filterButton {
+                            ensureOpen()
+                        }
+                        val statusLabel = statusLabel()
+                        statusLabel.click(Point(60, 10))
+                        statusLabel.click(Point(60,  60))
+                        filterButton {
+                            ensureClosed()
+                        }
                     }
                 }
             }

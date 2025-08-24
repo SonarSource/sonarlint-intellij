@@ -33,19 +33,13 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusOnSonarQubeAndPressChange
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
-import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
 import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
 import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.setFocusOnNewCode
-import org.sonarlint.intellij.its.utils.FiltersUtils.showResolvedIssues
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.defaultBuilderEnv
@@ -54,12 +48,8 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.generateTokenNameAndVa
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.newAdminWsClientWithUser
 import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnectionsAndAddSonarQubeConnection
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.SONARCLOUD_STAGING_URL
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.analyzeSonarCloudWithMaven
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.associateSonarCloudProjectToQualityProfile
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.cleanupProjects
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.newAdminSonarCloudWsClientWithUser
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.provisionSonarCloudProfile
-import org.sonarlint.intellij.its.utils.SonarCloudUtils.restoreSonarCloudProfile
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
@@ -182,28 +172,19 @@ class ConnectedAnalysisTests : BaseUiTest() {
             analyzeAndVerifyReportTabContainsMessages(
                 "No new issues from last 1 days",
                 "No new Security Hotspots from last 1 days",
-                "Found 2 older issues in 1 file",
-                "Found 1 older Security Hotspot in 1 file"
-            )
-            verifyTaintTabContainsMessages(
-                "No new issues from last 1 days",
-                "Found 1 older issue in 1 file"
-            )
-            verifySecurityHotspotTabContainsMessages(
-                "No new Security Hotspots from last 1 days",
-                "Found 1 older Security Hotspot in 1 file"
+                "Found 2 older issues",
+                "Found 1 older Security Hotspot"
             )
             verifyCurrentFileTabContainsMessages(
-                "No new issues from last 1 days",
-                "Found 2 older issues in 1 file",
+                "Found 2 older issues",
+                "Found 1 older Security Hotspot",
+                "Found 1 older Taint Vulnerability"
             )
 
             resetFocusOnNewCode()
 
-            // Taint Vulnerability Test
-            verifyTaintTabContainsMessages(
-                "Found 1 issue in 1 file",
-                "FileWithSink.java",
+            verifyCurrentFileTabContainsMessages(
+                "Found 1 Taint Vulnerability",
                 "Change this code to not construct SQL queries directly from user-controlled data."
             )
             enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false, "Orchestrator")
@@ -218,70 +199,10 @@ class ConnectedAnalysisTests : BaseUiTest() {
 
             openFile("file.swift")
             verifyCurrentFileTabContainsMessages(
-                "Found 1 issue in 1 file",
-                "file.swift",
+                "Found 1 issue",
                 "Use \"try\" or \"try?\" here instead; \"try!\" disables error propagation."
             )
             enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, false, "Orchestrator")
-        }
-
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    inner class SampleJavaIssuesTests : BaseUiTest() {
-
-        @BeforeAll
-        fun initProfile() {
-            ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/java-sonarlint-with-issue.xml"))
-            ORCHESTRATOR.server.provisionProject(ISSUE_PROJECT_KEY, "SLI Java Issues")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(
-                ISSUE_PROJECT_KEY,
-                "java",
-                "SonarLint IT Java Issue"
-            )
-            // Build and analyze project to raise issue
-            executeBuildWithMaven("projects/sli-java-issues/pom.xml", ORCHESTRATOR)
-            firstIssueKey = getFirstIssueKey(adminWsClient)
-
-            restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
-            provisionSonarCloudProfile(
-                adminSonarCloudWsClient, "SLI Java Issues",
-                SONARCLOUD_ISSUE_PROJECT_KEY
-            )
-            associateSonarCloudProjectToQualityProfile(
-                adminSonarCloudWsClient,
-                "java",
-                SONARCLOUD_ISSUE_PROJECT_KEY,
-                "SonarLint IT Java Issue"
-            )
-
-            analyzeSonarCloudWithMaven(
-                adminSonarCloudWsClient,
-                SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues",
-                sonarCloudToken
-            )
-
-            firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
-        }
-
-        @Test
-        fun should_analyze_issue_then_should_review_issue() = uiTest {
-            openExistingProject("sli-java-issues")
-
-            // Issue Analysis Test
-            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator")
-            openFile("src/main/java/foo/Foo.java", "Foo.java")
-            verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-
-            // Issue Reviewing Test
-            openIssueReviewDialogFromList("Remove this empty class, write its code or make it an \"interface\".")
-            changeStatusOnSonarQubeAndPressChange("False Positive")
-            confirm()
-            verifyIssueStatusWasSuccessfullyChanged()
-            showResolvedIssues()
-            verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-            showResolvedIssues()
         }
 
     }

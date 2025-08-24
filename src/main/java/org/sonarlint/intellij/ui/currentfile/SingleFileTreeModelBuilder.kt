@@ -31,7 +31,6 @@ interface SingleFileTreeModelBuilder<T: Finding> {
     fun findFindingByKey(key: String): T?
     fun removeFinding(finding: T)
     fun clear()
-    fun allowResolvedFindings(shouldIncludeResolvedFindings: Boolean)
     fun isEmpty(): Boolean
     fun numberOfDisplayedFindings(): Int
     fun setSortMode(mode: SortMode)

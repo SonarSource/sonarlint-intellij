@@ -53,6 +53,7 @@ import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
+import org.sonarlint.intellij.its.utils.FiltersUtils.showOpenIssues
 import org.sonarlint.intellij.its.utils.FiltersUtils.showResolvedIssues
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
@@ -271,7 +272,7 @@ class OpenInIdeTests : BaseUiTest() {
             verifyIssueStatusWasSuccessfullyChanged()
             showResolvedIssues()
             verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-            showResolvedIssues()
+            showOpenIssues()
         }
 
         @Test

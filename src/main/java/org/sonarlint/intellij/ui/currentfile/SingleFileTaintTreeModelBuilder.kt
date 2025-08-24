@@ -54,7 +54,6 @@ val TAINT_IMPACT_ORDER = listOf(
 class SingleFileTaintTreeModelBuilder(private val project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LocalTaintVulnerability> {
 
     var summaryNode: SummaryNode
-    private var includeLocallyResolvedIssues = false
     private var latestTaints = mutableListOf<LocalTaintVulnerability>()
     private var currentFile: VirtualFile? = null
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.TAINT_VULNERABILITIES, isOldIssue).also {
@@ -126,11 +125,6 @@ class SingleFileTaintTreeModelBuilder(private val project: Project, isOldIssue: 
         runOnUiThread(project) {
             updateModel(null, emptyList())
         }
-    }
-
-    override fun allowResolvedFindings(shouldIncludeResolvedFindings: Boolean) {
-        this.includeLocallyResolvedIssues = shouldIncludeResolvedFindings
-        this.resolutionFilter = if (shouldIncludeResolvedFindings) ResolutionFilter.ALL else ResolutionFilter.OPEN_ONLY
     }
 
     override fun getSummaryUiModel(): SummaryUiModel {

@@ -178,10 +178,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void filterCurrentFileTab(boolean isResolved) {
-    this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE, panel -> panel.allowResolvedFindings(isResolved));
-  }
-
   public void filterTaintVulnerabilityTab(boolean isResolved) {
     var taintContent = getTaintVulnerabilitiesContent();
     if (taintContent != null) {
@@ -575,8 +571,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void markAsResolved(Issue issue) {
     if (issue instanceof LiveIssue liveIssue) {
-      this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
-      this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
+      // Don't remove the issue completely - let the status filter handle it
+      this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshView);
       this.<ReportPanel>updateTab(REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));
     } else {
       var content = getTaintVulnerabilitiesContent();
@@ -589,8 +585,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void reopenIssue(Issue issue) {
     if (issue instanceof LiveIssue liveIssue) {
-      this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE, panel -> panel.remove(liveIssue));
-      this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshModel);
+      // Don't remove the issue completely - let the status filter handle it  
+      this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshView);
     } else if (issue instanceof LocalTaintVulnerability taintVulnerability) {
       var taintContent = getTaintVulnerabilitiesContent();
       if (taintContent != null) {

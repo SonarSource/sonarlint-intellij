@@ -21,24 +21,36 @@ package org.sonarlint.intellij.its.fixtures.tool.window
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
-import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
-import com.intellij.remoterobot.fixtures.EditorFixture
+import com.intellij.remoterobot.fixtures.ContainerFixture
+import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.fixtures.JCheckboxFixture
-import com.intellij.remoterobot.fixtures.JLabelFixture
-import com.intellij.remoterobot.search.locators.byXpath
-import org.sonarlint.intellij.its.fixtures.findElement
+import com.intellij.remoterobot.stepsProcessing.step
+import java.time.Duration
 
-@FixtureName(name = "Tool Window Tab Content")
-class TabContentFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+fun ContainerFixture.filterButton(function: ToggleButtonFixture.() -> Unit = {}, ): ToggleButtonFixture = step("Search for toggle filter button") {
+    val toggleButton = find<ToggleButtonFixture>(Duration.ofSeconds(5))
+    toggleButton.apply(function)
+}
 
-  fun console() = findElement<EditorFixture>(EditorFixture.locator)
-  fun toolBarButton(name: String) =
-    findElement<ActionButtonFixture>(byXpath("finding action button with text '$name'", "//div[@accessiblename='$name']"))
-  fun focusOnNewCodeCheckbox() =
-    findElement<JCheckboxFixture>(byXpath("focus on new code action button", "//div[@tooltiptext='Show only findings in new code']"))
-  fun statusLabel() =
-    findElement<JLabelFixture>(byXpath("resolved issues action button", "//div[@text='Status:']"))
+@DefaultXpath(by = "Toggle Button", xpath = "//div[@class='JToggleButton']")
+@FixtureName(name = "Filter Button")
+class ToggleButtonFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+
+    private fun isSelected(): Boolean {
+        return callJs("component.isSelected()")
+    }
+
+    fun ensureOpen() {
+        if (!isSelected()) {
+            click()
+        }
+    }
+
+    fun ensureClosed() {
+        if (isSelected()) {
+            click()
+        }
+    }
 
 }
