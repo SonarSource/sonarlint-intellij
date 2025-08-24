@@ -35,11 +35,9 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 
-class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {
+private val DASHBOARD_MODEL = Key<SonarLintDashboardModel>("DASHBOARD_MODEL")
 
-    companion object {
-        private val DASHBOARD_MODEL = Key<SonarLintDashboardModel>("DASHBOARD_MODEL")
-    }
+class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {
 
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
         return SonarLintTrafficLightWidget(this, presentation, place, editor)

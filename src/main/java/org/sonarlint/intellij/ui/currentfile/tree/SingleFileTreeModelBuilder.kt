@@ -17,11 +17,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.currentfile
+package org.sonarlint.intellij.ui.currentfile.tree
 
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.TreeModel
 import org.sonarlint.intellij.finding.Finding
+import org.sonarlint.intellij.ui.currentfile.SortMode
+import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
 
 /**
  * Interface defining the contract for building and managing tree models for findings within a single file.
