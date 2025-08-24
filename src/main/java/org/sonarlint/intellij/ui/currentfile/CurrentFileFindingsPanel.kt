@@ -57,6 +57,11 @@ import org.sonarlint.intellij.ui.FindingDetailsPanel
 import org.sonarlint.intellij.ui.FindingKind
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.currentfile.tree.SingleFileDependencyRiskTreeModelBuilder
+import org.sonarlint.intellij.ui.currentfile.tree.SingleFileHotspotTreeModelBuilder
+import org.sonarlint.intellij.ui.currentfile.tree.SingleFileIssueTreeModelBuilder
+import org.sonarlint.intellij.ui.currentfile.tree.SingleFileTaintTreeModelBuilder
+import org.sonarlint.intellij.ui.currentfile.tree.SingleFileTreeModelBuilder
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTree
