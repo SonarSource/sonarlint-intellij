@@ -42,7 +42,6 @@ val VULNERABILITY_PROBABILITIES = listOf(VulnerabilityProbability.HIGH, Vulnerab
 
 class SingleFileHotspotTreeModelBuilder(private val project: Project, isOldHotspots: Boolean) : SingleFileTreeModelBuilder<LiveSecurityHotspot> {
 
-    var shouldIncludeResolvedHotspots = false
     var model: DefaultTreeModel
     private var summaryNode: SummaryNode
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.SECURITY_HOTSPOTS, isOldHotspots).also {
@@ -116,10 +115,6 @@ class SingleFileHotspotTreeModelBuilder(private val project: Project, isOldHotsp
         runOnUiThread(project) {
             updateModel(null, emptyList())
         }
-    }
-
-    override fun allowResolvedFindings(shouldIncludeResolvedFindings: Boolean) {
-        this.shouldIncludeResolvedHotspots = shouldIncludeResolvedFindings
     }
 
     override fun getSummaryUiModel(): SummaryUiModel {

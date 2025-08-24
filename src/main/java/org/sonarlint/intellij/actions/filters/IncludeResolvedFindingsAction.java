@@ -20,16 +20,10 @@
 package org.sonarlint.intellij.actions.filters;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import javax.swing.Icon;
 import javax.annotation.Nullable;
+import javax.swing.Icon;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
-import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.finding.Finding;
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class IncludeResolvedFindingsAction<T extends Finding> extends AbstractSonarToggleAction {
 
@@ -50,21 +44,11 @@ public class IncludeResolvedFindingsAction<T extends Finding> extends AbstractSo
   @Override
   public void setSelected(AnActionEvent event, boolean flag) {
     var p = event.getProject();
-    if (p != null) {
-      if (type == LiveSecurityHotspot.class) {
+    if (p != null && type == Finding.class) {
         isResolved = flag;
-        getService(p, SonarLintToolWindow.class).filterSecurityHotspotTab(isResolved);
-      } else if (type == LiveIssue.class) {
-        isResolved = flag;
-        getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
-      } else if (type == LocalTaintVulnerability.class) {
-        isResolved = flag;
-        getService(p, SonarLintToolWindow.class).filterTaintVulnerabilityTab(isResolved);
-      } else if (type == Finding.class) {
-        isResolved = flag;
-        getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
+        //getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
       }
-    }
+
   }
 
 }

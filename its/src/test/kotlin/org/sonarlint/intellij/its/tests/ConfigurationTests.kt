@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.tests
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
+import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
@@ -68,7 +69,6 @@ import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
-import kotlin.random.Random
 
 @Tag("ConfigurationTests")
 @EnabledIf("isIdeaCommunity")
@@ -199,25 +199,19 @@ class ConfigurationTests : BaseUiTest() {
                 }
             }
             verifyCurrentFileShowsCard("ConnectedCard")
-            verifyCurrentFileTabContainsMessages(
-                "Found 1 issue in 1 file",
-                "HelloProject.scala",
-            )
+            verifyCurrentFileTabContainsMessages("Found 1 issue")
             clickCurrentFileIssue("Remove or correct this useless self-assignment.")
             verifyCurrentFileRuleDescriptionTabContains("Variables should not be self-assigned")
 
             openFile("mod/src/HelloModule.scala", "HelloModule.scala")
 
-            verifyCurrentFileTabContainsMessages(
-                "Found 1 issue in 1 file",
-                "HelloModule.scala",
-            )
+            verifyCurrentFileTabContainsMessages("Found 1 issue")
             clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
             verifyCurrentFileRuleDescriptionTabContains("Methods should not be empty")
 
             openFile("mod/src/Excluded.scala", "Excluded.scala")
             verifyCurrentFileTabContainsMessages(
-                "No analysis done on the current opened file",
+                "No findings to display",
                 "This file is not automatically analyzed",
             )
             enableConnectedModeFromCurrentFilePanel(SCALA_PROJECT_KEY, false, "Orchestrator")

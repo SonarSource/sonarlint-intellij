@@ -27,6 +27,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
 import javax.swing.Box
@@ -51,17 +52,19 @@ class FiltersPanel(
     val severityCombo = ComboBox(CurrentFileDisplayManager.STANDARD_SEVERITIES)
     val statusLabel = JBLabel("Status:")
     val statusCombo = ComboBox(RESOLVED_STATUS)
-    val quickFixLabel = JBLabel("With fix suggestion:")
+    val quickFixLabel = JBLabel("Fix suggestion:")
     val quickFixCheckBox = JBCheckBox()
     val sortLabel = JBLabel("Sort by:")
     val sortCombo = ComboBox(SORTING_MODES)
-    val focusOnNewCodeLabel = JBLabel("Focus on New Code:")
+    val focusOnNewCodeLabel = JBLabel("New code:")
     val focusOnNewCodeCheckBox = JBCheckBox()
     val cleanFiltersBtn = JButton("Clear")
+    private lateinit var statusSeparator: JSeparator
+    private val statusSpacingComponents = mutableListOf<Component>()
 
     var filterText = ""
     var filterSeverity = "All"
-    var filterStatus = "All"
+    var filterStatus = "Open"
     private var sortMode = SortMode.DATE
 
     init {
@@ -121,8 +124,9 @@ class FiltersPanel(
         }
 
         statusCombo.apply {
-            toolTipText = "Filer by status"
+            toolTipText = "Filter by status"
             maximumSize = Dimension(90, 30)
+            selectedItem = "Open"  // Set initial selection to "Open"
             addActionListener { _ ->
                 filterStatus = statusCombo.selectedItem as String
                 onFilterChanged()
@@ -182,8 +186,8 @@ class FiltersPanel(
                 searchField.text = ""
                 filterSeverity = "All"
                 severityCombo.selectedItem = "All"
-                filterStatus = "All"
-                statusCombo.selectedItem = "All"
+                filterStatus = "Open"
+                statusCombo.selectedItem = "Open"
                 quickFixCheckBox.isSelected = false
                 sortMode = SortMode.DATE
                 sortCombo.selectedItem = "Date"
@@ -210,7 +214,16 @@ class FiltersPanel(
         add(JSeparator(JSeparator.VERTICAL).apply {
             maximumSize = Dimension(8, 24)
         })
-        add(Box.createRigidArea(Dimension(4, 0)))
+        statusSpacingComponents.add(Box.createRigidArea(Dimension(4, 0)).also { add(it) })
+        add(statusLabel)
+        statusSpacingComponents.add(Box.createRigidArea(Dimension(4, 0)).also { add(it) })
+        add(statusCombo)
+        statusSpacingComponents.add(Box.createRigidArea(Dimension(4, 0)).also { add(it) })
+        statusSeparator = JSeparator(JSeparator.VERTICAL).apply {
+            maximumSize = Dimension(8, 24)
+        }
+        add(statusSeparator)
+        statusSpacingComponents.add(Box.createRigidArea(Dimension(4, 0)).also { add(it) })
         add(quickFixLabel)
         add(Box.createRigidArea(Dimension(4, 0)))
         add(quickFixCheckBox)
@@ -240,6 +253,13 @@ class FiltersPanel(
 
     fun setFocusOnNewCode(focusOnNewCode: Boolean) {
         focusOnNewCodeCheckBox.isSelected = focusOnNewCode
+    }
+
+    fun setStatusFilterVisible(visible: Boolean) {
+        statusLabel.isVisible = visible
+        statusCombo.isVisible = visible
+        statusSeparator.isVisible = visible
+        statusSpacingComponents.forEach { it.isVisible = visible }
     }
 
 }

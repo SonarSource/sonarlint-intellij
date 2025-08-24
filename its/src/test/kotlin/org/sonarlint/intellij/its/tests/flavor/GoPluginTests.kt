@@ -38,8 +38,7 @@ class GoPluginTests : BaseUiTest() {
         openFile("file.go")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.go",
+            "Found 1 issue",
             "Remove or correct this useless self-assignment."
         )
     }

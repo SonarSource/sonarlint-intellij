@@ -36,8 +36,7 @@ class PyCharmTests : BaseUiTest() {
         openFile("file.py")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.py",
+            "Found 1 issue",
             "Refactor this method to not always return the same value."
         )
     }

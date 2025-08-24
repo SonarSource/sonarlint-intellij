@@ -36,29 +36,25 @@ class IdeaUltimateTests : BaseUiTest() {
 
         openFile("file.yaml")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.yaml",
+            "Found 1 issue",
             "Change this code to disable support of older TLS versions."
         )
 
         openFile("Dockerfile")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "Dockerfile",
+            "Found 1 issue",
             "Replace \"from\" with upper case format \"FROM\"."
         )
 
         openFile("kubernetes.yaml")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "kubernetes.yaml",
+            "Found 1 issue",
             "Replace this wildcard with a clear list of allowed resources."
         )
 
         openFile("file.tf")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.tf",
+            "Found 1 issue",
             "Change this code to disable support of older TLS versions."
         )
     }
@@ -69,8 +65,7 @@ class IdeaUltimateTests : BaseUiTest() {
 
         openFile("file.kt")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.kt",
+            "Found 1 issue",
             "Make this interface functional or replace it with a function type."
         )
     }
@@ -81,8 +76,7 @@ class IdeaUltimateTests : BaseUiTest() {
 
         openFile("file.xml")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.xml",
+            "Found 1 issue",
             "Take the required action to fix the issue indicated by this \"FIXME\" comment."
         )
     }
@@ -94,29 +88,25 @@ class IdeaUltimateTests : BaseUiTest() {
 
         openFile("file.js")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file.js",
+            "Found 1 issue",
             "Unexpected comma in middle of array."
         )
 
         openFile("file2.ts")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file2.ts",
+            "Found 1 issue",
             "Unexpected var, use let or const instead."
         )
 
         openFile("file3.css")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue in 1 file",
-            "file3.css",
+            "Found 1 issue",
             "Unexpected empty block"
         )
 
         openFile("file4.html")
         verifyCurrentFileTabContainsMessages(
-            "Found 2 issues in 1 file",
-            "file4.html",
+            "Found 2 issues",
             "\"tabIndex\" should only be declared on interactive elements.",
             "Avoid using positive values for the \"tabIndex\" attribute."
         )
