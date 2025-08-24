@@ -28,7 +28,6 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.CompactTreeModel
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -87,12 +86,6 @@ class SingleFileTaintTreeModelBuilder(private val project: Project, isOldIssue: 
         return latestTaints.isEmpty()
     }
 
-    override fun removeFinding(finding: LocalTaintVulnerability) {
-        if (latestTaints.remove(finding)) {
-            updateModel(currentFile, latestTaints)
-        }
-    }
-
     override fun updateModel(file: VirtualFile?, findings: List<LocalTaintVulnerability>) {
         latestTaints = findings.toMutableList()
         currentFile = file
@@ -113,18 +106,8 @@ class SingleFileTaintTreeModelBuilder(private val project: Project, isOldIssue: 
         treeSummary.refresh(1, sortedTaints.size)
     }
 
-    override fun refreshModel() {
-        runOnUiThread(project) { updateModel(currentFile, latestTaints) }
-    }
-
     override fun findFindingByKey(key: String): LocalTaintVulnerability? {
         return null
-    }
-
-    override fun clear() {
-        runOnUiThread(project) {
-            updateModel(null, emptyList())
-        }
     }
 
     override fun getSummaryUiModel(): SummaryUiModel {

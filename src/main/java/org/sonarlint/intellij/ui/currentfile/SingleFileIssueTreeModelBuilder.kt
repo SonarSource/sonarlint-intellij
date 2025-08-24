@@ -22,7 +22,6 @@ package org.sonarlint.intellij.ui.currentfile
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.util.Collections
 import javax.swing.tree.DefaultTreeModel
 import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.backgroundColorsBySeverity
@@ -30,10 +29,7 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -81,15 +77,6 @@ class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: 
         return latestIssues.isEmpty()
     }
 
-    override fun removeFinding(finding: LiveIssue) {
-        findIssueNode(finding.getId().toString())?.let {
-            latestIssues.remove(finding)
-            summaryNode.remove(it)
-            treeSummary.refresh(1, latestIssues.size)
-            model.nodeStructureChanged(summaryNode)
-        }
-    }
-
     override fun updateModel(file: VirtualFile?, findings: List<LiveIssue>) {
         latestIssues = findings.toMutableList()
         currentFile = file
@@ -113,21 +100,8 @@ class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: 
         model.nodeStructureChanged(summaryNode)
     }
 
-    override fun refreshModel() {
-        runOnUiThread(project) { updateModel(currentFile, latestIssues) }
-        currentFile?.let {
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(Collections.singleton(it))
-        }
-    }
-
     override fun findFindingByKey(key: String): LiveIssue? {
         return findIssueNode(key)?.issue()
-    }
-
-    override fun clear() {
-        runOnUiThread(project) {
-            updateModel(null, emptyList())
-        }
     }
 
     override fun setSortMode(mode: SortMode) {

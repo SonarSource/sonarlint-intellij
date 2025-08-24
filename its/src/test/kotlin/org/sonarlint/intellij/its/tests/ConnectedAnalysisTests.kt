@@ -180,7 +180,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
                 "Found 1 older Security Hotspot",
                 "Found 1 older Taint Vulnerability"
             )
-
             resetFocusOnNewCode()
 
             verifyCurrentFileTabContainsMessages(

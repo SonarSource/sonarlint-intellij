@@ -55,6 +55,25 @@ import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.util.SonarLintActions
 import org.sonarlint.intellij.util.runOnPooledThread
 
+/**
+ * Main panel component for the Current File tab in SonarLint tool window.
+ * 
+ * <h3>Design & Architecture:</h3>
+ * <p>This panel serves as the primary orchestrator for displaying findings in the currently opened file.
+ * It implements a multi-layered architecture that handles filtering, display management,
+ * and tree organization for different types of findings.</p>
+ * 
+ * <h3>Key Components Integration:</h3>
+ * <p>The panel coordinates multiple specialized components:</p>
+ * <ul>
+ *   <li><strong>{@link CurrentFileSummaryPanel}:</strong> Header with finding counts and collapse/expand controls</li>
+ *   <li><strong>{@link FiltersPanel}:</strong> Filtering and sorting controls (search, severity, status, etc.)</li>
+ *   <li><strong>{@link CurrentFileDisplayManager}:</strong> Manages display state, MQR mode, and UI updates</li>
+ *   <li><strong>{@link CurrentFileFindingsFilter}:</strong> Applies filtering logic to findings</li>
+ *   <li><strong>Tree Components:</strong> Multiple {@link SingleFileTreeModelBuilder} implementations for each finding type</li>
+ *   <li><strong>FindingDetailsPanel:</strong> Shows detailed information for selected findings</li>
+ * </ul>
+ */
 class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
     // UI Components
