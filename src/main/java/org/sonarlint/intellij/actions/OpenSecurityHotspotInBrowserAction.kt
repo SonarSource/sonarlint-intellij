@@ -31,16 +31,15 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.runOnPooledThread
 
+val SECURITY_HOTSPOT_DATA_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
+
 class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
   "Open In Browser",
   "Open Security Hotspot in browser",
   null
 ) {
-  companion object {
-    val SECURITY_HOTSPOT_DATA_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
-  }
 
-  override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
+    override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
     return e.getData(SECURITY_HOTSPOT_DATA_KEY) != null &&
         e.getData(SECURITY_HOTSPOT_DATA_KEY)?.getServerKey() != null
   }

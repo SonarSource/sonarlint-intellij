@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.currentfile.tree
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.DefaultTreeModel
@@ -70,7 +69,6 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
     override fun updateModel(file: VirtualFile?, findings: List<LiveSecurityHotspot>) {
         latestHotspots = findings.toMutableList()
         currentFile = file
-        ApplicationManager.getApplication().assertIsDispatchThread()
 
         summaryNode.removeAllChildren()
 
@@ -108,6 +106,15 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
 
     override fun setSortMode(mode: SortMode) {
         sortMode = mode
+    }
+
+    override fun removeFinding(finding: LiveSecurityHotspot) {
+        findHotspotNode(finding.getId().toString())?.let {
+            latestHotspots.remove(finding)
+            summaryNode.remove(it)
+            treeSummary.refresh(1, latestHotspots.size)
+            model.nodeStructureChanged(summaryNode)
+        }
     }
 
     private fun findHotspotNode(key: String): LiveSecurityHotspotNode? {
