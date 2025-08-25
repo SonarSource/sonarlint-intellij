@@ -167,7 +167,7 @@ intellijPlatform {
         } else {
             // Test oldest supported, and latest
             ides {
-                create("IC", "2024.2")
+                create("IC", "2023.1")
                 create("IC", "2025.2")
             }
         }
