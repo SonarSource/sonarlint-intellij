@@ -28,8 +28,8 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.ui.currentfile.SortMode
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.currentfile.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.CompactTreeModel
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -52,7 +52,7 @@ val TAINT_IMPACT_ORDER = listOf(
     ImpactSeverity.INFO
 )
 
-class SingleFileTaintTreeModelBuilder(private val project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LocalTaintVulnerability> {
+class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LocalTaintVulnerability> {
 
     var summaryNode: SummaryNode
     private var latestTaints = mutableListOf<LocalTaintVulnerability>()
@@ -66,7 +66,7 @@ class SingleFileTaintTreeModelBuilder(private val project: Project, isOldIssue: 
     var focusFilter: FocusFilter = FocusFilter.ALL_CODE
     var resolutionFilter: ResolutionFilter = ResolutionFilter.OPEN_ONLY
 
-    private var sortMode: SortMode = SortMode.LINE
+    private var sortMode: SortMode = SortMode.DATE
 
     override fun setSortMode(mode: SortMode) {
         sortMode = mode

@@ -22,23 +22,21 @@ package org.sonarlint.intellij.ui.currentfile.tree
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.TreeModel
 import org.sonarlint.intellij.finding.Finding
-import org.sonarlint.intellij.ui.currentfile.SortMode
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.currentfile.filter.SortMode
 
 /**
  * Interface defining the contract for building and managing tree models for findings within a single file.
  * 
  * <h3>Design & Architecture:</h3>
- * <p>This interface establishes a common contract for all tree model builders in the Current File panel.</p>
+ * This interface establishes a common contract for all tree model builders in the Current File panel.
  * 
  * <h3>Core Responsibilities:</h3>
- * <p>Implementations of this interface are responsible for:</p>
- * <ul>
- *   <li><strong>Model Management:</strong> Creating and updating tree models based on finding data</li>
- *   <li><strong>Filtering Integration:</strong> Applying filters and displaying only relevant findings</li>
- *   <li><strong>Sorting Support:</strong> Organizing findings according to user-selected sort criteria</li>
- *   <li><strong>State Tracking:</strong> Maintaining model state and providing metadata about displayed content</li>
- * </ul>
+ * Implementations of this interface are responsible for:
+ * - Model Management:</strong> Creating and updating tree models based on finding data
+ * - Filtering Integration:</strong> Applying filters and displaying only relevant findings
+ * - Sorting Support:</strong> Organizing findings according to user-selected sort criteria
+ * - State Tracking:</strong> Maintaining model state and providing metadata about displayed content
  */
 interface SingleFileTreeModelBuilder<T: Finding> {
 

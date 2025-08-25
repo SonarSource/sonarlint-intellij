@@ -37,6 +37,7 @@ class LocalDependencyRisk(private val serverDependencyRisk: DependencyRiskDto) :
     val vulnerabilityId = serverDependencyRisk.vulnerabilityId
     val cvssScore = serverDependencyRisk.cvssScore
     val transitions: List<DependencyRiskDto.Transition> = serverDependencyRisk.transitions
+    private val resolvedStatus = listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT, DependencyRiskDto.Status.FIXED)
 
     fun canChangeStatus(): Boolean {
         return transitions.isNotEmpty()
@@ -94,7 +95,7 @@ class LocalDependencyRisk(private val serverDependencyRisk: DependencyRiskDto) :
 
     override fun isOnNewCode() = true
 
-    override fun isResolved() = status in listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT, DependencyRiskDto.Status.FIXED)
+    override fun isResolved() = status in resolvedStatus
 
     override fun isAiCodeFixable() = false
 }

@@ -25,8 +25,8 @@ import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.riskSeverity
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
-import org.sonarlint.intellij.ui.currentfile.SortMode
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.currentfile.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskResolvedFilter
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTreeUpdater
@@ -44,7 +44,7 @@ val DEPENDENCY_RISK_SEVERITY_ORDER = listOf(
     DependencyRiskDto.Severity.INFO
 )
 
-class SingleFileDependencyRiskTreeModelBuilder(private val project: Project, isOldRisk: Boolean) : SingleFileTreeModelBuilder<LocalDependencyRisk> {
+class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Boolean) : SingleFileTreeModelBuilder<LocalDependencyRisk> {
 
     var summaryNode: SummaryNode
     private var latestRisks = mutableListOf<LocalDependencyRisk>()
@@ -56,7 +56,7 @@ class SingleFileDependencyRiskTreeModelBuilder(private val project: Project, isO
 
     var resolutionFilter: DependencyRiskResolvedFilter = DependencyRiskResolvedFilter.OPEN_ONLY
 
-    private var sortMode: SortMode = SortMode.LINE
+    private var sortMode: SortMode = SortMode.DATE
 
     init {
         // Initialize the tree updater's resolution filter to match the builder's filter

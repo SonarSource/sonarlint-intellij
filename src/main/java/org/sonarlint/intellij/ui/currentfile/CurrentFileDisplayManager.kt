@@ -30,32 +30,30 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.ToolWindowConstants
+import org.sonarlint.intellij.ui.currentfile.filter.FilterCriteria
+import org.sonarlint.intellij.ui.currentfile.filter.FilteredFindings
+import org.sonarlint.intellij.ui.currentfile.filter.FiltersPanel
+import org.sonarlint.intellij.ui.currentfile.filter.MqrImpactFilter
+import org.sonarlint.intellij.ui.currentfile.filter.SeverityFilter
 
 /**
  * Manages display state, UI updates, and visual feedback for the Current File panel.
  * 
  * <h3>Design & Architecture:</h3>
- * <p>This service acts as a coordinator between the UI components and the underlying data state,
+ * This service acts as a coordinator between the UI components and the underlying data state,
  * managing visual feedback elements like icons, filter controls, and display modes. It implements
- * a reactive pattern where display updates are triggered by data changes.</p>
+ * a reactive pattern where display updates are triggered by data changes.
  * 
  * <h3>Core Responsibilities:</h3>
- * <ul>
- *   <li><strong>MQR Mode Management:</strong> Automatically detects and switches between MQR and standard severity modes</li>
- *   <li><strong>Filter Control Updates:</strong> Dynamically updates filter panel controls based on current context</li>
- *   <li><strong>Icon Management:</strong> Updates tool window and editor gutter icons based on finding states</li>
- *   <li><strong>Visual State Coordination:</strong> Ensures UI consistency across different components</li>
- * </ul>
+ * - MQR Mode Management:</strong> Automatically detects and switches between MQR and standard severity modes
+ * - Filter Control Updates:</strong> Dynamically updates filter panel controls based on current context
+ * - Icon Management:</strong> Updates tool window and editor gutter icons based on finding states
+ * - Visual State Coordination:</strong> Ensures UI consistency across different components
  */
 class CurrentFileDisplayManager(
     private val project: Project,
     private val filtersPanel: FiltersPanel
 ) {
-
-    companion object {
-        val MQR_IMPACTS = arrayOf("All", "Blocker", "High", "Medium", "Low", "Info")
-        val STANDARD_SEVERITIES = arrayOf("All", "Blocker", "Critical", "Major", "Minor", "Info")
-    }
 
     private var isMqrMode = false
     private var currentFile: VirtualFile? = null
@@ -69,19 +67,8 @@ class CurrentFileDisplayManager(
     }
 
     private fun updateSeverityComboModel() {
-        val newOptions = if (isMqrMode) MQR_IMPACTS else STANDARD_SEVERITIES
-        val prev = filtersPanel.severityCombo.selectedItem as String?
+        val newOptions = if (isMqrMode) MqrImpactFilter.values() else SeverityFilter.values()
         filtersPanel.severityCombo.setModel(DefaultComboBoxModel(newOptions))
-        
-        // Try to keep the same selection if possible
-        if (prev != null) {
-            for (i in newOptions.indices) {
-                if (newOptions[i].equals(prev, ignoreCase = true)) {
-                    filtersPanel.severityCombo.selectedIndex = i
-                    break
-                }
-            }
-        }
     }
 
     fun updateIcons(file: VirtualFile, filteredFindings: FilteredFindings) {
