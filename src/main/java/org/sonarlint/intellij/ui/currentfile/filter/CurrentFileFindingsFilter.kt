@@ -17,11 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.currentfile
+package org.sonarlint.intellij.ui.currentfile.filter
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.Locale
+import org.apache.commons.lang3.Strings
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.Finding
@@ -32,20 +33,14 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilities
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 
-/**
- * Filter criteria for findings
- */
 data class FilterCriteria(
-    val severityFilter: String = "All",
-    val statusFilter: String = "All", 
+    val severityFilter: SeverityFilter = SeverityFilter.NO_FILTER,
+    val statusFilter: StatusFilter = StatusFilter.OPEN,
     val textFilter: String = "",
     val quickFixFilter: Boolean = false,
     val isMqrMode: Boolean = false
 )
 
-/**
- * Container for all filtered findings
- */
 data class FilteredFindings(
     val issues: List<LiveIssue>,
     val hotspots: List<LiveSecurityHotspot>,
@@ -60,18 +55,16 @@ data class FilteredFindings(
  * Service responsible for filtering all types of findings based on user-defined criteria.
  * 
  * <h3>Design & Architecture:</h3>
- * <p>This service implements a comprehensive filtering system that applies multiple filter types
+ * This service implements a comprehensive filtering system that applies multiple filter types
  * across different finding categories. It follows a clean separation of concerns where filtering 
- * logic is centralized and independent of UI components.</p>
+ * logic is centralized and independent of UI components.
  * 
  * <h3>Filtering Strategy:</h3>
- * <p>Uses a multi-stage filtering approach:</p>
- * <ul>
- *   <li><strong>Data Loading:</strong> Retrieves raw findings from various caches and holders</li>
- *   <li><strong>Type-Specific Filtering:</strong> Applies filters appropriate to each finding type</li>
- *   <li><strong>Unified Criteria:</strong> Uses {@link FilterCriteria} for consistent filter application</li>
- *   <li><strong>Result Aggregation:</strong> Returns filtered results in a structured {@link FilteredFindings} container</li>
- * </ul>
+ * Uses a multi-stage filtering approach:
+ * - Data Loading: Retrieves raw findings from various caches and holders
+ * - Type-Specific Filtering: Applies filters appropriate to each finding type
+ * - Unified Criteria: Uses {@link FilterCriteria} for consistent filter application
+ * - Result Aggregation: Returns filtered results in a structured {@link FilteredFindings} container
  */
 class CurrentFileFindingsFilter(private val project: Project) {
 
@@ -109,20 +102,20 @@ class CurrentFileFindingsFilter(private val project: Project) {
     }
 
     private fun filterIssueBySeverity(issue: LiveIssue, criteria: FilterCriteria): Boolean {
-        if (criteria.severityFilter == "All") return true
+        if (criteria.severityFilter == SeverityFilter.NO_FILTER) return true
         return if (criteria.isMqrMode) {
-            issue.getHighestImpact() != null && issue.getHighestImpact()?.name.equals(criteria.severityFilter, ignoreCase = true)
+            Strings.CI.equals(issue.getHighestImpact()?.name, criteria.severityFilter.presentableText)
         } else {
-            issue.userSeverity != null && issue.userSeverity?.name.equals(criteria.severityFilter, ignoreCase = true)
+            Strings.CI.equals(issue.userSeverity?.name, criteria.severityFilter.presentableText)
         }
     }
 
     private fun filterIssueByText(issue: LiveIssue, criteria: FilterCriteria): Boolean {
         if (criteria.textFilter.isEmpty()) return true
         val filterText = criteria.textFilter.lowercase(Locale.getDefault())
-        return (issue.message != null && issue.message.lowercase(Locale.getDefault()).contains(filterText))
-            || issue.getRuleKey().lowercase(Locale.getDefault()).contains(filterText)
-            || issue.file().name.lowercase(Locale.getDefault()).contains(filterText)
+        return Strings.CI.contains(issue.message, filterText)
+            || Strings.CI.contains(issue.getRuleKey(), filterText)
+            || Strings.CI.contains(issue.file().name, filterText)
     }
 
     private fun filterIssueByQuickFix(issue: LiveIssue, criteria: FilterCriteria): Boolean {
@@ -139,15 +132,16 @@ class CurrentFileFindingsFilter(private val project: Project) {
     }
 
     private fun filterHotspotBySeverity(hotspot: LiveSecurityHotspot, criteria: FilterCriteria): Boolean {
-        return criteria.severityFilter == "All" || hotspot.vulnerabilityProbability.name.equals(criteria.severityFilter, ignoreCase = true)
+        return criteria.severityFilter == SeverityFilter.NO_FILTER
+            || hotspot.vulnerabilityProbability.name.equals(criteria.severityFilter.presentableText, ignoreCase = true)
     }
 
     private fun filterHotspotByText(hotspot: LiveSecurityHotspot, criteria: FilterCriteria): Boolean {
         if (criteria.textFilter.isEmpty()) return true
         val filterText = criteria.textFilter.lowercase(Locale.getDefault())
-        return (hotspot.message != null && hotspot.message.lowercase(Locale.getDefault()).contains(filterText))
-            || hotspot.getRuleKey().lowercase(Locale.getDefault()).contains(filterText)
-            || hotspot.file().name.lowercase(Locale.getDefault()).contains(filterText)
+        return Strings.CI.contains(hotspot.message, filterText)
+            || Strings.CI.contains(hotspot.getRuleKey(), filterText)
+            || Strings.CI.contains(hotspot.file().name, filterText)
     }
 
     private fun filterHotspotByQuickFix(hotspot: LiveSecurityHotspot, criteria: FilterCriteria): Boolean {
@@ -165,9 +159,9 @@ class CurrentFileFindingsFilter(private val project: Project) {
     private fun filterTaintByText(taint: LocalTaintVulnerability, criteria: FilterCriteria): Boolean {
         if (criteria.textFilter.isEmpty()) return true
         val filterText = criteria.textFilter.lowercase(Locale.getDefault())
-        return (taint.getRuleDescriptionContextKey() != null && taint.getRuleDescriptionContextKey()!!.lowercase(Locale.getDefault()).contains(filterText))
-            || taint.getRuleKey().lowercase(Locale.getDefault()).contains(filterText)
-            || (taint.file() != null && taint.file()?.name != null && taint.file()?.name?.lowercase(Locale.getDefault())?.contains(filterText) == true)
+        return Strings.CI.contains(taint.getRuleDescriptionContextKey(), filterText)
+            || Strings.CI.contains(taint.getRuleKey(), filterText)
+            || Strings.CI.contains(taint.file()?.name, filterText)
     }
 
     private fun filterTaintByQuickFix(taint: LocalTaintVulnerability, criteria: FilterCriteria): Boolean {
@@ -184,15 +178,15 @@ class CurrentFileFindingsFilter(private val project: Project) {
     }
 
     private fun filterDependencyRiskBySeverity(risk: LocalDependencyRisk, criteria: FilterCriteria): Boolean {
-        return criteria.severityFilter == "All" || risk.severity.name.equals(criteria.severityFilter, ignoreCase = true)
+        return criteria.severityFilter == SeverityFilter.NO_FILTER || risk.severity.name.equals(criteria.severityFilter.presentableText, ignoreCase = true)
     }
 
     private fun filterDependencyRiskByText(risk: LocalDependencyRisk, criteria: FilterCriteria): Boolean {
         if (criteria.textFilter.isEmpty()) return true
         val filterText = criteria.textFilter.lowercase(Locale.getDefault())
-        return risk.packageName.lowercase(Locale.getDefault()).contains(filterText)
-            || risk.packageVersion.lowercase(Locale.getDefault()).contains(filterText)
-            || (risk.vulnerabilityId != null && risk.vulnerabilityId.lowercase(Locale.getDefault()).contains(filterText))
+        return Strings.CI.contains(risk.packageName, filterText)
+            || Strings.CI.contains(risk.packageVersion, filterText)
+            || Strings.CI.contains(risk.vulnerabilityId, filterText)
     }
 
     private fun filterDependencyRiskByQuickFix(risk: LocalDependencyRisk, criteria: FilterCriteria): Boolean {
@@ -200,7 +194,12 @@ class CurrentFileFindingsFilter(private val project: Project) {
     }
 
     private fun filterByStatus(finding: Finding, criteria: FilterCriteria): Boolean {
-        return criteria.statusFilter == "All" || (criteria.statusFilter == "Open" && !finding.isResolved()) || (criteria.statusFilter == "Resolved" && finding.isResolved())
+        return when (criteria.statusFilter) {
+            StatusFilter.NO_FILTER -> true
+            StatusFilter.OPEN if !finding.isResolved() -> true
+            StatusFilter.RESOLVED if finding.isResolved() -> true
+            else -> false
+        }
     }
 
 }

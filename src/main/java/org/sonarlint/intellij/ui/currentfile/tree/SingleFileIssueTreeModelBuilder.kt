@@ -30,8 +30,8 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
 import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.ui.currentfile.SortMode
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.currentfile.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -50,7 +50,7 @@ val IMPACT_ORDER = listOf(
     ImpactSeverity.INFO
 )
 
-class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LiveIssue> {
+class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LiveIssue> {
 
     var model: DefaultTreeModel
     var summaryNode: SummaryNode
@@ -59,7 +59,7 @@ class SingleFileIssueTreeModelBuilder(private val project: Project, isOldIssue: 
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, isOldIssue).also {
         summaryNode = SummaryNode(it)
     }
-    private var sortMode: SortMode = SortMode.LINE
+    private var sortMode: SortMode = SortMode.DATE
 
     init {
         model = DefaultTreeModel(summaryNode).apply {

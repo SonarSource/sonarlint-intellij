@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.currentfile
 
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -50,6 +49,9 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerabil
 import org.sonarlint.intellij.messages.StatusListener
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.currentfile.filter.CurrentFileFindingsFilter
+import org.sonarlint.intellij.ui.currentfile.filter.FiltersPanel
+import org.sonarlint.intellij.ui.currentfile.filter.SortMode
 import org.sonarlint.intellij.ui.currentfile.tree.SingleFileTreeModelBuilder
 import org.sonarlint.intellij.ui.factory.PanelFactory
 import org.sonarlint.intellij.ui.nodes.IssueNode
@@ -61,20 +63,18 @@ import org.sonarlint.intellij.util.runOnPooledThread
  * Main panel component for the Current File tab in SonarLint tool window.
  * 
  * <h3>Design & Architecture:</h3>
- * <p>This panel serves as the primary orchestrator for displaying findings in the currently opened file.
+ * This panel serves as the primary orchestrator for displaying findings in the currently opened file.
  * It implements a multi-layered architecture that handles filtering, display management,
- * and tree organization for different types of findings.</p>
+ * and tree organization for different types of findings.
  * 
  * <h3>Key Components Integration:</h3>
- * <p>The panel coordinates multiple specialized components:</p>
- * <ul>
- *   <li><strong>{@link CurrentFileSummaryPanel}:</strong> Header with finding counts and collapse/expand controls</li>
- *   <li><strong>{@link FiltersPanel}:</strong> Filtering and sorting controls (search, severity, status, etc.)</li>
- *   <li><strong>{@link CurrentFileDisplayManager}:</strong> Manages display state, MQR mode, and UI updates</li>
- *   <li><strong>{@link CurrentFileFindingsFilter}:</strong> Applies filtering logic to findings</li>
- *   <li><strong>Tree Components:</strong> Multiple {@link SingleFileTreeModelBuilder} implementations for each finding type</li>
- *   <li><strong>FindingDetailsPanel:</strong> Shows detailed information for selected findings</li>
- * </ul>
+ * The panel coordinates multiple specialized components:
+ * - {@link CurrentFileSummaryPanel}:</strong> Header with finding counts and collapse/expand controls
+ * - {@link FiltersPanel}:</strong> Filtering and sorting controls (search, severity, status, etc.)
+ * - {@link CurrentFileDisplayManager}:</strong> Manages display state, MQR mode, and UI updates
+ * - {@link CurrentFileFindingsFilter}:</strong> Applies filtering logic to findings
+ * - Tree Components:</strong> Multiple {@link SingleFileTreeModelBuilder} implementations for each finding type
+ * - FindingDetailsPanel:</strong> Shows detailed information for selected findings
  */
 class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
@@ -95,8 +95,8 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         filtersPanel = FiltersPanel(
             { refreshView() },
             { sortMode -> treeConfigs.values.forEach { it.builder.setSortMode(SortMode.valueOf(sortMode.name)) } },
-            { focusOnNewCode -> 
-                runOnPooledThread(project) { 
+            { focusOnNewCode ->
+                runOnPooledThread(project) {
                     getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCode)
                 }
             }
@@ -185,8 +185,8 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             SonarLintActions.getInstance().analyzeCurrentFileAction(),
             SonarLintActions.getInstance().analyzeChangedFiles(),
             SonarLintActions.getInstance().analyzeAllFiles(),
-            ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
-            ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"),
+            SonarLintActions.getInstance().cancelAnalysis(),
+            SonarLintActions.getInstance().configure(),
             SonarLintActions.getInstance().clearIssues()
         ))
     }

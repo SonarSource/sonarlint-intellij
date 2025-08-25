@@ -46,6 +46,7 @@ public class IncludeResolvedFindingsAction<T extends Finding> extends AbstractSo
     var p = event.getProject();
     if (p != null && type == Finding.class) {
         isResolved = flag;
+        // TODO: To refactor
         //getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
       }
 
