@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.currentfile
+package org.sonarlint.intellij.ui.currentfile.filter
 
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.JBColor
@@ -37,31 +37,24 @@ import javax.swing.JSeparator
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-val RESOLVED_STATUS = arrayOf("All", "Open", "Resolved")
-val SORTING_MODES = arrayOf("Date", "Impact", "Rule key", "Line number")
-
 /**
  * Filter panel component that provides various filtering and sorting controls for findings in the Current File tab.
  * 
  * <h3>Design & Architecture:</h3>
- * <p>This panel follows a reactive design pattern where filter changes immediately trigger callbacks to update 
- * the displayed findings. It contains multiple filter types:</p>
- * 
- * <ul>
- *   <li><strong>Search Filter:</strong> Text-based search across rule names, messages, and file names</li>
- *   <li><strong>Severity Filter:</strong> Filters by issue severity/impact levels (adapts to MQR/standard mode)</li>
- *   <li><strong>Status Filter:</strong> Filters by resolution status (All/Open/Resolved) - only visible in connected mode</li>
- *   <li><strong>Quick Fix Filter:</strong> Shows only findings with available quick fixes or AI code fixes</li>
- *   <li><strong>Sorting Controls:</strong> Allows sorting by date, impact, rule key, or line number</li>
- *   <li><strong>Focus on New Code:</strong> Toggle to show only findings in new code areas</li>
- * </ul>
+ * This panel follows a reactive design pattern where filter changes immediately trigger callbacks to update
+ * the displayed findings. It contains multiple filter types:
+ *
+ * - Search Filter:</strong> Text-based search across rule names, messages, and file names
+ * - Severity Filter:</strong> Filters by issue severity/impact levels (adapts to MQR/standard mode)
+ * - Status Filter:</strong> Filters by resolution status (All/Open/Resolved) - only visible in connected mode
+ * - Quick Fix Filter:</strong> Shows only findings with available quick fixes or AI code fixes
+ * - Sorting Controls:</strong> Allows sorting by date, impact, rule key, or line number
+ * - Focus on New Code:</strong> Toggle to show only findings in new code areas
  * 
  * <h3>Visibility Management:</h3>
- * <p>The panel uses conditional visibility for certain filters:</p>
- * <ul>
- *   <li>Status filter is only shown in connected mode (when bound to SonarQube/SonarCloud)</li>
- *   <li>The entire panel can be hidden/shown via the summary panel toggle</li>
- * </ul>
+ * The panel uses conditional visibility for certain filters:
+ * - Status filter is only shown in connected mode (when bound to SonarQube/SonarCloud)
+ * - The entire panel can be hidden/shown via the summary panel toggle
  */
 class FiltersPanel(
     private val onFilterChanged: () -> Unit,
@@ -72,13 +65,13 @@ class FiltersPanel(
     val searchLabel = JBLabel("Search:")
     val searchField = SearchTextField()
     val severityLabel = JBLabel("Severity:")
-    val severityCombo = ComboBox(CurrentFileDisplayManager.STANDARD_SEVERITIES)
+    val severityCombo: ComboBox<Any> = ComboBox(SeverityFilter.values())
     val statusLabel = JBLabel("Status:")
-    val statusCombo = ComboBox(RESOLVED_STATUS)
+    val statusCombo = ComboBox(StatusFilter.values())
     val quickFixLabel = JBLabel("Fix suggestion:")
     val quickFixCheckBox = JBCheckBox()
     val sortLabel = JBLabel("Sort by:")
-    val sortCombo = ComboBox(SORTING_MODES)
+    val sortCombo = ComboBox(SortMode.values())
     val focusOnNewCodeLabel = JBLabel("New code:")
     val focusOnNewCodeCheckBox = JBCheckBox()
     val cleanFiltersBtn = JButton("Clear")
@@ -86,8 +79,8 @@ class FiltersPanel(
     private val statusSpacingComponents = mutableListOf<Component>()
 
     var filterText = ""
-    var filterSeverity = "All"
-    var filterStatus = "Open"
+    var filterSeverity = SeverityFilter.NO_FILTER
+    var filterStatus = StatusFilter.OPEN
     private var sortMode = SortMode.DATE
 
     init {
@@ -136,7 +129,7 @@ class FiltersPanel(
             toolTipText = "Filter by severity"
             maximumSize = Dimension(90, 30)
             addActionListener { _ ->
-                filterSeverity = severityCombo.selectedItem as String
+                filterSeverity = severityCombo.selectedItem as SeverityFilter
                 onFilterChanged()
             }
         }
@@ -149,9 +142,9 @@ class FiltersPanel(
         statusCombo.apply {
             toolTipText = "Filter by status"
             maximumSize = Dimension(90, 30)
-            selectedItem = "Open"  // Set initial selection to "Open"
+            selectedItem = StatusFilter.OPEN
             addActionListener { _ ->
-                filterStatus = statusCombo.selectedItem as String
+                filterStatus = statusCombo.selectedItem as StatusFilter
                 onFilterChanged()
             }
         }
@@ -175,13 +168,7 @@ class FiltersPanel(
             toolTipText = "Sort findings by"
             maximumSize = Dimension(160, 30)
             addActionListener { _ ->
-                val selected = sortCombo.selectedItem as String
-                sortMode = when (selected) {
-                    "Impact" -> SortMode.IMPACT
-                    "Date" -> SortMode.DATE
-                    "Rule key" -> SortMode.RULE_KEY
-                    else -> SortMode.LINE
-                }
+                sortMode = sortCombo.selectedItem as SortMode
                 onSortingChanged(sortMode)
                 onFilterChanged()
             }
@@ -207,13 +194,13 @@ class FiltersPanel(
             addActionListener { _ ->
                 filterText = ""
                 searchField.text = ""
-                filterSeverity = "All"
-                severityCombo.selectedItem = "All"
-                filterStatus = "Open"
-                statusCombo.selectedItem = "Open"
+                filterSeverity = SeverityFilter.NO_FILTER
+                severityCombo.selectedItem = SeverityFilter.NO_FILTER
+                filterStatus = StatusFilter.OPEN
+                statusCombo.selectedItem = StatusFilter.OPEN
                 quickFixCheckBox.isSelected = false
                 sortMode = SortMode.DATE
-                sortCombo.selectedItem = "Date"
+                sortCombo.selectedItem = SortMode.DATE
                 focusOnNewCodeCheckBox.isSelected = false
                 onFocusOnNewCodeChanged(false)
                 onFilterChanged()

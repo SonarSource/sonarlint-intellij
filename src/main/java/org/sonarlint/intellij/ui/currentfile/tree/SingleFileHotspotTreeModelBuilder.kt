@@ -27,8 +27,8 @@ import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByVulnerabilityProb
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.ui.currentfile.SortMode
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.currentfile.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -38,7 +38,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityPr
 
 val VULNERABILITY_PROBABILITIES = listOf(VulnerabilityProbability.HIGH, VulnerabilityProbability.MEDIUM, VulnerabilityProbability.LOW)
 
-class SingleFileHotspotTreeModelBuilder(private val project: Project, isOldHotspots: Boolean) : SingleFileTreeModelBuilder<LiveSecurityHotspot> {
+class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean) : SingleFileTreeModelBuilder<LiveSecurityHotspot> {
 
     var model: DefaultTreeModel
     private var summaryNode: SummaryNode
@@ -47,7 +47,7 @@ class SingleFileHotspotTreeModelBuilder(private val project: Project, isOldHotsp
     }
     private var currentFile: VirtualFile? = null
     private var latestHotspots = mutableListOf<LiveSecurityHotspot>()
-    private var sortMode: SortMode = SortMode.LINE
+    private var sortMode: SortMode = SortMode.DATE
 
     init {
         model = DefaultTreeModel(summaryNode).apply {
