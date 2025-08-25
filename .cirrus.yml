@@ -68,7 +68,7 @@ eks_builder_container: &BUILDER_CONTAINER_DEFINITION
 ec2_instance_definition: &WINVM_DEFINITION
   region: eu-central-1
   type: c5.4xlarge
-  image: pr-72-sonarlint-intellij-v20250821155253
+  image: sonarlint-intellij-v*
   platform: windows
 
 setup_gradle_cache_template: &SETUP_GRADLE_CACHE
