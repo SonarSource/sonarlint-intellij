@@ -152,7 +152,7 @@ class MarkAsResolvedAction(
         private fun updateUI(project: Project, issue: Issue) {
             runOnUiThread(project) {
                 issue.resolve()
-                getService(project, SonarLintToolWindow::class.java).markAsResolved(issue)
+                getService(project, SonarLintToolWindow::class.java).refreshViews()
                 getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
             }
         }

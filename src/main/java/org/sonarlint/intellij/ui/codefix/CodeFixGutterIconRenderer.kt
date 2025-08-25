@@ -27,12 +27,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupStep
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
-import java.awt.event.MouseEvent
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import java.awt.event.MouseEvent
 
 private const val ISSUE_TEXT_TITLE = "SonarQube: Fix with AI CodeFix"
 

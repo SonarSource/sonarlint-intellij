@@ -77,7 +77,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
   private static final String ID = "SonarQube for IDE";
   protected final Project project;
-  private final LastAnalysisPanel lastAnalysisPanel;
   private final ReportTabStatusPanel whatsNewPanel;
   private final AnAction restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction();
   protected Tree tree;
@@ -97,7 +96,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   public ReportPanel(Project project) {
     super(false, false);
     this.project = project;
-    lastAnalysisPanel = new LastAnalysisPanel();
     whatsNewPanel = new ReportTabStatusPanel(project);
 
     createIssuesTree();
@@ -119,7 +117,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     var currentFocus = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
     lastAnalysisResult = analysisResult;
 
-    lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
     var findings = analysisResult.getFindings();
 
     if (currentFocus) {
@@ -191,8 +188,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     treePanel.add(oldSecurityHotspotTree);
     findingsTreePane = ScrollPaneFactory.createScrollPane(treePanel, true);
     findingsPanel.add(findingsTreePane, BorderLayout.CENTER);
-    findingsPanel.add(lastAnalysisPanel, BorderLayout.SOUTH);
-    whatsNewPanel.add(lastAnalysisPanel, BorderLayout.WEST);
     findingsPanel.add(whatsNewPanel, BorderLayout.SOUTH);
     setToolbar(createActionGroup());
     disableEmptyDisplay(false);
@@ -213,7 +208,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
       var sonarLintActions = SonarLintActions.getInstance();
       var analyzeChangedFiles = sonarLintActions.analyzeChangedFiles();
       var analyzeAllFiles = sonarLintActions.analyzeAllFiles();
-      statusText.setText(LastAnalysisPanel.NEVER_ANALYZED_EMPTY_TEXT);
       statusText.appendLine("");
       if (analyzeChangedFiles.getTemplateText() != null) {
         statusText.appendText(analyzeChangedFiles.getTemplateText(), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES,
@@ -389,7 +383,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     if (project.isDisposed()) {
       return;
     }
-    lastAnalysisPanel.clear();
     treeBuilder.clear();
     oldTreeBuilder.clear();
     oldSecurityHotspotTreeBuilder.clear();
@@ -418,15 +411,12 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
       runOnPooledThread(project, this::handleEmptyView);
     }
     findingsTreePane.setVisible(state);
-    lastAnalysisPanel.setVisible(state);
     whatsNewPanel.setVisible(state);
-    lastAnalysisPanel.setVisible(state);
   }
 
   @Override
-  // called automatically because the panel is one of the content of the tool window
   public void dispose() {
-    lastAnalysisPanel.dispose();
+    // Nothing to do
   }
 
   public void refreshView() {

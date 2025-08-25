@@ -56,7 +56,9 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
+import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
@@ -940,8 +942,9 @@ class BackendService : Disposable {
                     val taintVulnerabilityMatcher = TaintVulnerabilityMatcher(project)
                     response.taintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
                 } ?: return@thenApplyAsync
+                getService(project, TaintVulnerabilitiesCache::class.java).taintVulnerabilities = localTaintVulnerabilities
                 runOnUiThread(project) {
-                    getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(localTaintVulnerabilities)
+                    getService(project, SonarLintToolWindow::class.java).refreshViews()
                 }
             }
     }
@@ -951,8 +954,9 @@ class BackendService : Disposable {
         requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId, true)) }
             .thenApplyAsync { response ->
                 val localDependencyRisks = response.dependencyRisks.map { LocalDependencyRisk(it) }
+                getService(project, DependencyRisksCache::class.java).dependencyRisks = localDependencyRisks
                 runOnUiThread(project) {
-                    getService(project, SonarLintToolWindow::class.java).populateDependencyRisksTab(localDependencyRisks)
+                    getService(project, SonarLintToolWindow::class.java).refreshViews()
                 }
             }
     }

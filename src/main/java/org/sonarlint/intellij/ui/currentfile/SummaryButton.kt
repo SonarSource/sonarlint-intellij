@@ -182,6 +182,13 @@ class SummaryButton(
         repaint()
     }
 
+    fun setTooltipText(tooltip: String) {
+        this.disabledTooltip = tooltip
+        if (!isEnabled) {
+            toolTipText = tooltip
+        }
+    }
+
     override fun paintComponent(g: java.awt.Graphics) {
         if (alpha < 1.0f) {
             val g2 = g.create() as java.awt.Graphics2D

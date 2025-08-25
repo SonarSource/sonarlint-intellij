@@ -36,6 +36,7 @@ import javax.annotation.Nullable;
 import javax.swing.tree.TreeModel;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.OpenSecurityHotspotInBrowserAction;
+import org.sonarlint.intellij.actions.OpenSecurityHotspotInBrowserActionKt;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
@@ -78,7 +79,7 @@ public class SecurityHotspotTree extends FindingTree implements DataProvider {
       return data;
     } else if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
       return navigate();
-    } else if (OpenSecurityHotspotInBrowserAction.Companion.getSECURITY_HOTSPOT_DATA_KEY().is(dataId)) {
+    } else if (OpenSecurityHotspotInBrowserActionKt.getSECURITY_HOTSPOT_DATA_KEY().is(dataId)) {
       return getSelectedSecurityHotspot();
     }
 

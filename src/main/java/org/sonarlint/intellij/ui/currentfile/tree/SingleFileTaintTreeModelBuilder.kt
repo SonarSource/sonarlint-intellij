@@ -36,9 +36,6 @@ import org.sonarlint.intellij.ui.tree.FindingTreeSummary
 import org.sonarlint.intellij.ui.tree.TreeContentKind
 import org.sonarlint.intellij.ui.tree.TreeSummary
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTreeUpdater
-import org.sonarlint.intellij.ui.vulnerabilities.tree.filter.FindingFilter
-import org.sonarlint.intellij.ui.vulnerabilities.tree.filter.FocusFilter
-import org.sonarlint.intellij.ui.vulnerabilities.tree.filter.ResolutionFilter
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 
@@ -60,11 +57,7 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.TAINT_VULNERABILITIES, isOldIssue).also {
         summaryNode = SummaryNode(it)
     }
-    private val taintVulnerabilityTreeUpdater: TaintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(treeSummary, summaryNode)
-
-    // Filtering state
-    var focusFilter: FocusFilter = FocusFilter.ALL_CODE
-    var resolutionFilter: ResolutionFilter = ResolutionFilter.OPEN_ONLY
+    private val taintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(summaryNode)
 
     private var sortMode: SortMode = SortMode.DATE
 
@@ -92,15 +85,11 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
         latestTaints = findings.toMutableList()
         currentFile = file
 
-        // Filtering logic (focus, resolution)
-        val filters = listOf<FindingFilter>(focusFilter, resolutionFilter)
-        val filteredTaints = findings.filter { taint -> filters.all { it.filter(taint) } }
-
         val sortedTaints = when (sortMode) {
-            SortMode.IMPACT -> filteredTaints.sortedWith(compareByDescending { it.getHighestImpact() })
-            SortMode.DATE -> filteredTaints.sortedByDescending { it.creationDate() }
-            SortMode.RULE_KEY -> filteredTaints.sortedBy { it.getRuleKey() }
-            else -> filteredTaints.sortedBy { it.rangeMarker()?.startOffset ?: Int.MAX_VALUE }
+            SortMode.IMPACT -> findings.sortedWith(compareByDescending { it.getHighestImpact() })
+            SortMode.DATE -> findings.sortedByDescending { it.creationDate() }
+            SortMode.RULE_KEY -> findings.sortedBy { it.getRuleKey() }
+            else -> findings.sortedBy { it.rangeMarker()?.startOffset ?: Int.MAX_VALUE }
         }
 
         val newModel = taintVulnerabilityTreeUpdater.createCompactTree(sortedTaints)
@@ -134,6 +123,12 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
                 SummaryUiModel()
             }
         } ?: SummaryUiModel()
+    }
+
+    override fun removeFinding(finding: LocalTaintVulnerability) {
+        if (latestTaints.remove(finding)) {
+            updateModel(currentFile, latestTaints)
+        }
     }
 
     private fun getIssueWithHighestSeverity(): LocalTaintVulnerability? {

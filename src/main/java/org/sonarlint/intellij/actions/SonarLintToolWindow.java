@@ -26,55 +26,25 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.ColorUtil;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.ui.content.ContentManagerListener;
-import com.intellij.util.ui.UIUtil;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
-import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
-import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisResult;
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.Finding;
-import org.sonarlint.intellij.finding.Issue;
-import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.ShowFinding;
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
-import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
-import org.sonarlint.intellij.finding.sca.DependencyRisksCache;
-import org.sonarlint.intellij.finding.sca.DependencyRisksDetectionSupport;
-import org.sonarlint.intellij.finding.sca.LocalDependencyRisk;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.ui.ReportPanel;
-import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
-import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
-import org.sonarlint.intellij.ui.risks.DependencyRisksPanel;
-import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
-import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
+import org.sonarlint.intellij.ui.currentfile.filter.FilteredFindings;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.CURRENT_FILE_TAB_TITLE;
-import static org.sonarlint.intellij.ui.ToolWindowConstants.DEPENDENCY_RISKS_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.REPORT_TAB_TITLE;
-import static org.sonarlint.intellij.ui.ToolWindowConstants.SECURITY_HOTSPOTS_TAB_TITLE;
-import static org.sonarlint.intellij.ui.ToolWindowConstants.TAINT_VULNERABILITIES_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -83,9 +53,6 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 public final class SonarLintToolWindow implements ContentManagerListener, ProjectBindingListener {
 
   private final Project project;
-  private Content taintVulnerabilitiesContent;
-  private Content securityHotspotsContent;
-  private Content dependenciesRisksContent;
 
   public SonarLintToolWindow(Project project) {
     this.project = project;
@@ -109,39 +76,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     updateTab(REPORT_TAB_TITLE, ReportPanel::clear);
   }
 
-  public void updateStatusAndApplyCurrentFiltering(String securityHotspotKey, HotspotStatus status) {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      var hotspotsCount = hotspotsPanel.updateStatusAndApplyCurrentFiltering(securityHotspotKey, status);
-      content.setDisplayName(buildTabName(hotspotsCount, SECURITY_HOTSPOTS_TAB_TITLE));
-    }
-    var contentManager = getToolWindow().getContentManager();
-    content = contentManager.findContent(REPORT_TAB_TITLE);
-    if (content != null) {
-      var reportPanel = (ReportPanel) content.getComponent();
-      reportPanel.updateStatusForSecurityHotspot(securityHotspotKey, status);
-      reportPanel.updateStatusForOldSecurityHotspots(securityHotspotKey, status);
-    }
-  }
 
-  public void filterSecurityHotspotTab(SecurityHotspotFilters filter) {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      var hotspotsCount = hotspotsPanel.filterSecurityHotspots(project, filter);
-      content.setDisplayName(buildTabName(hotspotsCount, SECURITY_HOTSPOTS_TAB_TITLE));
-    }
-  }
-
-  public void filterSecurityHotspotTab(boolean isResolved) {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      var hotspotsCount = hotspotsPanel.filterSecurityHotspots(project, isResolved);
-      content.setDisplayName(buildTabName(hotspotsCount, SECURITY_HOTSPOTS_TAB_TITLE));
-    }
-  }
 
   private <T> void openTab(String displayName, Consumer<T> tabPanelConsumer) {
     var toolWindow = updateTabAndGet(displayName, tabPanelConsumer);
@@ -178,24 +113,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void filterTaintVulnerabilityTab(boolean isResolved) {
-    var taintContent = getTaintVulnerabilitiesContent();
-    if (taintContent != null) {
-      var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-      taintPanel.allowResolvedTaintVulnerabilities(isResolved);
-      taintContent.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(isResolved),
-        TAINT_VULNERABILITIES_TAB_TITLE));
-    }
-  }
-
-  public void filterDependencyRiskTab(boolean isResolved) {
-    var content = getDependenciesRisksContent();
-    if (content != null) {
-      var riskPanel = (DependencyRisksPanel) content.getComponent();
-      riskPanel.allowResolvedDependencyRisks(isResolved);
-      content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(isResolved),
-        DEPENDENCY_RISKS_TAB_TITLE));
-    }
+  public void filterCurrentFileTab(boolean isResolved) {
+    this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE, panel -> panel.allowResolvedFindings(isResolved));
   }
 
   /**
@@ -204,20 +123,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   public void openCurrentFileTab() {
     ApplicationManager.getApplication().assertIsDispatchThread();
     openTab(CURRENT_FILE_TAB_TITLE);
-  }
-
-  /**
-   * Must run in EDT
-   */
-  public void openTaintVulnerabilityTab() {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-    var toolWindow = getToolWindow();
-    if (toolWindow != null) {
-      var taintContent = getTaintVulnerabilitiesContent();
-      if (taintContent != null) {
-        toolWindow.show(() -> toolWindow.getContentManager().setSelectedContent(taintContent));
-      }
-    }
   }
 
   public void openOrCloseCurrentFileTab() {
@@ -236,10 +141,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void openSecurityHotspotsTab() {
-    openTab(getSecurityHotspotContent());
-  }
-
   public void openLogTab() {
     openTab(LOG_TAB_TITLE);
   }
@@ -247,32 +148,17 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   public void refreshViews() {
     this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshView);
     this.updateTab(REPORT_TAB_TITLE, ReportPanel::refreshView);
-
-    var hotspotContent = getSecurityHotspotContent();
-    if (hotspotContent != null) {
-      var hotspotsPanel = (SecurityHotspotsPanel) hotspotContent.getComponent();
-      runOnUiThread(project, () -> hotspotContent.setDisplayName(buildTabName(hotspotsPanel.refreshView(), SECURITY_HOTSPOTS_TAB_TITLE)));
-    }
-
-    var taintContent = getTaintVulnerabilitiesContent();
-    if (taintContent != null) {
-      var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-      taintPanel.applyFocusOnNewCodeSettings();
-      taintContent.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
-        TAINT_VULNERABILITIES_TAB_TITLE));
-    }
-
-    var risksContent = getDependenciesRisksContent();
-    if (risksContent != null) {
-      var risksPanel = (DependencyRisksPanel) risksContent.getComponent();
-      var shownItems = risksPanel.refreshView();
-      risksContent.setDisplayName(buildTabName(shownItems,
-        DEPENDENCY_RISKS_TAB_TITLE));
-    }
   }
 
   public void setAnalysisReadyCurrentFile() {
     this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::setAnalysisIsReady);
+  }
+
+  public FilteredFindings getDisplayedFindings() {
+    var contentManager = getToolWindow().getContentManager();
+    var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+    var currentFilePanel = (CurrentFilePanel) content.getComponent();
+    return currentFilePanel.getDisplayedFindings();
   }
 
   private void openTab(String name) {
@@ -283,99 +169,9 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  private void openTab(Content content) {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-    var toolWindow = getToolWindow();
-    if (toolWindow != null) {
-      toolWindow.show(() -> toolWindow.getContentManager().setSelectedContent(content));
-    }
-  }
-
   private ToolWindow getToolWindow() {
     var toolWindowManager = ToolWindowManager.getInstance(project);
     return toolWindowManager.getToolWindow(TOOL_WINDOW_ID);
-  }
-
-  public void populateTaintVulnerabilitiesTab(List<LocalTaintVulnerability> taintVulnerabilities) {
-    var content = getTaintVulnerabilitiesContent();
-    if (content != null) {
-      var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
-      taintVulnerabilitiesPanel.populate(taintVulnerabilities);
-      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
-        TAINT_VULNERABILITIES_TAB_TITLE));
-    }
-  }
-
-  public void updateTaintVulnerabilities(Set<UUID> closedTaintVulnerabilityIds, List<LocalTaintVulnerability> addedTaintVulnerabilities,
-    List<LocalTaintVulnerability> updatedTaintVulnerabilities) {
-    var content = getTaintVulnerabilitiesContent();
-    if (content != null) {
-      var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
-      taintVulnerabilitiesPanel.update(closedTaintVulnerabilityIds, addedTaintVulnerabilities, updatedTaintVulnerabilities);
-      content.setDisplayName(buildTabName(getService(project, TaintVulnerabilitiesCache.class).getFocusAwareCount(),
-        TAINT_VULNERABILITIES_TAB_TITLE));
-    }
-  }
-
-  public void populateDependencyRisksTab(List<LocalDependencyRisk> dependencyRisks) {
-    var content = getDependenciesRisksContent();
-    if (content != null) {
-      var dependencyRiskPanel = (DependencyRisksPanel) content.getComponent();
-      dependencyRiskPanel.populate(dependencyRisks);
-      content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
-        DEPENDENCY_RISKS_TAB_TITLE));
-    }
-  }
-
-  public void populateDependencyRisksTab(DependencyRisksDetectionSupport status) {
-    var content = getDependenciesRisksContent();
-    if (content != null) {
-      var dependencyRiskPanel = (DependencyRisksPanel) content.getComponent();
-      dependencyRiskPanel.populate(status);
-      content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
-        DEPENDENCY_RISKS_TAB_TITLE));
-    }
-  }
-
-  public void updateDependencyRisks(Set<UUID> closedDependencyRiskIds, List<LocalDependencyRisk> addedDependencyRisks,
-    List<LocalDependencyRisk> updatedDependencyRisks) {
-    var content = getDependenciesRisksContent();
-    if (content != null) {
-      var dependencyRiskPanel = (DependencyRisksPanel) content.getComponent();
-      dependencyRiskPanel.update(closedDependencyRiskIds, addedDependencyRisks, updatedDependencyRisks);
-      content.setDisplayName(buildTabName(getService(project, DependencyRisksCache.class).getFocusAwareCount(),
-        DEPENDENCY_RISKS_TAB_TITLE));
-    }
-  }
-
-  public void refreshTaintCodeFix() {
-    var content = getTaintVulnerabilitiesContent();
-    if (content != null) {
-      var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
-      taintVulnerabilitiesPanel.updateGutterIconForTaints();
-    }
-  }
-
-  public void populateSecurityHotspotsTab(SecurityHotspotsLocalDetectionSupport status) {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      hotspotsPanel.populate(status);
-    }
-  }
-
-  public static String buildTabName(int count, String tabName) {
-    if (count == 0) {
-      return tabName;
-    }
-    return "<html><body>" + tabName + "<font color=\"" + ColorUtil.toHtmlColor(UIUtil.getInactiveTextColor()) + "\"> " + count
-      + "</font></body></html>";
-  }
-
-  public void showTaintVulnerabilityDescription(LocalTaintVulnerability vulnerability) {
-    var content = getTaintVulnerabilitiesContent();
-    openTab(content);
-    ((TaintVulnerabilitiesPanel) content.getComponent()).setSelectedVulnerability(vulnerability);
   }
 
   private static void selectTab(ToolWindow toolWindow, String tabId) {
@@ -391,64 +187,24 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
       panel -> runOnUiThread(project, () -> panel.update(selectedFile)));
   }
 
-  private void showIssue(LiveIssue liveIssue, Consumer<CurrentFilePanel> selectTab) {
+  public void showFindingDescription(Finding liveIssue) {
     openCurrentFileTab();
     selectTab(getToolWindow(), CURRENT_FILE_TAB_TITLE);
     var contentManager = getToolWindow().getContentManager();
     var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
     var currentFilePanel = (CurrentFilePanel) content.getComponent();
-    currentFilePanel.setSelectedIssue(liveIssue);
-    selectTab.accept(currentFilePanel);
+    currentFilePanel.setSelectedFinding(liveIssue);
+    currentFilePanel.selectRulesTab();
   }
 
-  private void showSecurityHotspot(LiveSecurityHotspot liveSecurityHotspot, Consumer<SecurityHotspotsPanel> selectTab) {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      hotspotsPanel.selectAndHighlightSecurityHotspot(liveSecurityHotspot);
-      selectTab.accept(hotspotsPanel);
-    }
-  }
-
-  public void showFindingDescription(LiveFinding liveFinding) {
-    if (liveFinding.getType() == RuleType.SECURITY_HOTSPOT) {
-      showSecurityHotspotDescription((LiveSecurityHotspot) liveFinding);
-    } else {
-      showIssueDescription((LiveIssue) liveFinding);
-    }
-  }
-
-  public void showIssueDescription(LiveIssue liveIssue) {
-    showIssue(liveIssue, CurrentFilePanel::selectRulesTab);
-  }
-
-  public void showSecurityHotspotDescription(LiveSecurityHotspot liveSecurityHotspot) {
-    showSecurityHotspot(liveSecurityHotspot, SecurityHotspotsPanel::selectRulesTab);
-  }
-
-  public void showFindingLocations(LiveFinding liveFinding) {
-    if (liveFinding.getType() == RuleType.SECURITY_HOTSPOT) {
-      showSecurityHotspotLocations((LiveSecurityHotspot) liveFinding);
-    } else {
-      showIssueLocations((LiveIssue) liveFinding);
-    }
-  }
-
-  public void showIssueLocations(LiveIssue liveIssue) {
-    showIssue(liveIssue, CurrentFilePanel::selectLocationsTab);
-  }
-
-  public void showSecurityHotspotLocations(LiveSecurityHotspot liveSecurityHotspot) {
-    showSecurityHotspot(liveSecurityHotspot, SecurityHotspotsPanel::selectLocationsTab);
-  }
-
-  public boolean doesSecurityHotspotExist(String securityHotspotKey) {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var sonarLintHotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      return sonarLintHotspotsPanel.doesSecurityHotspotExist(securityHotspotKey);
-    }
-    return false;
+  public void showFindingLocations(Finding liveIssue) {
+    openCurrentFileTab();
+    selectTab(getToolWindow(), CURRENT_FILE_TAB_TITLE);
+    var contentManager = getToolWindow().getContentManager();
+    var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+    var currentFilePanel = (CurrentFilePanel) content.getComponent();
+    currentFilePanel.setSelectedFinding(liveIssue);
+    currentFilePanel.selectLocationsTab();
   }
 
   public void trySelectIssueForCodeFix(String findingKey) {
@@ -479,23 +235,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void trySelectTaintForCodeFix(String findingKey) {
-    var toolWindow = getToolWindow();
-    if (toolWindow != null) {
-      var content = getTaintVulnerabilitiesContent();
-      if (content != null) {
-        var taintPanel = (TaintVulnerabilitiesPanel) content.getComponent();
-        var taint = taintPanel.setAndGetSelectedVulnerability(findingKey);
-
-        if (taint == null) {
-          getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
-            "The taint vulnerability was not found",
-            new IncludeResolvedIssueAction());
-        }
-      }
-    }
-  }
-
   public <T extends Finding> void trySelectIssue(ShowFinding<T> showFinding) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
@@ -520,21 +259,71 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   public <T extends Finding> void trySelectTaintVulnerability(ShowFinding<T> showFinding) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
-      var taintContent = getTaintVulnerabilitiesContent();
-      if (taintContent != null) {
-        var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-        taintPanel.trySelectFilteredTaintVulnerability(showFinding);
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      if (content != null) {
+        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var taint = currentFilePanel.getTaintFiltered(showFinding.getFindingKey());
+
+        if (taint == null && currentFilePanel.doesTaintExist(showFinding.getFindingKey())) {
+          getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
+            "The taint vulnerability could not be opened by SonarQube for IDE due to the applied filters",
+            new IncludeResolvedIssueAction()
+          );
+        }
+
+        currentFilePanel.trySelectFilteredTaint(taint, showFinding);
       }
     }
   }
 
-  public boolean trySelectSecurityHotspot(String securityHotspotKey) {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var sonarLintHotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      return sonarLintHotspotsPanel.trySelectFilteredSecurityHotspot(securityHotspotKey);
+  public void trySelectTaintForCodeFix(String findingKey) {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      if (content != null) {
+        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var taint = currentFilePanel.getTaintFiltered(findingKey);
+
+        if (taint == null) {
+          if (currentFilePanel.doesTaintExist(findingKey)) {
+            getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
+              "The taint vulnerability could not be opened by SonarQube for IDE due to the applied filters",
+              new IncludeResolvedIssueAction()
+            );
+          } else {
+            getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
+              "The taint vulnerability was not found",
+              new IncludeResolvedIssueAction()
+            );
+          }
+        } else {
+          currentFilePanel.trySelectTaintForCodeFix(taint);
+        }
+      }
     }
-    return false;
+  }
+
+  public <T extends Finding> void trySelectSecurityHotspot(ShowFinding<T> showFinding) {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      if (content != null) {
+        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var hotspot = currentFilePanel.getHotspotFiltered(showFinding.getFindingKey());
+
+        if (hotspot == null && currentFilePanel.doesHotspotExist(showFinding.getFindingKey())) {
+          getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
+            "The security hotspot could not be opened by SonarQube for IDE due to the applied filters",
+            new IncludeResolvedIssueAction()
+          );
+        }
+
+        currentFilePanel.trySelectFilteredHotspot(hotspot, showFinding);
+      }
+    }
   }
 
   public void bringToFront() {
@@ -549,88 +338,9 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void updateOnTheFlySecurityHotspots(Map<VirtualFile, Collection<LiveSecurityHotspot>> currentSecurityHotspotsPerOpenFile) {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-      runOnUiThread(project, () -> {
-        var count = hotspotsPanel.updateHotspots(currentSecurityHotspotsPerOpenFile);
-        content.setDisplayName(buildTabName(count, SECURITY_HOTSPOTS_TAB_TITLE));
-      });
-    }
-  }
-
-  public Collection<LiveSecurityHotspot> getDisplayedSecurityHotspotsForFile(VirtualFile file) {
-    var toolWindow = getToolWindow();
-    if (toolWindow != null && toolWindow.isVisible() && securityHotspotsContent != null && securityHotspotsContent.isSelected()) {
-      var securityHotspotPanel = (SecurityHotspotsPanel) securityHotspotsContent.getComponent();
-      return securityHotspotPanel.getDisplayedNodesForFile(file).stream().map(LiveSecurityHotspotNode::getHotspot).toList();
-    }
-    return Collections.emptyList();
-  }
-
-  public void markAsResolved(Issue issue) {
-    if (issue instanceof LiveIssue liveIssue) {
-      // Don't remove the issue completely - let the status filter handle it
-      this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshView);
-      this.<ReportPanel>updateTab(REPORT_TAB_TITLE, panel -> panel.remove(liveIssue));
-    } else {
-      var content = getTaintVulnerabilitiesContent();
-      if (content != null) {
-        ((TaintVulnerabilitiesPanel) content.getComponent()).remove((LocalTaintVulnerability) issue);
-        ((TaintVulnerabilitiesPanel) content.getComponent()).switchCard();
-      }
-    }
-  }
-
-  public void reopenIssue(Issue issue) {
-    if (issue instanceof LiveIssue liveIssue) {
-      // Don't remove the issue completely - let the status filter handle it  
-      this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshView);
-    } else if (issue instanceof LocalTaintVulnerability taintVulnerability) {
-      var taintContent = getTaintVulnerabilitiesContent();
-      if (taintContent != null) {
-        var taintPanel = (TaintVulnerabilitiesPanel) taintContent.getComponent();
-        taintPanel.remove(taintVulnerability);
-      }
-    }
-  }
-
-  @Override
-  public void selectionChanged(ContentManagerEvent event) {
-    // Introduced in the context of Security Hotspot to trigger analysis when opening the SH tab and when tabbing out to remove highlighting
-    getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
-  }
-
-  private Content getSecurityHotspotContent() {
-    var toolWindow = getToolWindow();
-    if (securityHotspotsContent == null && toolWindow != null) {
-      securityHotspotsContent = toolWindow.getContentManager()
-        .findContent(buildTabName(0, SECURITY_HOTSPOTS_TAB_TITLE));
-    }
-    return securityHotspotsContent;
-  }
-
-  private Content getTaintVulnerabilitiesContent() {
-    var toolWindow = getToolWindow();
-    if (taintVulnerabilitiesContent == null && toolWindow != null) {
-      taintVulnerabilitiesContent = toolWindow.getContentManager()
-        .findContent(buildTabName(0, TAINT_VULNERABILITIES_TAB_TITLE));
-    }
-    return taintVulnerabilitiesContent;
-  }
-
-  private Content getDependenciesRisksContent() {
-    var toolWindow = getToolWindow();
-    if (dependenciesRisksContent == null && toolWindow != null) {
-      dependenciesRisksContent = toolWindow.getContentManager()
-        .findContent(buildTabName(0, DEPENDENCY_RISKS_TAB_TITLE));
-    }
-    return dependenciesRisksContent;
-  }
-
   @Override
   public void bindingChanged() {
     runOnPooledThread(project, this::refreshViews);
   }
+
 }

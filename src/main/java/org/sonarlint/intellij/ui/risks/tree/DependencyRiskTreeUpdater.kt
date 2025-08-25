@@ -19,17 +19,14 @@
  */
 package org.sonarlint.intellij.ui.risks.tree
 
-import com.intellij.openapi.application.ModalityState
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.CompactTree
 import org.sonarlint.intellij.ui.tree.CompactTreeModel
 import org.sonarlint.intellij.ui.tree.NodeRenderer
 import org.sonarlint.intellij.ui.tree.TreeSummary
 
-class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary, summaryNode: SummaryNode? = null) {
-
+class DependencyRiskTreeUpdater(treeSummary: TreeSummary, summaryNode: SummaryNode? = null) {
     val model = CompactTreeModel(summaryNode ?: SummaryNode(treeSummary))
 
     val renderer = NodeRenderer<Any> { renderer, node ->
@@ -41,28 +38,8 @@ class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary, summaryNod
         }
     }
 
-    var resolutionFilter = DependencyRiskResolvedFilter.OPEN_ONLY
-        set(value) {
-            field = value
-            applyFiltering()
-        }
-
-    var dependencyRisks: List<LocalDependencyRisk> = mutableListOf()
-        set(value) {
-            field = value
-            applyFiltering()
-        }
-
-    var filteredDependencyRisks: List<LocalDependencyRisk> = emptyList()
-
     fun getNumberOfDependencyRisks(): Int {
-        return filteredDependencyRisks.size
-    }
-
-    private fun applyFiltering() {
-        filteredDependencyRisks = dependencyRisks.filter { risk -> resolutionFilter.filter(risk) }
-        runOnUiThread(ModalityState.defaultModalityState()) { model.setCompactTree(createCompactTree(filteredDependencyRisks)) }
-        treeSummary.refresh(0, filteredDependencyRisks.size)
+        return model.getCountForType(LocalDependencyRisk::class.java)
     }
 
     fun createCompactTree(dependencyRisks: List<LocalDependencyRisk>): CompactTree {
@@ -71,5 +48,4 @@ class DependencyRiskTreeUpdater(private val treeSummary: TreeSummary, summaryNod
         val nodes: Map<Any, List<Any>> = mapOf(model.root to sortedDependencyRisks)
         return CompactTree(nodes)
     }
-
 }

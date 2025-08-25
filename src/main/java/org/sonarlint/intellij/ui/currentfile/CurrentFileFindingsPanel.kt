@@ -49,7 +49,6 @@ import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.TextRangeMatcher
-import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
@@ -117,10 +116,6 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
         }
         createFindingDetailsPanel()
         setupAllListeners()
-    }
-
-    fun refreshToolbar() {
-        mainToolbar.updateActionsImmediately()
     }
 
     private fun createFindingDetailsPanel() {
@@ -204,18 +199,31 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
         tree.isVisible = false // Trees should be hidden initially, shown only when they have content
     }
 
-    fun setSelectedIssue(issue: LiveIssue) {
-        val issueTree = getTree(TreeType.ISSUES, false)
-        val oldIssueTree = getTree(TreeType.ISSUES, true)
-        
-        TreeUtil.findNode((issueTree.model.root as DefaultMutableTreeNode)) { it is IssueNode && it.issue() == issue }?.let { issueNode ->
-            issueTree.selectionPath = null
-            issueTree.addSelectionPath(TreePath(issueNode.path))
-        } ?: run {
-            TreeUtil.findNode((oldIssueTree.model.root as DefaultMutableTreeNode)) { it is IssueNode && it.issue() == issue }?.let { issueNode ->
-                oldIssueTree.selectionPath = null
-                oldIssueTree.addSelectionPath(TreePath(issueNode.path))
-            } ?: SonarLintConsole.get(project).error("Cannot select issue in the tree")
+    fun setSelectedFinding(finding: Finding) {
+        when (finding) {
+            is LiveFinding -> {
+                val issueTree = getTree(TreeType.ISSUES, false) as IssueTree
+                val oldIssueTree = getTree(TreeType.ISSUES, true) as IssueTree
+
+                TreeUtil.findNode((issueTree.model.root as DefaultMutableTreeNode)) { it is IssueNode && it.issue() == finding }?.let { issueNode ->
+                    issueTree.selectionPath = null
+                    issueTree.addSelectionPath(TreePath(issueNode.path))
+                } ?: run {
+                    TreeUtil.findNode((oldIssueTree.model.root as DefaultMutableTreeNode)) { it is IssueNode && it.issue() == finding }?.let { issueNode ->
+                        oldIssueTree.selectionPath = null
+                        oldIssueTree.addSelectionPath(TreePath(issueNode.path))
+                    } ?: SonarLintConsole.get(project).error("Cannot select issue in the tree")
+                }
+                findingDetailsPanel.show(finding, false)
+            }
+            is LocalTaintVulnerability -> {
+                val taintTree = getTree(TreeType.TAINTS, false) as TaintVulnerabilityTree
+                val oldTaintTree = getTree(TreeType.TAINTS, true) as TaintVulnerabilityTree
+                taintTree.setSelectedVulnerability(finding)
+                oldTaintTree.setSelectedVulnerability(finding)
+                findingDetailsPanel.show(finding, false)
+            }
+            else -> clearSelection()
         }
     }
 

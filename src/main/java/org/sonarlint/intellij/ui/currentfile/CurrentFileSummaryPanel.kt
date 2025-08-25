@@ -121,6 +121,10 @@ class CurrentFileSummaryPanel(
     fun setTaintsEnabled(isSelected: Boolean) = taintsSummaryButton.setEnabled(isSelected)
     fun setDependencyRisksEnabled(isSelected: Boolean) = dependencyRisksSummaryButton.setEnabled(isSelected)
 
+    fun setHotspotsTooltip(tooltip: String) = hotspotsSummaryButton.setTooltipText(tooltip)
+    fun setTaintsTooltip(tooltip: String) = taintsSummaryButton.setTooltipText(tooltip)
+    fun setDependencyRisksTooltip(tooltip: String) = dependencyRisksSummaryButton.setTooltipText(tooltip)
+
     fun areIssuesEnabled() = issuesSummaryButton.isSelected()
     fun areHotspotsEnabled() = hotspotsSummaryButton.isSelected()
     fun areTaintsEnabled() = taintsSummaryButton.isSelected()

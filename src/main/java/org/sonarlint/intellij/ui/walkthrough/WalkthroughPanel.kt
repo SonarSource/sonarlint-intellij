@@ -30,6 +30,12 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
+import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
+import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable
+import org.sonarlint.intellij.telemetry.LinkTelemetry
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Color
@@ -42,12 +48,6 @@ import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.event.HyperlinkEvent
-import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable
-import org.sonarlint.intellij.telemetry.LinkTelemetry
 
 enum class WalkthroughActions(val id: String, val action: (Project) -> (Unit)) {
     REPORT_VIEW("#reportView", { project -> getService(project, SonarLintToolWindow::class.java).openReportTab() }),
@@ -58,7 +58,6 @@ enum class WalkthroughActions(val id: String, val action: (Project) -> (Unit)) {
     TROUBLESHOOTING_LINK("#troubleshootingLink", { LinkTelemetry.TROUBLESHOOTING_PAGE.browseWithTelemetry() }),
     CURRENT_FILE("#currentFile", { project -> getService(project, SonarLintToolWindow::class.java).openCurrentFileTab() }),
     SETTINGS("#settings", { project -> ShowSettingsUtil.getInstance().showSettingsDialog(project, SonarLintGlobalConfigurable::class.java) }),
-    TAINT_VULNERABILITIES("#taintVulnerabilities", { project -> getService(project, SonarLintToolWindow::class.java).openTaintVulnerabilityTab() }),
     AI_FIX_SUGGESTIONS("#aiFixSuggestions", { LinkTelemetry.AI_FIX_SUGGESTIONS_PAGE.browseWithTelemetry() }),
     SETUP_CONNECTION("#setupConnection", { project -> ShowSettingsUtil.getInstance().editConfigurable(project, SonarLintProjectConfigurable(project)) }),
     LOG_VIEW("#logView", { project -> getService(project, SonarLintToolWindow::class.java).openLogTab() }),
@@ -238,7 +237,7 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
                 SonarQube for IDE can connect to SonarQube (Server, Cloud) using connected mode;
                 this allows your entire team to use the same rules and applied quality standards.<br><br>
                 When using <a href="${WalkthroughActions.CONNECTED_MODE_LINK.id}">connected mode</a>, 
-                you can highlight advanced issues like <a href="${WalkthroughActions.TAINT_VULNERABILITIES.id}">taint vulnerabilities</a> 
+                you can highlight advanced issues like taint vulnerabilities
                 and analyze more languages that aren’t available with a local analysis. SonarQube (Server, Cloud) can also generate
                 <a href="${WalkthroughActions.AI_FIX_SUGGESTIONS.id}">AI fix suggestions</a>, 
                 and you can <a href="${WalkthroughActions.OPEN_IN_IDE_LINK.id}">open them right in your IDE</a>!<br><br>

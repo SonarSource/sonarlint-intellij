@@ -34,7 +34,6 @@ import org.sonarlint.intellij.ui.currentfile.filter.SortMode
  * <h3>Core Responsibilities:</h3>
  * Implementations of this interface are responsible for:
  * - Model Management:</strong> Creating and updating tree models based on finding data
- * - Filtering Integration:</strong> Applying filters and displaying only relevant findings
  * - Sorting Support:</strong> Organizing findings according to user-selected sort criteria
  * - State Tracking:</strong> Maintaining model state and providing metadata about displayed content
  */
@@ -47,5 +46,6 @@ interface SingleFileTreeModelBuilder<T: Finding> {
     fun numberOfDisplayedFindings(): Int
     fun setSortMode(mode: SortMode)
     fun getSummaryUiModel(): SummaryUiModel
+    fun removeFinding(finding: T)
 
 }
