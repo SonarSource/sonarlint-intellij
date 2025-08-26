@@ -27,18 +27,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -70,8 +65,6 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private final Project project;
   private DefaultTreeModel model;
   private SummaryNode summaryNode;
-  private boolean includeLocallyResolvedIssues = false;
-  private Map<VirtualFile, Collection<LiveIssue>> latestIssues;
   private TreeSummary treeSummary;
   private int issueCount;
 
@@ -85,7 +78,6 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
    * Creates the model with a basic root
    */
   public DefaultTreeModel createModel(boolean isOldIssue) {
-    latestIssues = Collections.emptyMap();
     treeSummary = new FindingTreeSummary(project, TreeContentKind.ISSUES, isOldIssue);
     summaryNode = new SummaryNode(treeSummary);
     model = new DefaultTreeModel(summaryNode);
@@ -106,7 +98,6 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map) {
-    latestIssues = map;
     var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).toList();
     ApplicationManager.getApplication().assertIsDispatchThread();
 
@@ -124,22 +115,6 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
 
     treeSummary.refresh(fileWithIssuesCount, issueCount);
     model.nodeChanged(summaryNode);
-  }
-
-  public void allowResolvedIssues(boolean allowResolved) {
-    if (includeLocallyResolvedIssues != allowResolved) {
-      includeLocallyResolvedIssues = allowResolved;
-    }
-  }
-
-  public int getCountOfDisplayedIssues() {
-    return issueCount;
-  }
-
-  public void refreshModel(Project project) {
-    runOnUiThread(project, () -> updateModel(latestIssues));
-    var fileList = new HashSet<>(latestIssues.keySet());
-    SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshFiles(fileList);
   }
 
   private int setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
@@ -212,7 +187,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   private boolean accept(LiveIssue issue) {
-    return (!issue.isResolved() && issue.isValid()) || includeLocallyResolvedIssues;
+    return !issue.isResolved() && issue.isValid();
   }
 
   private static boolean accept(VirtualFile file) {
@@ -232,33 +207,6 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     }
   }
 
-  public Optional<LiveIssue> findIssueByKey(String issueKey) {
-    var virtualFile = index.getAllFiles().stream().findFirst();
-    if (virtualFile.isPresent()) {
-      var fileNode = index.getFileNode(virtualFile.get());
-      if (fileNode != null) {
-        return fileNode.findChildren(c -> Objects.equals(c.getServerKey(), issueKey) || Objects.equals(c.getId().toString(), issueKey)).map(node -> ((IssueNode) node).issue());
-      }
-    }
-    return Optional.empty();
-  }
-
-  public boolean doesIssueExists(String issueKey) {
-    var virtualFile = index.getAllFiles().stream().findFirst();
-    if (virtualFile.isPresent()) {
-      var foundIssue = latestIssues.get(virtualFile.get()).stream().filter(issue -> {
-        if (issue.getServerKey() != null && issue.getServerKey().equals(issueKey)) {
-          return true;
-        } else {
-          return issue.getBackendId() != null && issue.getBackendId().toString().equals(issueKey);
-        }
-      }).findFirst();
-
-      return foundIssue.isPresent();
-    }
-    return false;
-  }
-
   private static class FileNodeComparator implements Comparator<FileNode> {
     @Override public int compare(FileNode o1, FileNode o2) {
       int c = o1.file().getName().compareTo(o2.file().getName());
@@ -271,7 +219,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   static class IssueComparator implements Comparator<LiveIssue> {
-    @Override public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
+    @Override public int compare(LiveIssue o1, LiveIssue o2) {
       var isResolvedCompare = Comparator.comparing(LiveIssue::isResolved).compare(o1, o2);
       if (isResolvedCompare != 0) {
         return isResolvedCompare;
@@ -284,7 +232,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
         return dateCompare;
       }
 
-      if (o1.getCleanCodeAttribute() != null && o1.getHighestImpact() != null
+      if (o1.isMqrMode() && o1.getCleanCodeAttribute() != null && o1.getHighestImpact() != null
         && o2.getCleanCodeAttribute() != null && o2.getHighestImpact() != null) {
         var highestQualityImpactO1 = o1.getHighestImpact();
         var highestQualityImpactO2 = o2.getHighestImpact();

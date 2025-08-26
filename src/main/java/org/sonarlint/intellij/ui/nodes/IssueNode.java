@@ -74,7 +74,7 @@ public class IssueNode extends FindingNode {
     var highestImpact = issue.getHighestImpact();
     var highestQuality = issue.getHighestQuality();
 
-    if (issue.getCleanCodeAttribute() != null && highestQuality != null && highestImpact != null) {
+    if (issue.isMqrMode() && issue.getCleanCodeAttribute() != null && highestQuality != null && highestImpact != null) {
       renderWithMqrMode(renderer, serverConnection, highestImpact, highestQuality);
     } else {
       renderWithStandardMode(renderer, serverConnection);

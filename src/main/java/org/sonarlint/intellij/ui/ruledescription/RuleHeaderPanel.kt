@@ -71,7 +71,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import org.sonarsource.sonarlint.core.rpc.protocol.common.StandardModeDetails
 
 
-class RuleHeaderPanel(private val parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayout()) {
+class RuleHeaderPanel(parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayout()) {
     companion object {
         private const val MARK_AS_RESOLVED = "Mark Issue as\u2026"
         private const val REOPEN = "Reopen"
