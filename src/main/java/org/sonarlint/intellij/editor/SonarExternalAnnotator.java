@@ -37,15 +37,12 @@ import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction;
-import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
@@ -67,36 +64,30 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     var project = psiFile.getProject();
-    var file = psiFile.getVirtualFile();
+    var isFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
 
-    var onTheFlyFindingsHolder = getService(project, AnalysisSubmitter.class).getOnTheFlyFindingsHolder();
-    var issues = onTheFlyFindingsHolder.getFindingsForFile(file);
-    issues.stream()
-      .filter(issue -> !issue.isResolved())
+    var toolWindowService = getService(project, SonarLintToolWindow.class);
+    toolWindowService.getDisplayedFindings().getIssues().stream()
+      .filter(issue -> !issue.isResolved() && (!isFocusOnNewCode || issue.isOnNewCode()))
       .forEach(issue -> {
-        // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
         var validTextRange = issue.getValidTextRange();
         if (validTextRange != null) {
           addAnnotation(project, issue, validTextRange, holder);
         }
       });
 
-    // only annotate the hotspots currently displayed in the tree
-    var toolWindowService = getService(project, SonarLintToolWindow.class);
-    toolWindowService.getDisplayedSecurityHotspotsForFile(file)
+    toolWindowService.getDisplayedFindings().getHotspots().stream()
+      .filter(securityHotspot -> !securityHotspot.isResolved() && (!isFocusOnNewCode || securityHotspot.isOnNewCode()))
       .forEach(securityHotspot -> {
-        // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
         var validTextRange = securityHotspot.getValidTextRange();
         if (validTextRange != null) {
           addAnnotation(project, securityHotspot, validTextRange, holder);
         }
       });
 
-    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-      getService(project, TaintVulnerabilitiesCache.class).getTaintVulnerabilitiesForFile(file)
-        .stream().filter(vulnerability -> !vulnerability.isResolved())
-        .forEach(vulnerability -> addAnnotation(vulnerability, holder));
-    }
+    toolWindowService.getDisplayedFindings().getTaints().stream()
+      .filter(vulnerability -> !vulnerability.isResolved() & (!isFocusOnNewCode || vulnerability.isOnNewCode()))
+      .forEach(vulnerability -> addAnnotation(vulnerability, holder));
   }
 
   private static boolean shouldSkip(PsiFile file) {

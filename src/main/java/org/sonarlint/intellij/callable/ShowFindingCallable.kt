@@ -31,7 +31,6 @@ import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.notifications.ClearSecurityHotspotsFiltersAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
@@ -67,37 +66,21 @@ class ShowFindingCallable<T: Finding>(private val project: Project, onTheFlyFind
     }
 
     private fun showSecurityHotspot(toolWindow: SonarLintToolWindow) {
-        toolWindow.openSecurityHotspotsTab()
+        toolWindow.openCurrentFileTab()
         toolWindow.bringToFront()
-
-        val found = getService(project, SonarLintToolWindow::class.java).doesSecurityHotspotExist(showFinding.findingKey)
-        if (!found) {
-            SonarLintProjectNotifications.get(project)
-                .notifyUnableToOpenFinding("The Security Hotspot could not be detected by SonarQube for IDE in the current code. Please verify you are in the right branch.")
-        } else {
-            val selected =
-                getService(project, SonarLintToolWindow::class.java).trySelectSecurityHotspot(showFinding.findingKey)
-            if (!selected) {
-                SonarLintProjectNotifications.get(project)
-                    .notifyUnableToOpenFinding(
-                        "The Security Hotspot could not be opened by SonarQube for IDE due to the applied filters",
-                        ClearSecurityHotspotsFiltersAction(showFinding.findingKey)
-                    )
-            }
-        }
+        getService(project, SonarLintToolWindow::class.java).trySelectSecurityHotspot(showFinding)
     }
 
     private fun showIssue(toolWindow: SonarLintToolWindow) {
         toolWindow.openCurrentFileTab()
         toolWindow.bringToFront()
-
         getService(project, SonarLintToolWindow::class.java).trySelectIssue(showFinding)
     }
 
     private fun showTaintVulnerability(toolWindow: SonarLintToolWindow) {
-        toolWindow.openTaintVulnerabilityTab()
+        toolWindow.openCurrentFileTab()
         toolWindow.bringToFront()
-
         getService(project, SonarLintToolWindow::class.java).trySelectTaintVulnerability(showFinding)
     }
+
 }

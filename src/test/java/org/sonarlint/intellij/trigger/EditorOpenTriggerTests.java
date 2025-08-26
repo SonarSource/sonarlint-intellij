@@ -23,16 +23,21 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
 
@@ -54,6 +59,9 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
     when(editorManager.getProject()).thenReturn(getProject());
     reset(analysisSubmitter);
     editorTrigger.onProjectOpened();
+    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
+      assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue()
+    );
   }
 
   @Test

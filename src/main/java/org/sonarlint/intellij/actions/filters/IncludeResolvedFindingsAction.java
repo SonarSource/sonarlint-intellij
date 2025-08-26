@@ -23,7 +23,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import org.sonarlint.intellij.actions.AbstractSonarToggleAction;
+import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.finding.Finding;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class IncludeResolvedFindingsAction<T extends Finding> extends AbstractSonarToggleAction {
 
@@ -46,10 +49,8 @@ public class IncludeResolvedFindingsAction<T extends Finding> extends AbstractSo
     var p = event.getProject();
     if (p != null && type == Finding.class) {
         isResolved = flag;
-        // TODO: To refactor
-        //getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
+        getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
       }
-
   }
 
 }

@@ -28,7 +28,6 @@ import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
 import org.sonarlint.intellij.ui.currentfile.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
-import org.sonarlint.intellij.ui.risks.tree.DependencyRiskResolvedFilter
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTreeUpdater
 import org.sonarlint.intellij.ui.tree.CompactTreeModel
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -52,16 +51,8 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.DEPENDENCY_RISKS, isOldRisk).also {
         summaryNode = SummaryNode(it)
     }
-    private val dependencyRiskTreeUpdater: DependencyRiskTreeUpdater = DependencyRiskTreeUpdater(treeSummary, summaryNode)
-
-    var resolutionFilter: DependencyRiskResolvedFilter = DependencyRiskResolvedFilter.OPEN_ONLY
-
+    private val dependencyRiskTreeUpdater = DependencyRiskTreeUpdater(treeSummary, summaryNode)
     private var sortMode: SortMode = SortMode.DATE
-
-    init {
-        // Initialize the tree updater's resolution filter to match the builder's filter
-        dependencyRiskTreeUpdater.resolutionFilter = resolutionFilter
-    }
 
     override fun setSortMode(mode: SortMode) {
         sortMode = mode
@@ -87,19 +78,15 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
         latestRisks = findings.toMutableList()
         currentFile = file
 
-        // Apply resolution filtering
-        val filteredRisks = findings.filter { resolutionFilter.filter(it) }
-
         val sortedRisks = when (sortMode) {
-            SortMode.IMPACT -> filteredRisks.sortedWith(compareByDescending { it.getHighestImpact() })
-            SortMode.DATE -> filteredRisks
-            SortMode.RULE_KEY -> filteredRisks.sortedBy { it.getRuleKey() }
-            else -> filteredRisks.sortedWith(compareByDescending<LocalDependencyRisk> { it.severity }.thenByDescending { it.cvssScore }.thenBy { it.packageName })
+            SortMode.IMPACT -> findings.sortedWith(compareByDescending { it.getHighestImpact() })
+            SortMode.DATE -> findings
+            SortMode.RULE_KEY -> findings.sortedBy { it.getRuleKey() }
+            else -> findings.sortedWith(compareByDescending<LocalDependencyRisk> { it.severity }.thenByDescending { it.cvssScore }.thenBy { it.packageName })
         }
 
-        // Update the tree updater properly to ensure counts are correct
-        dependencyRiskTreeUpdater.resolutionFilter = resolutionFilter
-        dependencyRiskTreeUpdater.dependencyRisks = sortedRisks
+        val newModel = dependencyRiskTreeUpdater.createCompactTree(sortedRisks)
+        dependencyRiskTreeUpdater.model.setCompactTree(newModel)
         treeSummary.refresh(1, sortedRisks.size)
     }
 
@@ -116,6 +103,12 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
                 borderColorsByImpact[impactSeverity]
             )
         } ?: SummaryUiModel()
+    }
+
+    override fun removeFinding(finding: LocalDependencyRisk) {
+        if (latestRisks.remove(finding)) {
+            updateModel(currentFile, latestRisks)
+        }
     }
 
     private fun getRiskWithHighestSeverity(): LocalDependencyRisk? {

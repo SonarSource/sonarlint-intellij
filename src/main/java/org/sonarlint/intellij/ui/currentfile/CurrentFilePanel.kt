@@ -41,23 +41,39 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.messages.StatusListener
+import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
+import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.currentfile.filter.CurrentFileFindingsFilter
+import org.sonarlint.intellij.ui.currentfile.filter.FilteredFindings
 import org.sonarlint.intellij.ui.currentfile.filter.FiltersPanel
 import org.sonarlint.intellij.ui.currentfile.filter.SortMode
+import org.sonarlint.intellij.ui.currentfile.filter.StatusFilter
 import org.sonarlint.intellij.ui.currentfile.tree.SingleFileTreeModelBuilder
 import org.sonarlint.intellij.ui.factory.PanelFactory
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.util.SonarLintActions
 import org.sonarlint.intellij.util.runOnPooledThread
+
+/**
+ * Support status for a finding type
+ */
+sealed class FindingSupportStatus {
+    object Supported : FindingSupportStatus()
+    data class NotSupported(val reason: String) : FindingSupportStatus()
+    object CheckingSupport : FindingSupportStatus()
+    object NotBound : FindingSupportStatus()
+}
 
 /**
  * Main panel component for the Current File tab in SonarLint tool window.
@@ -90,6 +106,13 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
     private var findingsFilter: CurrentFileFindingsFilter = CurrentFileFindingsFilter(project)
     private var displayManager: CurrentFileDisplayManager
+
+    // Support status tracking
+    private var hotspotSupportStatus: FindingSupportStatus = FindingSupportStatus.CheckingSupport
+    private var taintSupportStatus: FindingSupportStatus = FindingSupportStatus.CheckingSupport  
+    private var dependencyRiskSupportStatus: FindingSupportStatus = FindingSupportStatus.CheckingSupport
+
+    private var filteredFindingsCache = FilteredFindings(listOf(), listOf(), listOf(), listOf())
 
     init {
         filtersPanel = FiltersPanel(
@@ -125,9 +148,108 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         // Initialize status filter visibility based on connected mode
         filtersPanel.setStatusFilterVisible(Settings.getSettingsFor(project).isBound)
 
+        // Check support status for connected-mode features
+        checkSupportStatus()
+
         // Set up toolbar and listeners
         setupToolbar()
         setupStatusListener()
+    }
+
+    private fun checkSupportStatus() {
+        val isBound = Settings.getSettingsFor(project).isBound
+        
+        // Update status filter visibility based on binding status
+        filtersPanel.setStatusFilterVisible(isBound)
+        
+        if (!isBound) {
+            // User is not in connected mode - all connected features are not available
+            hotspotSupportStatus = FindingSupportStatus.NotBound
+            taintSupportStatus = FindingSupportStatus.NotBound
+            dependencyRiskSupportStatus = FindingSupportStatus.NotBound
+            return
+        }
+
+        // Check hotspot support
+        runOnPooledThread(project) {
+            try {
+                getService(BackendService::class.java)
+                    .checkLocalSecurityHotspotDetectionSupported(project)
+                    .thenAcceptAsync { response ->
+                        runOnUiThread(project) {
+                            hotspotSupportStatus = if (response.isSupported) {
+                                FindingSupportStatus.Supported
+                            } else {
+                                FindingSupportStatus.NotSupported(response.reason!!)
+                            }
+                            updateSummaryButtons()
+                        }
+                    }
+            } catch (e: Exception) {
+                runOnUiThread(project) {
+                    hotspotSupportStatus = FindingSupportStatus.NotSupported("Error checking support: ${e.message}")
+                    updateSummaryButtons()
+                }
+            }
+        }
+
+        // Check dependency risk support  
+        runOnPooledThread(project) {
+            try {
+                getService(BackendService::class.java)
+                    .checkIfDependencyRiskSupported(project)
+                    .thenAcceptAsync { response ->
+                        runOnUiThread(project) {
+                            dependencyRiskSupportStatus = if (response.isSupported) {
+                                FindingSupportStatus.Supported
+                            } else {
+                                FindingSupportStatus.NotSupported(response.reason!!)
+                            }
+                            updateSummaryButtons()
+                        }
+                    }
+            } catch (e: Exception) {
+                runOnUiThread(project) {
+                    dependencyRiskSupportStatus = FindingSupportStatus.NotSupported("Error checking support: ${e.message}")
+                    updateSummaryButtons()
+                }
+            }
+        }
+
+        taintSupportStatus = FindingSupportStatus.Supported
+    }
+
+    private fun isFeatureSupported(treeType: TreeType): Boolean {
+        return when (treeType) {
+            TreeType.ISSUES -> true // Issues are always supported
+            TreeType.HOTSPOTS -> hotspotSupportStatus is FindingSupportStatus.Supported
+            TreeType.TAINTS -> taintSupportStatus is FindingSupportStatus.Supported  
+            TreeType.DEPENDENCY_RISKS -> dependencyRiskSupportStatus is FindingSupportStatus.Supported
+        }
+    }
+
+    private fun getFeatureSupportReason(treeType: TreeType): String? {
+        return when (treeType) {
+            TreeType.ISSUES -> null
+            TreeType.HOTSPOTS -> when (val status = hotspotSupportStatus) {
+                is FindingSupportStatus.NotSupported -> status.reason
+                is FindingSupportStatus.NotBound -> "Connect to SonarQube or SonarCloud to enable Security Hotspots"
+                is FindingSupportStatus.CheckingSupport -> "Checking support..."
+                else -> null
+            }
+            TreeType.TAINTS -> when (val status = taintSupportStatus) {
+                is FindingSupportStatus.NotSupported -> status.reason
+                is FindingSupportStatus.NotBound -> "Connect to SonarQube or SonarCloud to enable Taint Vulnerabilities"
+                is FindingSupportStatus.CheckingSupport -> "Checking support..."
+                else -> null
+            }
+            TreeType.DEPENDENCY_RISKS -> when (val status = dependencyRiskSupportStatus) {
+                is FindingSupportStatus.NotSupported -> status.reason
+                is FindingSupportStatus.NotBound -> "Connect to SonarQube or SonarCloud to enable Dependency Risks"
+                is FindingSupportStatus.CheckingSupport -> "Checking support..."
+                else -> null
+            }
+        }
     }
 
     private fun setupLayout() {
@@ -192,10 +314,15 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     }
 
     private fun setupStatusListener() {
-        project.messageBus.connect().subscribe(
-            StatusListener.SONARLINT_STATUS_TOPIC,
-            StatusListener { _ -> runOnUiThread(project) { this.refreshToolbar() } }
-        )
+        val busConnection = project.messageBus.connect()
+        with(busConnection) {
+            subscribe(ProjectConfigurationListener.TOPIC, ProjectConfigurationListener { checkSupportStatus() })
+            subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
+                override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
+                    checkSupportStatus()
+                }
+            })
+        }
     }
 
     fun update(file: VirtualFile?) {
@@ -211,26 +338,40 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
         // Filtering
         val filterCriteria = displayManager.getCurrentFilterCriteria()
-        val filteredFindings = findingsFilter.filterAllFindings(file, filterCriteria)
+        filteredFindingsCache = findingsFilter.filterAllFindings(file, filterCriteria)
 
         // Update UI using the display manager
-        displayManager.updateIcons(file, filteredFindings)
+        displayManager.updateIcons(file, filteredFindingsCache)
         
         // Populate trees
-        populateTreesWithNewCodeFilter(TreeType.ISSUES, filteredFindings.issues) { !summaryPanel.areIssuesEnabled() }
+        populateTreesWithNewCodeFilter(TreeType.ISSUES, filteredFindingsCache.issues) { !summaryPanel.areIssuesEnabled() }
         
-        val isBound = Settings.getSettingsFor(project).isBound
-        filtersPanel.setStatusFilterVisible(isBound)
-        
-        if (isBound) {
-            populateTreesWithNewCodeFilter(TreeType.HOTSPOTS, filteredFindings.hotspots) { !summaryPanel.areHotspotsEnabled() }
-            populateTreesWithNewCodeFilter(TreeType.TAINTS, filteredFindings.taints) { !summaryPanel.areTaintsEnabled() }
-            populateTreesWithNewCodeFilter(TreeType.DEPENDENCY_RISKS, filteredFindings.dependencyRisks) { !summaryPanel.areDependencyRisksEnabled() }
+        // Populate connected-mode trees based on support status
+        if (isFeatureSupported(TreeType.HOTSPOTS)) {
+            populateTreesWithNewCodeFilter(TreeType.HOTSPOTS, filteredFindingsCache.hotspots) { !summaryPanel.areHotspotsEnabled() }
         } else {
-            treeConfigs.entries.filter { it.key.first != TreeType.ISSUES }.forEach {
-                it.value.builder.updateModel(currentFile, listOf())
-                it.value.tree.isVisible = false
-            }
+            getBuilder<LiveSecurityHotspot>(TreeType.HOTSPOTS, isOld = false).updateModel(currentFile, listOf())
+            getBuilder<LiveSecurityHotspot>(TreeType.HOTSPOTS, isOld = true).updateModel(currentFile, listOf())
+            getTree(TreeType.HOTSPOTS, isOld = false).isVisible = false
+            getTree(TreeType.HOTSPOTS, isOld = true).isVisible = false
+        }
+        
+        if (isFeatureSupported(TreeType.TAINTS)) {
+            populateTreesWithNewCodeFilter(TreeType.TAINTS, filteredFindingsCache.taints) { !summaryPanel.areTaintsEnabled() }
+        } else {
+            getBuilder<LocalTaintVulnerability>(TreeType.TAINTS, isOld = false).updateModel(currentFile, listOf())
+            getBuilder<LocalTaintVulnerability>(TreeType.TAINTS, isOld = true).updateModel(currentFile, listOf())
+            getTree(TreeType.TAINTS, isOld = false).isVisible = false
+            getTree(TreeType.TAINTS, isOld = true).isVisible = false
+        }
+        
+        if (isFeatureSupported(TreeType.DEPENDENCY_RISKS)) {
+            populateTreesWithNewCodeFilter(TreeType.DEPENDENCY_RISKS, filteredFindingsCache.dependencyRisks) { !summaryPanel.areDependencyRisksEnabled() }
+        } else {
+            getBuilder<LocalDependencyRisk>(TreeType.DEPENDENCY_RISKS, isOld = false).updateModel(currentFile, listOf())
+            getBuilder<LocalDependencyRisk>(TreeType.DEPENDENCY_RISKS, isOld = true).updateModel(currentFile, listOf())
+            getTree(TreeType.DEPENDENCY_RISKS, isOld = false).isVisible = false
+            getTree(TreeType.DEPENDENCY_RISKS, isOld = true).isVisible = false
         }
         
         // Handle display status and expand trees
@@ -324,6 +465,26 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     fun doesIssueExist(issueKey: String): Boolean {
         return getBuilder<LiveIssue>(TreeType.ISSUES, isOld = false).findFindingByKey(issueKey) != null
             || getBuilder<LiveIssue>(TreeType.ISSUES, isOld = true).findFindingByKey(issueKey) != null
+    }
+
+    fun getTaintFiltered(taintKey: String): LocalTaintVulnerability? {
+        return getBuilder<LocalTaintVulnerability>(TreeType.TAINTS, isOld = false).findFindingByKey(taintKey)
+            ?: getBuilder<LocalTaintVulnerability>(TreeType.TAINTS, isOld = true).findFindingByKey(taintKey)
+    }
+
+    fun doesTaintExist(taintKey: String): Boolean {
+        return getBuilder<LocalTaintVulnerability>(TreeType.TAINTS, isOld = false).findFindingByKey(taintKey) != null
+            || getBuilder<LocalTaintVulnerability>(TreeType.TAINTS, isOld = true).findFindingByKey(taintKey) != null
+    }
+
+    fun getHotspotFiltered(hotspotKey: String): LiveSecurityHotspot? {
+        return getBuilder<LiveSecurityHotspot>(TreeType.HOTSPOTS, isOld = false).findFindingByKey(hotspotKey)
+            ?: getBuilder<LiveSecurityHotspot>(TreeType.HOTSPOTS, isOld = true).findFindingByKey(hotspotKey)
+    }
+
+    fun doesHotspotExist(hotspotKey: String): Boolean {
+        return getBuilder<LiveSecurityHotspot>(TreeType.HOTSPOTS, isOld = false).findFindingByKey(hotspotKey) != null
+            || getBuilder<LiveSecurityHotspot>(TreeType.HOTSPOTS, isOld = true).findFindingByKey(hotspotKey) != null
     }
 
     private fun enableEmptyDisplay() {
@@ -440,10 +601,21 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         summaryPanel.updateTaints(getBuilder<Finding>(TreeType.TAINTS, isOld = false).numberOfDisplayedFindings(), taintSummaryUiModel)
         summaryPanel.updateDependencyRisks(getBuilder<Finding>(TreeType.DEPENDENCY_RISKS, isOld = false).numberOfDisplayedFindings(), dependencyRiskSummaryUiModel)
 
-        val isBound = Settings.getSettingsFor(project).isBound
-        summaryPanel.setHotspotsEnabled(isBound)
-        summaryPanel.setTaintsEnabled(isBound)
-        summaryPanel.setDependencyRisksEnabled(isBound)
+        // Use support status instead of just binding status
+        summaryPanel.setHotspotsEnabled(isFeatureSupported(TreeType.HOTSPOTS))
+        summaryPanel.setTaintsEnabled(isFeatureSupported(TreeType.TAINTS))
+        summaryPanel.setDependencyRisksEnabled(isFeatureSupported(TreeType.DEPENDENCY_RISKS))
+        
+        // Set tooltips with support reasons for unsupported features
+        getFeatureSupportReason(TreeType.HOTSPOTS)?.let { reason ->
+            summaryPanel.setHotspotsTooltip(reason)
+        }
+        getFeatureSupportReason(TreeType.TAINTS)?.let { reason ->
+            summaryPanel.setTaintsTooltip(reason)
+        }
+        getFeatureSupportReason(TreeType.DEPENDENCY_RISKS)?.let { reason ->
+            summaryPanel.setDependencyRisksTooltip(reason)
+        }
 
         runOnUiThread(project) { handleDisplayStatus() }
     }
@@ -473,8 +645,24 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         selectAndOpenCodeFixTab(issue)
     }
 
+    fun trySelectTaintForCodeFix(taint: LocalTaintVulnerability) {
+        findingDetailsPanel.show(taint, true)
+    }
+
     fun <T : Finding> trySelectFilteredIssue(issue: LiveIssue?, showFinding: ShowFinding<T>) {
         updateOnSelect(issue, showFinding)
+    }
+
+    fun <T : Finding> trySelectFilteredTaint(taint: LocalTaintVulnerability?, showFinding: ShowFinding<T>) {
+        if (taint != null) {
+            findingDetailsPanel.show(taint, false)
+        } else {
+            updateOnSelect(null, showFinding)
+        }
+    }
+
+    fun <T : Finding> trySelectFilteredHotspot(hotspot: LiveSecurityHotspot?, showFinding: ShowFinding<T>) {
+        updateOnSelect(hotspot, showFinding)
     }
 
     fun setAnalysisIsReady() {
@@ -492,6 +680,17 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                 )
             }
         }
+    }
+
+    fun getDisplayedFindings(): FilteredFindings {
+        return filteredFindingsCache
+    }
+
+    fun allowResolvedFindings(isResolved: Boolean) {
+        val newStatus = if (isResolved) StatusFilter.NO_FILTER else StatusFilter.OPEN
+        filtersPanel.filterStatus = newStatus
+        filtersPanel.statusCombo.selectedItem = newStatus
+        refreshView()
     }
 
 }

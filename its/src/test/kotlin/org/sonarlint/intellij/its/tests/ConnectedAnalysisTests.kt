@@ -36,8 +36,6 @@ import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
-import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.enableConnectedModeFromTaintPanel
-import org.sonarlint.intellij.its.tests.domain.TaintVulnerabilityTests.Companion.verifyTaintTabContainsMessages
 import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -51,7 +49,6 @@ import org.sonarlint.intellij.its.utils.SonarCloudUtils.SONARCLOUD_STAGING_URL
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.cleanupProjects
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.newAdminSonarCloudWsClientWithUser
 import org.sonarqube.ws.client.WsClient
-import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 
@@ -81,8 +78,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
         const val ISSUE_PROJECT_KEY = "sli-java-issues"
         val SONARCLOUD_ISSUE_PROJECT_KEY = projectKey(ISSUE_PROJECT_KEY)
 
-        private var firstIssueKey: String? = null
-        private var firstSCIssueKey: String? = null
         lateinit var tokenName: String
         lateinit var tokenValue: String
         lateinit var sonarCloudToken: String
@@ -91,22 +86,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
         private fun projectKey(key: String): String {
             val randomPositiveInt = Random.nextInt(Int.MAX_VALUE)
             return "sonarlint-its-$key-$randomPositiveInt"
-        }
-
-        private fun getFirstIssueKey(client: WsClient): String? {
-            val searchRequest = SearchRequest()
-            searchRequest.projects = listOf(ISSUE_PROJECT_KEY)
-            val searchResults = client.issues().search(searchRequest)
-            val issue = searchResults.issuesList[0]
-            return issue.key
-        }
-
-        private fun getFirstSCIssueKey(client: WsClient): String? {
-            val searchRequest = SearchRequest()
-            searchRequest.projects = listOf(SONARCLOUD_ISSUE_PROJECT_KEY)
-            val searchResults = client.issues().search(searchRequest)
-            val issue = searchResults.issuesList[0]
-            return issue.key
         }
 
         @JvmStatic
@@ -166,7 +145,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
             openExistingProject("sample-java-taint-vulnerability")
 
             // Focus On New Code Test
-            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator")
+            enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator")
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode()
             analyzeAndVerifyReportTabContainsMessages(
@@ -181,9 +160,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
                 "Found 1 older Taint Vulnerability"
             )
             resetFocusOnNewCode()
-
-            enableConnectedModeFromTaintPanel(TAINT_VULNERABILITY_PROJECT_KEY, false, "Orchestrator")
-            verifyTaintTabContainsMessages("The project is not bound to SonarQube (Server, Cloud)")
         }
 
         @Test

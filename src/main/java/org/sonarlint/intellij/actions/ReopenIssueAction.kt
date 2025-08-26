@@ -34,6 +34,7 @@ import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.REVIEW_ISSUE_GROUP
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -87,7 +88,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         }
 
         private fun reopenFinding(project: Project, module: Module, issue: Issue, issueKey: String) {
-            SonarLintUtils.getService(BackendService::class.java).reopenIssue(module, issueKey, issue is LocalTaintVulnerability)
+            getService(BackendService::class.java).reopenIssue(module, issueKey, issue is LocalTaintVulnerability)
                 .thenAcceptAsync {
                     updateUI(project, issue)
                     SonarLintProjectNotifications.get(project).displaySuccessfulNotification(
@@ -106,8 +107,8 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         private fun updateUI(project: Project, issue: Issue) {
             UiUtils.runOnUiThread(project) {
                 issue.reopen()
-                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).reopenIssue(issue)
-                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+                getService(project, SonarLintToolWindow::class.java).refreshViews()
+                getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
             }
         }
 
