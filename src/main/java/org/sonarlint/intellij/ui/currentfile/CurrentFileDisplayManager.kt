@@ -55,11 +55,14 @@ class CurrentFileDisplayManager(
     private val filtersPanel: FiltersPanel
 ) {
 
-    private var isMqrMode = false
+    private var isMqrMode = true
     private var currentFile: VirtualFile? = null
 
-    fun updateMqrMode(issues: List<LiveIssue>) {
-        val newIsMqrMode = issues.any { it.getHighestImpact() != null }
+    fun updateMqrMode(findings: FilteredFindings) {
+        if (findings.issues.isEmpty() && findings.hotspots.isEmpty() && findings.taints.isEmpty()) {
+            return
+        }
+        val newIsMqrMode = findings.issues.any { it.isMqrMode } || findings.hotspots.any { it.isMqrMode } || findings.taints.any { it.isMqrMode() }
         if (newIsMqrMode != isMqrMode) {
             isMqrMode = newIsMqrMode
             updateSeverityComboModel()
@@ -71,8 +74,7 @@ class CurrentFileDisplayManager(
         filtersPanel.severityCombo.setModel(DefaultComboBoxModel(newOptions))
     }
 
-    fun updateIcons(file: VirtualFile, filteredFindings: FilteredFindings) {
-        this.currentFile = file
+    fun updateIcons(filteredFindings: FilteredFindings) {
         updateToolWindowIcon(filteredFindings.issues)
         updateGutterIcons(filteredFindings.issues)
     }

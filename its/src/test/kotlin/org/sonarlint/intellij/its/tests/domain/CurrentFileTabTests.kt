@@ -94,7 +94,12 @@ class CurrentFileTabTests {
                 idea {
                     toolWindow {
                         tabTitleContains("Current File") { select() }
-                        findText(issueMessage).rightClick()
+                        content("CurrentFilePanel") {
+                            val issueElement = findText(issueMessage)
+                            // Select the issue first, otherwise the right click may not work on older versions
+                            issueElement.click()
+                            issueElement.rightClick()
+                        }
                     }
                     actionMenuItem("Mark Issue as\u2026") {
                         click()

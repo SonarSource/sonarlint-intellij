@@ -63,6 +63,7 @@ public abstract class LiveFinding implements Finding {
   private final IssueSeverity severity;
   private final SoftwareQuality highestQuality;
   private final ImpactSeverity highestImpact;
+  private final boolean isMqrMode;
 
   private Instant introductionDate;
   private String serverFindingKey;
@@ -84,6 +85,7 @@ public abstract class LiveFinding implements Finding {
     this.introductionDate = finding.getIntroductionDate();
     this.isOnNewCode = finding.isOnNewCode();
     this.resolved = finding.isResolved();
+    this.isMqrMode = finding.getSeverityMode().isRight();
 
     if (finding.getSeverityMode().isLeft()) {
       this.severity = finding.getSeverityMode().getLeft().getSeverity();
@@ -254,4 +256,9 @@ public abstract class LiveFinding implements Finding {
   public ImpactSeverity getHighestImpact() {
     return highestImpact;
   }
+
+  public boolean isMqrMode() {
+    return isMqrMode;
+  }
+
 }

@@ -34,7 +34,7 @@ import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 
 data class FilterCriteria(
-    val severityFilter: SeverityFilter = SeverityFilter.NO_FILTER,
+    val severityFilter: SeverityImpactFilter = SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER),
     val statusFilter: StatusFilter = StatusFilter.OPEN,
     val textFilter: String = "",
     val quickFixFilter: Boolean = false,
@@ -68,7 +68,7 @@ data class FilteredFindings(
  */
 class CurrentFileFindingsFilter(private val project: Project) {
 
-    fun filterAllFindings(file: VirtualFile, criteria: FilterCriteria): FilteredFindings {
+    fun filterAllFindings(file: VirtualFile?, criteria: FilterCriteria): FilteredFindings {
         val rawFindings = loadRawFindings(file)
         
         return FilteredFindings(
@@ -79,10 +79,20 @@ class CurrentFileFindingsFilter(private val project: Project) {
         )
     }
 
-    private fun loadRawFindings(file: VirtualFile): FilteredFindings {
+    private fun loadRawFindings(file: VirtualFile?): FilteredFindings {
+        val dependencyRisksCache = getService(project, DependencyRisksCache::class.java)
+
+        if (file == null) {
+            return FilteredFindings(
+                issues = listOf(),
+                hotspots = listOf(),
+                taints = listOf(),
+                dependencyRisks = dependencyRisksCache.dependencyRisks.toList()
+            )
+        }
+
         val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
         val taintCache = getService(project, TaintVulnerabilitiesCache::class.java)
-        val dependencyRisksCache = getService(project, DependencyRisksCache::class.java)
         
         return FilteredFindings(
             issues = onTheFlyFindingsHolder.getIssuesForFile(file).toList(),
@@ -102,11 +112,11 @@ class CurrentFileFindingsFilter(private val project: Project) {
     }
 
     private fun filterIssueBySeverity(issue: LiveIssue, criteria: FilterCriteria): Boolean {
-        if (criteria.severityFilter == SeverityFilter.NO_FILTER) return true
+        if (criteria.severityFilter.isNoFilter()) return true
         return if (criteria.isMqrMode) {
-            Strings.CI.equals(issue.getHighestImpact()?.name, criteria.severityFilter.presentableText)
+            Strings.CI.equals(issue.getHighestImpact()?.name, criteria.severityFilter.getPresentableText())
         } else {
-            Strings.CI.equals(issue.userSeverity?.name, criteria.severityFilter.presentableText)
+            Strings.CI.equals(issue.userSeverity?.name, criteria.severityFilter.getPresentableText())
         }
     }
 
@@ -132,8 +142,8 @@ class CurrentFileFindingsFilter(private val project: Project) {
     }
 
     private fun filterHotspotBySeverity(hotspot: LiveSecurityHotspot, criteria: FilterCriteria): Boolean {
-        return criteria.severityFilter == SeverityFilter.NO_FILTER
-            || hotspot.vulnerabilityProbability.name.equals(criteria.severityFilter.presentableText, ignoreCase = true)
+        return criteria.severityFilter.isNoFilter()
+            || hotspot.vulnerabilityProbability.name.equals(criteria.severityFilter.getPresentableText(), ignoreCase = true)
     }
 
     private fun filterHotspotByText(hotspot: LiveSecurityHotspot, criteria: FilterCriteria): Boolean {
@@ -178,7 +188,7 @@ class CurrentFileFindingsFilter(private val project: Project) {
     }
 
     private fun filterDependencyRiskBySeverity(risk: LocalDependencyRisk, criteria: FilterCriteria): Boolean {
-        return criteria.severityFilter == SeverityFilter.NO_FILTER || risk.severity.name.equals(criteria.severityFilter.presentableText, ignoreCase = true)
+        return criteria.severityFilter.isNoFilter() || risk.severity.name.equals(criteria.severityFilter.getPresentableText(), ignoreCase = true)
     }
 
     private fun filterDependencyRiskByText(risk: LocalDependencyRisk, criteria: FilterCriteria): Boolean {

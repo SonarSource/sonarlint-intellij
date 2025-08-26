@@ -29,3 +29,29 @@ enum class SeverityFilter(val presentableText: String) {
 
     override fun toString() = presentableText
 }
+
+enum class MqrImpactFilter(val presentableText: String) {
+    NO_FILTER("All"),
+    BLOCKER("Blocker"),
+    HIGH("High"),
+    MEDIUM("Medium"),
+    LOW("Low"),
+    INFO("Info");
+
+    override fun toString() = presentableText
+}
+
+sealed class SeverityImpactFilter {
+    data class Severity(val filter: SeverityFilter) : SeverityImpactFilter()
+    data class MqrImpact(val filter: MqrImpactFilter) : SeverityImpactFilter()
+
+    fun isNoFilter(): Boolean = when (this) {
+        is Severity -> filter == SeverityFilter.NO_FILTER
+        is MqrImpact -> filter == MqrImpactFilter.NO_FILTER
+    }
+
+    fun getPresentableText(): String = when (this) {
+        is Severity -> filter.presentableText
+        is MqrImpact -> filter.presentableText
+    }
+}
