@@ -22,4 +22,5 @@ package org.sonarlint.intellij.finding
 interface Issue : Finding {
     fun resolve()
     fun reopen()
+    fun isMqrMode(): Boolean
 }

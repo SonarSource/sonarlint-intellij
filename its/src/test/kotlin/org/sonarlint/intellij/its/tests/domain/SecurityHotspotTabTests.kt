@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.waitFor
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -28,7 +29,6 @@ import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.enableConnectedMode
-import java.time.Duration
 
 class SecurityHotspotTabTests {
 
@@ -39,7 +39,10 @@ class SecurityHotspotTabTests {
                     toolWindow {
                         tabTitleContains("Security Hotspots") { select() }
                         content("SecurityHotspotTree") {
-                            findText(securityHotspotMessage).rightClick()
+                            // Select the hotspot first, otherwise the right click may not work on older versions
+                            val hotspotElement = findText(securityHotspotMessage)
+                            hotspotElement.click()
+                            hotspotElement.rightClick()
                         }
                     }
                     actionMenuItem("Review Security Hotspot") {

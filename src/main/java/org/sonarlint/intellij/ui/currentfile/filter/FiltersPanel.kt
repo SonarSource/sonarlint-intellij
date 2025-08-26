@@ -79,7 +79,7 @@ class FiltersPanel(
     private val statusSpacingComponents = mutableListOf<Component>()
 
     var filterText = ""
-    var filterSeverity = SeverityFilter.NO_FILTER
+    var filterSeverity: SeverityImpactFilter = SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
     var filterStatus = StatusFilter.OPEN
     private var sortMode = SortMode.DATE
 
@@ -129,7 +129,11 @@ class FiltersPanel(
             toolTipText = "Filter by severity"
             maximumSize = Dimension(90, 30)
             addActionListener { _ ->
-                filterSeverity = severityCombo.selectedItem as SeverityFilter
+                filterSeverity = when (severityCombo.selectedItem) {
+                    is SeverityFilter -> SeverityImpactFilter.Severity(severityCombo.selectedItem as SeverityFilter)
+                    is MqrImpactFilter -> SeverityImpactFilter.MqrImpact(severityCombo.selectedItem as MqrImpactFilter)
+                    else -> SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
+                }
                 onFilterChanged()
             }
         }
@@ -194,7 +198,10 @@ class FiltersPanel(
             addActionListener { _ ->
                 filterText = ""
                 searchField.text = ""
-                filterSeverity = SeverityFilter.NO_FILTER
+                filterSeverity = when (filterSeverity) {
+                    is SeverityImpactFilter.MqrImpact -> SeverityImpactFilter.MqrImpact(MqrImpactFilter.NO_FILTER)
+                    else -> SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
+                }
                 severityCombo.selectedItem = SeverityFilter.NO_FILTER
                 filterStatus = StatusFilter.OPEN
                 statusCombo.selectedItem = StatusFilter.OPEN

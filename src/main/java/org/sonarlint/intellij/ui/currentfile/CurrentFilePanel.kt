@@ -37,7 +37,6 @@ import javax.swing.JScrollPane
 import javax.swing.tree.TreePath
 import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
-import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
@@ -327,25 +326,21 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
     fun update(file: VirtualFile?) {
         this.currentFile = file
-        
+
         // Early returns for invalid states
         if (!handleBackendAlive()) return
-        if (!handleFileOpen(file)) return
-
-        val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-        val issues = onTheFlyFindingsHolder.getIssuesForFile(file!!).toList()
-        displayManager.updateMqrMode(issues)
 
         // Filtering
         val filterCriteria = displayManager.getCurrentFilterCriteria()
         filteredFindingsCache = findingsFilter.filterAllFindings(file, filterCriteria)
 
         // Update UI using the display manager
-        displayManager.updateIcons(file, filteredFindingsCache)
-        
+        displayManager.updateMqrMode(filteredFindingsCache)
+        displayManager.updateIcons(filteredFindingsCache)
+
         // Populate trees
         populateTreesWithNewCodeFilter(TreeType.ISSUES, filteredFindingsCache.issues) { !summaryPanel.areIssuesEnabled() }
-        
+
         // Populate connected-mode trees based on support status
         if (isFeatureSupported(TreeType.HOTSPOTS)) {
             populateTreesWithNewCodeFilter(TreeType.HOTSPOTS, filteredFindingsCache.hotspots) { !summaryPanel.areHotspotsEnabled() }
@@ -389,27 +384,12 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         return true
     }
 
-    private fun handleFileOpen(file: VirtualFile?): Boolean {
-        if (file == null) {
-            showNoFileMessage()
-            return false
-        }
-        return true
-    }
-
     private fun showBackendErrorMessage() {
         val statusText = issuesPanel.emptyText
         statusText.text = RestartBackendAction.SONARLINT_ERROR_MSG
         statusText.appendLine("Restart SonarQube for IDE Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { _ ->
             ActionUtil.invokeAction(restartSonarLintAction, this, TOOL_WINDOW_ID, null, null)
         }
-        enableEmptyDisplay()
-        clearAllTrees()
-    }
-
-    private fun showNoFileMessage() {
-        val statusText = issuesPanel.emptyText
-        statusText.text = "No file opened in the editor"
         enableEmptyDisplay()
         clearAllTrees()
     }

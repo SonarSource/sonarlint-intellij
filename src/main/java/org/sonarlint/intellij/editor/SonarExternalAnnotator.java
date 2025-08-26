@@ -86,7 +86,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       });
 
     toolWindowService.getDisplayedFindings().getTaints().stream()
-      .filter(vulnerability -> !vulnerability.isResolved() & (!isFocusOnNewCode || vulnerability.isOnNewCode()))
+      .filter(vulnerability -> !vulnerability.isResolved() && (!isFocusOnNewCode || vulnerability.isOnNewCode()))
       .forEach(vulnerability -> addAnnotation(vulnerability, holder));
   }
 

@@ -57,9 +57,9 @@ public class TreeCellRenderer extends ColoredTreeCellRenderer {
         var issue = issueNode.issue();
         var severity = issue.getUserSeverity();
         var impact = issue.getHighestImpact();
-        if (severity != null && issue.getType() != null) {
+        if (!issueNode.issue().isMqrMode() && severity != null && issue.getType() != null) {
           setIcon(SonarLintIcons.getIconForTypeAndSeverity(issue.getType(), severity));
-        } else if (impact != null) {
+        } else if (issueNode.issue().isMqrMode() && impact != null) {
           setIcon(SonarLintIcons.impact(impact));
         } else {
           setIcon(null); // fallback
