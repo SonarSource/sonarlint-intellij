@@ -94,7 +94,7 @@ class SuggestCodeFixIntentionAction(private val finding: Issue?) : AbstractSonar
             val serverKey = issue.getServerKey() ?: return
             runOnUiThread(project) {
                 val toolWindow = getService(project, SonarLintToolWindow::class.java)
-                toolWindow.openTaintVulnerabilityTab()
+                toolWindow.openCurrentFileTab()
                 toolWindow.bringToFront()
 
                 getService(project, SonarLintToolWindow::class.java).trySelectTaintForCodeFix(serverKey)

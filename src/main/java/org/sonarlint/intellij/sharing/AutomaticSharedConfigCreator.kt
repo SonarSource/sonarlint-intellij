@@ -60,8 +60,6 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
-import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
-import org.sonarlint.intellij.finding.sca.DependencyRisksRefreshTrigger
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
@@ -189,9 +187,6 @@ class AutomaticSharedConfigCreator(
                 NotificationType.INFORMATION,
                 OpenInBrowserAction("Learn more", null, SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK)
             )
-
-            getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh()
-            getService(project, DependencyRisksRefreshTrigger::class.java).triggerRefresh()
         } finally {
             getSettingsFor(project).isBindingSuggestionsEnabled = currBindingSuggestion
         }

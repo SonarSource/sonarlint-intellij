@@ -32,13 +32,11 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 @Service(Service.Level.PROJECT)
 public final class AnalysisStatus {
   private final StatusListener statusListener;
-  private final Project project;
   private Status status = Status.STOPPED;
   private UUID analysisId;
 
   public AnalysisStatus(Project project) {
     this.statusListener = project.getMessageBus().syncPublisher(StatusListener.SONARLINT_STATUS_TOPIC);
-    this.project = project;
   }
 
   public enum Status {RUNNING, STOPPED}

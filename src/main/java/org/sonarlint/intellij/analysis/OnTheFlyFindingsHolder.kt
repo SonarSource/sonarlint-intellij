@@ -25,8 +25,6 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.net.URI
-import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -43,6 +41,8 @@ import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
+import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
 
 class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerListener {
     private var selectedFile: VirtualFile? = null
@@ -73,7 +73,6 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
         }
         updateCurrentFileTab()
-        updateSecurityHotspots()
         getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
     }
 
@@ -109,7 +108,7 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
                 selectedFile = SonarLintUtils.getSelectedFile(project)
             }
         }
-        updateSecurityHotspots()
+        refreshViews()
         getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(securityHotspots.keys)
     }
 
@@ -117,16 +116,15 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         val file = event.newFile
         selectedFile = file
         updateCurrentFileTab()
-        updateTaintTab()
     }
 
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
         currentIssuesPerOpenFile.remove(file)
         currentSecurityHotspotsPerOpenFile.remove(file)
-        // update only Security Hotspots, issues will be updated in reaction to selectionChanged
-        updateSecurityHotspots()
         if (currentIssuesPerOpenFile.isEmpty()) {
             updateCurrentFileTab()
+        } else {
+            refreshViews()
         }
 
         runOnPooledThread(project) {
@@ -138,27 +136,15 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
     }
 
-    private fun updateSecurityHotspots() {
+    private fun refreshViews() {
         if (!project.isDisposed) {
-            getService(
-                project, SonarLintToolWindow::class.java
-            ).updateOnTheFlySecurityHotspots(currentSecurityHotspotsPerOpenFile)
+            getService(project, SonarLintToolWindow::class.java).refreshViews()
         }
     }
 
     private fun updateCurrentFileTab() {
         if (!project.isDisposed) {
-            getService(
-                project, SonarLintToolWindow::class.java
-            ).updateCurrentFileTab(selectedFile)
-        }
-    }
-
-    private fun updateTaintTab() {
-        if (!project.isDisposed) {
-            getService(
-                project, SonarLintToolWindow::class.java
-            ).refreshTaintCodeFix()
+            getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(selectedFile)
         }
     }
 
