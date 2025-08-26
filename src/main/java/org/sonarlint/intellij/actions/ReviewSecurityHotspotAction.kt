@@ -47,13 +47,14 @@ import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 
+val SECURITY_HOTSPOT_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
+
 class ReviewSecurityHotspotAction(private var serverFindingKey: String? = null, private var status: HotspotStatus? = null) :
     AbstractSonarAction(
         "Review Security Hotspot", "Review Security Hotspot Status", null
     ), IntentionAction, PriorityAction, Iconable {
 
     companion object {
-        val SECURITY_HOTSPOT_KEY = DataKey.create<LiveSecurityHotspot>("sonarlint_security_hotspot")
         const val REVIEW_HOTSPOT_GROUP = "SonarQube for IDE: Security Hotspot Review"
         private const val ERROR_TITLE = "<b>SonarQube for IDE - Unable to review the Security Hotspot</b>"
         private const val CONTENT = "The Security Hotspot status was successfully updated"

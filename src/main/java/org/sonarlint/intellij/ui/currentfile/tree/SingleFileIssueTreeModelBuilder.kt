@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.currentfile.tree
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.DefaultTreeModel
@@ -82,7 +81,6 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     override fun updateModel(file: VirtualFile?, findings: List<LiveIssue>) {
         latestIssues = findings.toMutableList()
         currentFile = file
-        ApplicationManager.getApplication().assertIsDispatchThread()
 
         summaryNode.removeAllChildren()
 
@@ -132,6 +130,15 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
                 SummaryUiModel()
             }
         } ?: SummaryUiModel()
+    }
+
+    override fun removeFinding(finding: LiveIssue) {
+        findIssueNode(finding.getId().toString())?.let {
+            latestIssues.remove(finding)
+            summaryNode.remove(it)
+            treeSummary.refresh(1, latestIssues.size)
+            model.nodeStructureChanged(summaryNode)
+        }
     }
 
     private fun getIssueWithHighestSeverity(): LiveIssue? {

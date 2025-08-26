@@ -20,8 +20,6 @@
 package org.sonarlint.intellij.ui.factory
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowAnchor
@@ -29,40 +27,14 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.OnePixelSplitter
-import com.intellij.ui.SimpleTextAttributes
-import com.intellij.ui.components.JBPanelWithEmptyText
-import com.intellij.ui.components.panels.HorizontalLayout
-import java.awt.event.ActionEvent
-import javax.swing.JComponent
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
+import javax.swing.JComponent
 
 private const val LAYOUT_GAP = 5
 
 class PanelFactory {
 
     companion object {
-        @JvmOverloads
-        @JvmStatic
-        fun centeredLabel(textLabel: String, actionText: String? = null, action: AnAction? = null): JBPanelWithEmptyText {
-            val labelPanel = JBPanelWithEmptyText(HorizontalLayout(LAYOUT_GAP))
-            val text = labelPanel.emptyText
-            text.text = textLabel
-            if (action != null && actionText != null) {
-                text.appendLine(
-                    actionText, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES
-                ) { _: ActionEvent ->
-                    ActionUtil.invokeAction(
-                        action,
-                        labelPanel,
-                        TOOL_WINDOW_ID,
-                        null,
-                        null
-                    )
-                }
-            }
-            return labelPanel
-        }
-
         @JvmStatic
         fun createSplitter(
             project: Project,

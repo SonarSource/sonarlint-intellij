@@ -23,8 +23,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
-import org.sonarlint.intellij.finding.sca.DependencyRisksRefreshTrigger
 import org.sonarlint.intellij.fs.EditorFileChangeListener
 import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.trigger.EditorOpenTrigger
@@ -39,8 +37,6 @@ class StartServicesOnProjectOpened : StartupActivity {
         runOnPooledThread(project) {
             getService(EditorFileChangeListener::class.java).startListening()
             getService(project, EditorOpenTrigger::class.java).onProjectOpened()
-            getService(project, SecurityHotspotsRefreshTrigger::class.java).subscribeToTriggeringEvents()
-            getService(project, DependencyRisksRefreshTrigger::class.java).subscribeToTriggeringEvents()
             getService(project, PromotionProvider::class.java).subscribeToTriggeringEvents()
         }
     }

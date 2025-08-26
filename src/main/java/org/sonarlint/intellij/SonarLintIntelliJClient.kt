@@ -103,11 +103,11 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROU
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
-import org.sonarlint.intellij.finding.sca.DependencyRisksRefreshTrigger
+import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
@@ -520,9 +520,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     OpenInBrowserAction("Learn More in Documentation", null, CONNECTED_MODE_BENEFITS_LINK)
                 )
             }
-            val module = findModule(configScopeId)
-            getService(project, SecurityHotspotsRefreshTrigger::class.java).triggerRefresh(module)
-            getService(project, DependencyRisksRefreshTrigger::class.java).triggerRefresh()
             AssistBindingResponse(BackendService.projectId(project))
         }
     }
@@ -864,7 +861,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val (locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities) = computeReadActionSafely(project) {
             addedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) } to updatedTaintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
         } ?: return
-        getService(project, SonarLintToolWindow::class.java).updateTaintVulnerabilities(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
+        getService(project, TaintVulnerabilitiesCache::class.java)
+            .update(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
+        getService(project, SonarLintToolWindow::class.java).refreshViews()
     }
 
     override fun didChangeDependencyRisks(
@@ -876,7 +875,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val project = findProject(configurationScopeId) ?: return
         val added = addedDependencyRisks.map { LocalDependencyRisk(it) }
         val updated = updatedDependencyRisks.map { LocalDependencyRisk(it) }
-        getService(project, SonarLintToolWindow::class.java).updateDependencyRisks(closedDependencyRiskIds, added, updated)
+        getService(project, DependencyRisksCache::class.java).update(closedDependencyRiskIds, added, updated)
+        getService(project, SonarLintToolWindow::class.java).refreshViews()
     }
 
     override fun raiseIssues(

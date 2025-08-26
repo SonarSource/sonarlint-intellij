@@ -25,8 +25,6 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import java.awt.event.ActionEvent
-import javax.swing.JButton
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction.Companion.REVIEW_HOTSPOT_GROUP
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -39,6 +37,8 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.CheckStatusChangePermittedResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
+import java.awt.event.ActionEvent
+import javax.swing.JButton
 
 
 class ReviewSecurityHotspotDialog(
@@ -78,8 +78,7 @@ class ReviewSecurityHotspotDialog(
                             project,
                             modalityState,
                         ) {
-                            SonarLintUtils.getService(project, SonarLintToolWindow::class.java)
-                                .updateStatusAndApplyCurrentFiltering(securityHotspotKey, status)
+                            SonarLintUtils.getService(project, SonarLintToolWindow::class.java).refreshViews()
                             SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
                             close(OK_EXIT_CODE)
                         }

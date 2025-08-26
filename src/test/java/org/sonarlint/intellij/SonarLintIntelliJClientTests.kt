@@ -21,6 +21,8 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
+import java.nio.file.Paths
+import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Assertions
@@ -35,6 +37,7 @@ import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.aDependencyRiskDto
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
@@ -44,8 +47,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
-import java.nio.file.Paths
-import java.util.UUID
 
 class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     lateinit var client: SonarLintIntelliJClient
@@ -313,6 +314,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     fun should_handle_dependency_risks_changes() {
         val toolWindow = mock(SonarLintToolWindow::class.java)
         replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
+        val risksCache = mock(DependencyRisksCache::class.java)
+        replaceProjectService(DependencyRisksCache::class.java, risksCache)
 
         val closedRiskId1 = UUID.randomUUID()
         val closedRiskId2 = UUID.randomUUID()
@@ -330,7 +333,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         client.didChangeDependencyRisks(projectBackendId, closedRiskIds, addedRisks, updatedRisks)
 
-        verify(toolWindow).updateDependencyRisks(
+        verify(risksCache).update(
             eq(closedRiskIds),
             argThat { addedLocal ->
                 addedLocal.size == 2 &&
@@ -342,6 +345,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
                 updatedLocal[0].getId() == updatedRiskId1 && updatedLocal[0].isResolved()
             }
         )
+        verify(toolWindow).refreshViews()
     }
 
     @Test
@@ -357,10 +361,13 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     fun should_handle_empty_dependency_risks_changes() {
         val toolWindow = mock(SonarLintToolWindow::class.java)
         replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
+        val risksCache = mock(DependencyRisksCache::class.java)
+        replaceProjectService(DependencyRisksCache::class.java, risksCache)
 
         client.didChangeDependencyRisks(projectBackendId, emptySet(), emptyList(), emptyList())
 
-        verify(toolWindow).updateDependencyRisks(emptySet(), emptyList(), emptyList())
+        verify(risksCache).update(emptySet(), emptyList(), emptyList())
+        verify(toolWindow).refreshViews()
     }
 
 }
