@@ -17,12 +17,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.vulnerabilities.tree.filter
+package org.sonarlint.intellij.ui.filter
 
-import org.sonarlint.intellij.finding.Finding
+enum class SortMode(val presentableText: String) {
+    DATE("Date"),
+    IMPACT("Impact"),
+    RULE_KEY("Rule key"),
+    LINE_NUMBER("Line number");
 
-enum class ResolutionFilter : FindingFilter {
-    OPEN_ONLY, ALL;
-
-    override fun filter(finding: Finding) = this == ALL || this == OPEN_ONLY && !finding.isResolved()
+    override fun toString() = presentableText
 }

@@ -26,10 +26,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.util.ui.UIUtil;
+import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import org.jetbrains.annotations.NotNull;
-import javax.annotation.Nullable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
@@ -40,10 +40,6 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
   protected int fileCount;
 
   public abstract void render(TreeCellRenderer renderer);
-
-  public boolean hasChildren() {
-    return getChildCount() != 0;
-  }
 
   public int getFindingCount() {
     if (findingCount < 0) {

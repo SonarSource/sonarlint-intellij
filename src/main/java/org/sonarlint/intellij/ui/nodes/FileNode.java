@@ -21,13 +21,8 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.SimpleTextAttributes;
-import java.util.Iterator;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Predicate;
 import javax.swing.Icon;
-import javax.swing.tree.TreeNode;
-import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
@@ -39,16 +34,6 @@ public class FileNode extends AbstractNode {
   public FileNode(VirtualFile file, boolean isSecurityHotspot) {
     this.file = file;
     this.isSecurityHotspot = isSecurityHotspot;
-  }
-
-  public Optional<FindingNode> findChildren(Predicate<Finding> predicate) {
-    for (Iterator<TreeNode> it = children().asIterator(); it.hasNext(); ) {
-      var findingNode = (FindingNode) it.next();
-      if (predicate.test(findingNode.getFinding())) {
-        return Optional.of(findingNode);
-      }
-    }
-    return Optional.empty();
   }
 
   public VirtualFile file() {

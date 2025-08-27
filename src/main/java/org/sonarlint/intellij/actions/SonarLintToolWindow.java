@@ -39,7 +39,7 @@ import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.ui.ToolWindowConstants;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
-import org.sonarlint.intellij.ui.currentfile.filter.FilteredFindings;
+import org.sonarlint.intellij.ui.filter.FilteredFindings;
 import org.sonarlint.intellij.ui.report.ReportPanel;
 import org.sonarlint.intellij.ui.report.ReportTabManager;
 

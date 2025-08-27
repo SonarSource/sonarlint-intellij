@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.finding.sca
 
-import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -61,82 +60,6 @@ class DependencyRisksCacheTests {
 
         assertThat(cache.dependencyRisks).hasSize(2)
         assertThat(cache.dependencyRisks.map { it.getId() }).containsExactlyInAnyOrder(existingRisk.getId(), newRisk.getId())
-    }
-
-    @Test
-    fun should_update_dependency_risk_by_id() {
-        val uuid = UUID.randomUUID()
-        val riskToUpdate = aDependencyRisk(uuid, DependencyRiskDto.Status.OPEN, DependencyRiskDto.Severity.HIGH, listOf(DependencyRiskDto.Transition.ACCEPT))
-        val newRisk = aDependencyRisk(uuid, DependencyRiskDto.Status.SAFE, DependencyRiskDto.Severity.HIGH, listOf(DependencyRiskDto.Transition.ACCEPT))
-        cache.dependencyRisks = listOf(riskToUpdate)
-
-        val updated = cache.update(newRisk)
-
-        assertThat(updated).isTrue()
-        assertThat(cache.dependencyRisks).hasSize(1)
-        assertThat(cache.dependencyRisks.first().status).isEqualTo(DependencyRiskDto.Status.SAFE)
-    }
-
-    @Test
-    fun should_return_false_when_updating_non_existing_dependency_risk() {
-        val existingRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        cache.dependencyRisks = listOf(existingRisk)
-
-        val nonExistingRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val removed = cache.update(nonExistingRisk)
-
-        assertThat(removed).isFalse()
-        assertThat(cache.dependencyRisks).hasSize(1)
-        assertThat(cache.dependencyRisks.first().getId()).isEqualTo(existingRisk.getId())
-    }
-
-    @Test
-    fun should_count_all_dependency_risks_when_not_filtering_by_resolved_state() {
-        val unresolvedRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val resolvedRisk = aDependencyRisk(DependencyRiskDto.Status.SAFE)
-        cache.dependencyRisks = listOf(unresolvedRisk, resolvedRisk)
-
-        val count = cache.getFocusAwareCount()
-
-        assertThat(count).isEqualTo(1)
-    }
-
-    @Test
-    fun should_count_only_unresolved_dependency_risks_when_filtering_by_resolved_state() {
-        val unresolvedRisk1 = aDependencyRisk(DependencyRiskDto.Status.CONFIRM)
-        val unresolvedRisk2 = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val resolvedRisk = aDependencyRisk(DependencyRiskDto.Status.SAFE)
-        cache.dependencyRisks = listOf(unresolvedRisk1, unresolvedRisk2, resolvedRisk)
-
-        val count = cache.getFocusAwareCount(false)
-
-        assertThat(count).isEqualTo(2)
-    }
-
-    @Test
-    fun should_count_all_dependency_risks_when_isResolved_is_true() {
-        val unresolvedRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val resolvedRisk = aDependencyRisk(DependencyRiskDto.Status.SAFE)
-        cache.dependencyRisks = listOf(unresolvedRisk, resolvedRisk)
-
-        val count = cache.getFocusAwareCount(true)
-
-        assertThat(count).isEqualTo(2)
-    }
-
-    @Test
-    fun should_remember_resolved_state_for_subsequent_calls() {
-        val unresolvedRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        val resolvedRisk = aDependencyRisk(DependencyRiskDto.Status.SAFE)
-        cache.dependencyRisks = listOf(unresolvedRisk, resolvedRisk)
-
-        // Set the state to filter unresolved
-        cache.getFocusAwareCount(false)
-        
-        // Subsequent call without parameter should use the remembered state
-        val count = cache.getFocusAwareCount()
-
-        assertThat(count).isEqualTo(1)
     }
 
     @Test

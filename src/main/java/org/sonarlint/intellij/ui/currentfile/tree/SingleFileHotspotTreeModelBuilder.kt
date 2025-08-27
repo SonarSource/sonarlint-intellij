@@ -27,7 +27,7 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsByVulnerabilityProbabil
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
-import org.sonarlint.intellij.ui.currentfile.filter.SortMode
+import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary

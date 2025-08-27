@@ -23,7 +23,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.TreeModel
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
-import org.sonarlint.intellij.ui.currentfile.filter.SortMode
+import org.sonarlint.intellij.ui.filter.SortMode
 
 /**
  * Interface defining the contract for building and managing tree models for findings within a single file.

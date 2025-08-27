@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.currentfile.filter
+package org.sonarlint.intellij.ui.filter
 
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.JBColor
@@ -65,7 +65,7 @@ class FiltersPanel(
     val searchLabel = JBLabel("Search:")
     val searchField = SearchTextField()
     val severityLabel = JBLabel("Severity:")
-    val severityCombo: ComboBox<Any> = ComboBox(SeverityFilter.values())
+    val severityCombo: ComboBox<Any> = ComboBox(MqrImpactFilter.values())
     val statusLabel = JBLabel("Status:")
     val statusCombo = ComboBox(StatusFilter.values())
     val quickFixLabel = JBLabel("Fix suggestion:")

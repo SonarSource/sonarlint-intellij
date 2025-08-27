@@ -17,12 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.currentfile.filter
+@ParametersAreNonnullByDefault
+package org.sonarlint.intellij.ui.filter;
 
-enum class StatusFilter(val presentableText: String) {
-    NO_FILTER("All"),
-    OPEN("Open"),
-    RESOLVED("Resolved");
-
-    override fun toString() = presentableText
-}
+import javax.annotation.ParametersAreNonnullByDefault;
