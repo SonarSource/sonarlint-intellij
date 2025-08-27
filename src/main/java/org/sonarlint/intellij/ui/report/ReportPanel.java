@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui;
+package org.sonarlint.intellij.ui.report;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
@@ -56,6 +56,8 @@ import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.ui.FindingDetailsPanel;
+import org.sonarlint.intellij.ui.FindingKind;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.tree.IssueTree;
@@ -63,7 +65,6 @@ import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus;
 
 import static java.util.function.Predicate.not;
 import static org.sonarlint.intellij.actions.RestartBackendAction.SONARLINT_ERROR_MSG;
@@ -161,20 +162,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   public void remove(LiveIssue issue) {
     treeBuilder.remove(issue);
-  }
-
-  public void updateStatusForSecurityHotspot(String securityHotspotKey, HotspotStatus status) {
-    var wasUpdated = securityHotspotTreeBuilder.updateStatusForHotspotWithFileNode(securityHotspotKey, status);
-    if (wasUpdated) {
-      expandTree();
-    }
-  }
-
-  public void updateStatusForOldSecurityHotspots(String securityHotspotKey, HotspotStatus status) {
-    var wasUpdated = oldSecurityHotspotTreeBuilder.updateStatusForHotspotWithFileNode(securityHotspotKey, status);
-    if (wasUpdated) {
-      expandTree();
-    }
   }
 
   private void initPanel() {
@@ -312,14 +299,6 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     return actionGroup;
   }
 
-  private String whatAnalyzed(AnalysisResult analysisResult) {
-    var filesCount = analysisResult.getAnalyzedFiles().size();
-    if (filesCount == 1) {
-      return "1 file";
-    }
-    return filesCount + " files";
-  }
-
   private void handleListener() {
     tree.addTreeSelectionListener(this::issueTreeSelectionChanged);
     oldTree.addTreeSelectionListener(this::oldIssueTreeSelectionChanged);
@@ -387,6 +366,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     oldTreeBuilder.clear();
     oldSecurityHotspotTreeBuilder.clear();
     securityHotspotTreeBuilder.clear();
+    this.lastAnalysisResult = null;
     disableEmptyDisplay(false);
   }
 
@@ -416,7 +396,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
 
   @Override
   public void dispose() {
-    // Nothing to do
+    this.lastAnalysisResult = null;
   }
 
   public void refreshView() {
@@ -425,6 +405,10 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     } else {
       disableEmptyDisplay(false);
     }
+  }
+
+  public AnalysisResult getAnalysisResult() {
+    return lastAnalysisResult;
   }
 
 }
