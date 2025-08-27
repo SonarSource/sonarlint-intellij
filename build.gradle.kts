@@ -10,7 +10,9 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -43,7 +45,7 @@ val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 val omnisharpVersion: String by project
 val runIdeDirectory: String by project
-val verifierVersions: String by project
+val verifierEnv: String by project
 
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
@@ -158,17 +160,40 @@ intellijPlatform {
             VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES
         )
 
-        if (project.hasProperty("verifierVersions")) {
+        val ideTypes = listOf(IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
+            IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.DataGrip, IntelliJPlatformType.GoLand,
+            IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
+            IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity)
+
+        if (!project.hasProperty("verifierEnv")) {
             ides {
-                verifierVersions.split(',').forEach {
-                    create("IC", it)
-                }
+                recommended()
             }
         } else {
-            // Test oldest supported, and latest
-            ides {
-                create("IC", "2023.1")
-                create("IC", "2025.2")
+            when (verifierEnv) {
+                "EAP" -> ides {
+                    select {
+                        types = ideTypes
+                        channels = listOf(ProductRelease.Channel.EAP)
+                        sinceBuild = "252.*"
+                    }
+                }
+                "MINIMAL" -> ides {
+                    select {
+                        types = ideTypes
+                        channels = listOf(ProductRelease.Channel.RELEASE)
+                        sinceBuild = "231.*"
+                        untilBuild = "231.*"
+                    }
+                }
+                "LATEST" -> ides {
+                    select {
+                        types = ideTypes
+                        channels = listOf(ProductRelease.Channel.RELEASE)
+                        sinceBuild = "252.*"
+                        untilBuild = "252.*"
+                    }
+                }
             }
         }
     }
