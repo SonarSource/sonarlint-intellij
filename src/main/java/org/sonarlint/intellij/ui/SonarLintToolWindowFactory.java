@@ -29,10 +29,8 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.ui.ToolWindowConstants.CURRENT_FILE_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.HELP_AND_FEEDBACK_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
-import static org.sonarlint.intellij.ui.ToolWindowConstants.REPORT_TAB_TITLE;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 /**
@@ -46,7 +44,6 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     runOnUiThread(project, () -> {
       var contentManager = toolWindow.getContentManager();
       addCurrentFileTab(project, contentManager);
-      addReportTab(project, contentManager);
       var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
       addLogTab(project, toolWindow);
       addHelpAndFeedbackTab(project, toolWindow);
@@ -57,19 +54,14 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
   private static void addCurrentFileTab(Project project, ContentManager contentManager) {
     var currentFilePanel = new CurrentFilePanel(project);
-    addTab(currentFilePanel, contentManager, CURRENT_FILE_TAB_TITLE);
+    addCurrentFileTab(currentFilePanel, contentManager);
   }
 
-  private static void addReportTab(Project project, ContentManager contentManager) {
-    var reportPanel = new ReportPanel(project);
-    addTab(reportPanel, contentManager, REPORT_TAB_TITLE);
-  }
-
-  private static void addTab(SimpleToolWindowPanel panel, ContentManager contentManager, String title) {
+  private static void addCurrentFileTab(SimpleToolWindowPanel panel, ContentManager contentManager) {
     var content = contentManager.getFactory()
       .createContent(
         panel,
-        title,
+        ToolWindowConstants.CURRENT_FILE_TAB_TITLE,
         false);
     content.setCloseable(false);
     contentManager.addDataProvider(panel);

@@ -30,12 +30,6 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
-import org.sonarlint.intellij.SonarLintIcons
-import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable
-import org.sonarlint.intellij.telemetry.LinkTelemetry
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Color
@@ -48,9 +42,14 @@ import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.event.HyperlinkEvent
+import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
+import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable
+import org.sonarlint.intellij.telemetry.LinkTelemetry
 
 enum class WalkthroughActions(val id: String, val action: (Project) -> (Unit)) {
-    REPORT_VIEW("#reportView", { project -> getService(project, SonarLintToolWindow::class.java).openReportTab() }),
     CONNECTED_MODE_LINK("#connectedModeLink", { LinkTelemetry.CONNECTED_MODE_DOCS.browseWithTelemetry() }),
     RULE_LINK("#ruleLink", { LinkTelemetry.USING_RULES_PAGE.browseWithTelemetry() }),
     INVESTIGATING_ISSUES_LINK("#investigatingIssuesLink", { LinkTelemetry.INVESTIGATING_ISSUES_PAGE.browseWithTelemetry() }),
@@ -202,7 +201,7 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
                 Python, Java, Javascript, IaC domains, and secrets detection.
                 <a href="${WalkthroughActions.RULE_LINK.id}">Learn more</a>.<br><br>
                 Detect issues on the fly in your open file while you code in the code editor. And run an analysis on multiple 
-                files from the <a href="${WalkthroughActions.REPORT_VIEW.id}">Report tab</a>.<br><br>
+                files from the Report tab.<br><br>
                 Open a file to start your high-quality and secure code journey.
             """.trimIndent(),
             SonarLintIcons.WALKTHROUGH_WELCOME,

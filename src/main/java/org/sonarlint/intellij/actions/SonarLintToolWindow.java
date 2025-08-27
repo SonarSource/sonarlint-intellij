@@ -37,14 +37,15 @@ import org.sonarlint.intellij.messages.ProjectBindingListener;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarlint.intellij.ui.ReportPanel;
+import org.sonarlint.intellij.ui.ToolWindowConstants;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 import org.sonarlint.intellij.ui.currentfile.filter.FilteredFindings;
+import org.sonarlint.intellij.ui.report.ReportPanel;
+import org.sonarlint.intellij.ui.report.ReportTabManager;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.CURRENT_FILE_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
-import static org.sonarlint.intellij.ui.ToolWindowConstants.REPORT_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
@@ -61,50 +62,25 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   /**
    * Must run in EDT
+   * Creates a new dated report tab for the analysis results.
    */
   public void openReportTab(AnalysisResult analysisResult) {
     ApplicationManager.getApplication().assertIsDispatchThread();
-    this.<ReportPanel>openTab(REPORT_TAB_TITLE, panel -> panel.updateFindings(analysisResult));
-  }
-
-  public void openReportTab() {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-    this.openTab(REPORT_TAB_TITLE);
+    var reportTabManager = getService(project, ReportTabManager.class);
+    reportTabManager.createReportTab(analysisResult);
   }
 
   public void clearReportTab() {
-    updateTab(REPORT_TAB_TITLE, ReportPanel::clear);
+    var reportTabManager = getService(project, ReportTabManager.class);
+    reportTabManager.closeAllReportTabs();
   }
 
-
-
-  private <T> void openTab(String displayName, Consumer<T> tabPanelConsumer) {
-    var toolWindow = updateTabAndGet(displayName, tabPanelConsumer);
-    if (toolWindow != null) {
-      toolWindow.show(() -> selectTab(toolWindow, displayName));
-    }
-  }
-
-  private <T> ToolWindow updateTabAndGet(String displayName, Consumer<T> tabPanelConsumer) {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-    var toolWindow = getToolWindow();
-    if (toolWindow != null) {
-      var contentManager = toolWindow.getContentManager();
-      var content = contentManager.findContent(displayName);
-      if (content != null) {
-        var panel = (T) content.getComponent();
-        runOnPooledThread(project, () -> tabPanelConsumer.accept(panel));
-      }
-    }
-    return toolWindow;
-  }
-
-  private <T> void updateTab(String displayName, Consumer<T> tabPanelConsumer) {
+  private <T> void updateCurrentFileTab(Consumer<T> tabPanelConsumer) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       runOnUiThread(project, () -> {
         var contentManager = toolWindow.getContentManager();
-        var content = contentManager.findContent(displayName);
+        var content = contentManager.findContent(ToolWindowConstants.CURRENT_FILE_TAB_TITLE);
         if (content != null) {
           var panel = (T) content.getComponent();
           tabPanelConsumer.accept(panel);
@@ -114,7 +90,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void filterCurrentFileTab(boolean isResolved) {
-    this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE, panel -> panel.allowResolvedFindings(isResolved));
+    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.allowResolvedFindings(isResolved));
   }
 
   /**
@@ -146,19 +122,42 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void refreshViews() {
-    this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::refreshView);
-    this.updateTab(REPORT_TAB_TITLE, ReportPanel::refreshView);
+    this.updateCurrentFileTab(CurrentFilePanel::refreshView);
+    // Refresh all open report tabs
+    var reportTabManager = getService(project, ReportTabManager.class);
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var contentManager = toolWindow.getContentManager();
+      for (var tabTitle: reportTabManager.getOpenReportTabs()) {
+        var content = contentManager.findContent(tabTitle);
+        if (content != null && content.getComponent() instanceof ReportPanel reportPanel) {
+          runOnPooledThread(project, reportPanel::refreshView);
+        }
+      }
+    }
   }
 
   public void setAnalysisReadyCurrentFile() {
-    this.updateTab(CURRENT_FILE_TAB_TITLE, CurrentFilePanel::setAnalysisIsReady);
+    this.updateCurrentFileTab(CurrentFilePanel::setAnalysisIsReady);
   }
 
+  /**
+   * Gets the displayed findings from the current file tab.
+   * Note: This method returns findings from the Current File tab, not report tabs,
+   * as report tabs show historical analysis results.
+   */
   public FilteredFindings getDisplayedFindings() {
-    var contentManager = getToolWindow().getContentManager();
+    var toolWindow = getToolWindow();
+    if (toolWindow == null) {
+      return new FilteredFindings(java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of());
+    }
+    
+    var contentManager = toolWindow.getContentManager();
     var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
-    var currentFilePanel = (CurrentFilePanel) content.getComponent();
-    return currentFilePanel.getDisplayedFindings();
+    if (content != null && content.getComponent() instanceof CurrentFilePanel currentFilePanel) {
+      return currentFilePanel.getDisplayedFindings();
+    }
+    return new FilteredFindings(java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of());
   }
 
   private void openTab(String name) {
@@ -183,7 +182,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void updateCurrentFileTab(@Nullable VirtualFile selectedFile) {
-    this.<CurrentFilePanel>updateTab(CURRENT_FILE_TAB_TITLE,
+    this.<CurrentFilePanel>updateCurrentFileTab(
       panel -> runOnUiThread(project, () -> panel.update(selectedFile)));
   }
 
