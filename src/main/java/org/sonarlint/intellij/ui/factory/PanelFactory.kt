@@ -27,10 +27,8 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.OnePixelSplitter
-import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import javax.swing.JComponent
-
-private const val LAYOUT_GAP = 5
+import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 
 class PanelFactory {
 

@@ -18,6 +18,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 @ParametersAreNonnullByDefault
-package org.sonarlint.intellij.ui.currentfile.filter;
+package org.sonarlint.intellij.ui.report.tree;
 
 import javax.annotation.ParametersAreNonnullByDefault;

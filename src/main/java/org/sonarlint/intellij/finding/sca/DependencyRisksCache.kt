@@ -26,7 +26,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRi
 @Service(Service.Level.PROJECT)
 class DependencyRisksCache() {
 
-    private var isResolvedState = false
     var dependencyRisks: List<LocalDependencyRisk> = emptyList()
 
     fun update(dependencyRiskIdsToRemove: Set<UUID>, dependencyRisksToAdd: List<LocalDependencyRisk>, dependencyRisksToUpdate: List<LocalDependencyRisk>) {
@@ -40,22 +39,6 @@ class DependencyRisksCache() {
         currentDependencyRisks.removeAll { it.getId() in updatedDependencyRiskKeys }
         currentDependencyRisks.addAll(dependencyRisksToUpdateFiltered)
         dependencyRisks = currentDependencyRisks
-    }
-
-    fun update(risk: LocalDependencyRisk): Boolean {
-        val currentDependencyRisks = dependencyRisks.toMutableList()
-        val removed = currentDependencyRisks.removeIf { currentRisk -> currentRisk.getId() == risk.getId() }
-        if (removed && risk.status != DependencyRiskDto.Status.FIXED) {
-            currentDependencyRisks.add(risk)
-            dependencyRisks = currentDependencyRisks
-        }
-        return removed
-    }
-
-    @JvmOverloads
-    fun getFocusAwareCount(isResolved: Boolean? = null): Int {
-        isResolved?.let { isResolvedState = it }
-        return dependencyRisks.count { isResolvedState || !it.isResolved() }
     }
 
 }

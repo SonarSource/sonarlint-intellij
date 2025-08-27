@@ -17,12 +17,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.currentfile.filter
+package org.sonarlint.intellij.ui.filter
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.Locale
 import org.apache.commons.lang3.Strings
+import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.Finding
@@ -66,7 +67,7 @@ data class FilteredFindings(
  * - Unified Criteria: Uses {@link FilterCriteria} for consistent filter application
  * - Result Aggregation: Returns filtered results in a structured {@link FilteredFindings} container
  */
-class CurrentFileFindingsFilter(private val project: Project) {
+class FindingsFilter(private val project: Project) {
 
     fun filterAllFindings(file: VirtualFile?, criteria: FilterCriteria): FilteredFindings {
         val rawFindings = loadRawFindings(file)
@@ -99,6 +100,36 @@ class CurrentFileFindingsFilter(private val project: Project) {
             hotspots = onTheFlyFindingsHolder.getSecurityHotspotsForFile(file).toList(),
             taints = taintCache.getTaintVulnerabilitiesForFile(file).toList(),
             dependencyRisks = dependencyRisksCache.dependencyRisks.toList()
+        )
+    }
+
+    fun filterAllFindings(analysisResult: AnalysisResult?, criteria: FilterCriteria): FilteredFindings {
+        if (analysisResult == null) {
+            return FilteredFindings(listOf(), listOf(), listOf(), listOf())
+        }
+
+        val rawFindings = loadRawFindings(analysisResult)
+
+        return FilteredFindings(
+            issues = filterIssues(rawFindings.issues, criteria),
+            hotspots = filterHotspots(rawFindings.hotspots, criteria),
+            taints = listOf(),
+            dependencyRisks = listOf()
+        )
+    }
+
+    private fun loadRawFindings(analysisResult: AnalysisResult): FilteredFindings {
+        val findings = analysisResult.findings
+
+        // Flatten the per-file findings into lists
+        val allIssues = findings.issuesPerFile.values.flatten()
+        val allHotspots = findings.securityHotspotsPerFile.values.flatten()
+
+        return FilteredFindings(
+            issues = allIssues,
+            hotspots = allHotspots,
+            taints = listOf(),
+            dependencyRisks = listOf()
         )
     }
     
