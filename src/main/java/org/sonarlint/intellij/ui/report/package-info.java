@@ -17,22 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui
+@ParametersAreNonnullByDefault
+package org.sonarlint.intellij.ui.report;
 
-import com.intellij.openapi.project.Project
-import com.intellij.ui.components.JBPanel
-import java.awt.BorderLayout
-
-class ReportTabStatusPanel internal constructor(private val project: Project) : JBPanel<ReportTabStatusPanel>(BorderLayout()) {
-    companion object {
-        private const val HELP_TEXT = "This view shows a snapshot of issues found after a manually triggered analysis. "
-    }
-
-    init {
-        createPanel()
-    }
-
-    private fun createPanel() {
-        add(WhatsInThisViewPanel(project, HELP_TEXT).panel, BorderLayout.EAST)
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;
