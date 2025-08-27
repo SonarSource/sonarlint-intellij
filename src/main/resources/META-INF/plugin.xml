@@ -328,13 +328,6 @@
             <!-- This group is programmatically added to AnalyzeMenu if it exists -->
         </group>
 
-        <action id="SonarLint.SetFocusNewCode"
-                class="org.sonarlint.intellij.actions.SonarFocusOnNewCode"
-                text="Set Focus on New Code"
-                description="Change the current SonarQube for IDE focus to new code"
-                icon="org.sonarlint.intellij.SonarLintIcons.FOCUS">
-        </action>
-
         <action id="SonarLint.AnalyzeFiles"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeFilesAction"
                 text="Analyze with SonarQube for IDE"

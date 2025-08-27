@@ -52,13 +52,13 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.ui.currentfile.filter.CurrentFileFindingsFilter
-import org.sonarlint.intellij.ui.currentfile.filter.FilteredFindings
-import org.sonarlint.intellij.ui.currentfile.filter.FiltersPanel
-import org.sonarlint.intellij.ui.currentfile.filter.SortMode
-import org.sonarlint.intellij.ui.currentfile.filter.StatusFilter
 import org.sonarlint.intellij.ui.currentfile.tree.SingleFileTreeModelBuilder
 import org.sonarlint.intellij.ui.factory.PanelFactory
+import org.sonarlint.intellij.ui.filter.FilteredFindings
+import org.sonarlint.intellij.ui.filter.FiltersPanel
+import org.sonarlint.intellij.ui.filter.FindingsFilter
+import org.sonarlint.intellij.ui.filter.SortMode
+import org.sonarlint.intellij.ui.filter.StatusFilter
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.util.SonarLintActions
@@ -103,7 +103,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     private val analyzeCurrentFileAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
     private val restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction()
 
-    private var findingsFilter: CurrentFileFindingsFilter = CurrentFileFindingsFilter(project)
+    private var findingsFilter: FindingsFilter = FindingsFilter(project)
     private var displayManager: CurrentFileDisplayManager
 
     // Support status tracking

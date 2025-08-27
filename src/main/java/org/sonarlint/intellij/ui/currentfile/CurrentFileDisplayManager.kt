@@ -30,11 +30,11 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.ToolWindowConstants
-import org.sonarlint.intellij.ui.currentfile.filter.FilterCriteria
-import org.sonarlint.intellij.ui.currentfile.filter.FilteredFindings
-import org.sonarlint.intellij.ui.currentfile.filter.FiltersPanel
-import org.sonarlint.intellij.ui.currentfile.filter.MqrImpactFilter
-import org.sonarlint.intellij.ui.currentfile.filter.SeverityFilter
+import org.sonarlint.intellij.ui.filter.FilterCriteria
+import org.sonarlint.intellij.ui.filter.FilteredFindings
+import org.sonarlint.intellij.ui.filter.FiltersPanel
+import org.sonarlint.intellij.ui.filter.MqrImpactFilter
+import org.sonarlint.intellij.ui.filter.SeverityFilter
 
 /**
  * Manages display state, UI updates, and visual feedback for the Current File panel.

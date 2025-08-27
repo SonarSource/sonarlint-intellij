@@ -23,12 +23,10 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.UUID
-import org.sonarlint.intellij.cayc.CleanAsYouCodeService
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
 @Service(Service.Level.PROJECT)
 class TaintVulnerabilitiesCache(val project: Project) {
-    private var isResolvedState = false
+
     var taintVulnerabilities: List<LocalTaintVulnerability> = emptyList()
 
     fun update(taintVulnerabilityIdsToRemove: Set<UUID>, taintVulnerabilitiesToAdd: List<LocalTaintVulnerability>, taintVulnerabilitiesToUpdate: List<LocalTaintVulnerability>) {
@@ -41,27 +39,8 @@ class TaintVulnerabilitiesCache(val project: Project) {
         taintVulnerabilities = currentTaintVulnerabilities
     }
 
-    fun remove(taintVulnerabilityToRemove: LocalTaintVulnerability): Boolean {
-        val currentTaintVulnerabilities = taintVulnerabilities.toMutableList()
-        val removed = currentTaintVulnerabilities.removeIf { currentVulnerability -> currentVulnerability.getServerKey() == taintVulnerabilityToRemove.getServerKey() }
-        if (removed) {
-            taintVulnerabilities = currentTaintVulnerabilities
-        }
-        return removed
-    }
-
     fun getTaintVulnerabilitiesForFile(file: VirtualFile) : List<LocalTaintVulnerability> {
         return taintVulnerabilities.filter { it.file() == file }
     }
 
-    fun getAllTaintVulnerabilities() : List<LocalTaintVulnerability> {
-        return taintVulnerabilities
-    }
-
-    @JvmOverloads
-    fun getFocusAwareCount(isResolved: Boolean? = null): Int {
-        val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
-        isResolved?.let { isResolvedState = it }
-        return taintVulnerabilities.count { (isResolvedState || !it.isResolved()) && (!isFocusOnNewCode || it.isOnNewCode()) }
-    }
 }

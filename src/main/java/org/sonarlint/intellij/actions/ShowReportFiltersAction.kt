@@ -17,12 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.vulnerabilities.tree.filter
+package org.sonarlint.intellij.actions
 
-import org.sonarlint.intellij.finding.Finding
+import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.ui.report.ReportPanel
 
-enum class FocusFilter : FindingFilter {
-    NEW_CODE, OLD_CODE, ALL_CODE;
+class ShowReportFiltersAction(private val reportPanel: ReportPanel) :
 
-    override fun filter(finding: Finding) = this == ALL_CODE || this == OLD_CODE && !finding.isOnNewCode() || this == NEW_CODE && finding.isOnNewCode()
+    AbstractSonarToggleAction("Show Filters", "Show/hide filter panel", AllIcons.General.Filter) {
+
+    override fun isSelected(event: AnActionEvent): Boolean {
+        return reportPanel.isFiltersPanelVisible()
+    }
+
+    override fun setSelected(event: AnActionEvent, flag: Boolean) {
+        reportPanel.showFiltersPanel(flag)
+    }
+
 }
