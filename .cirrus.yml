@@ -149,6 +149,83 @@ validate_task:
     slack_notification_script: |
       source slack-failure-notification
 
+sonarqube_eu_analysis_task:
+  #  name: "Run tests and SonarQube analysis"
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  env:
+    SONAR_HOST_URL: VAULT[development/kv/data/sonarcloud data.url]
+    SONAR_TOKEN: VAULT[development/kv/data/sonarcloud data.token]
+    JDK_VERSION: "17"
+  eks_container:
+    <<: *BUILDER_CONTAINER_DEFINITION
+    cpu: 7
+    memory: 14G
+  <<: *SETUP_GRADLE_CACHE
+  build_script: |
+    source cirrus-env QA
+    source .cirrus/use-gradle-wrapper.sh
+    # Run tests and SonarQube analysis
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport -Dsonar.organization=sonarsource -Dsonar.projectKey=SonarSource_sonarlint-intellij
+  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  always:
+    reports_artifacts:
+      path: "**/reports/**/**"
+    junit_artifacts:
+      path: "**/test-results/**/*.xml"
+      format: junit
+  on_failure:
+    slack_notification_script: |
+      source slack-failure-notification
+
+sonarqube_us_analysis_task:
+  #  name: "Run tests and SonarQube analysis"
+  <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
+  env:
+    SONAR_HOST_URL: VAULT[development/kv/data/sonarqube-us data.url]
+    SONAR_TOKEN: VAULT[development/kv/data/sonarqube-us data.token]
+    JDK_VERSION: "17"
+  eks_container:
+    <<: *BUILDER_CONTAINER_DEFINITION
+    cpu: 7
+    memory: 14G
+  <<: *SETUP_GRADLE_CACHE
+  build_script: |
+    source cirrus-env QA
+    source .cirrus/use-gradle-wrapper.sh
+    # Run tests and SonarQube analysis
+    PULL_REQUEST_SHA=$GIT_SHA1 regular_gradle_build_deploy_analyze check -x :its:check -x artifactoryPublish sonar jacocoTestReport -Dsonar.organization=sonarsource -Dsonar.projectKey=SonarSource_sonarlint-intellij
+  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
+  always:
+    reports_artifacts:
+      path: "**/reports/**/**"
+    junit_artifacts:
+      path: "**/test-results/**/*.xml"
+      format: junit
+  on_failure:
+    slack_notification_script: |
+      source slack-failure-notification
+
+run_iris_task:
+  #only_if: $CIRRUS_CRON == "secondary-platform"
+  depends_on:
+    - validate
+    - sonarqube_us_analysis
+    - sonarqube_eu_analysis
+  eks_container:
+    <<: *CONTAINER_DEFINITION
+  env:
+    SONAR_SQC_EU_URL: VAULT[development/kv/data/sonarcloud data.url]
+    SONAR_SQC_US_URL: VAULT[development/kv/data/sonarqube-us data.url]
+    SONAR_NEXT_URL: VAULT[development/kv/data/next data.url]
+    SONAR_IRIS_NEXT_TOKEN: VAULT[development/kv/data/iris data.next]
+    SONAR_IRIS_SQC_EU_TOKEN: VAULT[development/kv/data/iris data.sqc-eu]
+    SONAR_IRIS_SQC_US_TOKEN: VAULT[development/kv/data/iris data.sqc-us]
+    ARTIFACTORY_USERNAME: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader username]
+    ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
+  iris_script: |
+    chmod +x .cirrus/run-iris.sh
+    .cirrus/run-iris.sh
+
 validate_windows_task:
   #  name: "Run unit tests on Windows"
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
