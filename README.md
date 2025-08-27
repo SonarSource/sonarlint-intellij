@@ -155,6 +155,47 @@ For example:
 Keep in mind that the `clean` task will wipe out the content of `build/`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
 
+Plugin Verification
+--------------------------
+
+The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier. This ensures compatibility across different IDE versions and types.
+
+### Automated Nightly Testing
+
+Plugin verification runs automatically every night via CI/CD pipeline across three different environments:
+
+- **EAP**: Tests against Early Access Program (pre-release) versions
+- **MINIMAL**: Tests against the oldest supported release version
+- **LATEST**: Tests against the latest release versions
+
+### Supported IDEs
+
+The verification covers most of the major JetBrains IDEs that we support:
+- Android Studio
+- CLion
+- DataGrip
+- GoLand
+- IntelliJ IDEA (Community & Ultimate)
+- PhpStorm
+- PyCharm (Community & Professional)
+- Rider
+- RubyMine
+- WebStorm
+
+### Running Verification Locally
+
+To run plugin verification locally:
+
+```bash
+# Use recommended IDE versions (default)
+./gradlew :verifyPlugin
+
+# Test against specific environment
+./gradlew :verifyPlugin -PverifierEnv=EAP
+./gradlew :verifyPlugin -PverifierEnv=MINIMAL
+./gradlew :verifyPlugin -PverifierEnv=LATEST
+```
+
 License
 -------
 

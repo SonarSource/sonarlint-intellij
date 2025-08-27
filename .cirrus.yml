@@ -191,25 +191,19 @@ plugin_verifier_task:
     memory: 10G
   matrix:
     - env:
-        IDEA_VERSION: '2023.1.7'
+        VERIFIER_ENV: 'EAP'
     - env:
-        IDEA_VERSION: '2025.2'
+        VERIFIER_ENV: 'MINIMAL'
     - env:
-        # It automatically retrieves the latest version available for the given year (likely to be the EAP)
-        IDEA_VERSION: '2025'
+        VERIFIER_ENV: 'LATEST'
   <<: *SETUP_GRADLE_CACHE
   sync_script: |
     git fetch origin +refs/heads/master:refs/remotes/origin/master
     git reset --hard refs/remotes/origin/master
-  # The versions are retrieved by querying JB API, we only keep the IDE flavors we handle, then we filter by our specified version.
-  # Since there can be multiple 2021.3 (2021.3.1, 2021.3.2, etc.) we only keep the latest one.
   build_script: |
-    echo "Run plugin verifier on ${IDEA_VERSION}"
     source cirrus-env QA
     source .cirrus/use-gradle-wrapper.sh
-    VERSIONS=$(curl -s -L https://jb.gg/intellij-platform-builds-list | jq '.[] | "\(.code) \(.releases[].version)"' | grep -Ew "${ALLOWED_IDE}" | grep "${IDEA_VERSION}" | tr -d '"' | awk '{k=$1} $2>a[k]{a[k]=$2} END{for (i in a) print i, a[i]}' | sort -u | sed 's/ /-/' | paste -s -d',')
-    echo ${VERSIONS}
-    ./gradlew :verifyPlugin -PverifierVersions=${VERSIONS}
+    ./gradlew :verifyPlugin -PverifierEnv=${VERIFIER_ENV}
   <<: *CLEANUP_GRADLE_CACHE_SCRIPT
   on_failure:
     reports_artifacts:
