@@ -27,8 +27,10 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.CompactTreeModel
@@ -59,7 +61,7 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     }
     private val taintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(summaryNode)
 
-    private var sortMode: SortMode = SortMode.DATE
+    private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
 
     override fun setSortMode(mode: SortMode) {
         sortMode = mode

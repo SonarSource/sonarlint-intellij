@@ -24,8 +24,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.riskSeverity
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTreeUpdater
@@ -52,7 +54,7 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
         summaryNode = SummaryNode(it)
     }
     private val dependencyRiskTreeUpdater = DependencyRiskTreeUpdater(treeSummary, summaryNode)
-    private var sortMode: SortMode = SortMode.DATE
+    private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
 
     override fun setSortMode(mode: SortMode) {
         sortMode = mode
