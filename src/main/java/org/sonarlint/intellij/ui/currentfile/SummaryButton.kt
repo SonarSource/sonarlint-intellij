@@ -70,16 +70,16 @@ class SummaryButton(
         textLabel.verticalAlignment = SwingConstants.CENTER
         iconLabel.horizontalAlignment = SwingConstants.CENTER
         textLabel.horizontalAlignment = SwingConstants.CENTER
-        border = JBUI.Borders.empty(0, 10)
+        border = JBUI.Borders.empty(0, 8)
         font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         textLabel.text = formatText()
         selectionListener = listener
-        add(Box.createRigidArea(Dimension(10, 0)))
+        add(Box.createRigidArea(Dimension(8, 0)))
         add(iconLabel)
-        add(Box.createRigidArea(Dimension(5, 0)))
+        add(Box.createRigidArea(Dimension(4, 0)))
         add(textLabel)
-        add(Box.createRigidArea(Dimension(10, 0)))
+        add(Box.createRigidArea(Dimension(8, 0)))
         toolTipText = tooltipText
         isOpaque = false
         disabledTooltip = DISABLED_TOOLTIP
@@ -158,7 +158,7 @@ class SummaryButton(
             !isEnabled -> JBColor.GRAY
             isSelected -> JBColor.GRAY.darker()
             isHovered && isEnabled && newBorderColor != null -> newBorderColor.darker()
-            else -> newBorderColor ?: JBColor.GRAY // Always fallback to grey if null
+            else -> newBorderColor ?: JBColor.GRAY
         }
         updateBorderColor(border)
     }
