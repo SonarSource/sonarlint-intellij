@@ -119,7 +119,9 @@ class SummaryButton(
 
     private fun formatText(): String {
         if (count == 0) {
-            return "No $typeNamePlural"
+            // When disabled (not supported), just show the type name without "No"
+            // When enabled but count is 0, show "No [type]" to indicate zero findings
+            return if (isEnabled) "No $typeNamePlural" else typeNamePlural
         }
         if (count == 1) {
             return "1 $typeNameSingular"
@@ -174,6 +176,7 @@ class SummaryButton(
         toolTipText = if (enabled) defaultTooltip else (disabledTooltip ?: defaultTooltip)
         iconLabel.isEnabled = enabled
         textLabel.isEnabled = enabled
+        textLabel.text = formatText()
         alpha = if (enabled) 1.0f else 0.5f
         // When disabled, force border to grey
         if (!enabled) {
