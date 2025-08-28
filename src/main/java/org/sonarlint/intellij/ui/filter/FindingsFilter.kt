@@ -126,9 +126,7 @@ class FindingsFilter(private val project: Project) {
         val allHotspots = findings.securityHotspotsPerFile.values.flatten()
         
         // Get the set of files that were analyzed in this specific analysis result
-        val analyzedFiles = mutableSetOf<VirtualFile>()
-        analyzedFiles.addAll(findings.issuesPerFile.keys)
-        analyzedFiles.addAll(findings.securityHotspotsPerFile.keys)
+        val analyzedFiles = findings.issuesPerFile.keys + findings.securityHotspotsPerFile.keys
         
         // Load taints from their respective caches, filtered by analyzed files
         val taintCache = getService(project, TaintVulnerabilitiesCache::class.java)
