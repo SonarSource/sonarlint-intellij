@@ -67,7 +67,7 @@ class AnsibleTests : BaseUiTest() {
         with(remoteRobot) {
             idea {
                 toolWindow {
-                    tabTitleContains("Current File") { select() }
+                    tabTitleContains("Findings") { select() }
                     // the synchronization can take a while to happen
                     waitFor(duration = Duration.ofMinutes(1)) {
                         hasText("Use a specific version tag for the image.")

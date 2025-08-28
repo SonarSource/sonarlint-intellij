@@ -39,7 +39,7 @@ object FiltersUtils {
     fun setFocusOnNewCode(focusOnNewCode: Boolean) {
         optionalIdeaFrame()?.apply {
             toolWindow {
-                tabTitleContains("Current File") { select() }
+                tabTitleContains("Findings") { select() }
                 content("CurrentFilePanel") {
                     filterButton {
                         ensureOpen()
@@ -60,7 +60,7 @@ object FiltersUtils {
         with(BaseUiTest.remoteRobot) {
             idea {
                 toolWindow {
-                    tabTitleContains("Current File") { select() }
+                    tabTitleContains("Findings") { select() }
                     content("CurrentFilePanel") {
                         filterButton {
                             ensureOpen()
@@ -81,7 +81,7 @@ object FiltersUtils {
         with(BaseUiTest.remoteRobot) {
             idea {
                 toolWindow {
-                    tabTitleContains("Current File") { select() }
+                    tabTitleContains("Findings") { select() }
                     content("CurrentFilePanel") {
                         filterButton {
                             ensureOpen()

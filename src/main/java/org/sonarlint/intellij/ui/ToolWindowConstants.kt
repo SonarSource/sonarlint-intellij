@@ -23,11 +23,7 @@ object ToolWindowConstants {
 
     const val TOOL_WINDOW_ID: String = "SonarQube for IDE"
     const val LOG_TAB_TITLE: String = "Log"
-    const val CURRENT_FILE_TAB_TITLE: String = "Current File"
-    const val REPORT_TAB_TITLE: String = "Report"
-    const val TAINT_VULNERABILITIES_TAB_TITLE: String = "Taint Vulnerabilities"
-    const val SECURITY_HOTSPOTS_TAB_TITLE: String = "Security Hotspots"
-    const val DEPENDENCY_RISKS_TAB_TITLE: String = "Dependency Risks"
+    const val CURRENT_FILE_TAB_TITLE: String = "Findings"
     const val HELP_AND_FEEDBACK_TAB_TITLE: String = "Help & Feedback"
 
 }

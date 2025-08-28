@@ -93,7 +93,7 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     toolWindow {
-                        tabTitleContains("Current File") { select() }
+                        tabTitleContains("Findings") { select() }
                         content("CurrentFilePanel") {
                             val issueElement = findText(issueMessage)
                             // Select the issue first, otherwise the right click may not work on older versions
@@ -112,7 +112,7 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     toolWindow {
-                        tabTitleContains("Current File") { select() }
+                        tabTitleContains("Findings") { select() }
                         content("CurrentFilePanel") {
                             expectedMessages.forEach {
                                 // the synchronization can take a while to happen
@@ -130,7 +130,7 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     toolWindow {
-                        tabTitleContains("Current File") { select() }
+                        tabTitleContains("Findings") { select() }
                         content("CurrentFilePanel") {
                             findText(issueMessage).click()
                         }
@@ -142,7 +142,7 @@ class CurrentFileTabTests {
         fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String) {
             optionalIdeaFrame()?.apply {
                 toolWindow {
-                    tabTitleContains("Current File") { select() }
+                    tabTitleContains("Findings") { select() }
                     content("CurrentFilePanel") {
                         toolBarButton("Configure SonarQube for IDE").click()
                     }
