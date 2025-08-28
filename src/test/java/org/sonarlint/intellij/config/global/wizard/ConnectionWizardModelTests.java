@@ -24,7 +24,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class WizardModelTests {
+class ConnectionWizardModelTests {
   @Test
   void testCreateFromConfig() {
     var server = ServerConnection.newBuilder()
@@ -35,7 +35,7 @@ class WizardModelTests {
       .setHostUrl("url")
       .build();
 
-    var model = new WizardModel(server);
+    var model = new ConnectionWizardModel(server);
     assertThat(model.getLogin()).isNull();
     assertThat(model.getPassword()).isNull();
     assertThat(model.getToken()).isEqualTo("token");
@@ -47,7 +47,7 @@ class WizardModelTests {
 
   @Test
   void testExportToConfig() {
-    var model = new WizardModel();
+    var model = new ConnectionWizardModel();
     model.setName("name");
     model.setOrganizationKey("org");
     model.setServerUrl("url");
@@ -55,7 +55,7 @@ class WizardModelTests {
     model.setProxyEnabled(true);
     model.setPassword(new char[] {'p', 'a', 's', 's'});
 
-    model.setServerType(WizardModel.ServerType.SONARQUBE);
+    model.setServerType(ConnectionWizardModel.ServerType.SONARQUBE);
 
     var server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("url");
@@ -68,13 +68,13 @@ class WizardModelTests {
 
   @Test
   void testExportSonarCloud() {
-    var model = new WizardModel();
+    var model = new ConnectionWizardModel();
     model.setName("name");
     model.setOrganizationKey("org");
     model.setToken("token");
     model.setPassword(new char[] {'p', 'a', 's', 's'});
 
-    model.setServerType(WizardModel.ServerType.SONARCLOUD);
+    model.setServerType(ConnectionWizardModel.ServerType.SONARCLOUD);
 
     var server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
@@ -93,7 +93,7 @@ class WizardModelTests {
       .setEnableProxy(true)
       .setHostUrl("https://www.sonarqube.com")
       .build();
-    var model = new WizardModel(server);
+    var model = new ConnectionWizardModel(server);
 
     server = model.createConnection();
     assertThat(server.enableProxy()).isTrue();

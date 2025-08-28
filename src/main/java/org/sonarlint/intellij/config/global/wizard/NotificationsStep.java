@@ -31,13 +31,13 @@ import javax.annotation.Nullable;
 import org.sonarlint.intellij.documentation.SonarLintDocumentation;
 
 public class NotificationsStep extends AbstractWizardStepEx {
-  private final WizardModel model;
+  private final ConnectionWizardModel model;
   private final boolean onlyEditNotifications;
   private JPanel panel;
   private JCheckBox notificationsCheckBox;
   private JEditorPane notificationsDetails;
 
-  public NotificationsStep(WizardModel model, boolean onlyEditNotifications) {
+  public NotificationsStep(ConnectionWizardModel model, boolean onlyEditNotifications) {
     super("Configure Notifications");
     this.model = model;
     this.onlyEditNotifications = onlyEditNotifications;
@@ -50,7 +50,7 @@ public class NotificationsStep extends AbstractWizardStepEx {
 
   @Override
   public void _init() {
-    var isSc = model.getServerType() == WizardModel.ServerType.SONARCLOUD;
+    var isSc = model.getServerType() == ConnectionWizardModel.ServerType.SONARCLOUD;
     var sqOrSc = isSc ? "SonarQube Cloud" : "SonarQube Server";
     notificationsCheckBox.setText("Receive notifications from " + sqOrSc);
     notificationsCheckBox.setSelected(!model.isNotificationsDisabled());
@@ -84,7 +84,7 @@ public class NotificationsStep extends AbstractWizardStepEx {
     if (onlyEditNotifications) {
       return null;
     }
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
+    if (model.getServerType() == ConnectionWizardModel.ServerType.SONARCLOUD) {
       return OrganizationStep.class;
     } else {
       return AuthStep.class;

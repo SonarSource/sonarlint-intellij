@@ -56,7 +56,7 @@ import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIG
 
 public class ServerStep extends AbstractWizardStepEx {
   private static final int NAME_MAX_LENGTH = 50;
-  private final WizardModel model;
+  private final ConnectionWizardModel model;
   private final Collection<String> existingNames;
 
   private JRadioButton radioSonarCloud;
@@ -78,7 +78,7 @@ public class ServerStep extends AbstractWizardStepEx {
   private JRadioButton radioEU;
   private JLabel sonarCloudUrl;
 
-  public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
+  public ServerStep(ConnectionWizardModel model, boolean editing, Collection<String> existingNames) {
     super("Server Details");
     this.model = model;
     this.existingNames = existingNames;
@@ -157,7 +157,7 @@ public class ServerStep extends AbstractWizardStepEx {
     var sqsIcon = SonarLintIcons.ICON_SONARQUBE_SERVER;
     var sqcIcon = SonarLintIcons.ICON_SONARQUBE_CLOUD;
 
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
+    if (model.getServerType() == ConnectionWizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
       radioSonarCloud.setSelected(true);
       if (model.getRegion() == SonarCloudRegion.US) {
         radioUS.setSelected(true);
@@ -250,7 +250,7 @@ public class ServerStep extends AbstractWizardStepEx {
   private void validateUrl() throws CommitStepException {
     if (radioSonarQube.isSelected()) {
       try {
-        URL url = new URL(urlText.getText());
+        var url = new URL(urlText.getText());
         if (SonarLintUtils.isBlank(url.getHost())) {
           throw new CommitStepException("Please provide a valid URL");
         }
@@ -262,7 +262,7 @@ public class ServerStep extends AbstractWizardStepEx {
 
   private void save() {
     if (radioSonarCloud.isSelected()) {
-      model.setServerType(WizardModel.ServerType.SONARCLOUD);
+      model.setServerType(ConnectionWizardModel.ServerType.SONARCLOUD);
       var isUS = radioUS.isSelected();
       if (isUS) {
         model.setServerUrl(US_SONARCLOUD_URL);
@@ -272,7 +272,7 @@ public class ServerStep extends AbstractWizardStepEx {
         model.setRegion(SonarCloudRegion.EU);
       }
     } else {  
-      model.setServerType(WizardModel.ServerType.SONARQUBE);
+      model.setServerType(ConnectionWizardModel.ServerType.SONARQUBE);
       model.setServerUrl(urlText.getText().trim());
     }
     model.setName(nameField.getText().trim());

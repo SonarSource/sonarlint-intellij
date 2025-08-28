@@ -32,7 +32,7 @@ import org.sonarlint.intellij.util.RegionUtils;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
-public class WizardModel {
+public class ConnectionWizardModel {
   private ServerType serverType;
   private String serverUrl;
   private String token;
@@ -51,17 +51,15 @@ public class WizardModel {
     SONARQUBE
   }
 
-  public WizardModel() {
+  public ConnectionWizardModel() {
 
   }
 
-  public WizardModel(ServerConnection connectionToEdit) {
+  public ConnectionWizardModel(ServerConnection connectionToEdit) {
     if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
       if (connectionToEdit.getRegion() != null) {
         region = SonarCloudRegion.valueOf(connectionToEdit.getRegion());
-      } else {
-        region = SonarCloudRegion.EU;
       }
     } else {
       serverType = ServerType.SONARQUBE;
@@ -84,7 +82,7 @@ public class WizardModel {
     return serverType;
   }
 
-  public WizardModel setServerType(ServerType serverType) {
+  public ConnectionWizardModel setServerType(ServerType serverType) {
     this.serverType = serverType;
     return this;
   }
@@ -138,7 +136,7 @@ public class WizardModel {
     return notificationsDisabled;
   }
 
-  public WizardModel setNotificationsDisabled(boolean notificationsDisabled) {
+  public ConnectionWizardModel setNotificationsDisabled(boolean notificationsDisabled) {
     this.notificationsDisabled = notificationsDisabled;
     return this;
   }
@@ -147,7 +145,7 @@ public class WizardModel {
     return proxyEnabled;
   }
 
-  public WizardModel setProxyEnabled(boolean proxyEnabled) {
+  public ConnectionWizardModel setProxyEnabled(boolean proxyEnabled) {
     this.proxyEnabled = proxyEnabled;
     return this;
   }
@@ -156,7 +154,7 @@ public class WizardModel {
     return organizationList;
   }
 
-  public WizardModel setOrganizationList(List<OrganizationDto> organizationList) {
+  public ConnectionWizardModel setOrganizationList(List<OrganizationDto> organizationList) {
     this.organizationList = organizationList;
     return this;
   }
@@ -166,7 +164,7 @@ public class WizardModel {
     return serverUrl;
   }
 
-  public WizardModel setServerUrl(@Nullable String serverUrl) {
+  public ConnectionWizardModel setServerUrl(@Nullable String serverUrl) {
     this.serverUrl = serverUrl;
     return this;
   }
@@ -176,7 +174,7 @@ public class WizardModel {
     return token;
   }
 
-  public WizardModel setToken(@Nullable String token) {
+  public ConnectionWizardModel setToken(@Nullable String token) {
     this.token = token;
     return this;
   }
@@ -186,7 +184,7 @@ public class WizardModel {
     return login;
   }
 
-  public WizardModel setLogin(@Nullable String login) {
+  public ConnectionWizardModel setLogin(@Nullable String login) {
     this.login = login;
     return this;
   }
@@ -196,7 +194,7 @@ public class WizardModel {
     return password;
   }
 
-  public WizardModel setPassword(@Nullable char[] password) {
+  public ConnectionWizardModel setPassword(@Nullable char[] password) {
     this.password = password;
     return this;
   }
@@ -206,7 +204,7 @@ public class WizardModel {
     return name;
   }
 
-  public WizardModel setName(String name) {
+  public ConnectionWizardModel setName(String name) {
     this.name = name;
     return this;
   }
@@ -216,7 +214,7 @@ public class WizardModel {
     return organizationKey;
   }
 
-  public WizardModel setOrganizationKey(@Nullable String organization) {
+  public ConnectionWizardModel setOrganizationKey(@Nullable String organization) {
     this.organizationKey = organization;
     return this;
   }
@@ -225,7 +223,7 @@ public class WizardModel {
     return region;
   }
 
-  public WizardModel setRegion(SonarCloudRegion region) {
+  public ConnectionWizardModel setRegion(SonarCloudRegion region) {
     this.region = region;
     return this;
   }
