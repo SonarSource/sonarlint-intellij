@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.tests
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
+import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.tests.domain.ConnectionFromToolWindowTests.bindProjectFromToolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusOnSonarCloudAndPressChange
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.clickCurrentFileIssue
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
@@ -68,7 +70,6 @@ import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.settings.SetRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
-import kotlin.random.Random
 
 @Tag("ConfigurationTests")
 @EnabledIf("isIdeaCommunity")
@@ -183,7 +184,7 @@ class ConfigurationTests : BaseUiTest() {
         }
 
         @Test
-        fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
+        fun `should use configured project and module bindings for analysis`() = uiTest {
             // Scala should only be supported in connected mode
             openExistingProject("sample-scala")
             verifyCurrentFileShowsCard("EmptyCard")
@@ -245,7 +246,7 @@ class ConfigurationTests : BaseUiTest() {
         }
 
         @Test
-        fun should_export_then_import_connected_mode_configuration() = uiTest {
+        fun `should export then import connected mode configuration`() = uiTest {
             openExistingProject("shared-connected-mode")
             bindProjectAndModuleInFileSettings("shared-connected-mode-module", SHARED_CONNECTED_MODE_KEY, SHARED_CONNECTED_MODE_MODULE_KEY)
             shareConfiguration()
@@ -256,6 +257,33 @@ class ConfigurationTests : BaseUiTest() {
             importConfiguration(tokenValue)
         }
 
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class NewConnectionsFromToolWindowTests : BaseUiTest() {
+
+        @BeforeAll
+        fun initProfile() {
+            restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
+            provisionSonarCloudProfile(adminSonarCloudWsClient, "SLI Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
+            associateSonarCloudProjectToQualityProfile(
+                adminSonarCloudWsClient,
+                "java",
+                SONARCLOUD_ISSUE_PROJECT_KEY,
+                "SonarLint IT Java Issue"
+            )
+
+            analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues", sonarCloudToken)
+        }
+
+        @Test
+        fun `should create new connection from tool window and autofill created connection`() = uiTest {
+            addSonarCloudConnection(sonarCloudToken, "Initial connection")
+            openExistingProject("sli-java-issues")
+            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, true, "Initial connection")
+            bindProjectFromToolWindow(SONARCLOUD_ISSUE_PROJECT_KEY, "New Connection Name", sonarCloudToken, "Initial connection")
+        }
     }
 
     @Nested
@@ -289,7 +317,7 @@ class ConfigurationTests : BaseUiTest() {
         }
 
         @Test
-        fun should_create_connection_with_sonarcloud_and_analyze_issue() = uiTest {
+        fun `should create connection with sonarcloud and analyze issue`() = uiTest {
             addSonarCloudConnection(sonarCloudToken, "SonarCloud-IT")
 
             openExistingProject("sli-java-issues")

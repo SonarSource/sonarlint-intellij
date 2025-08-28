@@ -59,7 +59,7 @@ import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 public class AuthStep extends AbstractWizardStepEx {
   private static final String LOGIN_ITEM = "Login / Password";
   private static final String TOKEN_ITEM = "Token";
-  private final WizardModel model;
+  private final ConnectionWizardModel model;
 
   private JPanel panel;
   private JComboBox<String> authComboBox;
@@ -72,7 +72,7 @@ public class AuthStep extends AbstractWizardStepEx {
   private final ErrorPainter errorPainter;
   private boolean nextStepTriggered = false;
 
-  public AuthStep(WizardModel model) {
+  public AuthStep(ConnectionWizardModel model) {
     super("Authentication");
     this.model = model;
 
@@ -89,7 +89,7 @@ public class AuthStep extends AbstractWizardStepEx {
         if (LOGIN_ITEM.equals(e.getItem())) {
           cl.show(cardPanel, "Login");
         } else {
-          cl.show(cardPanel, "Token");
+          cl.show(cardPanel, TOKEN_ITEM);
         }
         fireStateChanged();
       }
@@ -120,7 +120,7 @@ public class AuthStep extends AbstractWizardStepEx {
 
   @Override
   public void _init() {
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
+    if (model.getServerType() == ConnectionWizardModel.ServerType.SONARCLOUD) {
       authComboBox.setSelectedItem(TOKEN_ITEM);
       authComboBox.setEnabled(false);
     } else {
@@ -170,7 +170,7 @@ public class AuthStep extends AbstractWizardStepEx {
   @Nullable
   @Override
   public Object getNextStepId() {
-    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
+    if (model.getServerType() == ConnectionWizardModel.ServerType.SONARCLOUD) {
       return OrganizationStep.class;
     }
     return NotificationsStep.class;

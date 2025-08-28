@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.waitFor
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -29,7 +30,6 @@ import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.enableConnectedMode
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
-import java.time.Duration
 
 class CurrentFileTabTests {
 
@@ -164,5 +164,4 @@ class CurrentFileTabTests {
             }
         }
     }
-
 }

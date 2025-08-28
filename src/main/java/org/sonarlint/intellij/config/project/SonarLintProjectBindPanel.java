@@ -51,13 +51,15 @@ import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.AbstractAction;
+import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import org.apache.commons.lang3.StringUtils;
+import javax.swing.ListModel;
+import org.apache.commons.lang3.Strings;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -149,6 +151,7 @@ public class SonarLintProjectBindPanel {
     var isAnyConnectionSelected = selectedConnection != null;
     projectKeyTextField.setEnabled(isAnyConnectionSelected);
     projectKeyTextField.setEditable(isAnyConnectionSelected);
+    projectKeyTextField.setText("");
     searchProjectButton.setEnabled(isAnyConnectionSelected);
   }
 
@@ -172,18 +175,54 @@ public class SonarLintProjectBindPanel {
   public void connectionsChanged(List<ServerConnection> connectionList) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    // keep selection if possible
-    final var selectedConnection = getSelectedConnection();
-    var previousSelectedStorageId = selectedConnection != null ? selectedConnection.getName() : null;
+    var selectedItemId = getItemToSelect(connectionList);
+
     connectionComboBox.removeAllItems();
-    setConnectionList(connectionList, previousSelectedStorageId);
+    setConnectionList(connectionList, selectedItemId);
+  }
+
+  private String getItemToSelect(List<ServerConnection> connectionList) {
+    var existingConnections = connectionComboBox.getModel();
+    if (isNewConnectionAdded(connectionList, existingConnections)) {
+      return getNewConnectionName(connectionList, existingConnections);
+    } else {
+      // keep selection if possible
+      return getPreviousConnectionName();
+    }
+  }
+
+  private String getPreviousConnectionName() {
+    final var selectedConnection = getSelectedConnection();
+    return selectedConnection != null ? selectedConnection.getName() : null;
+  }
+
+  private static String getNewConnectionName(List<ServerConnection> connectionList, ComboBoxModel<ServerConnection> existingConnections) {
+    return connectionList.stream()
+      .map(ServerConnection::getName)
+      .filter(connectionName -> doesNotContain(existingConnections, connectionName))
+      .findFirst()
+      .orElse(null);
+  }
+
+  private static boolean isNewConnectionAdded(List<ServerConnection> connectionList, ComboBoxModel<ServerConnection> existingConnections) {
+    return existingConnections.getSize() < connectionList.size();
+  }
+
+  private static boolean doesNotContain(ListModel<ServerConnection> existingConnections, String connectionName) {
+    for (var i = 0; i < existingConnections.getSize(); i++) {
+      var existingConnection = existingConnections.getElementAt(i);
+      if (connectionName.equals(existingConnection.getName())) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
    * Sets new connections in the combo box, or disable it if there aren't any.
    * Will also enable or disable other components.
    */
-  private void setConnectionList(Collection<ServerConnection> connections, @Nullable String previousSelectedStorageId) {
+  private void setConnectionList(Collection<ServerConnection> connections, @Nullable String selectedItemName) {
     var model = (DefaultComboBoxModel<ServerConnection>) connectionComboBox.getModel();
 
     if (connections.isEmpty()) {
@@ -198,7 +237,7 @@ public class SonarLintProjectBindPanel {
       var i = 0;
       var selectedIndex = -1;
       for (var connection : connections) {
-        if (previousSelectedStorageId != null && connection.getName() != null && previousSelectedStorageId.equals(connection.getName())) {
+        if (selectedItemName != null && connection.getName() != null && selectedItemName.equals(connection.getName())) {
           selectedIndex = i;
         }
         connectionComboBox.setPrototypeDisplayValue(null);
@@ -333,11 +372,11 @@ public class SonarLintProjectBindPanel {
     }
 
     if (isBindingEnabled()) {
-      if (!StringUtils.equals(projectSettings.getConnectionName(), ofNullable(getSelectedConnection()).map(ServerConnection::getName).orElse(null))) {
+      if (!Strings.CS.equals(projectSettings.getConnectionName(), ofNullable(getSelectedConnection()).map(ServerConnection::getName).orElse(null))) {
         return true;
       }
 
-      if (!StringUtils.equals(projectSettings.getProjectKey(), getSelectedProjectKey())) {
+      if (!Strings.CS.equals(projectSettings.getProjectKey(), getSelectedProjectKey())) {
         return true;
       }
 

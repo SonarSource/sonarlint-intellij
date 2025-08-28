@@ -30,42 +30,42 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK;
 
 public class ServerConnectionWizard {
-  private final WizardModel model;
+  private final ConnectionWizardModel model;
   private AbstractWizardEx wizardEx;
 
-  private ServerConnectionWizard(WizardModel model) {
+  private ServerConnectionWizard(ConnectionWizardModel model) {
     this.model = model;
   }
 
   public static ServerConnectionWizard forNewConnection(Set<String> existingNames) {
-    var wizard = new ServerConnectionWizard(new WizardModel());
+    var wizard = new ServerConnectionWizard(new ConnectionWizardModel());
     var steps = createSteps(wizard.model, false, existingNames);
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "New Connection");
     return wizard;
   }
 
   public static ServerConnectionWizard forNewConnection(ServerConnection prefilledConnection, Set<String> existingNames) {
-    var wizard = new ServerConnectionWizard(new WizardModel(prefilledConnection));
+    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(prefilledConnection));
     var steps = createSteps(wizard.model, false, existingNames);
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "New Connection");
     return wizard;
   }
 
   public static ServerConnectionWizard forConnectionEdition(ServerConnection connectionToEdit) {
-    var wizard = new ServerConnectionWizard(new WizardModel(connectionToEdit));
+    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(connectionToEdit));
     var steps = createSteps(wizard.model, true, Collections.emptySet());
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
     return wizard;
   }
 
   public static ServerConnectionWizard forNotificationsEdition(ServerConnection connectionToEdit) {
-    var wizard = new ServerConnectionWizard(new WizardModel(connectionToEdit));
+    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(connectionToEdit));
     var steps = List.of(new NotificationsStep(wizard.model, true));
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
     return wizard;
   }
 
-  private static List<AbstractWizardStepEx> createSteps(WizardModel model, boolean editing, Set<String> existingNames) {
+  private static List<AbstractWizardStepEx> createSteps(ConnectionWizardModel model, boolean editing, Set<String> existingNames) {
     return List.of(
       new ServerStep(model, editing, existingNames),
       new AuthStep(model),

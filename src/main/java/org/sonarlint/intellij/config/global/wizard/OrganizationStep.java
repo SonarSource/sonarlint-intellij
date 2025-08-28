@@ -44,13 +44,13 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.Organi
 import static javax.swing.JList.VERTICAL;
 
 public class OrganizationStep extends AbstractWizardStepEx {
-  private final WizardModel model;
+  private final ConnectionWizardModel model;
   private JList<OrganizationDto> orgList;
   private JPanel panel;
   private JButton selectOtherOrganizationButton;
   private DefaultListModel<OrganizationDto> listModel;
 
-  public OrganizationStep(WizardModel model) {
+  public OrganizationStep(ConnectionWizardModel model) {
     super("Organization");
     this.model = model;
 
