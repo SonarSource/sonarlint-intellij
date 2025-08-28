@@ -26,7 +26,7 @@ import org.sonarlint.intellij.ui.WhatsInThisViewPanel
 
 class ReportTabStatusPanel internal constructor(private val project: Project) : JBPanel<ReportTabStatusPanel>(BorderLayout()) {
     companion object {
-        private const val HELP_TEXT = "This view shows a snapshot of issues found after a manually triggered analysis. "
+        private const val HELP_TEXT = "A snapshot of findings from the analysis you triggered; findings remain even if they later change."
     }
 
     init {

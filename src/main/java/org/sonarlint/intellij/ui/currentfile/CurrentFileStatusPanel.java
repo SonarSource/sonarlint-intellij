@@ -31,9 +31,13 @@ import org.sonarlint.intellij.ui.WhatsInThisViewPanel;
 
 public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
 
-  private final Project project;
+  public static final String HELP_TEXT = """
+    This view analyzes the currently active file in real time and shows its findings.\s
+    Taint vulnerabilities are provided by the server (not computed locally).\s
+    Dependency risks are displayed at project level, as they are not linked to a specific file.
+   """;
 
-  public static final String HELP_TEXT = "SonarQube for IDE analyzes in real-time the active file only, and reports any issues found in this view. ";
+  private final Project project;
 
   CurrentFileStatusPanel(Project project) {
     super(new BorderLayout());
