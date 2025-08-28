@@ -72,8 +72,8 @@ public final class SonarLintActions {
     cancelAction = actionManager.getAction("SonarLint.toolwindow.Cancel");
     configureAction = actionManager.getAction("SonarLint.toolwindow.Configure");
 
-    clearReportAction = new ClearReportAction("Clear Project Files Issues",
-      "Clear analysis results",
+    clearReportAction = new ClearReportAction("Clear All Reports",
+      "Clear all report tabs",
       SonarLintIcons.CLEAN);
     clearIssuesAction = new ClearCurrentFileIssuesAction("Clear SonarQube for IDE Issues",
       "Clear SonarQube for IDE issues",
