@@ -114,7 +114,7 @@ class FindingsFilter(private val project: Project) {
             issues = filterIssues(rawFindings.issues, criteria),
             hotspots = filterHotspots(rawFindings.hotspots, criteria),
             taints = filterTaints(rawFindings.taints, criteria),
-            dependencyRisks = rawFindings.dependencyRisks
+            dependencyRisks = filterDependencyRisks(rawFindings.dependencyRisks, criteria)
         )
     }
 

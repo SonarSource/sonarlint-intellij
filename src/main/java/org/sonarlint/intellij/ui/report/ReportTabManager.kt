@@ -48,12 +48,39 @@ import org.sonarlint.intellij.ui.ToolWindowConstants
 class ReportTabManager(private val project: Project) {
     
     private val reportTabs = ConcurrentHashMap<String, ReportPanel>()
+    private val batchToTabTitle = ConcurrentHashMap<String, String>()
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm")
+    
+    /**
+     * Updates an existing report tab or creates a new one for the given batch.
+     * This allows incremental updates as analysis results become available.
+     */
+    @Synchronized
+    fun updateOrCreateReportTab(batchId: String, analysisResult: AnalysisResult): String? {
+        val existingTabTitle = batchToTabTitle[batchId]
+        
+        return if (existingTabTitle != null) {
+            // Update existing tab
+            val reportPanel = reportTabs[existingTabTitle]
+            reportPanel?.let { panel ->
+                // Merge new results with existing results
+                panel.mergeAnalysisResults(analysisResult)
+                existingTabTitle
+            }
+        } else {
+            // Create new tab
+            createReportTab(analysisResult, batchId)
+        }
+    }
     
     /**
      * Creates a new report tab with the current timestamp and displays the analysis results.
      */
     fun createReportTab(analysisResult: AnalysisResult): String? {
+        return createReportTab(analysisResult, null)
+    }
+    
+    private fun createReportTab(analysisResult: AnalysisResult, batchId: String?): String? {
         val toolWindow = getToolWindow() ?: return null
         val contentManager = toolWindow.contentManager
         
@@ -75,6 +102,9 @@ class ReportTabManager(private val project: Project) {
         
         // Store reference to panel
         reportTabs[tabTitle] = reportPanel
+        
+        // Store batch mapping if provided
+        batchId?.let { batchToTabTitle[it] = tabTitle }
 
         toolWindow.show()
         
@@ -97,7 +127,11 @@ class ReportTabManager(private val project: Project) {
         // Remove all report tabs
         reportContents.forEach { content ->
             val tabTitle = content.getUserData(REPORT_TAB_KEY)
-            tabTitle?.let { reportTabs.remove(it) }
+            tabTitle?.let { title ->
+                reportTabs.remove(title)
+                // Remove batch mappings for this tab
+                batchToTabTitle.entries.removeIf { it.value == title }
+            }
             contentManager.removeContent(content, true)
         }
     }

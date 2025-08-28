@@ -20,35 +20,33 @@
 package org.sonarlint.intellij.callable
 
 import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisCallback
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.report.ReportTabManager
 
-class ShowReportCallable(private val project: Project) : AnalysisCallback {
-
-    private var results: AnalysisResult? = null
+class ShowReportCallable(private val project: Project, private val batchId: String = generateBatchId()) : AnalysisCallback {
 
     override fun onSuccess(analysisResult: AnalysisResult) {
-        results = analysisResult.let {
-            val mergedLiveFindings = it.findings.merge(results?.findings)
-            AnalysisResult(it.analysisId, mergedLiveFindings, it.analyzedFiles, it.analysisDate)
+        // All UI operations must run on EDT, with synchronization happening on EDT
+        runOnUiThread(project) {
+            synchronized(this@ShowReportCallable) {
+                val reportTabManager = SonarLintUtils.getService(project, ReportTabManager::class.java)
+                reportTabManager.updateOrCreateReportTab(batchId, analysisResult)
+                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+            }
         }
-        showReportTab()
     }
 
     override fun onError(e: Throwable) {
-        // nothing to do
+        // For errors, we don't need to do anything special - just let the existing tab remain
     }
-
-    private fun showReportTab() {
-        results?.let {
-            runOnUiThread(project) {
-                SonarLintUtils.getService(project, SonarLintToolWindow::class.java).openReportTab(it)
-                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-            }
+    
+    companion object {
+        private fun generateBatchId(): String {
+            return "batch-${System.currentTimeMillis()}-${(Math.random() * 1000).toInt()}"
         }
     }
 

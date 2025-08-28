@@ -27,6 +27,6 @@ import org.sonarlint.intellij.finding.LiveFindings
 data class AnalysisResult(
     val analysisId: UUID?,
     val findings: LiveFindings,
-    val analyzedFiles: MutableCollection<out VirtualFile>,
+    val analyzedFiles: Collection<VirtualFile>,
     val analysisDate: Instant,
 )
