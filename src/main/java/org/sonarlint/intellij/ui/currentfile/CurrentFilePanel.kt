@@ -74,6 +74,8 @@ sealed class FindingSupportStatus {
     object NotBound : FindingSupportStatus()
 }
 
+private const val CHECKING_SUPPORT = "Checking support..."
+
 /**
  * Main panel component for the Current File tab in SonarLint tool window.
  * 
@@ -184,6 +186,13 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                             updateSummaryButtons()
                         }
                     }
+                    .exceptionally { error ->
+                        runOnUiThread(project) {
+                            hotspotSupportStatus = FindingSupportStatus.NotSupported("Error checking support: ${error.message}")
+                            updateSummaryButtons()
+                        }
+                        null
+                    }
             } catch (e: Exception) {
                 runOnUiThread(project) {
                     hotspotSupportStatus = FindingSupportStatus.NotSupported("Error checking support: ${e.message}")
@@ -206,6 +215,13 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                             }
                             updateSummaryButtons()
                         }
+                    }
+                    .exceptionally { error ->
+                        runOnUiThread(project) {
+                            dependencyRiskSupportStatus = FindingSupportStatus.NotSupported("Error checking support: ${error.message}")
+                            updateSummaryButtons()
+                        }
+                        null
                     }
             } catch (e: Exception) {
                 runOnUiThread(project) {
@@ -233,19 +249,19 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             TreeType.HOTSPOTS -> when (val status = hotspotSupportStatus) {
                 is FindingSupportStatus.NotSupported -> status.reason
                 is FindingSupportStatus.NotBound -> "Connect to SonarQube or SonarCloud to enable Security Hotspots"
-                is FindingSupportStatus.CheckingSupport -> "Checking support..."
+                is FindingSupportStatus.CheckingSupport -> CHECKING_SUPPORT
                 else -> null
             }
             TreeType.TAINTS -> when (val status = taintSupportStatus) {
                 is FindingSupportStatus.NotSupported -> status.reason
                 is FindingSupportStatus.NotBound -> "Connect to SonarQube or SonarCloud to enable Taint Vulnerabilities"
-                is FindingSupportStatus.CheckingSupport -> "Checking support..."
+                is FindingSupportStatus.CheckingSupport -> CHECKING_SUPPORT
                 else -> null
             }
             TreeType.DEPENDENCY_RISKS -> when (val status = dependencyRiskSupportStatus) {
                 is FindingSupportStatus.NotSupported -> status.reason
                 is FindingSupportStatus.NotBound -> "Connect to SonarQube or SonarCloud to enable Dependency Risks"
-                is FindingSupportStatus.CheckingSupport -> "Checking support..."
+                is FindingSupportStatus.CheckingSupport -> CHECKING_SUPPORT
                 else -> null
             }
         }
@@ -419,7 +435,11 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     }
 
     fun refreshView() {
-        runOnUiThread(project) { this.update(currentFile) }
+        runOnUiThread(project) {
+            // Re-evaluate support when views refresh (e.g., after backend initialization/restart)
+            checkSupportStatus()
+            this.update(currentFile)
+        }
     }
 
     private fun setUpTreeListeners() {
