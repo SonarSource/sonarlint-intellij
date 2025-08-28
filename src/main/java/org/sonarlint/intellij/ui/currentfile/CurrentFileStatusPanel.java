@@ -33,7 +33,7 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
 
   public static final String HELP_TEXT = """
     This view analyzes the currently active file in real time and shows its findings.\s
-    Taint vulnerabilities are provided by the server (not computed locally).\s
+    Taint vulnerabilities and dependency risks are provided by the server (not computed locally).\s
     Dependency risks are displayed at project level, as they are not linked to a specific file.
    """;
 
