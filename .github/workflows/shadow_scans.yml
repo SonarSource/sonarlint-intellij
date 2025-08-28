@@ -1,0 +1,43 @@
+name: Shadow scans
+on:
+  schedule:
+    # Run the workflow every day at 04:00 UTC
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: github-ubuntu-latest-s
+    name: Scan on shadow platforms
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Vault
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@320bd31b03e5dacaac6be51bbbb15adf7caccc32 # 3.1.0
+        with:
+          secrets: |
+            development/artifactory/token/SonarSource-sonarlint-intellij-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+        with:
+          version: 2025.7.12
+      - uses: SonarSource/ci-github-actions/build-gradle@master # dogfood
+        env:
+          ARTIFACTORY_PRIVATE_USERNAME: vault-SonarSource-sonarlint-intellij-private-reader
+          ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        with:
+          run-shadow-scans: true
+          artifactory-reader-role: private-reader
+          artifactory-deployer-role: qa-deployer
+          gradle-args: -x :its:check -I gradle/init-signing-deps.gradle.kts sonar jacocoTestReport
+      - name: Run IRIS Analysis
+        uses: SonarSource/unified-dogfooding-actions/run-iris@v1
+        with:
+          primary_project_key: "org.sonarsource.sonarlint.intellij:sonarlint-intellij"
+          primary_platform: "Next"
+          shadow1_project_key: "org.sonarsource.sonarlint.intellij:sonarlint-intellij"
+          shadow1_platform: "SQC-EU"
+          shadow2_project_key: "org.sonarsource.sonarlint.intellij:sonarlint-intellij"
+          shadow2_platform: "SQC-US"
