@@ -27,7 +27,9 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.report.ReportTabManager
 
-class ShowReportCallable(private val project: Project, private val batchId: String = generateBatchId()) : AnalysisCallback {
+class ShowReportCallable(private val project: Project) : AnalysisCallback {
+
+    private val batchId: String = generateBatchId()
 
     override fun onSuccess(analysisResult: AnalysisResult) {
         // All UI operations must run on EDT, with synchronization happening on EDT
@@ -46,7 +48,7 @@ class ShowReportCallable(private val project: Project, private val batchId: Stri
     
     companion object {
         private fun generateBatchId(): String {
-            return "batch-${System.currentTimeMillis()}-${(Math.random() * 1000).toInt()}"
+            return "batch-${System.currentTimeMillis()}"
         }
     }
 
