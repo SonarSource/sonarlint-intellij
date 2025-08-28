@@ -74,7 +74,7 @@ class FiltersPanel(
     val sortCombo = ComboBox(SortMode.values())
     val focusOnNewCodeLabel = JBLabel("New code:")
     val focusOnNewCodeCheckBox = JBCheckBox()
-    val cleanFiltersBtn = JButton("Clear")
+    val cleanFiltersBtn = JButton("Default")
     private lateinit var statusSeparator: JSeparator
     private val statusSpacingComponents = mutableListOf<Component>()
 
