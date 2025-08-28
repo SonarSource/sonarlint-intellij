@@ -47,10 +47,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.annotation.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
@@ -110,7 +110,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
       if (analysisIdsByCallback == null) {
         SonarLintConsole.get(project).debug("Pre-commit analysis cancelled because analysis did not start");
-        return ReturnResult.CANCEL;
+        return ReturnResult.COMMIT;
       }
 
       var analysisIds = analysisIdsByCallback.getRight();
@@ -126,7 +126,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
       if (Boolean.FALSE.equals(completed) || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
         SonarLintConsole.get(project).debug("Pre-commit analysis failed");
-        return ReturnResult.CANCEL;
+        return showFailureMessage("Error analysing " + affectedFiles.size() + " changed file(s).");
       }
 
       var results = analysisIdsByCallback.getLeft().getResults();
@@ -135,8 +135,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       SonarLintConsole.get(project).debug("Pre-commit analysis cancelled by user");
       throw e;
     } catch (Exception e) {
-      handleError(e, affectedFiles.size());
-      return ReturnResult.CANCEL;
+      return handleError(e, affectedFiles.size());
     }
   }
 
@@ -163,13 +162,13 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     };
   }
 
-  private void handleError(Exception e, int numFiles) {
-    var msg = "SonarQube for IDE - Error analysing " + numFiles + " changed file(s).";
+  private ReturnResult handleError(Exception e, int numFiles) {
+    var msg = "Error analysing " + numFiles + " changed file(s).";
     if (e.getMessage() != null) {
       msg = msg + ": " + e.getMessage();
     }
     SonarLintConsole.get(project).error(msg, e);
-    Messages.showErrorDialog(project, msg, "Error Analysing Files");
+    return showFailureMessage(msg);
   }
 
   private ReturnResult processResults(List<AnalysisResult> results) {
@@ -262,7 +261,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   private ReturnResult showYesNoCancel(String resultStr) {
     final var answer = Messages.showYesNoCancelDialog(project,
       resultStr,
-      "SonarQube for IDE Analysis Results",
+      "SonarQube for IDE Pre-Commit Results",
       "&Review Issues",
       "C&ontinue",
       "Cancel",
@@ -270,6 +269,23 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     if (answer == Messages.YES) {
       return ReturnResult.CLOSE_WINDOW;
+    } else if (answer == Messages.CANCEL) {
+      return ReturnResult.CANCEL;
+    } else {
+      return ReturnResult.COMMIT;
+    }
+  }
+
+  private ReturnResult showFailureMessage(String msg) {
+    final var answer = Messages.showOkCancelDialog(project,
+      msg,
+      "SonarQube for IDE Pre-Commit Results",
+      "C&ontinue",
+      "Abort",
+      UIUtil.getErrorIcon());
+
+    if (answer == Messages.OK) {
+      return ReturnResult.COMMIT;
     } else if (answer == Messages.CANCEL) {
       return ReturnResult.CANCEL;
     } else {
