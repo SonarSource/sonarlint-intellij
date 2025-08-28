@@ -36,6 +36,7 @@ import org.sonarlint.intellij.callable.UpdateOnTheFlyFindingsCallable
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator
 import org.sonarlint.intellij.common.analysis.ForcedLanguage
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
@@ -86,6 +87,7 @@ class AnalysisSubmitter(private val project: Project) {
     }
 
     fun autoAnalyzeOpenFiles() {
+        if (!Settings.getGlobalSettings().isAutoTrigger) return
         runOnPooledThread(project) {
             val callback = UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder)
             val modules = ModuleManager.getInstance(project).modules
