@@ -149,6 +149,8 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
             oldIssuesTreeBuilder.sortMode = sortMode
             securityHotspotsTreeBuilder.sortMode = sortMode
             oldSecurityHotspotsTreeBuilder.sortMode = sortMode
+            taintsTreeBuilder.sortMode = sortMode
+            oldTaintsTreeBuilder.sortMode = sortMode
         }
         refreshFilteredView()
     }
@@ -166,8 +168,10 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         )).apply {
             add(treeManager.issuesTree)
             add(treeManager.securityHotspotsTree)
+            add(treeManager.taintsTree)
             add(treeManager.oldIssuesTree)
             add(treeManager.oldSecurityHotspotsTree)
+            add(treeManager.oldTaintsTree)
         }
         
         findingsTreePane = ScrollPaneFactory.createScrollPane(treePanel, true)
@@ -224,10 +228,11 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun updateTreeModels(findings: LiveFindings, isFocusOnNewCode: Boolean) {
+        val taints = filteredFindingsCache.taints
         val split = if (isFocusOnNewCode) {
-            ReportFilteringUtils.splitFindingsByCodeAge(findings)
+            ReportFilteringUtils.splitFindingsByCodeAge(findings, taints)
         } else {
-            ReportFilteringUtils.createNoFocusSplit(findings)
+            ReportFilteringUtils.createNoFocusSplit(findings, taints)
         }
         
         runOnUiThread(project) {
@@ -236,6 +241,8 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
                 oldIssuesTreeBuilder.updateModel(split.oldIssues)
                 securityHotspotsTreeBuilder.updateModel(split.newHotspots)
                 oldSecurityHotspotsTreeBuilder.updateModel(split.oldHotspots)
+                taintsTreeBuilder.updateModel(split.newTaints)
+                oldTaintsTreeBuilder.updateModel(split.oldTaints)
             }
         }
     }
@@ -263,8 +270,9 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         val rawFindings = analysisResult.findings
         val allIssues = rawFindings.issuesPerFile.values.flatten()
         val allHotspots = rawFindings.securityHotspotsPerFile.values.flatten()
+        val allTaints = filteredFindingsCache.taints
 
-        val rawFilteredFindings = FilteredFindings(allIssues, allHotspots, emptyList(), emptyList())
+        val rawFilteredFindings = FilteredFindings(allIssues, allHotspots, allTaints, emptyList())
         displayManager.updateMqrMode(rawFilteredFindings)
     }
     
