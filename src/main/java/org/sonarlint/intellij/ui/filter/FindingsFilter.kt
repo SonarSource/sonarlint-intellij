@@ -204,9 +204,19 @@ class FindingsFilter(private val project: Project) {
 
     private fun filterTaints(taints: List<LocalTaintVulnerability>, criteria: FilterCriteria): List<LocalTaintVulnerability> {
         return taints.filter { taint ->
-            filterByStatus(taint, criteria)
+            filterTaintBySeverity(taint, criteria)
+                && filterByStatus(taint, criteria)
                 && filterTaintByText(taint, criteria)
                 && filterTaintByQuickFix(taint, criteria)
+        }
+    }
+
+    private fun filterTaintBySeverity(taint: LocalTaintVulnerability, criteria: FilterCriteria): Boolean {
+        if (criteria.severityFilter.isNoFilter()) return true
+        return if (criteria.isMqrMode) {
+            Strings.CI.equals(taint.getHighestImpact()?.name, criteria.severityFilter.getPresentableText())
+        } else {
+            Strings.CI.equals(taint.severity()?.name, criteria.severityFilter.getPresentableText())
         }
     }
 
