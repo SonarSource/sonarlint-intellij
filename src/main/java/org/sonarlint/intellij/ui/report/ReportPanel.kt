@@ -122,6 +122,28 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     fun refreshView() {
         lastAnalysisResult?.let(::updateFindings) ?: showEmptyState()
     }
+    
+    /**
+     * Merges new analysis results with existing results and updates the display.
+     * This is used for incremental updates as modules complete analysis.
+     */
+    fun mergeAnalysisResults(newAnalysisResult: AnalysisResult) {
+        if (project.isDisposed) return
+        
+        lastAnalysisResult = lastAnalysisResult?.let { existing ->
+            val mergedFindings = newAnalysisResult.findings.merge(existing.findings)
+            val mergedFiles = (existing.analyzedFiles + newAnalysisResult.analyzedFiles).distinct()
+            AnalysisResult(
+                newAnalysisResult.analysisId,
+                mergedFindings,
+                mergedFiles,
+                newAnalysisResult.analysisDate
+            )
+        } ?: newAnalysisResult
+        
+        // Update display with merged results
+        updateFindings(lastAnalysisResult!!)
+    }
 
     private fun initializeUI() {
         createMainContent()
