@@ -23,7 +23,6 @@ import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanel
@@ -291,7 +290,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         val headerCardPanel = JBPanel<CurrentFilePanel>(BorderLayout()).apply {
             background = com.intellij.util.ui.UIUtil.getListBackground()
             border = JBUI.Borders.compound(
-                JBUI.Borders.customLine(JBColor.DARK_GRAY, 0, 0, 1, 0),
+                JBUI.Borders.customLine(JBUI.CurrentTheme.CustomFrameDecorations.separatorForeground(), 0, 0, 1, 0),
                 JBUI.Borders.empty(6, 8)
             )
             putClientProperty("JComponent.roundRect", true)
