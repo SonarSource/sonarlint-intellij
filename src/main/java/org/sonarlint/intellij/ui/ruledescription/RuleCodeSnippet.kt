@@ -24,7 +24,6 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.tools.util.base.TextDiffSettingsHolder
 import com.intellij.diff.util.DiffUtil
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.colors.EditorColorsManager
@@ -37,13 +36,14 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBPanel
-import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_ADDITION
 import org.sonarlint.intellij.config.SonarLintTextAttributes.DIFF_REMOVAL
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleFragment
 import org.sonarlint.intellij.ui.ruledescription.section.CodeExampleType
+import org.sonarlint.intellij.util.runOnPooledThread
 
 
 class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, private val codeExampleFragment: CodeExampleFragment) :
@@ -53,17 +53,22 @@ class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, 
 
     init {
         border = JBUI.Borders.empty(0, 10, 5, 10)
-        myEditor = createEditor() as EditorEx
+        myEditor = createEditor(fileTypeFromRule, codeExampleFragment.code) as EditorEx
         layout = BorderLayout()
         add(myEditor.component, BorderLayout.CENTER)
-        setText(codeExampleFragment.code, fileTypeFromRule)
         myEditor.document.setReadOnly(true)
         myEditor.putUserData(CODE_EXAMPLE_FRAGMENT_KEY, codeExampleFragment)
+
+        // If diff highlighting is needed, do it asynchronously to avoid EDT freeze
+        if (codeExampleFragment.diffTarget != null) {
+            computeDiffHighlightingAsync()
+        }
     }
 
-    private fun createEditor(): Editor {
+    private fun createEditor(fileType: FileType, initialText: String): Editor {
         val editorFactory = EditorFactory.getInstance()
-        val editorDocument = editorFactory.createDocument("")
+        // Create document with initial text to avoid a write action after editor creation
+        val editorDocument = editorFactory.createDocument(StringUtil.convertLineSeparators(initialText))
         editorDocument.putUserData(IS_SONARLINT_DOCUMENT, true)
         val editor = editorFactory.createViewer(editorDocument) as EditorEx
         editor.settings.apply {
@@ -80,41 +85,40 @@ class RuleCodeSnippet(private val project: Project, fileTypeFromRule: FileType, 
         editor.setCaretEnabled(false)
         editor.contextMenuGroupId = null
 
+        // Configure highlighter without write action
+        val scheme = EditorColorsManager.getInstance().globalScheme
+        editor.highlighter = EditorHighlighterFactory.getInstance().createEditorHighlighter(fileType, scheme, project)
+
         return editor
     }
 
-    private fun setText(text: String, fileType: FileType) {
-        DocumentUtil.writeInRunUndoTransparentAction { configureByText(text, fileType) }
-    }
-
-    private fun configureByText(usageText: String, fileType: FileType) {
-        val document: Document = myEditor.document
-        val text = StringUtil.convertLineSeparators(usageText)
-        document.replaceString(0, document.textLength, text)
-        val scheme = EditorColorsManager.getInstance().globalScheme
-        myEditor.highlighter =
-            EditorHighlighterFactory.getInstance().createEditorHighlighter(fileType, scheme, project)
-
-        if (codeExampleFragment.diffTarget != null) {
+    private fun computeDiffHighlightingAsync() {
+        // Move expensive diff computation to background thread
+        runOnPooledThread(project) {
             val provider = DiffUtil.createTextDiffProvider(
                 project, SimpleDiffRequest(
                     "Diff",
                     DiffContentFactory.getInstance().createEmpty(),
                     DiffContentFactory.getInstance().createEmpty(), null, null
-                ), TextDiffSettingsHolder.TextDiffSettings(), {}, this
+                ), TextDiffSettingsHolder.TextDiffSettings(), {}, this@RuleCodeSnippet
             )
             val fragments =
                 provider.compare(codeExampleFragment.code, codeExampleFragment.diffTarget!!.code, EmptyProgressIndicator())
 
-            val attributeKey = if (codeExampleFragment.type == CodeExampleType.Compliant) DIFF_ADDITION else DIFF_REMOVAL
-            fragments?.forEach { fragment ->
-                myEditor.markupModel.addRangeHighlighter(
-                    attributeKey,
-                    fragment.startOffset1,
-                    fragment.endOffset1,
-                    0,
-                    HighlighterTargetArea.EXACT_RANGE
-                )
+            // Apply highlighting on EDT
+            runOnUiThread(project) {
+                if (!project.isDisposed && !myEditor.isDisposed) {
+                    val attributeKey = if (codeExampleFragment.type == CodeExampleType.Compliant) DIFF_ADDITION else DIFF_REMOVAL
+                    fragments?.forEach { fragment ->
+                        myEditor.markupModel.addRangeHighlighter(
+                            attributeKey,
+                            fragment.startOffset1,
+                            fragment.endOffset1,
+                            0,
+                            HighlighterTargetArea.EXACT_RANGE
+                        )
+                    }
+                }
             }
         }
     }
