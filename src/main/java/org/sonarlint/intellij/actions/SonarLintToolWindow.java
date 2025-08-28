@@ -27,6 +27,7 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.ContentManagerListener;
+import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.Nullable;
@@ -149,7 +150,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   public FilteredFindings getDisplayedFindings() {
     var toolWindow = getToolWindow();
     if (toolWindow == null) {
-      return new FilteredFindings(java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of());
+      return new FilteredFindings(List.of(), List.of(), List.of(), List.of());
     }
     
     var contentManager = toolWindow.getContentManager();
@@ -157,7 +158,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     if (content != null && content.getComponent() instanceof CurrentFilePanel currentFilePanel) {
       return currentFilePanel.getDisplayedFindings();
     }
-    return new FilteredFindings(java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of());
+    return new FilteredFindings(List.of(), List.of(), List.of(), List.of());
   }
 
   private void openTab(String name) {

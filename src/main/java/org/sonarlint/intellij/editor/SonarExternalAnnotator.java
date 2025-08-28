@@ -67,11 +67,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     var isFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
 
     var toolWindowService = getService(project, SonarLintToolWindow.class);
+    var fileTextRange = psiFile.getTextRange();
     toolWindowService.getDisplayedFindings().getIssues().stream()
       .filter(issue -> !issue.isResolved() && (!isFocusOnNewCode || issue.isOnNewCode()))
       .forEach(issue -> {
         var validTextRange = issue.getValidTextRange();
-        if (validTextRange != null) {
+        if (validTextRange != null && fileTextRange.contains(validTextRange)) {
           addAnnotation(project, issue, validTextRange, holder);
         }
       });
@@ -80,7 +81,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .filter(securityHotspot -> !securityHotspot.isResolved() && (!isFocusOnNewCode || securityHotspot.isOnNewCode()))
       .forEach(securityHotspot -> {
         var validTextRange = securityHotspot.getValidTextRange();
-        if (validTextRange != null) {
+        if (validTextRange != null && fileTextRange.contains(validTextRange)) {
           addAnnotation(project, securityHotspot, validTextRange, holder);
         }
       });
@@ -89,7 +90,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     toolWindowService.getDisplayedFindings().getTaints().stream()
       .filter(vulnerability -> !vulnerability.isResolved() && (!isFocusOnNewCode || vulnerability.isOnNewCode()))
       .filter(vulnerability -> currentFile.equals(vulnerability.file()))
-      .forEach(vulnerability -> addAnnotation(vulnerability, holder));
+      .forEach(vulnerability -> addAnnotation(vulnerability, fileTextRange, holder));
   }
 
   private static boolean shouldSkip(PsiFile file) {
@@ -167,9 +168,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return !SILENCED_QUICK_FIXABLE_RULE_KEYS.contains(issue.getRuleKey());
   }
 
-  private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
+  private static void addAnnotation(LocalTaintVulnerability vulnerability, TextRange fileTextRange, AnnotationHolder annotationHolder) {
     var textRange = vulnerability.getValidTextRange();
-    if (textRange == null || !vulnerability.isValid()) {
+    if (textRange == null || !vulnerability.isValid() || !fileTextRange.contains(textRange)) {
       return;
     }
 
