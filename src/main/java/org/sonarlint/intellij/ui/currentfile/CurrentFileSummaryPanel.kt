@@ -60,7 +60,7 @@ class CurrentFileSummaryPanel(
     taintsSelectionChanged: (Boolean) -> Unit,
     dependencyRisksSelectionChanged: (Boolean) -> Unit,
     toggleFilterBtnClicked: (Boolean) -> Unit
-) : JBPanel<CurrentFileSummaryPanel>(HorizontalLayout(10)) {
+) : JBPanel<CurrentFileSummaryPanel>(HorizontalLayout(8)) {
 
     private val issuesSummaryButton = SummaryButton("Issue", "Issues", issuesSelectionChanged, "Show/hide issues")
     private val hotspotsSummaryButton = SummaryButton("Security Hotspot", "Security Hotspots", hotspotsSelectionChanged, "Show/hide security hotspots")
@@ -69,7 +69,7 @@ class CurrentFileSummaryPanel(
     private val toggleFilterBtn = JToggleButton(AllIcons.General.Filter)
 
     init {
-        border = JBUI.Borders.empty(10)
+        border = JBUI.Borders.empty(8)
 
         toggleFilterBtn.apply {
             isFocusPainted = false

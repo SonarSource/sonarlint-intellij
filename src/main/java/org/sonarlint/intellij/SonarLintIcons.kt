@@ -162,9 +162,9 @@ object SonarLintIcons {
     )
 
     val backgroundColorsByVulnerabilityProbability = mapOf(
-        VulnerabilityProbability.HIGH to JBColor(Color(254, 243, 242), Color(253, 162, 155, 20)),
-        VulnerabilityProbability.MEDIUM to JBColor(Color(255, 240, 235), Color(254, 150, 75, 20)),
-        VulnerabilityProbability.LOW to JBColor(Color(252, 245, 228), Color(250, 220, 121, 20))
+        VulnerabilityProbability.HIGH to JBColor(Color(254, 243, 242), Color(253, 162, 155, 30)),
+        VulnerabilityProbability.MEDIUM to JBColor(Color(255, 240, 235), Color(254, 150, 75, 30)),
+        VulnerabilityProbability.LOW to JBColor(Color(252, 245, 228), Color(250, 220, 121, 30))
     )
 
     val fontColorsByVulnerabilityProbability = mapOf(
@@ -180,11 +180,11 @@ object SonarLintIcons {
     )
 
     val backgroundColorsBySeverity = mapOf(
-        IssueSeverity.BLOCKER to JBColor(Color(254, 228, 226), Color(128, 27, 20, 20)),
-        IssueSeverity.CRITICAL to JBColor(Color(254, 243, 242), Color(253, 162, 155, 20)),
-        IssueSeverity.MAJOR to JBColor(Color(255, 240, 235), Color(254, 150, 75, 20)),
-        IssueSeverity.MINOR to JBColor(Color(252, 245, 228), Color(250, 220, 121, 20)),
-        IssueSeverity.INFO to JBColor(Color(245, 251, 255), Color(143, 202, 234, 20))
+        IssueSeverity.BLOCKER to JBColor(Color(254, 228, 226), Color(128, 27, 20, 30)),
+        IssueSeverity.CRITICAL to JBColor(Color(254, 243, 242), Color(253, 162, 155, 30)),
+        IssueSeverity.MAJOR to JBColor(Color(255, 240, 235), Color(254, 150, 75, 30)),
+        IssueSeverity.MINOR to JBColor(Color(252, 245, 228), Color(250, 220, 121, 30)),
+        IssueSeverity.INFO to JBColor(Color(245, 251, 255), Color(143, 202, 234, 30))
     )
 
     val fontColorsBySeverity = mapOf(
@@ -204,11 +204,11 @@ object SonarLintIcons {
     )
 
     val backgroundColorsByImpact = mapOf(
-        ImpactSeverity.BLOCKER to JBColor(Color(254, 228, 226), Color(128, 27, 20, 20)),
-        ImpactSeverity.HIGH to JBColor(Color(254, 243, 242), Color(253, 162, 155, 20)),
-        ImpactSeverity.MEDIUM to JBColor(Color(255, 240, 235), Color(254, 150, 75, 20)),
-        ImpactSeverity.LOW to JBColor(Color(252, 245, 228), Color(250, 220, 121, 20)),
-        ImpactSeverity.INFO to JBColor(Color(245, 251, 255), Color(143, 202, 234, 20))
+        ImpactSeverity.BLOCKER to JBColor(Color(254, 228, 226), Color(128, 27, 20, 30)),
+        ImpactSeverity.HIGH to JBColor(Color(254, 243, 242), Color(253, 162, 155, 30)),
+        ImpactSeverity.MEDIUM to JBColor(Color(255, 240, 235), Color(254, 150, 75, 30)),
+        ImpactSeverity.LOW to JBColor(Color(252, 245, 228), Color(250, 220, 121, 30)),
+        ImpactSeverity.INFO to JBColor(Color(245, 251, 255), Color(143, 202, 234, 30))
     )
 
     val fontColorsByImpact = mapOf(
