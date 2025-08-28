@@ -113,8 +113,8 @@ class FindingsFilter(private val project: Project) {
         return FilteredFindings(
             issues = filterIssues(rawFindings.issues, criteria),
             hotspots = filterHotspots(rawFindings.hotspots, criteria),
-            taints = listOf(),
-            dependencyRisks = listOf()
+            taints = filterTaints(rawFindings.taints, criteria),
+            dependencyRisks = rawFindings.dependencyRisks
         )
     }
 
@@ -124,11 +124,24 @@ class FindingsFilter(private val project: Project) {
         // Flatten the per-file findings into lists
         val allIssues = findings.issuesPerFile.values.flatten()
         val allHotspots = findings.securityHotspotsPerFile.values.flatten()
-
+        
+        // Get the set of files that were analyzed in this specific analysis result
+        val analyzedFiles = mutableSetOf<VirtualFile>()
+        analyzedFiles.addAll(findings.issuesPerFile.keys)
+        analyzedFiles.addAll(findings.securityHotspotsPerFile.keys)
+        
+        // Load taints from their respective caches, filtered by analyzed files
+        val taintCache = getService(project, TaintVulnerabilitiesCache::class.java)
+        
+        // Filter taints to only include those for files that were part of this analysis
+        val filteredTaints = taintCache.taintVulnerabilities.filter { taint ->
+            taint.file() in analyzedFiles
+        }
+        
         return FilteredFindings(
             issues = allIssues,
             hotspots = allHotspots,
-            taints = listOf(),
+            taints = filteredTaints,
             dependencyRisks = listOf()
         )
     }

@@ -28,14 +28,17 @@ import javax.swing.event.TreeSelectionEvent
 import javax.swing.tree.TreeSelectionModel
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.EditorDecorator
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.FindingDetailsPanel
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.report.tree.ReportIssueTreeModelBuilder
 import org.sonarlint.intellij.ui.report.tree.ReportSecurityHotspotTreeModelBuilder
+import org.sonarlint.intellij.ui.report.tree.ReportTaintTreeModelBuilder
 import org.sonarlint.intellij.ui.tree.IssueTree
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree
+import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
 
 /**
  * Manages tree creation, configuration, and interaction for report panels.
@@ -61,7 +64,17 @@ class ReportTreeManager(
     val securityHotspotsTree = SecurityHotspotTree(project, securityHotspotsTreeBuilder.model)
     val oldSecurityHotspotsTree = SecurityHotspotTree(project, oldSecurityHotspotsTreeBuilder.model)
     
-    private val allTrees: List<Tree> = listOf(issuesTree, oldIssuesTree, securityHotspotsTree, oldSecurityHotspotsTree)
+    // Taint vulnerability trees
+    val taintsTreeBuilder = ReportTaintTreeModelBuilder(project, isOld = false)
+    val oldTaintsTreeBuilder = ReportTaintTreeModelBuilder(project, isOld = true)
+    val taintsTree = TaintVulnerabilityTree(project, taintsTreeBuilder.getTreeUpdater())
+    val oldTaintsTree = TaintVulnerabilityTree(project, oldTaintsTreeBuilder.getTreeUpdater())
+    
+    private val allTrees: List<Tree> = listOf(
+        issuesTree, oldIssuesTree, 
+        securityHotspotsTree, oldSecurityHotspotsTree,
+        taintsTree, oldTaintsTree
+    )
     
     init {
         setupTreeInteractions()
@@ -96,6 +109,12 @@ class ReportTreeManager(
         oldSecurityHotspotsTree.addTreeSelectionListener { event -> 
             handleHotspotSelection(event, oldSecurityHotspotsTree, getAllOtherTrees(oldSecurityHotspotsTree))
         }
+        taintsTree.addTreeSelectionListener { 
+            handleTaintSelection(taintsTree, getAllOtherTrees(taintsTree))
+        }
+        oldTaintsTree.addTreeSelectionListener { 
+            handleTaintSelection(oldTaintsTree, getAllOtherTrees(oldTaintsTree))
+        }
     }
     
     private fun getAllOtherTrees(excludeTree: Tree) = 
@@ -123,6 +142,16 @@ class ReportTreeManager(
         }
     }
     
+    private fun handleTaintSelection(tree: Tree, treesToClear: List<Tree>) {
+        clearOtherTreeSelections(tree, treesToClear)
+        val selectedTaintNodes = tree.getSelectedNodes(LocalTaintVulnerability::class.java, null)
+        if (selectedTaintNodes.isNotEmpty()) {
+            findingDetailsPanel.show(selectedTaintNodes[0], false)
+        } else {
+            clearSelection()
+        }
+    }
+    
     private fun clearOtherTreeSelections(activeTree: Tree, treesToClear: List<Tree>) {
         if (!activeTree.isSelectionEmpty) {
             treesToClear.forEach { it.clearSelection() }
@@ -138,6 +167,7 @@ class ReportTreeManager(
         runOnUiThread(project) {
             expandTreeIfSmall(issuesTree, issuesTreeBuilder.numberOfDisplayedFindings())
             expandTreeIfSmall(securityHotspotsTree, securityHotspotsTreeBuilder.numberOfDisplayedFindings())
+            expandTreeIfSmall(taintsTree, taintsTreeBuilder.numberOfDisplayedFindings())
         }
     }
     
@@ -155,8 +185,10 @@ class ReportTreeManager(
 
             issuesTree.isVisible = true
             securityHotspotsTree.isVisible = true
+            taintsTree.isVisible = true
             oldIssuesTree.isVisible = isFocusOnNewCode
             oldSecurityHotspotsTree.isVisible = isFocusOnNewCode
+            oldTaintsTree.isVisible = isFocusOnNewCode
         }
     }
     
@@ -165,6 +197,8 @@ class ReportTreeManager(
         oldIssuesTreeBuilder.clear()
         securityHotspotsTreeBuilder.clear()
         oldSecurityHotspotsTreeBuilder.clear()
+        taintsTreeBuilder.clear()
+        oldTaintsTreeBuilder.clear()
     }
 
 }

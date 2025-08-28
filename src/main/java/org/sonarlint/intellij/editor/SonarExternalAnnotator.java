@@ -85,8 +85,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         }
       });
 
+    var currentFile = psiFile.getVirtualFile();
     toolWindowService.getDisplayedFindings().getTaints().stream()
       .filter(vulnerability -> !vulnerability.isResolved() && (!isFocusOnNewCode || vulnerability.isOnNewCode()))
+      .filter(vulnerability -> currentFile.equals(vulnerability.file()))
       .forEach(vulnerability -> addAnnotation(vulnerability, holder));
   }
 
@@ -167,9 +169,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
     var textRange = vulnerability.getValidTextRange();
-    if (textRange == null) {
+    if (textRange == null || !vulnerability.isValid()) {
       return;
     }
+
     annotationHolder.newAnnotation(getSeverity(vulnerability.getHighestImpact(), vulnerability.severity()), vulnerability.message())
       .range(textRange)
       .withFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability))

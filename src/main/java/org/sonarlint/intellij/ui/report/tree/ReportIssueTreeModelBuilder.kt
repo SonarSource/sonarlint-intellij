@@ -49,7 +49,8 @@ class ReportIssueTreeModelBuilder(project: Project, isOld: Boolean) {
         val allIssues = findings.values.flatten()
         latestIssues = allIssues.toMutableList()
 
-        summaryNode.removeAllChildren()
+        // Clear existing model completely
+        clear()
 
         // Group by file first, then sort within each file
         val issuesByFile = allIssues.groupBy { it.file() }
@@ -68,8 +69,16 @@ class ReportIssueTreeModelBuilder(project: Project, isOld: Boolean) {
                 fileNode.add(IssueNode(issue))
             }
             
-            // Add file node to summary using sorted insertion by file name
-            summaryNode.insertFileNode(fileNode, compareBy { it.file().name })
+            // Add file node to summary - use simple add instead of insertFileNode to avoid conflicts
+            summaryNode.add(fileNode)
+        }
+
+        // Sort children after all nodes are added
+        if (summaryNode.childCount > 0) {
+            val children = (0 until summaryNode.childCount).map { summaryNode.getChildAt(it) as FileNode }
+            val sortedChildren = children.sortedWith(compareBy { it.file().name })
+            summaryNode.removeAllChildren()
+            sortedChildren.forEach { summaryNode.add(it) }
         }
 
         treeSummary.refresh(issuesByFile.size, allIssues.size)
