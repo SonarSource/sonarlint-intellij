@@ -36,6 +36,7 @@ import javax.swing.JButton
 import javax.swing.JSeparator
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
 /**
  * Filter panel component that provides various filtering and sorting controls for findings in the Current File tab.
@@ -81,7 +82,7 @@ class FiltersPanel(
     var filterText = ""
     var filterSeverity: SeverityImpactFilter = SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
     var filterStatus = StatusFilter.OPEN
-    private var sortMode = SortMode.DATE
+    private var sortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
 
     init {
         layout = BoxLayout(this, BoxLayout.X_AXIS)
@@ -171,8 +172,10 @@ class FiltersPanel(
         sortCombo.apply {
             toolTipText = "Sort findings by"
             maximumSize = Dimension(160, 30)
+            selectedItem = sortMode
             addActionListener { _ ->
                 sortMode = sortCombo.selectedItem as SortMode
+                getService(FilterSettingsService::class.java).setDefaultSortMode(sortMode)
                 onSortingChanged(sortMode)
                 onFilterChanged()
             }

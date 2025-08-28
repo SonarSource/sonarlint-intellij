@@ -28,8 +28,10 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
@@ -58,7 +60,7 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, isOldIssue).also {
         summaryNode = SummaryNode(it)
     }
-    private var sortMode: SortMode = SortMode.DATE
+    private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
 
     init {
         model = DefaultTreeModel(summaryNode).apply {

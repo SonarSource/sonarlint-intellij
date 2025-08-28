@@ -45,6 +45,7 @@ public final class SonarLintGlobalSettings {
 
   private boolean isFocusOnNewCode = false;
   private boolean isPromotionDisabled = false;
+  private String defaultSortMode = "DATE";
 
   private boolean autoTrigger = true;
   private boolean isRegionEnabled = false;
@@ -67,6 +68,7 @@ public final class SonarLintGlobalSettings {
   public SonarLintGlobalSettings(SonarLintGlobalSettings original) {
     this.isFocusOnNewCode = original.isFocusOnNewCode;
     this.isPromotionDisabled = original.isPromotionDisabled;
+    this.defaultSortMode = original.defaultSortMode;
     this.autoTrigger = original.autoTrigger;
     this.isRegionEnabled = original.isRegionEnabled;
     this.nodejsPath = original.nodejsPath;
@@ -99,19 +101,6 @@ public final class SonarLintGlobalSettings {
 
   public void setSecretsNeverBeenAnalysed(boolean secretsNeverBeenAnalysed) {
     this.secretsNeverBeenAnalysed = secretsNeverBeenAnalysed;
-  }
-
-  public boolean isTaintVulnerabilitiesTabDisclaimerDismissed() {
-    return taintVulnerabilitiesTabDisclaimerDismissed;
-  }
-
-  public void dismissTaintVulnerabilitiesTabDisclaimer() {
-    setTaintVulnerabilitiesTabDisclaimerDismissed(true);
-  }
-
-  // used for deserializing
-  public void setTaintVulnerabilitiesTabDisclaimerDismissed(boolean dismissed) {
-    this.taintVulnerabilitiesTabDisclaimerDismissed = dismissed;
   }
 
   public void setRuleParam(String ruleKey, String paramName, String paramValue) {
@@ -174,6 +163,14 @@ public final class SonarLintGlobalSettings {
 
   public void setFocusOnNewCode(boolean focusOnNewCode) {
     isFocusOnNewCode = focusOnNewCode;
+  }
+
+  public String getDefaultSortMode() {
+    return defaultSortMode;
+  }
+
+  public void setDefaultSortMode(String defaultSortMode) {
+    this.defaultSortMode = defaultSortMode;
   }
 
   public boolean isAutoTrigger() {

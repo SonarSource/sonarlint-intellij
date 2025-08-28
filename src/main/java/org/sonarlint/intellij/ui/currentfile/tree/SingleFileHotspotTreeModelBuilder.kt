@@ -25,8 +25,10 @@ import javax.swing.tree.DefaultTreeModel
 import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
@@ -46,7 +48,7 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
     }
     private var currentFile: VirtualFile? = null
     private var latestHotspots = mutableListOf<LiveSecurityHotspot>()
-    private var sortMode: SortMode = SortMode.DATE
+    private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
 
     init {
         model = DefaultTreeModel(summaryNode).apply {

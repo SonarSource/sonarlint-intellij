@@ -22,7 +22,9 @@ package org.sonarlint.intellij.ui.report.tree
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.DefaultTreeModel
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.FileNode
 import org.sonarlint.intellij.ui.nodes.IssueNode
@@ -33,7 +35,7 @@ import org.sonarlint.intellij.ui.tree.TreeContentKind
 class ReportIssueTreeModelBuilder(project: Project, isOld: Boolean) {
 
     val model: DefaultTreeModel
-    var sortMode: SortMode = SortMode.DATE
+    var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
     private val summaryNode: SummaryNode
     private val treeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, isOld)
     private var latestIssues = mutableListOf<LiveIssue>()

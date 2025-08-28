@@ -21,7 +21,9 @@ package org.sonarlint.intellij.ui.report.tree
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.CompactTreeModel
@@ -32,7 +34,7 @@ import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTreeUpda
 class ReportTaintTreeModelBuilder(project: Project, isOld: Boolean) {
 
     val model: CompactTreeModel
-    var sortMode: SortMode = SortMode.DATE
+    var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
     private val summaryNode: SummaryNode
     private val treeSummary = FindingTreeSummary(project, TreeContentKind.TAINT_VULNERABILITIES, isOld)
     private var latestTaints = mutableListOf<LocalTaintVulnerability>()

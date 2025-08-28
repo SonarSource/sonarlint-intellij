@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
 
-  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 12;
+  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 13;
   private static final String RULE = "rule";
   private static final String RULE1 = "rule1";
   private static final String PARAM = "param";
@@ -159,12 +159,12 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
     original.setNodejsPath("/usr/local/node");
     original.setHasWalkthroughRunOnce(true);
     original.setSecretsNeverBeenAnalysed(false);
-    original.setTaintVulnerabilitiesTabDisclaimerDismissed(true);
     original.setServerConnections(List.of(
       ServerConnection.newBuilder().setName("test-server").setHostUrl("http://localhost:9000").build()
     ));
     original.setFileExclusions(List.of("**/test/**"));
     original.setRules(List.of());
+    original.setDefaultSortMode("SEVERITY");
 
     var copy = new SonarLintGlobalSettings(original);
 
@@ -175,12 +175,11 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
     assertThat(copy.getNodejsPath()).isEqualTo(original.getNodejsPath());
     assertThat(copy.hasWalkthroughRunOnce()).isEqualTo(original.hasWalkthroughRunOnce());
     assertThat(copy.isSecretsNeverBeenAnalysed()).isEqualTo(original.isSecretsNeverBeenAnalysed());
-    assertThat(copy.isTaintVulnerabilitiesTabDisclaimerDismissed())
-      .isEqualTo(original.isTaintVulnerabilitiesTabDisclaimerDismissed());
     assertThat(copy.getServerConnections()).isEqualTo(original.getServerConnections());
     assertThat(copy.getFileExclusions()).isEqualTo(original.getFileExclusions());
     assertThat(copy.getRules()).isEqualTo(original.getRules());
     assertThat(copy.getRulesByKey()).isEqualTo(original.getRulesByKey());
+    assertThat(copy.getDefaultSortMode()).isEqualTo(original.getDefaultSortMode());
   }
 
   @Test
