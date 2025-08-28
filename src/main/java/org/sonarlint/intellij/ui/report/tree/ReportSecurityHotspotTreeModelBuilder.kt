@@ -49,7 +49,8 @@ class ReportSecurityHotspotTreeModelBuilder(project: Project, isOld: Boolean) {
         val allHotspots = findings.values.flatten()
         latestHotspots = allHotspots.toMutableList()
 
-        summaryNode.removeAllChildren()
+        // Clear existing model completely
+        clear()
 
         // Group by file first, then sort within each file
         val hotspotsByFile = allHotspots.groupBy { it.file() }
@@ -68,8 +69,16 @@ class ReportSecurityHotspotTreeModelBuilder(project: Project, isOld: Boolean) {
                 fileNode.add(LiveSecurityHotspotNode(hotspot, true))
             }
             
-            // Add file node to summary using sorted insertion by file name
-            summaryNode.insertFileNode(fileNode, compareBy { it.file().name })
+            // Add file node to summary - use simple add instead of insertFileNode to avoid conflicts
+            summaryNode.add(fileNode)
+        }
+
+        // Sort children after all nodes are added
+        if (summaryNode.childCount > 0) {
+            val children = (0 until summaryNode.childCount).map { summaryNode.getChildAt(it) as FileNode }
+            val sortedChildren = children.sortedWith(compareBy { it.file().name })
+            summaryNode.removeAllChildren()
+            sortedChildren.forEach { summaryNode.add(it) }
         }
 
         treeSummary.refresh(hotspotsByFile.size, allHotspots.size)

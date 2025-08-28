@@ -60,7 +60,7 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
             SINGLE_FILE_FORMAT.format(
                 findingsCount,
                 newOrOldOrNothing,
-                pluralize(treeContentKind.displayName, findingsCount),
+                pluralizeFindingType(findingsCount),
                 sinceText
             )
         } else {
@@ -68,7 +68,7 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
             MULTI_FILE_FORMAT.format(
                 findingsCount,
                 newOrOldOrNothing,
-                pluralize(treeContentKind.displayName, findingsCount),
+                pluralizeFindingType(findingsCount),
                 filesCount,
                 pluralize("file", filesCount),
                 sinceText
@@ -79,15 +79,19 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
     private fun computeEmptyText(newCodePeriod: String): String {
         if (isFocusOnNewCode()) {
             return if (holdsOldFindings) {
-                "No older ${treeContentKind.displayName}s"
+                "No older ${treeContentKind.displayNamePlural}"
             } else {
-                "No new ${treeContentKind.displayName}s $newCodePeriod"
+                "No new ${treeContentKind.displayNamePlural} $newCodePeriod"
             }
         }
-        return "No ${treeContentKind.displayName}s to display"
+        return "No ${treeContentKind.displayNamePlural} to display"
     }
 
     private fun isFocusOnNewCode() = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
+
+    private fun pluralizeFindingType(count: Int): String {
+        return if (count == 1) treeContentKind.displayName else treeContentKind.displayNamePlural
+    }
 
     companion object {
         private const val DEFAULT_EMPTY_TEXT = "No analysis done"

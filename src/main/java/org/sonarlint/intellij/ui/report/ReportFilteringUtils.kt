@@ -23,6 +23,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.filter.FilteredFindings
 
 object ReportFilteringUtils {
@@ -43,7 +44,7 @@ object ReportFilteringUtils {
     /**
      * Splits findings into new/old code collections when focus on new code is enabled.
      */
-    fun splitFindingsByCodeAge(findings: LiveFindings): SplitFindings {
+    fun splitFindingsByCodeAge(findings: LiveFindings, taints: List<LocalTaintVulnerability>): SplitFindings {
         val oldHotspots = findings.securityHotspotsPerFile
             .mapValues { (_, hotspots) -> hotspots.filter { !it.isOnNewCode() } }
             .filterValues { it.isNotEmpty() }
@@ -60,18 +61,31 @@ object ReportFilteringUtils {
             .mapValues { (_, issues) -> issues.filter { it.isOnNewCode() } }
             .filterValues { it.isNotEmpty() }
         
-        return SplitFindings(newIssues, oldIssues, newHotspots, oldHotspots)
+        val oldTaints = taints
+            .filter { !it.isOnNewCode() && it.file() != null }
+            .groupBy { it.file()!! }
+            .filterValues { it.isNotEmpty() }
+            
+        val newTaints = taints
+            .filter { it.isOnNewCode() && it.file() != null }
+            .groupBy { it.file()!! }
+            .filterValues { it.isNotEmpty() }
+        
+        return SplitFindings(newIssues, oldIssues, newHotspots, oldHotspots, newTaints, oldTaints)
     }
     
     /**
      * Creates empty collections for when no focus on new code is enabled.
      */
-    fun createNoFocusSplit(findings: LiveFindings): SplitFindings {
+    fun createNoFocusSplit(findings: LiveFindings, taints: List<LocalTaintVulnerability>): SplitFindings {
+        val taintsByFile = taints.filter { it.file() != null }.groupBy { it.file()!! }
         return SplitFindings(
             newIssues = findings.issuesPerFile,
             oldIssues = emptyMap(),
             newHotspots = findings.securityHotspotsPerFile,
-            oldHotspots = emptyMap()
+            oldHotspots = emptyMap(),
+            newTaints = taintsByFile,
+            oldTaints = emptyMap()
         )
     }
 
@@ -84,5 +98,7 @@ data class SplitFindings(
     val newIssues: Map<VirtualFile, Collection<LiveIssue>>,
     val oldIssues: Map<VirtualFile, Collection<LiveIssue>>,
     val newHotspots: Map<VirtualFile, Collection<LiveSecurityHotspot>>,
-    val oldHotspots: Map<VirtualFile, Collection<LiveSecurityHotspot>>
+    val oldHotspots: Map<VirtualFile, Collection<LiveSecurityHotspot>>,
+    val newTaints: Map<VirtualFile, Collection<LocalTaintVulnerability>>,
+    val oldTaints: Map<VirtualFile, Collection<LocalTaintVulnerability>>
 )
