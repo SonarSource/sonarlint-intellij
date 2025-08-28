@@ -204,6 +204,7 @@ intellijPlatform {
             property("sonar.sca.exclusions", "its/projects/**")
             // Fix deprecated implicit compilation
             property("sonar.gradle.skipCompile", "true")
+            property("sonar.organization", "sonarsource")
         }
     }
 
