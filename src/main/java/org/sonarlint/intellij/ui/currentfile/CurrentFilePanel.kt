@@ -319,9 +319,9 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     private fun setupToolbar() {
         setToolbar(listOf(
             SonarLintActions.getInstance().analyzeCurrentFileAction(),
+            SonarLintActions.getInstance().cancelAnalysis(),
             SonarLintActions.getInstance().analyzeChangedFiles(),
             SonarLintActions.getInstance().analyzeAllFiles(),
-            SonarLintActions.getInstance().cancelAnalysis(),
             SonarLintActions.getInstance().configure(),
             SonarLintActions.getInstance().clearIssues()
         ))
