@@ -302,15 +302,13 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
     }
 
     private fun updateHeader(ruleDetails: EffectiveRuleDetailsDto) {
-        ruleNameLabel.text = StringEscapeUtils.escapeHtml4(ruleDetails.name)
-        ruleNameLabel.setCopyable(true)
+        setLabelText(ruleDetails.name)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
         headerPanel.updateForServerIssue(ruleDetails)
     }
 
     private fun updateHeader(finding: Finding?, issueDetails: EffectiveIssueDetailsDto) {
-        ruleNameLabel.text = StringEscapeUtils.escapeHtml4(issueDetails.name)
-        ruleNameLabel.setCopyable(true)
+        setLabelText(issueDetails.name)
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
         when (finding) {
             null -> headerPanel.updateForServerIssue(issueDetails)
@@ -344,6 +342,14 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
             }
 
             else -> headerPanel.updateForIssue(project, issueDetails.severityDetails, issueDetails.ruleKey, finding as Issue)
+        }
+    }
+
+    private fun setLabelText(input: String?) {
+        ruleNameLabel.apply {
+            text = StringEscapeUtils.escapeHtml4(input)
+            setCopyable(true)
+            setAllowAutoWrapping(true)
         }
     }
 
