@@ -40,6 +40,11 @@ import org.sonarlint.intellij.ui.filter.SortMode
 interface SingleFileTreeModelBuilder<T: Finding> {
 
     fun updateModel(file: VirtualFile?, findings: List<T>)
+    
+    fun updateModelWithScope(file: VirtualFile?, findings: List<T>, showFileNames: Boolean) {
+        // Default implementation for backward compatibility
+        updateModel(file, findings)
+    }
     fun getTreeModel(): TreeModel
     fun findFindingByKey(key: String): T?
     fun isEmpty(): Boolean
@@ -47,5 +52,9 @@ interface SingleFileTreeModelBuilder<T: Finding> {
     fun setSortMode(mode: SortMode)
     fun getSummaryUiModel(): SummaryUiModel
     fun removeFinding(finding: T)
+    
+    fun setScopeSuffix(suffix: String) {
+        // Default implementation - do nothing
+    }
 
 }

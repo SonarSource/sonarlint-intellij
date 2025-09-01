@@ -162,7 +162,9 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private fun createFiltersPanel() = FiltersPanel(
         onFilterChanged = ::refreshFilteredView,
         onSortingChanged = ::handleSortingChange,
-        onFocusOnNewCodeChanged = ::handleFocusOnNewCodeChange
+        onFocusOnNewCodeChanged = ::handleFocusOnNewCodeChange,
+        onScopeModeChanged = { /* No action needed for Report tab */ },
+        showScopeFilter = false // Hide scope filter in Report tab
     )
     
     private fun handleSortingChange(sortMode: SortMode) {

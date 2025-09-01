@@ -25,12 +25,13 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
-import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -41,8 +42,6 @@ import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
-import java.net.URI
-import java.util.concurrent.ConcurrentHashMap
 
 class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerListener {
     private var selectedFile: VirtualFile? = null
@@ -148,8 +147,12 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
     }
 
-    fun getFindingsForFile(file: VirtualFile): Collection<LiveFinding> {
-        return currentIssuesPerOpenFile[file]?.plus(currentSecurityHotspotsPerOpenFile[file] ?: emptyList()) ?: emptyList()
+    fun getAllIssues(): Collection<LiveIssue> {
+        return currentIssuesPerOpenFile.values.flatten()
+    }
+
+    fun getAllHotspots(): Collection<LiveSecurityHotspot> {
+        return currentSecurityHotspotsPerOpenFile.values.flatten()
     }
 
     fun getIssuesForFile(file: VirtualFile): Collection<LiveIssue> {

@@ -30,6 +30,7 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
 import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
+import org.sonarlint.intellij.ui.nodes.FileNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -49,6 +50,7 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
     private var currentFile: VirtualFile? = null
     private var latestHotspots = mutableListOf<LiveSecurityHotspot>()
     private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
+    private var actualFindingsCount: Int = 0
 
     init {
         model = DefaultTreeModel(summaryNode).apply {
@@ -57,7 +59,7 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
     }
 
     override fun numberOfDisplayedFindings(): Int {
-        return summaryNode.childCount
+        return actualFindingsCount
     }
 
     override fun getTreeModel(): DefaultTreeModel {
@@ -69,6 +71,10 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
     }
 
     override fun updateModel(file: VirtualFile?, findings: List<LiveSecurityHotspot>) {
+        updateModelWithScope(file, findings, false)
+    }
+
+    override fun updateModelWithScope(file: VirtualFile?, findings: List<LiveSecurityHotspot>, showFileNames: Boolean) {
         latestHotspots = findings.toMutableList()
         currentFile = file
 
@@ -81,11 +87,31 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
             else -> findings.sortedBy { it.validTextRange?.startOffset }
         }
 
-        for (hotspot in sortedHotspots) {
-            summaryNode.add(LiveSecurityHotspotNode(hotspot, true))
+        if (showFileNames && sortedHotspots.isNotEmpty()) {
+            // Group by file and create file nodes
+            val hotspotsByFile = sortedHotspots.groupBy { it.file() }
+            val sortedFiles = hotspotsByFile.keys.sortedBy { it.name }
+            
+            for (fileKey in sortedFiles) {
+                val fileHotspots = hotspotsByFile[fileKey] ?: continue
+                val fileNode = FileNode(fileKey, true) // true = security hotspot
+                
+                for (hotspot in fileHotspots) {
+                    fileNode.add(LiveSecurityHotspotNode(hotspot, false)) // false = don't append filename since it's already in parent
+                }
+                
+                summaryNode.add(fileNode)
+            }
+        } else {
+            // Original flat structure - append filename when not grouped by file
+            for (hotspot in sortedHotspots) {
+                summaryNode.add(LiveSecurityHotspotNode(hotspot, true))
+            }
         }
 
-        treeSummary.refresh(1, sortedHotspots.size)
+        // Store the actual count of findings, not file nodes
+        actualFindingsCount = sortedHotspots.size
+        treeSummary.refresh(if (showFileNames) summaryNode.childCount else 1, sortedHotspots.size)
         model.nodeStructureChanged(summaryNode)
     }
 
@@ -108,6 +134,10 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
 
     override fun setSortMode(mode: SortMode) {
         sortMode = mode
+    }
+
+    override fun setScopeSuffix(suffix: String) {
+        (treeSummary as? FindingTreeSummary)?.setScopeSuffix(suffix)
     }
 
     override fun removeFinding(finding: LiveSecurityHotspot) {
