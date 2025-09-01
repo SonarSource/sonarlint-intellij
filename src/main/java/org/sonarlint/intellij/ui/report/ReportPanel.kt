@@ -29,14 +29,18 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
+import com.intellij.util.ui.AsyncProcessIcon
 import com.intellij.util.ui.StatusText
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Dimension
+import java.awt.FlowLayout
 import javax.swing.Box
 import javax.swing.JScrollPane
+import javax.swing.SwingConstants
 import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.actions.ShowReportFiltersAction
 import org.sonarlint.intellij.analysis.AnalysisResult
@@ -89,6 +93,21 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     // State
     private var lastAnalysisResult: AnalysisResult? = null
     private var filteredFindingsCache = FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
+    private var isLoadingState = false
+    private var expectedModuleCount = 1
+    private var receivedModuleCount = 0
+    
+    // Loading UI components
+    private var loadingPanel: JBPanel<*>? = null
+    private var loadingIcon: AsyncProcessIcon? = null
+    private var loadingMainLabel: JBLabel? = null
+    private var loadingProgressLabel: JBLabel? = null
+    private var loadingStatusLabel: JBLabel? = null
+    
+    // Analysis status components (persistent during multi-module analysis)
+    private var analysisStatusPanel: JBPanel<*>? = null
+    private var analysisStatusIcon: AsyncProcessIcon? = null
+    private var analysisStatusLabel: JBLabel? = null
 
     init {
         initializeUI()
@@ -97,6 +116,11 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
 
     fun updateFindings(analysisResult: AnalysisResult) {
         if (project.isDisposed) return
+
+        // Update progress if in loading state
+        if (isLoadingState) {
+            updateLoadingProgress()
+        }
 
         lastAnalysisResult = analysisResult
         val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
@@ -108,6 +132,19 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         treeManager.configureTreeVisibility(isFocusOnNewCode)
         treeManager.expandTrees()
 
+        // Transition from loading to results
+        if (isLoadingState) {
+            hideLoadingPanel()
+            isLoadingState = false
+        }
+        
+        // Show/update ongoing analysis status if not all modules are complete
+        if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
+            showAnalysisStatusPanel()
+        } else {
+            hideAnalysisStatusPanel()
+        }
+        
         showFindingsState()
     }
 
@@ -121,6 +158,51 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
 
     fun refreshView() {
         lastAnalysisResult?.let(::updateFindings) ?: showEmptyState()
+    }
+    
+    /**
+     * Shows the loading state with a spinner and progress information.
+     */
+    fun showLoadingState(expectedModules: Int = 1) {
+        isLoadingState = true
+        expectedModuleCount = expectedModules
+        receivedModuleCount = 0
+        
+        createLoadingPanel()
+        showLoadingPanel()
+    }
+    
+    /**
+     * Updates the loading progress when a module completes analysis.
+     */
+    fun updateLoadingProgress() {
+        receivedModuleCount++
+        updateLoadingText()
+        
+        // Update analysis status panel if it exists
+        if (analysisStatusPanel != null) {
+            updateAnalysisStatusText()
+        }
+        
+        // If all modules are complete, we'll transition to results when updateFindings is called
+    }
+    
+    /**
+     * Updates the analysis progress with explicit counts from the callback.
+     */
+    fun updateAnalysisProgress(completedModules: Int, expectedModules: Int) {
+        receivedModuleCount = completedModules
+        expectedModuleCount = expectedModules
+        
+        // Update loading text if in loading state
+        if (isLoadingState) {
+            updateLoadingText()
+        }
+        
+        // Update analysis status panel if it exists
+        if (analysisStatusPanel != null) {
+            updateAnalysisStatusText()
+        }
     }
     
     /**
@@ -347,7 +429,189 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         }
     }
 
+        private fun createLoadingPanel() {
+        loadingIcon = AsyncProcessIcon("SonarLint Analysis").apply {
+            isVisible = true
+        }
+
+        loadingMainLabel = JBLabel("Analyzing files...").apply {
+            font = font.deriveFont(16f)
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
+        loadingProgressLabel = JBLabel(getProgressText()).apply {
+            font = font.deriveFont(13f)
+            foreground = UIUtil.getContextHelpForeground()
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
+        loadingStatusLabel = JBLabel(getAnalysisStatusText()).apply {
+            font = font.deriveFont(11f)
+            foreground = UIUtil.getContextHelpForeground()
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
+        loadingPanel = JBPanel<ReportPanel>(BorderLayout()).apply {
+            background = UIUtil.getPanelBackground()
+
+            // Create a centered content panel
+            val contentPanel = JBPanel<ReportPanel>(VerticalFlowLayout(0, 15)).apply {
+                background = UIUtil.getPanelBackground()
+
+                // Center the spinner horizontally
+                val spinnerPanel = JBPanel<ReportPanel>(FlowLayout(FlowLayout.CENTER)).apply {
+                    background = UIUtil.getPanelBackground()
+                    add(loadingIcon!!)
+                }
+
+                add(spinnerPanel)
+                add(loadingMainLabel!!)
+                add(loadingProgressLabel!!)
+                add(loadingStatusLabel!!)
+            }
+
+            // Center the content panel both horizontally and vertically
+            val wrapperPanel = JBPanel<ReportPanel>(BorderLayout()).apply {
+                background = UIUtil.getPanelBackground()
+                add(contentPanel, BorderLayout.CENTER)
+            }
+
+            add(wrapperPanel, BorderLayout.CENTER)
+        }
+    }
+    
+    private fun showLoadingPanel() {
+        loadingPanel?.let { panel ->
+            findingsPanel.removeAll()
+            findingsPanel.add(panel, BorderLayout.CENTER)
+            findingsPanel.revalidate()
+            findingsPanel.repaint()
+        }
+    }
+    
+    private fun hideLoadingPanel() {
+        // Dispose and clear all loading references
+        loadingIcon?.dispose()
+        loadingIcon = null
+        loadingPanel = null
+        loadingMainLabel = null
+        loadingProgressLabel = null
+        loadingStatusLabel = null
+        
+        // Restore original content
+        findingsPanel.removeAll()
+        findingsPanel.add(findingsTreePane, BorderLayout.CENTER)
+        findingsPanel.add(whatsNewPanel, BorderLayout.SOUTH)
+        findingsPanel.revalidate()
+        findingsPanel.repaint()
+    }
+    
+    private fun updateLoadingText() {
+        loadingProgressLabel?.text = getProgressText()
+        loadingStatusLabel?.text = getAnalysisStatusText()
+        
+        // Force repaint
+        loadingPanel?.let { panel ->
+            panel.revalidate()
+            panel.repaint()
+        }
+    }
+    
+    private fun getProgressText(): String {
+        return if (expectedModuleCount > 1) {
+            "Analyzing modules ($receivedModuleCount/$expectedModuleCount completed)..."
+        } else {
+            "Analyzing files..."
+        }
+    }
+    
+    private fun getAnalysisStatusText(): String {
+        return if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
+            val remaining = expectedModuleCount - receivedModuleCount
+            "Analysis ongoing • $remaining ${if (remaining == 1) "module" else "modules"} remaining"
+        } else if (expectedModuleCount > 1) {
+            "Finalizing results..."
+        } else {
+            "Preparing analysis..."
+        }
+    }
+
+    private fun createAnalysisStatusPanel() {
+        analysisStatusIcon = AsyncProcessIcon("Analysis Status").apply {
+            isVisible = true
+        }
+        
+        analysisStatusLabel = JBLabel(getAnalysisStatusText()).apply {
+            font = font.deriveFont(12f)
+            foreground = UIUtil.getContextHelpForeground()
+        }
+        
+        analysisStatusPanel = JBPanel<ReportPanel>(FlowLayout(FlowLayout.LEFT, 8, 4)).apply {
+            background = UIUtil.getListBackground()
+            add(analysisStatusIcon!!)
+            add(analysisStatusLabel!!)
+        }
+    }
+    
+    private fun showAnalysisStatusPanel() {
+        if (analysisStatusPanel == null) {
+            createAnalysisStatusPanel()
+        }
+        
+        analysisStatusPanel?.let { panel ->
+            // Add to header if not already present
+            if (!headerCardPanel.isAncestorOf(panel)) {
+                val headerPanel = headerCardPanel.components.filterIsInstance<JBPanel<*>>().firstOrNull()
+                headerPanel?.add(panel, 0) // Add at the top
+                headerCardPanel.revalidate()
+                headerCardPanel.repaint()
+            }
+            
+            // Always update the status text when showing
+            updateAnalysisStatusText()
+        }
+    }
+    
+    private fun hideAnalysisStatusPanel() {
+        analysisStatusPanel?.let { panel ->
+            val headerPanel = headerCardPanel.components.filterIsInstance<JBPanel<*>>().firstOrNull()
+            headerPanel?.remove(panel)
+            headerCardPanel.revalidate()
+            headerCardPanel.repaint()
+        }
+        
+        // Dispose and clear references
+        analysisStatusIcon?.dispose()
+        analysisStatusIcon = null
+        analysisStatusPanel = null
+        analysisStatusLabel = null
+    }
+    
+    private fun updateAnalysisStatusText() {
+        analysisStatusLabel?.text = getAnalysisStatusText()
+        
+        // Force repaint to ensure the text update is visible
+        analysisStatusPanel?.let { panel ->
+            panel.revalidate()
+            panel.repaint()
+        }
+    }
+
     override fun dispose() {
+        loadingIcon?.dispose()
+        analysisStatusIcon?.dispose()
+        
+        // Clear all references
+        loadingPanel = null
+        loadingIcon = null
+        loadingMainLabel = null
+        loadingProgressLabel = null
+        loadingStatusLabel = null
+        
+        analysisStatusPanel = null
+        analysisStatusIcon = null
+        analysisStatusLabel = null
+        
         lastAnalysisResult = null
     }
 

@@ -54,8 +54,8 @@ class AnalysisSubmitter(private val project: Project) {
 
     fun analyzeAllFiles() {
         runOnPooledThread(project) {
-            val callback = ShowReportCallable(project)
             val modules = ModuleManager.getInstance(project).modules
+            val callback = ShowReportCallable(project, modules.size)
             val taskState = createGlobalTaskIfNeeded("Analyzing all projects files", modules.size, true)
             modules.forEach { module ->
                 getService(BackendService::class.java).analyzeFullProject(module).thenAccept { response ->
@@ -71,8 +71,8 @@ class AnalysisSubmitter(private val project: Project) {
 
     fun analyzeVcsChangedFiles() {
         runOnPooledThread(project) {
-            val callback = ShowReportCallable(project)
             val modules = ModuleManager.getInstance(project).modules
+            val callback = ShowReportCallable(project, modules.size)
             val taskState = createGlobalTaskIfNeeded("Analyzing VCS changed files", modules.size, false)
             modules.forEach { module ->
                 getService(BackendService::class.java).analyzeVCSChangedFiles(module).thenAccept { response ->
@@ -126,14 +126,17 @@ class AnalysisSubmitter(private val project: Project) {
 
     fun analyzeFilesOnUserAction(files: Set<VirtualFile>, actionEvent: AnActionEvent) {
         runOnPooledThread(project) {
-            val callback = if (TOOL_WINDOW_ID == actionEvent.place) {
-                ShowUpdatedCurrentFileCallable(project, onTheFlyFindingsHolder)
-            } else {
-                ShowReportCallable(project)
-            }
             val filesByModule = files.groupBy { file ->
                 findModuleForFile(file, project)
             }
+            val moduleCount = filesByModule.keys.filterNotNull().size
+            
+            val callback = if (TOOL_WINDOW_ID == actionEvent.place) {
+                ShowUpdatedCurrentFileCallable(project, onTheFlyFindingsHolder)
+            } else {
+                ShowReportCallable(project, moduleCount)
+            }
+            
             val taskState = createGlobalTaskIfNeeded("Analyzing files", filesByModule.size, true)
             filesByModule.forEach { (module, files) ->
                 module?.let {

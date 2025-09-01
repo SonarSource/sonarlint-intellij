@@ -52,23 +52,63 @@ class ReportTabManager(private val project: Project) {
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm")
     
     /**
+     * Creates a report tab immediately with loading state for the given batch.
+     * This provides immediate feedback to the user that analysis has started.
+     */
+    @Synchronized
+    fun createLoadingReportTab(batchId: String, expectedModuleCount: Int = 1): String? {
+        val existingTabTitle = batchToTabTitle[batchId]
+        if (existingTabTitle != null) {
+            // Tab already exists, just return the title
+            return existingTabTitle
+        }
+        
+        val toolWindow = getToolWindow() ?: return null
+        val contentManager = toolWindow.contentManager
+        
+        val timestamp = LocalDateTime.now()
+        val tabTitle = "Report - ${dateFormatter.format(timestamp)}"
+        
+        // Create new report panel in loading state
+        val reportPanel = ReportPanel(project)
+        reportPanel.showLoadingState(expectedModuleCount)
+        
+        // Create and add content to tool window
+        val content = contentManager.factory.createContent(reportPanel, tabTitle, false).apply {
+            isCloseable = true
+            putUserData(REPORT_TAB_KEY, tabTitle)
+        }
+        
+        contentManager.addContent(content)
+        contentManager.setSelectedContent(content)
+        
+        // Store reference to panel and batch mapping
+        reportTabs[tabTitle] = reportPanel
+        batchToTabTitle[batchId] = tabTitle
+
+        toolWindow.show()
+        
+        return tabTitle
+    }
+
+    /**
      * Updates an existing report tab or creates a new one for the given batch.
      * This allows incremental updates as analysis results become available.
      */
     @Synchronized
-    fun updateOrCreateReportTab(batchId: String, analysisResult: AnalysisResult): String? {
+    fun updateOrCreateReportTab(batchId: String, analysisResult: AnalysisResult, completedModules: Int = 1, expectedModules: Int = 1): String? {
         val existingTabTitle = batchToTabTitle[batchId]
         
         return if (existingTabTitle != null) {
             // Update existing tab
-            val reportPanel = reportTabs[existingTabTitle]
-            reportPanel?.let { panel ->
-                // Merge new results with existing results
+            reportTabs[existingTabTitle]?.let { panel ->
+                // Update progress and merge new results with existing results
+                panel.updateAnalysisProgress(completedModules, expectedModules)
                 panel.mergeAnalysisResults(analysisResult)
                 existingTabTitle
             }
         } else {
-            // Create new tab
+            // Create new tab (fallback if loading tab wasn't created)
             createReportTab(analysisResult, batchId)
         }
     }
