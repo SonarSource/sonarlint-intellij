@@ -122,7 +122,7 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
         findingDetailsPanel = FindingDetailsPanel(project, this, FindingKind.ISSUE)
     }
 
-    fun setToolbar(actions: List<AnAction>) {
+    fun setToolbar(actions: List<AnAction?>) {
         mainToolbar = ActionManager.getInstance().createActionToolbar(TOOL_WINDOW_ID, createActionGroup(actions), false)
         mainToolbar.targetComponent = this
         val box = Box.createHorizontalBox()
@@ -131,9 +131,15 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
         mainToolbar.component.isVisible = true
     }
 
-    private fun createActionGroup(actions: List<AnAction>): ActionGroup {
+    private fun createActionGroup(actions: List<AnAction?>): ActionGroup {
         val actionGroup = DefaultActionGroup()
-        actions.forEach { action -> actionGroup.add(action) }
+        actions.forEach { action -> 
+            if (action != null) {
+                actionGroup.add(action)
+            } else {
+                actionGroup.addSeparator()
+            }
+        }
         return actionGroup
     }
 

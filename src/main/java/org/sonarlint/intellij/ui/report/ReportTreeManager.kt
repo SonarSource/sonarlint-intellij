@@ -171,6 +171,26 @@ class ReportTreeManager(
         }
     }
     
+    fun expandAllTrees() {
+        runOnUiThread(project) {
+            allTrees.forEach { tree ->
+                if (tree.isVisible && tree.model.root != null) {
+                    TreeUtil.expandAll(tree)
+                }
+            }
+        }
+    }
+    
+    fun collapseTrees() {
+        runOnUiThread(project) {
+            allTrees.forEach { tree ->
+                if (tree.isVisible && tree.model.root != null) {
+                    TreeUtil.collapseAll(tree, 0)
+                }
+            }
+        }
+    }
+    
     private fun expandTreeIfSmall(tree: Tree, findingsCount: Int) {
         if (findingsCount < TREE_EXPANSION_THRESHOLD) {
             TreeUtil.expandAll(tree)

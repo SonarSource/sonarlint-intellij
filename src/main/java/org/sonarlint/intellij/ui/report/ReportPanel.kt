@@ -42,7 +42,6 @@ import javax.swing.Box
 import javax.swing.JScrollPane
 import javax.swing.SwingConstants
 import org.sonarlint.intellij.actions.RestartBackendAction
-import org.sonarlint.intellij.actions.ShowReportFiltersAction
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -241,6 +240,36 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         showEmptyState()
     }
     
+    private fun createToolbar() {
+        val actions = listOf(
+            SonarLintActions.getInstance().analyzeAllFiles(),
+            SonarLintActions.getInstance().analyzeChangedFiles(),
+            // Separator
+            null,
+            SonarLintActions.getInstance().expandAllTreesAction(),
+            SonarLintActions.getInstance().collapseAllTreesAction(),
+            null,
+            SonarLintActions.getInstance().configure()
+        )
+
+        val actionGroup = DefaultActionGroup()
+        actions.forEach { action ->
+            if (action == null) {
+                actionGroup.addSeparator()
+            } else {
+                actionGroup.add(action)
+            }
+        }
+        
+        val toolbar = ActionManager.getInstance().createActionToolbar(TOOL_WINDOW_ID, actionGroup, false)
+        toolbar.targetComponent = this
+        
+        val box = Box.createHorizontalBox()
+        box.add(toolbar.component)
+        setToolbar(box)
+        toolbar.component.isVisible = true
+    }
+    
     private fun createFiltersPanel() = FiltersPanel(
         onFilterChanged = ::refreshFilteredView,
         onSortingChanged = ::handleSortingChange,
@@ -298,23 +327,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
             putClientProperty("JComponent.roundRect", true)
             add(headerPanel, BorderLayout.CENTER)
         }
-    }
-    
-    private fun createToolbar() {
-        val actionGroup = DefaultActionGroup().apply {
-            add(ShowReportFiltersAction(this@ReportPanel))
-            add(SonarLintActions.getInstance().configure())
-        }
-        
-        mainToolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_ID, actionGroup, false)
-        mainToolbar.targetComponent = this
-        
-        val toolBarBox = Box.createHorizontalBox().apply {
-            add(mainToolbar.component)
-        }
-        
-        super.setToolbar(toolBarBox)
-        mainToolbar.component.isVisible = true
     }
     
     private fun configureLayout() {
@@ -595,6 +607,14 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
             panel.revalidate()
             panel.repaint()
         }
+    }
+
+    fun expandAllTrees() {
+        treeManager.expandAllTrees()
+    }
+    
+    fun collapseAllTrees() {
+        treeManager.collapseTrees()
     }
 
     override fun dispose() {
