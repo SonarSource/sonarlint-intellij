@@ -222,7 +222,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         val actionGroup = DefaultActionGroup().apply {
             add(ShowReportFiltersAction(this@ReportPanel))
             add(SonarLintActions.getInstance().configure())
-            add(SonarLintActions.getInstance().clearReport())
         }
         
         mainToolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_ID, actionGroup, false)

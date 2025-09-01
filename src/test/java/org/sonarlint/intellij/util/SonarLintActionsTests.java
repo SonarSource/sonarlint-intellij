@@ -46,11 +46,9 @@ class SonarLintActionsTests extends AbstractSonarLintLightTests {
   @Test
   void should_create_actions() {
     assertActionFields(instance.analyzeAllFiles());
-    assertActionFields(instance.clearReport());
     assertAction(instance.configure());
     assertAction(instance.cancelAnalysis());
     assertActionFields(instance.analyzeChangedFiles());
-    assertActionFields(instance.clearReport());
     assertActionFields(instance.clearIssues());
     assertActionFields(instance.cleanConsole());
     assertActionFields(instance.includeResolvedIssuesAction());

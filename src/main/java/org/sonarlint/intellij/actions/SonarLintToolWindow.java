@@ -71,11 +71,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     reportTabManager.createReportTab(analysisResult);
   }
 
-  public void clearReportTab() {
-    var reportTabManager = getService(project, ReportTabManager.class);
-    reportTabManager.closeAllReportTabs();
-  }
-
   private <T> void updateCurrentFileTab(Consumer<T> tabPanelConsumer) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
