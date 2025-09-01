@@ -42,6 +42,7 @@ import javax.swing.Box
 import javax.swing.JScrollPane
 import javax.swing.SwingConstants
 import org.sonarlint.intellij.actions.RestartBackendAction
+import org.sonarlint.intellij.actions.ShowReportFiltersAction
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -242,9 +243,11 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     
     private fun createToolbar() {
         val actions = listOf(
+            ShowReportFiltersAction(this@ReportPanel),
+            // Separator
+            null,
             SonarLintActions.getInstance().analyzeAllFiles(),
             SonarLintActions.getInstance().analyzeChangedFiles(),
-            // Separator
             null,
             SonarLintActions.getInstance().expandAllTreesAction(),
             SonarLintActions.getInstance().collapseAllTreesAction(),
