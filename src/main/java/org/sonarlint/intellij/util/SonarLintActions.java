@@ -27,6 +27,8 @@ import com.intellij.openapi.components.Service;
 import com.intellij.serviceContainer.NonInjectable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
+import org.sonarlint.intellij.actions.CollapseAllTreesAction;
+import org.sonarlint.intellij.actions.ExpandAllTreesAction;
 import org.sonarlint.intellij.actions.RestartBackendAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
@@ -53,6 +55,8 @@ public final class SonarLintActions {
   private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
   private final AnAction analyzeCurrentFileAction;
   private final AnAction restartSonarLintAction;
+  private final AnAction expandAllTreesAction;
+  private final AnAction collapseAllTreesAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -90,6 +94,8 @@ public final class SonarLintActions {
       "Run SonarQube for IDE analysis on the current file",
       SonarLintIcons.PLAY);
     restartSonarLintAction = new RestartBackendAction();
+    expandAllTreesAction = new ExpandAllTreesAction();
+    collapseAllTreesAction = new CollapseAllTreesAction();
   }
 
   public static SonarLintActions getInstance() {
@@ -130,6 +136,14 @@ public final class SonarLintActions {
 
   public AnAction restartSonarLintAction() {
     return restartSonarLintAction;
+  }
+
+  public AnAction expandAllTreesAction() {
+    return expandAllTreesAction;
+  }
+
+  public AnAction collapseAllTreesAction() {
+    return collapseAllTreesAction;
   }
 
 }

@@ -322,8 +322,14 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         setToolbar(listOf(
             SonarLintActions.getInstance().analyzeCurrentFileAction(),
             SonarLintActions.getInstance().cancelAnalysis(),
+            // Separator
+            null,
             SonarLintActions.getInstance().analyzeChangedFiles(),
             SonarLintActions.getInstance().analyzeAllFiles(),
+            null,
+            SonarLintActions.getInstance().expandAllTreesAction(),
+            SonarLintActions.getInstance().collapseAllTreesAction(),
+            null,
             SonarLintActions.getInstance().configure(),
             SonarLintActions.getInstance().clearIssues()
         ))
@@ -653,11 +659,85 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         expandTaintFileNodes(getTree(TreeType.TAINTS, isOld = false))
     }
     
-    private fun expandTaintFileNodes(tree: Tree) {
-        val root = tree.model.root
-        if (root != null) {
-            tree.expandPath(TreePath(root))
+    fun expandAllTrees() {
+        val scopeMode = filtersPanel.scopeMode
+        TreeType.values().forEach { treeType ->
+            val tree = getTree(treeType, isOld = false)
+            val oldTree = getTree(treeType, isOld = true)
 
+            // Expand main tree if it's visible and has content
+            if (tree.isVisible) {
+                expandTreeBasedOnScope(tree, treeType, scopeMode)
+            }
+
+            // Expand old tree if it's visible and has content
+            if (oldTree.isVisible) {
+                expandTreeBasedOnScope(oldTree, treeType, scopeMode)
+            }
+        }
+    }
+    
+    fun collapseAllTrees() {
+        val scopeMode = filtersPanel.scopeMode
+        TreeType.values().forEach { treeType ->
+            val tree = getTree(treeType, isOld = false)
+            val oldTree = getTree(treeType, isOld = true)
+
+            // Collapse main tree if it's visible and has content
+            if (tree.isVisible) {
+                collapseTreeBasedOnScope(tree, scopeMode)
+            }
+
+            // Collapse old tree if it's visible and has content
+            if (oldTree.isVisible) {
+                collapseTreeBasedOnScope(oldTree, scopeMode)
+            }
+        }
+    }
+    
+    private fun expandTreeBasedOnScope(tree: Tree, treeType: TreeType, scopeMode: ScopeMode) {
+        when (scopeMode) {
+            ScopeMode.CURRENT_FILE -> {
+                // In current file mode, expand the root to show all findings directly
+                tree.expandRow(0)
+            }
+            ScopeMode.OPEN_FILES -> {
+                // In all files mode, expand file nodes
+                if (treeType == TreeType.TAINTS) {
+                    expandTaintFileNodes(tree)
+                } else {
+                    expandFileNodes(tree)
+                }
+            }
+        }
+    }
+    
+    private fun collapseTreeBasedOnScope(tree: Tree, scopeMode: ScopeMode) {
+        when (scopeMode) {
+            ScopeMode.CURRENT_FILE -> {
+                // In current file mode, collapse the root to hide all findings
+                tree.collapseRow(0)
+            }
+            ScopeMode.OPEN_FILES -> {
+                // In all files mode, collapse file nodes but keep root expanded
+                TreeUtil.collapseAll(tree, 1)
+            }
+        }
+    }
+    
+    private fun expandFileNodes(tree: Tree) {
+        tree.model.root?.let { root ->
+            tree.expandPath(TreePath(root))
+            for (i in 0 until tree.model.getChildCount(root)) {
+                val fileNode = tree.model.getChild(root, i)
+                tree.expandPath(TreePath(arrayOf(root, fileNode)))
+            }
+        }
+    }
+    
+    fun expandTaintFileNodes(tree: Tree) {
+        tree.model.root?.let { root ->
+            tree.expandPath(TreePath(root))
             for (i in 0 until tree.model.getChildCount(root)) {
                 val fileNode = tree.model.getChild(root, i)
                 tree.expandPath(TreePath(arrayOf(root, fileNode)))
