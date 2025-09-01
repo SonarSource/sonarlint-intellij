@@ -200,8 +200,8 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
                 SonarQube for IDE supports the local analysis of more than 18 languages including
                 Python, Java, Javascript, IaC domains, and secrets detection.
                 <a href="${WalkthroughActions.RULE_LINK.id}">Learn more</a>.<br><br>
-                Detect issues on the fly in your open file while you code in the code editor. And run an analysis on multiple 
-                files from the Report tab.<br><br>
+                Detect issues on the fly in your open file while you code in the code editor. You can analyze multiple files
+                and view the generated report in a dedicated tab.<br><br>
                 Open a file to start your high-quality and secure code journey.
             """.trimIndent(),
             SonarLintIcons.WALKTHROUGH_WELCOME,
@@ -214,12 +214,12 @@ class WalkthroughPanel(private val project: Project) : SimpleToolWindowPanel(tru
             "Step 2/4",
             "Learn as You Code",
             text = """
-                Take a look at the <a href="${WalkthroughActions.CURRENT_FILE.id}">Current File tab</a>. 
+                Take a look at the <a href="${WalkthroughActions.CURRENT_FILE.id}">Findings tab</a>. 
                 When SonarQube for IDE finds an issue, select it to 
                 get its rule description, see an explanation of the issue, and get tips about how to fix it. 
                 Check the documentation to learn how to <a href="${WalkthroughActions.INVESTIGATING_ISSUES_LINK.id}">investigate issues</a>.
                 <br><br>
-                Double-click an issue in the Report tab to open its location in the Editor. 
+                Double-click an issue to open its location in the Editor. 
                 Some rules offer quick fixes when you hover over the issue location.<br><br>
                 If needed, you can disable rules in the <a href="${WalkthroughActions.SETTINGS.id}">Settings</a>.
             """.trimIndent(),
