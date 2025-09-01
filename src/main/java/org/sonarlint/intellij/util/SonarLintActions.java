@@ -27,7 +27,6 @@ import com.intellij.openapi.components.Service;
 import com.intellij.serviceContainer.NonInjectable;
 import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
-import org.sonarlint.intellij.actions.ClearReportAction;
 import org.sonarlint.intellij.actions.RestartBackendAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
@@ -45,7 +44,6 @@ import org.sonarlint.intellij.finding.issue.LiveIssue;
 @Service(Service.Level.APP)
 public final class SonarLintActions {
 
-  private final AnAction clearReportAction;
   private final AnAction clearIssuesAction;
   private final AnAction cleanConsoleAction;
   private final AnAction cancelAction;
@@ -72,9 +70,6 @@ public final class SonarLintActions {
     cancelAction = actionManager.getAction("SonarLint.toolwindow.Cancel");
     configureAction = actionManager.getAction("SonarLint.toolwindow.Configure");
 
-    clearReportAction = new ClearReportAction("Clear All Reports",
-      "Clear all report tabs",
-      SonarLintIcons.CLEAN);
     clearIssuesAction = new ClearCurrentFileIssuesAction("Clear SonarQube for IDE Issues",
       "Clear SonarQube for IDE issues",
       SonarLintIcons.CLEAN);
@@ -103,10 +98,6 @@ public final class SonarLintActions {
 
   public AnAction cancelAnalysis() {
     return cancelAction;
-  }
-
-  public AnAction clearReport() {
-    return clearReportAction;
   }
 
   public AnAction clearIssues() {

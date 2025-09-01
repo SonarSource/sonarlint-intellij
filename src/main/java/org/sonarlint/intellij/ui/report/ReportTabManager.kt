@@ -114,27 +114,6 @@ class ReportTabManager(private val project: Project) {
     fun getOpenReportTabs(): Set<String> {
         return reportTabs.keys.toSet()
     }
-
-    fun closeAllReportTabs() {
-        val toolWindow = getToolWindow() ?: return
-        val contentManager = toolWindow.contentManager
-        
-        // Get all report tab contents
-        val reportContents = contentManager.contents.filter { content ->
-            content.getUserData(REPORT_TAB_KEY) != null
-        }
-        
-        // Remove all report tabs
-        reportContents.forEach { content ->
-            val tabTitle = content.getUserData(REPORT_TAB_KEY)
-            tabTitle?.let { title ->
-                reportTabs.remove(title)
-                // Remove batch mappings for this tab
-                batchToTabTitle.entries.removeIf { it.value == title }
-            }
-            contentManager.removeContent(content, true)
-        }
-    }
     
     private fun getToolWindow(): ToolWindow? {
         return ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)
