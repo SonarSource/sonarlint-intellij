@@ -27,16 +27,26 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.report.ReportTabManager
 
-class ShowReportCallable(private val project: Project) : AnalysisCallback {
+class ShowReportCallable(private val project: Project, private val expectedModuleCount: Int = 1) : AnalysisCallback {
 
     private val batchId: String = generateBatchId()
+    private var completedModuleCount = 0
+    
+    init {
+        // Create loading tab immediately
+        runOnUiThread(project) {
+            val reportTabManager = SonarLintUtils.getService(project, ReportTabManager::class.java)
+            reportTabManager.createLoadingReportTab(batchId, expectedModuleCount)
+        }
+    }
 
     override fun onSuccess(analysisResult: AnalysisResult) {
         // All UI operations must run on EDT, with synchronization happening on EDT
         runOnUiThread(project) {
             synchronized(this@ShowReportCallable) {
+                completedModuleCount++
                 val reportTabManager = SonarLintUtils.getService(project, ReportTabManager::class.java)
-                reportTabManager.updateOrCreateReportTab(batchId, analysisResult)
+                reportTabManager.updateOrCreateReportTab(batchId, analysisResult, completedModuleCount, expectedModuleCount)
                 SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
             }
         }
