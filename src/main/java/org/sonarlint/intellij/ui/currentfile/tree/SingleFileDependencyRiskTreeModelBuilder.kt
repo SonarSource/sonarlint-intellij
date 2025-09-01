@@ -60,6 +60,10 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
         sortMode = mode
     }
 
+    override fun setScopeSuffix(suffix: String) {
+        (treeSummary as? FindingTreeSummary)?.setScopeSuffix(suffix)
+    }
+
     override fun numberOfDisplayedFindings(): Int {
         return dependencyRiskTreeUpdater.getNumberOfDependencyRisks()
     }
@@ -77,6 +81,10 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
     }
 
     override fun updateModel(file: VirtualFile?, findings: List<LocalDependencyRisk>) {
+        updateModelWithScope(file, findings, false)
+    }
+
+    override fun updateModelWithScope(file: VirtualFile?, findings: List<LocalDependencyRisk>, showFileNames: Boolean) {
         latestRisks = findings.toMutableList()
         currentFile = file
 
@@ -89,6 +97,7 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
 
         val newModel = dependencyRiskTreeUpdater.createCompactTree(sortedRisks)
         dependencyRiskTreeUpdater.model.setCompactTree(newModel)
+        // Dependency risks are always project-wide, so always use 1 for file count
         treeSummary.refresh(1, sortedRisks.size)
     }
 

@@ -33,6 +33,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
 import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
+import org.sonarlint.intellij.ui.nodes.FileNode
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.FindingTreeSummary
@@ -61,6 +62,7 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
         summaryNode = SummaryNode(it)
     }
     private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
+    private var actualFindingsCount: Int = 0
 
     init {
         model = DefaultTreeModel(summaryNode).apply {
@@ -69,7 +71,7 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     }
 
     override fun numberOfDisplayedFindings(): Int {
-        return summaryNode.childCount
+        return actualFindingsCount
     }
 
     override fun getTreeModel(): DefaultTreeModel {
@@ -81,6 +83,10 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     }
 
     override fun updateModel(file: VirtualFile?, findings: List<LiveIssue>) {
+        updateModelWithScope(file, findings, false)
+    }
+
+    override fun updateModelWithScope(file: VirtualFile?, findings: List<LiveIssue>, showFileNames: Boolean) {
         latestIssues = findings.toMutableList()
         currentFile = file
 
@@ -94,11 +100,31 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
             else -> filteredIssues.sortedBy { it.validTextRange?.startOffset }
         }
 
-        for (issue in sortedIssues) {
-            summaryNode.add(IssueNode(issue))
+        if (showFileNames && sortedIssues.isNotEmpty()) {
+            // Group by file and create file nodes
+            val issuesByFile = sortedIssues.groupBy { it.file() }
+            val sortedFiles = issuesByFile.keys.sortedBy { it.name }
+            
+            for (fileKey in sortedFiles) {
+                val fileIssues = issuesByFile[fileKey] ?: continue
+                val fileNode = FileNode(fileKey, false)
+                
+                for (issue in fileIssues) {
+                    fileNode.add(IssueNode(issue))
+                }
+                
+                summaryNode.add(fileNode)
+            }
+        } else {
+            // Original flat structure
+            for (issue in sortedIssues) {
+                summaryNode.add(IssueNode(issue))
+            }
         }
 
-        treeSummary.refresh(1, sortedIssues.size)
+        // Store the actual count of findings, not file nodes
+        actualFindingsCount = sortedIssues.size
+        treeSummary.refresh(if (showFileNames) summaryNode.childCount else 1, sortedIssues.size)
         model.nodeStructureChanged(summaryNode)
     }
 
@@ -108,6 +134,10 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
 
     override fun setSortMode(mode: SortMode) {
         sortMode = mode
+    }
+
+    override fun setScopeSuffix(suffix: String) {
+        (treeSummary as? FindingTreeSummary)?.setScopeSuffix(suffix)
     }
 
     override fun getSummaryUiModel(): SummaryUiModel {

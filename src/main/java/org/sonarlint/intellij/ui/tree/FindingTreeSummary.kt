@@ -29,13 +29,27 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
 
     private var emptyText = DEFAULT_EMPTY_TEXT
     private var text: String = emptyText
+    private var scopeSuffix: String = ""
+    private var lastFilesCount: Int = 0
+    private var lastFindingsCount: Int = 0
 
     override fun getText() = text
 
     override fun refresh(filesCount: Int, findingsCount: Int) {
+        lastFilesCount = filesCount
+        lastFindingsCount = findingsCount
         val newCodePeriod = getService(project, NewCodePeriodCache::class.java).periodAsString
         emptyText = computeEmptyText(newCodePeriod)
         text = computeText(filesCount, findingsCount, newCodePeriod)
+    }
+
+    fun setScopeSuffix(suffix: String) {
+        scopeSuffix = suffix
+        // Regenerate text with the new scope suffix if we have existing data
+        if (text != emptyText && text != DEFAULT_EMPTY_TEXT) {
+            val newCodePeriod = getService(project, NewCodePeriodCache::class.java).periodAsString
+            text = computeText(lastFindingsCount, lastFindingsCount, newCodePeriod)
+        }
     }
 
     override fun reset() {
@@ -55,7 +69,7 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
             newOrOldOrNothing = if (holdsOldFindings) "older " else "new "
         }
 
-        return if (filesCount <= 1) {
+        val baseText = if (filesCount <= 1) {
             // Single file context - don't show file count
             SINGLE_FILE_FORMAT.format(
                 findingsCount,
@@ -73,6 +87,13 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
                 pluralize("file", filesCount),
                 sinceText
             )
+        }
+        
+        return if (scopeSuffix.isNotEmpty() && filesCount > 1) {
+            // Replace "in X files" with scope-specific text when we have a scope suffix
+            baseText.replace(Regex("in \\d+ files?"), scopeSuffix)
+        } else {
+            baseText
         }
     }
 

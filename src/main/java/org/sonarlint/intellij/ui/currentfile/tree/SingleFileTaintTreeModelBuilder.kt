@@ -67,6 +67,10 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
         sortMode = mode
     }
 
+    override fun setScopeSuffix(suffix: String) {
+        (treeSummary as? FindingTreeSummary)?.setScopeSuffix(suffix)
+    }
+
     override fun numberOfDisplayedFindings(): Int {
         return taintVulnerabilityTreeUpdater.getNumberOfTaints()
     }
@@ -84,6 +88,10 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     }
 
     override fun updateModel(file: VirtualFile?, findings: List<LocalTaintVulnerability>) {
+        updateModelWithScope(file, findings, false)
+    }
+
+    override fun updateModelWithScope(file: VirtualFile?, findings: List<LocalTaintVulnerability>, showFileNames: Boolean) {
         latestTaints = findings.toMutableList()
         currentFile = file
 
@@ -94,9 +102,13 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
             else -> findings.sortedBy { it.rangeMarker()?.startOffset ?: Int.MAX_VALUE }
         }
 
-        val newModel = taintVulnerabilityTreeUpdater.createCompactTree(sortedTaints)
+        val newModel = taintVulnerabilityTreeUpdater.createCompactTree(sortedTaints, showFileNames)
         taintVulnerabilityTreeUpdater.model.setCompactTree(newModel)
-        treeSummary.refresh(1, sortedTaints.size)
+        treeSummary.refresh(if (showFileNames) getFileCount(sortedTaints) else 1, sortedTaints.size)
+    }
+
+    private fun getFileCount(taints: List<LocalTaintVulnerability>): Int {
+        return taints.map { it.file() }.distinct().size
     }
 
     override fun findFindingByKey(key: String): LocalTaintVulnerability? {

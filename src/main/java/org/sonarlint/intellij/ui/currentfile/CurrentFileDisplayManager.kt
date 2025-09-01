@@ -108,7 +108,8 @@ class CurrentFileDisplayManager(
             statusFilter = filtersPanel.filterStatus,
             textFilter = filtersPanel.filterText,
             quickFixFilter = filtersPanel.quickFixCheckBox.isSelected,
-            isMqrMode = isMqrMode
+            isMqrMode = isMqrMode,
+            scopeMode = filtersPanel.scopeMode
         )
     }
 

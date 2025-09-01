@@ -39,7 +39,8 @@ data class FilterCriteria(
     val statusFilter: StatusFilter = StatusFilter.OPEN,
     val textFilter: String = "",
     val quickFixFilter: Boolean = false,
-    val isMqrMode: Boolean = false
+    val isMqrMode: Boolean = false,
+    val scopeMode: ScopeMode = ScopeMode.CURRENT_FILE
 )
 
 data class FilteredFindings(
@@ -70,7 +71,10 @@ data class FilteredFindings(
 class FindingsFilter(private val project: Project) {
 
     fun filterAllFindings(file: VirtualFile?, criteria: FilterCriteria): FilteredFindings {
-        val rawFindings = loadRawFindings(file)
+        val rawFindings = when (criteria.scopeMode) {
+            ScopeMode.CURRENT_FILE -> loadRawFindings(file)
+            ScopeMode.OPEN_FILES -> loadRawFindingsForOpenFiles()
+        }
         
         return FilteredFindings(
             issues = filterIssues(rawFindings.issues, criteria),
@@ -81,14 +85,12 @@ class FindingsFilter(private val project: Project) {
     }
 
     private fun loadRawFindings(file: VirtualFile?): FilteredFindings {
-        val dependencyRisksCache = getService(project, DependencyRisksCache::class.java)
-
         if (file == null) {
             return FilteredFindings(
                 issues = listOf(),
                 hotspots = listOf(),
                 taints = listOf(),
-                dependencyRisks = dependencyRisksCache.dependencyRisks.toList()
+                dependencyRisks = listOf()
             )
         }
 
@@ -99,6 +101,24 @@ class FindingsFilter(private val project: Project) {
             issues = onTheFlyFindingsHolder.getIssuesForFile(file).toList(),
             hotspots = onTheFlyFindingsHolder.getSecurityHotspotsForFile(file).toList(),
             taints = taintCache.getTaintVulnerabilitiesForFile(file).toList(),
+            dependencyRisks = listOf() // Hide SCA in current file mode
+        )
+    }
+
+    private fun loadRawFindingsForOpenFiles(): FilteredFindings {
+        val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+        val taintCache = getService(project, TaintVulnerabilitiesCache::class.java)
+        val dependencyRisksCache = getService(project, DependencyRisksCache::class.java)
+        
+        // Get all findings from the cache (which includes all files that have been analyzed)
+        val allIssues = onTheFlyFindingsHolder.getAllIssues().toList()
+        val allHotspots = onTheFlyFindingsHolder.getAllHotspots().toList()
+        val allTaints = taintCache.taintVulnerabilities.toList()
+        
+        return FilteredFindings(
+            issues = allIssues,
+            hotspots = allHotspots,
+            taints = allTaints,
             dependencyRisks = dependencyRisksCache.dependencyRisks.toList()
         )
     }

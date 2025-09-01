@@ -56,6 +56,7 @@ import org.sonarlint.intellij.ui.factory.PanelFactory
 import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.FindingsFilter
+import org.sonarlint.intellij.ui.filter.ScopeMode
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.filter.StatusFilter
 import org.sonarlint.intellij.ui.nodes.IssueNode
@@ -122,7 +123,8 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                 runOnPooledThread(project) {
                     getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCode)
                 }
-            }
+            },
+            { handleScopeModeChanged() }
         )
 
         summaryPanel = CurrentFileSummaryPanel(
@@ -441,6 +443,10 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
     }
 
+    private fun handleScopeModeChanged() {
+        refreshView()
+    }
+
     private fun setUpTreeListeners() {
         treeConfigs.values.forEach { config ->
             config.tree.addTreeSelectionListener {
@@ -509,18 +515,37 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         val treeBuilder = getBuilder<T>(treeType, false)
         val oldTreeBuilder = getBuilder<T>(treeType, true)
         
+        // Determine if we should show file names based on scope mode
+        val showFileNames = filtersPanel.scopeMode == ScopeMode.OPEN_FILES
+        
+        // Set scope suffix for tree summary nodes BEFORE populating trees
+        val scopeMode = filtersPanel.scopeMode
+        val scopeSuffix = when (treeType) {
+            TreeType.ISSUES, TreeType.HOTSPOTS -> when (scopeMode) {
+                ScopeMode.CURRENT_FILE -> "in the current file"
+                ScopeMode.OPEN_FILES -> "in the opened files"
+            }
+            TreeType.TAINTS -> when (scopeMode) {
+                ScopeMode.CURRENT_FILE -> "in the current file"
+                ScopeMode.OPEN_FILES -> "in the project"
+            }
+            TreeType.DEPENDENCY_RISKS -> "in the project"
+        }
+        treeBuilder.setScopeSuffix(scopeSuffix)
+        oldTreeBuilder.setScopeSuffix(scopeSuffix)
+        
         if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
             val newFindings = findings.filter { it.isOnNewCode() }
             val oldFindings = findings.filter { !it.isOnNewCode() }
-            populateSubTree(tree, treeBuilder, newFindings)
-            populateSubTree(oldTree, oldTreeBuilder, oldFindings)
+            populateSubTreeWithScope(tree, treeBuilder, newFindings, showFileNames)
+            populateSubTreeWithScope(oldTree, oldTreeBuilder, oldFindings, showFileNames)
             
             // Show tree only if summary panel allows it AND it has displayed findings (after filtering)
             val summaryAllowsTree = treeVisibilityCheck?.invoke() ?: true
             oldTree.isVisible = summaryAllowsTree && oldTreeBuilder.numberOfDisplayedFindings() > 0
         } else {
-            populateSubTree(tree, treeBuilder, findings)
-            populateSubTree(oldTree, oldTreeBuilder, listOf())
+            populateSubTreeWithScope(tree, treeBuilder, findings, showFileNames)
+            populateSubTreeWithScope(oldTree, oldTreeBuilder, listOf(), showFileNames)
             oldTree.isVisible = false
         }
         
@@ -532,8 +557,8 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         oldTree.showsRootHandles = findings.isNotEmpty()
     }
 
-    private fun <T : Finding> populateSubTree(tree: Tree, treeBuilder: SingleFileTreeModelBuilder<T>, issues: List<T>) {
-        treeBuilder.updateModel(currentFile, issues)
+    private fun <T : Finding> populateSubTreeWithScope(tree: Tree, treeBuilder: SingleFileTreeModelBuilder<T>, issues: List<T>, showFileNames: Boolean) {
+        treeBuilder.updateModelWithScope(currentFile, issues, showFileNames)
         tree.showsRootHandles = issues.isNotEmpty()
     }
 

@@ -32,19 +32,27 @@ import java.awt.Dimension
 import java.awt.Font
 import javax.swing.Box
 import javax.swing.BoxLayout
+import javax.swing.DefaultListCellRenderer
 import javax.swing.JButton
+import javax.swing.JList
 import javax.swing.JSeparator
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
+enum class ScopeMode(val displayName: String, val tooltip: String) {
+    CURRENT_FILE("Current File", "Show issues/hotspots/taints for the current file only"),
+    OPEN_FILES("All Files", "Show all cached issues/hotspots/taints from analyzed files + project-wide SCA")
+}
+
 /**
- * Filter panel component that provides various filtering and sorting controls for findings in the Current File tab.
+ * Filter panel component that provides various filtering and sorting controls for findings.
  * 
  * <h3>Design & Architecture:</h3>
  * This panel follows a reactive design pattern where filter changes immediately trigger callbacks to update
  * the displayed findings. It contains multiple filter types:
  *
+ * - Scope Filter:</strong> Toggle between current file only or all open files + project-wide findings (Current File tab only)
  * - Search Filter:</strong> Text-based search across rule names, messages, and file names
  * - Severity Filter:</strong> Filters by issue severity/impact levels (adapts to MQR/standard mode)
  * - Status Filter:</strong> Filters by resolution status (All/Open/Resolved) - only visible in connected mode
@@ -54,15 +62,20 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
  * 
  * <h3>Visibility Management:</h3>
  * The panel uses conditional visibility for certain filters:
+ * - Scope filter is only shown in Current File tab (not in Report tab)
  * - Status filter is only shown in connected mode (when bound to SonarQube/SonarCloud)
  * - The entire panel can be hidden/shown via the summary panel toggle
  */
 class FiltersPanel(
     private val onFilterChanged: () -> Unit,
     private val onSortingChanged: (SortMode) -> Unit,
-    private val onFocusOnNewCodeChanged: (Boolean) -> Unit
+    private val onFocusOnNewCodeChanged: (Boolean) -> Unit,
+    private val onScopeModeChanged: () -> Unit = {},
+    private val showScopeFilter: Boolean = true
 ) : JBPanel<FiltersPanel>() {
 
+    val scopeLabel = JBLabel("Scope:")
+    val scopeCombo = ComboBox(ScopeMode.values())
     val searchLabel = JBLabel("Search:")
     val searchField = SearchTextField()
     val severityLabel = JBLabel("Severity:")
@@ -79,6 +92,7 @@ class FiltersPanel(
     private lateinit var statusSeparator: JSeparator
     private val statusSpacingComponents = mutableListOf<Component>()
 
+    var scopeMode = ScopeMode.CURRENT_FILE
     var filterText = ""
     var filterSeverity: SeverityImpactFilter = SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
     var filterStatus = StatusFilter.OPEN
@@ -94,6 +108,34 @@ class FiltersPanel(
     }
 
     private fun initComponents() {
+        scopeLabel.apply {
+            font = UIUtil.getLabelFont().deriveFont(Font.PLAIN, 11f)
+            foreground = JBColor.GRAY
+        }
+
+        scopeCombo.apply {
+            toolTipText = "Filter scope: current file only or all files (Issues And Security Hotspots are displayed for opened files)"
+            maximumSize = Dimension(120, 30)
+            selectedItem = ScopeMode.CURRENT_FILE
+            renderer = object : DefaultListCellRenderer() {
+                override fun getListCellRendererComponent(
+                    list: JList<*>, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean
+                ): Component {
+                    super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                    if (value is ScopeMode) {
+                        text = value.displayName
+                        toolTipText = value.tooltip
+                    }
+                    return this
+                }
+            }
+            addActionListener { _ ->
+                scopeMode = scopeCombo.selectedItem as ScopeMode
+                onScopeModeChanged()
+                onFilterChanged()
+            }
+        }
+
         searchLabel.apply {
             font = UIUtil.getLabelFont().deriveFont(Font.PLAIN, 11f)
             foreground = JBColor.GRAY
@@ -199,6 +241,11 @@ class FiltersPanel(
             toolTipText = "Reset all filters"
             maximumSize = Dimension(60, 30)
             addActionListener { _ ->
+                if (showScopeFilter) {
+                    scopeMode = ScopeMode.CURRENT_FILE
+                    scopeCombo.selectedItem = ScopeMode.CURRENT_FILE
+                    onScopeModeChanged()
+                }
                 filterText = ""
                 searchField.text = ""
                 filterSeverity = when (filterSeverity) {
@@ -219,6 +266,16 @@ class FiltersPanel(
     }
 
     private fun addComponents() {
+        if (showScopeFilter) {
+            add(scopeLabel)
+            add(Box.createRigidArea(Dimension(4, 0)))
+            add(scopeCombo)
+            add(Box.createRigidArea(Dimension(4, 0)))
+            add(JSeparator(JSeparator.VERTICAL).apply {
+                maximumSize = Dimension(8, 24)
+            })
+            add(Box.createRigidArea(Dimension(4, 0)))
+        }
         add(searchLabel)
         add(Box.createRigidArea(Dimension(4, 0)))
         add(searchField)
