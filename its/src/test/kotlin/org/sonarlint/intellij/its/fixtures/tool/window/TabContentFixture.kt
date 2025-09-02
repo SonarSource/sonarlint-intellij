@@ -37,7 +37,7 @@ class TabContentFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
   fun toolBarButton(name: String) =
     findElement<ActionButtonFixture>(byXpath("finding action button with text '$name'", "//div[@accessiblename='$name']"))
   fun focusOnNewCodeCheckbox() =
-    findElement<JCheckboxFixture>(byXpath("focus on new code action button", "//div[@tooltiptext='Show only findings in new code']"))
+    findElement<JCheckboxFixture>(byXpath("focus on new code action button", "//div[@tooltiptext='Focus on new code']"))
   fun statusLabel() =
     findElement<JLabelFixture>(byXpath("resolved issues action button", "//div[@text='Status:']"))
 

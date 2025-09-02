@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui.filter
 
 import com.intellij.ui.components.JBPanel
-import com.intellij.util.ui.JBUI
 import java.awt.Component
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JSeparator
@@ -28,9 +27,9 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
-enum class ScopeMode(val displayName: String, val tooltip: String) {
+enum class FindingsScope(val displayName: String, val tooltip: String) {
     CURRENT_FILE("Current File", "Show issues/hotspots/taints for the current file only"),
-    OPEN_FILES("All Files", "Show all cached issues/hotspots/taints from analyzed files + project-wide SCA")
+    ALL_FILES("All Files", "Show all cached issues/hotspots/taints from analyzed files + project-wide SCA")
 }
 
 /**
@@ -40,7 +39,7 @@ class FiltersPanel(
     private val onFilterChanged: () -> Unit,
     private val onSortingChanged: (SortMode) -> Unit,
     private val onFocusOnNewCodeChanged: (Boolean) -> Unit,
-    private val onScopeModeChanged: () -> Unit = {},
+    private val onFindingsScopeChanged: () -> Unit = {},
     private val showScopeFilter: Boolean = true
 ) : JBPanel<FiltersPanel>() {
 
@@ -66,7 +65,7 @@ class FiltersPanel(
     private val statusSpacingComponents = mutableListOf<Component>()
 
     // Filter state
-    var scopeMode = ScopeMode.CURRENT_FILE
+    var findingsScope = FindingsScope.CURRENT_FILE
     var filterText = ""
     var filterSeverity: SeverityImpactFilter = SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
     var filterStatus = StatusFilter.OPEN
@@ -74,8 +73,7 @@ class FiltersPanel(
     private var isMqrMode = true
 
     init {
-        layout = FlowWrapLayout(hgap = 4, vgap = 4)
-        border = JBUI.Borders.empty(4)
+        layout = FlowWrapLayout(hgap = 2, vgap = 2)
         isVisible = false
 
         setupComponents()
@@ -95,10 +93,10 @@ class FiltersPanel(
 
     private fun setupScopeComponents() {
         scopeCombo.apply {
-            selectedItem = ScopeMode.CURRENT_FILE
+            selectedItem = FindingsScope.CURRENT_FILE
             addActionListener {
-                scopeMode = selectedItem as ScopeMode
-                onScopeModeChanged()
+                findingsScope = selectedItem as FindingsScope
+                onFindingsScopeChanged()
                 onFilterChanged()
             }
         }
@@ -204,6 +202,7 @@ class FiltersPanel(
     }
 
     private fun resetFilters() {
+        findingsScope = FindingsScope.CURRENT_FILE
         searchField.text = ""
         filterSeverity = when (filterSeverity) {
             is SeverityImpactFilter.MqrImpact -> SeverityImpactFilter.MqrImpact(MqrImpactFilter.NO_FILTER)

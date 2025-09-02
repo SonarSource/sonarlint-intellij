@@ -34,7 +34,7 @@ object ConnectionFromToolWindowTests {
     fun bindProjectFromToolWindow(projectKey: String, connectionName: String, token: String, expectedInitialConnection: String) {
         optionalIdeaFrame()?.apply {
             toolWindow {
-                tabTitleContains("Current File") { select() }
+                tabTitleContains("Findings") { select() }
                 content("CurrentFilePanel") {
                     toolBarButton("Configure SonarQube for IDE").click()
                 }

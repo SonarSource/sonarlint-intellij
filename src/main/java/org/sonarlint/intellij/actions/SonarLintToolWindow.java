@@ -138,8 +138,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   /**
-   * Gets the displayed findings from the current file tab.
-   * Note: This method returns findings from the Current File tab, not report tabs,
+   * Gets the displayed findings from the Findings tab.
+   * Note: This method returns findings from the Findings tab, not report tabs,
    * as report tabs show historical analysis results.
    */
   public FilteredFindings getDisplayedFindings() {

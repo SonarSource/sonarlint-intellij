@@ -37,7 +37,7 @@ import javax.swing.JToggleButton
  * Summary panel component that displays finding counts and provides collapse/expand controls for each finding type.
  * 
  * <h3>Design & Architecture:</h3>
- * <p>This panel serves as the main control header for the Current File tab, implementing a dashboard-style interface
+ * <p>This panel serves as the main control header for the Findings tab, implementing a dashboard-style interface
  * with interactive summary buttons and a filter toggle. It follows a delegation pattern where each summary button
  * can independently control the visibility of its corresponding tree section.</p>
  * 

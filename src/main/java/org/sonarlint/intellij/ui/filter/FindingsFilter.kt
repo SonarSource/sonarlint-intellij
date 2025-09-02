@@ -40,7 +40,7 @@ data class FilterCriteria(
     val textFilter: String = "",
     val quickFixFilter: Boolean = false,
     val isMqrMode: Boolean = false,
-    val scopeMode: ScopeMode = ScopeMode.CURRENT_FILE
+    val findingsScope: FindingsScope = FindingsScope.CURRENT_FILE
 )
 
 data class FilteredFindings(
@@ -71,9 +71,9 @@ data class FilteredFindings(
 class FindingsFilter(private val project: Project) {
 
     fun filterAllFindings(file: VirtualFile?, criteria: FilterCriteria): FilteredFindings {
-        val rawFindings = when (criteria.scopeMode) {
-            ScopeMode.CURRENT_FILE -> loadRawFindings(file)
-            ScopeMode.OPEN_FILES -> loadRawFindingsForOpenFiles()
+        val rawFindings = when (criteria.findingsScope) {
+            FindingsScope.CURRENT_FILE -> loadRawFindings(file)
+            FindingsScope.ALL_FILES -> loadRawFindingsForOpenFiles()
         }
         
         return FilteredFindings(

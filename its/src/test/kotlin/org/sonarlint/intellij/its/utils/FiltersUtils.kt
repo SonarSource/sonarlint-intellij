@@ -67,7 +67,7 @@ object FiltersUtils {
                         }
                         val statusLabel = statusLabel()
                         statusLabel.click(Point(60, 10))
-                        statusLabel.click(Point(60, 80))
+                        statusLabel.click(Point(60, 85))
                         filterButton {
                             ensureClosed()
                         }

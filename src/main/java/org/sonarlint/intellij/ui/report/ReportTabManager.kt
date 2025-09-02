@@ -31,7 +31,7 @@ import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.ui.ToolWindowConstants
 
 /**
- * Service responsible for managing multiple report tabs in the SonarLint tool window.
+ * Service responsible for managing multiple report tabs in the SonarQube for IDE tool window.
  * 
  * <h3>Design & Architecture:</h3>
  * This service manages the lifecycle of dated report tabs, allowing multiple analysis results
