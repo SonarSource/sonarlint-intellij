@@ -34,7 +34,7 @@ import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 /**
- * Factory of SonarLint tool window.
+ * Factory of SonarQube for IDE tool window.
  * Nothing can be injected as it runs in the root pico container.
  */
 public class SonarLintToolWindowFactory implements ToolWindowFactory {

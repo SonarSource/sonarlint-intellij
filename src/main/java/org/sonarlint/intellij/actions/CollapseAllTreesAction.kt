@@ -30,7 +30,7 @@ import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
 import org.sonarlint.intellij.ui.report.ReportPanel
 
 /**
- * Action to collapse all trees in the SonarLint tool window.
+ * Action to collapse all trees in the SonarQube for IDE tool window.
  * Works for both Current File and Report tabs.
  */
 class CollapseAllTreesAction : AnAction("Collapse All", "Collapse all finding trees", AllIcons.Actions.Collapseall), DumbAware {

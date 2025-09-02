@@ -29,8 +29,8 @@ import java.awt.LayoutManager
  * Maintains proper vertical alignment and spacing between components.
  */
 class FlowWrapLayout(
-    private val hgap: Int = 4,
-    private val vgap: Int = 4
+    private val hgap: Int = 2,
+    private val vgap: Int = 2
 ) : LayoutManager {
     
     override fun addLayoutComponent(name: String?, comp: Component?) {

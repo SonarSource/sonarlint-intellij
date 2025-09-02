@@ -20,13 +20,11 @@
 package org.sonarlint.intellij.ui.currentfile
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataProvider
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.vfs.VirtualFile
@@ -67,6 +65,7 @@ import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTree
 import org.sonarlint.intellij.ui.tree.IssueTree
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
+import org.sonarlint.intellij.util.ToolbarUtils
 import org.sonarlint.intellij.util.runOnPooledThread
 
 enum class TreeType {
@@ -122,25 +121,13 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
         findingDetailsPanel = FindingDetailsPanel(project, this, FindingKind.ISSUE)
     }
 
-    fun setToolbar(actions: List<AnAction?>) {
-        mainToolbar = ActionManager.getInstance().createActionToolbar(TOOL_WINDOW_ID, createActionGroup(actions), false)
+    fun setToolbarSections(sections: List<List<AnAction>>) {
+        mainToolbar = ActionManager.getInstance().createActionToolbar(TOOL_WINDOW_ID, ToolbarUtils.createActionGroupFromSections(sections), false)
         mainToolbar.targetComponent = this
         val box = Box.createHorizontalBox()
         box.add(mainToolbar.component)
         super.setToolbar(box)
         mainToolbar.component.isVisible = true
-    }
-
-    private fun createActionGroup(actions: List<AnAction?>): ActionGroup {
-        val actionGroup = DefaultActionGroup()
-        actions.forEach { action -> 
-            if (action != null) {
-                actionGroup.add(action)
-            } else {
-                actionGroup.addSeparator()
-            }
-        }
-        return actionGroup
     }
 
     private fun createTreeConfigForType(type: TreeType, isOld: Boolean): TreeConfig<*, *> {

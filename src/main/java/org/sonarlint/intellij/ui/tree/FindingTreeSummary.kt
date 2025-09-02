@@ -69,7 +69,7 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
             newOrOldOrNothing = if (holdsOldFindings) "older " else "new "
         }
 
-        val baseText = if (filesCount <= 1) {
+        return if (filesCount <= 1) {
             // Single file context - don't show file count
             SINGLE_FILE_FORMAT.format(
                 findingsCount,
@@ -78,22 +78,25 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
                 sinceText
             )
         } else {
-            // Multiple files context - show file count
-            MULTI_FILE_FORMAT.format(
-                findingsCount,
-                newOrOldOrNothing,
-                pluralizeFindingType(findingsCount),
-                filesCount,
-                pluralize("file", filesCount),
-                sinceText
-            )
-        }
-        
-        return if (scopeSuffix.isNotEmpty() && filesCount > 1) {
-            // Replace "in X files" with scope-specific text when we have a scope suffix
-            baseText.replace(Regex("in \\d+ files?"), scopeSuffix)
-        } else {
-            baseText
+            // Multiple files context - choose format based on scope suffix
+            if (scopeSuffix.isNotEmpty()) {
+                SCOPED_FORMAT.format(
+                    findingsCount,
+                    newOrOldOrNothing,
+                    pluralizeFindingType(findingsCount),
+                    scopeSuffix,
+                    sinceText
+                )
+            } else {
+                MULTI_FILE_FORMAT.format(
+                    findingsCount,
+                    newOrOldOrNothing,
+                    pluralizeFindingType(findingsCount),
+                    filesCount,
+                    pluralize("file", filesCount),
+                    sinceText
+                )
+            }
         }
     }
 
@@ -118,6 +121,7 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
         private const val DEFAULT_EMPTY_TEXT = "No analysis done"
         private const val SINGLE_FILE_FORMAT = "Found %d %s%s%s"
         private const val MULTI_FILE_FORMAT = "Found %d %s%s in %d %s%s"
+        private const val SCOPED_FORMAT = "Found %d %s%s %s%s"
 
         private fun pluralize(word: String, count: Int): String {
             return if (count == 1) word else word + "s"

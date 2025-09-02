@@ -109,7 +109,7 @@ class CurrentFileDisplayManager(
             textFilter = filtersPanel.filterText,
             quickFixFilter = filtersPanel.quickFixCheckBox.isSelected,
             isMqrMode = isMqrMode,
-            scopeMode = filtersPanel.scopeMode
+            findingsScope = filtersPanel.findingsScope
         )
     }
 

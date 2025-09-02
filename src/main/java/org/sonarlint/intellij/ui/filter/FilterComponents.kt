@@ -49,21 +49,20 @@ object FilterComponentFactory {
         }
     }
     
-    fun createScopeCombo(): ComboBox<ScopeMode> {
-        return ComboBox<ScopeMode>().apply {
+    fun createScopeCombo(): ComboBox<FindingsScope> {
+        return ComboBox<FindingsScope>().apply {
             toolTipText = "Filter scope: current file only or all files (Issues And Security Hotspots are displayed for opened files)"
-            maximumSize = Dimension(120, 30)
-            
+
             // Add all scope mode values
-            ScopeMode.values().forEach { addItem(it) }
-            selectedItem = ScopeMode.CURRENT_FILE
+            FindingsScope.values().forEach { addItem(it) }
+            selectedItem = FindingsScope.CURRENT_FILE
             
             renderer = object : DefaultListCellRenderer() {
                 override fun getListCellRendererComponent(
                     list: JList<*>, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean
                 ): Component {
                     super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-                    if (value is ScopeMode) {
+                    if (value is FindingsScope) {
                         text = value.displayName
                         toolTipText = value.tooltip
                     }
@@ -85,7 +84,6 @@ object FilterComponentFactory {
     fun createSeverityCombo(): ComboBox<Any> {
         return ComboBox<Any>().apply {
             toolTipText = "Filter by severity"
-            maximumSize = Dimension(90, 30)
             addItem(SeverityFilter.NO_FILTER)
             // Note: Specific severity values will be added by the panel based on MQR mode
         }
@@ -94,7 +92,6 @@ object FilterComponentFactory {
     fun createStatusCombo(): ComboBox<StatusFilter> {
         return ComboBox<StatusFilter>().apply {
             toolTipText = "Filter by status"
-            maximumSize = Dimension(90, 30)
             StatusFilter.values().forEach { addItem(it) }
             selectedItem = StatusFilter.OPEN
         }
@@ -109,7 +106,6 @@ object FilterComponentFactory {
     fun createSortCombo(): ComboBox<SortMode> {
         return ComboBox<SortMode>().apply {
             toolTipText = "Sort findings"
-            maximumSize = Dimension(160, 30)
             SortMode.values().forEach { addItem(it) }
         }
     }
@@ -130,10 +126,10 @@ object FilterComponentFactory {
         return JBPanel<JBPanel<*>>().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             isOpaque = false
-            border = JBUI.Borders.emptyRight(4)
-            
+            border = JBUI.Borders.emptyRight(2)
+
             add(label)
-            add(Box.createRigidArea(Dimension(4, 0)))
+            add(Box.createRigidArea(Dimension(2, 0)))
             add(control)
 
             alignmentY = Component.CENTER_ALIGNMENT
@@ -142,8 +138,8 @@ object FilterComponentFactory {
     
     fun createSeparator(): JSeparator {
         return JSeparator(JSeparator.VERTICAL).apply {
-            maximumSize = Dimension(8, 24)
-            preferredSize = Dimension(8, 24)
+            maximumSize = Dimension(6, 24)
+            preferredSize = Dimension(6, 24)
         }
     }
 

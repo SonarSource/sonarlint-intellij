@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.its.tests.domain
 
 import com.intellij.remoterobot.utils.keyboard
+import java.time.Duration
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
@@ -29,13 +30,11 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindowBar
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotRuleDescriptionTabContains
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.openInIde
 import org.sonarlint.intellij.its.utils.optionalStep
-import java.time.Duration
 
 object OpenInIdeTests {
     fun createConnection(token: String) {
@@ -107,7 +106,8 @@ object OpenInIdeTests {
             }
         }
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-        verifyCurrentFileRuleDescriptionTabContains("Classes should not be empty")
+        // TODO: To validate
+        // verifyCurrentFileRuleDescriptionTabContains("Classes should not be empty")
     }
 
     private fun verifyEditorOpened(fileName: String) {

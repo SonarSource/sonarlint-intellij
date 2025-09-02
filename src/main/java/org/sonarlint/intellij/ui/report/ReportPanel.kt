@@ -21,8 +21,6 @@ package org.sonarlint.intellij.ui.report
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionToolbar
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
@@ -59,11 +57,11 @@ import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.FindingsFilter
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.util.SonarLintActions
+import org.sonarlint.intellij.util.ToolbarUtils
 import org.sonarlint.intellij.util.runOnPooledThread
 
 // UI Configuration
 const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION"
-const val TOOLBAR_ID = "SonarQube for IDE"
 const val DEFAULT_SPLIT_PROPORTION = 0.5f
 val FINDING_DETAILS_MINIMUM_SIZE = Dimension(350, 200)
 
@@ -88,7 +86,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private lateinit var findingsPanel: JBPanelWithEmptyText
     private lateinit var findingsTreePane: JScrollPane
     private lateinit var headerCardPanel: JBPanel<*>
-    private lateinit var mainToolbar: ActionToolbar
     
     // State
     private var lastAnalysisResult: AnalysisResult? = null
@@ -101,7 +98,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private var loadingPanel: JBPanel<*>? = null
     private var loadingIcon: AsyncProcessIcon? = null
     private var loadingMainLabel: JBLabel? = null
-    private var loadingProgressLabel: JBLabel? = null
     private var loadingStatusLabel: JBLabel? = null
     
     // Analysis status components (persistent during multi-module analysis)
@@ -138,7 +134,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
             isLoadingState = false
         }
         
-        // Show/update ongoing analysis status if not all modules are complete
         if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
             showAnalysisStatusPanel()
         } else {
@@ -178,13 +173,14 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     fun updateLoadingProgress() {
         receivedModuleCount++
         updateLoadingText()
-        
-        // Update analysis status panel if it exists
+
         if (analysisStatusPanel != null) {
             updateAnalysisStatusText()
         }
-        
-        // If all modules are complete, we'll transition to results when updateFindings is called
+
+        if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
+            showAnalysisStatusPanel()
+        }
     }
     
     /**
@@ -198,10 +194,11 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         if (isLoadingState) {
             updateLoadingText()
         }
-        
-        // Update analysis status panel if it exists
-        if (analysisStatusPanel != null) {
-            updateAnalysisStatusText()
+
+        if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
+            showAnalysisStatusPanel()
+        } else if (expectedModuleCount > 1) {
+            hideAnalysisStatusPanel()
         }
     }
     
@@ -242,28 +239,16 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun createToolbar() {
-        val actions = listOf(
-            ShowReportFiltersAction(this@ReportPanel),
-            // Separator
-            null,
-            SonarLintActions.getInstance().analyzeAllFiles(),
-            SonarLintActions.getInstance().analyzeChangedFiles(),
-            null,
-            SonarLintActions.getInstance().expandAllTreesAction(),
-            SonarLintActions.getInstance().collapseAllTreesAction(),
-            null,
-            SonarLintActions.getInstance().configure()
+        val sonarLintActions = SonarLintActions.getInstance()
+        
+        val sections = listOf(
+            listOf(ShowReportFiltersAction(this@ReportPanel)),
+            listOf(sonarLintActions.analyzeAllFiles(), sonarLintActions.analyzeChangedFiles()),
+            listOf(sonarLintActions.expandAllTreesAction(), sonarLintActions.collapseAllTreesAction()),
+            listOf(sonarLintActions.configure())
         )
 
-        val actionGroup = DefaultActionGroup()
-        actions.forEach { action ->
-            if (action == null) {
-                actionGroup.addSeparator()
-            } else {
-                actionGroup.add(action)
-            }
-        }
-        
+        val actionGroup = ToolbarUtils.createActionGroupFromSections(sections)        
         val toolbar = ActionManager.getInstance().createActionToolbar(TOOL_WINDOW_ID, actionGroup, false)
         toolbar.targetComponent = this
         
@@ -277,7 +262,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         onFilterChanged = ::refreshFilteredView,
         onSortingChanged = ::handleSortingChange,
         onFocusOnNewCodeChanged = ::handleFocusOnNewCodeChange,
-        onScopeModeChanged = { /* No action needed for Report tab */ },
+        onFindingsScopeChanged = { /* No action needed for Report tab */ },
         showScopeFilter = false // Hide scope filter in Report tab
     )
     
@@ -454,12 +439,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
             horizontalAlignment = SwingConstants.CENTER
         }
 
-        loadingProgressLabel = JBLabel(getProgressText()).apply {
-            font = font.deriveFont(13f)
-            foreground = UIUtil.getContextHelpForeground()
-            horizontalAlignment = SwingConstants.CENTER
-        }
-
         loadingStatusLabel = JBLabel(getAnalysisStatusText()).apply {
             font = font.deriveFont(11f)
             foreground = UIUtil.getContextHelpForeground()
@@ -481,7 +460,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
 
                 add(spinnerPanel)
                 add(loadingMainLabel!!)
-                add(loadingProgressLabel!!)
                 add(loadingStatusLabel!!)
             }
 
@@ -510,7 +488,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         loadingIcon = null
         loadingPanel = null
         loadingMainLabel = null
-        loadingProgressLabel = null
         loadingStatusLabel = null
         
         // Restore original content
@@ -522,21 +499,11 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun updateLoadingText() {
-        loadingProgressLabel?.text = getProgressText()
         loadingStatusLabel?.text = getAnalysisStatusText()
-        
         // Force repaint
         loadingPanel?.let { panel ->
             panel.revalidate()
             panel.repaint()
-        }
-    }
-    
-    private fun getProgressText(): String {
-        return if (expectedModuleCount > 1) {
-            "Analyzing modules ($receivedModuleCount/$expectedModuleCount completed)..."
-        } else {
-            "Analyzing files..."
         }
     }
     
@@ -628,7 +595,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         loadingPanel = null
         loadingIcon = null
         loadingMainLabel = null
-        loadingProgressLabel = null
         loadingStatusLabel = null
         
         analysisStatusPanel = null

@@ -56,7 +56,7 @@ import org.sonarlint.intellij.ui.factory.PanelFactory
 import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.FindingsFilter
-import org.sonarlint.intellij.ui.filter.ScopeMode
+import org.sonarlint.intellij.ui.filter.FindingsScope
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.filter.StatusFilter
 import org.sonarlint.intellij.ui.nodes.IssueNode
@@ -77,7 +77,7 @@ sealed class FindingSupportStatus {
 private const val CHECKING_SUPPORT = "Checking support..."
 
 /**
- * Main panel component for the Current File tab in SonarLint tool window.
+ * Main panel component for the Findings tab in SonarQube for IDE tool window.
  * 
  * <h3>Design & Architecture:</h3>
  * This panel serves as the primary orchestrator for displaying findings in the currently opened file.
@@ -124,7 +124,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                     getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCode)
                 }
             },
-            { handleScopeModeChanged() }
+            { handleFindingsScopeChanged() }
         )
 
         summaryPanel = CurrentFileSummaryPanel(
@@ -319,19 +319,12 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     }
 
     private fun setupToolbar() {
-        setToolbar(listOf(
-            SonarLintActions.getInstance().analyzeCurrentFileAction(),
-            SonarLintActions.getInstance().cancelAnalysis(),
-            // Separator
-            null,
-            SonarLintActions.getInstance().analyzeChangedFiles(),
-            SonarLintActions.getInstance().analyzeAllFiles(),
-            null,
-            SonarLintActions.getInstance().expandAllTreesAction(),
-            SonarLintActions.getInstance().collapseAllTreesAction(),
-            null,
-            SonarLintActions.getInstance().configure(),
-            SonarLintActions.getInstance().clearIssues()
+        val actions = SonarLintActions.getInstance()
+        setToolbarSections(listOf(
+            listOf(actions.analyzeCurrentFileAction(), actions.cancelAnalysis()),
+            listOf(actions.analyzeChangedFiles(), actions.analyzeAllFiles()),
+            listOf(actions.expandAllTreesAction(), actions.collapseAllTreesAction()),
+            listOf(actions.configure(), actions.clearIssues())
         ))
     }
 
@@ -449,7 +442,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
     }
 
-    private fun handleScopeModeChanged() {
+    private fun handleFindingsScopeChanged() {
         refreshView()
     }
 
@@ -522,18 +515,18 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         val oldTreeBuilder = getBuilder<T>(treeType, true)
         
         // Determine if we should show file names based on scope mode
-        val showFileNames = filtersPanel.scopeMode == ScopeMode.OPEN_FILES
+        val showFileNames = filtersPanel.findingsScope == FindingsScope.ALL_FILES
         
         // Set scope suffix for tree summary nodes BEFORE populating trees
-        val scopeMode = filtersPanel.scopeMode
+        val findingsScope = filtersPanel.findingsScope
         val scopeSuffix = when (treeType) {
-            TreeType.ISSUES, TreeType.HOTSPOTS -> when (scopeMode) {
-                ScopeMode.CURRENT_FILE -> "in the current file"
-                ScopeMode.OPEN_FILES -> "in the opened files"
+            TreeType.ISSUES, TreeType.HOTSPOTS -> when (findingsScope) {
+                FindingsScope.CURRENT_FILE -> "in the current file"
+                FindingsScope.ALL_FILES -> "in the opened files"
             }
-            TreeType.TAINTS -> when (scopeMode) {
-                ScopeMode.CURRENT_FILE -> "in the current file"
-                ScopeMode.OPEN_FILES -> "in the project"
+            TreeType.TAINTS -> when (findingsScope) {
+                FindingsScope.CURRENT_FILE -> "in the current file"
+                FindingsScope.ALL_FILES -> "in the project"
             }
             TreeType.DEPENDENCY_RISKS -> "in the project"
         }
@@ -660,48 +653,44 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     }
     
     fun expandAllTrees() {
-        val scopeMode = filtersPanel.scopeMode
+        val findingsScope = filtersPanel.findingsScope
         TreeType.values().forEach { treeType ->
             val tree = getTree(treeType, isOld = false)
             val oldTree = getTree(treeType, isOld = true)
 
-            // Expand main tree if it's visible and has content
             if (tree.isVisible) {
-                expandTreeBasedOnScope(tree, treeType, scopeMode)
+                expandTreeBasedOnScope(tree, treeType, findingsScope)
             }
 
-            // Expand old tree if it's visible and has content
             if (oldTree.isVisible) {
-                expandTreeBasedOnScope(oldTree, treeType, scopeMode)
+                expandTreeBasedOnScope(oldTree, treeType, findingsScope)
             }
         }
     }
     
     fun collapseAllTrees() {
-        val scopeMode = filtersPanel.scopeMode
+        val findingsScope = filtersPanel.findingsScope
         TreeType.values().forEach { treeType ->
             val tree = getTree(treeType, isOld = false)
             val oldTree = getTree(treeType, isOld = true)
 
-            // Collapse main tree if it's visible and has content
             if (tree.isVisible) {
-                collapseTreeBasedOnScope(tree, scopeMode)
+                collapseTreeBasedOnScope(tree, findingsScope)
             }
 
-            // Collapse old tree if it's visible and has content
             if (oldTree.isVisible) {
-                collapseTreeBasedOnScope(oldTree, scopeMode)
+                collapseTreeBasedOnScope(oldTree, findingsScope)
             }
         }
     }
     
-    private fun expandTreeBasedOnScope(tree: Tree, treeType: TreeType, scopeMode: ScopeMode) {
-        when (scopeMode) {
-            ScopeMode.CURRENT_FILE -> {
+    private fun expandTreeBasedOnScope(tree: Tree, treeType: TreeType, findingsScope: FindingsScope) {
+        when (findingsScope) {
+            FindingsScope.CURRENT_FILE -> {
                 // In current file mode, expand the root to show all findings directly
                 tree.expandRow(0)
             }
-            ScopeMode.OPEN_FILES -> {
+            FindingsScope.ALL_FILES -> {
                 // In all files mode, expand file nodes
                 if (treeType == TreeType.TAINTS) {
                     expandTaintFileNodes(tree)
@@ -712,13 +701,13 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
     }
     
-    private fun collapseTreeBasedOnScope(tree: Tree, scopeMode: ScopeMode) {
-        when (scopeMode) {
-            ScopeMode.CURRENT_FILE -> {
+    private fun collapseTreeBasedOnScope(tree: Tree, findingsScope: FindingsScope) {
+        when (findingsScope) {
+            FindingsScope.CURRENT_FILE -> {
                 // In current file mode, collapse the root to hide all findings
                 tree.collapseRow(0)
             }
-            ScopeMode.OPEN_FILES -> {
+            FindingsScope.ALL_FILES -> {
                 // In all files mode, collapse file nodes but keep root expanded
                 TreeUtil.collapseAll(tree, 1)
             }
