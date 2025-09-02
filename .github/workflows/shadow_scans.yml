@@ -31,7 +31,7 @@ jobs:
           run-shadow-scans: true
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
-          gradle-args: -x :its:check -I gradle/init-signing-deps.gradle.kts sonar jacocoTestReport
+          gradle-args: -x :its:check sonar jacocoTestReport
       - name: Run IRIS Analysis
         uses: SonarSource/unified-dogfooding-actions/run-iris@v1
         with:

@@ -16,6 +16,10 @@ import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+tasks.matching { it.name == "signArchives" }.configureEach {
+    dependsOn(":composedJar")
+}
+
 plugins {
     java
     alias(libs.plugins.kotlin)
