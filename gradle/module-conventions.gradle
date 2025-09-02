@@ -4,6 +4,10 @@ tasks.withType(Test).configureEach {
     useJUnitPlatform()
 }
 
+tasks.matching { it.name == "signArchives" }.configureEach {
+  dependsOn(":composedJar")
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
