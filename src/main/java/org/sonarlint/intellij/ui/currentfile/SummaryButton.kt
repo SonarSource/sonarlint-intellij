@@ -75,11 +75,11 @@ class SummaryButton(
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         textLabel.text = formatText()
         selectionListener = listener
-        add(Box.createRigidArea(Dimension(8, 0)))
+        add(Box.createRigidArea(Dimension(4, 0)))
         add(iconLabel)
         add(Box.createRigidArea(Dimension(4, 0)))
         add(textLabel)
-        add(Box.createRigidArea(Dimension(8, 0)))
+        add(Box.createRigidArea(Dimension(4, 0)))
         toolTipText = tooltipText
         isOpaque = false
         disabledTooltip = DISABLED_TOOLTIP

@@ -69,7 +69,7 @@ class CurrentFileSummaryPanel(
     private val toggleFilterBtn = JToggleButton(AllIcons.General.Filter)
 
     init {
-        border = JBUI.Borders.empty(8)
+        border = JBUI.Borders.empty(4)
 
         toggleFilterBtn.apply {
             isFocusPainted = false

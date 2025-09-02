@@ -42,6 +42,7 @@ import org.sonarlint.intellij.finding.sca.aDependencyRiskDto
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
@@ -120,7 +121,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         client.suggestBinding(
             mapOf(
-                projectBackendId to listOf(BindingSuggestionDto("connectionId", "projectKey", "projectName", false))
+                projectBackendId to listOf(BindingSuggestionDto("connectionId", "projectKey", "projectName", BindingSuggestionOrigin.PROPERTIES_FILE))
             )
         )
 
@@ -152,8 +153,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         client.suggestBinding(
             mapOf(
                 projectBackendId to listOf(
-                    BindingSuggestionDto("connectionId", "projectKey", "projectName", false),
-                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", false)
+                    BindingSuggestionDto("connectionId", "projectKey", "projectName", BindingSuggestionOrigin.PROPERTIES_FILE),
+                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", BindingSuggestionOrigin.PROPERTIES_FILE)
                 )
             )
         )
@@ -173,8 +174,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         client.suggestBinding(
             mapOf(
                 "wrongProjectId" to listOf(
-                    BindingSuggestionDto("connectionId", "projectKey", "projectName", false),
-                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", false)
+                    BindingSuggestionDto("connectionId", "projectKey", "projectName", BindingSuggestionOrigin.PROPERTIES_FILE),
+                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", BindingSuggestionOrigin.PROPERTIES_FILE)
                 )
             )
         )
@@ -190,8 +191,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         client.suggestBinding(
             mapOf(
                 "wrongProjectId" to listOf(
-                    BindingSuggestionDto("connectionId", "projectKey", "projectName", false),
-                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", false)
+                    BindingSuggestionDto("connectionId", "projectKey", "projectName", BindingSuggestionOrigin.PROPERTIES_FILE),
+                    BindingSuggestionDto("connectionId", "projectKey2", "projectName2", BindingSuggestionOrigin.PROPERTIES_FILE)
                 )
             )
         )

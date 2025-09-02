@@ -25,6 +25,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.SonarCloudConnectionSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.SonarQubeConnectionSuggestionDto
@@ -52,13 +53,13 @@ class BindingSuggestionHandlerTests : AbstractSonarLintLightTests() {
             "scopeId",
             project,
             null,
-            ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "projectKey1"), true)
+            ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "projectKey1"), BindingSuggestionOrigin.PROPERTIES_FILE)
         )
         val moduleSuggestion = ClientBindingSuggestion(
             "scopeIdModule",
             project,
             module1,
-            ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "projectKey2"), true)
+            ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "projectKey2"), BindingSuggestionOrigin.PROPERTIES_FILE)
         )
         val suggestions = listOf(projectBinding, moduleSuggestion)
 
@@ -71,14 +72,14 @@ class BindingSuggestionHandlerTests : AbstractSonarLintLightTests() {
     fun `should find overridden modules for SonarQube Cloud`() {
         val module1 = mockModule("module1")
         val project = mockProject("project")
-        val cloudSuggestion = ConnectionSuggestionDto(SonarCloudConnectionSuggestionDto("org", "projectKey1", SonarCloudRegion.EU), false)
+        val cloudSuggestion = ConnectionSuggestionDto(SonarCloudConnectionSuggestionDto("org", "projectKey1", SonarCloudRegion.EU), BindingSuggestionOrigin.PROPERTIES_FILE)
         val projectBinding = ClientBindingSuggestion(
             "scopeId",
             project,
             null,
             cloudSuggestion
         )
-        val cloudSuggestion2 = ConnectionSuggestionDto(SonarCloudConnectionSuggestionDto("org", "projectKey2", SonarCloudRegion.EU), false)
+        val cloudSuggestion2 = ConnectionSuggestionDto(SonarCloudConnectionSuggestionDto("org", "projectKey2", SonarCloudRegion.EU), BindingSuggestionOrigin.PROPERTIES_FILE)
         val moduleSuggestion = ClientBindingSuggestion(
             "scopeIdModule",
             project,
@@ -100,13 +101,13 @@ class BindingSuggestionHandlerTests : AbstractSonarLintLightTests() {
             "scopeId",
             project,
             null,
-            ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "projectKey1"), true)
+            ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "projectKey1"), BindingSuggestionOrigin.PROPERTIES_FILE)
         )
         val moduleSuggestion = ClientBindingSuggestion(
             "scopeIdModule",
             project,
             module1,
-            ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "projectKey1"), true)
+            ConnectionSuggestionDto(SonarQubeConnectionSuggestionDto("url", "projectKey1"), BindingSuggestionOrigin.PROPERTIES_FILE)
         )
         val suggestions = listOf(projectBinding, moduleSuggestion)
 
@@ -123,13 +124,13 @@ class BindingSuggestionHandlerTests : AbstractSonarLintLightTests() {
             "scopeId",
             project,
             null,
-            ConnectionSuggestionDto(SonarCloudConnectionSuggestionDto("url1", "projectKey1", SonarCloudRegion.EU), true)
+            ConnectionSuggestionDto(SonarCloudConnectionSuggestionDto("url1", "projectKey1", SonarCloudRegion.EU), BindingSuggestionOrigin.PROPERTIES_FILE)
         )
         val moduleSuggestion = ClientBindingSuggestion(
             "scopeIdModule",
             project,
             module1,
-            ConnectionSuggestionDto(SonarCloudConnectionSuggestionDto("url2", "projectKey2", SonarCloudRegion.EU), true)
+            ConnectionSuggestionDto(SonarCloudConnectionSuggestionDto("url2", "projectKey2", SonarCloudRegion.EU), BindingSuggestionOrigin.PROPERTIES_FILE)
         )
         val suggestions = listOf(projectBinding, moduleSuggestion)
 
