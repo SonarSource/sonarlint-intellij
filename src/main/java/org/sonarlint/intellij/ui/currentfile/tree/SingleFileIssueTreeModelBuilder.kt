@@ -28,10 +28,8 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
-import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.FileNode
 import org.sonarlint.intellij.ui.nodes.IssueNode
@@ -52,7 +50,7 @@ val IMPACT_ORDER = listOf(
     ImpactSeverity.INFO
 )
 
-class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LiveIssue> {
+class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LiveIssue>() {
 
     var model: DefaultTreeModel
     var summaryNode: SummaryNode
@@ -61,7 +59,6 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     private var treeSummary: TreeSummary = FindingTreeSummary(project, TreeContentKind.ISSUES, isOldIssue).also {
         summaryNode = SummaryNode(it)
     }
-    private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
     private var actualFindingsCount: Int = 0
 
     init {
@@ -82,11 +79,7 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
         return latestIssues.isEmpty()
     }
 
-    override fun updateModel(file: VirtualFile?, findings: List<LiveIssue>) {
-        updateModelWithScope(file, findings, false)
-    }
-
-    override fun updateModelWithScope(file: VirtualFile?, findings: List<LiveIssue>, showFileNames: Boolean) {
+    override fun performUpdateModelWithScope(file: VirtualFile?, findings: List<LiveIssue>, showFileNames: Boolean) {
         latestIssues = findings.toMutableList()
         currentFile = file
 
@@ -130,10 +123,6 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
 
     override fun findFindingByKey(key: String): LiveIssue? {
         return findIssueNode(key)?.issue()
-    }
-
-    override fun setSortMode(mode: SortMode) {
-        sortMode = mode
     }
 
     override fun setScopeSuffix(suffix: String) {
