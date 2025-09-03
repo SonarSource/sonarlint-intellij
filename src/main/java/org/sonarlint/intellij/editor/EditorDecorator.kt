@@ -23,6 +23,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Document
@@ -58,7 +59,7 @@ import org.sonarlint.intellij.util.getDocument
 private const val HIGHLIGHT_GROUP_ID = 1001
 
 @Service(Service.Level.PROJECT)
-class EditorDecorator(private val project: Project) {
+class EditorDecorator(private val project: Project) : Disposable {
     private val currentHighlightedDoc: MutableSet<Document> = hashSetOf()
     private var blinker: RangeBlinker? = null
 
@@ -66,9 +67,11 @@ class EditorDecorator(private val project: Project) {
         ApplicationManager.getApplication().assertIsDispatchThread()
         currentHighlightedDoc.forEach {
             clearSecondaryLocationNumbers(it)
-            UpdateHighlightersUtil.setHighlightersToEditor(
-                project, it, 0, it.textLength, emptyList(), null, HIGHLIGHT_GROUP_ID
-            )
+            if (!project.isDisposed) {
+                UpdateHighlightersUtil.setHighlightersToEditor(
+                    project, it, 0, it.textLength, emptyList(), null, HIGHLIGHT_GROUP_ID
+                )
+            }
         }
         currentHighlightedDoc.clear()
         stopBlinking()
@@ -178,7 +181,7 @@ class EditorDecorator(private val project: Project) {
             return
         }
         getEditors(document).forEach(Consumer { editor: Editor ->
-            blinker = RangeBlinker(editor, TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3)
+            blinker = RangeBlinker(editor, TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3, this)
             blinker!!.blinkHighlights(highlights)
         })
     }
@@ -285,6 +288,11 @@ class EditorDecorator(private val project: Project) {
             builder.descriptionAndTooltip("SonarQube: $message")
         }
         return builder.create()?.let { hl -> computeReadActionSafely { Highlight(location.document, hl) } }
+    }
+
+    override fun dispose() {
+        stopBlinking()
+        removeHighlights()
     }
 
     class Highlight(val document: Document, val highlightInfo: HighlightInfo)
