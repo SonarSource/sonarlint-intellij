@@ -68,7 +68,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     var toolWindowService = getService(project, SonarLintToolWindow.class);
     var fileTextRange = psiFile.getTextRange();
-    toolWindowService.getDisplayedFindings().getIssues().stream()
+    var currentFile = psiFile.getVirtualFile();
+    var findings = toolWindowService.getDisplayedFindings(currentFile);
+
+    findings.getIssues().stream()
       .filter(issue -> !issue.isResolved() && (!isFocusOnNewCode || issue.isOnNewCode()))
       .forEach(issue -> {
         var validTextRange = issue.getValidTextRange();
@@ -77,7 +80,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         }
       });
 
-    toolWindowService.getDisplayedFindings().getHotspots().stream()
+    findings.getHotspots().stream()
       .filter(securityHotspot -> !securityHotspot.isResolved() && (!isFocusOnNewCode || securityHotspot.isOnNewCode()))
       .forEach(securityHotspot -> {
         var validTextRange = securityHotspot.getValidTextRange();
@@ -86,8 +89,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         }
       });
 
-    var currentFile = psiFile.getVirtualFile();
-    toolWindowService.getDisplayedFindings().getTaints().stream()
+    findings.getTaints().stream()
       .filter(vulnerability -> !vulnerability.isResolved() && (!isFocusOnNewCode || vulnerability.isOnNewCode()))
       .filter(vulnerability -> currentFile.equals(vulnerability.file()))
       .forEach(vulnerability -> addAnnotation(vulnerability, fileTextRange, holder));

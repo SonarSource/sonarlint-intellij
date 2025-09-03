@@ -782,8 +782,8 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
     }
 
-    fun getDisplayedFindings(): FilteredFindings {
-        return filteredFindingsCache
+    fun getDisplayedFindingsFoFile(file: VirtualFile): FilteredFindings {
+        return filteredFindingsCache.getFindingsForFile(file)
     }
 
     fun allowResolvedFindings(isResolved: Boolean) {
