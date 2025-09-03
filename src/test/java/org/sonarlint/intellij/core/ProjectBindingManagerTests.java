@@ -31,11 +31,12 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.mock;
-import static org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC;
 
 class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager;
@@ -79,7 +80,7 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
     var connection = ServerConnection.newBuilder().setName("name").build();
     getGlobalSettings().setServerConnections(List.of(connection));
 
-    projectBindingManager.bindTo(connection, "projectKey", Collections.emptyMap(), AUTOMATIC);
+    projectBindingManager.bindTo(connection, "projectKey", Collections.emptyMap(), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME);
 
     assertThat(getProjectSettings().isBoundTo(connection)).isTrue();
     assertThat(getProjectSettings().getProjectKey()).isEqualTo("projectKey");
@@ -89,7 +90,7 @@ class ProjectBindingManagerTests extends AbstractSonarLintLightTests {
   void should_store_project_and_module_bindings_in_settings() {
     var connection = ServerConnection.newBuilder().setName("name").build();
     getGlobalSettings().setServerConnections(List.of(connection));
-    projectBindingManager.bindTo(connection, "projectKey", Map.of(getModule(), "moduleProjectKey"), AUTOMATIC);
+    projectBindingManager.bindTo(connection, "projectKey", Map.of(getModule(), "moduleProjectKey"), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME);
 
     assertThat(getProjectSettings().isBoundTo(connection)).isTrue();
     assertThat(getProjectSettings().getProjectKey()).isEqualTo("projectKey");

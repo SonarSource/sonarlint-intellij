@@ -36,7 +36,7 @@ open class BindingSuggestionSelectionDialog(bindingSuggestions: List<BindingSugg
         init()
         suggestionsList.cellRenderer = BindingSuggestionRenderer()
 
-        title = "Bind the project"
+        title = "Bind the Project"
         okAction.isEnabled = false
         suggestionsList.addListSelectionListener { okAction.isEnabled = true }
         val accepted = showAndGet()

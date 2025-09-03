@@ -35,7 +35,8 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -90,15 +91,14 @@ public final class ProjectBindingManager {
   }
 
   public void bindTo(ServerConnection connection, String projectKey, Map<Module, String> moduleBindingsOverrides,
-    BindingMode bindingMode) {
+    BindingMode mode, @Nullable BindingSuggestionOrigin origin) {
     var previousBinding = getProjectBinding(connection, projectKey, moduleBindingsOverrides);
 
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
-      updateTelemetryOnBind(bindingMode);
-      getService(BackendService.class).projectBound(myProject, newBinding);
+      getService(BackendService.class).projectBound(myProject, newBinding, mode, origin);
     }
   }
 
@@ -110,8 +110,7 @@ public final class ProjectBindingManager {
 
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
-      updateTelemetryOnBind(BindingMode.MANUAL);
-      getService(BackendService.class).projectBound(myProject, newBinding);
+      getService(BackendService.class).projectBound(myProject, newBinding, BindingMode.MANUAL, null);
 
       showSharedConfigurationNotification(myProject, String.format("""
         Project successfully bound with '%s' on '%s'.
@@ -172,20 +171,6 @@ public final class ProjectBindingManager {
     return allModules().stream()
       .filter(m -> getSettingsFor(m).isProjectBindingOverridden())
       .collect(Collectors.toMap(m -> m, m -> org.sonarlint.intellij.config.Settings.getSettingsFor(m).getProjectKey()));
-  }
-
-  public static void updateTelemetryOnBind(BindingMode bindingMode) {
-    switch (bindingMode) {
-      case AUTOMATIC -> getService(SonarLintTelemetry.class).addedAutomaticBindings();
-      case IMPORTED -> getService(SonarLintTelemetry.class).addedImportedBindings();
-      case MANUAL -> getService(SonarLintTelemetry.class).addedManualBindings();
-    }
-  }
-
-  public enum BindingMode {
-    AUTOMATIC,
-    IMPORTED,
-    MANUAL
   }
 
 }

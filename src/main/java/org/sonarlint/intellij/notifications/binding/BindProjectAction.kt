@@ -26,30 +26,36 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 
-class BindProjectAction(private val bindingSuggestion: BindingSuggestion, private val bindingMode: BindingMode)
-    : AbstractSonarAction("Bind project") {
+class BindProjectAction(
+    private val bindingSuggestion: BindingSuggestion,
+    private val mode: BindingMode,
+    private val origin: BindingSuggestionOrigin?,
+) : AbstractSonarAction("Bind project") {
+
     override fun actionPerformed(e: AnActionEvent) {
         val notification = Notification.get(e)
         notification.expire()
         val project = e.project!!
         val bindingManager = SonarLintUtils.getService(project, ProjectBindingManager::class.java)
         val connectionId = bindingSuggestion.connectionId
-        getGlobalSettings().getServerConnectionByName(connectionId)
-            .ifPresentOrElse(
-                { connection ->
-                    bindingManager.bindTo(
-                        connection,
-                        bindingSuggestion.projectKey,
-                        emptyMap(),
-                        bindingMode
-                    )
-                },
-                {
-                    SonarLintConsole.get(project)
-                        .debug("Cannot bind project as suggested, connection $connectionId has been removed")
-                })
-
+        getGlobalSettings().getServerConnectionByName(connectionId).ifPresentOrElse(
+            { connection ->
+                bindingManager.bindTo(
+                    connection,
+                    bindingSuggestion.projectKey,
+                    emptyMap(),
+                    mode,
+                    origin
+                )
+            },
+            {
+                SonarLintConsole.get(project)
+                    .debug("Cannot bind project as suggested, connection $connectionId has been removed")
+            }
+        )
     }
+
 }

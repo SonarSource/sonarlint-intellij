@@ -72,18 +72,6 @@ class SonarLintTelemetry {
         notifyTelemetry { it.analysisReportingTriggered(AnalysisReportingTriggeredParams(analysisType)) }
     }
 
-    fun addedAutomaticBindings() {
-        notifyTelemetry { it.addedAutomaticBindings() }
-    }
-
-    fun addedImportedBindings() {
-        notifyTelemetry { it.addedImportedBindings() }
-    }
-
-    fun addedManualBindings() {
-        notifyTelemetry { it.addedManualBindings() }
-    }
-
     fun fixSuggestionResolved(suggestionId: String, status: FixSuggestionStatus, snippetIndex: Int?) {
         notifyTelemetry { it.fixSuggestionResolved(FixSuggestionResolvedParams(suggestionId, status, snippetIndex)) }
     }

@@ -26,33 +26,31 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
 import org.sonarlint.intellij.ui.BindingSuggestionSelectionDialog
 
-class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingSuggestion>) :
-    NotificationAction("Configure binding") {
+class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingSuggestion>) : NotificationAction("Configure binding") {
+
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         val dialog = BindingSuggestionSelectionDialog(suggestedBindings)
         val acceptedSuggestion = dialog.chooseSuggestion() ?: return
 
-        val mode = if (acceptedSuggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
-
         notification.expire()
         val project = e.project!!
-        getGlobalSettings().getServerConnectionByName(acceptedSuggestion.connectionId)
-            .ifPresentOrElse(
-                { connection ->
-                    getService(project, ProjectBindingManager::class.java).bindTo(
-                        connection,
-                        acceptedSuggestion.projectKey,
-                        emptyMap(),
-                        mode
-                    )
-                },
-                {
-                    SonarLintConsole.get(project)
-                        .debug("Cannot bind the project as the '${acceptedSuggestion.connectionId}' was deleted")
-                })
+        getGlobalSettings().getServerConnectionByName(acceptedSuggestion.connectionId).ifPresentOrElse(
+            { connection ->
+                getService(project, ProjectBindingManager::class.java).bindTo(
+                    connection,
+                    acceptedSuggestion.projectKey,
+                    emptyMap(),
+                    acceptedSuggestion.mode,
+                    acceptedSuggestion.origin
+                )
+            },
+            {
+                SonarLintConsole.get(project)
+                    .debug("Cannot bind the project as the '${acceptedSuggestion.connectionId}' was deleted")
+            }
+        )
     }
+
 }

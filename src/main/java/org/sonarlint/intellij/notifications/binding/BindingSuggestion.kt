@@ -19,4 +19,13 @@
  */
 package org.sonarlint.intellij.notifications.binding
 
-data class BindingSuggestion(val connectionId: String, val projectKey: String, val projectName: String, val isFromSharedConfiguration: Boolean)
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
+
+data class BindingSuggestion(
+    val connectionId: String,
+    val projectKey: String,
+    val projectName: String,
+    val mode: BindingMode,
+    val origin: BindingSuggestionOrigin?,
+)

@@ -27,6 +27,9 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import java.util.Arrays
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.stream.Stream
 import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
@@ -35,8 +38,6 @@ import org.sonarlint.intellij.actions.ShowLogAction
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK
 import org.sonarlint.intellij.notifications.binding.BindProjectAction
@@ -49,9 +50,6 @@ import org.sonarlint.intellij.telemetry.LinkTelemetry
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
-import java.util.Arrays
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.stream.Stream
 
 
 @Service(Service.Level.PROJECT)
@@ -138,11 +136,9 @@ class SonarLintProjectNotifications(private val myProject: Project) {
     fun suggestBindingOptions(suggestedBindings: List<BindingSuggestion>) {
         if (suggestedBindings.size == 1) {
             val suggestedBinding = suggestedBindings[0]
-            val mode =
-                if (suggestedBinding.isFromSharedConfiguration) IMPORTED else AUTOMATIC
             notifyBindingSuggestions(
                 "Bind this project to '${suggestedBinding.projectName}' on '${suggestedBinding.connectionId}'?",
-                BindProjectAction(suggestedBinding, mode), OpenProjectSettingsAction(myProject, "Select another one")
+                BindProjectAction(suggestedBinding, suggestedBinding.mode, suggestedBinding.origin), OpenProjectSettingsAction(myProject, "Select another one")
             )
         } else {
             notifyBindingSuggestions(
