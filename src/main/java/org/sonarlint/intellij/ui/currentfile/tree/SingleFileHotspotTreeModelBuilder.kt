@@ -94,7 +94,7 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
             
             for (fileKey in sortedFiles) {
                 val fileHotspots = hotspotsByFile[fileKey] ?: continue
-                val fileNode = FileNode(fileKey, true) // true = security hotspot
+                val fileNode = FileNode(fileKey, true)
                 
                 for (hotspot in fileHotspots) {
                     fileNode.add(LiveSecurityHotspotNode(hotspot, false)) // false = don't append filename since it's already in parent

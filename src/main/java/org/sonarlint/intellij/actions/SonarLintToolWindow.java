@@ -311,7 +311,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
         if (hotspot == null && currentFilePanel.doesHotspotExist(showFinding.getFindingKey())) {
           getService(project, SonarLintProjectNotifications.class).notifyUnableToOpenFinding(
-            "The security hotspot could not be opened by SonarQube for IDE due to the applied filters",
+            "The Security Hotspot could not be opened by SonarQube for IDE due to the applied filters",
             new IncludeResolvedIssueAction()
           );
         }

@@ -63,7 +63,7 @@ class CurrentFileSummaryPanel(
 ) : JBPanel<CurrentFileSummaryPanel>(HorizontalLayout(8)) {
 
     private val issuesSummaryButton = SummaryButton("Issue", "Issues", issuesSelectionChanged, "Show/hide issues")
-    private val hotspotsSummaryButton = SummaryButton("Security Hotspot", "Security Hotspots", hotspotsSelectionChanged, "Show/hide security hotspots")
+    private val hotspotsSummaryButton = SummaryButton("Security Hotspot", "Security Hotspots", hotspotsSelectionChanged, "Show/hide Security Hotspots")
     private val taintsSummaryButton = SummaryButton("Taint Vulnerability", "Taint Vulnerabilities", taintsSelectionChanged, "Show/hide taint vulnerabilities")
     private val dependencyRisksSummaryButton = SummaryButton("Dependency Risk", "Dependency Risks", dependencyRisksSelectionChanged, "Show/hide dependency risks")
     private val toggleFilterBtn = JToggleButton(AllIcons.General.Filter)

@@ -262,13 +262,13 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             }
             TreeType.TAINTS -> when (val status = taintSupportStatus) {
                 is FindingSupportStatus.NotSupported -> status.reason
-                is FindingSupportStatus.NotBound -> "Connect to SonarQube (Server, Cloud) to enable Taint Vulnerabilities"
+                is FindingSupportStatus.NotBound -> "Connect to SonarQube (Server, Cloud) to enable taint vulnerabilities"
                 is FindingSupportStatus.CheckingSupport -> CHECKING_SUPPORT
                 else -> null
             }
             TreeType.DEPENDENCY_RISKS -> when (val status = dependencyRiskSupportStatus) {
                 is FindingSupportStatus.NotSupported -> status.reason
-                is FindingSupportStatus.NotBound -> "Connect to SonarQube (Server, Cloud) to enable Dependency Risks"
+                is FindingSupportStatus.NotBound -> "Connect to SonarQube Server with Advanced Security to enable dependency risks"
                 is FindingSupportStatus.CheckingSupport -> CHECKING_SUPPORT
                 else -> null
             }
