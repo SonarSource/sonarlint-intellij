@@ -27,10 +27,8 @@ import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.SonarLintIcons.impact
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
-import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.tree.CompactTreeModel
@@ -51,7 +49,7 @@ val TAINT_IMPACT_ORDER = listOf(
     ImpactSeverity.INFO
 )
 
-class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LocalTaintVulnerability> {
+class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : SingleFileTreeModelBuilder<LocalTaintVulnerability>() {
 
     var summaryNode: SummaryNode
     private var latestTaints = mutableListOf<LocalTaintVulnerability>()
@@ -60,12 +58,6 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
         summaryNode = SummaryNode(it)
     }
     private val taintVulnerabilityTreeUpdater = TaintVulnerabilityTreeUpdater(summaryNode)
-
-    private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
-
-    override fun setSortMode(mode: SortMode) {
-        sortMode = mode
-    }
 
     override fun setScopeSuffix(suffix: String) {
         (treeSummary as? FindingTreeSummary)?.setScopeSuffix(suffix)
@@ -87,11 +79,7 @@ class SingleFileTaintTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
         return latestTaints.isEmpty()
     }
 
-    override fun updateModel(file: VirtualFile?, findings: List<LocalTaintVulnerability>) {
-        updateModelWithScope(file, findings, false)
-    }
-
-    override fun updateModelWithScope(file: VirtualFile?, findings: List<LocalTaintVulnerability>, showFileNames: Boolean) {
+    override fun performUpdateModelWithScope(file: VirtualFile?, findings: List<LocalTaintVulnerability>, showFileNames: Boolean) {
         latestTaints = findings.toMutableList()
         currentFile = file
 

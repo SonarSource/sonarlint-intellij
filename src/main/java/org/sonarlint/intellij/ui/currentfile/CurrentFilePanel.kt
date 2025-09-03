@@ -124,7 +124,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         filtersPanel = FiltersPanel(
             { refreshView() },
             { sortMode -> 
-                treeConfigs.values.forEach { it.builder.setSortMode(SortMode.valueOf(sortMode.name)) }
+                treeConfigs.values.forEach { it.builder.changeSortMode(SortMode.valueOf(sortMode.name)) }
                 refreshView()
             },
             { focusOnNewCode ->

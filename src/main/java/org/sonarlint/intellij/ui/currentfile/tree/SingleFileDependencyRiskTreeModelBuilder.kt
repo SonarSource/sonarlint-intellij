@@ -24,10 +24,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.SonarLintIcons.riskSeverity
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
-import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
 import org.sonarlint.intellij.ui.risks.tree.DependencyRiskTreeUpdater
@@ -45,7 +43,7 @@ val DEPENDENCY_RISK_SEVERITY_ORDER = listOf(
     DependencyRiskDto.Severity.INFO
 )
 
-class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Boolean) : SingleFileTreeModelBuilder<LocalDependencyRisk> {
+class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Boolean) : SingleFileTreeModelBuilder<LocalDependencyRisk>() {
 
     var summaryNode: SummaryNode
     private var latestRisks = mutableListOf<LocalDependencyRisk>()
@@ -54,11 +52,6 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
         summaryNode = SummaryNode(it)
     }
     private val dependencyRiskTreeUpdater = DependencyRiskTreeUpdater(treeSummary, summaryNode)
-    private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
-
-    override fun setSortMode(mode: SortMode) {
-        sortMode = mode
-    }
 
     override fun setScopeSuffix(suffix: String) {
         (treeSummary as? FindingTreeSummary)?.setScopeSuffix(suffix)
@@ -80,11 +73,7 @@ class SingleFileDependencyRiskTreeModelBuilder(project: Project, isOldRisk: Bool
         return latestRisks.isEmpty()
     }
 
-    override fun updateModel(file: VirtualFile?, findings: List<LocalDependencyRisk>) {
-        updateModelWithScope(file, findings, false)
-    }
-
-    override fun updateModelWithScope(file: VirtualFile?, findings: List<LocalDependencyRisk>, showFileNames: Boolean) {
+    override fun performUpdateModelWithScope(file: VirtualFile?, findings: List<LocalDependencyRisk>, showFileNames: Boolean) {
         latestRisks = findings.toMutableList()
         currentFile = file
 

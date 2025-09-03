@@ -25,10 +25,8 @@ import javax.swing.tree.DefaultTreeModel
 import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.borderColorsByVulnerabilityProbability
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
-import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.FileNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
@@ -40,7 +38,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityPr
 
 val VULNERABILITY_PROBABILITIES = listOf(VulnerabilityProbability.HIGH, VulnerabilityProbability.MEDIUM, VulnerabilityProbability.LOW)
 
-class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean) : SingleFileTreeModelBuilder<LiveSecurityHotspot> {
+class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean) : SingleFileTreeModelBuilder<LiveSecurityHotspot>() {
 
     var model: DefaultTreeModel
     private var summaryNode: SummaryNode
@@ -49,7 +47,6 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
     }
     private var currentFile: VirtualFile? = null
     private var latestHotspots = mutableListOf<LiveSecurityHotspot>()
-    private var sortMode: SortMode = getService(FilterSettingsService::class.java).getDefaultSortMode()
     private var actualFindingsCount: Int = 0
 
     init {
@@ -70,11 +67,7 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
         return latestHotspots.isEmpty()
     }
 
-    override fun updateModel(file: VirtualFile?, findings: List<LiveSecurityHotspot>) {
-        updateModelWithScope(file, findings, false)
-    }
-
-    override fun updateModelWithScope(file: VirtualFile?, findings: List<LiveSecurityHotspot>, showFileNames: Boolean) {
+    override fun performUpdateModelWithScope(file: VirtualFile?, findings: List<LiveSecurityHotspot>, showFileNames: Boolean) {
         latestHotspots = findings.toMutableList()
         currentFile = file
 
@@ -130,10 +123,6 @@ class SingleFileHotspotTreeModelBuilder(project: Project, isOldHotspots: Boolean
                 borderColorsByVulnerabilityProbability[it]
             )
         } ?: SummaryUiModel()
-    }
-
-    override fun setSortMode(mode: SortMode) {
-        sortMode = mode
     }
 
     override fun setScopeSuffix(suffix: String) {
