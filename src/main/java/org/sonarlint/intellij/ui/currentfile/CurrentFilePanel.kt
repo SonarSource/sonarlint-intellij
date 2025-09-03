@@ -118,7 +118,10 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     init {
         filtersPanel = FiltersPanel(
             { refreshView() },
-            { sortMode -> treeConfigs.values.forEach { it.builder.setSortMode(SortMode.valueOf(sortMode.name)) } },
+            { sortMode -> 
+                treeConfigs.values.forEach { it.builder.setSortMode(SortMode.valueOf(sortMode.name)) }
+                refreshView()
+            },
             { focusOnNewCode ->
                 runOnPooledThread(project) {
                     getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCode)
