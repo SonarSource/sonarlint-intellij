@@ -551,14 +551,13 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         val findingsScope = filtersPanel.findingsScope
         val scopeSuffix = when (treeType) {
             TreeType.ISSUES, TreeType.HOTSPOTS -> when (findingsScope) {
-                FindingsScope.CURRENT_FILE -> "in the current file"
+                FindingsScope.CURRENT_FILE -> ""  // No suffix needed when already in current file scope
                 FindingsScope.ALL_FILES -> "in the opened files"
             }
-            TreeType.TAINTS -> when (findingsScope) {
-                FindingsScope.CURRENT_FILE -> "in the current file"
+            TreeType.TAINTS, TreeType.DEPENDENCY_RISKS -> when (findingsScope) {
+                FindingsScope.CURRENT_FILE -> ""
                 FindingsScope.ALL_FILES -> "in the project"
             }
-            TreeType.DEPENDENCY_RISKS -> "in the project"
         }
         treeBuilder.setScopeSuffix(scopeSuffix)
         oldTreeBuilder.setScopeSuffix(scopeSuffix)
