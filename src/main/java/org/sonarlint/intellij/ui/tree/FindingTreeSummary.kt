@@ -48,7 +48,7 @@ class FindingTreeSummary(private val project: Project, private val treeContentKi
         // Regenerate text with the new scope suffix if we have existing data
         if (text != emptyText && text != DEFAULT_EMPTY_TEXT) {
             val newCodePeriod = getService(project, NewCodePeriodCache::class.java).periodAsString
-            text = computeText(lastFindingsCount, lastFindingsCount, newCodePeriod)
+            text = computeText(lastFilesCount, lastFindingsCount, newCodePeriod)
         }
     }
 
