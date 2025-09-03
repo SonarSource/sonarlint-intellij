@@ -679,7 +679,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         TreeUtil.expandAll(getTree(TreeType.DEPENDENCY_RISKS, isOld = false))
         
         // For taint trees, expand only file nodes (not the full tree as it can be very deep)
-        expandTaintFileNodes(getTree(TreeType.TAINTS, isOld = false))
+        expandFileNodes(getTree(TreeType.TAINTS, isOld = false))
     }
     
     fun expandAllTrees() {
@@ -705,11 +705,11 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             val oldTree = getTree(treeType, isOld = true)
 
             if (tree.isVisible) {
-                collapseTreeBasedOnScope(tree, findingsScope)
+                collapseTreeBasedOnScope(tree, treeType, findingsScope)
             }
 
             if (oldTree.isVisible) {
-                collapseTreeBasedOnScope(oldTree, findingsScope)
+                collapseTreeBasedOnScope(oldTree, treeType, findingsScope)
             }
         }
     }
@@ -721,9 +721,9 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                 tree.expandRow(0)
             }
             FindingsScope.ALL_FILES -> {
-                // In all files mode, expand file nodes
-                if (treeType == TreeType.TAINTS) {
-                    expandTaintFileNodes(tree)
+                // In all files mode, expand file nodes (except for dependency risks)
+                if (treeType == TreeType.DEPENDENCY_RISKS) {
+                    tree.expandRow(0)
                 } else {
                     expandFileNodes(tree)
                 }
@@ -731,30 +731,24 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
     }
     
-    private fun collapseTreeBasedOnScope(tree: Tree, findingsScope: FindingsScope) {
+    private fun collapseTreeBasedOnScope(tree: Tree, treeType: TreeType, findingsScope: FindingsScope) {
         when (findingsScope) {
             FindingsScope.CURRENT_FILE -> {
                 // In current file mode, collapse the root to hide all findings
                 tree.collapseRow(0)
             }
             FindingsScope.ALL_FILES -> {
-                // In all files mode, collapse file nodes but keep root expanded
-                TreeUtil.collapseAll(tree, 1)
+                // In all files mode, collapse file nodes but keep root expanded (except for dependency risks)
+                if (treeType == TreeType.DEPENDENCY_RISKS) {
+                    tree.collapseRow(0)
+                } else {
+                    TreeUtil.collapseAll(tree, 1)
+                }
             }
         }
     }
     
-    private fun expandFileNodes(tree: Tree) {
-        tree.model.root?.let { root ->
-            tree.expandPath(TreePath(root))
-            for (i in 0 until tree.model.getChildCount(root)) {
-                val fileNode = tree.model.getChild(root, i)
-                tree.expandPath(TreePath(arrayOf(root, fileNode)))
-            }
-        }
-    }
-    
-    fun expandTaintFileNodes(tree: Tree) {
+    fun expandFileNodes(tree: Tree) {
         tree.model.root?.let { root ->
             tree.expandPath(TreePath(root))
             for (i in 0 until tree.model.getChildCount(root)) {
