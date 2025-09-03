@@ -142,6 +142,10 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         // Set up UI layout first
         setupLayout()
         
+        // Initialize summary buttons with proper enabled/disabled state immediately
+        // This prevents the buttons from appearing enabled during startup before support checks complete
+        updateSummaryButtons()
+        
         // Initialize display manager after UI components are ready
         displayManager = CurrentFileDisplayManager(
             project, filtersPanel
