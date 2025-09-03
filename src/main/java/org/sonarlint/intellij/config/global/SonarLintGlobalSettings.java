@@ -46,6 +46,7 @@ public final class SonarLintGlobalSettings {
   private boolean isFocusOnNewCode = false;
   private boolean isPromotionDisabled = false;
   private String defaultSortMode = "DATE";
+  private String defaultFindingsScope = "CURRENT_FILE";
 
   private boolean autoTrigger = true;
   private boolean isRegionEnabled = false;
@@ -69,6 +70,7 @@ public final class SonarLintGlobalSettings {
     this.isFocusOnNewCode = original.isFocusOnNewCode;
     this.isPromotionDisabled = original.isPromotionDisabled;
     this.defaultSortMode = original.defaultSortMode;
+    this.defaultFindingsScope = original.defaultFindingsScope;
     this.autoTrigger = original.autoTrigger;
     this.isRegionEnabled = original.isRegionEnabled;
     this.nodejsPath = original.nodejsPath;
@@ -171,6 +173,14 @@ public final class SonarLintGlobalSettings {
 
   public void setDefaultSortMode(String defaultSortMode) {
     this.defaultSortMode = defaultSortMode;
+  }
+
+  public String getDefaultFindingsScope() {
+    return defaultFindingsScope;
+  }
+
+  public void setDefaultFindingsScope(String defaultFindingsScope) {
+    this.defaultFindingsScope = defaultFindingsScope;
   }
 
   public boolean isAutoTrigger() {

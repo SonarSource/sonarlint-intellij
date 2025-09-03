@@ -65,7 +65,7 @@ class FiltersPanel(
     private val statusSpacingComponents = mutableListOf<Component>()
 
     // Filter state
-    var findingsScope = FindingsScope.CURRENT_FILE
+    var findingsScope = getService(FilterSettingsService::class.java).getDefaultFindingsScope()
     var filterText = ""
     var filterSeverity: SeverityImpactFilter = SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
     var filterStatus = StatusFilter.OPEN
@@ -93,9 +93,10 @@ class FiltersPanel(
 
     private fun setupScopeComponents() {
         scopeCombo.apply {
-            selectedItem = FindingsScope.CURRENT_FILE
+            selectedItem = findingsScope
             addActionListener {
                 findingsScope = selectedItem as FindingsScope
+                getService(FilterSettingsService::class.java).setDefaultFindingsScope(findingsScope)
                 onFindingsScopeChanged()
                 onFilterChanged()
             }
@@ -203,6 +204,8 @@ class FiltersPanel(
 
     private fun resetFilters() {
         findingsScope = FindingsScope.CURRENT_FILE
+        getService(FilterSettingsService::class.java).setDefaultFindingsScope(findingsScope)
+        scopeCombo.selectedItem = FindingsScope.CURRENT_FILE
         searchField.text = ""
         filterSeverity = when (filterSeverity) {
             is SeverityImpactFilter.MqrImpact -> SeverityImpactFilter.MqrImpact(MqrImpactFilter.NO_FILTER)
@@ -214,6 +217,7 @@ class FiltersPanel(
         quickFixCheckBox.isSelected = false
         sortMode = SortMode.DATE
         sortCombo.selectedItem = SortMode.DATE
+        getService(FilterSettingsService::class.java).setDefaultSortMode(sortMode)
         focusOnNewCodeCheckBox.isSelected = false
         onFocusOnNewCodeChanged(false)
         onFilterChanged()

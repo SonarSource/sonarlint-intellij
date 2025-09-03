@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
 
-  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 13;
+  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 14;
   private static final String RULE = "rule";
   private static final String RULE1 = "rule1";
   private static final String PARAM = "param";
@@ -180,6 +180,7 @@ class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
     assertThat(copy.getRules()).isEqualTo(original.getRules());
     assertThat(copy.getRulesByKey()).isEqualTo(original.getRulesByKey());
     assertThat(copy.getDefaultSortMode()).isEqualTo(original.getDefaultSortMode());
+    assertThat(copy.getDefaultFindingsScope()).isEqualTo(original.getDefaultFindingsScope());
   }
 
   @Test
