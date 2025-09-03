@@ -142,7 +142,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
    * Note: This method returns findings from the Findings tab, not report tabs,
    * as report tabs show historical analysis results.
    */
-  public FilteredFindings getDisplayedFindings() {
+  public FilteredFindings getDisplayedFindings(VirtualFile file) {
     var toolWindow = getToolWindow();
     if (toolWindow == null) {
       return new FilteredFindings(List.of(), List.of(), List.of(), List.of());
@@ -151,7 +151,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var contentManager = toolWindow.getContentManager();
     var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
     if (content != null && content.getComponent() instanceof CurrentFilePanel currentFilePanel) {
-      return currentFilePanel.getDisplayedFindings();
+      return currentFilePanel.getDisplayedFindingsFoFile(file);
     }
     return new FilteredFindings(List.of(), List.of(), List.of(), List.of());
   }

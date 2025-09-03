@@ -51,6 +51,14 @@ data class FilteredFindings(
 ) {
     fun isEmpty(): Boolean = issues.isEmpty() && hotspots.isEmpty() && taints.isEmpty() && dependencyRisks.isEmpty()
     fun isNotEmpty(): Boolean = !isEmpty()
+    fun getFindingsForFile(file: VirtualFile): FilteredFindings {
+        return FilteredFindings(
+            issues = issues.filter { it.file() == file },
+            hotspots = hotspots.filter { it.file() == file },
+            taints = taints.filter { it.file() == file },
+            dependencyRisks = emptyList()
+        )
+    }
 }
 
 /**
