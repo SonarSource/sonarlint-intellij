@@ -95,10 +95,13 @@ class FiltersPanel(
         scopeCombo.apply {
             selectedItem = findingsScope
             addActionListener {
-                findingsScope = selectedItem as FindingsScope
-                getService(FilterSettingsService::class.java).setDefaultFindingsScope(findingsScope)
-                onFindingsScopeChanged()
-                onFilterChanged()
+                val newScope = selectedItem as FindingsScope
+                if (findingsScope != newScope) {
+                    findingsScope = newScope
+                    getService(FilterSettingsService::class.java).setDefaultFindingsScope(findingsScope)
+                    onFindingsScopeChanged()
+                    onFilterChanged()
+                }
             }
         }
     }
@@ -150,8 +153,11 @@ class FiltersPanel(
         sortCombo.apply {
             selectedItem = sortMode
             addActionListener {
-                sortMode = selectedItem as SortMode
-                onSortingChanged(sortMode)
+                val newSortMode = selectedItem as SortMode
+                if (sortMode != newSortMode) {
+                    sortMode = newSortMode
+                    onSortingChanged(sortMode)
+                }
             }
         }
     }
@@ -203,22 +209,31 @@ class FiltersPanel(
     }
 
     private fun resetFilters() {
+        // Update internal state first
         findingsScope = FindingsScope.CURRENT_FILE
-        getService(FilterSettingsService::class.java).setDefaultFindingsScope(findingsScope)
-        scopeCombo.selectedItem = FindingsScope.CURRENT_FILE
-        searchField.text = ""
+        sortMode = SortMode.DATE
         filterSeverity = when (filterSeverity) {
             is SeverityImpactFilter.MqrImpact -> SeverityImpactFilter.MqrImpact(MqrImpactFilter.NO_FILTER)
             else -> SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
         }
-        severityCombo.selectedItem = SeverityFilter.NO_FILTER
         filterStatus = StatusFilter.OPEN
-        statusCombo.selectedItem = StatusFilter.OPEN
-        quickFixCheckBox.isSelected = false
-        sortMode = SortMode.DATE
-        sortCombo.selectedItem = SortMode.DATE
+        
+        // Save preferences
+        getService(FilterSettingsService::class.java).setDefaultFindingsScope(findingsScope)
         getService(FilterSettingsService::class.java).setDefaultSortMode(sortMode)
+
+        scopeCombo.selectedItem = findingsScope
+        sortCombo.selectedItem = sortMode
+        searchField.text = ""
+        severityCombo.selectedItem = when (filterSeverity) {
+            is SeverityImpactFilter.MqrImpact -> MqrImpactFilter.NO_FILTER
+            else -> SeverityFilter.NO_FILTER
+        }
+        statusCombo.selectedItem = filterStatus
+        quickFixCheckBox.isSelected = false
         focusOnNewCodeCheckBox.isSelected = false
+        
+        // Trigger callbacks
         onFocusOnNewCodeChanged(false)
         onFilterChanged()
     }
