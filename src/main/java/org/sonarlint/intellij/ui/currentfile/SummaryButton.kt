@@ -79,7 +79,7 @@ class SummaryButton(
         add(iconLabel)
         add(Box.createRigidArea(Dimension(4, 0)))
         add(textLabel)
-        add(Box.createRigidArea(Dimension(4, 0)))
+        add(Box.createRigidArea(Dimension(6, 0)))
         toolTipText = tooltipText
         isOpaque = false
         disabledTooltip = DISABLED_TOOLTIP
