@@ -53,6 +53,7 @@ import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.currentfile.tree.SingleFileTreeModelBuilder
 import org.sonarlint.intellij.ui.factory.PanelFactory
+import org.sonarlint.intellij.ui.filter.FilterCriteria
 import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.FindingsFilter
@@ -114,6 +115,10 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     private var dependencyRiskSupportStatus: FindingSupportStatus = FindingSupportStatus.CheckingSupport
 
     private var filteredFindingsCache = FilteredFindings(listOf(), listOf(), listOf(), listOf())
+    
+    // Track changes to avoid unnecessary work
+    private var lastFilterCriteria: FilterCriteria? = null
+    private var lastFile: VirtualFile? = null
 
     init {
         filtersPanel = FiltersPanel(
@@ -350,12 +355,26 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     fun update(file: VirtualFile?) {
         this.currentFile = file
 
-        // Early returns for invalid states
         if (!handleBackendAlive()) return
 
-        // Filtering
         val filterCriteria = displayManager.getCurrentFilterCriteria()
-        filteredFindingsCache = findingsFilter.filterAllFindings(file, filterCriteria)
+        val fileChanged = file != lastFile
+        val filtersChanged = filterCriteria != lastFilterCriteria
+        
+        // Always check for new findings - they may have changed even with same file/filters
+        val newFilteredFindings = findingsFilter.filterAllFindings(file, filterCriteria)
+        val findingsChanged = newFilteredFindings != filteredFindingsCache
+        
+        // Skip expensive operations only if truly nothing has changed
+        if (!fileChanged && !filtersChanged && !findingsChanged) {
+            return
+        }
+
+        filteredFindingsCache = newFilteredFindings
+
+        // Cache values for next comparison
+        lastFile = file
+        lastFilterCriteria = filterCriteria
 
         // Update UI using the display manager
         displayManager.updateMqrMode(filteredFindingsCache)
@@ -443,6 +462,10 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
     fun refreshView() {
         runOnUiThread(project) {
+            // Clear cache to force complete refresh
+            lastFile = null
+            lastFilterCriteria = null
+            
             // Re-evaluate support when views refresh (e.g., after backend initialization/restart)
             checkSupportStatus()
             this.update(currentFile)
