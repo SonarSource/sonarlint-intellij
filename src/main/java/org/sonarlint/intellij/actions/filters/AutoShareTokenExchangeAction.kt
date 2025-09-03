@@ -24,7 +24,6 @@ import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.sharing.AutomaticSharedConfigCreator
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
@@ -33,14 +32,13 @@ class AutoShareTokenExchangeAction(
     text: String,
     private val connectionSuggestionDto: ConnectionSuggestionDto,
     private val project: Project,
-    private val overridesPerModule: Map<Module, String>,
-    private val bindingMode: BindingMode,
+    private val overridesPerModule: Map<Module, String>
 ) : NotificationAction(text) {
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         notification.expire()
         val (isSQ, projectKey, orgOrServerUrl, region) = getAutoShareConfigParams(connectionSuggestionDto)
-        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, overridesPerModule, bindingMode, region).chooseResolution()
+        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, overridesPerModule, region).chooseResolution()
     }
 
     private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): AutoShareConfigParams {

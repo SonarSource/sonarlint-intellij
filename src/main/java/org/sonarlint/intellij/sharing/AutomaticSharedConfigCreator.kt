@@ -58,13 +58,14 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
 import org.sonarlint.intellij.util.RegionUtils
 import org.sonarlint.intellij.util.computeOnPooledThread
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
@@ -75,7 +76,6 @@ class AutomaticSharedConfigCreator(
     private val isSQ: Boolean,
     private val project: Project,
     private val overridesPerModule: Map<Module, String>,
-    private val bindingMode: BindingMode,
     private val region: SonarCloudRegion?
 ) :
     DialogWrapper(false) {
@@ -178,7 +178,8 @@ class AutomaticSharedConfigCreator(
             val connection = getGlobalSettings().getServerConnectionByName(connectionNameField.text)
                 .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
 
-            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, overridesPerModule, bindingMode)
+            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, overridesPerModule,
+                BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.SHARED_CONFIGURATION)
             val connectionTypeMessage = if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",

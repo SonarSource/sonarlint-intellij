@@ -94,8 +94,6 @@ import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.BackendService.Companion.findModule
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.AUTOMATIC
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode.IMPORTED
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_SETUP_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SUPPORT_POLICY_LINK
@@ -136,6 +134,7 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
@@ -213,7 +212,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             val overridesPerModule = findOverriddenModules(suggestions, projectBinding)
 
             val (connectionKind, projKey, connectionName) = getAutoShareConfigParams(projectBinding.suggestion)
-            val mode = if (projectBinding.suggestion.isFromSharedConfiguration) IMPORTED else AUTOMATIC
             val optionalModulesBindingMessage = if (overridesPerModule.isEmpty()) "" else "Some of your modules will also be automatically bound.\n"
 
             ConfigurationSharing.showAutoSharedConfigurationNotification(
@@ -225,8 +223,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 The binding can also be manually configured later.
                 """.trimIndent().format(projKey, connectionKind, connectionName),
                 SKIP_AUTO_SHARE_CONFIGURATION_DIALOG_PROPERTY,
-                projectBinding.suggestion,
-                mode
+                projectBinding.suggestion
             )
         }
     }
@@ -239,7 +236,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (getSettingsFor(project).isBindingSuggestionsEnabled && !getSettingsFor(project).isBound) {
             val notifications = get(project)
             notifications.suggestBindingOptions(suggestions.map {
-                BindingSuggestion(it.connectionId, it.sonarProjectKey, it.sonarProjectName, it.isFromSharedConfiguration)
+                BindingSuggestion(it.connectionId, it.sonarProjectKey, it.sonarProjectName, BindingMode.FROM_SUGGESTION, it.origin)
             })
         }
     }
@@ -510,8 +507,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                 .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
             val binding = getService(project, ProjectBindingManager::class.java).binding
             if (binding == null || binding.projectKey != projectKey || binding.connectionName != connection.name) {
-                val mode = if (params.isFromSharedConfiguration) IMPORTED else AUTOMATIC
-                getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(), mode)
+                getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(),
+                    BindingMode.FROM_SUGGESTION, params.origin)
                 get(project).simpleNotification(
                     "Project successfully bound",
                     "Local project bound to project '$projectKey' of SonarQube Server instance '${connection.name}'. "

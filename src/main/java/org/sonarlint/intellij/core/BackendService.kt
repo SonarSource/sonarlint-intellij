@@ -39,6 +39,22 @@ import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.ui.jcef.JBCefApp
+import java.io.IOException
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.Duration
+import java.time.format.DateTimeParseException
+import java.util.UUID
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Filter
+import java.util.logging.Level
+import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
@@ -87,6 +103,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConn
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingConfigurationDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpdateBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.ConfigurationScopeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidAddConfigurationScopesParams
@@ -161,22 +179,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
-import java.io.IOException
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.Duration
-import java.time.format.DateTimeParseException
-import java.util.UUID
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Filter
-import java.util.logging.Level
-import java.util.logging.Logger
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedParams as issueCheckStatusChangePermittedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.CheckStatusChangePermittedResponse as issueCheckStatusChangePermittedResponse
 
@@ -567,14 +569,16 @@ class BackendService : Disposable {
         ConfigurationScopeDto(projectId(project), null, true, project.name,
             BindingConfigurationDto(binding?.connectionName, binding?.projectKey, areBindingSuggestionsDisabledFor(project)))
 
-    fun projectBound(project: Project, newBinding: ProjectBinding) {
+    fun projectBound(project: Project, newBinding: ProjectBinding, mode: BindingMode, origin: BindingSuggestionOrigin?) {
         runOnPooledThread(project) {
             notifyBackend {
                 it.configurationService.didUpdateBinding(
                     DidUpdateBindingParams(
                         projectId(project), BindingConfigurationDto(
-                            newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project)
-                        )
+                            newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project),
+                        ),
+                        mode,
+                        origin
                     )
                 )
             }
@@ -586,7 +590,9 @@ class BackendService : Disposable {
                             moduleId, BindingConfigurationDto(
                                 // we don't want binding suggestions for modules
                                 newBinding.connectionName, projectKey, true
-                            )
+                            ),
+                            mode,
+                            origin
                         )
                     )
                 }
@@ -601,7 +607,10 @@ class BackendService : Disposable {
         notifyBackend {
             it.configurationService.didUpdateBinding(
                 DidUpdateBindingParams(
-                    projectId(project), BindingConfigurationDto(null, null, areBindingSuggestionsDisabledFor(project))
+                    projectId(project),
+                    BindingConfigurationDto(null, null, areBindingSuggestionsDisabledFor(project)),
+                    BindingMode.MANUAL,
+                    null
                 )
             )
         }
@@ -646,10 +655,13 @@ class BackendService : Disposable {
         notifyBackend {
             it.configurationService.didUpdateBinding(
                 DidUpdateBindingParams(
-                    moduleId, BindingConfigurationDto(
+                    moduleId,
+                    BindingConfigurationDto(
                         // we don't want binding suggestions for modules
                         null, null, true
-                    )
+                    ),
+                    BindingMode.MANUAL,
+                    null
                 )
             )
         }
@@ -664,7 +676,9 @@ class BackendService : Disposable {
             it.configurationService.didUpdateBinding(
                 DidUpdateBindingParams(
                     projectId(project),
-                    BindingConfigurationDto(binding?.connectionName, binding?.projectKey, true)
+                    BindingConfigurationDto(binding?.connectionName, binding?.projectKey, true),
+                    BindingMode.MANUAL,
+                    null
                 )
             )
         }

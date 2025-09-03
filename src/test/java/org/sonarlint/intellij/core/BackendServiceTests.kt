@@ -57,6 +57,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConn
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.SonarProjectBranchRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.ConfigurationRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpdateBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidAddConfigurationScopesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidRemoveConfigurationScopeParams
@@ -312,7 +314,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_binding_a_project() {
-        service.projectBound(project, ProjectBinding("id", "key", emptyMap()))
+        service.projectBound(project, ProjectBinding("id", "key", emptyMap()), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService, timeout(500)).didUpdateBinding(paramsCaptor.capture())
@@ -327,7 +329,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     @Test
     fun test_notify_backend_when_binding_a_project_with_binding_suggestions_disabled() {
         projectSettings.isBindingSuggestionsEnabled = false
-        service.projectBound(project, ProjectBinding("id", "key", emptyMap()))
+        service.projectBound(project, ProjectBinding("id", "key", emptyMap()), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService, timeout(500)).didUpdateBinding(paramsCaptor.capture())
@@ -344,7 +346,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         projectSettings.isBindingSuggestionsEnabled = false
         val moduleBackendId = moduleBackendId(module)
 
-        service.projectBound(project, ProjectBinding("id", "key", mapOf(Pair(module, "moduleKey"))))
+        service.projectBound(project, ProjectBinding("id", "key", mapOf(Pair(module, "moduleKey"))), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService, timeout(500).times(2)).didUpdateBinding(paramsCaptor.capture())

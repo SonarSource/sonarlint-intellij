@@ -54,7 +54,6 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
-import org.sonarlint.intellij.core.ProjectBinding;
 import org.sonarlint.intellij.fixtures.AbstractLightTests;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
@@ -185,14 +184,6 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   protected PsiFile createTestPsiFile(String fileName, Language language, String text) {
     return PsiFileFactory.getInstance(getProject()).createFileFromText(fileName, language, text, true, true);
-  }
-
-  protected void connectProjectTo(String hostUrl, String connectionName, String projectKey) {
-    var connection = ServerConnection.newBuilder().setHostUrl(hostUrl).setName(connectionName).build();
-    getGlobalSettings().addServerConnection(connection);
-    getProjectSettings().bindTo(connection, projectKey);
-    getService(BackendService.class).connectionsUpdated(getGlobalSettings().getServerConnections());
-    getService(BackendService.class).projectBound(getProject(), new ProjectBinding(connectionName, projectKey, Collections.emptyMap()));
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {

@@ -35,7 +35,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.ProjectBindingManager.BindingMode
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.sharing.SharedConnectedModeUtils.Companion.findSharedFolder
@@ -155,14 +154,13 @@ class ConfigurationSharing {
         @JvmStatic
         fun showAutoSharedConfigurationNotification(
             project: Project, overridesPerModule: Map<Module, String>, message: String, doNotShowAgainId: String,
-            connectionSuggestionDto: ConnectionSuggestionDto, bindingMode: BindingMode,
-        ) {
+            connectionSuggestionDto: ConnectionSuggestionDto) {
             if (!PropertiesComponent.getInstance().getBoolean(doNotShowAgainId)) {
                 get(project).showAutoSharedConfigurationNotification(
                     "",
                     message,
                     doNotShowAgainId,
-                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project, overridesPerModule, bindingMode)
+                    AutoShareTokenExchangeAction("Use configuration", connectionSuggestionDto, project, overridesPerModule)
                 )
             }
         }
