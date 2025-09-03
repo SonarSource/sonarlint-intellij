@@ -54,6 +54,7 @@ import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.currentfile.tree.SingleFileTreeModelBuilder
 import org.sonarlint.intellij.ui.factory.PanelFactory
 import org.sonarlint.intellij.ui.filter.FilterCriteria
+import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.FindingsFilter
@@ -125,6 +126,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             { refreshView() },
             { sortMode -> 
                 treeConfigs.values.forEach { it.builder.changeSortMode(SortMode.valueOf(sortMode.name)) }
+                getService(FilterSettingsService::class.java).setDefaultSortMode(sortMode)
                 refreshView()
             },
             { focusOnNewCode ->

@@ -27,7 +27,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
  * Service to manage filter panel settings persistence.
  * 
  * This service handles storing and retrieving user preferences for filter panel settings
- * such as sorting mode, ensuring they persist across IDE restarts.
+ * such as sorting mode or scope mode, ensuring they persist across IDE restarts.
  */
 @Service(Service.Level.APP)
 class FilterSettingsService {
@@ -47,6 +47,24 @@ class FilterSettingsService {
     fun setDefaultSortMode(sortMode: SortMode, settings: SonarLintGlobalSettings) {
         if (settings.defaultSortMode != sortMode.name) {
             settings.defaultSortMode = sortMode.name
+        }
+    }
+
+    fun getDefaultFindingsScope(): FindingsScope {
+        return try {
+            FindingsScope.valueOf(getGlobalSettings().defaultFindingsScope)
+        } catch (_: IllegalArgumentException) {
+            FindingsScope.CURRENT_FILE
+        }
+    }
+
+    fun setDefaultFindingsScope(scope: FindingsScope) {
+        setDefaultFindingsScope(scope, getGlobalSettings())
+    }
+
+    fun setDefaultFindingsScope(scope: FindingsScope, settings: SonarLintGlobalSettings) {
+        if (settings.defaultFindingsScope != scope.name) {
+            settings.defaultFindingsScope = scope.name
         }
     }
 }

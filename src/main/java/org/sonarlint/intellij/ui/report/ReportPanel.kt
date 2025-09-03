@@ -52,6 +52,7 @@ import org.sonarlint.intellij.ui.FindingKind
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.createSplitter
+import org.sonarlint.intellij.ui.filter.FilterSettingsService
 import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.FindingsFilter
@@ -275,6 +276,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
             taintsTreeBuilder.sortMode = sortMode
             oldTaintsTreeBuilder.sortMode = sortMode
         }
+        getService(FilterSettingsService::class.java).setDefaultSortMode(sortMode)
         refreshFilteredView()
     }
     
