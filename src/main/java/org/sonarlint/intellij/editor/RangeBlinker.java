@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
@@ -40,14 +41,15 @@ public class RangeBlinker {
   private int myTimeToLive;
   private final List<Segment> myMarkers = new ArrayList<>();
   private boolean show = true;
-  private final Alarm myBlinkingAlarm = new Alarm();
+  private final Alarm myBlinkingAlarm;
   private final TextAttributes myAttributes;
   private final List<RangeHighlighter> myAddedHighlighters = new ArrayList<>();
 
-  public RangeBlinker(Editor editor, final TextAttributes attributes, int timeToLive) {
+  public RangeBlinker(Editor editor, final TextAttributes attributes, int timeToLive, Disposable parentDisposable) {
     myAttributes = attributes;
     myEditor = editor;
     myTimeToLive = timeToLive;
+    myBlinkingAlarm = new Alarm(parentDisposable);
   }
 
   public void blinkHighlights(final List<HighlightInfo> markers) {
