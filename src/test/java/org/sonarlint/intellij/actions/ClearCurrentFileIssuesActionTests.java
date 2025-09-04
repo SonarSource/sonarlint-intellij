@@ -54,7 +54,7 @@ class ClearCurrentFileIssuesActionTests extends AbstractSonarLintLightTests {
     when(event.getProject()).thenReturn(getProject());
     file = myFixture.copyFileToProject("foo.php", "foo.php");
     findingsHolder = SonarLintUtils.getService(getProject(), AnalysisSubmitter.class).getOnTheFlyFindingsHolder();
-    findingsHolder.clearCurrentFile();
+    findingsHolder.clearAllCurrentFileFindings();
     FileEditorManager.getInstance(getProject()).openFile(file, true);
     findingsHolder.updateOnAnalysisResult(new AnalysisResult(null, new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()), List.of(file), Instant.now()));
   }
@@ -73,16 +73,6 @@ class ClearCurrentFileIssuesActionTests extends AbstractSonarLintLightTests {
     clearIssues.actionPerformed(event);
 
     assertThat(findingsHolder.getIssuesForFile(file)).isEmpty();
-  }
-
-  @Test
-  void testDoNothingIfNoProject() {
-    var file2 = myFixture.copyFileToProject("foo2.php", "foo2.php");
-    FileEditorManager.getInstance(getProject()).openFile(file2, true);
-
-    clearIssues.actionPerformed(event);
-
-    assertThat(findingsHolder.getIssuesForFile(file)).isNotEmpty();
   }
 
 }

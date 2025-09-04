@@ -29,8 +29,8 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import java.util.ArrayList;
 import java.util.Collection;
-import javax.swing.Icon;
 import javax.annotation.Nullable;
+import javax.swing.Icon;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
@@ -52,7 +52,7 @@ public class ClearCurrentFileIssuesAction extends AbstractSonarAction {
       var codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
 
       runReadActionSafely(project, () -> {
-        getService(project, AnalysisSubmitter.class).getOnTheFlyFindingsHolder().clearCurrentFile();
+        getService(project, AnalysisSubmitter.class).getOnTheFlyFindingsHolder().clearAllCurrentFileFindings();
 
         // run annotator to remove highlighting of issues
         var editorManager = FileEditorManager.getInstance(project);

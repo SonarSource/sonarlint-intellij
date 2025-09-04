@@ -77,12 +77,18 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
 
     fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>) {
         val issues = raisedIssues.mapNotNull { (uri, rawIssues) ->
-            val virtualFile = uriToVirtualFile(uri) ?: return
-            val liveIssues = rawIssues.mapNotNull {
-                RawIssueAdapter.toLiveIssue(module, it, virtualFile, null)
+            val virtualFile = uriToVirtualFile(uri) ?: return@mapNotNull null
+            // Only include issues for files that are still open
+            if (virtualFile in openFiles || virtualFile == selectedFile) {
+                val liveIssues = rawIssues.mapNotNull {
+                    RawIssueAdapter.toLiveIssue(module, it, virtualFile, null)
+                }
+                virtualFile to liveIssues
+            } else {
+                null // Skip findings for closed files
             }
-            virtualFile to liveIssues
         }.toMap()
+        
         currentIssuesPerOpenFile.putAll(issues)
         if (selectedFile == null) {
             runOnUiThread(project) {
@@ -95,12 +101,18 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
 
     fun updateViewsWithNewSecurityHotspots(module: Module, raisedSecurityHotspots: Map<URI, List<RaisedHotspotDto>>) {
         val securityHotspots = raisedSecurityHotspots.mapNotNull { (uri, rawSecurityHotspots) ->
-            val virtualFile = uriToVirtualFile(uri) ?: return
-            val liveIssues = rawSecurityHotspots.mapNotNull {
-                RawIssueAdapter.toLiveSecurityHotspot(module, it, virtualFile, null)
+            val virtualFile = uriToVirtualFile(uri) ?: return@mapNotNull null
+            // Only include hotspots for files that are still open
+            if (virtualFile in openFiles || virtualFile == selectedFile) {
+                val liveHotspots = rawSecurityHotspots.mapNotNull {
+                    RawIssueAdapter.toLiveSecurityHotspot(module, it, virtualFile, null)
+                }
+                virtualFile to liveHotspots
+            } else {
+                null // Skip findings for closed files
             }
-            virtualFile to liveIssues
-        }.toMap().filterKeys { it in openFiles }
+        }.toMap()
+        
         currentSecurityHotspotsPerOpenFile.putAll(securityHotspots)
         if (selectedFile == null) {
             runOnUiThread(project) {
@@ -163,13 +175,9 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         return currentSecurityHotspotsPerOpenFile[file] ?: emptyList()
     }
 
-    fun clearCurrentFile() {
-        if (selectedFile == null) {
-            selectedFile = SonarLintUtils.getSelectedFile(project)
-        }
-        if (selectedFile != null) {
-            currentIssuesPerOpenFile.remove(selectedFile)
-        }
+    fun clearAllCurrentFileFindings() {
+        currentIssuesPerOpenFile.clear()
+        currentSecurityHotspotsPerOpenFile.clear()
         updateCurrentFileTab()
     }
 
