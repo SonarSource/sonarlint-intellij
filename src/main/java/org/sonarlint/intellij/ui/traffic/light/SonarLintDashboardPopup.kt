@@ -20,10 +20,12 @@
 package org.sonarlint.intellij.ui.traffic.light
 
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.JBPopupListener
 import com.intellij.openapi.ui.popup.LightweightWindowEvent
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.ui.AncestorListenerAdapter
 import com.intellij.ui.awt.RelativePoint
@@ -45,7 +47,7 @@ class SonarLintDashboardPopup(private val editor: Editor) {
             hidePopup()
         }
     }
-    private val popupAlarm = Alarm()
+    private val popupAlarm: Alarm
     private var myPopup: JBPopup? = null
     private var insidePopup = false
     private val dashboard = SonarLintDashboardPanel(editor)
@@ -66,6 +68,10 @@ class SonarLintDashboardPopup(private val editor: Editor) {
                 }
             }
         })
+
+        val disposable = Disposer.newDisposable()
+        EditorUtil.disposeWithEditor(editor, disposable)
+        popupAlarm = Alarm(disposable)
     }
 
     fun scheduleShow(target: Component) {
@@ -122,4 +128,5 @@ class SonarLintDashboardPopup(private val editor: Editor) {
     fun refresh(model: SonarLintDashboardModel) {
         dashboard.refresh(model)
     }
+
 }

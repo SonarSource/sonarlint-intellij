@@ -75,13 +75,16 @@ class CurrentFileDisplayManager(
     }
 
     fun updateIcons(filteredFindings: FilteredFindings) {
-        updateToolWindowIcon(filteredFindings.issues)
+        updateToolWindowIcon(filteredFindings)
         updateGutterIcons(filteredFindings.issues)
     }
 
-    private fun updateToolWindowIcon(issues: List<LiveIssue>) {
+    private fun updateToolWindowIcon(findings: FilteredFindings) {
         ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)?.let { toolWindow ->
-            val isEmpty = issues.none { !it.isResolved() }
+            val isEmpty = findings.issues.none { !it.isResolved() }
+                && findings.hotspots.none { !it.isResolved() }
+                && findings.taints.none { !it.isResolved() }
+                && findings.dependencyRisks.none { !it.isResolved() }
             ApplicationManager.getApplication().assertIsDispatchThread()
             toolWindow.setIcon(if (isEmpty) 
                 SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW 

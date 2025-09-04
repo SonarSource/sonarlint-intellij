@@ -181,7 +181,7 @@ class EditorDecorator(private val project: Project) : Disposable {
             return
         }
         getEditors(document).forEach(Consumer { editor: Editor ->
-            blinker = RangeBlinker(editor, TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3, this)
+            blinker = RangeBlinker(editor, TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3, project)
             blinker!!.blinkHighlights(highlights)
         })
     }

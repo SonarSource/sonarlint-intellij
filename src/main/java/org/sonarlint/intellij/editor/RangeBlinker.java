@@ -20,61 +20,57 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
-import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
 import com.intellij.openapi.editor.markup.HighlighterTargetArea;
 import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Segment;
-import com.intellij.util.Alarm;
 import com.intellij.util.ArrayUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+
 /**
  * Based on {@link com.intellij.util.ui.RangeBlinker}, but stops immediately when requested
+ * and uses a shared alarm for efficiency
  */
 public class RangeBlinker {
   private final Editor myEditor;
   private int myTimeToLive;
   private final List<Segment> myMarkers = new ArrayList<>();
   private boolean show = true;
-  private final Alarm myBlinkingAlarm;
   private final TextAttributes myAttributes;
   private final List<RangeHighlighter> myAddedHighlighters = new ArrayList<>();
+  private final String blinkerId;
+  private final Project project;
 
-  public RangeBlinker(Editor editor, final TextAttributes attributes, int timeToLive, Disposable parentDisposable) {
+  public RangeBlinker(Editor editor, final TextAttributes attributes, int timeToLive, Project project) {
     myAttributes = attributes;
     myEditor = editor;
     myTimeToLive = timeToLive;
-    myBlinkingAlarm = new Alarm(parentDisposable);
+    this.blinkerId = "blinker_" + System.identityHashCode(this);
+    this.project = project;
   }
 
   public void blinkHighlights(final List<HighlightInfo> markers) {
     removeHighlights();
     myMarkers.clear();
-    myBlinkingAlarm.cancelAllRequests();
     myMarkers.addAll(markers);
     show = true;
-    startBlinking();
+    getService(project, SharedBlinkManager.class).registerBlinker(blinkerId, this);
   }
 
-  private void removeHighlights() {
-    var markupModel = myEditor.getMarkupModel();
-    var allHighlighters = markupModel.getAllHighlighters();
 
-    myAddedHighlighters.stream()
-      .filter(h -> !ArrayUtil.contains(allHighlighters, h))
-      .forEach(RangeHighlighter::dispose);
-    myAddedHighlighters.clear();
-  }
-
-  private void startBlinking() {
-    var project = myEditor.getProject();
-    if (ApplicationManager.getApplication().isDisposed() || myEditor.isDisposed() || (project != null && project.isDisposed())) {
-      return;
+  /**
+   * Called by SharedBlinkManager to perform one blink cycle.
+   * @return true if blinking should continue, false if it should stop
+   */
+  public boolean performBlinkCycle() {
+    if (myEditor.isDisposed() || (project != null && project.isDisposed())) {
+      return false;
     }
 
     var markupModel = myEditor.getMarkupModel();
@@ -91,19 +87,31 @@ public class RangeBlinker {
     } else {
       removeHighlights();
     }
-    myBlinkingAlarm.cancelAllRequests();
-    myBlinkingAlarm.addRequest(() -> {
-      if (myTimeToLive > 0 || show) {
-        myTimeToLive--;
-        show = !show;
-        startBlinking();
-      }
-    }, 400);
+    
+    // Check if we should continue blinking
+    if (myTimeToLive > 0 || show) {
+      myTimeToLive--;
+      show = !show;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   public void stopBlinking() {
     myTimeToLive = 0;
-    myBlinkingAlarm.cancelAllRequests();
+    getService(project, SharedBlinkManager.class).unregisterBlinker(blinkerId);
     removeHighlights();
   }
+
+  void removeHighlights() {
+    var markupModel = myEditor.getMarkupModel();
+    var allHighlighters = markupModel.getAllHighlighters();
+
+    myAddedHighlighters.stream()
+      .filter(h -> !ArrayUtil.contains(allHighlighters, h))
+      .forEach(RangeHighlighter::dispose);
+    myAddedHighlighters.clear();
+  }
+
 }
