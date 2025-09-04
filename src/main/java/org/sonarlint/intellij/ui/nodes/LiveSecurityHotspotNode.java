@@ -78,6 +78,7 @@ public class LiveSecurityHotspotNode extends FindingNode {
     if (appendFileName) {
       renderer.append(" " + securityHotspot.file().getName(), SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
+    renderer.append("  " + securityHotspot.getRuleKey(), SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES);
   }
 
   private void setIcon(TreeCellRenderer renderer, Icon icon) {
