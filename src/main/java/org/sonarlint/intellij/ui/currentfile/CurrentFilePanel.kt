@@ -380,7 +380,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
         // Update UI using the display manager
         displayManager.updateMqrMode(filteredFindingsCache)
-        displayManager.updateIcons(filteredFindingsCache)
+        displayManager.updateIcons(filteredFindingsCache, file)
 
         // Populate trees
         populateTreesWithNewCodeFilter(TreeType.ISSUES, filteredFindingsCache.issues) { !summaryPanel.areIssuesEnabled() }

@@ -29,6 +29,7 @@ import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.ToolWindowConstants
 import org.sonarlint.intellij.ui.filter.FilterCriteria
 import org.sonarlint.intellij.ui.filter.FilteredFindings
@@ -56,7 +57,6 @@ class CurrentFileDisplayManager(
 ) {
 
     private var isMqrMode = true
-    private var currentFile: VirtualFile? = null
 
     fun updateMqrMode(findings: FilteredFindings) {
         if (findings.issues.isEmpty() && findings.hotspots.isEmpty() && findings.taints.isEmpty()) {
@@ -74,9 +74,12 @@ class CurrentFileDisplayManager(
         filtersPanel.severityCombo.setModel(DefaultComboBoxModel(newOptions))
     }
 
-    fun updateIcons(filteredFindings: FilteredFindings) {
+    fun updateIcons(filteredFindings: FilteredFindings, file: VirtualFile?) {
         updateToolWindowIcon(filteredFindings)
-        updateGutterIcons(filteredFindings.issues)
+        val fileFindings = file?.let { filteredFindings.getFindingsForFile(it) }
+            ?: FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
+        updateGutterIcons(fileFindings.issues, file)
+        updateGutterIconsForTaints(fileFindings.taints)
     }
 
     private fun updateToolWindowIcon(findings: FilteredFindings) {
@@ -94,7 +97,7 @@ class CurrentFileDisplayManager(
         }
     }
 
-    private fun updateGutterIcons(issues: List<LiveIssue>) {
+    private fun updateGutterIcons(issues: List<LiveIssue>, currentFile: VirtualFile?) {
         currentFile?.let { file ->
             val displayedIssues = if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
                 issues.filter { it.isOnNewCode() }
@@ -103,6 +106,15 @@ class CurrentFileDisplayManager(
             }
             getService(project, EditorDecorator::class.java).createGutterIconForIssues(file, displayedIssues)
         }
+    }
+
+    private fun updateGutterIconsForTaints(taints: List<LocalTaintVulnerability>) {
+        val displayedTaints = if (getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()) {
+            taints.filter { it.isOnNewCode() }
+        } else {
+            taints
+        }
+        getService(project, EditorDecorator::class.java).createGutterIconForTaints(displayedTaints)
     }
 
     fun getCurrentFilterCriteria(): FilterCriteria {

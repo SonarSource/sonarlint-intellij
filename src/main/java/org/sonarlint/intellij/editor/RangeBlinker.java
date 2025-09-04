@@ -63,7 +63,6 @@ public class RangeBlinker {
     getService(project, SharedBlinkManager.class).registerBlinker(blinkerId, this);
   }
 
-
   /**
    * Called by SharedBlinkManager to perform one blink cycle.
    * @return true if blinking should continue, false if it should stop

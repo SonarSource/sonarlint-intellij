@@ -84,6 +84,7 @@ public class IssueNode extends FindingNode {
     renderMessage(renderer);
     issue.context().ifPresent(context -> renderer.append(context.getSummaryDescription(), GRAYED_SMALL_ATTRIBUTES));
     renderIntroductionDate(renderer);
+    renderer.append("  " + issue.getRuleKey(), GRAYED_SMALL_ATTRIBUTES);
   }
 
   private void renderWithMqrMode(TreeCellRenderer renderer, Optional<ServerConnection> serverConnection,
