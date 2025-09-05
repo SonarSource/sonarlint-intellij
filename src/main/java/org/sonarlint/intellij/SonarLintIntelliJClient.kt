@@ -136,6 +136,7 @@ import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
@@ -214,11 +215,17 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             val (connectionKind, projKey, connectionName) = getAutoShareConfigParams(projectBinding.suggestion)
             val optionalModulesBindingMessage = if (overridesPerModule.isEmpty()) "" else "Some of your modules will also be automatically bound.\n"
 
+            val textNotif = when (projectBinding.suggestion.origin) {
+                BindingSuggestionOrigin.SHARED_CONFIGURATION -> "A connected mode configuration file is available"
+                BindingSuggestionOrigin.PROPERTIES_FILE -> "A SonarQube property file was found"
+                else -> "A matching SonarQube connection was found"
+            }
+
             ConfigurationSharing.showAutoSharedConfigurationNotification(
                 projectBinding.project,
                 overridesPerModule,
                 """
-                A Connected Mode configuration file is available to bind to project '%s' on %s '%s'.
+                $textNotif for binding project '%s' on %s '%s'.
                 $optionalModulesBindingMessage
                 The binding can also be manually configured later.
                 """.trimIndent().format(projKey, connectionKind, connectionName),
