@@ -37,11 +37,18 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# Gradle
+# ---- Gradle
 .gradle
 classes
 build
 .scannerwork/
 
-# Visual Studio
+# ----Visual Studio
 .vs
+
+# ----VS Code
+.vscode
+
+# ---- Kotlin
+
+.kotlin
