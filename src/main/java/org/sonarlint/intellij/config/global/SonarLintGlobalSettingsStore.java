@@ -29,7 +29,8 @@ import java.util.stream.Collectors;
 @State(name = "SonarLintGlobalSettings",
   storages = {@Storage("sonarlint.xml")},
   // used for settings export
-  presentableName = SonarLintGlobalSettingsPresentableName.class
+  presentableName = SonarLintGlobalSettingsPresentableName.class,
+  allowLoadInTests = true
 )
 public final class SonarLintGlobalSettingsStore implements PersistentStateComponent<SonarLintGlobalSettings> {
 
@@ -45,6 +46,31 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
   public void loadState(SonarLintGlobalSettings settings) {
     this.settings = settings;
     initializeRulesByKey();
+  }
+
+  @Override
+  public void initializeComponent() {
+    // todo
+    var serverConnections = settings.getServerConnections();
+
+    if (serverConnections.stream().anyMatch(this::hasCredentials)) {
+      var connectionsToMigrate = serverConnections.stream()
+        .filter(this::hasCredentials)
+        .toList();
+//      connectionsToMigrate.
+
+    }
+
+//    serverConnections.stream()
+//      .filter(this::hasCredentials)
+//      // todo SC are immutable - so we need to: find - extract/remove - migrate - nullify - add back?
+//      .forEach(SonarLintUtils.getService(CredentialsService.class)::migrate);
+  }
+
+  private boolean hasCredentials(ServerConnection connection) {
+    return connection.getLogin() != null
+      || connection.getPassword() != null
+      || connection.getToken() != null;
   }
 
   public void save(SonarLintGlobalSettings settings) {

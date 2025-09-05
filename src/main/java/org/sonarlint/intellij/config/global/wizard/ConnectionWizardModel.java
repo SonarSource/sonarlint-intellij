@@ -25,6 +25,7 @@ import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.config.CredentialsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
@@ -55,7 +56,7 @@ public class ConnectionWizardModel {
 
   }
 
-  public ConnectionWizardModel(ServerConnection connectionToEdit) {
+  public ConnectionWizardModel(ServerConnection connectionToEdit, CredentialsService credentialsService) {
     if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
       if (connectionToEdit.getRegion() != null) {
@@ -65,13 +66,19 @@ public class ConnectionWizardModel {
       serverType = ServerType.SONARQUBE;
       serverUrl = connectionToEdit.getHostUrl();
     }
-    this.proxyEnabled = connectionToEdit.enableProxy();
-    this.token = connectionToEdit.getToken();
-    this.login = connectionToEdit.getLogin();
-    var pass = connectionToEdit.getPassword();
-    if (pass != null) {
-      this.password = pass.toCharArray();
+    this.proxyEnabled = connectionToEdit.isEnableProxy();
+
+    var credentials = credentialsService.getCredentials(connectionToEdit);
+    if (credentials.isLeft()) {
+      this.token = credentials.getLeft().getToken();
+    } else {
+      this.login = credentials.getRight().getUsername();
+      var pass = credentials.getRight().getPassword();
+      if (pass != null) {
+        this.password = pass.toCharArray();
+      }
     }
+
     this.organizationKey = connectionToEdit.getOrganizationKey();
     this.notificationsDisabled = connectionToEdit.isDisableNotifications();
     this.name = connectionToEdit.getName();

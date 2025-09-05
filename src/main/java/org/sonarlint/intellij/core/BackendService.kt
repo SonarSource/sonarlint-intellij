@@ -67,6 +67,7 @@ import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadAct
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
+import org.sonarlint.intellij.config.CredentialsService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
@@ -489,8 +490,8 @@ class BackendService : Disposable {
     fun getAllProjects(server: ServerConnection): CompletableFuture<GetAllProjectsResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> =
+            getService(CredentialsService::class.java).getCredentials(server)
         val params: GetAllProjectsParams = if (server.isSonarCloud) {
             GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials,
                 SonarCloudRegion.valueOf(serverRegion)))
@@ -834,8 +835,8 @@ class BackendService : Disposable {
     fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> =
+            getService(CredentialsService::class.java).getCredentials(server)
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
             ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey,
                 credentials, SonarCloudRegion.valueOf(serverRegion)))
@@ -848,8 +849,8 @@ class BackendService : Disposable {
     fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> =
+            getService(CredentialsService::class.java).getCredentials(server)
         val params = ListUserOrganizationsParams(credentials,
             SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.listUserOrganizations(params) }
@@ -859,8 +860,8 @@ class BackendService : Disposable {
         CompletableFuture<GetOrganizationResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> =
+            getService(CredentialsService::class.java).getCredentials(server)
         val params = GetOrganizationParams(credentials, organizationKey,
             SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.getOrganization(params) }

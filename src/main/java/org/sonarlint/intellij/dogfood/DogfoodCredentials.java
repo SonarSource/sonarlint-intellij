@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public class DogfoodCredentials {
+public class DogfoodCredentials { // todo
 
   @Tag
   private String username;

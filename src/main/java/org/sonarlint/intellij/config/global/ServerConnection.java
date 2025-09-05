@@ -52,12 +52,27 @@ public class ServerConnection {
   private String region;
   @OptionTag
   private String hostUrl;
+  /**
+   * @deprecated as we are moving to persisting data with IntelliJ Credentials store API.
+   * Now used for reading the old data and migrating it to a new way of storage. Will be removed after the migration is done.
+   */
+  @Deprecated(since = "11.1", forRemoval = true)
   @Tag
   private String token;
   @OptionTag
   private String name;
+  /**
+   * @deprecated as we are moving to persisting data with IntelliJ Credentials store API.
+   * Now used for reading the old data and migrating it to a new way of storage. Will be removed after the migration is done.
+   */
+  @Deprecated(since = "11.1", forRemoval = true)
   @OptionTag
   private String login;
+  /**
+   * @deprecated as we are moving to persisting data with IntelliJ Credentials store API.
+   * Now used for reading the old data and migrating it to a new way of storage. Will be removed after the migration is done.
+   */
+  @Deprecated(since = "11.1", forRemoval = true)
   @Tag
   private String password;
   @OptionTag
@@ -95,7 +110,7 @@ public class ServerConnection {
       Objects.equals(getLogin(), other.getLogin()) &&
       Objects.equals(getName(), other.getName()) &&
       Objects.equals(getOrganizationKey(), other.getOrganizationKey()) &&
-      Objects.equals(enableProxy(), other.enableProxy()) &&
+      Objects.equals(isEnableProxy(), other.isEnableProxy()) &&
       Objects.equals(isDisableNotifications(), other.isDisableNotifications());
   }
 
@@ -154,7 +169,7 @@ public class ServerConnection {
     return isSonarCloud() ? SonarLintIcons.ICON_SONARQUBE_CLOUD_16 : SonarLintIcons.ICON_SONARQUBE_SERVER_16;
   }
 
-  public boolean enableProxy() {
+  public boolean isEnableProxy() {
     return enableProxy;
   }
 

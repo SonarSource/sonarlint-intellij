@@ -1,0 +1,35 @@
+<application>
+  <component name="SonarLintGlobalSettings">
+    <option name="sonarQubeServers">
+      <list>
+        <SonarQubeServer>
+          <option name="name" value="noCredentials" />
+          <option name="region" value="region" />
+          <option name="hostUrl" value="host" />
+          <option name="enableProxy" value="true" />
+          <organizationKey>organizationKey</organizationKey>
+          <disableNotifications>true</disableNotifications>
+        </SonarQubeServer>
+        <SonarQubeServer>
+          <option name="name" value="onlyToken" />
+          <option name="hostUrl" value="host" />
+          <token>onlyTokenToken</token>
+        </SonarQubeServer>
+        <SonarQubeServer>
+          <option name="name" value="onlyLoginPass" />
+          <option name="hostUrl" value="host" />
+          <option name="login" value="onlyLoginPassLogin" />
+          <password>onlyLoginPassPassword</password>
+        </SonarQubeServer>
+        <SonarQubeServer>
+          <option name="name" value="allCredentials" />
+          <option name="hostUrl" value="host" />
+          <option name="login" value="allCredentialsLogin" />
+          <password>allCredentialsPassword</password>
+          <token>allCredentialsToken</token>
+        </SonarQubeServer>
+      </list>
+    </option>
+    <rules />
+  </component>
+</application>
