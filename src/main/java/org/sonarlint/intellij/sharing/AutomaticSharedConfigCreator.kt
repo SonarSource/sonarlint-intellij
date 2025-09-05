@@ -76,7 +76,8 @@ class AutomaticSharedConfigCreator(
     private val isSQ: Boolean,
     private val project: Project,
     private val overridesPerModule: Map<Module, String>,
-    private val region: SonarCloudRegion?
+    private val region: SonarCloudRegion?,
+    private val origin: BindingSuggestionOrigin
 ) :
     DialogWrapper(false) {
     private var serverConnection: ServerConnection? = null
@@ -179,7 +180,7 @@ class AutomaticSharedConfigCreator(
                 .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
 
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, overridesPerModule,
-                BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.SHARED_CONFIGURATION)
+                BindingMode.FROM_SUGGESTION, origin)
             val connectionTypeMessage = if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",

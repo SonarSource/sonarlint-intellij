@@ -25,6 +25,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.sharing.AutomaticSharedConfigCreator
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 
@@ -37,8 +38,8 @@ class AutoShareTokenExchangeAction(
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         notification.expire()
-        val (isSQ, projectKey, orgOrServerUrl, region) = getAutoShareConfigParams(connectionSuggestionDto)
-        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, overridesPerModule, region).chooseResolution()
+        val (isSQ, projectKey, orgOrServerUrl, region, origin) = getAutoShareConfigParams(connectionSuggestionDto)
+        AutomaticSharedConfigCreator(projectKey, orgOrServerUrl, isSQ, project, overridesPerModule, region, origin).chooseResolution()
     }
 
     private fun getAutoShareConfigParams(uniqueSuggestion: ConnectionSuggestionDto): AutoShareConfigParams {
@@ -46,15 +47,24 @@ class AutoShareTokenExchangeAction(
             AutoShareConfigParams(
                 false, uniqueSuggestion.connectionSuggestion.right.projectKey,
                 uniqueSuggestion.connectionSuggestion.right.organization,
-                SonarCloudRegion.valueOf(uniqueSuggestion.connectionSuggestion.right.region.name)
+                SonarCloudRegion.valueOf(uniqueSuggestion.connectionSuggestion.right.region.name),
+                uniqueSuggestion.origin
             )
         } else {
             AutoShareConfigParams(
                 true, uniqueSuggestion.connectionSuggestion.left.projectKey,
-                uniqueSuggestion.connectionSuggestion.left.serverUrl, null
+                uniqueSuggestion.connectionSuggestion.left.serverUrl, null,
+                uniqueSuggestion.origin
             )
         }
     }
 
-    data class AutoShareConfigParams(val isSQ: Boolean, val projectKey: String, val orgOrServerUrl: String, val region: SonarCloudRegion?)
+    data class AutoShareConfigParams(
+        val isSQ: Boolean,
+        val projectKey: String,
+        val orgOrServerUrl: String,
+        val region: SonarCloudRegion?,
+        val origin: BindingSuggestionOrigin
+    )
+
 }
