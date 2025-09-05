@@ -56,6 +56,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
@@ -68,7 +69,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.Bindin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
 class AutomaticSharedConfigCreator(
     private val projectKey: String,
@@ -77,7 +80,7 @@ class AutomaticSharedConfigCreator(
     private val project: Project,
     private val overridesPerModule: Map<Module, String>,
     private val region: SonarCloudRegion?,
-    private val origin: BindingSuggestionOrigin
+    private val origin: BindingSuggestionOrigin,
 ) :
     DialogWrapper(false) {
     private var serverConnection: ServerConnection? = null
@@ -151,7 +154,8 @@ class AutomaticSharedConfigCreator(
         val currBindingSuggestion = getSettingsFor(project).isBindingSuggestionsEnabled
         try {
             getSettingsFor(project).isBindingSuggestionsEnabled = false
-            val serverConnectionBuilder = ServerConnection.newBuilder().setDisableNotifications(false).setToken(String(tokenField.password))
+            val serverConnectionBuilder = ServerConnection.newBuilder().setDisableNotifications(false)
+//                .setToken(String(tokenField.password))
                 .setName(connectionNameField.text)
             if (isSQ) {
                 serverConnectionBuilder.setHostUrl(orgOrServerUrl)
@@ -162,6 +166,9 @@ class AutomaticSharedConfigCreator(
                 serverConnectionBuilder.setRegion(region?.name ?: SonarCloudRegion.EU.name)
             }
             serverConnection = serverConnectionBuilder.build()
+            getService(CredentialsService::class.java).saveCredentials(
+                connectionNameField.text,
+                Either.forLeft(TokenDto(String(tokenField.password))))
 
             if (!validateConnection()) {
                 return false

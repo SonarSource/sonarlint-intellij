@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core
 
 import com.intellij.ide.impl.OpenProjectTask
+import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.vfs.VirtualFile
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility.await
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -46,8 +48,10 @@ import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.config.global.credentials.eraseToken
+import org.sonarlint.intellij.config.global.credentials.eraseUsernamePassword
+import org.sonarlint.intellij.config.global.credentials.setToken
+import org.sonarlint.intellij.messages.CredentialsChangeListener
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
@@ -87,6 +91,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRul
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RulesRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityTrackingRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
+
+private const val CONNECTION_NAME = "id"
 
 class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
@@ -106,8 +113,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         super.initApplication()
 
         globalSettings.serverConnections = listOf(
-            ServerConnection.newBuilder().setName("id").setHostUrl("url").build(),
-            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
+            ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("url").build(),
+            ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
                 .build()
         )
 
@@ -147,14 +154,20 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         reset(backendConfigurationService)
     }
 
+    @AfterEach
+    override fun tearDown() {
+        PasswordSafe.instance.eraseToken(CONNECTION_NAME)
+        PasswordSafe.instance.eraseUsernamePassword(CONNECTION_NAME)
+    }
+
     @Test
     fun test_initialize_with_existing_connections_when_starting() {
         val paramsCaptor = argumentCaptor<InitializeParams>()
         verify(backend, timeout(500)).initialize(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
-            .containsExactly(tuple("id", "url"))
+            .containsExactly(tuple(CONNECTION_NAME, "url"))
         assertThat(paramsCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
-            .containsExactly(tuple("id", "org"))
+            .containsExactly(tuple(CONNECTION_NAME, "org"))
     }
 
     @Test
@@ -239,23 +252,23 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_adding_a_sonarqube_connection() {
-        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").build()))
+        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("url").build()))
 
         val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
         verify(backendConnectionService, timeout(500)).didUpdateConnections(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
-            .containsExactly(tuple("id", "url"))
+            .containsExactly(tuple(CONNECTION_NAME, "url"))
     }
 
     @Test
     fun test_notify_backend_when_adding_a_sonarcloud_connection() {
-        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
+        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
             .build()))
 
         val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
         verify(backendConnectionService, timeout(500)).didUpdateConnections(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
-            .containsExactly(tuple("id", "org"))
+            .containsExactly(tuple(CONNECTION_NAME, "org"))
     }
 
     @Test
@@ -268,7 +281,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             verify(backendConfigurationService, timeout(500).atLeastOnce()).didAddConfigurationScopes(paramsCaptor.capture())
         }
         assertThat(paramsCaptor.firstValue.addedScopes).extracting(
-            "id",
+            CONNECTION_NAME,
             "name",
             "parentId",
             "bindable",
@@ -280,7 +293,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_opening_a_bound_project() {
-        val connection = ServerConnection.newBuilder().setName("id").setHostUrl("url").build()
+        val connection = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("url").build()
         globalSettings.serverConnections = listOf(connection)
         projectSettings.bindTo(connection, "key")
 
@@ -290,14 +303,14 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val paramsCaptor = argumentCaptor<DidAddConfigurationScopesParams>()
         verify(backendConfigurationService, timeout(500).atLeastOnce()).didAddConfigurationScopes(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.addedScopes).extracting(
-            "id",
+            CONNECTION_NAME,
             "name",
             "parentId",
             "bindable",
             "binding.connectionId",
             "binding.sonarProjectKey",
             "binding.bindingSuggestionDisabled"
-        ).containsExactly(tuple(projectBackendId(project), project.name, null, true, "id", "key", false))
+        ).containsExactly(tuple(projectBackendId(project), project.name, null, true, CONNECTION_NAME, "key", false))
     }
 
     @Test
@@ -314,7 +327,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_binding_a_project() {
-        service.projectBound(project, ProjectBinding("id", "key", emptyMap()), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
+        service.projectBound(project, ProjectBinding(CONNECTION_NAME, "key", emptyMap()), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService, timeout(500)).didUpdateBinding(paramsCaptor.capture())
@@ -323,13 +336,13 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             "updatedBinding.connectionId",
             "updatedBinding.sonarProjectKey",
             "updatedBinding.bindingSuggestionDisabled"
-        ).containsExactly(projectBackendId(project), "id", "key", false)
+        ).containsExactly(projectBackendId(project), CONNECTION_NAME, "key", false)
     }
 
     @Test
     fun test_notify_backend_when_binding_a_project_with_binding_suggestions_disabled() {
         projectSettings.isBindingSuggestionsEnabled = false
-        service.projectBound(project, ProjectBinding("id", "key", emptyMap()), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
+        service.projectBound(project, ProjectBinding(CONNECTION_NAME, "key", emptyMap()), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService, timeout(500)).didUpdateBinding(paramsCaptor.capture())
@@ -338,7 +351,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             "updatedBinding.connectionId",
             "updatedBinding.sonarProjectKey",
             "updatedBinding.bindingSuggestionDisabled"
-        ).containsExactly(projectBackendId(project), "id", "key", true)
+        ).containsExactly(projectBackendId(project), CONNECTION_NAME, "key", true)
     }
 
     @Test
@@ -346,7 +359,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         projectSettings.isBindingSuggestionsEnabled = false
         val moduleBackendId = moduleBackendId(module)
 
-        service.projectBound(project, ProjectBinding("id", "key", mapOf(Pair(module, "moduleKey"))), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
+        service.projectBound(project, ProjectBinding(CONNECTION_NAME, "key", mapOf(Pair(module, "moduleKey"))), BindingMode.FROM_SUGGESTION, BindingSuggestionOrigin.PROJECT_NAME)
 
         val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
         verify(backendConfigurationService, timeout(500).times(2)).didUpdateBinding(paramsCaptor.capture())
@@ -356,8 +369,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             "updatedBinding.sonarProjectKey",
             "updatedBinding.bindingSuggestionDisabled"
         ).containsExactlyInAnyOrder(
-            tuple(projectBackendId(project), "id", "key", true),
-            tuple(moduleBackendId, "id", "moduleKey", true)
+            tuple(projectBackendId(project), CONNECTION_NAME, "key", true),
+            tuple(moduleBackendId, CONNECTION_NAME, "moduleKey", true)
         )
     }
 
@@ -423,68 +436,11 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_notify_backend_when_connection_token_changed() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setToken("oldToken").build())
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setToken("newToken").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialsChangeListener.TOPIC).onCredentialsChanged(CONNECTION_NAME)
 
         await().atMost(Duration.ofSeconds(3)).untilAsserted {
-            verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
+            verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams(CONNECTION_NAME)))
         }
-    }
-
-    @Test
-    fun test_notify_backend_when_connection_password_changed() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("oldPass").build())
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("newPass").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
-
-        await().atMost(Duration.ofSeconds(3)).untilAsserted {
-            verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
-        }
-    }
-
-    @Test
-    fun test_notify_backend_when_connection_login_changed() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("oldLogin").setPassword("pass").build())
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("newLogin").setPassword("pass").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
-
-        await().atMost(Duration.ofSeconds(3)).untilAsserted {
-            verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
-        }
-    }
-
-    @Test
-    fun test_do_not_notify_backend_of_credentials_change_when_connection_is_new() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = emptyList()
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").setLogin("login").setPassword("newPass").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
-
-        verify(backendConnectionService, timeout(500).times(0)).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
-    }
-
-    @Test
-    fun test_do_not_notify_backend_of_credentials_change_when_something_else_changed() {
-        val previousSettings = SonarLintGlobalSettings()
-        previousSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("oldUrl").setToken("token").build())
-        val newSettings = SonarLintGlobalSettings()
-        newSettings.serverConnections = listOf(ServerConnection.newBuilder().setName("id").setHostUrl("newUrl").setToken("token").build())
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(previousSettings, newSettings)
-
-        verify(backendConnectionService, timeout(500).times(0)).didChangeCredentials(refEq(DidChangeCredentialsParams("id")))
     }
 
     @Test
@@ -613,7 +569,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_reopen_issue() {
-        val issueId = "id"
+        val issueId = CONNECTION_NAME
         val isTaint = false
 
         service.reopenIssue(module, issueId, isTaint)
@@ -645,7 +601,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_hotspot_change_permitted() {
-        val connectionId = "id"
+        val connectionId = CONNECTION_NAME
         val hotspotKey = "key"
 
         service.checkStatusChangePermitted(connectionId, hotspotKey)
@@ -660,7 +616,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_issue_change_permitted() {
-        val connectionId = "id"
+        val connectionId = CONNECTION_NAME
         val issueKey = "key"
 
         service.checkIssueStatusChangePermitted(connectionId, issueKey)
@@ -684,31 +640,42 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_check_list_user_organizations_for_sonarqube() {
-        val serverConnection = ServerConnection.newBuilder().setName("id").setHostUrl("url").build()
+        PasswordSafe.instance.setToken(CONNECTION_NAME, "token")
+        val serverConnection = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("url").build()
 
         service.listUserOrganizations(serverConnection)
 
         val paramsCaptor = argumentCaptor<ListUserOrganizationsParams>()
         verify(backendConnectionService, timeout(500)).listUserOrganizations(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.credentials.isRight).isTrue()
+        assertThat(paramsCaptor.firstValue.region).isEqualTo(SonarCloudRegion.EU)
+        assertThat(paramsCaptor.firstValue.credentials.isLeft).isTrue()
+        assertThat(paramsCaptor.firstValue.credentials.left.token).isEqualTo("token")
     }
 
     @Test
     fun test_check_list_user_organizations_for_sonarcloud() {
-        val serverConnection =
-            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org").build()
+        PasswordSafe.instance.setToken(CONNECTION_NAME, "token")
+        val serverConnection = ServerConnection.newBuilder()
+            .setName(CONNECTION_NAME)
+            .setRegion(SonarCloudRegion.US.name)
+            .setHostUrl("https://sonarcloud.us")
+            .setOrganizationKey("org")
+            .build()
 
         service.listUserOrganizations(serverConnection)
 
         val paramsCaptor = argumentCaptor<ListUserOrganizationsParams>()
         verify(backendConnectionService, timeout(500)).listUserOrganizations(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.credentials.isRight).isTrue()
+        assertThat(paramsCaptor.firstValue.region).isEqualTo(SonarCloudRegion.US)
+        assertThat(paramsCaptor.firstValue.credentials.isLeft).isTrue()
+        assertThat(paramsCaptor.firstValue.credentials.left.token).isEqualTo("token")
     }
 
     @Test
     fun test_get_organization() {
+        PasswordSafe.instance.setToken(CONNECTION_NAME, "token")
         val serverConnection =
-            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org").build()
+            ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("https://sonarcloud.io").setOrganizationKey("org").build()
         val organizationKey = "org"
 
         service.getOrganization(serverConnection, organizationKey)
@@ -716,7 +683,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val paramsCaptor = argumentCaptor<GetOrganizationParams>()
         verify(backendConnectionService, timeout(500)).getOrganization(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.organizationKey).isEqualTo(organizationKey)
-        assertThat(paramsCaptor.firstValue.credentials.isRight).isTrue()
+        assertThat(paramsCaptor.firstValue.credentials.isLeft).isTrue()
+        assertThat(paramsCaptor.firstValue.credentials.left.token).isEqualTo("token")
     }
 
     @Test

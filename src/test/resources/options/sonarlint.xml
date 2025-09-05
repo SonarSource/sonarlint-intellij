@@ -1,0 +1,56 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2025 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<application>
+  <component name="SonarLintGlobalSettings">
+    <option name="sonarQubeServers">
+      <list>
+        <SonarQubeServer>
+          <option name="name" value="onlyToken" />
+          <option name="hostUrl" value="host" />
+          <token>dfc5dfc4dfc6dfd3dffedfc5dfc1dfcfdfc4dffedfc5dfc1dfcfdfc4</token>
+        </SonarQubeServer>
+        <SonarQubeServer>
+          <option name="name" value="onlyLoginPass" />
+          <option name="hostUrl" value="host" />
+          <option name="login" value="onlyLoginPassLogin" />
+          <password>dfc5dfc4dfc6dfd3dfe6dfc5dfcddfc3dfc4dffadfcbdfd9dfd9dffadfcbdfd9dfd9dfdddfc5dfd8dfce</password>
+        </SonarQubeServer>
+        <SonarQubeServer>
+          <option name="name" value="allCredentials" />
+          <option name="hostUrl" value="host" />
+          <option name="login" value="allCredentialsLogin" />
+          <password>dfcbdfc6dfc6dfe9dfd8dfcfdfcedfcfdfc4dfdedfc3dfcbdfc6dfd9dffadfcbdfd9dfd9dfdddfc5dfd8dfce</password>
+          <token>dfcbdfc6dfc6dfe9dfd8dfcfdfcedfcfdfc4dfdedfc3dfcbdfc6dfd9dffedfc5dfc1dfcfdfc4</token>
+        </SonarQubeServer>
+        <SonarQubeServer>
+          <option name="name" value="noCredentials" />
+          <option name="region" value="region" />
+          <option name="hostUrl" value="host" />
+          <option name="enableProxy" value="true" />
+          <organizationKey>organizationKey</organizationKey>
+          <disableNotifications>true</disableNotifications>
+        </SonarQubeServer>
+      </list>
+    </option>
+    <rules />
+  </component>
+</application>

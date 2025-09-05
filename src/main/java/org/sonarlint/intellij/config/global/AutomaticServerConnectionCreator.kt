@@ -38,11 +38,15 @@ import java.awt.event.ActionEvent
 import javax.swing.JButton
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.util.RegionUtils
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
 class AutomaticServerConnectionCreator(private val serverOrOrg: String, private val tokenValue: String,
                                        private val isSQ: Boolean, private val region: SonarCloudRegion?) :
@@ -84,14 +88,17 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
             override fun doAction(e: ActionEvent) {
                 val globalSettings = Settings.getGlobalSettings()
                 serverConnection = if (isSQ) {
-                    ServerConnection.newBuilder().setHostUrl(serverOrOrg).setDisableNotifications(false).setToken(tokenValue)
+                    ServerConnection.newBuilder().setHostUrl(serverOrOrg).setDisableNotifications(false)
                         .setName(connectionNameField.text).build()
                 } else {
-                    ServerConnection.newBuilder().setOrganizationKey(serverOrOrg).setDisableNotifications(false).setToken(tokenValue)
+                    ServerConnection.newBuilder().setOrganizationKey(serverOrOrg).setDisableNotifications(false)
                         .setName(connectionNameField.text).setHostUrl(RegionUtils.getUrlByRegion(region))
                         .setRegion(region?.name ?: SonarCloudRegion.EU.name)
                         .build()
                 }
+                getService(CredentialsService::class.java).saveCredentials(
+                    connectionNameField.text,
+                    Either.forLeft(TokenDto(tokenValue)))
                 serverConnection?.apply {
                     Settings.getGlobalSettings().addServerConnection(this)
                     val serverChangeListener =

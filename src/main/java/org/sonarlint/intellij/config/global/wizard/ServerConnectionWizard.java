@@ -25,7 +25,9 @@ import com.intellij.ide.wizard.AbstractWizardStepEx;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK;
 
@@ -45,21 +47,24 @@ public class ServerConnectionWizard {
   }
 
   public static ServerConnectionWizard forNewConnection(ServerConnection prefilledConnection, Set<String> existingNames) {
-    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(prefilledConnection));
+    var credentials = SonarLintUtils.getService(CredentialsService.class).getCredentials(prefilledConnection);
+    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(prefilledConnection, credentials));
     var steps = createSteps(wizard.model, false, existingNames);
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "New Connection");
     return wizard;
   }
 
   public static ServerConnectionWizard forConnectionEdition(ServerConnection connectionToEdit) {
-    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(connectionToEdit));
+    var credentials = SonarLintUtils.getService(CredentialsService.class).getCredentials(connectionToEdit);
+    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(connectionToEdit, credentials));
     var steps = createSteps(wizard.model, true, Collections.emptySet());
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
     return wizard;
   }
 
   public static ServerConnectionWizard forNotificationsEdition(ServerConnection connectionToEdit) {
-    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(connectionToEdit));
+    var credentials = SonarLintUtils.getService(CredentialsService.class).getCredentials(connectionToEdit);
+    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(connectionToEdit, credentials));
     var steps = List.of(new NotificationsStep(wizard.model, true));
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
     return wizard;

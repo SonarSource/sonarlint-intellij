@@ -19,21 +19,30 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.configurationStore.StoreUtil;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.PersistentStateComponentWithModificationTracker;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.config.global.credentials.CredentialsService;
+
+import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @State(name = "SonarLintGlobalSettings",
   storages = {@Storage("sonarlint.xml")},
   // used for settings export
-  presentableName = SonarLintGlobalSettingsPresentableName.class
+  presentableName = SonarLintGlobalSettingsPresentableName.class,
+  allowLoadInTests = true
 )
-public final class SonarLintGlobalSettingsStore implements PersistentStateComponent<SonarLintGlobalSettings> {
+public final class SonarLintGlobalSettingsStore implements PersistentStateComponentWithModificationTracker<SonarLintGlobalSettings> {
 
   private SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+  private transient long modificationCount = 0;
 
   @Override
   public SonarLintGlobalSettings getState() {
@@ -45,13 +54,49 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
   public void loadState(SonarLintGlobalSettings settings) {
     this.settings = settings;
     initializeRulesByKey();
+    modificationCount = 0;
+  }
+
+  @Override
+  public void initializeComponent() {
+    migrateCredentials();
+  }
+
+  private void migrateCredentials() {
+    CredentialsService credentialsService = SonarLintUtils.getService(CredentialsService.class);
+    var serverConnections = settings.getServerConnections();
+
+    if (serverConnections.stream().anyMatch(credentialsService::hasOldCredentials)) {
+      runOnPooledThread(() -> {
+        migrateCredentials(serverConnections, credentialsService);
+        modificationCount++;
+        StoreUtil.saveSettings(ApplicationManager.getApplication());
+      });
+    }
+  }
+
+  private static void migrateCredentials(List<ServerConnection> serverConnections, CredentialsService credentialsService) {
+    var connections = serverConnections.listIterator();
+    while (connections.hasNext()) {
+      var connection = connections.next();
+      if (credentialsService.hasOldCredentials(connection)) {
+        var migrated = credentialsService.migrateCredentials(connection);
+        connections.set(migrated);
+      }
+    }
   }
 
   public void save(SonarLintGlobalSettings settings) {
     this.settings = settings;
+    modificationCount++;
   }
 
   private void initializeRulesByKey() {
     settings.rulesByKey = new HashMap<>(settings.rules.stream().collect(Collectors.toMap(SonarLintGlobalSettings.Rule::getKey, Function.identity())));
+  }
+
+  @Override
+  public long getStateModificationCount() {
+    return modificationCount;
   }
 }
