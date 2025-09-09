@@ -63,6 +63,7 @@ public final class SonarLintGlobalSettings {
 
   private boolean taintVulnerabilitiesTabDisclaimerDismissed;
   private boolean secretsNeverBeenAnalysed = true;
+  private boolean flightRecorderEnabled = false;
 
   public SonarLintGlobalSettings() {}
 
@@ -77,6 +78,7 @@ public final class SonarLintGlobalSettings {
     this.hasWalkthroughRunOnce = original.hasWalkthroughRunOnce;
     this.secretsNeverBeenAnalysed = original.secretsNeverBeenAnalysed;
     this.taintVulnerabilitiesTabDisclaimerDismissed = original.taintVulnerabilitiesTabDisclaimerDismissed;
+    this.flightRecorderEnabled = original.flightRecorderEnabled;
 
     this.servers = new LinkedList<>(original.servers);
     this.fileExclusions = new LinkedList<>(original.fileExclusions);
@@ -261,6 +263,14 @@ public final class SonarLintGlobalSettings {
     return servers.stream()
       .filter(it -> equalsIgnoringTrailingSlash(it.getHostUrl(), serverUrl))
       .toList();
+  }
+
+  public boolean isFlightRecorderEnabled() {
+    return flightRecorderEnabled;
+  }
+
+  public void setFlightRecorderEnabled(boolean flightRecorderEnabled) {
+    this.flightRecorderEnabled = flightRecorderEnabled;
   }
 
   public static class Rule {

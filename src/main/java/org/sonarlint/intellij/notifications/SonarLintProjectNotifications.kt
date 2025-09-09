@@ -63,7 +63,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             return SonarLintUtils.getService(project, SonarLintProjectNotifications::class.java)
         }
 
-        fun projectLessNotification(title: String?, message: String, type: NotificationType, action: AnAction? = null): Notification {
+        fun projectLessNotification(title: String?, message: String, type: NotificationType, vararg actions: AnAction): Notification {
             return NotificationGroupManager.getInstance().getNotificationGroup("SonarQube for IDE").createNotification(
                 title ?: "",
                 message,
@@ -71,7 +71,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             ).apply {
                 isImportant = type != NotificationType.INFORMATION
                 icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
-                action?.let { addAction(it) }
+                actions.forEach { addAction(it) }
                 notify(null)
             }
         }
@@ -267,7 +267,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             NotificationType.WARNING
         ).apply {
             icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
-            setImportant(true)
+            isImportant = true
             notify(myProject)
         }
     }
@@ -279,7 +279,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             NotificationType.WARNING
         ).apply {
             icon = SonarLintIcons.SONARQUBE_FOR_INTELLIJ
-            setImportant(true)
+            isImportant = true
             Stream.of(*actions).forEach(this::addAction)
             notify(myProject)
         }

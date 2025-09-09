@@ -72,6 +72,7 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
@@ -189,6 +190,7 @@ class BackendService : Disposable {
     private var backendFuture = CompletableFuture<SonarLintRpcServer>()
     private var sloop: Sloop? = null
     private var defaultSloopLauncher: SloopLauncher? = null
+    private var intentionalRestart = AtomicBoolean(false)
 
     constructor()
 
@@ -200,6 +202,13 @@ class BackendService : Disposable {
 
     init {
         registerListeners()
+
+        // Automatically disable flight recorder upon restart
+        val globalSettings = getGlobalSettings()
+        if (globalSettings.isFlightRecorderEnabled) {
+            globalSettings.isFlightRecorderEnabled = false
+            getService(SonarLintGlobalSettingsStore::class.java).save(globalSettings)
+        }
     }
 
     private fun registerListeners() {
@@ -324,12 +333,16 @@ class BackendService : Disposable {
         ProjectManager.getInstance().openProjects.forEach { project ->
             getService(project, SonarLintToolWindow::class.java).refreshViews()
         }
-        projectLessNotification(
-            null,
-            SONARLINT_ERROR_MSG,
-            NotificationType.ERROR,
-            RestartBackendNotificationAction()
-        )
+
+        // Only show error notification if this wasn't an intentional restart
+        if (!intentionalRestart.getAndSet(false)) {
+            projectLessNotification(
+                null,
+                SONARLINT_ERROR_MSG,
+                NotificationType.ERROR,
+                RestartBackendNotificationAction()
+            )
+        }
     }
 
     private fun initRpcServer(rpcServer: SonarLintRpcServer): CompletableFuture<Void> {
@@ -393,6 +406,9 @@ class BackendService : Disposable {
         }
         if (!System.getProperty("sonarlint.monitoring.disabled", "false").toBoolean()) {
             capabilities.add(BackendCapability.MONITORING)
+        }
+        if (getGlobalSettings().isFlightRecorderEnabled) {
+            capabilities.add(BackendCapability.FLIGHT_RECORDER)
         }
         return capabilities
     }
@@ -880,20 +896,40 @@ class BackendService : Disposable {
         notifyBackend { it.newCodeService.didToggleFocus() }
     }
 
-    fun restartBackendService() {
+    fun restartBackendService(forced: Boolean = false) {
         runOnPooledThread {
-            if (isAlive()) {
+            if (!forced && isAlive()) {
                 return@runOnPooledThread
             }
+
+            if (forced) {
+                intentionalRestart.set(true)
+                
+                // Properly shut down current backend and wait for it to exit
+                val currentSloop = sloop
+                if (currentSloop != null && currentSloop.isAlive) {
+                    try {
+                        dispose()
+                        // Wait for the process to actually exit
+                        currentSloop.onExit()[10, TimeUnit.SECONDS]
+                    } catch (_: Exception) {
+                        GlobalLogOutput.get().log("Error during backend shutdown, proceeding with restart", ClientLogOutput.Level.DEBUG)
+                    }
+                }
+            }
+            
+            // Reset everything for clean restart
             initializationTriedOnce.set(false)
             backendFuture = CompletableFuture()
             sloop = null
+            
+            // Start the new backend
             ensureBackendInitialized().thenAcceptAsync { catchUpWithBackend(it) }
         }
     }
 
     private fun catchUpWithBackend(rpcServer: SonarLintRpcServer) {
-        ProjectManager.getInstance().openProjects.forEach { project ->
+        ProjectManager.getInstance().openProjects.forEach { project ->  
             getService(project, SonarLintToolWindow::class.java).refreshViews()
 
             val binding = getService(project, ProjectBindingManager::class.java).binding
@@ -1129,6 +1165,22 @@ class BackendService : Disposable {
     fun checkIfDependencyRiskSupported(project: Project): CompletableFuture<CheckDependencyRiskSupportedResponse> {
         val projectId = projectId(project)
         return requestFromBackend { it.dependencyRiskService.checkSupported(CheckDependencyRiskSupportedParams(projectId)) }
+    }
+
+    fun captureThreadDump() {
+        return notifyBackend { it.flightRecordingService.captureThreadDump() }
+    }
+
+    fun updateFlightRecorder(enabled: Boolean) {
+        val globalSettings = getGlobalSettings()
+        val newSettings = SonarLintGlobalSettings(globalSettings)
+        newSettings.isFlightRecorderEnabled = enabled
+        getService(SonarLintGlobalSettingsStore::class.java).save(newSettings)
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+            .applied(globalSettings, newSettings)
+
+        restartBackendService(true)
     }
 
 }
