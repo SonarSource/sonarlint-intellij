@@ -204,11 +204,10 @@ class BackendService : Disposable {
         registerListeners()
 
         // Automatically disable flight recorder upon restart
-        getService(SonarLintGlobalSettingsStore::class.java).state?.let {
-            if (it.isFlightRecorderEnabled) {
-                it.isFlightRecorderEnabled = false
-                getService(SonarLintGlobalSettingsStore::class.java).save(it)
-            }
+        val globalSettings = getGlobalSettings()
+        if (globalSettings.isFlightRecorderEnabled) {
+            globalSettings.isFlightRecorderEnabled = false
+            getService(SonarLintGlobalSettingsStore::class.java).save(globalSettings)
         }
     }
 
@@ -1172,34 +1171,16 @@ class BackendService : Disposable {
         return notifyBackend { it.flightRecordingService.captureThreadDump() }
     }
 
-    fun enableFlightRecorder() {
-        getService(SonarLintGlobalSettingsStore::class.java).state?.let {
-            val newSettings = SonarLintGlobalSettings(it)
-            newSettings.isFlightRecorderEnabled = true
-            getService(SonarLintGlobalSettingsStore::class.java).save(newSettings)
+    fun updateFlightRecorder(enabled: Boolean) {
+        val globalSettings = getGlobalSettings()
+        val newSettings = SonarLintGlobalSettings(globalSettings)
+        newSettings.isFlightRecorderEnabled = enabled
+        getService(SonarLintGlobalSettingsStore::class.java).save(newSettings)
 
-            ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-                .applied(it, newSettings)
+        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+            .applied(globalSettings, newSettings)
 
-            restartBackendService(true)
-        }
-    }
-
-    fun disableFlightRecorder() {
-        getService(SonarLintGlobalSettingsStore::class.java).state?.let {
-            val newSettings = SonarLintGlobalSettings(it)
-            newSettings.isFlightRecorderEnabled = false
-            getService(SonarLintGlobalSettingsStore::class.java).save(newSettings)
-
-            ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-                .applied(it, newSettings)
-
-            restartBackendService(true)
-        }
-    }
-
-    fun isFlightRecorderEnabled(): Boolean {
-        return getGlobalSettings().isFlightRecorderEnabled
+        restartBackendService(true)
     }
 
 }

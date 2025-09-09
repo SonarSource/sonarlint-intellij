@@ -42,6 +42,7 @@ import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
@@ -211,7 +212,7 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
                     text = "Restarting..."
                     isEnabled = false
                     runOnPooledThread {
-                        backendService.enableFlightRecorder()
+                        backendService.updateFlightRecorder(true)
                         runOnUiThread(project) {
                             text = "Start Flight Recorder"
                             updateButtonStates()
@@ -225,7 +226,7 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
                     text = "Restarting..."
                     isEnabled = false
                     runOnPooledThread {
-                        backendService.disableFlightRecorder()
+                        backendService.updateFlightRecorder(false)
                         runOnUiThread(project) {
                             text = "Stop Flight Recorder"
                             updateButtonStates()
@@ -258,8 +259,7 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
     }
 
     fun updateButtonStates() {
-        val backendService = getService(BackendService::class.java)
-        val isEnabled = backendService.isFlightRecorderEnabled()
+        val isEnabled = getGlobalSettings().isFlightRecorderEnabled
 
         startButton.isEnabled = !isEnabled
         stopButton.isEnabled = isEnabled

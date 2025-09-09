@@ -29,7 +29,7 @@ class StopFlightRecorderAction : NotificationAction("Stop Flight Recorder") {
 
     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
         val backendService = getService(BackendService::class.java)
-        backendService.disableFlightRecorder()
+        backendService.updateFlightRecorder(false)
         notification.expire()
     }
 
