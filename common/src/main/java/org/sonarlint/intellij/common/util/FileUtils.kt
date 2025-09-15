@@ -77,7 +77,7 @@ object FileUtils {
     }
 
     private fun isRazorFile(file: VirtualFile): Boolean {
-        return file.extension != null && (file.extension == "razor" || file.name.endsWith("razor.cs"))
+        return file.extension != null && file.name.endsWith("razor.cs")
     }
 
     private fun isExcludedFromEP(file: VirtualFile, project: Project): Boolean {
