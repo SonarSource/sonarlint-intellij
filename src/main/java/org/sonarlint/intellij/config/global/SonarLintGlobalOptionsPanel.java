@@ -125,7 +125,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     optionsPanel.add(nodeJsVersion, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
-    enableRegion = new JBCheckBox("Show region selection for SonarQube Cloud (early access)");
+    enableRegion = new JBCheckBox("Show region selection for SonarQube Cloud");
     enableRegion.setFocusable(false);
     optionsPanel.add(enableRegion, new GridBagConstraints(0, 3, 3, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
