@@ -57,7 +57,9 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
+import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -314,6 +316,8 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       // it's not removed from serverIds and editorList
       model.remove(server);
       connections.remove(server);
+      SonarLintUtils.getService(CredentialsService.class)
+          .eraseCredentials(server);
       connectionChangeListener.changed(connections);
 
       if (model.getSize() > 0) {

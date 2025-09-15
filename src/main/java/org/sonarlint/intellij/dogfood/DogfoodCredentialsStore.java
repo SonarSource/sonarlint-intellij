@@ -19,20 +19,20 @@
  */
 package org.sonarlint.intellij.dogfood;
 
+import com.intellij.configurationStore.StoreUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 
 @State(
   name = "SonarLintDogfoodCredentials",
-  storages = {@Storage("sonarlint-dogfood.xml")})
+  storages = {@Storage(value = "sonarlint-dogfood.xml")},
+  allowLoadInTests = true)
+@Deprecated(since = "11.1", forRemoval = true)
 public final class DogfoodCredentialsStore implements PersistentStateComponent<DogfoodCredentials> {
 
   private DogfoodCredentials credentials = new DogfoodCredentials();
-
-  public void save(DogfoodCredentials credentials) {
-    this.credentials = credentials;
-  }
 
   @Override
   public DogfoodCredentials getState() {
@@ -44,4 +44,8 @@ public final class DogfoodCredentialsStore implements PersistentStateComponent<D
     this.credentials = state;
   }
 
+  public void erase() {
+    credentials = null;
+    StoreUtil.saveSettings(ApplicationManager.getApplication());
+  }
 }

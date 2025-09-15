@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.analysis
 
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.replaceService
 import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -40,8 +38,8 @@ class RunningAnalysesTrackerTests : AbstractSonarLintLightTests() {
     fun setup() {
         backendService = mock(BackendService::class.java)
         analysisStatus = mock(AnalysisStatus::class.java)
-        ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
-        project.replaceService(AnalysisStatus::class.java, analysisStatus, testRootDisposable)
+        replaceApplicationService(BackendService::class.java, backendService)
+        replaceProjectService(AnalysisStatus::class.java, analysisStatus)
         tracker = RunningAnalysesTracker(project)
     }
 

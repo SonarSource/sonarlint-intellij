@@ -17,26 +17,9 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.dogfood
+package org.sonarlint.intellij.config.global.credentials
 
-import com.intellij.credentialStore.Credentials
-import com.intellij.openapi.ui.DialogWrapper
+class CredentialsException: RuntimeException {
 
-class DogfoodDialog : DialogWrapper(false) {
-
-    private val centerPanel = DogfoodPanel()
-
-    fun setCredentials(): Credentials? {
-        title = "Insert Your Repox Credentials"
-        isResizable = false
-        init()
-
-        val accepted = showAndGet()
-        return if (accepted) {
-            Credentials(centerPanel.getUsername(), centerPanel.getPassword())
-        } else null
-    }
-
-    override fun createCenterPanel() = centerPanel
-
+    constructor(message: String?) : super(message)
 }

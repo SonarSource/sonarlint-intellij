@@ -25,6 +25,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Base64
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.runOnPooledThread
 
@@ -44,9 +45,9 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
 
     override fun getAuthHeaders(url: String): Map<String, String> {
         if (!connectionFailed && !notificationAlreadyDisplayed) {
-            val dogfoodCredentials = getService(DogfoodCredentialsStore::class.java).state
-            return if (dogfoodCredentials != null && !dogfoodCredentials.username.isNullOrBlank() && !dogfoodCredentials.pass.isNullOrBlank()) {
-                val encodedAuth = "Basic " + "${dogfoodCredentials.username}:${dogfoodCredentials.pass}".encodeBase64()
+            val dogfoodCredentials = getService(CredentialsService::class.java).getDogfoodCredentials()
+            return if (dogfoodCredentials != null && !dogfoodCredentials.userName.isNullOrBlank() && !dogfoodCredentials.password.isNullOrBlank()) {
+                val encodedAuth = "Basic " + "${dogfoodCredentials.userName}:${dogfoodCredentials.password}".encodeBase64()
 
                 val testUrlRepox = URL("https://repox.jfrog.io/repox/sonarsource")
                 runOnPooledThread {

@@ -33,6 +33,7 @@ import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.JBColor;
 import java.awt.CardLayout;
 import java.awt.event.ItemEvent;
+import javax.annotation.Nullable;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -45,14 +46,17 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import org.jetbrains.annotations.NotNull;
-import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.ProgressUtils;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto;
 
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
@@ -145,14 +149,16 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   private void save() {
+    SonarLintUtils.getService(CredentialsService.class)
+                .saveCredentials(model.getName(), getCredentials());
+  }
+
+  private Either<TokenDto, UsernamePasswordDto> getCredentials() {
     if (LOGIN_ITEM.equals(authComboBox.getSelectedItem())) {
-      model.setToken(null);
-      model.setLogin(loginField.getText());
-      model.setPassword(passwordField.getPassword());
+      return Either.forRight(new UsernamePasswordDto(loginField.getText(),
+        String.valueOf(passwordField.getPassword())));
     } else {
-      model.setToken(String.valueOf(tokenField.getPassword()));
-      model.setLogin(null);
-      model.setPassword(null);
+      return Either.forLeft(new TokenDto(String.valueOf(tokenField.getPassword())));
     }
   }
 

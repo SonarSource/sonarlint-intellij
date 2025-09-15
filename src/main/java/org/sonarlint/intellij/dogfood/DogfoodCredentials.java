@@ -19,12 +19,12 @@
  */
 package org.sonarlint.intellij.dogfood;
 
-import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.Tag;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
+@Deprecated(since = "11.1", forRemoval = true)
 public class DogfoodCredentials {
 
   @Tag
@@ -46,7 +46,7 @@ public class DogfoodCredentials {
   }
 
   public String getPass() {
-    return PasswordUtil.decodePassword(pass);
+    return pass;
   }
 
   public static Builder newBuilder() {
@@ -72,11 +72,7 @@ public class DogfoodCredentials {
     }
 
     public Builder setPassword(@Nullable String pass) {
-      if (pass == null) {
-        this.pass = null;
-      } else {
-        this.pass = PasswordUtil.encodePassword(pass);
-      }
+      this.pass = pass;
       return this;
     }
 

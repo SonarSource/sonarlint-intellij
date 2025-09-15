@@ -23,12 +23,11 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-class SonarLintGlobalSettingsTests extends AbstractSonarLintLightTests {
+class SonarLintGlobalSettingsTests {
 
   private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 14;
   private static final String RULE = "rule";
