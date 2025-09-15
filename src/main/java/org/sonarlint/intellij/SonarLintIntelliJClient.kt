@@ -110,10 +110,12 @@ import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
+import org.sonarlint.intellij.notifications.CopyFlightRecorderUUIDAction
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
+import org.sonarlint.intellij.notifications.StopFlightRecorderAction
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.progress.BackendTaskProgressReporter
 import org.sonarlint.intellij.promotion.PromotionProvider
@@ -147,6 +149,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreat
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.flightrecorder.FlightRecorderStartedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.HotspotDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.http.GetProxyPasswordAuthenticationResponse
@@ -997,6 +1000,17 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } ?: findProject(configurationScopeId)?.let { project ->
             getService(project, LocalFileExclusions::class.java).projectExclusions + getGlobalSettings().fileExclusions.toSet()
         } ?: return getGlobalSettings().fileExclusions.toSet()
+    }
+
+    override fun flightRecorderStarted(params: FlightRecorderStartedParams) {
+        projectLessNotification(
+            "Flight Recorder Started",
+            "Flight Recorder has been started for advanced diagnostics. " +
+                "Session ID: " + params.sessionId,
+            NotificationType.INFORMATION,
+            CopyFlightRecorderUUIDAction(params.sessionId),
+            StopFlightRecorderAction()
+        )
     }
 
 }

@@ -19,12 +19,15 @@
  */
 package org.sonarlint.intellij.ui
 
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
@@ -33,12 +36,20 @@ import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.Box
 import javax.swing.BoxLayout
+import javax.swing.JButton
 import javax.swing.JSeparator
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings.getGlobalSettings
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.telemetry.LinkTelemetry
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.runOnPooledThread
 
 data class HelpCard(
     val title: String,
@@ -64,19 +75,30 @@ private val FEATURE_CARD = HelpCard(
     LinkTelemetry.SUGGEST_FEATURE_HELP
 )
 
-class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWindowPanel(false, false) {
+class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWindowPanel(false, false), Disposable {
 
     private val topLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val cardPanel = JBPanel<SonarLintHelpAndFeedbackPanel>()
+    private val flightRecorderPanel = JBPanel<SonarLintHelpAndFeedbackPanel>()
+
+    private lateinit var startButton: JButton
+    private lateinit var stopButton: JButton
+    private lateinit var threadDumpButton: JButton
 
     init {
-        layout = GridBagLayout()
+        setupContent()
+        setupConfigurationListener()
+    }
+
+    private fun setupContent() {
+        val contentPanel = JBPanel<SonarLintHelpAndFeedbackPanel>()
+        contentPanel.layout = GridBagLayout()
         val constraints = GridBagConstraints().apply {
             gridx = 0
             gridy = GridBagConstraints.RELATIVE
             weightx = 1.0
             fill = GridBagConstraints.HORIZONTAL
-            insets = JBUI.insets(10)
+            insets = JBUI.insets(5, 30)
         }
 
         topLabel.apply {
@@ -94,6 +116,7 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
                     }
                 }
             }
+            border = JBUI.Borders.emptyTop(25)
         }
 
         cardPanel.apply {
@@ -105,15 +128,51 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
             add(generateHelpCard(FEATURE_CARD))
         }
 
-        add(topLabel, constraints)
+        contentPanel.add(topLabel, constraints)
 
         constraints.gridy = 1
-        add(JSeparator(SwingConstants.HORIZONTAL), constraints)
+        contentPanel.add(JSeparator(SwingConstants.HORIZONTAL), constraints)
 
         constraints.gridy = 2
+        constraints.fill = GridBagConstraints.HORIZONTAL
+        constraints.weighty = 0.0
+        contentPanel.add(cardPanel, constraints)
+
+        setupFlightRecorderPanel()
+
+        constraints.gridy = 3
+        contentPanel.add(JSeparator(SwingConstants.HORIZONTAL), constraints)
+
+        constraints.gridy = 4
         constraints.fill = GridBagConstraints.BOTH
         constraints.weighty = 1.0
-        add(cardPanel, constraints)
+        contentPanel.add(flightRecorderPanel, constraints)
+
+        val scrollPane = JBScrollPane(contentPanel).apply {
+            horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+            verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+            border = JBUI.Borders.empty()
+            viewportBorder = JBUI.Borders.empty()
+        }
+
+        setContent(scrollPane)
+    }
+
+    private fun setupConfigurationListener() {
+        val busConnection = project.messageBus.connect(this)
+        busConnection.subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
+            override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
+                if (previousSettings.isFlightRecorderEnabled != newSettings.isFlightRecorderEnabled) {
+                    runOnUiThread(project) {
+                        updateButtonStates()
+                    }
+                }
+            }
+        })
+    }
+
+    override fun dispose() {
+        // Cleanup is handled automatically by the message bus connection
     }
 
     private fun generateHelpCard(card: HelpCard): JBPanel<SonarLintHelpAndFeedbackPanel> {
@@ -126,6 +185,85 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
             })
             maximumSize = Dimension(300, maximumSize.height)
         }
+    }
+
+    private fun setupFlightRecorderPanel() {
+        flightRecorderPanel.apply {
+            layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, false)
+
+            add(JBLabel("Flight Recorder").apply {
+                font = JBFont.label().asBold()
+                border = JBUI.Borders.emptyLeft(3)
+            })
+
+            add(SwingHelper.createHtmlViewer(false, null, null, null).apply {
+                text = """
+                Flight Recorder mode enables advanced diagnostics for troubleshooting SonarQube for IDE issues. When enabled, it collects detailed execution traces, logs, and system metrics.<br>
+                To report a problem, please share the generated session UUID (shown in the first notification) on our Community Forum.
+            """.trimIndent()
+            })
+
+            val backendService = getService(BackendService::class.java)
+            val buttonPanel = JBPanel<SonarLintHelpAndFeedbackPanel>()
+            buttonPanel.layout = BoxLayout(buttonPanel, BoxLayout.X_AXIS)
+
+            startButton = JButton("Start Flight Recorder").apply {
+                addActionListener { 
+                    text = "Restarting..."
+                    isEnabled = false
+                    runOnPooledThread {
+                        backendService.updateFlightRecorder(true)
+                        runOnUiThread(project) {
+                            text = "Start Flight Recorder"
+                            updateButtonStates()
+                        }
+                    }
+                }
+            }
+
+            stopButton = JButton("Stop Flight Recorder").apply {
+                addActionListener { 
+                    text = "Restarting..."
+                    isEnabled = false
+                    runOnPooledThread {
+                        backendService.updateFlightRecorder(false)
+                        runOnUiThread(project) {
+                            text = "Stop Flight Recorder"
+                            updateButtonStates()
+                        }
+                    }
+                }
+            }
+
+            threadDumpButton = JButton("Generate Thread Dump").apply {
+                addActionListener {
+                    backendService.captureThreadDump()
+                    SonarLintProjectNotifications.projectLessNotification(
+                        null,
+                        "Thread dump captured successfully.",
+                        NotificationType.INFORMATION
+                    )
+                }
+            }
+
+            buttonPanel.add(startButton)
+            buttonPanel.add(Box.createHorizontalStrut(10))
+            buttonPanel.add(stopButton)
+            buttonPanel.add(Box.createHorizontalStrut(10))
+            buttonPanel.add(threadDumpButton)
+
+            add(buttonPanel)
+
+            updateButtonStates()
+        }
+    }
+
+    fun updateButtonStates() {
+        val isEnabled = getGlobalSettings().isFlightRecorderEnabled
+
+        startButton.isEnabled = !isEnabled
+        stopButton.isEnabled = isEnabled
+        threadDumpButton.isEnabled = isEnabled
     }
 
 }

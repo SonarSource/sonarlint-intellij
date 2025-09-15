@@ -37,7 +37,6 @@ import java.awt.Font
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.util.concurrent.ConcurrentHashMap
-import javax.swing.ScrollPaneConstants
 import kotlin.math.ceil
 import kotlin.math.min
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -104,7 +103,7 @@ class InlayManager(val editor: EditorImpl) : Disposable {
             border = JBUI.Borders.empty()
             viewportBorder = JBUI.Borders.empty()
 
-            horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+            horizontalScrollBarPolicy = HORIZONTAL_SCROLLBAR_NEVER
             verticalScrollBar.preferredSize = Dimension(0, 0)
             setViewportView(component)
 
