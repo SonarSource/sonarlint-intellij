@@ -25,10 +25,12 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.util.PasswordUtil
 import java.util.Objects
+import org.apache.commons.lang3.BooleanUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.dogfood.DogfoodCredentialsStore
 import org.sonarlint.intellij.messages.CredentialsChangeListener
+import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
@@ -37,6 +39,16 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 class CredentialsService {
 
     fun getCredentials(connection: ServerConnection): Either<TokenDto, UsernamePasswordDto> {
+        val result = computeOnPooledThread("Getting credentials from store...") {
+            readCredentials(connection)
+        }
+        if (result == null) {
+            throw CredentialsException("Failed to get saved credentials from store")
+        }
+        return result
+    }
+
+    private fun readCredentials(connection: ServerConnection): Either<TokenDto, UsernamePasswordDto> {
         val token = PasswordSafe.instance.getToken(connection.name)
         if (token != null) {
             return Either.forLeft(TokenDto(token))
@@ -52,6 +64,19 @@ class CredentialsService {
     }
 
     fun saveCredentials(connectionName: String, credentials: Either<TokenDto, UsernamePasswordDto>) {
+        val success = computeOnPooledThread("Saving credentials...") {
+            writeCredentials(credentials, connectionName)
+        }
+
+        if (BooleanUtils.isNotTrue(success)) {
+            throw CredentialsException("Could not save token or login/password credentials for connection: $connectionName")
+        }
+    }
+
+    private fun writeCredentials(
+        credentials: Either<TokenDto, UsernamePasswordDto>,
+        connectionName: String,
+    ): Boolean {
         val passwordSafe = PasswordSafe.instance
         var isEdit: Boolean
         if (credentials.isLeft) {
@@ -62,19 +87,20 @@ class CredentialsService {
             val old = passwordSafe.getUsernamePassword(connectionName)
             val new = credentials.right
             isEdit = old != null
-                && (!Objects.equals(old.userName,new.username)
+                && (!Objects.equals(old.userName, new.username)
                 || !Objects.equals(old.password, new.password))
             passwordSafe.setUsernamePassword(
                 connectionName,
                 new.username, new.password)
         } else {
-            throw CredentialsException("Could not save token or login/password credentials for connection: $connectionName")
+            return false
         }
 
         if (isEdit) {
             ApplicationManager.getApplication().messageBus.syncPublisher(CredentialsChangeListener.TOPIC)
                 .onCredentialsChanged(connectionName)
         }
+        return true
     }
 
     fun eraseCredentials(connection: ServerConnection) {
