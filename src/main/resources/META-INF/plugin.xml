@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>11.1 - Introduction of a Flight Recorder mode to help detect and report issues on demand. Enable parallel execution of rules in Python. 4 new rules for PyTorch. 5 new MISRA rules for C++. Improved secrets' detection. Fewer FPs for Python.</li>
+        <li>11.1 - Support of dependency risks for SonarQube Cloud. Introduction of a Flight Recorder mode to help detect and report issues on demand. Enable parallel execution of rules in Python. 4 new rules for PyTorch. 5 new MISRA rules for C++. Improved secrets' detection. Fewer FPs for Python.</li>
         <li>11.0.1 - Various UI/UX refinements to the unified view with improved rendering performance. Fixed sorting issues in findings and incorrect highlighting across files.</li>
         <li>11.0 - Raise minimal supported version to 2023.1.7. Complete UI refactor with unified view, filtering, and stacked reports. Pre-commit analysis now always skippable even in case of errors. Fixed an issue where automatic analysis would not be disabled upon restart. 4 new MISRA rules for C++. Fewer FPs for JS/TS analysis.</li>
         <li>10.30 - Fixed an issue where the pre-commit analysis would be stuck. Introduce new rules for AWS Lambda functions in Python. Support NOSONAR for Python and Go rules suppression. 9 new rules for GitHub Actions. 3 new Security Hotspots for secrets in connected mode. UI/UX improvements on the Dependency Risks tab. Fewer FPs for PHP, C#, and secrets.</li>
