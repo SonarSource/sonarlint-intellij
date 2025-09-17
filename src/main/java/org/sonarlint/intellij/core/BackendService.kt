@@ -231,12 +231,10 @@ class BackendService : Disposable {
                 runOnPooledThread { this@BackendService.projectClosed(project) }
             }
         })
-        busConnection.subscribe(CredentialsChangeListener.TOPIC, object : CredentialsChangeListener {
-            override fun onCredentialsChanged(connectionId: String) {
-                runOnPooledThread {
-                    notifyBackend {
-                        it.connectionService.didChangeCredentials(DidChangeCredentialsParams(connectionId))
-                    }
+        busConnection.subscribe(CredentialsChangeListener.TOPIC, CredentialsChangeListener { connectionId ->
+            runOnPooledThread {
+                notifyBackend {
+                    it.connectionService.didChangeCredentials(DidChangeCredentialsParams(connectionId))
                 }
             }
         })

@@ -33,6 +33,7 @@ import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.JBColor;
 import java.awt.CardLayout;
 import java.awt.event.ItemEvent;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -150,7 +151,7 @@ public class AuthStep extends AbstractWizardStepEx {
 
   private void save() {
     SonarLintUtils.getService(CredentialsService.class)
-                .saveCredentials(model.getName(), getCredentials());
+                .saveCredentials(Objects.requireNonNull(model.getName()), getCredentials());
   }
 
   private Either<TokenDto, UsernamePasswordDto> getCredentials() {
