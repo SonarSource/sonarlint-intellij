@@ -47,8 +47,7 @@ public class ServerConnectionWizard {
   }
 
   public static ServerConnectionWizard forNewConnection(ServerConnection prefilledConnection, Set<String> existingNames) {
-    var credentials = SonarLintUtils.getService(CredentialsService.class).getCredentials(prefilledConnection);
-    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(prefilledConnection, credentials));
+    var wizard = new ServerConnectionWizard(new ConnectionWizardModel(prefilledConnection));
     var steps = createSteps(wizard.model, false, existingNames);
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "New Connection");
     return wizard;

@@ -58,17 +58,24 @@ public class ConnectionWizardModel {
 
   }
 
-  public ConnectionWizardModel(ServerConnection connectionToEdit, Either<TokenDto, UsernamePasswordDto> credentials) {
-    if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
+  public ConnectionWizardModel(ServerConnection prefilledConnection) {
+    if (SonarLintUtils.isSonarCloudAlias(prefilledConnection.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
-      if (connectionToEdit.getRegion() != null) {
-        region = SonarCloudRegion.valueOf(connectionToEdit.getRegion());
+      if (prefilledConnection.getRegion() != null) {
+        region = SonarCloudRegion.valueOf(prefilledConnection.getRegion());
       }
     } else {
       serverType = ServerType.SONARQUBE;
-      serverUrl = connectionToEdit.getHostUrl();
+      serverUrl = prefilledConnection.getHostUrl();
     }
-    this.proxyEnabled = connectionToEdit.isEnableProxy();
+    this.proxyEnabled = prefilledConnection.isEnableProxy();
+    this.organizationKey = prefilledConnection.getOrganizationKey();
+    this.notificationsDisabled = prefilledConnection.isDisableNotifications();
+    this.name = prefilledConnection.getName();
+  }
+
+  public ConnectionWizardModel(ServerConnection connectionToEdit, Either<TokenDto, UsernamePasswordDto> credentials) {
+    this(connectionToEdit);
 
     if (credentials.isLeft()) {
       this.token = credentials.getLeft().getToken();
@@ -79,10 +86,6 @@ public class ConnectionWizardModel {
         this.password = pass.toCharArray();
       }
     }
-
-    this.organizationKey = connectionToEdit.getOrganizationKey();
-    this.notificationsDisabled = connectionToEdit.isDisableNotifications();
-    this.name = connectionToEdit.getName();
   }
 
   @CheckForNull
