@@ -71,7 +71,6 @@ assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj"}
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 
 its-sonar-scala = { module = "org.sonarsource.slang:sonar-scala-plugin", version.ref = "its-sonar-scala" }
-its-sonar-ws = { module = "org.sonarsource.sonarqube:sonar-ws", version.ref = "its-sonar-ws" }
 its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.ref = "its-remote" }
 its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "its-remote" }
 
