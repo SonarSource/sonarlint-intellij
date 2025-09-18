@@ -30,7 +30,10 @@ import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
 import org.sonarlint.intellij.util.RegionUtils;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.OrganizationDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto;
 
 public class ConnectionWizardModel {
   private ServerType serverType;
@@ -55,26 +58,34 @@ public class ConnectionWizardModel {
 
   }
 
-  public ConnectionWizardModel(ServerConnection connectionToEdit) {
-    if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
+  public ConnectionWizardModel(ServerConnection prefilledConnection) {
+    if (SonarLintUtils.isSonarCloudAlias(prefilledConnection.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
-      if (connectionToEdit.getRegion() != null) {
-        region = SonarCloudRegion.valueOf(connectionToEdit.getRegion());
+      if (prefilledConnection.getRegion() != null) {
+        region = SonarCloudRegion.valueOf(prefilledConnection.getRegion());
       }
     } else {
       serverType = ServerType.SONARQUBE;
-      serverUrl = connectionToEdit.getHostUrl();
+      serverUrl = prefilledConnection.getHostUrl();
     }
-    this.proxyEnabled = connectionToEdit.enableProxy();
-    this.token = connectionToEdit.getToken();
-    this.login = connectionToEdit.getLogin();
-    var pass = connectionToEdit.getPassword();
-    if (pass != null) {
-      this.password = pass.toCharArray();
+    this.proxyEnabled = prefilledConnection.isEnableProxy();
+    this.organizationKey = prefilledConnection.getOrganizationKey();
+    this.notificationsDisabled = prefilledConnection.isDisableNotifications();
+    this.name = prefilledConnection.getName();
+  }
+
+  public ConnectionWizardModel(ServerConnection connectionToEdit, Either<TokenDto, UsernamePasswordDto> credentials) {
+    this(connectionToEdit);
+
+    if (credentials.isLeft()) {
+      this.token = credentials.getLeft().getToken();
+    } else {
+      this.login = credentials.getRight().getUsername();
+      var pass = credentials.getRight().getPassword();
+      if (pass != null) {
+        this.password = pass.toCharArray();
+      }
     }
-    this.organizationKey = connectionToEdit.getOrganizationKey();
-    this.notificationsDisabled = connectionToEdit.isDisableNotifications();
-    this.name = connectionToEdit.getName();
   }
 
   @CheckForNull
@@ -255,15 +266,6 @@ public class ConnectionWizardModel {
   private ServerConnection createConnection(@Nullable String organizationKey) {
     var builder = createUnauthenticatedConnection(organizationKey);
 
-    if (token != null) {
-      builder.setToken(token)
-        .setLogin(null)
-        .setPassword(null);
-    } else {
-      builder.setToken(null)
-        .setLogin(login)
-        .setPassword(new String(password));
-    }
     return builder.build();
   }
 }

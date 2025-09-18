@@ -11,7 +11,9 @@ RUN apt-get update && apt-get install -y metacity xvfb xauth ffmpeg \
     build-essential \
     gettext-base \
     jq \
-    unzip
+    unzip \
+    libsecret-1-0 \
+    dbus-x11
 RUN rm -f dotnet.tar.gz && curl -o dotnet.tar.gz https://download.visualstudio.microsoft.com/download/pr/9454f7dc-b98e-4a64-a96d-4eb08c7b6e66/da76f9c6bc4276332b587b771243ae34/dotnet-sdk-8.0.101-linux-x64.tar.gz
 RUN export DOTNET_ROOT=$(pwd)/.dotnet &&\
     mkdir -p "$DOTNET_ROOT" &&\

@@ -17,26 +17,16 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.dogfood
+package org.sonarlint.intellij.messages
 
-import com.intellij.credentialStore.Credentials
-import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.util.messages.Topic
 
-class DogfoodDialog : DialogWrapper(false) {
+fun interface CredentialsChangeListener {
 
-    private val centerPanel = DogfoodPanel()
+    fun onCredentialsChanged(connectionId: String)
 
-    fun setCredentials(): Credentials? {
-        title = "Insert Your Repox Credentials"
-        isResizable = false
-        init()
-
-        val accepted = showAndGet()
-        return if (accepted) {
-            Credentials(centerPanel.getUsername(), centerPanel.getPassword())
-        } else null
+    companion object {
+        val TOPIC: Topic<CredentialsChangeListener> = Topic.create(
+            "Credentials for SonarQube changed", CredentialsChangeListener::class.java)
     }
-
-    override fun createCenterPanel() = centerPanel
-
 }

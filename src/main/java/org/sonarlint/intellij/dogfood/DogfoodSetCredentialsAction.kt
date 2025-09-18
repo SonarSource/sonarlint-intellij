@@ -23,6 +23,7 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
 class DogfoodSetCredentialsAction : NotificationAction("Set Credentials") {
@@ -31,7 +32,7 @@ class DogfoodSetCredentialsAction : NotificationAction("Set Credentials") {
         val project = e.project ?: return
         runOnUiThread(project) {
             DogfoodDialog().setCredentials()?.let {
-                getService(DogfoodCredentialsStore::class.java).save(it)
+                getService(CredentialsService::class.java).saveDogfoodCredentials(it.userName, it.getPasswordAsString())
                 resetTries()
             }
         }

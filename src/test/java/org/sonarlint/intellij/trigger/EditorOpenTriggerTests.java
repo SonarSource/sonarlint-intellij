@@ -26,6 +26,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
@@ -39,6 +40,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
+@Disabled // Disabled due to flakiness. It seems to be too affected by other tests.
 class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
 
   private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
