@@ -73,11 +73,13 @@ import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fs.VirtualFileEvent
+import org.sonarlint.intellij.messages.CredentialsChangeListener
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.promotion.UtmParameters
@@ -212,30 +214,30 @@ class BackendService : Disposable {
     }
 
     private fun registerListeners() {
-        ApplicationManager.getApplication().messageBus.connect()
-            .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
-                override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                    runOnPooledThread {
-                        connectionsUpdated(newSettings.serverConnections)
-                        val changedConnections = newSettings.serverConnections.filter { connection ->
-                            val previousConnection = previousSettings.getServerConnectionByName(connection.name)
-                            previousConnection.isPresent && !connection.hasSameCredentials(previousConnection.get())
-                        }
-                        credentialsChanged(changedConnections)
-                    }
+        val busConnection = ApplicationManager.getApplication().messageBus.connect()
+        busConnection.subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
+            override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
+                runOnPooledThread {
+                    connectionsUpdated(newSettings.serverConnections)
                 }
+            }
 
-                override fun changed(serverList: List<ServerConnection>) {
-                    runOnPooledThread { connectionsUpdated(serverList) }
+            override fun changed(serverList: List<ServerConnection>) {
+                runOnPooledThread { connectionsUpdated(serverList) }
+            }
+        })
+        busConnection.subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
+            override fun projectClosing(project: Project) {
+                runOnPooledThread { this@BackendService.projectClosed(project) }
+            }
+        })
+        busConnection.subscribe(CredentialsChangeListener.TOPIC, CredentialsChangeListener { connectionId ->
+            runOnPooledThread {
+                notifyBackend {
+                    it.connectionService.didChangeCredentials(DidChangeCredentialsParams(connectionId))
                 }
-            })
-        ApplicationManager.getApplication().messageBus.connect()
-            .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
-                override fun projectClosing(project: Project) {
-                    runOnPooledThread { this@BackendService.projectClosed(project) }
-                }
-            })
-
+            }
+        })
     }
 
     private fun <T> requestFromBackend(action: (SonarLintRpcServer) -> CompletableFuture<T>): CompletableFuture<T> {
@@ -505,8 +507,8 @@ class BackendService : Disposable {
     fun getAllProjects(server: ServerConnection): CompletableFuture<GetAllProjectsResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> =
+            getService(CredentialsService::class.java).getCredentials(server)
         val params: GetAllProjectsParams = if (server.isSonarCloud) {
             GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials,
                 SonarCloudRegion.valueOf(serverRegion)))
@@ -540,10 +542,6 @@ class BackendService : Disposable {
         val scConnections = serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
         val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         notifyBackend { it.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections)) }
-    }
-
-    private fun credentialsChanged(connections: List<ServerConnection>) {
-        connections.forEach { connection -> notifyBackend { it.connectionService.didChangeCredentials(DidChangeCredentialsParams(connection.name)) } }
     }
 
     private fun toSonarQubeBackendConnection(createdConnection: ServerConnection): SonarQubeConnectionConfigurationDto {
@@ -850,8 +848,8 @@ class BackendService : Disposable {
     fun validateConnection(server: ServerConnection): CompletableFuture<ValidateConnectionResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> =
+            getService(CredentialsService::class.java).getCredentials(server)
         val params: ValidateConnectionParams = if (server.isSonarCloud) {
             ValidateConnectionParams(TransientSonarCloudConnectionDto(server.organizationKey,
                 credentials, SonarCloudRegion.valueOf(serverRegion)))
@@ -864,8 +862,8 @@ class BackendService : Disposable {
     fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> =
+            getService(CredentialsService::class.java).getCredentials(server)
         val params = ListUserOrganizationsParams(credentials,
             SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.listUserOrganizations(params) }
@@ -875,8 +873,8 @@ class BackendService : Disposable {
         CompletableFuture<GetOrganizationResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> = server.token?.let { Either.forLeft(TokenDto(server.token!!)) }
-            ?: Either.forRight(UsernamePasswordDto(server.login, server.password))
+        val credentials: Either<TokenDto, UsernamePasswordDto> =
+            getService(CredentialsService::class.java).getCredentials(server)
         val params = GetOrganizationParams(credentials, organizationKey,
             SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.getOrganization(params) }
@@ -904,7 +902,7 @@ class BackendService : Disposable {
 
             if (forced) {
                 intentionalRestart.set(true)
-                
+
                 // Properly shut down current backend and wait for it to exit
                 val currentSloop = sloop
                 if (currentSloop != null && currentSloop.isAlive) {
@@ -917,19 +915,19 @@ class BackendService : Disposable {
                     }
                 }
             }
-            
+
             // Reset everything for clean restart
             initializationTriedOnce.set(false)
             backendFuture = CompletableFuture()
             sloop = null
-            
+
             // Start the new backend
             ensureBackendInitialized().thenAcceptAsync { catchUpWithBackend(it) }
         }
     }
 
     private fun catchUpWithBackend(rpcServer: SonarLintRpcServer) {
-        ProjectManager.getInstance().openProjects.forEach { project ->  
+        ProjectManager.getInstance().openProjects.forEach { project ->
             getService(project, SonarLintToolWindow::class.java).refreshViews()
 
             val binding = getService(project, ProjectBindingManager::class.java).binding

@@ -86,6 +86,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.common.vcs.VcsRepo
 import org.sonarlint.intellij.common.vcs.VcsRepoProvider
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
@@ -553,11 +554,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             throw ResponseErrorException(ResponseError(ResponseErrorCode.InvalidParams, "Unknown connection: $connectionId", connectionId))
         }
         val connection = connectionOpt.get()
-        return if (connection.token != null) {
-            Either.forLeft(TokenDto(connection.token!!))
-        } else {
-            Either.forRight(UsernamePasswordDto(connection.login!!, connection.password!!))
-        }
+        return getService(CredentialsService::class.java).getCredentials(connection)
     }
 
     override fun getProxyPasswordAuthentication(

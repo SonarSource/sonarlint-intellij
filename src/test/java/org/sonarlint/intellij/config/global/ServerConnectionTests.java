@@ -28,16 +28,10 @@ class ServerConnectionTests {
   void testRoundTrip() {
     var server = ServerConnection.newBuilder()
       .setHostUrl("host")
-      .setPassword("pass")
-      .setToken("token")
       .setName("name")
-      .setLogin("login")
       .build();
 
     assertThat(server.getName()).isEqualTo("name");
-    assertThat(server.getToken()).isEqualTo("token");
-    assertThat(server.getLogin()).isEqualTo("login");
-    assertThat(server.getPassword()).isEqualTo("pass");
     assertThat(server.getHostUrl()).isEqualTo("host");
 
     assertThat(server).hasToString(server.getName());
@@ -48,10 +42,7 @@ class ServerConnectionTests {
   void testSonarCloud() {
     var server1 = ServerConnection.newBuilder()
       .setHostUrl("https://sonarqube.com")
-      .setPassword("pass")
-      .setToken("token")
       .setName("name")
-      .setLogin("login")
       .build();
     assertThat(server1.isSonarCloud()).isTrue();
   }
@@ -60,26 +51,17 @@ class ServerConnectionTests {
   void testEqualsAndHash() {
     var server1 = ServerConnection.newBuilder()
       .setHostUrl("host")
-      .setPassword("pass")
-      .setToken("token")
       .setName("name")
-      .setLogin("login")
       .build();
 
     var server2 = ServerConnection.newBuilder()
       .setHostUrl("host")
-      .setPassword("pass")
-      .setToken("token")
       .setName("name")
-      .setLogin("login")
       .build();
 
     var server3 = ServerConnection.newBuilder()
       .setHostUrl("host")
-      .setPassword("pass1")
-      .setToken("token")
-      .setName("name")
-      .setLogin("login")
+      .setName("name1")
       .build();
 
     assertThat(server1)
@@ -87,30 +69,5 @@ class ServerConnectionTests {
       .isNotEqualTo(server3)
       .isNotEqualTo(null)
       .hasSameHashCodeAs(server2);
-  }
-
-  @Test
-  void testSetNullEncodedFields() {
-    var server = ServerConnection.newBuilder()
-      .setHostUrl("host")
-      .setPassword(null)
-      .setToken(null)
-      .setName("name")
-      .setLogin("login")
-      .build();
-
-    assertThat(server.getToken()).isNull();
-    assertThat(server.getPassword()).isNull();
-  }
-
-  @Test
-  void testEncoded() {
-    var builder = ServerConnection.newBuilder()
-      .setPassword("pass")
-      .setToken("token");
-
-    ServerConnection connection = builder.build();
-    assertThat(connection.getPassword()).isEqualTo("pass");
-    assertThat(connection.getToken()).isEqualTo("token");
   }
 }
