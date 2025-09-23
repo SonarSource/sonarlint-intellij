@@ -155,7 +155,6 @@ class AutomaticSharedConfigCreator(
         try {
             getSettingsFor(project).isBindingSuggestionsEnabled = false
             val serverConnectionBuilder = ServerConnection.newBuilder().setDisableNotifications(false)
-//                .setToken(String(tokenField.password))
                 .setName(connectionNameField.text)
             if (isSQ) {
                 serverConnectionBuilder.setHostUrl(orgOrServerUrl)

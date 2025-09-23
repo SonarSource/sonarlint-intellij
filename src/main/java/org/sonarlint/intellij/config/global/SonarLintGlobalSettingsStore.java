@@ -63,7 +63,7 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
   }
 
   private void migrateCredentials() {
-    CredentialsService credentialsService = SonarLintUtils.getService(CredentialsService.class);
+    var credentialsService = SonarLintUtils.getService(CredentialsService.class);
     var serverConnections = settings.getServerConnections();
 
     if (serverConnections.stream().anyMatch(credentialsService::hasOldCredentials)) {
