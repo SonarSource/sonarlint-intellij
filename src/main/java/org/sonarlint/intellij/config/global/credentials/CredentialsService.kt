@@ -142,7 +142,7 @@ class CredentialsService {
     private fun migrateDogfoodCredentials() {
         val oldStore = getService(DogfoodCredentialsStore::class.java)
         val oldCredentials = oldStore.state
-        if (oldCredentials != null) {
+        if (oldCredentials != null && oldCredentials.username != null && oldCredentials.pass != null) {
             migrateDogfoodCredentials(oldCredentials.username, oldCredentials.pass)
             oldStore.erase()
         }
