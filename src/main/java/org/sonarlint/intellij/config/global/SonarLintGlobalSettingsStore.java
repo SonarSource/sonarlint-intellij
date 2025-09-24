@@ -81,7 +81,7 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
     var migrated = migrateCredentials(serverConnections, credentialsService);
     settings.setServerConnections(migrated);
     modificationCount++;
-    StoreUtil.saveSettings(ApplicationManager.getApplication());
+    StoreUtil.saveSettings(ApplicationManager.getApplication(), false);
   }
 
   private static List<ServerConnection> migrateCredentials(List<ServerConnection> serverConnections, CredentialsService credentialsService) {
