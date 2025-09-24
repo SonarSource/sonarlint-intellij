@@ -46,6 +46,6 @@ public final class DogfoodCredentialsStore implements PersistentStateComponent<D
 
   public void erase() {
     credentials = null;
-    StoreUtil.saveSettings(ApplicationManager.getApplication());
+    StoreUtil.saveSettings(ApplicationManager.getApplication(), false);
   }
 }
