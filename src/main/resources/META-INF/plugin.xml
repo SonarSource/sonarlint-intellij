@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>11.2 - Drop support for Node.js 18, the minimum version is now 20.12. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.1 - Support of dependency risks for SonarQube Cloud. Introduction of a Flight Recorder mode to help detect and report issues on demand. Enable parallel execution of rules in Python. Support for Go 1.25. 4 new rules for PyTorch. 5 new MISRA rules for C++. Improved secrets' detection. Fewer FPs and FNs for Python, Go, and secrets.</li>
         <li>11.0.1 - Various UI/UX refinements to the unified view with improved rendering performance. Fixed sorting issues in findings and incorrect highlighting across files.</li>
         <li>11.0 - Raise minimal supported version to 2023.1.7. Complete UI refactor with unified view, filtering, and stacked reports. Pre-commit analysis now always skippable even in case of errors. Fixed an issue where automatic analysis would not be disabled upon restart. 4 new MISRA rules for C++. Fewer FPs for JS/TS analysis.</li>

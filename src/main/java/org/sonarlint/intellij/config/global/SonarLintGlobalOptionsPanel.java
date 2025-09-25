@@ -108,7 +108,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     optionsPanel.add(autoTrigger, new GridBagConstraints(0, 1, 3, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
-    var label = new JLabel("Node.js path: ");
+    var label = new JLabel("Node.js path (20.12 minimum): ");
     label.setToolTipText(NODE_JS_TOOLTIP);
     optionsPanel.add(label, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
