@@ -86,10 +86,10 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.common.vcs.VcsRepo
 import org.sonarlint.intellij.common.vcs.VcsRepoProvider
-import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.AutomaticServerConnectionCreator
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.config.global.wizard.ManualServerConnectionCreator
 import org.sonarlint.intellij.connected.SonarProjectBranchCache
 import org.sonarlint.intellij.core.BackendService
@@ -628,8 +628,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     val findingToShow = getService(project, OpenInIdeFindingCache::class.java).finding
                     if (findingToShow != null && !getService(project, OpenInIdeFindingCache::class.java).analysisQueued) {
                         getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectFinding(findingToShow)
-                    } else {
-                        getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles()
                     }
                 }
             }
