@@ -3,6 +3,7 @@ out
 its/projects/*-tmp/
 its/projects/**/bin
 its/projects/**/obj
+bin
 
 # ---- Sonar
 .sonar
