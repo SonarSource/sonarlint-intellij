@@ -413,43 +413,12 @@ inspect_orchestrator_cache_task:
     find .
     echo "Inspecting cache done."
 
-mend_scan_task:
-  depends_on:
-    - build_plugin
-  <<: *ONLY_MAIN_BRANCHES
-  eks_container:
-    <<: *CONTAINER_DEFINITION
-    cpu: 4
-    memory: 4G
-  env:
-    WS_APIKEY: VAULT[development/kv/data/mend data.apikey]
-    IDEA_HOME: ""
-    RIDER_HOME: ""
-    RESHARPER_HOME: ""
-    CLION_HOME: ""
-    ULTIMATE_HOME: ""
-  <<: *SETUP_GRADLE_CACHE
-  mend_script: |
-    source cirrus-env QA
-    source .cirrus/use-gradle-wrapper.sh
-    source set_gradle_build_version
-    source ws_scan.sh
-  <<: *CLEANUP_GRADLE_CACHE_SCRIPT
-  allow_failures: "true"
-  always:
-    ws_scan_artifacts:
-      path: "whitesource/**/*"
-  on_failure:
-    slack_notification_script: |
-      source slack-failure-notification
-
 promote_task:
   depends_on:
     - build_plugin
     - validate
     - validate_windows
     - qa
-    - mend_scan
   <<: *ONLY_PR_AND_MAINTAINED_BRANCHES
   eks_container:
     <<: *CONTAINER_DEFINITION
