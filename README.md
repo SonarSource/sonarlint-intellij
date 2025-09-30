@@ -4,15 +4,16 @@ SonarQube for IntelliJ Plugin
 [![Build Status](https://api.cirrus-ci.com/github/SonarSource/sonarlint-intellij.svg?branch=master)](https://cirrus-ci.com/github/SonarSource/sonarlint-intellij)
 [![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
 
-SonarQube for IDE is an IDE extension that helps you detect and fix quality issues, ensuring you deliever [integrated code quality and security](https://www.sonarsource.com/solutions/for-developers/).
+SonarQube for IDE is an IDE extension that helps you detect and fix quality issues, ensuring you
+deliever [integrated code quality and security](https://www.sonarsource.com/solutions/for-developers/).
 Like a spell checker, SonarQube for IntelliJ squiggles flaws so they can be fixed before committing code.
 
 Useful links
 ------------
 
-- [Documentation](https://docs.sonarsource.com/sonarlint/intellij/)
+- [Documentation](https://docs.sonarsource.com/sonarqube-for-intellij/)
     - A full list of supported programming languages and links to the static code analysis rules associated with each language are available
-      on the [Rules page](https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/rules/).
+      on the [Rules page](https://docs.sonarsource.com/sonarqube-for-intellij/using/rules/).
 - [Community](https://community.sonarsource.com/c/help/sl)
     - Report an issue, ask for some help, or suggest new features.
 
@@ -22,8 +23,8 @@ How to install
 You can install SonarQube for IntelliJ from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly
 available in the IDE preferences.
 
-Full up-to-date details are available on the [Requirements](https://docs.sonarsource.com/sonarlint/intellij/getting-started/requirements/)
-and [Installation](https://docs.sonarsource.com/sonarlint/intellij/getting-started/installation/) pages.
+Full up-to-date details are available on the [Requirements](https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/requirements/)
+and [Installation](https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/installation/) pages.
 
 Questions and Feedback?
 --------------------------
@@ -158,7 +159,8 @@ so you will need to repeat some setup steps for that instance, such as configuri
 Plugin Verification
 --------------------------
 
-The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier. This ensures compatibility across different IDE versions and types.
+The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier. This ensures compatibility across different IDE
+versions and types.
 
 ### Automated Nightly Testing
 
@@ -171,6 +173,7 @@ Plugin verification runs automatically every night via CI/CD pipeline across thr
 ### Supported IDEs
 
 The verification covers most of the major JetBrains IDEs that we support:
+
 - Android Studio
 - CLion
 - DataGrip
