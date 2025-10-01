@@ -22,7 +22,7 @@ package org.sonarlint.intellij.documentation
 object SonarLintDocumentation {
 
     object Intellij {
-        const val BASE_DOCS_URL = "https://docs.sonarsource.com/sonarqube-for-ide/intellij"
+        const val BASE_DOCS_URL = "https://docs.sonarsource.com/sonarqube-for-intellij"
         const val CONNECTED_MODE_LINK = "$BASE_DOCS_URL/team-features/connected-mode"
         const val CONNECTED_MODE_SETUP_LINK = "$BASE_DOCS_URL/team-features/connected-mode-setup"
         const val SECURITY_HOTSPOTS_LINK = "$BASE_DOCS_URL/using/security-hotspots"

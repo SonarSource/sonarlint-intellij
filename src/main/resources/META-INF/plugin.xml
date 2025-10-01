@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
 
 -->
-<idea-plugin url="https://docs.sonarsource.com/sonarlint/intellij/" require-restart="true">
+<idea-plugin url="https://docs.sonarsource.com/sonarqube-for-intellij/" require-restart="true">
     <id>org.sonarlint.idea</id>
     <name>SonarQube for IDE</name>
     <version>${project.version}</version>
@@ -51,13 +51,13 @@
             <p>
                 SonarQube for IDE is the only extension you need in your JetBrains IDE for ensuring both code quality and security.
                 It supports a wide range of languages, including C, C++, Java, Go, JavaScript, TypeScript, Python, C#, Kotlin, Ruby, HTML,
-                CSS, PHP, and PL/SQL. Please check out our <a href="https://docs.sonarsource.com/sonarlint/intellij/using-sonarlint/rules/">documentation</a>
+                CSS, PHP, and PL/SQL. Please check out our <a href="https://docs.sonarsource.com/sonarqube-for-intellij/using/rules/">documentation</a>
                 for the complete list of supported languages, rules and secret detection capabilities.
             </p>
             <br/>
             <br/>
             <p>
-                Get started today for free. Check the <a href="https://docs.sonarsource.com/sonarlint/intellij/getting-started/requirements/">Requirements</a> and <a href="https://docs.sonarsource.com/sonarlint/intellij/getting-started/installation/">Installation</a>
+                Get started today for free. Check the <a href="https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/requirements/">Requirements</a> and <a href="https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/installation/">Installation</a>
                 pages— download SonarQube for IDE in the Extension Marketplace and enjoy safe coding!
             </p>
         </html>
@@ -210,9 +210,9 @@
       ]]>
     </change-notes>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
-    <depends>com.intellij.modules.lang</depends>
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.lang</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-go.xml">org.jetbrains.plugins.go</depends>
     <depends optional="true" config-file="plugin-plsql.xml">com.intellij.database</depends>
@@ -237,7 +237,8 @@
                     factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
         <applicationConfigurable groupId="tools" id="sonarlint" displayName="SonarQube for IDE"
                                  instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
-        <projectConfigurable parentId="sonarlint" displayName="Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>
+        <projectConfigurable parentId="sonarlint" displayName="Project Settings"
+                             instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>
         <colorSettingsPage implementation="org.sonarlint.intellij.config.SonarLintColorSettingsPage"/>
         <checkinHandlerFactory implementation="org.sonarlint.intellij.trigger.SonarLintCheckinHandlerFactory"/>
         <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>
@@ -246,36 +247,36 @@
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
         <iw.actionProvider implementation="org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider"/>
 
-        <!-- Empty language attribute corresponds to any language (see com.intellij.lang.Language.ANY) -->
-        <externalAnnotator language="" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+      <!-- Empty language attribute corresponds to any language (see com.intellij.lang.Language.ANY) -->
+      <externalAnnotator language="" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
-        <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
-        <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
+      <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
+      <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
 
-        <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
-        <applicationService serviceImplementation="org.sonarlint.intellij.dogfood.DogfoodCredentialsStore"/>
+      <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
+      <applicationService serviceImplementation="org.sonarlint.intellij.dogfood.DogfoodCredentialsStore"/>
 
-        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
-        <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
-                            serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"
-                            testServiceImplementation="org.sonarlint.intellij.util.GlobalLogOutputTestImpl"/>
+      <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
+      <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
+                          serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"
+                          testServiceImplementation="org.sonarlint.intellij.util.GlobalLogOutputTestImpl"/>
 
-        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
-        <applicationService serviceInterface="org.sonarlint.intellij.fs.VirtualFileSystemEventsHandler"
-                            serviceImplementation="org.sonarlint.intellij.fs.DefaultVirtualFileSystemEventsHandler"
-                            testServiceImplementation="org.sonarlint.intellij.fs.VirtualFileSystemEventsTestHandler"/>
+      <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
+      <applicationService serviceInterface="org.sonarlint.intellij.fs.VirtualFileSystemEventsHandler"
+                          serviceImplementation="org.sonarlint.intellij.fs.DefaultVirtualFileSystemEventsHandler"
+                          testServiceImplementation="org.sonarlint.intellij.fs.VirtualFileSystemEventsTestHandler"/>
 
-        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
-        <projectService serviceInterface="org.sonarlint.intellij.common.vcs.VcsService"
-                        serviceImplementation="org.sonarlint.intellij.vcs.DefaultVcsService"/>
+      <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
+      <projectService serviceInterface="org.sonarlint.intellij.common.vcs.VcsService"
+                      serviceImplementation="org.sonarlint.intellij.vcs.DefaultVcsService"/>
 
-        <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
-        <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
-                        serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
-                        testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
+      <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
+      <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
+                      serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
+                      testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
 
-        <!-- Cannot be moved to service annotation because of module -->
-        <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
+      <!-- Cannot be moved to service annotation because of module -->
+      <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
 
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
@@ -312,8 +313,10 @@
     </extensions>
 
     <extensionPoints>
-        <extensionPoint name="analysisConfiguration" interface="org.sonarlint.intellij.common.analysis.AnalysisConfigurator" dynamic="true"/>
-        <extensionPoint name="fileExclusionContributor" interface="org.sonarlint.intellij.common.analysis.FileExclusionContributor" dynamic="true"/>
+        <extensionPoint name="analysisConfiguration" interface="org.sonarlint.intellij.common.analysis.AnalysisConfigurator"
+                        dynamic="true"/>
+        <extensionPoint name="fileExclusionContributor" interface="org.sonarlint.intellij.common.analysis.FileExclusionContributor"
+                        dynamic="true"/>
         <extensionPoint name="filesContributor" interface="org.sonarlint.intellij.common.analysis.FilesContributor" dynamic="true"/>
         <extensionPoint name="vcsProvider" interface="org.sonarlint.intellij.common.vcs.VcsRepoProvider" dynamic="true"/>
         <extensionPoint name="nodeJsProvider" interface="org.sonarlint.intellij.common.nodejs.NodeJsProvider" dynamic="true"/>
@@ -326,9 +329,9 @@
     <actions>
         <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
       <group id="SonarLint.AnalyzeMenu" searchable="false" text="SonarQube for IDE" popup="false"
-               icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
+             icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
             <separator/>
-            <!-- This group is programmatically added to AnalyzeMenu if it exists -->
+        <!-- This group is programmatically added to AnalyzeMenu if it exists -->
         </group>
 
         <action id="SonarLint.AnalyzeFiles"
