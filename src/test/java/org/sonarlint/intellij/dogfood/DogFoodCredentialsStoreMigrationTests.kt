@@ -19,8 +19,10 @@
  */
 package org.sonarlint.intellij.dogfood
 
+import com.intellij.configurationStore.StoreUtil
 import com.intellij.credentialStore.Credentials
 import com.intellij.ide.passwordSafe.PasswordSafe
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -71,6 +73,7 @@ class DogFoodCredentialsStoreMigrationTests : AbstractSonarLintLightTests() {
     @Test
     fun `should delete xml config with old credentials on write`() {
         getService(CredentialsService::class.java).getDogfoodCredentials()
+        StoreUtil.saveSettings(ApplicationManager.getApplication())
 
         assertThat(PathManager.getOptionsFile("sonarlint-dogfood"))
             .doesNotExist()

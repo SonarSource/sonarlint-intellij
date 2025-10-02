@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.configurationStore.StoreUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponentWithModificationTracker;
 import com.intellij.openapi.components.State;
@@ -81,7 +80,6 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
     var migrated = migrateCredentials(serverConnections, credentialsService);
     settings.setServerConnections(migrated);
     modificationCount++;
-    StoreUtil.saveSettings(ApplicationManager.getApplication(), false);
   }
 
   private static List<ServerConnection> migrateCredentials(List<ServerConnection> serverConnections, CredentialsService credentialsService) {
