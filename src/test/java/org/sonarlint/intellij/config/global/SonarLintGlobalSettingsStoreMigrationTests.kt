@@ -19,8 +19,10 @@
  */
 package org.sonarlint.intellij.config.global
 
+import com.intellij.configurationStore.StoreUtil
 import com.intellij.credentialStore.Credentials
 import com.intellij.ide.passwordSafe.PasswordSafe
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -106,6 +108,7 @@ class SonarLintGlobalSettingsStoreMigrationTests : AbstractSonarLintLightTests()
         tested.loadState(settings)
 
         tested.initializeComponent()
+        StoreUtil.saveSettings(ApplicationManager.getApplication())
 
         assertThat(PathManager.getOptionsFile("sonarlint"))
             .exists()

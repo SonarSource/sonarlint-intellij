@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.dogfood;
 
-import com.intellij.configurationStore.StoreUtil;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
@@ -46,6 +44,5 @@ public final class DogfoodCredentialsStore implements PersistentStateComponent<D
 
   public void erase() {
     credentials = null;
-    StoreUtil.saveSettings(ApplicationManager.getApplication(), false);
   }
 }
