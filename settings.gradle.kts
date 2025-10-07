@@ -1,7 +1,7 @@
 import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
 plugins {
-    id("org.jetbrains.intellij.platform.settings") version "2.7.2"
+    id("org.jetbrains.intellij.platform.settings") version "2.9.0"
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
     id("com.gradle.develocity") version "3.18.2"
     id("com.gradle.common-custom-user-data-gradle-plugin") version "2.2.1"

@@ -26,5 +26,5 @@ dependencies {
     testFixturesImplementation(libs.junit.jupiter)
     testFixturesImplementation(libs.junit.four)
     testFixturesImplementation(libs.mockito.core)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly(libs.junit.launcher)
 }
