@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -28,12 +27,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.ui.CollapsiblePanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
-import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
@@ -48,17 +45,14 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.BoxLayout
 import javax.swing.JButton
-import javax.swing.JLabel
 import javax.swing.JProgressBar
 import javax.swing.JTextArea
 import javax.swing.SwingConstants
-import javax.swing.SwingUtilities
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.aicontext.CodeLocation
 
 /**
  * Data class representing a file location result from AI Context search
@@ -79,6 +73,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private lateinit var clearButton: JButton
     private lateinit var resultsContainer: JBPanel<AIContextPanel>
     private lateinit var resultsScrollPane: JBScrollPane
+    private lateinit var resultsPanel: JBPanel<AIContextPanel>
     private lateinit var loadingPanel: JBPanel<AIContextPanel>
     private lateinit var messagePanel: JBPanel<AIContextPanel>
     private lateinit var progressBar: JProgressBar
@@ -152,7 +147,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     }
 
     private fun createResultsPanel(): JBPanel<AIContextPanel> {
-        val resultsPanel = JBPanel<AIContextPanel>(BorderLayout())
+        resultsPanel = JBPanel<AIContextPanel>(BorderLayout())
         resultsPanel.border = JBUI.Borders.empty(0, 15, 15, 15)
 
         // Container for results with vertical layout
@@ -189,13 +184,8 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             border = JBUI.Borders.empty()
         }
 
-        // Stack all panels in the results area
-        val stackedPanel = JBPanel<AIContextPanel>(BorderLayout())
-        stackedPanel.add(resultsScrollPane, BorderLayout.CENTER)
-        stackedPanel.add(loadingPanel, BorderLayout.CENTER)
-        stackedPanel.add(messagePanel, BorderLayout.CENTER)
-
-        resultsPanel.add(stackedPanel, BorderLayout.CENTER)
+        // Start with results panel visible
+        resultsPanel.add(resultsScrollPane, BorderLayout.CENTER)
         return resultsPanel
     }
 
@@ -235,7 +225,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                             location.filePath,
                             location.startLine,
                             location.endLine,
-                            location.description
+                            generateDisplayText(location.filePath)
                         )
                     }
                     
@@ -268,42 +258,12 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             }
     }
 
-    private fun addPlaceholderResults(question: String) {
-        GlobalLogOutput.get().log("AI Context: Using placeholder results for question: '$question'", ClientLogOutput.Level.INFO)
-        
-        // This is a placeholder implementation showing sample results
-        // In the real implementation, this will be replaced with actual AI service calls
-        val sampleResults = listOf(
-            FileLocationResult(
-                "src/main/java/org/sonarlint/intellij/ui/AIContextPanel.kt",
-                25,
-                45,
-                "Panel initialization and UI setup"
-            ),
-            FileLocationResult(
-                "src/main/java/org/sonarlint/intellij/ui/SonarLintToolWindowFactory.java",
-                50,
-                70,
-                "Tool window creation and tab management"
-            ),
-            FileLocationResult(
-                "src/main/java/org/sonarlint/intellij/ui/ToolWindowConstants.kt",
-                22,
-                30,
-                "Tab title constants definition"
-            )
-        )
-
-        setResults(sampleResults)
-    }
-
     private fun clearResults() {
         GlobalLogOutput.get().log("AI Context: Clearing ${results.size} results", ClientLogOutput.Level.DEBUG)
         results.clear()
         resultsContainer.removeAll()
         hideLoadingState()
         hideMessagePanel()
-        resultsScrollPane.isVisible = true
         resultsContainer.revalidate()
         resultsContainer.repaint()
         clearButton.isEnabled = false
@@ -507,9 +467,16 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             this.results.clear()
             resultsContainer.removeAll()
             hideMessagePanel()
-            resultsScrollPane.isVisible = true
             
             this.results.addAll(results)
+            // Add a simple test label first to verify layout works
+            val testLabel = JBLabel("TEST: ${results.size} results found").apply {
+                preferredSize = Dimension(200, 30)
+                background = Color.YELLOW
+                isOpaque = true
+            }
+            resultsContainer.add(testLabel)
+            
             results.forEachIndexed { index, result ->
                 GlobalLogOutput.get().log("AI Context: Creating UI panel for result ${index + 1}: ${result.filePath}", ClientLogOutput.Level.DEBUG)
                 resultsContainer.add(createResultPanel(result))
@@ -517,28 +484,53 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             
             resultsContainer.revalidate()
             resultsContainer.repaint()
+            
+            // Also refresh the parent container to ensure proper layout
+            this@AIContextPanel.revalidate()
+            this@AIContextPanel.repaint()
+            
             clearButton.isEnabled = results.isNotEmpty()
             
             GlobalLogOutput.get().log("AI Context: UI updated with ${results.size} result(s)", ClientLogOutput.Level.DEBUG)
+            GlobalLogOutput.get().log("AI Context: Results container visible: ${resultsScrollPane.isVisible}, has ${resultsContainer.componentCount} components", ClientLogOutput.Level.DEBUG)
+            
+            // Debug component sizes and visibility
+            GlobalLogOutput.get().log("AI Context: ResultsScrollPane size: ${resultsScrollPane.size}, bounds: ${resultsScrollPane.bounds}", ClientLogOutput.Level.DEBUG)
+            GlobalLogOutput.get().log("AI Context: ResultsContainer size: ${resultsContainer.size}, bounds: ${resultsContainer.bounds}", ClientLogOutput.Level.DEBUG)
+            GlobalLogOutput.get().log("AI Context: ResultsContainer preferred size: ${resultsContainer.preferredSize}", ClientLogOutput.Level.DEBUG)
+            
+            // Debug individual component sizes
+            for (i in 0 until resultsContainer.componentCount) {
+                val component = resultsContainer.getComponent(i)
+                GlobalLogOutput.get().log("AI Context: Component $i size: ${component.size}, bounds: ${component.bounds}, visible: ${component.isVisible}", ClientLogOutput.Level.DEBUG)
+            }
         }
     }
 
     private fun showLoadingState() {
-        resultsScrollPane.isVisible = false
-        messagePanel.isVisible = false
-        loadingPanel.isVisible = true
+        resultsPanel.removeAll()
+        resultsPanel.add(loadingPanel, BorderLayout.CENTER)
+        resultsPanel.revalidate()
+        resultsPanel.repaint()
     }
 
     private fun hideLoadingState() {
-        loadingPanel.isVisible = false
+        // Switch back to results panel
+        resultsPanel.removeAll()
+        resultsPanel.add(resultsScrollPane, BorderLayout.CENTER)
+        resultsPanel.revalidate()
+        resultsPanel.repaint()
     }
 
     private fun hideMessagePanel() {
-        messagePanel.isVisible = false
+        // Switch back to results panel
+        resultsPanel.removeAll()
+        resultsPanel.add(resultsScrollPane, BorderLayout.CENTER)
+        resultsPanel.revalidate()
+        resultsPanel.repaint()
     }
 
     private fun showNoResultsMessage() {
-        resultsScrollPane.isVisible = false
         messagePanel.removeAll()
         
         val messageLabel = JBLabel("No results found for your question.", SwingConstants.CENTER).apply {
@@ -558,13 +550,17 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         messageContainer.add(suggestionLabel)
         
         messagePanel.add(messageContainer, BorderLayout.CENTER)
-        messagePanel.isVisible = true
+        
+        // Switch to message panel
+        resultsPanel.removeAll()
+        resultsPanel.add(messagePanel, BorderLayout.CENTER)
+        resultsPanel.revalidate()
+        resultsPanel.repaint()
         
         clearButton.isEnabled = false
     }
 
     private fun showErrorMessage(errorText: String) {
-        resultsScrollPane.isVisible = false
         messagePanel.removeAll()
         
         val errorLabel = JBLabel("Error", SwingConstants.CENTER).apply {
@@ -584,9 +580,56 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         errorContainer.add(errorMessageLabel)
         
         messagePanel.add(errorContainer, BorderLayout.CENTER)
-        messagePanel.isVisible = true
+        
+        // Switch to message panel
+        resultsPanel.removeAll()
+        resultsPanel.add(messagePanel, BorderLayout.CENTER)
+        resultsPanel.revalidate()
+        resultsPanel.repaint()
         
         clearButton.isEnabled = false
+    }
+
+    /**
+     * Generate a user-friendly display text from a file path
+     */
+    private fun generateDisplayText(filePath: String): String {
+        if (filePath.isBlank()) {
+            return "Unknown file"
+        }
+        
+        // Extract the file name
+        val fileName = filePath.substringAfterLast('/')
+        
+        // Generate a description based on file type and path
+        return when {
+            fileName.endsWith(".java") -> {
+                val className = fileName.removeSuffix(".java")
+                when {
+                    filePath.contains("test/") -> "Test: $className"
+                    filePath.contains("controller/") || className.contains("Controller") -> "Controller: $className"
+                    filePath.contains("service/") || className.contains("Service") -> "Service: $className" 
+                    filePath.contains("repository/") || className.contains("Repository") -> "Repository: $className"
+                    filePath.contains("config/") || className.contains("Config") -> "Config: $className"
+                    filePath.contains("security/") -> "Security: $className"
+                    filePath.contains("util/") -> "Utility: $className"
+                    filePath.contains("model/") || filePath.contains("entity/") -> "Model: $className"
+                    filePath.contains("dto/") -> "DTO: $className"
+                    filePath.contains("exception/") -> "Exception: $className"
+                    else -> className
+                }
+            }
+            fileName.endsWith(".kt") -> fileName.removeSuffix(".kt")
+            fileName.endsWith(".ts") || fileName.endsWith(".tsx") -> fileName.substringBeforeLast('.')
+            fileName.endsWith(".js") || fileName.endsWith(".jsx") -> fileName.substringBeforeLast('.')
+            fileName.endsWith(".py") -> fileName.removeSuffix(".py")
+            fileName.endsWith(".sql") -> "SQL: ${fileName.removeSuffix(".sql")}"
+            fileName.endsWith(".yml") || fileName.endsWith(".yaml") -> "Config: ${fileName.substringBeforeLast('.')}"
+            fileName.endsWith(".xml") -> "XML: ${fileName.removeSuffix(".xml")}"
+            fileName.endsWith(".json") -> "JSON: ${fileName.removeSuffix(".json")}"
+            fileName.equals("Dockerfile", ignoreCase = true) -> "Docker config"
+            else -> fileName
+        }
     }
 
     override fun dispose() {
