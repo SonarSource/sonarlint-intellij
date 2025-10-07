@@ -25,5 +25,6 @@ object ToolWindowConstants {
     const val LOG_TAB_TITLE: String = "Log"
     const val CURRENT_FILE_TAB_TITLE: String = "Findings"
     const val HELP_AND_FEEDBACK_TAB_TITLE: String = "Help & Feedback"
+    const val AI_CONTEXT_TAB_TITLE: String = "AI Context"
 
 }

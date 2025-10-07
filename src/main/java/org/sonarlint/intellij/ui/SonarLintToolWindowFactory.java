@@ -29,6 +29,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.AI_CONTEXT_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.HELP_AND_FEEDBACK_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
@@ -47,6 +48,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
       var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
       addLogTab(project, toolWindow);
       addHelpAndFeedbackTab(project, toolWindow);
+      addAIContextTab(project, toolWindow);
       toolWindow.setType(ToolWindowType.DOCKED, null);
       contentManager.addContentManagerListener(sonarLintToolWindow);
     });
@@ -86,6 +88,16 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         false);
     helpContent.setCloseable(false);
     toolWindow.getContentManager().addContent(helpContent);
+  }
+
+  private static void addAIContextTab(Project project, ToolWindow toolWindow) {
+    var aiContextContent = toolWindow.getContentManager().getFactory()
+      .createContent(
+        new AIContextPanel(project),
+        AI_CONTEXT_TAB_TITLE,
+        false);
+    aiContextContent.setCloseable(false);
+    toolWindow.getContentManager().addContent(aiContextContent);
   }
 
 }

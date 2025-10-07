@@ -95,6 +95,8 @@ import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.aicontext.AskCodebaseQuestionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.aicontext.AskCodebaseQuestionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFileListParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeFullProjectParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeOpenFilesParams
@@ -1179,6 +1181,33 @@ class BackendService : Disposable {
             .applied(globalSettings, newSettings)
 
         restartBackendService(true)
+    }
+
+    fun askCodebaseQuestion(project: Project, question: String): CompletableFuture<AskCodebaseQuestionResponse> {
+        val projectId = projectId(project)
+        
+        getService(GlobalLogOutput::class.java).log(
+            "AI Context RPC: Asking codebase question for project '$projectId': '$question'", 
+            ClientLogOutput.Level.INFO
+        )
+        
+        return requestFromBackend { 
+            it.aiContextRpcService.askCodebaseQuestion(
+                AskCodebaseQuestionParams(projectId, question)
+            )
+        }.whenComplete { response, error ->
+            if (error != null) {
+                getService(GlobalLogOutput::class.java).logError(
+                    "AI Context RPC: Error processing question for project '$projectId'", 
+                    error
+                )
+            } else {
+                getService(GlobalLogOutput::class.java).log(
+                    "AI Context RPC: Successfully received response with ${response.locations.size} location(s) for project '$projectId'", 
+                    ClientLogOutput.Level.INFO
+                )
+            }
+        }
     }
 
 }

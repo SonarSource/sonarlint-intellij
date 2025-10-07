@@ -15,6 +15,7 @@ dependencyResolutionManagement {
 
     @Suppress("UnstableApiUsage")
     repositories {
+        mavenLocal()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             credentials {
                 username = System.getenv("ARTIFACTORY_PRIVATE_USERNAME") ?: (extra["artifactoryUsername"] as? String ?: "")
