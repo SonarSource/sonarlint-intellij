@@ -29,6 +29,7 @@ commons-text = "1.14.0"
 findbugs-jsr305 = "3.0.2"
 junit-five = "5.13.4"
 junit-four = "4.13.2"
+junit-launcher = "1.13.4"
 mockito-kotlin = "5.4.0"
 mockito = "5.18.0"
 assertj = "3.23.1"
@@ -65,6 +66,7 @@ commons-text = { module = "org.apache.commons:commons-text", version.ref = "comm
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-five" }
 junit-four = { module = "junit:junit", version.ref = "junit-four" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-launcher" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito"}
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj"}

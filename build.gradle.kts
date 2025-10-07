@@ -107,7 +107,7 @@ dependencies {
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.awaitility)
     testImplementation(testFixtures(project("test-common")))
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly(libs.junit.launcher)
     "sqplugins"(libs.bundles.sonar.analyzers)
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"(libs.sonar.cfamily)
@@ -153,15 +153,11 @@ intellijPlatform {
     buildSearchableOptions = true
     pluginVerification {
         failureLevel = listOf(
-            // these are the only issues we tolerate
-            VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES,
-            VerifyPluginTask.FailureLevel.EXPERIMENTAL_API_USAGES,
-            VerifyPluginTask.FailureLevel.NOT_DYNAMIC,
-            VerifyPluginTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
-            // TODO Workaround for CLion
-            VerifyPluginTask.FailureLevel.MISSING_DEPENDENCIES,
-            // needed because of CPPToolset.isRemote()
-            VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES
+            VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+            VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS,
+            VerifyPluginTask.FailureLevel.NON_EXTENDABLE_API_USAGES,
+            VerifyPluginTask.FailureLevel.PLUGIN_STRUCTURE_WARNINGS,
+            VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES
         )
 
         val ideTypes = listOf(IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
@@ -169,11 +165,11 @@ intellijPlatform {
             IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
             IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity)
 
-        if (!project.hasProperty("verifierEnv")) {
-            ides {
-                recommended()
-            }
-        } else {
+        ides {
+            ide(IntelliJPlatformType.IntellijIdeaCommunity, "2023.1.7")
+        }
+
+        if (project.hasProperty("verifierEnv")) {
             when (verifierEnv) {
                 "EAP" -> ides {
                     select {
@@ -182,6 +178,7 @@ intellijPlatform {
                         sinceBuild = "252.*"
                     }
                 }
+
                 "MINIMAL" -> ides {
                     select {
                         types = ideTypes
@@ -190,6 +187,7 @@ intellijPlatform {
                         untilBuild = "231.*"
                     }
                 }
+
                 "LATEST" -> ides {
                     select {
                         types = ideTypes

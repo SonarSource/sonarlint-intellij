@@ -30,6 +30,6 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly(libs.junit.launcher)
     compileOnly(libs.findbugs.jsr305)
 }
