@@ -59,9 +59,8 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
  */
 data class FileLocationResult(
     val filePath: String,
-    val startLine: Int,
-    val endLine: Int,
-    val displayText: String,
+    val startLine: Int?,
+    val endLine: Int?,
     var isExpanded: Boolean = false,
     var codeSnippet: String? = null
 )
@@ -76,6 +75,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private lateinit var resultsPanel: JBPanel<AIContextPanel>
     private lateinit var loadingPanel: JBPanel<AIContextPanel>
     private lateinit var messagePanel: JBPanel<AIContextPanel>
+    private lateinit var descriptionPanel: JBPanel<AIContextPanel>
     private lateinit var progressBar: JProgressBar
     private val results = mutableListOf<FileLocationResult>()
     private val questionLabel = JBLabel("Ask a question about the codebase:")
@@ -150,9 +150,20 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         resultsPanel = JBPanel<AIContextPanel>(BorderLayout())
         resultsPanel.border = JBUI.Borders.empty(0, 15, 15, 15)
 
+        // Description panel at the top
+        descriptionPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
+            isVisible = false
+            border = JBUI.Borders.empty(10, 15, 15, 15)
+        }
+
         // Container for results with vertical layout
         resultsContainer = JBPanel<AIContextPanel>()
         resultsContainer.layout = BoxLayout(resultsContainer, BoxLayout.Y_AXIS)
+        
+        // Main content panel with description at top and results below
+        val mainContentPanel = JBPanel<AIContextPanel>(BorderLayout())
+        mainContentPanel.add(descriptionPanel, BorderLayout.NORTH)
+        mainContentPanel.add(resultsContainer, BorderLayout.CENTER)
 
         // Loading panel with spinner
         loadingPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
@@ -176,7 +187,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             border = JBUI.Borders.empty(50, 20)
         }
 
-        resultsScrollPane = JBScrollPane(resultsContainer).apply {
+        resultsScrollPane = JBScrollPane(mainContentPanel).apply {
             preferredSize = Dimension(0, 300)
             minimumSize = Dimension(0, 200)
             horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
@@ -218,14 +229,22 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                     // Hide loading state
                     hideLoadingState()
                     
+                    // Show description if present
+                    if (!response.text.isNullOrBlank()) {
+                        showDescription(response.text!!)
+                    } else {
+                        hideDescription()
+                    }
+                    
                     // Convert backend response to our UI model
                     val results = response.locations.map { location ->
-                        GlobalLogOutput.get().log("AI Context: Processing location: ${location.filePath} (lines ${location.startLine}-${location.endLine})", ClientLogOutput.Level.DEBUG)
+                        val startLine = location.textRange?.startLine
+                        val endLine = location.textRange?.endLine
+                        GlobalLogOutput.get().log("AI Context: Processing location: ${location.fileRelativePath} (lines $startLine-$endLine)", ClientLogOutput.Level.DEBUG)
                         FileLocationResult(
-                            location.filePath,
-                            location.startLine,
-                            location.endLine,
-                            generateDisplayText(location.filePath)
+                            location.fileRelativePath,
+                            startLine,
+                            endLine
                         )
                     }
                     
@@ -262,6 +281,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         GlobalLogOutput.get().log("AI Context: Clearing ${results.size} results", ClientLogOutput.Level.DEBUG)
         results.clear()
         resultsContainer.removeAll()
+        hideDescription()
         hideLoadingState()
         hideMessagePanel()
         resultsContainer.revalidate()
@@ -291,18 +311,16 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         val filePathDir = result.filePath.substringBeforeLast("/", "")
         val pathPrefix = if (filePathDir.isNotEmpty()) "$filePathDir/" else ""
 
-        val fileLabel = JBLabel("<html><b>$fileName</b> <span style='color: #888888;'>($pathPrefix lines ${result.startLine}-${result.endLine})</span></html>")
-        
-        // Description
-        val descriptionLabel = JBLabel(result.displayText).apply {
-            font = font.deriveFont(Font.PLAIN)
-            foreground = UIUtil.getContextHelpForeground()
+        val lineInfo = if (result.startLine != null && result.endLine != null) {
+            "lines ${result.startLine}-${result.endLine}"
+        } else {
+            "entire file"
         }
+        val fileLabel = JBLabel("<html><b>$fileName</b> <span style='color: #888888;'>($pathPrefix $lineInfo)</span></html>")
 
         val infoPanel = JBPanel<AIContextPanel>()
         infoPanel.layout = BoxLayout(infoPanel, BoxLayout.Y_AXIS)
         infoPanel.add(fileLabel)
-        infoPanel.add(descriptionLabel)
 
         headerPanel.add(infoPanel, BorderLayout.CENTER)
 
@@ -413,22 +431,40 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                 val document = FileDocumentManager.getInstance().getDocument(virtualFile)
                 if (document != null) {
                     val totalLines = document.lineCount
-                    val startLine = Math.max(0, result.startLine - 1) // Convert to 0-based
-                    val endLine = Math.min(totalLines - 1, result.endLine - 1) // Convert to 0-based
                     
-                    if (startLine <= endLine) {
-                        val startOffset = document.getLineStartOffset(startLine)
+                    if (result.startLine != null && result.endLine != null) {
+                        // Load specific line range
+                        val startLine = 0.coerceAtLeast(result.startLine - 1) // Convert to 0-based
+                        val endLine = (totalLines - 1).coerceAtMost(result.endLine - 1) // Convert to 0-based
+                        
+                        if (startLine <= endLine) {
+                            val startOffset = document.getLineStartOffset(startLine)
+                            val endOffset = document.getLineEndOffset(endLine)
+                            result.codeSnippet = document.getText(com.intellij.openapi.util.TextRange(startOffset, endOffset))
+                            GlobalLogOutput.get().log("AI Context: Successfully loaded ${result.codeSnippet?.lines()?.size ?: 0} lines of code", ClientLogOutput.Level.DEBUG)
+                        } else {
+                            GlobalLogOutput.get().log("AI Context: Invalid line range for ${result.filePath}: $startLine-$endLine", ClientLogOutput.Level.DEBUG)
+                            result.codeSnippet = "// Invalid line range"
+                        }
+                    } else {
+                        // Load entire file (or first 50 lines to avoid huge files)
+                        val linesToShow = 50.coerceAtMost(totalLines)
+                        val endLine = linesToShow - 1
+                        val startOffset = document.getLineStartOffset(0)
                         val endOffset = document.getLineEndOffset(endLine)
                         result.codeSnippet = document.getText(com.intellij.openapi.util.TextRange(startOffset, endOffset))
-                        GlobalLogOutput.get().log("AI Context: Successfully loaded ${result.codeSnippet?.lines()?.size ?: 0} lines of code", ClientLogOutput.Level.DEBUG)
-                    } else {
-                        GlobalLogOutput.get().log("AI Context: Invalid line range for ${result.filePath}: $startLine-$endLine", ClientLogOutput.Level.DEBUG)
+                        if (totalLines > 50) {
+                            result.codeSnippet += "\n\n// ... (showing first 50 lines of ${totalLines} total lines)"
+                        }
+                        GlobalLogOutput.get().log("AI Context: Successfully loaded first $linesToShow lines of entire file", ClientLogOutput.Level.DEBUG)
                     }
                 } else {
                     GlobalLogOutput.get().log("AI Context: Could not get document for ${result.filePath}", ClientLogOutput.Level.DEBUG)
+                    result.codeSnippet = "// Could not load document"
                 }
             } else {
                 GlobalLogOutput.get().log("AI Context: Virtual file not found for ${result.filePath}", ClientLogOutput.Level.DEBUG)
+                result.codeSnippet = "// File not found: ${result.filePath}"
             }
         } catch (e: Exception) {
             GlobalLogOutput.get().logError("AI Context: Error loading code snippet for ${result.filePath}", e)
@@ -444,8 +480,14 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             val virtualFile = VirtualFileManager.getInstance().findFileByUrl("file://${project.basePath}/${result.filePath}")
             
             if (virtualFile != null && virtualFile.exists()) {
-                // Open the file and navigate to the start line (convert to 0-based indexing)
-                val descriptor = OpenFileDescriptor(project, virtualFile, result.startLine - 1, 0)
+                // Open the file and navigate to the start line if available
+                val descriptor = if (result.startLine != null) {
+                    // Convert to 0-based indexing
+                    OpenFileDescriptor(project, virtualFile, result.startLine - 1, 0)
+                } else {
+                    // Open at the beginning of the file
+                    OpenFileDescriptor(project, virtualFile, 0, 0)
+                }
                 FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
                 GlobalLogOutput.get().log("AI Context: Successfully opened file ${result.filePath}", ClientLogOutput.Level.DEBUG)
             } else {
@@ -469,14 +511,6 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             hideMessagePanel()
             
             this.results.addAll(results)
-            // Add a simple test label first to verify layout works
-            val testLabel = JBLabel("TEST: ${results.size} results found").apply {
-                preferredSize = Dimension(200, 30)
-                background = Color.YELLOW
-                isOpaque = true
-            }
-            resultsContainer.add(testLabel)
-            
             results.forEachIndexed { index, result ->
                 GlobalLogOutput.get().log("AI Context: Creating UI panel for result ${index + 1}: ${result.filePath}", ClientLogOutput.Level.DEBUG)
                 resultsContainer.add(createResultPanel(result))
@@ -588,6 +622,30 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         resultsPanel.repaint()
         
         clearButton.isEnabled = false
+    }
+
+    private fun showDescription(text: String) {
+        descriptionPanel.removeAll()
+        
+        val descriptionLabel = JBLabel("<html><div style='width: 400px; font-family: sans-serif;'>$text</div></html>").apply {
+            font = font.deriveFont(Font.PLAIN, 13f)
+            foreground = UIUtil.getLabelForeground()
+            border = JBUI.Borders.empty(5)
+        }
+        
+        descriptionPanel.add(descriptionLabel, BorderLayout.CENTER)
+        descriptionPanel.isVisible = true
+        descriptionPanel.revalidate()
+        descriptionPanel.repaint()
+        
+        GlobalLogOutput.get().log("AI Context: Showing description: ${text.take(100)}...", ClientLogOutput.Level.DEBUG)
+    }
+
+    private fun hideDescription() {
+        descriptionPanel.isVisible = false
+        descriptionPanel.removeAll()
+        descriptionPanel.revalidate()
+        descriptionPanel.repaint()
     }
 
     /**
