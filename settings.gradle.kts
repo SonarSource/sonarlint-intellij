@@ -22,6 +22,7 @@ dependencyResolutionManagement {
                 password = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD") ?: (extra["artifactoryPassword"] as? String ?: "")
             }
         }
+        mavenLocal()
         mavenCentral()
         intellijPlatform {
             defaultRepositories()
