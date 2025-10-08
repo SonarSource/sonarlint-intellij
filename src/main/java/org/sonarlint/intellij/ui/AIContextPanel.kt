@@ -115,11 +115,11 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         
         // Question label (styled)
         val styledLabel = JBLabel("Ask a question:").apply {
-            font = font.deriveFont(Font.PLAIN, 13f)
+            font = UIUtil.getLabelFont()
             foreground = UIUtil.getLabelForeground()
         }
         
-        questionField = JBTextField(35).apply {
+        questionField = JBTextField(50).apply {
             addKeyListener(object : KeyAdapter() {
                 override fun keyPressed(e: KeyEvent) {
                     if (e.keyCode == KeyEvent.VK_ENTER && isEnabled) {
@@ -201,7 +201,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         }
         
         val loadingLabel = JBLabel("🔍 Searching for relevant code...", SwingConstants.CENTER).apply {
-            font = font.deriveFont(Font.PLAIN, 14f)
+            font = UIUtil.getLabelFont()
             foreground = UIUtil.getContextHelpForeground()
             border = JBUI.Borders.emptyBottom(15)
         }
@@ -345,8 +345,8 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun createResultPanel(result: FileLocationResult): JBPanel<AIContextPanel> {
         val mainPanel = JBPanel<AIContextPanel>(BorderLayout())
         mainPanel.border = JBUI.Borders.compound(
-            JBUI.Borders.emptyBottom(8),
-            JBUI.Borders.customLine(UIUtil.getPanelBackground().darker(), 0, 0, 1, 0)
+            JBUI.Borders.emptyBottom(4),
+            JBUI.Borders.customLineBottom(UIUtil.getPanelBackground().darker())
         )
         mainPanel.background = UIUtil.getListBackground()
         
@@ -356,9 +356,10 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
 
         // Header panel with file info
         val headerPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
-            border = JBUI.Borders.empty(12, 15)
+            border = JBUI.Borders.empty(14, 16, 12, 16)
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             background = UIUtil.getListBackground()
+            isOpaque = true
         }
 
         // File name (bold) and line info
@@ -371,8 +372,17 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         } else {
             "entire file"
         }
-        val fileLabel = JBLabel("<html><b style='font-size: 14px;'>$fileName</b></html>").apply {
-            font = font.deriveFont(Font.PLAIN, 14f)
+        // Expand/collapse indicator next to file name
+        val expandLabel = JBLabel(if (result.isExpanded) "▼" else "▶").apply {
+            font = Font(Font.MONOSPACED, Font.PLAIN, 10)
+            foreground = UIUtil.getContextHelpForeground()
+            border = JBUI.Borders.emptyRight(8)
+            preferredSize = Dimension(16, 16)
+            horizontalAlignment = SwingConstants.CENTER
+        }
+        
+        val fileLabel = JBLabel("<html><b>$fileName</b></html>").apply {
+            font = UIUtil.getLabelFont()
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             
             // Add click listener to open file directly
@@ -394,30 +404,36 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             })
         }
         
-        val pathLabel = JBLabel("<html><span style='color: #666; font-size: 12px;'>$pathPrefix ($lineInfo)</span></html>").apply {
-            font = font.deriveFont(Font.PLAIN, 12f)
-            border = JBUI.Borders.emptyTop(2)
+        // File info container (filename, path, status) - aligned under filename text
+        val fileInfoPanel = JBPanel<AIContextPanel>().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            isOpaque = false
         }
         
-        val statusLabel = JBLabel("📄 Click to expand • Click file name to open").apply {
-            font = font.deriveFont(Font.ITALIC, 11f)
+        fileInfoPanel.add(fileLabel)
+        
+        val pathLabel = JBLabel("$pathPrefix ($lineInfo)").apply {
+            font = UIUtil.getLabelFont(UIUtil.FontSize.SMALL)
             foreground = UIUtil.getContextHelpForeground()
-            border = JBUI.Borders.emptyTop(3)
+            border = JBUI.Borders.emptyTop(2)
         }
-
-        val infoPanel = JBPanel<AIContextPanel>()
-        infoPanel.layout = BoxLayout(infoPanel, BoxLayout.Y_AXIS)
-        infoPanel.add(fileLabel)
-        infoPanel.add(pathLabel)
-        infoPanel.add(statusLabel)
-
-        headerPanel.add(infoPanel, BorderLayout.CENTER)
-
-        // Expand/collapse indicator
-        val expandLabel = JBLabel(if (result.isExpanded) "▼" else "▶").apply {
-            font = Font(Font.MONOSPACED, Font.PLAIN, 12)
+        fileInfoPanel.add(pathLabel)
+        
+        val statusLabel = JBLabel("Click to expand • Click file name to open").apply {
+            font = UIUtil.getLabelFont(UIUtil.FontSize.SMALL)
+            foreground = UIUtil.getContextHelpForeground()
+            border = JBUI.Borders.emptyTop(4)
         }
-        headerPanel.add(expandLabel, BorderLayout.EAST)
+        fileInfoPanel.add(statusLabel)
+
+        // Main content with icon on left, file info on right
+        val contentPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
+            isOpaque = false
+        }
+        contentPanel.add(expandLabel, BorderLayout.WEST)
+        contentPanel.add(fileInfoPanel, BorderLayout.CENTER)
+
+        headerPanel.add(contentPanel, BorderLayout.CENTER)
 
         mainPanel.add(headerPanel, BorderLayout.NORTH)
 
@@ -453,7 +469,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                 when (e.clickCount) {
                     1 -> {
                         // Single click - toggle code snippet
-                        statusLabel.text = if (!result.isExpanded) "⏳ Loading code..." else "📄 Click to expand • Click file name to open"
+                        statusLabel.text = if (!result.isExpanded) "Loading code..." else "Click to expand • Click file name to open"
                         
                         result.isExpanded = !result.isExpanded
                         
@@ -498,7 +514,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                         }
                         
                         // Update status text
-                        statusLabel.text = if (result.isExpanded) "📂 Click to collapse • Click file name to open" else "📄 Click to expand • Click file name to open"
+                        statusLabel.text = if (result.isExpanded) "Click to collapse • Click file name to open" else "Click to expand • Click file name to open"
                         
                         // Use SwingUtilities.invokeLater to smooth UI updates and reduce flickering
                         SwingUtilities.invokeLater {
@@ -510,14 +526,15 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             }
             
             override fun mouseEntered(e: MouseEvent) {
+                // Use standard IntelliJ hover background
                 headerPanel.background = UIUtil.getListSelectionBackground(false)
-                statusLabel.foreground = JBColor.BLUE
+                expandLabel.foreground = JBColor.BLUE
                 headerPanel.repaint()
             }
             
             override fun mouseExited(e: MouseEvent) {
                 headerPanel.background = UIUtil.getListBackground()
-                statusLabel.foreground = UIUtil.getContextHelpForeground()
+                expandLabel.foreground = UIUtil.getContextHelpForeground()
                 headerPanel.repaint()
             }
         }
@@ -687,13 +704,13 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         }
         
         val suggestionLabel = JBLabel("<html><div style='text-align: center; width: 300px;'>Try rephrasing your question or being more specific about the functionality you're looking for.</div></html>", SwingConstants.CENTER).apply {
-            font = font.deriveFont(Font.PLAIN, 13f)
+            font = UIUtil.getLabelFont()
             foreground = UIUtil.getContextHelpForeground()
             border = JBUI.Borders.emptyTop(8)
         }
         
         val tipsLabel = JBLabel("<html><div style='text-align: center; color: #666; font-style: italic; width: 350px;'>Try questions like: \"authentication logic\", \"database connections\", or \"error handling\"</div></html>", SwingConstants.CENTER).apply {
-            font = font.deriveFont(Font.PLAIN, 12f)
+            font = UIUtil.getLabelFont(UIUtil.FontSize.SMALL)
             border = JBUI.Borders.emptyTop(15)
         }
         
@@ -732,13 +749,13 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         }
         
         val errorMessageLabel = JBLabel("<html><div style='text-align: center; width: 400px;'>$errorText</div></html>", SwingConstants.CENTER).apply {
-            font = font.deriveFont(Font.PLAIN, 13f)
+            font = UIUtil.getLabelFont()
             foreground = UIUtil.getContextHelpForeground()
             border = JBUI.Borders.emptyTop(8)
         }
         
         val retryLabel = JBLabel("<html><div style='text-align: center; color: #666; font-style: italic;'>Please try again or check your connection</div></html>", SwingConstants.CENTER).apply {
-            font = font.deriveFont(Font.PLAIN, 12f)
+            font = UIUtil.getLabelFont(UIUtil.FontSize.SMALL)
             border = JBUI.Borders.emptyTop(12)
         }
         
@@ -777,7 +794,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                 <style>
                     body { 
                         font-family: ${UIUtil.getLabelFont().family}; 
-                        font-size: 13px; 
+                        font-size: 10px; 
                         color: ${colorToHex(UIUtil.getLabelForeground())}; 
                         margin: 0; 
                         padding: 0;
