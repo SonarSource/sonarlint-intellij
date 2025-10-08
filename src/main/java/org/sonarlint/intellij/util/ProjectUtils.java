@@ -88,7 +88,7 @@ public class ProjectUtils {
   }
 
   @CheckForNull
-  private static VirtualFile findByRelativePath(VirtualFile file, Path path) {
+  public static VirtualFile findByRelativePath(VirtualFile file, Path path) {
     return file.findFileByRelativePath(getSystemIndependentPath(path));
   }
 

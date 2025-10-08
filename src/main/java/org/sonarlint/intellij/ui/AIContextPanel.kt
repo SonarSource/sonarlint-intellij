@@ -23,8 +23,11 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -41,7 +44,6 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.net.URL
 import java.nio.file.Paths
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -49,12 +51,14 @@ import javax.swing.JEditorPane
 import javax.swing.JProgressBar
 import javax.swing.JTextArea
 import javax.swing.SwingConstants
+import javax.swing.SwingUtilities
 import javax.swing.event.HyperlinkEvent
 import javax.swing.event.HyperlinkListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.ProjectUtils
 import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
@@ -66,7 +70,7 @@ data class FileLocationResult(
     val startLine: Int?,
     val endLine: Int?,
     var isExpanded: Boolean = false,
-    var codeSnippet: String? = null
+    var codeSnippet: String? = null,
 )
 
 class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false, false), Disposable {
@@ -330,9 +334,13 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         hideDescription()
         hideLoadingState()
         hideMessagePanel()
-        resultsContainer.revalidate()
-        resultsContainer.repaint()
         clearButton.isEnabled = false
+        
+        // Batch UI updates to reduce flickering
+        SwingUtilities.invokeLater {
+            resultsContainer.revalidate()
+            resultsContainer.repaint()
+        }
     }
 
     private fun createResultPanel(result: FileLocationResult): JBPanel<AIContextPanel> {
@@ -366,6 +374,25 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         }
         val fileLabel = JBLabel("<html><b style='font-size: 14px;'>$fileName</b></html>").apply {
             font = font.deriveFont(Font.PLAIN, 14f)
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            
+            // Add click listener to open file directly
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    if (e.clickCount == 1) {
+                        GlobalLogOutput.get().log("AI Context: Single-clicked on file name ${result.filePath}", ClientLogOutput.Level.INFO)
+                        openFileAtLocation(result)
+                    }
+                }
+                
+                override fun mouseEntered(e: MouseEvent) {
+                    foreground = JBColor.BLUE
+                }
+                
+                override fun mouseExited(e: MouseEvent) {
+                    foreground = UIUtil.getLabelForeground()
+                }
+            })
         }
         
         val pathLabel = JBLabel("<html><span style='color: #666; font-size: 12px;'>$pathPrefix ($lineInfo)</span></html>").apply {
@@ -373,7 +400,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             border = JBUI.Borders.emptyTop(2)
         }
         
-        val statusLabel = JBLabel("📄 Click to expand • Double-click to open").apply {
+        val statusLabel = JBLabel("📄 Click to expand • Click file name to open").apply {
             font = font.deriveFont(Font.ITALIC, 11f)
             foreground = UIUtil.getContextHelpForeground()
             border = JBUI.Borders.emptyTop(3)
@@ -427,7 +454,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                 when (e.clickCount) {
                     1 -> {
                         // Single click - toggle code snippet
-                        statusLabel.text = if (!result.isExpanded) "⏳ Loading code..." else "📄 Click to expand • Double-click to open"
+                        statusLabel.text = if (!result.isExpanded) "⏳ Loading code..." else "📄 Click to expand • Click file name to open"
                         
                         result.isExpanded = !result.isExpanded
                         
@@ -472,14 +499,13 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                         }
                         
                         // Update status text
-                        statusLabel.text = if (result.isExpanded) "📂 Click to collapse • Double-click to open" else "📄 Click to expand • Double-click to open"
+                        statusLabel.text = if (result.isExpanded) "📂 Click to collapse • Click file name to open" else "📄 Click to expand • Click file name to open"
                         
-                        mainPanel.revalidate()
-                        mainPanel.repaint()
-                    }
-                    2 -> {
-                        // Double click - open file
-                        openFileAtLocation(result)
+                        // Use SwingUtilities.invokeLater to smooth UI updates and reduce flickering
+                        SwingUtilities.invokeLater {
+                            mainPanel.revalidate()
+                            mainPanel.repaint()
+                        }
                     }
                 }
             }
@@ -505,8 +531,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         try {
             GlobalLogOutput.get().log("AI Context: Loading code snippet for ${result.filePath} (lines ${result.startLine}-${result.endLine})", ClientLogOutput.Level.DEBUG)
 
-            val path = Paths.get(result.filePath)
-            val virtualFile = tryFindFile(project, path)
+            val virtualFile = tryFindFileYolo(result.filePath)
             
             if (virtualFile != null && virtualFile.exists()) {
                 val document = FileDocumentManager.getInstance().getDocument(virtualFile)
@@ -557,8 +582,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         try {
             GlobalLogOutput.get().log("AI Context: Opening file ${result.filePath} at line ${result.startLine}", ClientLogOutput.Level.INFO)
 
-            val path = Paths.get(result.filePath)
-            val virtualFile = tryFindFile(project, path)
+            val virtualFile = tryFindFileYolo(result.filePath)
             
             if (virtualFile != null && virtualFile.exists()) {
                 // Open the file and navigate to the start line if available
@@ -597,14 +621,13 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                 resultsContainer.add(createResultPanel(result))
             }
             
-            resultsContainer.revalidate()
-            resultsContainer.repaint()
-            
-            // Also refresh the parent container to ensure proper layout
-            this@AIContextPanel.revalidate()
-            this@AIContextPanel.repaint()
-            
             clearButton.isEnabled = results.isNotEmpty()
+            
+            // Single revalidate/repaint at the end to minimize flickering
+            SwingUtilities.invokeLater {
+                resultsContainer.revalidate()
+                resultsContainer.repaint()
+            }
             
             GlobalLogOutput.get().log("AI Context: UI updated with ${results.size} result(s)", ClientLogOutput.Level.DEBUG)
             GlobalLogOutput.get().log("AI Context: Results container visible: ${resultsScrollPane.isVisible}, has ${resultsContainer.componentCount} components", ClientLogOutput.Level.DEBUG)
@@ -625,24 +648,30 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun showLoadingState() {
         resultsPanel.removeAll()
         resultsPanel.add(loadingPanel, BorderLayout.CENTER)
-        resultsPanel.revalidate()
-        resultsPanel.repaint()
+        SwingUtilities.invokeLater {
+            resultsPanel.revalidate()
+            resultsPanel.repaint()
+        }
     }
 
     private fun hideLoadingState() {
         // Switch back to results panel
         resultsPanel.removeAll()
         resultsPanel.add(resultsScrollPane, BorderLayout.CENTER)
-        resultsPanel.revalidate()
-        resultsPanel.repaint()
+        SwingUtilities.invokeLater {
+            resultsPanel.revalidate()
+            resultsPanel.repaint()
+        }
     }
 
     private fun hideMessagePanel() {
         // Switch back to results panel
         resultsPanel.removeAll()
         resultsPanel.add(resultsScrollPane, BorderLayout.CENTER)
-        resultsPanel.revalidate()
-        resultsPanel.repaint()
+        SwingUtilities.invokeLater {
+            resultsPanel.revalidate()
+            resultsPanel.repaint()
+        }
     }
 
     private fun showNoResultsMessage() {
@@ -681,8 +710,10 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         // Switch to message panel
         resultsPanel.removeAll()
         resultsPanel.add(messagePanel, BorderLayout.CENTER)
-        resultsPanel.revalidate()
-        resultsPanel.repaint()
+        SwingUtilities.invokeLater {
+            resultsPanel.revalidate()
+            resultsPanel.repaint()
+        }
         
         clearButton.isEnabled = false
         GlobalLogOutput.get().log("AI Context: Showing no results message", ClientLogOutput.Level.DEBUG)
@@ -724,8 +755,10 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         // Switch to message panel
         resultsPanel.removeAll()
         resultsPanel.add(messagePanel, BorderLayout.CENTER)
-        resultsPanel.revalidate()
-        resultsPanel.repaint()
+        SwingUtilities.invokeLater {
+            resultsPanel.revalidate()
+            resultsPanel.repaint()
+        }
         
         clearButton.isEnabled = false
         GlobalLogOutput.get().log("AI Context: Showing error message: $errorText", ClientLogOutput.Level.DEBUG)
@@ -734,8 +767,12 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun showDescription(text: String) {
         descriptionPanel.removeAll()
         
-        // Style the HTML content with proper formatting
-        val styledText = """
+        // Clean up potential encoding issues
+        val cleanText = text.replace("���", "").replace("\uFFFD", "").trim()
+        if (cleanText.isBlank()) return
+        
+        // Create styled HTML content for inline rendering
+        val htmlContent = """
             <html>
             <head>
                 <style>
@@ -743,8 +780,10 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                         font-family: ${UIUtil.getLabelFont().family}; 
                         font-size: 13px; 
                         color: ${colorToHex(UIUtil.getLabelForeground())}; 
-                        margin: 5px; 
+                        margin: 0; 
+                        padding: 0;
                         line-height: 1.4;
+                        background-color: transparent;
                     }
                     a { 
                         color: ${colorToHex(JBColor.BLUE)}; 
@@ -755,30 +794,30 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                     }
                 </style>
             </head>
-            <body>$text</body>
+            <body>${cleanText.replace("\n", "<br>")}</body>
             </html>
         """.trimIndent()
         
-        // Create HTML editor pane for rich text with clickable links
+        // Use JEditorPane for proper inline HTML rendering with clickable links
         val editorPane = JEditorPane().apply {
             contentType = "text/html"
             isEditable = false
             isOpaque = false
             background = UIUtil.getPanelBackground()
+            border = JBUI.Borders.empty(10, 15, 15, 15)
             
-            setText(styledText)
+            setText(htmlContent)
             
             // Add hyperlink listener for sonarlint-file:// links
             addHyperlinkListener(object : HyperlinkListener {
                 override fun hyperlinkUpdate(e: HyperlinkEvent) {
                     if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-                        handleSonarLintFileLink(e.url)
+                        val url = e.url?.toString() ?: e.description
+                        GlobalLogOutput.get().log("AI Context: Clicked on inline link: $url", ClientLogOutput.Level.DEBUG)
+                        handleSonarLintFileLink(url)
                     }
                 }
             })
-            
-            // Set preferred size for proper layout
-            preferredSize = Dimension(400, preferredSize.height)
         }
         
         // Wrap in scroll pane in case content is long
@@ -786,32 +825,38 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
             verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
             border = JBUI.Borders.empty()
-            maximumSize = Dimension(Int.MAX_VALUE, 200)  // Limit height
+            maximumSize = Dimension(Int.MAX_VALUE, 200)
         }
         
         descriptionPanel.add(scrollPane, BorderLayout.CENTER)
         descriptionPanel.isVisible = true
-        descriptionPanel.revalidate()
-        descriptionPanel.repaint()
         
-        GlobalLogOutput.get().log("AI Context: Showing description with HTML links: ${text.take(100)}...", ClientLogOutput.Level.DEBUG)
+        GlobalLogOutput.get().log("AI Context: Showing inline description with HTML: ${cleanText.take(100)}...", ClientLogOutput.Level.DEBUG)
+    }
+    
+    /**
+     * Convert a Color to hex string for CSS
+     */
+    private fun colorToHex(color: java.awt.Color): String {
+        return String.format("#%02x%02x%02x", color.red, color.green, color.blue)
     }
 
     private fun hideDescription() {
         descriptionPanel.isVisible = false
         descriptionPanel.removeAll()
-        descriptionPanel.revalidate()
-        descriptionPanel.repaint()
+        SwingUtilities.invokeLater {
+            descriptionPanel.revalidate()
+            descriptionPanel.repaint()
+        }
     }
 
     /**
      * Handle clicks on sonarlint-file:// links in the description
      */
-    private fun handleSonarLintFileLink(url: URL?) {
-        if (url == null) return
+    private fun handleSonarLintFileLink(urlString: String?) {
+        if (urlString.isNullOrBlank()) return
         
         try {
-            val urlString = url.toString()
             GlobalLogOutput.get().log("AI Context: Handling sonarlint-file link: $urlString", ClientLogOutput.Level.DEBUG)
             
             if (!urlString.startsWith("sonarlint-file://")) {
@@ -865,9 +910,8 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun openFileFromLink(filePath: String, startLine: Int?) {
         try {
             GlobalLogOutput.get().log("AI Context: Opening file from link: $filePath at line $startLine", ClientLogOutput.Level.INFO)
-            
-            val path = Paths.get(filePath)
-            val virtualFile = tryFindFile(project, path)
+
+            val virtualFile = tryFindFileYolo(filePath)
             
             if (virtualFile != null && virtualFile.exists()) {
                 // Open the file and navigate to the start line if available
@@ -887,16 +931,33 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             GlobalLogOutput.get().logError("AI Context: Error opening file from link: $filePath", e)
         }
     }
-    
-    /**
-     * Convert a Color to hex string for CSS
-     */
-    private fun colorToHex(color: java.awt.Color): String {
-        return String.format("#%02x%02x%02x", color.red, color.green, color.blue)
+
+    private fun tryFindFileYolo(filePath: String): VirtualFile? {
+        val path = Paths.get(filePath)
+        var virtualFile = tryFindFile(project, path)
+        if (virtualFile == null) {
+            virtualFile = ModuleManager.getInstance(project).modules.firstNotNullOfOrNull { module ->
+                val contentRoot = ModuleRootManager.getInstance(module).contentRoots.firstOrNull() ?: return@firstNotNullOfOrNull null
+                if (contentRoot.isDirectory) {
+                    val matchedFile = ProjectUtils.findByRelativePath(contentRoot, path)
+                    if (matchedFile != null) {
+                        return@firstNotNullOfOrNull matchedFile
+                    }
+                } else {
+                    // On some version of Rider, all source files are returned as individual content roots, so simply check for equality
+                    if (contentRoot.path.endsWith(ProjectUtils.getSystemIndependentPath(path))) {
+                        return@firstNotNullOfOrNull contentRoot
+                    }
+                }
+                return@firstNotNullOfOrNull null
+            }
+        }
+        return virtualFile
     }
 
     override fun dispose() {
         // Cleanup is handled automatically
     }
 }
+
 
