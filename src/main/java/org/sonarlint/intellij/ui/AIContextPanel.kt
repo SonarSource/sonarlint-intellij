@@ -25,7 +25,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
-import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -105,60 +104,72 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     }
 
     private fun createInputPanel(): JBPanel<AIContextPanel> {
-        val inputPanel = JBPanel<AIContextPanel>(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, false))
-        inputPanel.border = JBUI.Borders.empty(15, 15, 10, 15)
+        val inputPanel = JBPanel<AIContextPanel>(BorderLayout())
+        inputPanel.border = JBUI.Borders.empty(20, 20, 15, 20)
 
-        // Question label
-        questionLabel.border = JBUI.Borders.emptyBottom(5)
-        inputPanel.add(questionLabel)
-
-        // Input field and buttons row
-        val inputRowPanel = JBPanel<AIContextPanel>(FlowLayout(FlowLayout.LEFT, 0, 0))
+        // Main input row with label, field, and buttons
+        val inputRowPanel = JBPanel<AIContextPanel>(FlowLayout(FlowLayout.LEFT, 8, 0))
         
-        questionField = JBTextField(30).apply {
+        // Question label (styled)
+        val styledLabel = JBLabel("Ask a question:").apply {
+            font = font.deriveFont(Font.PLAIN, 13f)
+            foreground = UIUtil.getLabelForeground()
+        }
+        
+        questionField = JBTextField(35).apply {
             addKeyListener(object : KeyAdapter() {
                 override fun keyPressed(e: KeyEvent) {
-                    if (e.keyCode == KeyEvent.VK_ENTER) {
+                    if (e.keyCode == KeyEvent.VK_ENTER && isEnabled) {
                         handleAskQuestion()
                     }
                 }
             })
+            toolTipText = "Ask questions about your codebase (press Enter to submit)"
         }
 
         askButton = JButton("Ask").apply {
             addActionListener { handleAskQuestion() }
-            preferredSize = Dimension(60, questionField.preferredSize.height)
+            preferredSize = Dimension(70, questionField.preferredSize.height)
+            toolTipText = "Search the codebase for relevant information"
         }
 
         clearButton = JButton("Clear").apply {
             addActionListener { clearResults() }
             preferredSize = Dimension(60, questionField.preferredSize.height)
-            isEnabled = false // Initially disabled since no results
+            isEnabled = false
+            toolTipText = "Clear search results"
         }
 
+        // Add components to input row
+        inputRowPanel.add(styledLabel)
         inputRowPanel.add(questionField)
-        inputRowPanel.add(JBPanel<AIContextPanel>().apply { 
-            preferredSize = Dimension(10, 0) 
-        }) // Spacer
         inputRowPanel.add(askButton)
-        inputRowPanel.add(JBPanel<AIContextPanel>().apply { 
-            preferredSize = Dimension(5, 0) 
-        }) // Spacer
         inputRowPanel.add(clearButton)
 
-        inputPanel.add(inputRowPanel)
+        inputPanel.add(inputRowPanel, BorderLayout.CENTER)
+        
+        // Add separator line
+        val separator = JBPanel<AIContextPanel>().apply {
+            preferredSize = Dimension(0, 1)
+            background = UIUtil.getPanelBackground().darker()
+            isOpaque = true
+        }
+        inputPanel.add(separator, BorderLayout.SOUTH)
 
         return inputPanel
     }
 
     private fun createResultsPanel(): JBPanel<AIContextPanel> {
         resultsPanel = JBPanel<AIContextPanel>(BorderLayout())
-        resultsPanel.border = JBUI.Borders.empty(0, 15, 15, 15)
+        resultsPanel.border = JBUI.Borders.empty(10, 20, 20, 20)
 
-        // Description panel at the top
+        // Description panel at the top (styled)
         descriptionPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
             isVisible = false
-            border = JBUI.Borders.empty(10, 15, 15, 15)
+            border = JBUI.Borders.compound(
+                JBUI.Borders.empty(0, 0, 15, 0),
+                JBUI.Borders.customLine(UIUtil.getPanelBackground().darker().brighter(), 0, 0, 1, 0)
+            )
         }
 
         // Container for results with vertical layout
@@ -166,38 +177,52 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         resultsContainer.layout = BoxLayout(resultsContainer, BoxLayout.Y_AXIS)
         
         // Main content panel with description at top and results below
-        val mainContentPanel = JBPanel<AIContextPanel>(BorderLayout())
+        val mainContentPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
+            border = JBUI.Borders.empty(5, 0, 0, 0)
+        }
         mainContentPanel.add(descriptionPanel, BorderLayout.NORTH)
         mainContentPanel.add(resultsContainer, BorderLayout.CENTER)
 
-        // Loading panel with spinner
+        // Enhanced loading panel
         loadingPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
             isVisible = false
-            border = JBUI.Borders.empty(50, 20)
+            border = JBUI.Borders.empty(60, 40)
+            background = UIUtil.getPanelBackground()
         }
         
         progressBar = JProgressBar().apply {
             isIndeterminate = true
             isStringPainted = true
-            string = "Processing question..."
+            string = "Analyzing codebase..."
+            preferredSize = Dimension(200, 20)
         }
         
-        val loadingLabel = JBLabel("Searching codebase...", SwingConstants.CENTER)
-        loadingPanel.add(loadingLabel, BorderLayout.NORTH)
-        loadingPanel.add(progressBar, BorderLayout.CENTER)
+        val loadingLabel = JBLabel("🔍 Searching for relevant code...", SwingConstants.CENTER).apply {
+            font = font.deriveFont(Font.PLAIN, 14f)
+            foreground = UIUtil.getContextHelpForeground()
+            border = JBUI.Borders.emptyBottom(15)
+        }
+        
+        val loadingContainer = JBPanel<AIContextPanel>()
+        loadingContainer.layout = BoxLayout(loadingContainer, BoxLayout.Y_AXIS)
+        loadingContainer.add(loadingLabel)
+        loadingContainer.add(progressBar)
+        
+        loadingPanel.add(loadingContainer, BorderLayout.CENTER)
 
-        // Message panel for no results or errors
+        // Enhanced message panel for no results or errors
         messagePanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
             isVisible = false
-            border = JBUI.Borders.empty(50, 20)
+            border = JBUI.Borders.empty(40, 30)
         }
 
         resultsScrollPane = JBScrollPane(mainContentPanel).apply {
-            preferredSize = Dimension(0, 300)
-            minimumSize = Dimension(0, 200)
-            horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+            preferredSize = Dimension(0, 400)
+            minimumSize = Dimension(0, 250)
+            horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
             verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-            border = JBUI.Borders.empty()
+            border = JBUI.Borders.customLine(UIUtil.getPanelBackground().darker(), 1)
+            background = UIUtil.getListBackground()
         }
 
         // Start with results panel visible
@@ -208,78 +233,94 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun handleAskQuestion() {
         val question = questionField.text.trim()
         if (question.isEmpty()) {
-            GlobalLogOutput.get().log("AI Context: Empty question submitted, ignoring", ClientLogOutput.Level.DEBUG)
+            questionField.requestFocus()
             return
         }
 
         GlobalLogOutput.get().log("AI Context: Asking question: '$question'", ClientLogOutput.Level.INFO)
 
-        // Clear previous results automatically when asking a new question
+        // Clear previous results and show loading state
         clearResults()
-        
-        // Show loading state
         showLoadingState()
         
-        // Disable the ask button while processing
+        // Update UI state
         askButton.isEnabled = false
-        askButton.text = "Asking..."
+        askButton.text = "Searching..."
+        questionField.isEnabled = false
+        clearButton.isEnabled = false
         
-        // Call the actual AI Context service via Backend
+        // Call the AI Context service
         getService(BackendService::class.java)
             .askCodebaseQuestion(project, question)
             .thenAcceptAsync { response ->
                 runOnUiThread(project) {
-                    GlobalLogOutput.get().log("AI Context: Received ${response.locations.size} location(s) from backend", ClientLogOutput.Level.INFO)
-                    
-                    // Hide loading state
-                    hideLoadingState()
-                    
-                    // Show description if present
-                    if (!response.text.isNullOrBlank()) {
-                        showDescription(response.text!!)
-                    } else {
-                        hideDescription()
+                    try {
+                        GlobalLogOutput.get().log("AI Context: Received ${response.locations.size} location(s) from backend", ClientLogOutput.Level.INFO)
+                        
+                        hideLoadingState()
+                        
+                        // Show description if present
+                        if (!response.text.isNullOrBlank()) {
+                            showDescription(response.text!!)
+                        } else {
+                            hideDescription()
+                        }
+                        
+                        // Convert backend response to UI model
+                        val results = response.locations.map { location ->
+                            val startLine = location.textRange?.startLine
+                            val endLine = location.textRange?.endLine
+                            GlobalLogOutput.get().log("AI Context: Processing location: ${location.fileRelativePath} (lines $startLine-$endLine)", ClientLogOutput.Level.DEBUG)
+                            FileLocationResult(
+                                location.fileRelativePath,
+                                startLine,
+                                endLine
+                            )
+                        }
+                        
+                        if (results.isEmpty() && response.text.isNullOrBlank()) {
+                            showNoResultsMessage()
+                        } else {
+                            setResults(results)
+                        }
+                        
+                        GlobalLogOutput.get().log("AI Context: Question processing completed successfully", ClientLogOutput.Level.INFO)
+                    } catch (e: Exception) {
+                        GlobalLogOutput.get().logError("AI Context: Error processing response", e)
+                        showErrorMessage("An unexpected error occurred while processing the results.")
+                    } finally {
+                        // Always restore UI state
+                        restoreUIState()
                     }
-                    
-                    // Convert backend response to our UI model
-                    val results = response.locations.map { location ->
-                        val startLine = location.textRange?.startLine
-                        val endLine = location.textRange?.endLine
-                        GlobalLogOutput.get().log("AI Context: Processing location: ${location.fileRelativePath} (lines $startLine-$endLine)", ClientLogOutput.Level.DEBUG)
-                        FileLocationResult(
-                            location.fileRelativePath,
-                            startLine,
-                            endLine
-                        )
-                    }
-                    
-                    if (results.isEmpty()) {
-                        showNoResultsMessage()
-                    } else {
-                        setResults(results)
-                    }
-                    
-                    // Re-enable the ask button
-                    askButton.isEnabled = true
-                    askButton.text = "Ask"
-                    
-                    GlobalLogOutput.get().log("AI Context: Question processing completed successfully", ClientLogOutput.Level.INFO)
                 }
             }
             .exceptionally { error ->
                 runOnUiThread(project) {
-                    GlobalLogOutput.get().logError("AI Context: Error processing question '$question'", error)
+                    GlobalLogOutput.get().logError("AI Context: Backend request failed for question '$question'", error)
                     
-                    // Hide loading state and show error
                     hideLoadingState()
-                    showErrorMessage("Failed to process question: ${error.message}")
-                    
-                    // Re-enable the ask button
-                    askButton.isEnabled = true
-                    askButton.text = "Ask"
+                    val errorMessage = when {
+                        error.message?.contains("timeout", true) == true -> 
+                            "Request timed out. Please try again with a simpler question."
+                        error.message?.contains("connection", true) == true -> 
+                            "Connection error. Please check your network and try again."
+                        error.message?.contains("backend", true) == true -> 
+                            "Backend service unavailable. Please try again later."
+                        else -> 
+                            "Unable to process your question. Please try rephrasing it or try again later."
+                    }
+                    showErrorMessage(errorMessage)
+                    restoreUIState()
                 }
                 null
             }
+    }
+    
+    private fun restoreUIState() {
+        askButton.isEnabled = true
+        askButton.text = "Ask"
+        questionField.isEnabled = true
+        clearButton.isEnabled = results.isNotEmpty()
     }
 
     private fun clearResults() {
@@ -297,9 +338,10 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun createResultPanel(result: FileLocationResult): JBPanel<AIContextPanel> {
         val mainPanel = JBPanel<AIContextPanel>(BorderLayout())
         mainPanel.border = JBUI.Borders.compound(
-            JBUI.Borders.emptyBottom(5),
-            JBUI.Borders.customLine(UIUtil.getBoundsColor(), 0, 0, 1, 0)
+            JBUI.Borders.emptyBottom(8),
+            JBUI.Borders.customLine(UIUtil.getPanelBackground().darker(), 0, 0, 1, 0)
         )
+        mainPanel.background = UIUtil.getListBackground()
         
         // Set fixed height for consistent spacing
         mainPanel.maximumSize = Dimension(Int.MAX_VALUE, 80)
@@ -307,8 +349,9 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
 
         // Header panel with file info
         val headerPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
-            border = JBUI.Borders.empty(8, 12)
+            border = JBUI.Borders.empty(12, 15)
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            background = UIUtil.getListBackground()
         }
 
         // File name (bold) and line info
@@ -321,11 +364,26 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         } else {
             "entire file"
         }
-        val fileLabel = JBLabel("<html><b>$fileName</b> <span style='color: #888888;'>($pathPrefix $lineInfo)</span></html>")
+        val fileLabel = JBLabel("<html><b style='font-size: 14px;'>$fileName</b></html>").apply {
+            font = font.deriveFont(Font.PLAIN, 14f)
+        }
+        
+        val pathLabel = JBLabel("<html><span style='color: #666; font-size: 12px;'>$pathPrefix ($lineInfo)</span></html>").apply {
+            font = font.deriveFont(Font.PLAIN, 12f)
+            border = JBUI.Borders.emptyTop(2)
+        }
+        
+        val statusLabel = JBLabel("📄 Click to expand • Double-click to open").apply {
+            font = font.deriveFont(Font.ITALIC, 11f)
+            foreground = UIUtil.getContextHelpForeground()
+            border = JBUI.Borders.emptyTop(3)
+        }
 
         val infoPanel = JBPanel<AIContextPanel>()
         infoPanel.layout = BoxLayout(infoPanel, BoxLayout.Y_AXIS)
         infoPanel.add(fileLabel)
+        infoPanel.add(pathLabel)
+        infoPanel.add(statusLabel)
 
         headerPanel.add(infoPanel, BorderLayout.CENTER)
 
@@ -350,7 +408,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                 font = Font(Font.MONOSPACED, Font.PLAIN, 12)
                 background = UIUtil.getTextFieldBackground()
                 border = JBUI.Borders.compound(
-                    JBUI.Borders.customLine(UIUtil.getBoundsColor(), 1),
+                    JBUI.Borders.customLine(UIUtil.getPanelBackground().darker(), 1),
                     JBUI.Borders.empty(8)
                 )
             }
@@ -369,6 +427,8 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                 when (e.clickCount) {
                     1 -> {
                         // Single click - toggle code snippet
+                        statusLabel.text = if (!result.isExpanded) "⏳ Loading code..." else "📄 Click to expand • Double-click to open"
+                        
                         result.isExpanded = !result.isExpanded
                         
                         if (result.isExpanded && result.codeSnippet == null) {
@@ -400,7 +460,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                                 font = Font(Font.MONOSPACED, Font.PLAIN, 12)
                                 background = UIUtil.getTextFieldBackground()
                                 border = JBUI.Borders.compound(
-                                    JBUI.Borders.customLine(UIUtil.getBoundsColor(), 1),
+                                    JBUI.Borders.customLine(UIUtil.getPanelBackground().darker(), 1),
                                     JBUI.Borders.empty(8)
                                 )
                             }
@@ -411,6 +471,9 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                             codePanel.add(codeScrollPane, BorderLayout.CENTER)
                         }
                         
+                        // Update status text
+                        statusLabel.text = if (result.isExpanded) "📂 Click to collapse • Double-click to open" else "📄 Click to expand • Double-click to open"
+                        
                         mainPanel.revalidate()
                         mainPanel.repaint()
                     }
@@ -419,6 +482,18 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                         openFileAtLocation(result)
                     }
                 }
+            }
+            
+            override fun mouseEntered(e: MouseEvent) {
+                headerPanel.background = UIUtil.getListSelectionBackground(false)
+                statusLabel.foreground = JBColor.BLUE
+                headerPanel.repaint()
+            }
+            
+            override fun mouseExited(e: MouseEvent) {
+                headerPanel.background = UIUtil.getListBackground()
+                statusLabel.foreground = UIUtil.getContextHelpForeground()
+                headerPanel.repaint()
             }
         }
 
@@ -573,21 +648,33 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun showNoResultsMessage() {
         messagePanel.removeAll()
         
-        val messageLabel = JBLabel("No results found for your question.", SwingConstants.CENTER).apply {
-            font = font.deriveFont(Font.PLAIN, 14f)
+        val iconLabel = JBLabel("🔍", SwingConstants.CENTER).apply {
+            font = font.deriveFont(Font.PLAIN, 24f)
+            border = JBUI.Borders.emptyBottom(10)
+        }
+        
+        val messageLabel = JBLabel("No relevant code found", SwingConstants.CENTER).apply {
+            font = font.deriveFont(Font.BOLD, 16f)
             foreground = UIUtil.getContextHelpForeground()
         }
         
-        val suggestionLabel = JBLabel("Try rephrasing your question or using different keywords.", SwingConstants.CENTER).apply {
-            font = font.deriveFont(Font.PLAIN, 12f)
+        val suggestionLabel = JBLabel("<html><div style='text-align: center; width: 300px;'>Try rephrasing your question or being more specific about the functionality you're looking for.</div></html>", SwingConstants.CENTER).apply {
+            font = font.deriveFont(Font.PLAIN, 13f)
             foreground = UIUtil.getContextHelpForeground()
-            border = JBUI.Borders.emptyTop(10)
+            border = JBUI.Borders.emptyTop(8)
+        }
+        
+        val tipsLabel = JBLabel("<html><div style='text-align: center; color: #666; font-style: italic; width: 350px;'>Try questions like: \"authentication logic\", \"database connections\", or \"error handling\"</div></html>", SwingConstants.CENTER).apply {
+            font = font.deriveFont(Font.PLAIN, 12f)
+            border = JBUI.Borders.emptyTop(15)
         }
         
         val messageContainer = JBPanel<AIContextPanel>()
         messageContainer.layout = BoxLayout(messageContainer, BoxLayout.Y_AXIS)
+        messageContainer.add(iconLabel)
         messageContainer.add(messageLabel)
         messageContainer.add(suggestionLabel)
+        messageContainer.add(tipsLabel)
         
         messagePanel.add(messageContainer, BorderLayout.CENTER)
         
@@ -598,26 +685,39 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         resultsPanel.repaint()
         
         clearButton.isEnabled = false
+        GlobalLogOutput.get().log("AI Context: Showing no results message", ClientLogOutput.Level.DEBUG)
     }
 
     private fun showErrorMessage(errorText: String) {
         messagePanel.removeAll()
         
-        val errorLabel = JBLabel("Error", SwingConstants.CENTER).apply {
-            font = font.deriveFont(Font.BOLD, 14f)
+        val iconLabel = JBLabel("⚠️", SwingConstants.CENTER).apply {
+            font = font.deriveFont(Font.PLAIN, 24f)
+            border = JBUI.Borders.emptyBottom(10)
+        }
+        
+        val errorLabel = JBLabel("Unable to search codebase", SwingConstants.CENTER).apply {
+            font = font.deriveFont(Font.BOLD, 16f)
             foreground = JBColor.RED
         }
         
-        val errorMessageLabel = JBLabel("<html><div style='text-align: center;'>$errorText</div></html>", SwingConstants.CENTER).apply {
+        val errorMessageLabel = JBLabel("<html><div style='text-align: center; width: 400px;'>$errorText</div></html>", SwingConstants.CENTER).apply {
+            font = font.deriveFont(Font.PLAIN, 13f)
+            foreground = UIUtil.getContextHelpForeground()
+            border = JBUI.Borders.emptyTop(8)
+        }
+        
+        val retryLabel = JBLabel("<html><div style='text-align: center; color: #666; font-style: italic;'>Please try again or check your connection</div></html>", SwingConstants.CENTER).apply {
             font = font.deriveFont(Font.PLAIN, 12f)
-            foreground = JBColor.RED
-            border = JBUI.Borders.emptyTop(10)
+            border = JBUI.Borders.emptyTop(12)
         }
         
         val errorContainer = JBPanel<AIContextPanel>()
         errorContainer.layout = BoxLayout(errorContainer, BoxLayout.Y_AXIS)
+        errorContainer.add(iconLabel)
         errorContainer.add(errorLabel)
         errorContainer.add(errorMessageLabel)
+        errorContainer.add(retryLabel)
         
         messagePanel.add(errorContainer, BorderLayout.CENTER)
         
@@ -628,6 +728,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         resultsPanel.repaint()
         
         clearButton.isEnabled = false
+        GlobalLogOutput.get().log("AI Context: Showing error message: $errorText", ClientLogOutput.Level.DEBUG)
     }
 
     private fun showDescription(text: String) {
@@ -798,3 +899,4 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         // Cleanup is handled automatically
     }
 }
+
