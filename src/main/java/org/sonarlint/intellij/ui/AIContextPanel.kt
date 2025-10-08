@@ -86,7 +86,6 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private lateinit var descriptionPanel: JBPanel<AIContextPanel>
     private lateinit var progressBar: JProgressBar
     private val results = mutableListOf<FileLocationResult>()
-    private val questionLabel = JBLabel("Ask a question about the codebase:")
 
     init {
         setupContent()
@@ -171,7 +170,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         descriptionPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
             isVisible = false
             border = JBUI.Borders.compound(
-                JBUI.Borders.empty(0, 0, 15, 0),
+                JBUI.Borders.emptyBottom(15),
                 JBUI.Borders.customLine(UIUtil.getPanelBackground().darker().brighter(), 0, 0, 1, 0)
             )
         }
@@ -182,7 +181,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         
         // Main content panel with description at top and results below
         val mainContentPanel = JBPanel<AIContextPanel>(BorderLayout()).apply {
-            border = JBUI.Borders.empty(5, 0, 0, 0)
+            border = JBUI.Borders.emptyTop(5)
         }
         mainContentPanel.add(descriptionPanel, BorderLayout.NORTH)
         mainContentPanel.add(resultsContainer, BorderLayout.CENTER)
@@ -870,7 +869,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             val queryIndex = urlParts.indexOf('?')
             
             val filePath = if (queryIndex >= 0) {
-                urlParts.substring(0, queryIndex)
+                urlParts.take(queryIndex)
             } else {
                 urlParts
             }
