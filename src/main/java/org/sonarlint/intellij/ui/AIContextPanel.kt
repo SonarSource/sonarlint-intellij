@@ -26,7 +26,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
@@ -34,7 +34,6 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -43,6 +42,7 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.nio.file.Paths
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JProgressBar
@@ -52,6 +52,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.ProjectUtils.tryFindFile
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 /**
@@ -351,7 +352,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
             }
             val codeScrollPane = JBScrollPane(codeArea).apply {
                 maximumSize = Dimension(Int.MAX_VALUE, 150)
-                preferredSize = Dimension(0, Math.min(150, codeArea.preferredSize.height + 20))
+                preferredSize = Dimension(0, 150.coerceAtMost(codeArea.preferredSize.height + 20))
             }
             codePanel.add(codeScrollPane, BorderLayout.CENTER)
         }
@@ -401,7 +402,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                             }
                             val codeScrollPane = JBScrollPane(codeArea).apply {
                                 maximumSize = Dimension(Int.MAX_VALUE, 150)
-                                preferredSize = Dimension(0, Math.min(150, codeArea.preferredSize.height + 20))
+                                preferredSize = Dimension(0, 150.coerceAtMost(codeArea.preferredSize.height + 20))
                             }
                             codePanel.add(codeScrollPane, BorderLayout.CENTER)
                         }
@@ -424,8 +425,9 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun loadCodeSnippet(result: FileLocationResult) {
         try {
             GlobalLogOutput.get().log("AI Context: Loading code snippet for ${result.filePath} (lines ${result.startLine}-${result.endLine})", ClientLogOutput.Level.DEBUG)
-            
-            val virtualFile = VirtualFileManager.getInstance().findFileByUrl("file://${project.basePath}/${result.filePath}")
+
+            val path = Paths.get(result.filePath)
+            val virtualFile = tryFindFile(project, path)
             
             if (virtualFile != null && virtualFile.exists()) {
                 val document = FileDocumentManager.getInstance().getDocument(virtualFile)
@@ -454,7 +456,7 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
                         val endOffset = document.getLineEndOffset(endLine)
                         result.codeSnippet = document.getText(com.intellij.openapi.util.TextRange(startOffset, endOffset))
                         if (totalLines > 50) {
-                            result.codeSnippet += "\n\n// ... (showing first 50 lines of ${totalLines} total lines)"
+                            result.codeSnippet += "\n\n// ... (showing first 50 lines of $totalLines total lines)"
                         }
                         GlobalLogOutput.get().log("AI Context: Successfully loaded first $linesToShow lines of entire file", ClientLogOutput.Level.DEBUG)
                     }
@@ -475,9 +477,9 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun openFileAtLocation(result: FileLocationResult) {
         try {
             GlobalLogOutput.get().log("AI Context: Opening file ${result.filePath} at line ${result.startLine}", ClientLogOutput.Level.INFO)
-            
-            // Find the file using VirtualFileManager
-            val virtualFile = VirtualFileManager.getInstance().findFileByUrl("file://${project.basePath}/${result.filePath}")
+
+            val path = Paths.get(result.filePath)
+            val virtualFile = tryFindFile(project, path)
             
             if (virtualFile != null && virtualFile.exists()) {
                 // Open the file and navigate to the start line if available
@@ -599,12 +601,12 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         
         val errorLabel = JBLabel("Error", SwingConstants.CENTER).apply {
             font = font.deriveFont(Font.BOLD, 14f)
-            foreground = Color.RED
+            foreground = JBColor.RED
         }
         
         val errorMessageLabel = JBLabel("<html><div style='text-align: center;'>$errorText</div></html>", SwingConstants.CENTER).apply {
             font = font.deriveFont(Font.PLAIN, 12f)
-            foreground = Color.RED
+            foreground = JBColor.RED
             border = JBUI.Borders.emptyTop(10)
         }
         
@@ -646,48 +648,6 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         descriptionPanel.removeAll()
         descriptionPanel.revalidate()
         descriptionPanel.repaint()
-    }
-
-    /**
-     * Generate a user-friendly display text from a file path
-     */
-    private fun generateDisplayText(filePath: String): String {
-        if (filePath.isBlank()) {
-            return "Unknown file"
-        }
-        
-        // Extract the file name
-        val fileName = filePath.substringAfterLast('/')
-        
-        // Generate a description based on file type and path
-        return when {
-            fileName.endsWith(".java") -> {
-                val className = fileName.removeSuffix(".java")
-                when {
-                    filePath.contains("test/") -> "Test: $className"
-                    filePath.contains("controller/") || className.contains("Controller") -> "Controller: $className"
-                    filePath.contains("service/") || className.contains("Service") -> "Service: $className" 
-                    filePath.contains("repository/") || className.contains("Repository") -> "Repository: $className"
-                    filePath.contains("config/") || className.contains("Config") -> "Config: $className"
-                    filePath.contains("security/") -> "Security: $className"
-                    filePath.contains("util/") -> "Utility: $className"
-                    filePath.contains("model/") || filePath.contains("entity/") -> "Model: $className"
-                    filePath.contains("dto/") -> "DTO: $className"
-                    filePath.contains("exception/") -> "Exception: $className"
-                    else -> className
-                }
-            }
-            fileName.endsWith(".kt") -> fileName.removeSuffix(".kt")
-            fileName.endsWith(".ts") || fileName.endsWith(".tsx") -> fileName.substringBeforeLast('.')
-            fileName.endsWith(".js") || fileName.endsWith(".jsx") -> fileName.substringBeforeLast('.')
-            fileName.endsWith(".py") -> fileName.removeSuffix(".py")
-            fileName.endsWith(".sql") -> "SQL: ${fileName.removeSuffix(".sql")}"
-            fileName.endsWith(".yml") || fileName.endsWith(".yaml") -> "Config: ${fileName.substringBeforeLast('.')}"
-            fileName.endsWith(".xml") -> "XML: ${fileName.removeSuffix(".xml")}"
-            fileName.endsWith(".json") -> "JSON: ${fileName.removeSuffix(".json")}"
-            fileName.equals("Dockerfile", ignoreCase = true) -> "Docker config"
-            else -> fileName
-        }
     }
 
     override fun dispose() {
