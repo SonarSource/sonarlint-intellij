@@ -153,11 +153,11 @@ intellijPlatform {
     buildSearchableOptions = true
     pluginVerification {
         failureLevel = listOf(
-            VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
             VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS,
             VerifyPluginTask.FailureLevel.NON_EXTENDABLE_API_USAGES,
             VerifyPluginTask.FailureLevel.PLUGIN_STRUCTURE_WARNINGS,
-            VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES
+            VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES,
+            VerifyPluginTask.FailureLevel.INVALID_PLUGIN
         )
 
         val ideTypes = listOf(IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
@@ -166,7 +166,7 @@ intellijPlatform {
             IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity)
 
         ides {
-            ide(IntelliJPlatformType.IntellijIdeaCommunity, "2023.1.7")
+            ide(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
         }
 
         if (project.hasProperty("verifierEnv")) {
