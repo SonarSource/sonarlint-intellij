@@ -42,12 +42,16 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.net.URL
 import java.nio.file.Paths
 import javax.swing.BoxLayout
 import javax.swing.JButton
+import javax.swing.JEditorPane
 import javax.swing.JProgressBar
 import javax.swing.JTextArea
 import javax.swing.SwingConstants
+import javax.swing.event.HyperlinkEvent
+import javax.swing.event.HyperlinkListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -629,18 +633,67 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
     private fun showDescription(text: String) {
         descriptionPanel.removeAll()
         
-        val descriptionLabel = JBLabel("<html><div style='width: 400px; font-family: sans-serif;'>$text</div></html>").apply {
-            font = font.deriveFont(Font.PLAIN, 13f)
-            foreground = UIUtil.getLabelForeground()
-            border = JBUI.Borders.empty(5)
+        // Style the HTML content with proper formatting
+        val styledText = """
+            <html>
+            <head>
+                <style>
+                    body { 
+                        font-family: ${UIUtil.getLabelFont().family}; 
+                        font-size: 13px; 
+                        color: ${colorToHex(UIUtil.getLabelForeground())}; 
+                        margin: 5px; 
+                        line-height: 1.4;
+                    }
+                    a { 
+                        color: ${colorToHex(JBColor.BLUE)}; 
+                        text-decoration: underline;
+                    }
+                    a:hover { 
+                        color: ${colorToHex(JBColor.BLUE.darker())}; 
+                    }
+                </style>
+            </head>
+            <body>$text</body>
+            </html>
+        """.trimIndent()
+        
+        // Create HTML editor pane for rich text with clickable links
+        val editorPane = JEditorPane().apply {
+            contentType = "text/html"
+            isEditable = false
+            isOpaque = false
+            background = UIUtil.getPanelBackground()
+            
+            setText(styledText)
+            
+            // Add hyperlink listener for sonarlint-file:// links
+            addHyperlinkListener(object : HyperlinkListener {
+                override fun hyperlinkUpdate(e: HyperlinkEvent) {
+                    if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                        handleSonarLintFileLink(e.url)
+                    }
+                }
+            })
+            
+            // Set preferred size for proper layout
+            preferredSize = Dimension(400, preferredSize.height)
         }
         
-        descriptionPanel.add(descriptionLabel, BorderLayout.CENTER)
+        // Wrap in scroll pane in case content is long
+        val scrollPane = JBScrollPane(editorPane).apply {
+            horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+            verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+            border = JBUI.Borders.empty()
+            maximumSize = Dimension(Int.MAX_VALUE, 200)  // Limit height
+        }
+        
+        descriptionPanel.add(scrollPane, BorderLayout.CENTER)
         descriptionPanel.isVisible = true
         descriptionPanel.revalidate()
         descriptionPanel.repaint()
         
-        GlobalLogOutput.get().log("AI Context: Showing description: ${text.take(100)}...", ClientLogOutput.Level.DEBUG)
+        GlobalLogOutput.get().log("AI Context: Showing description with HTML links: ${text.take(100)}...", ClientLogOutput.Level.DEBUG)
     }
 
     private fun hideDescription() {
@@ -648,6 +701,97 @@ class AIContextPanel(private val project: Project) : SimpleToolWindowPanel(false
         descriptionPanel.removeAll()
         descriptionPanel.revalidate()
         descriptionPanel.repaint()
+    }
+
+    /**
+     * Handle clicks on sonarlint-file:// links in the description
+     */
+    private fun handleSonarLintFileLink(url: URL?) {
+        if (url == null) return
+        
+        try {
+            val urlString = url.toString()
+            GlobalLogOutput.get().log("AI Context: Handling sonarlint-file link: $urlString", ClientLogOutput.Level.DEBUG)
+            
+            if (!urlString.startsWith("sonarlint-file://")) {
+                GlobalLogOutput.get().log("AI Context: Not a sonarlint-file link, ignoring", ClientLogOutput.Level.DEBUG)
+                return
+            }
+            
+            // Parse the sonarlint-file:// URL
+            // Format: sonarlint-file:///path/to/file?startline=4&endline=17
+            val urlParts = urlString.removePrefix("sonarlint-file://")
+            val queryIndex = urlParts.indexOf('?')
+            
+            val filePath = if (queryIndex >= 0) {
+                urlParts.substring(0, queryIndex)
+            } else {
+                urlParts
+            }
+            
+            var startLine: Int? = null
+            var endLine: Int? = null
+            
+            // Parse query parameters if present
+            if (queryIndex >= 0) {
+                val queryString = urlParts.substring(queryIndex + 1)
+                val params = queryString.split('&')
+                
+                for (param in params) {
+                    val keyValue = param.split('=')
+                    if (keyValue.size == 2) {
+                        when (keyValue[0]) {
+                            "startline" -> startLine = keyValue[1].toIntOrNull()
+                            "endline" -> endLine = keyValue[1].toIntOrNull()
+                        }
+                    }
+                }
+            }
+            
+            GlobalLogOutput.get().log("AI Context: Parsed file link - path: $filePath, startLine: $startLine, endLine: $endLine", ClientLogOutput.Level.DEBUG)
+            
+            // Open the file at the specified location
+            openFileFromLink(filePath, startLine)
+            
+        } catch (e: Exception) {
+            GlobalLogOutput.get().logError("AI Context: Error handling sonarlint-file link", e)
+        }
+    }
+    
+    /**
+     * Open a file from a parsed sonarlint-file:// link
+     */
+    private fun openFileFromLink(filePath: String, startLine: Int?) {
+        try {
+            GlobalLogOutput.get().log("AI Context: Opening file from link: $filePath at line $startLine", ClientLogOutput.Level.INFO)
+            
+            val path = Paths.get(filePath)
+            val virtualFile = tryFindFile(project, path)
+            
+            if (virtualFile != null && virtualFile.exists()) {
+                // Open the file and navigate to the start line if available
+                val descriptor = if (startLine != null) {
+                    // Convert to 0-based indexing
+                    OpenFileDescriptor(project, virtualFile, startLine - 1, 0)
+                } else {
+                    // Open at the beginning of the file
+                    OpenFileDescriptor(project, virtualFile, 0, 0)
+                }
+                FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
+                GlobalLogOutput.get().log("AI Context: Successfully opened file from link: $filePath", ClientLogOutput.Level.DEBUG)
+            } else {
+                GlobalLogOutput.get().logError("AI Context: File not found from link: $filePath", null)
+            }
+        } catch (e: Exception) {
+            GlobalLogOutput.get().logError("AI Context: Error opening file from link: $filePath", e)
+        }
+    }
+    
+    /**
+     * Convert a Color to hex string for CSS
+     */
+    private fun colorToHex(color: java.awt.Color): String {
+        return String.format("#%02x%02x%02x", color.red, color.green, color.blue)
     }
 
     override fun dispose() {
