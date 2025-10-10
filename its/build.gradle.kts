@@ -43,6 +43,12 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.four)
     testRuntimeOnly(libs.junit.launcher)
+
+    constraints {
+        testImplementation("com.google.protobuf:protobuf-java:4.28.2") {
+            because("Fix protobuf version conflict between sonar-ws and sonarlint-core")
+        }
+    }
 }
 
 tasks {
