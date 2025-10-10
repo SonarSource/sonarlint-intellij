@@ -33,10 +33,11 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Bundled)
     }
-    testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:5.6.2.2625") {
+    testImplementation(libs.its.orchestrator) {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
     }
     testImplementation(libs.its.sonar.scala)
+    testImplementation(libs.its.sonar.ws)
     testImplementation(libs.bundles.its.remote)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

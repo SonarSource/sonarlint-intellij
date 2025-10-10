@@ -37,6 +37,8 @@ awaitility = "4.3.0"
 
 its-remote = "0.11.23"
 its-sonar-scala = "1.8.3.2219"
+its-sonar-ws = "9.9.9.104369"
+orchestrator = "5.6.2.2625"
 
 [libraries]
 sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarlint-java-client-utils", version.ref = "sonarlint-core" }
@@ -72,6 +74,8 @@ assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj"}
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 
 its-sonar-scala = { module = "org.sonarsource.slang:sonar-scala-plugin", version.ref = "its-sonar-scala" }
+its-sonar-ws = { module = "org.sonarsource.sonarqube:sonar-ws", version.ref = "its-sonar-ws" }
+its-orchestrator = { module = "org.sonarsource.orchestrator:sonar-orchestrator-junit5", version.ref = "orchestrator" }
 its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.ref = "its-remote" }
 its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "its-remote" }
 
