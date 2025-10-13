@@ -33,6 +33,7 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Bundled)
     }
+
     testImplementation(libs.its.orchestrator) {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
     }
@@ -42,12 +43,14 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.four)
+    // Force protobuf version to override any bundled versions
+    testImplementation(libs.protobuf)
     testRuntimeOnly(libs.junit.launcher)
+}
 
-    constraints {
-        testImplementation("com.google.protobuf:protobuf-java:4.28.2") {
-            because("Fix protobuf version conflict between sonar-ws and sonarlint-core")
-        }
+configurations.all {
+    resolutionStrategy {
+        force("com.google.protobuf:protobuf-java:4.28.2")
     }
 }
 
