@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>11.3 - 9 new Python rules for PyTorch. Fix various FP's in secret detection and for Java.</li>
+        <li>11.3 - Performance improvement when analysis multiple files at once. 9 new Python rules for PyTorch. Fixed an issue related to the credentials' migration. Fix various FP's in secret detection and for Java.</li>
         <li>11.2 – Dropped support for Node.js 18 (minimum required version is now 20.12). Improved analysis performance with Git optimizations and reduced file-system reads. Enhanced secret detection for PKCS12 files. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.1 - Support of dependency risks for SonarQube Cloud. Introduction of a Flight Recorder mode to help detect and report issues on demand. Enable parallel execution of rules in Python. Support for Go 1.25. 4 new rules for PyTorch. 5 new MISRA rules for C++. Improved secrets' detection. Fewer FPs and FNs for Python, Go, and secrets.</li>
         <li>11.0.1 - Various UI/UX refinements to the unified view with improved rendering performance. Fixed sorting issues in findings and incorrect highlighting across files.</li>
