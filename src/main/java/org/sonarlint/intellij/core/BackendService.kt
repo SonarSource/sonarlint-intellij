@@ -323,7 +323,7 @@ class BackendService : Disposable {
         return sloopLauncher.start(
             sloopPath,
             jreHomePath,
-            "-Xms384m -XX:+UseG1GC -XX:MaxHeapFreeRatio=20 -XX:MinHeapFreeRatio=10 -XX:MaxGCPauseMillis=50"
+            "-Xms384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
         )
     }
 
