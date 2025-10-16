@@ -45,9 +45,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
@@ -59,6 +57,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.computeOnPooledThread;
 
 public class AuthStep extends AbstractWizardStepEx {
@@ -102,7 +101,7 @@ public class AuthStep extends AbstractWizardStepEx {
 
     openTokenCreationPageButton.addActionListener(evt -> openTokenCreationPage());
 
-    DocumentListener listener = new DocumentAdapter() {
+    var listener = new DocumentAdapter() {
       @Override
       protected void textChanged(DocumentEvent e) {
         fireStateChanged();
@@ -150,8 +149,7 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   private void save() {
-    SonarLintUtils.getService(CredentialsService.class)
-                .saveCredentials(Objects.requireNonNull(model.getName()), getCredentials());
+    getService(CredentialsService.class).saveCredentials(Objects.requireNonNull(model.getName()), getCredentials());
   }
 
   private Either<TokenDto, UsernamePasswordDto> getCredentials() {
@@ -271,7 +269,7 @@ public class AuthStep extends AbstractWizardStepEx {
     Disposer.register(this, progressWindow);
     try {
       ProgressResult<HelpGenerateUserTokenResponse> progressResult = new ProgressRunner<>(pi -> computeOnPooledThread("Generate User Token Task", () -> {
-        var future = SonarLintUtils.getService(BackendService.class).helpGenerateUserToken(serverUrl);
+        var future = getService(BackendService.class).helpGenerateUserToken(serverUrl);
         return ProgressUtils.waitForFuture(pi, future);
       }))
         .sync()

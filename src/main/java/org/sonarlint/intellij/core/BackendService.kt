@@ -507,8 +507,7 @@ class BackendService : Disposable {
     fun getAllProjects(server: ServerConnection): CompletableFuture<GetAllProjectsResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> =
-            getService(CredentialsService::class.java).getCredentials(server)
+        val credentials = getService(CredentialsService::class.java).getCredentials(server)
         val params: GetAllProjectsParams = if (server.isSonarCloud) {
             GetAllProjectsParams(TransientSonarCloudConnectionDto(server.organizationKey, credentials,
                 SonarCloudRegion.valueOf(serverRegion)))
@@ -862,8 +861,7 @@ class BackendService : Disposable {
     fun listUserOrganizations(server: ServerConnection): CompletableFuture<ListUserOrganizationsResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> =
-            getService(CredentialsService::class.java).getCredentials(server)
+        val credentials = getService(CredentialsService::class.java).getCredentials(server)
         val params = ListUserOrganizationsParams(credentials,
             SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.listUserOrganizations(params) }
@@ -873,8 +871,7 @@ class BackendService : Disposable {
         CompletableFuture<GetOrganizationResponse> {
         val serverRegion = server.region ?: SonarCloudRegion.EU.name
 
-        val credentials: Either<TokenDto, UsernamePasswordDto> =
-            getService(CredentialsService::class.java).getCredentials(server)
+        val credentials = getService(CredentialsService::class.java).getCredentials(server)
         val params = GetOrganizationParams(credentials, organizationKey,
             SonarCloudRegion.valueOf(serverRegion))
         return requestFromBackend { it.connectionService.getOrganization(params) }

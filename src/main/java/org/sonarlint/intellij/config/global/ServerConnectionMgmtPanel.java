@@ -263,12 +263,20 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     int selectedIndex = connectionList.getSelectedIndex();
 
     if (selectedConnection != null) {
-      var serverEditor = ServerConnectionWizard.forConnectionEdition(selectedConnection);
-      if (serverEditor.showAndGet()) {
-        var editedConnection = serverEditor.getConnection();
-        ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(editedConnection, selectedIndex);
-        connections.set(connections.indexOf(selectedConnection), editedConnection);
-        connectionChangeListener.changed(connections);
+      try {
+        var serverEditor = ServerConnectionWizard.forConnectionEdition(selectedConnection);
+        if (serverEditor.showAndGet()) {
+          var editedConnection = serverEditor.getConnection();
+          ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(editedConnection, selectedIndex);
+          connections.set(connections.indexOf(selectedConnection), editedConnection);
+          connectionChangeListener.changed(connections);
+        }
+      } catch (Exception e) {
+        Messages.showErrorDialog(
+          serversPanel,
+          "Failed to edit connection: " + e.getMessage(),
+          "Error Editing Connection"
+        );
       }
     }
   }

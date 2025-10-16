@@ -98,7 +98,8 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
                 }
                 getService(CredentialsService::class.java).saveCredentials(
                     connectionNameField.text,
-                    Either.forLeft(TokenDto(tokenValue)))
+                    Either.forLeft(TokenDto(tokenValue))
+                )
                 serverConnection?.apply {
                     Settings.getGlobalSettings().addServerConnection(this)
                     val serverChangeListener =
