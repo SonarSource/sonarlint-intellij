@@ -36,12 +36,17 @@ class ConfigureNotificationsAction(private val connectionName: String, private v
         runOnUiThread(project) {
             val connectionToEdit = Settings.getGlobalSettings().serverConnections.find { it.name == connectionName }
             if (connectionToEdit != null) {
-                val wizard = ServerConnectionWizard.forNotificationsEdition(connectionToEdit)
-                if (wizard.showAndGet()) {
-                    val editedConnection = wizard.connection
-                    val serverConnections = Settings.getGlobalSettings().serverConnections.toMutableList()
-                    serverConnections[serverConnections.indexOf(connectionToEdit)] = editedConnection
-                    Settings.getGlobalSettings().serverConnections = serverConnections
+                try {
+                    val wizard = ServerConnectionWizard.forNotificationsEdition(connectionToEdit)
+                    if (wizard.showAndGet()) {
+                        val editedConnection = wizard.connection
+                        val serverConnections = Settings.getGlobalSettings().serverConnections.toMutableList()
+                        serverConnections[serverConnections.indexOf(connectionToEdit)] = editedConnection
+                        Settings.getGlobalSettings().serverConnections = serverConnections
+                    }
+                } catch (e: Exception) {
+                    SonarLintConsole.get(project).error("Failed to edit connection notifications: ${e.message}", e)
+                    notification.expire()
                 }
             } else {
                 SonarLintConsole.get(project).error("Unable to find connection with name: $connectionName")

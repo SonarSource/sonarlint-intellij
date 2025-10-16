@@ -22,4 +22,5 @@ package org.sonarlint.intellij.config.global.credentials
 class CredentialsException: RuntimeException {
 
     constructor(message: String?) : super(message)
+
 }

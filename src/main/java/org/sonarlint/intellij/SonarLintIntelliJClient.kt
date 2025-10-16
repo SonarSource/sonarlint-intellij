@@ -554,7 +554,13 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             throw ResponseErrorException(ResponseError(ResponseErrorCode.InvalidParams, "Unknown connection: $connectionId", connectionId))
         }
         val connection = connectionOpt.get()
-        return getService(CredentialsService::class.java).getCredentials(connection)
+        return runCatching { 
+            getService(CredentialsService::class.java).getCredentials(connection) 
+        }.getOrElse { e ->
+            val errorMessage = "Failed to retrieve credentials for connection '$connectionId': ${e.message}"
+            GlobalLogOutput.get().logError(errorMessage, e)
+            throw ResponseErrorException(ResponseError(ResponseErrorCode.InternalError, errorMessage, connectionId))
+        }
     }
 
     override fun getProxyPasswordAuthentication(

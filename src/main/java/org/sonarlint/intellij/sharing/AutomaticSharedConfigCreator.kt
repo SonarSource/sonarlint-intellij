@@ -167,7 +167,8 @@ class AutomaticSharedConfigCreator(
             serverConnection = serverConnectionBuilder.build()
             getService(CredentialsService::class.java).saveCredentials(
                 connectionNameField.text,
-                Either.forLeft(TokenDto(String(tokenField.password))))
+                Either.forLeft(TokenDto(String(tokenField.password)))
+            )
 
             if (!validateConnection()) {
                 return false

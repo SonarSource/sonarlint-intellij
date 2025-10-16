@@ -38,16 +38,23 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 @Service(Service.Level.APP)
 class CredentialsService {
 
+    @Throws(CredentialsException::class)
     fun getCredentials(connection: ServerConnection): Either<TokenDto, UsernamePasswordDto> {
         val result = computeOnPooledThread("Getting credentials from store...") {
             readCredentials(connection)
         }
         if (result == null) {
-            throw CredentialsException("Failed to get saved credentials from store")
+            throw CredentialsException(
+                """
+                    Failed to get saved credentials for connection '${connection.name}'.
+                    This may be caused by an issue with your system's credential storage.
+                    Check your IDE's password storage settings in Settings > Appearance & Behavior > System Settings > Passwords."""
+            )
         }
         return result
     }
 
+    @Throws(CredentialsException::class)
     private fun readCredentials(connection: ServerConnection): Either<TokenDto, UsernamePasswordDto> {
         val token = PasswordSafe.instance.getToken(connection.name)
         if (token != null) {
@@ -60,16 +67,28 @@ class CredentialsService {
             return Either.forRight(UsernamePasswordDto(credentials.userName!!, password))
         }
 
-        throw CredentialsException("Could not load token or login/password credentials for connection: ${connection.name}")
+        throw CredentialsException(
+            """
+                    Could not load token or login/password credentials for connection '${connection.name}'.
+                    As a workaround, try removing and re-adding the connection.
+                    This may also be caused by an issue with your system's credential storage.
+                    Check your IDE's password storage settings in Settings > Appearance & Behavior > System Settings > Passwords."""
+        )
     }
 
+    @Throws(CredentialsException::class)
     fun saveCredentials(connectionName: String, credentials: Either<TokenDto, UsernamePasswordDto>) {
         val success = computeOnPooledThread("Saving credentials...") {
             writeCredentials(credentials, connectionName)
         }
 
         if (BooleanUtils.isNotTrue(success)) {
-            throw CredentialsException("Could not save token or login/password credentials for connection: $connectionName")
+            throw CredentialsException(
+                """
+                    Could not save token credentials for connection '$connectionName'.
+                    This may be caused by an issue with your system's credential storage.
+                    Check your IDE's password storage settings in Settings > Appearance & Behavior > System Settings > Passwords."""
+            )
         }
     }
 
