@@ -26,7 +26,9 @@ dependencies {
         if (project.hasProperty("ijVersion")) {
             val type = ijVersion.split('-')[0]
             val version = ijVersion.split('-')[1]
-            create(type, version)
+            create(type, version) {
+                useCache = true
+            }
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
         }
