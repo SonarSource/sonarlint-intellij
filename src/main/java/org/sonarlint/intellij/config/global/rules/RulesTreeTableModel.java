@@ -28,8 +28,8 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.SonarLintIcons;
-import org.sonarlint.intellij.util.CompoundIcon;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
+import org.sonarlint.intellij.ui.icons.CompoundIcon;
 
 import static org.sonarlint.intellij.config.global.rules.RulesTreeTable.ICONS_COLUMN;
 import static org.sonarlint.intellij.config.global.rules.RulesTreeTable.IS_ENABLED_COLUMN;

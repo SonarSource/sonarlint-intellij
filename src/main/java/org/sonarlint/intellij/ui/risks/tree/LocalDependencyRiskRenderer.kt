@@ -21,40 +21,45 @@ package org.sonarlint.intellij.ui.risks.tree
 
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.SimpleTextAttributes
-import com.intellij.ui.scale.JBUIScale
 import javax.swing.Icon
-import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
+import org.sonarlint.intellij.ui.icons.DisplayedStatus
+import org.sonarlint.intellij.ui.icons.FindingIconBuilder
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.ui.tree.NodeRenderer
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
-import org.sonarlint.intellij.util.CompoundIcon
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 
 object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
 
     override fun render(renderer: TreeCellRenderer, node: LocalDependencyRisk) {
-        val gap = if (JBUIScale.isUsrHiDPI) 8 else 4
-
         val quality = node.quality
         val severity = node.severity
         val impactText = StringUtil.capitalize(severity.toString().lowercase())
         val qualityText = quality.toString().lowercase()
         val toolTipText = "$impactText $qualityText"
-        setIcon(
-            renderer,
-            CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.riskSeverity(severity))
-        )
+        val displayedStatus = DisplayedStatus.fromFinding(node)
+        val undecoratedIcon = FindingIconBuilder.forBaseIcon(SonarLintIcons.riskSeverity(severity))
+            .withDisplayedStatus(displayedStatus)
+            .undecorated()
+            .build()
+        setIcon(renderer, undecoratedIcon)
 
         renderer.setIconToolTip(toolTipText)
         renderer.toolTipText = "Double-click to open in the browser"
 
         val text = "${node.packageName}:${node.packageVersion}"
-        if (node.isResolved()) {
-            renderer.append(text, SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, null))
-        } else {
+        if (displayedStatus == DisplayedStatus.OPEN) {
             renderer.append(text)
+        } else {
+            renderer.append(text, SimpleTextAttributes.GRAY_ATTRIBUTES)
         }
 
+        val details = getDetails(node)
+        renderer.append(details, SimpleTextAttributes.GRAY_ATTRIBUTES)
+    }
+
+    private fun getDetails(node: LocalDependencyRisk): String {
         var details = " -"
         if (node.vulnerabilityId != null && node.cvssScore != null) {
             details += " [${node.cvssScore}] ${node.vulnerabilityId}"
@@ -64,11 +69,10 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
         } else {
             "$details (Vulnerability)"
         }
-        renderer.append(details, SimpleTextAttributes.GRAY_ATTRIBUTES)
+        return details
     }
 
     private fun setIcon(renderer: TreeCellRenderer, icon: Icon) {
         renderer.icon = icon
     }
-
 }

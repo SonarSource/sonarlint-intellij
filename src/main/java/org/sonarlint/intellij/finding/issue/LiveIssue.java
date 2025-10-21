@@ -29,6 +29,7 @@ import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.Issue;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType;
 
@@ -37,6 +38,8 @@ public class LiveIssue extends LiveFinding implements Issue {
   @Nullable
   private final RuleType type;
   private final boolean isAiCodeFixable;
+  @Nullable
+  private final ResolutionStatus status;
 
   public LiveIssue(Module module, RaisedIssueDto issue, VirtualFile virtualFile, List<QuickFix> quickFixes) {
     this(module, issue, virtualFile, null, null, quickFixes);
@@ -50,6 +53,7 @@ public class LiveIssue extends LiveFinding implements Issue {
       this.type = null;
     }
     this.isAiCodeFixable = issue.isAiCodeFixable();
+    this.status = issue.getResolutionStatus();
   }
 
   @CheckForNull
@@ -73,4 +77,8 @@ public class LiveIssue extends LiveFinding implements Issue {
     return this.isAiCodeFixable && hasNoQuickFix;
   }
 
+  @Nullable
+  public ResolutionStatus getStatus() {
+    return status;
+  }
 }

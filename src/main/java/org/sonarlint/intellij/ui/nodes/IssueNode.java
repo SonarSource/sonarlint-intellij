@@ -20,20 +20,19 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.ui.OffsetIcon;
 import com.intellij.ui.SimpleTextAttributes;
-import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.UIUtil;
 import java.util.Locale;
 import java.util.Optional;
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.swing.Icon;
-import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.ui.icons.DisplayedStatus;
+import org.sonarlint.intellij.ui.icons.FindingIconBuilder;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
-import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarlint.intellij.util.DateUtils;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.client.utils.SoftwareQuality;
@@ -45,8 +44,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 public class IssueNode extends FindingNode {
   private static final SimpleTextAttributes GRAYED_SMALL_ATTRIBUTES = new SimpleTextAttributes(STYLE_SMALLER,
     UIUtil.getInactiveTextColor());
-  private static final int GAP = JBUIScale.isUsrHiDPI() ? 8 : 4;
-  private static final int SERVER_ICON_EMPTY_SPACE = SonarLintIcons.ICON_SONARQUBE_SERVER_16.getIconWidth() + GAP;
 
   private final LiveIssue issue;
 
@@ -70,14 +67,13 @@ public class IssueNode extends FindingNode {
   }
 
   private void doRender(TreeCellRenderer renderer) {
-    var serverConnection = retrieveServerConnection();
     var highestImpact = issue.getHighestImpact();
     var highestQuality = issue.getHighestQuality();
 
     if (issue.isMqrMode() && issue.getCleanCodeAttribute() != null && highestQuality != null && highestImpact != null) {
-      renderWithMqrMode(renderer, serverConnection, highestImpact, highestQuality);
+      renderWithMqrMode(renderer, highestImpact, highestQuality);
     } else {
-      renderWithStandardMode(renderer, serverConnection);
+      renderWithStandardMode(renderer);
     }
 
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
@@ -87,77 +83,64 @@ public class IssueNode extends FindingNode {
     renderer.append("  " + issue.getRuleKey(), GRAYED_SMALL_ATTRIBUTES);
   }
 
-  private void renderWithMqrMode(TreeCellRenderer renderer, Optional<ServerConnection> serverConnection,
+  private void renderWithMqrMode(TreeCellRenderer renderer,
     ImpactSeverity highestImpact, SoftwareQuality highestQuality) {
     var impactText = StringUtil.capitalize(highestImpact.toString().toLowerCase(Locale.ENGLISH));
     var qualityText = StringUtil.capitalize(highestQuality.toString().toLowerCase(Locale.ENGLISH));
-    var impactIcon = SonarLintIcons.impact(highestImpact);
-
-    if (issue.getServerKey() != null && serverConnection.isPresent()) {
-      var connection = serverConnection.get();
-      renderer.setIconToolTip(impactText + " impact on " + qualityText + " already detected by " + connection.getProductName() + " " +
-        "analysis");
-      if (issue.isAiCodeFixable()) {
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, connection.getProductIcon(), impactIcon, SonarLintIcons.SPARKLE_GUTTER_ICON));
-      } else {
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, connection.getProductIcon(), impactIcon));
-      }
-    } else {
-      renderer.setIconToolTip(impactText + " impact on " + qualityText);
-      if (issue.isAiCodeFixable()) {
-        setIcon(renderer, new OffsetIcon(SERVER_ICON_EMPTY_SPACE, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, impactIcon, SonarLintIcons.SPARKLE_GUTTER_ICON)));
-      } else {
-        setIcon(renderer, new OffsetIcon(SERVER_ICON_EMPTY_SPACE, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, impactIcon)));
-      }
-    }
+    var icon = SonarLintIcons.impact(highestImpact);
+    var tooltip = impactText + " impact on " + qualityText;
+    render(renderer, tooltip, icon);
   }
 
-  private void renderWithStandardMode(TreeCellRenderer renderer, Optional<ServerConnection> serverConnection) {
+  private void renderWithStandardMode(TreeCellRenderer renderer) {
     var severity = issue.getUserSeverity();
     var type = issue.getType();
-    Icon typeIcon = null;
+    Icon icon = null;
     var typeStr = "";
     var severityText = "";
     if (severity != null && type != null) {
-      typeIcon = SonarLintIcons.getIconForTypeAndSeverity(type, severity);
+      icon = SonarLintIcons.getIconForTypeAndSeverity(type, severity);
       typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
       severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
     }
+    var tooltip = severityText + " " + typeStr;
+    render(renderer, tooltip, icon);
+  }
 
+  private void render(TreeCellRenderer renderer, String baseTooltip, @Nullable Icon icon) {
+    var serverConnection = retrieveServerConnection();
+    var tooltip = baseTooltip;
+    Icon productIcon = null;
     if (issue.getServerKey() != null && serverConnection.isPresent()) {
       var connection = serverConnection.get();
-      renderer.setIconToolTip(severityText + " " + typeStr + " already detected by " + connection.getProductName() + " analysis");
-      if (issue.isAiCodeFixable()) {
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, connection.getProductIcon(), typeIcon, SonarLintIcons.SPARKLE_GUTTER_ICON));
-      } else {
-        setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, connection.getProductIcon(), typeIcon));
-      }
-    } else {
-      renderer.setIconToolTip(severityText + " " + typeStr);
-      if (issue.isAiCodeFixable()) {
-        setIcon(renderer, new OffsetIcon(SERVER_ICON_EMPTY_SPACE, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, typeIcon, SonarLintIcons.SPARKLE_GUTTER_ICON)));
-      } else {
-        setIcon(renderer, new OffsetIcon(SERVER_ICON_EMPTY_SPACE, new CompoundIcon(CompoundIcon.Axis.X_AXIS, GAP, typeIcon)));
-      }
+      tooltip += " already detected by " + connection.getProductName() + " analysis";
+      productIcon = connection.getProductIcon();
     }
+
+    var compoundIcon = FindingIconBuilder.forBaseIcon(icon)
+      .withDecoratingIcon(productIcon)
+      .withAiCodeFix(issue.isAiCodeFixable())
+      .withDisplayedStatus(DisplayedStatus.fromFinding(issue))
+      .build();
+
+    renderer.setIconToolTip(tooltip);
+    renderer.setIcon(compoundIcon);
   }
 
   private void renderMessage(TreeCellRenderer renderer) {
-    if (issue.isValid()) {
-      renderer.setToolTipText("Double click to open location");
-      if (issue.isResolved()) {
-        renderer.append(issue.getMessage(), new SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, null));
-      } else {
-        renderer.append(issue.getMessage());
-      }
+    String tooltip;
+    SimpleTextAttributes attributes = SimpleTextAttributes.REGULAR_ATTRIBUTES;
+    if (!issue.isValid()) {
+      tooltip = "Issue is no longer valid";
+      attributes = SimpleTextAttributes.GRAY_ATTRIBUTES;
     } else {
-      renderer.setToolTipText("Issue is no longer valid");
+      tooltip = "Double click to open location";
       if (issue.isResolved()) {
-        renderer.append(issue.getMessage(), new SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, UIUtil.getInactiveTextColor()));
-      } else {
-        renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
+        attributes = SimpleTextAttributes.GRAY_ATTRIBUTES;
       }
     }
+    renderer.setToolTipText(tooltip);
+    renderer.append(issue.getMessage(), attributes);
   }
 
   private void renderIntroductionDate(TreeCellRenderer renderer) {
@@ -169,24 +152,11 @@ public class IssueNode extends FindingNode {
     }
   }
 
-  private void setIcon(TreeCellRenderer renderer, Icon icon) {
-    if (issue.isValid()) {
-      renderer.setIcon(icon);
-    } else {
-      renderer.setIcon(SonarLintIcons.toDisabled(icon));
-    }
-  }
-
-  @Override
-  public int getFindingCount() {
-    return 1;
-  }
-
   public LiveIssue issue() {
     return issue;
   }
 
-  private String issueCoordinates(@Nonnull LiveIssue issue) {
+  private String issueCoordinates(LiveIssue issue) {
     return formatRangeMarker(issue.file(), issue.getRange());
   }
 

@@ -21,9 +21,9 @@ package org.sonarlint.intellij.ui.currentfile.tree
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByImpact
-import org.sonarlint.intellij.SonarLintIcons.borderColorsByImpact
-import org.sonarlint.intellij.SonarLintIcons.riskSeverity
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.backgroundColorsByImpact
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.borderColorsByImpact
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.riskSeverity
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
 import org.sonarlint.intellij.ui.filter.SortMode

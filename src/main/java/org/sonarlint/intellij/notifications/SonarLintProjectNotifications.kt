@@ -30,7 +30,7 @@ import com.intellij.openapi.project.Project
 import java.util.Arrays
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.stream.Stream
-import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.actions.ShareConfigurationAction

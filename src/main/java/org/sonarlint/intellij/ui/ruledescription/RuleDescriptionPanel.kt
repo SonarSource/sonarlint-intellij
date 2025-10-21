@@ -35,7 +35,7 @@ import java.awt.BorderLayout
 import java.awt.Font
 import java.util.UUID
 import javax.swing.DefaultComboBoxModel
-import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.ui.codefix.CodeFixTabPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
 import org.sonarlint.intellij.util.runOnPooledThread

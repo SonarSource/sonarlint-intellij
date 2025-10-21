@@ -48,7 +48,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.border.Border
 import javax.swing.plaf.FontUIResource
-import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 
 class SonarLintTrafficLightWidget(
     private val action: AnAction,

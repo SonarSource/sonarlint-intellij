@@ -1,0 +1,24 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2025 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M7.15 8.7L6.15 7.71667C6.02778 7.59444 5.88889 7.53333 5.73333 7.53333C5.57778 7.53333 5.43889 7.59444 5.31667 7.71667C5.19444 7.83889 5.13333 7.98056 5.13333 8.14167C5.13333 8.30278 5.19444 8.44444 5.31667 8.56667L6.73333 9.98333C6.85556 10.1056 6.99444 10.1667 7.15 10.1667C7.30556 10.1667 7.44444 10.1056 7.56667 9.98333L10.6833 6.86667C10.8056 6.74444 10.8667 6.60278 10.8667 6.44167C10.8667 6.28056 10.8056 6.13889 10.6833 6.01667C10.5611 5.89444 10.4222 5.83333 10.2667 5.83333C10.1111 5.83333 9.97222 5.89444 9.85 6.01667L7.15 8.7ZM8 14.4C7.12222 14.4 6.29444 14.2333 5.51667 13.9C4.73889 13.5667 4.05833 13.1083 3.475 12.525C2.89167 11.9417 2.43333 11.2611 2.1 10.4833C1.76667 9.70555 1.6 8.87778 1.6 8C1.6 7.11111 1.76667 6.28056 2.1 5.50833C2.43333 4.73611 2.89167 4.05833 3.475 3.475C4.05833 2.89167 4.73889 2.43333 5.51667 2.1C6.29444 1.76667 7.12222 1.6 8 1.6C8.88889 1.6 9.71944 1.76667 10.4917 2.1C11.2639 2.43333 11.9417 2.89167 12.525 3.475C13.1083 4.05833 13.5667 4.73611 13.9 5.50833C14.2333 6.28056 14.4 7.11111 14.4 8C14.4 8.87778 14.2333 9.70555 13.9 10.4833C13.5667 11.2611 13.1083 11.9417 12.525 12.525C11.9417 13.1083 11.2639 13.5667 10.4917 13.9C9.71944 14.2333 8.88889 14.4 8 14.4Z" fill="#689A30"/>
+</svg>

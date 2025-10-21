@@ -1,0 +1,30 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2025 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<mask id="mask0_153_9241" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="16" height="16">
+<rect width="16" height="16" fill="#D9D9D9"/>
+</mask>
+<g mask="url(#mask0_153_9241)">
+<path d="M10.7313 5.64465C11.0191 5.64465 11.247 5.72606 11.4149 5.88782C11.5888 6.04373 11.6765 6.2539 11.6766 6.5177C11.6766 6.7817 11.5889 6.99535 11.4149 7.15735C11.247 7.31313 11.0191 7.39075 10.7313 7.39075H9.8407V5.64465H10.7313Z" fill="#6D6F77"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M7.99988 1.00012C11.8659 1.00012 14.9999 4.13413 14.9999 8.00012C14.9999 11.8661 11.8659 15.0001 7.99988 15.0001C4.13388 15.0001 0.999878 11.8661 0.999878 8.00012C0.999878 4.13413 4.13388 1.00012 7.99988 1.00012ZM3.62976 4.42981V11.0001H4.98035V8.40833H7.62585V7.14856H4.96179V5.69055H7.86023V4.42981H3.62976ZM8.49011 4.42981V11.0001H9.8407V8.60657H10.7313C11.1933 8.60657 11.5954 8.51885 11.9374 8.34485C12.2792 8.1709 12.5462 7.92818 12.7382 7.61633C12.9302 7.29833 13.0262 6.9317 13.0262 6.5177C13.0262 6.09788 12.9301 5.73194 12.7382 5.42004C12.5522 5.10817 12.2852 4.86549 11.9374 4.69153C11.5954 4.51753 11.1933 4.42981 10.7313 4.42981H8.49011Z" fill="#6D6F77"/>
+</g>
+</svg>

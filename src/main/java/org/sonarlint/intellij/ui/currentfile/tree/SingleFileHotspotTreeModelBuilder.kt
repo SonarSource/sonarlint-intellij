@@ -22,9 +22,9 @@ package org.sonarlint.intellij.ui.currentfile.tree
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.DefaultTreeModel
-import org.sonarlint.intellij.SonarLintIcons.backgroundColorsByVulnerabilityProbability
-import org.sonarlint.intellij.SonarLintIcons.borderColorsByVulnerabilityProbability
-import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.backgroundColorsByVulnerabilityProbability
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.borderColorsByVulnerabilityProbability
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
 import org.sonarlint.intellij.ui.filter.SortMode

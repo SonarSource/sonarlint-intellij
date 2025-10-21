@@ -24,7 +24,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
 import javax.swing.DefaultComboBoxModel
-import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.EditorDecorator

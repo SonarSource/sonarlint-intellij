@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij
+package org.sonarlint.intellij.ui.icons
 
 import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.AnimatedIcon
@@ -83,8 +83,6 @@ object SonarLintIcons {
     @JvmField
     val RESOLVED = getIcon("/images/resolved.svg")
     @JvmField
-    val FOCUS = getIcon("/images/focus.svg")
-    @JvmField
     val CODEFIX_PRESENTATION = getIcon("/images/codefix/presentation.svg")
     @JvmField
     val SPARKLE_GUTTER_ICON = getIcon("/images/codefix/sparkle.svg")
@@ -98,6 +96,12 @@ object SonarLintIcons {
     val WALKTHROUGH_REACH_OUT_TO_US = getIcon("/images/walkthrough/community.png")
     @JvmField
     val WALKTHROUGH_TOOLWINDOW_ICON = getIcon("/images/walkthrough/toolwindow_icon.svg")
+    @JvmField
+    val STATUS_ACCEPTED = getIcon("images/status/resolved-accepted.svg")
+    @JvmField
+    val STATUS_FALSE_POSITIVE = getIcon("/images/status/false-positive.svg")
+    @JvmField
+    val STATUS_LINK_OFF = getIcon("images/status/link_off.svg")
 
     private val BUG_ICONS = mapOf(
         IssueSeverity.BLOCKER to getIcon("/images/bug/bugBlocker.svg"),

@@ -26,7 +26,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
-import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue

@@ -41,7 +41,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.event.HyperlinkEvent;
-import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;

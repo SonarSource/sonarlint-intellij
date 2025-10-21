@@ -42,7 +42,7 @@ import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.event.HyperlinkEvent
-import org.sonarlint.intellij.SonarLintIcons
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable

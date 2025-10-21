@@ -21,13 +21,14 @@ package org.sonarlint.intellij
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.sonarlint.intellij.SonarLintIcons.getIconForTypeAndSeverity
-import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
-import org.sonarlint.intellij.SonarLintIcons.impact
-import org.sonarlint.intellij.SonarLintIcons.loadingCodeFixIcon
-import org.sonarlint.intellij.SonarLintIcons.riskSeverity
-import org.sonarlint.intellij.SonarLintIcons.severity
-import org.sonarlint.intellij.SonarLintIcons.toDisabled
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.getIconForTypeAndSeverity
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.hotspotTypeWithProbability
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.impact
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.loadingCodeFixIcon
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.riskSeverity
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.severity
+import org.sonarlint.intellij.ui.icons.SonarLintIcons.toDisabled
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
@@ -99,7 +100,6 @@ class SonarLintIconsTest {
         assertThat(SonarLintIcons.CONNECTED).isNotNull
         assertThat(SonarLintIcons.CONNECTION_ERROR).isNotNull
         assertThat(SonarLintIcons.RESOLVED).isNotNull
-        assertThat(SonarLintIcons.FOCUS).isNotNull
         assertThat(SonarLintIcons.CODEFIX_PRESENTATION).isNotNull
         assertThat(SonarLintIcons.SPARKLE_GUTTER_ICON).isNotNull
         assertThat(SonarLintIcons.WALKTHROUGH_LEARN_AS_YOU_CODE).isNotNull
@@ -107,6 +107,9 @@ class SonarLintIconsTest {
         assertThat(SonarLintIcons.WALKTHROUGH_CONNECT_WITH_YOUR_TEAM).isNotNull
         assertThat(SonarLintIcons.WALKTHROUGH_REACH_OUT_TO_US).isNotNull
         assertThat(SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON).isNotNull
+        assertThat(SonarLintIcons.STATUS_FALSE_POSITIVE).isNotNull
+        assertThat(SonarLintIcons.STATUS_LINK_OFF).isNotNull
+        assertThat(SonarLintIcons.STATUS_ACCEPTED).isNotNull
     }
 
     @Test
