@@ -34,10 +34,12 @@ mockito-kotlin = "5.4.0"
 mockito = "5.18.0"
 assertj = "3.23.1"
 awaitility = "4.3.0"
+protobuf = "4.28.2"
 
 its-remote = "0.11.23"
 its-sonar-scala = "1.8.3.2219"
-its-sonar-ws = "8.5.1.38104"
+its-sonar-ws = "9.9.9.104369"
+orchestrator = "5.6.2.2625"
 
 [libraries]
 sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarlint-java-client-utils", version.ref = "sonarlint-core" }
@@ -71,9 +73,11 @@ mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito"}
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj"}
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+protobuf = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 
 its-sonar-scala = { module = "org.sonarsource.slang:sonar-scala-plugin", version.ref = "its-sonar-scala" }
 its-sonar-ws = { module = "org.sonarsource.sonarqube:sonar-ws", version.ref = "its-sonar-ws" }
+its-orchestrator = { module = "org.sonarsource.orchestrator:sonar-orchestrator-junit5", version.ref = "orchestrator" }
 its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.ref = "its-remote" }
 its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "its-remote" }
 

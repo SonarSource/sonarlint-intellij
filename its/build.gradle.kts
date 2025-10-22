@@ -35,7 +35,8 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Bundled)
     }
-    testImplementation("org.sonarsource.orchestrator:sonar-orchestrator-junit5:5.1.0.2254") {
+
+    testImplementation(libs.its.orchestrator) {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
     }
     testImplementation(libs.its.sonar.scala)
@@ -44,7 +45,15 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.four)
+    // Force protobuf version to override any bundled versions
+    testImplementation(libs.protobuf)
     testRuntimeOnly(libs.junit.launcher)
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("com.google.protobuf:protobuf-java:4.28.2")
+    }
 }
 
 tasks {
