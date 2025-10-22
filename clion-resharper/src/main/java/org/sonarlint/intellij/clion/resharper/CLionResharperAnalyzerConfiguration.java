@@ -100,7 +100,7 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
       properties.put("isHeaderFile", "true");
     }
 
-    if (usingRemoteOrWslToolchain(configuration)) {
+    if (isRemoteOrWslToolchainSupported() && usingRemoteOrWslToolchain(configuration)) {
       collectPropertiesForRemoteToolchain(compilerSettings, properties);
     } else if (compilerKind instanceof MSVCCompilerKind) {
       // For MSVC, we collect built-in headers only, and the driver on CFamily side still handles '/external:I' arguments.
@@ -127,18 +127,29 @@ public class CLionResharperAnalyzerConfiguration extends AnalyzerConfiguration {
 
   private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
     final var initializedWorkspaces = CidrWorkspace.getInitializedWorkspaces(project);
-    CPPEnvironment cppEnvironment = null;
+    CPPEnvironment cppEnvironment;
     for (var initializedWorkspace : initializedWorkspaces) {
       if (initializedWorkspace instanceof CMakeWorkspace cMakeWorkspace) {
         cppEnvironment = getCMakeCppEnvironment(cMakeWorkspace, configuration);
       } else {
         cppEnvironment = tryReflection(initializedWorkspace, project);
-        if (cppEnvironment != null) {
-          break;
-        }
+      }
+      if (cppEnvironment != null) {
+        return cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker() || cppEnvironment.getToolSet().isRemote();
       }
     }
-    return cppEnvironment != null && (cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker() || cppEnvironment.getToolSet().isRemote());
+    SonarLintConsole.get(project).debug("Not using remote or WSL toolchain");
+    return false;
+  }
+
+  private boolean isRemoteOrWslToolchainSupported() {
+    try {
+      Class.forName("com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace");
+      return true;
+    } catch (ClassNotFoundException | NoClassDefFoundError e) {
+      SonarLintConsole.get(project).debug("Could not support remote or WSL toolchain");
+      return false;
+    }
   }
 
   @Nullable
