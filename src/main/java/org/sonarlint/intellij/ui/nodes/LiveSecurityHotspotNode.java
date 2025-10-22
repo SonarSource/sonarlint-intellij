@@ -20,16 +20,15 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.ui.OffsetIcon;
 import com.intellij.ui.SimpleTextAttributes;
-import com.intellij.ui.scale.JBUIScale;
 import java.util.Locale;
 import javax.swing.Icon;
-import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.ui.icons.DisplayedStatus;
+import org.sonarlint.intellij.ui.icons.FindingIconBuilder;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
-import org.sonarlint.intellij.util.CompoundIcon;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
@@ -55,24 +54,28 @@ public class LiveSecurityHotspotNode extends FindingNode {
     var type = securityHotspot.getType();
     var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
 
-    var typeIcon = SonarLintIcons.hotspotTypeWithProbability(vulnerability);
-    var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
+    Icon productIcon = null;
+    var tooltip = vulnerabilityText + " " + typeStr;
     var serverConnection = getService(securityHotspot.project(), ProjectBindingManager.class).tryGetServerConnection();
     if (securityHotspot.getServerKey() != null && serverConnection.isPresent()) {
-      var productIcon = serverConnection.get().getProductIcon();
-      var tooltip = vulnerabilityText + " " + typeStr + " existing on " + serverConnection.get().getProductName();
-      renderer.setIconToolTip(tooltip);
-      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, productIcon, typeIcon));
-    } else {
-      renderer.setIconToolTip(vulnerabilityText + " " + typeStr);
-      setIcon(renderer, new OffsetIcon(typeIcon.getIconWidth() + gap, typeIcon));
+      productIcon = serverConnection.get().getProductIcon();
+      tooltip += " existing on " + serverConnection.get().getProductName();
     }
+    var typeIcon = SonarLintIcons.hotspotTypeWithProbability(vulnerability);
+    var displayedStatus = DisplayedStatus.fromFinding(securityHotspot);
+    var compoundIcon = FindingIconBuilder.forBaseIcon(typeIcon)
+      .withDecoratingIcon(productIcon)
+      .withDisplayedStatus(displayedStatus)
+      .build();
+
+    renderer.setIcon(compoundIcon);
+    renderer.setIconToolTip(tooltip);
 
     renderer.setToolTipText("Double click to open location");
-    if (securityHotspot.isResolved()) {
-      renderer.append(securityHotspot.getMessage(), new SimpleTextAttributes(SimpleTextAttributes.STYLE_STRIKEOUT, null));
-    } else {
+    if (displayedStatus == DisplayedStatus.OPEN) {
       renderer.append(securityHotspot.getMessage());
+    } else {
+      renderer.append(securityHotspot.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
 
     if (appendFileName) {
@@ -80,20 +83,6 @@ public class LiveSecurityHotspotNode extends FindingNode {
     }
     renderer.append("  " + securityHotspot.getRuleKey(), SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES);
   }
-
-  private void setIcon(TreeCellRenderer renderer, Icon icon) {
-    if (securityHotspot.isValid()) {
-      renderer.setIcon(icon);
-    } else {
-      renderer.setIcon(SonarLintIcons.toDisabled(icon));
-    }
-  }
-
-  @Override
-  public int getFindingCount() {
-    return 1;
-  }
-
 
   @Override
   public String toString() {

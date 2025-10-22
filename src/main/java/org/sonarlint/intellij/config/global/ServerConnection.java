@@ -26,7 +26,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
-import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.server.ServerLinks;
 import org.sonarlint.intellij.core.server.SonarCloudLinks;

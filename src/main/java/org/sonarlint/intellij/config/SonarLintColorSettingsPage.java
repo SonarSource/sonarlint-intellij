@@ -32,7 +32,7 @@ import java.util.TreeMap;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 
 public class SonarLintColorSettingsPage implements ColorSettingsPage {
   private static final AttributesDescriptor[] DESCRIPTORS = new AttributesDescriptor[] {

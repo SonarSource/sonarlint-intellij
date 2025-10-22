@@ -233,10 +233,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Welcome to SonarQube for IDE"
                     anchor="left"
-                    icon="org.sonarlint.intellij.SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON"
+                    icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON"
                     factoryClass="org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindowFactory"/>
         <toolWindow id="SonarQube for IDE" anchor="bottom"
-                    icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW"
+                    icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW"
                     factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
         <applicationConfigurable groupId="tools" id="sonarlint" displayName="SonarQube for IDE"
                                  instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
@@ -332,7 +332,7 @@
     <actions>
         <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
       <group id="SonarLint.AnalyzeMenu" searchable="false" text="SonarQube for IDE" popup="false"
-             icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
+             icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
             <separator/>
         <!-- This group is programmatically added to AnalyzeMenu if it exists -->
         </group>
@@ -341,20 +341,20 @@
                 class="org.sonarlint.intellij.actions.SonarAnalyzeFilesAction"
                 text="Analyze with SonarQube for IDE"
                 description="Run SonarQube for IDE analysis on selected file(s)"
-                icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
+                icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
         <group id="SonarLint.ProjectViewPopupMenu" searchable="false" text="SonarQube for IDE" popup="true"
-               icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
+               icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
             <reference ref="SonarLint.AnalyzeFiles"/>
             <action id="SonarLint.Exclude"
                     class="org.sonarlint.intellij.actions.ExcludeFileAction"
                     text="Exclude from SonarQube for IDE Analysis"
                     description="Adds resources to the list exclusions in the SonarQube for IDE project settings"
-                    icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
+                    icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
             </action>
             <add-to-group group-id="ProjectViewPopupMenu"/>
         </group>
@@ -363,7 +363,7 @@
                 class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"
                 text="Analyze VCS Changed Files with SonarQube for IDE"
                 description="Run a SonarQube for IDE analysis on VCS changed files"
-                icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
+                icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
@@ -371,7 +371,7 @@
                 class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
                 text="Analyze All Files with SonarQube for IDE"
                 description="Run a SonarQube for IDE analysis on all files in the project"
-                icon="org.sonarlint.intellij.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
+                icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
@@ -379,14 +379,14 @@
                 class="org.sonarlint.intellij.actions.SonarCancelAction"
                 text="Cancel SonarQube for IDE Analysis"
                 description="Cancel the SonarQube for IDE analysis running"
-                icon="org.sonarlint.intellij.SonarLintIcons.SUSPEND">
+                icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SUSPEND">
         </action>
 
         <action id="SonarLint.toolwindow.Configure"
                 class="org.sonarlint.intellij.actions.SonarConfigureProject"
                 text="Configure SonarQube for IDE"
                 description="Configure SonarQube for IDE"
-                icon="org.sonarlint.intellij.SonarLintIcons.TOOLS">
+                icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.TOOLS">
         </action>
     </actions>
 </idea-plugin>

@@ -25,7 +25,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.components.Service;
 import com.intellij.serviceContainer.NonInjectable;
-import org.sonarlint.intellij.SonarLintIcons;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
 import org.sonarlint.intellij.actions.CollapseAllTreesAction;
 import org.sonarlint.intellij.actions.ExpandAllTreesAction;

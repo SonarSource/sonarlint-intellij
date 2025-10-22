@@ -17,11 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes
+package org.sonarlint.intellij.ui.icons
 
 import org.sonarlint.intellij.finding.Finding
 
-abstract class FindingNode(val finding: Finding): AbstractNode() {
+enum class DisplayedStatus {
+    OPEN, ACCEPTED, FALSE_POSITIVE, INVALID;
 
-    override fun getFindingCount(): Int = 1
+    companion object {
+        @JvmStatic
+        fun fromFinding(finding: Finding): DisplayedStatus {
+            return when {
+                !finding.isValid() -> INVALID
+                finding.isResolved() -> ACCEPTED
+                else -> OPEN
+            }
+        }
+    }
+
 }
