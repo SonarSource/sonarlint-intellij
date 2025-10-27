@@ -74,4 +74,27 @@ class GlobalTaskProgressReporterTests : AbstractSonarLintLightTests() {
 
         verify(indicator).text = "Some progress"
     }
+
+    @Test
+    fun `should cancel all tasks when cancelAllTasks is called`() {
+        reporter.trackTask(module1, "task1")
+        reporter.trackTask(module2, "task2")
+
+        reporter.cancelAllTasks()
+
+        val cancelled = reporter.getCancelledTaskIds()
+        assertThat(cancelled).containsExactlyInAnyOrder("task1", "task2")
+    }
+
+    @Test
+    fun `should mark as cancelled when cancelAllTasks is called`() {
+        reporter.trackTask(module1, "task1")
+
+        reporter.cancelAllTasks()
+
+        val cancelled = reporter.getCancelledTaskIds()
+        assertThat(cancelled).isNotEmpty
+        assertThat(reporter.getCancelledTaskIds()).contains("task1")
+    }
+
 }

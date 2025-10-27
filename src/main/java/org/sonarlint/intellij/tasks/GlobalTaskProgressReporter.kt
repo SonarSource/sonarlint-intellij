@@ -48,6 +48,13 @@ class GlobalTaskProgressReporter(
         super.onCancel()
     }
 
+    fun cancelAllTasks() {
+        isCancelled = true
+        modulesPerTaskId.keys.forEach { id ->
+            getService(BackendService::class.java).cancelTask(id)
+        }
+    }
+
     fun updateText(text: String) {
         if (withTextUpdate) {
             this.progressIndicator?.text = text

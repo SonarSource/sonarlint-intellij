@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis
 
+import com.intellij.openapi.project.Project
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -33,12 +34,16 @@ class GlobalBackgroundTaskTrackerTests {
     private lateinit var tracker: GlobalBackgroundTaskTracker
     private lateinit var reporter1: GlobalTaskProgressReporter
     private lateinit var reporter2: GlobalTaskProgressReporter
+    private lateinit var project1: Project
+    private lateinit var project2: Project
 
     @BeforeEach
     fun setUp() {
         tracker = GlobalBackgroundTaskTracker()
         reporter1 = mock(GlobalTaskProgressReporter::class.java)
         reporter2 = mock(GlobalTaskProgressReporter::class.java)
+        project1 = mock(Project::class.java)
+        project2 = mock(Project::class.java)
     }
 
     @Test
@@ -76,4 +81,54 @@ class GlobalBackgroundTaskTrackerTests {
         assertThat(tracker.isTaskIdCancelled(taskId)).isTrue()
         assertThat(tracker.isTaskIdCancelled("otherId")).isFalse()
     }
+
+    @Test
+    fun `should cleanup tasks for a specific project`() {
+        `when`(reporter1.project).thenReturn(project1)
+        `when`(reporter2.project).thenReturn(project2)
+        tracker.track(reporter1)
+        tracker.track(reporter2)
+
+        // Clean up tasks for project1
+        tracker.cleanupTasksForProject(project1)
+
+        // Verify: reporter1 should be cancelled
+        verify(reporter1).cancelAllTasks()
+        // Verify: reporter2 should NOT be cancelled
+        verify(reporter2, never()).cancelAllTasks()
+    }
+
+    @Test
+    fun `should cleanup tasks for disposed projects`() {
+        val disposedProject = mock(Project::class.java)
+        `when`(disposedProject.isDisposed).thenReturn(true)
+        `when`(reporter1.project).thenReturn(disposedProject)
+        `when`(reporter2.project).thenReturn(project2)
+        tracker.track(reporter1)
+        tracker.track(reporter2)
+
+        // Clean up tasks for the disposed project
+        tracker.cleanupTasksForProject(disposedProject)
+
+        // Verify: reporter1 should be cancelled due to disposed project
+        verify(reporter1).cancelAllTasks()
+        // Verify: reporter2 should NOT be cancelled
+        verify(reporter2, never()).cancelAllTasks()
+    }
+
+    @Test
+    fun `should not cleanup tasks for other projects`() {
+        `when`(reporter1.project).thenReturn(project1)
+        `when`(reporter2.project).thenReturn(project2)
+        tracker.track(reporter1)
+        tracker.track(reporter2)
+
+        // Try to clean up tasks for project3 (doesn't exist)
+        val project3 = mock(Project::class.java)
+        tracker.cleanupTasksForProject(project3)
+
+        verify(reporter1, never()).cancelAllTasks()
+        verify(reporter2, never()).cancelAllTasks()
+    }
+
 }
