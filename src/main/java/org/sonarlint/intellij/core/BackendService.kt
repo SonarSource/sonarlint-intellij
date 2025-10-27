@@ -158,6 +158,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetEffectiveIss
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.log.LogLevel
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.progress.CancelTaskParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixParams
@@ -387,7 +388,8 @@ class BackendService : Disposable {
                 getGlobalSettings().isFocusOnNewCode,
                 LanguageSpecificRequirements(jsTsRequirements, omnisharpRequirementsDto),
                 getGlobalSettings().isAutoTrigger,
-                null
+                null,
+                LogLevel.DEBUG
             )
         )
     }
