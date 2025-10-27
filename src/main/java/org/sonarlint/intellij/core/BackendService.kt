@@ -63,6 +63,7 @@ import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.Companion.collectContributedLanguages
+import org.sonarlint.intellij.analysis.GlobalBackgroundTaskTracker
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -577,6 +578,7 @@ class BackendService : Disposable {
         projectsOpened.remove(project)
         val projectId = projectId(project)
         notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId)) }
+        getService(GlobalBackgroundTaskTracker::class.java).cleanupTasksForProject(project)
     }
 
     private fun toBackendConfigurationScope(project: Project, binding: ProjectBinding?) =

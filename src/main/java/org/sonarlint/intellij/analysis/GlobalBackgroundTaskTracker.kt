@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 import java.util.concurrent.ConcurrentLinkedQueue
 import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
 
@@ -42,6 +43,18 @@ class GlobalBackgroundTaskTracker() {
 
     fun isTaskIdCancelled(taskId: String): Boolean {
         return backgroundTasks.any { it.getCancelledTaskIds().contains(taskId) }
+    }
+
+    fun cleanupTasksForProject(project: Project) {
+        val iterator = backgroundTasks.iterator()
+        while (iterator.hasNext()) {
+            val task = iterator.next()
+            val taskProject = task.project
+            if (taskProject?.equals(project) == true || taskProject?.isDisposed == true) {
+                task.cancelAllTasks()
+                iterator.remove()
+            }
+        }
     }
 
 }
