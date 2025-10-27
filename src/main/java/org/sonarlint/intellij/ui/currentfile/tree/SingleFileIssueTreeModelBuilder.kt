@@ -22,15 +22,15 @@ package org.sonarlint.intellij.ui.currentfile.tree
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.tree.DefaultTreeModel
+import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
+import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.backgroundColorsByImpact
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.backgroundColorsBySeverity
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.getIconForTypeAndSeverity
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.impact
-import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.ui.currentfile.SummaryUiModel
-import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.nodes.FileNode
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.SummaryNode
@@ -171,11 +171,26 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     }
 
     private fun findIssueNode(key: String): IssueNode? {
-        summaryNode.children().asIterator().forEach {
-            val node = it as IssueNode
-            val issue = node.issue()
-            if (issue.getServerKey() == key || issue.getId().toString() == key) {
-                return node
+        summaryNode.children().asIterator().forEach { child ->
+            // Handle both cases: when there are FileNodes as children (grouped by file) 
+            // and when IssueNodes are direct children
+            when (child) {
+                is FileNode -> {
+                    child.children().asIterator().forEach { fileChild ->
+                        if (fileChild is IssueNode) {
+                            val issue = fileChild.issue()
+                            if (issue.getServerKey() == key || issue.getId().toString() == key) {
+                                return fileChild
+                            }
+                        }
+                    }
+                }
+                is IssueNode -> {
+                    val issue = child.issue()
+                    if (issue.getServerKey() == key || issue.getId().toString() == key) {
+                        return child
+                    }
+                }
             }
         }
         return null
