@@ -44,7 +44,10 @@ public class AnalysisLogOutput implements ClientLogOutput, AutoCloseable {
     }
     var console = SonarLintUtils.getService(currentProject, SonarLintConsole.class);
     switch (level) {
-      case TRACE, DEBUG -> console.debug(msg);
+      case TRACE -> {
+        // Do not log TRACE level messages to avoid flooding the console
+      }
+      case DEBUG -> console.debug(msg);
       case ERROR -> console.error(msg);
       default -> console.info(msg);
     }

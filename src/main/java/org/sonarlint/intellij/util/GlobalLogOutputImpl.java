@@ -21,8 +21,8 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.project.ProjectManager;
 import java.util.stream.Stream;
-import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -31,7 +31,10 @@ public class GlobalLogOutputImpl implements GlobalLogOutput {
   @Override
   public void log(String msg, Level level) {
     switch (level) {
-      case TRACE, DEBUG -> getConsolesOfOpenedProjects().forEach(console -> console.debug(msg));
+      case TRACE -> {
+        // Do not log TRACE level messages to avoid flooding the console
+      }
+      case DEBUG -> getConsolesOfOpenedProjects().forEach(console -> console.debug(msg));
       case ERROR -> getConsolesOfOpenedProjects().forEach(console -> console.error(msg));
       default -> getConsolesOfOpenedProjects().forEach(console -> console.info(msg));
     }
