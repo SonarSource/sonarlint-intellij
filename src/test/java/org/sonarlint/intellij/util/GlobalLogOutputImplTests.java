@@ -26,6 +26,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 class GlobalLogOutputImplTests extends AbstractSonarLintLightTests {
@@ -53,7 +54,7 @@ class GlobalLogOutputImplTests extends AbstractSonarLintLightTests {
     verify(console).error("error");
 
     output.log("trace", ClientLogOutput.Level.TRACE);
-    verify(console).debug("trace");
+    verify(console, never()).debug("trace");
   }
 
 }

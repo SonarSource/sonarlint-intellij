@@ -29,6 +29,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -51,12 +52,13 @@ class AnalysisLogOutputTests extends AbstractSonarLintLightTests {
     "INFO,  info",
     "ERROR, error",
     "WARN,  info",
-    "TRACE, debug"
+    "TRACE, trace"
   })
   void test_log_levels(ClientLogOutput.Level level, String expectedMethod) {
     logOutput.log("test", level);
     
     switch (expectedMethod) {
+      case "trace" -> verify(mockConsole, never()).debug("test");
       case "debug" -> verify(mockConsole).debug("test");
       case "info" -> verify(mockConsole).info("test");
       case "error" -> verify(mockConsole).error("test");
@@ -94,7 +96,7 @@ class AnalysisLogOutputTests extends AbstractSonarLintLightTests {
     verify(mockConsole).info("info msg");
     verify(mockConsole).info("warn msg");
     verify(mockConsole).error("error msg");
-    verify(mockConsole).debug("trace msg");
+    verify(mockConsole, never()).debug("trace msg");
   }
 
   @Test

@@ -319,7 +319,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         console: SonarLintConsole,
     ) {
         when (logLevel) {
-            LogLevel.TRACE, LogLevel.DEBUG -> console.debug(message)
+            LogLevel.TRACE -> {
+                // Do not log TRACE level messages to avoid flooding the console
+            }
+            LogLevel.DEBUG -> console.debug(message)
             LogLevel.ERROR -> console.error(message)
             else -> console.info(message)
         }
