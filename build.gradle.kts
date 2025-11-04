@@ -51,11 +51,11 @@ val omnisharpVersion: String by project
 val runIdeDirectory: String by project
 val verifierEnv: String by project
 
-// The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env
+// The environment variables ARTIFACTORY_ACCESS_USERNAME and ARTIFACTORY_ACCESS_TOKEN are used on CI env
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
-val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
+val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME")
     ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
+val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN")
     ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 configurations {
@@ -225,7 +225,7 @@ intellijPlatform {
             repository {
                 setProperty("repoKey", System.getenv("ARTIFACTORY_DEPLOY_REPO"))
                 setProperty("username", System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
-                setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_PASSWORD"))
+                setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_ACCESS_TOKEN"))
             }
             defaults {
                 setProperties(
