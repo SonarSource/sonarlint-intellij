@@ -3,8 +3,8 @@ env:
   CIRRUS_SHELL: bash
 
   ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
-  ARTIFACTORY_PRIVATE_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
-  ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
+  ARTIFACTORY_ACCESS_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
+  ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
   DEVELOCITY_TOKEN: VAULT[development/kv/data/develocity data.token]
   DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${DEVELOCITY_TOKEN}
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
@@ -101,7 +101,7 @@ build_plugin_task:
     JDK_VERSION: "17"
     ARTIFACTORY_DEPLOY_REPO: sonarsource-public-qa
     ARTIFACTORY_DEPLOY_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer
-    ARTIFACTORY_DEPLOY_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
+    ARTIFACTORY_DEPLOY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
     ORG_GRADLE_PROJECT_signingKey: VAULT[development/kv/data/sign data.key]
     ORG_GRADLE_PROJECT_signingPassword: VAULT[development/kv/data/sign data.passphrase]
     ORG_GRADLE_PROJECT_signingKeyId: VAULT[development/kv/data/sign data.key_id]

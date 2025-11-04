@@ -17,8 +17,8 @@ dependencyResolutionManagement {
     repositories {
         maven("https://repox.jfrog.io/repox/sonarsource") {
             credentials {
-                username = System.getenv("ARTIFACTORY_PRIVATE_USERNAME") ?: (extra["artifactoryUsername"] as? String ?: "")
-                password = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD") ?: (extra["artifactoryPassword"] as? String ?: "")
+                username = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra["artifactoryUsername"] as? String ?: "")
+                password = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra["artifactoryPassword"] as? String ?: "")
             }
         }
         mavenCentral()
