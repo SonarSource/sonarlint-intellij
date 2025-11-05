@@ -40,3 +40,91 @@ jobs:
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
           gradle-args: -x build -x sonar :buildPlugin :cyclonedxBom
+
+  test_linux:
+    runs-on: github-ubuntu-latest-m
+    name: Test linux and Analyze
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - uses: SonarSource/ci-github-actions/build-gradle@v1
+        env:
+          PULL_REQUEST_SHA: ${{ github.sha }}
+        with:
+          deploy-pull-request: true
+          use-develocity: true
+          artifactory-reader-role: private-reader
+          artifactory-deployer-role: qa-deployer
+          gradle-args: check -x :its:check -x artifactoryPublish sonar jacocoTestReport :verifyPlugin
+
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-linux
+          path: "**/reports/**/**"
+
+      - name: Upload JUnit test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-linux
+          path: "**/test-results/**/*.xml"
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: failure()
+        with:
+          name: JUnit Test Results (Linux)
+          path: "**/test-results/**/*.xml"
+          reporter: java-junit
+
+  test_windows:
+    runs-on: warp-custom-sonarlint-intellij
+    name: Test Windows
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - uses: SonarSource/ci-github-actions/build-gradle@v1
+        env:
+          IDEA_HOME: /C/Program Files/intellij
+          RIDER_HOME: /C/Program Files/rider
+          RESHARPER_HOME: /C/Program Files/resharper
+          CLION_HOME: /C/Program Files/clion
+          ULTIMATE_HOME: /C/Program Files/ultimate
+        with:
+          deploy-pull-request: true
+          use-develocity: true
+          artifactory-reader-role: private-reader
+          artifactory-deployer-role: qa-deployer
+          gradle-args: :check
+
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-windows
+          path: "**/reports/**/**"
+
+      - name: Upload JUnit test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-windows
+          path: "**/test-results/**/*.xml"
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: failure()
+        with:
+          name: JUnit Test Results
+          path: "**/test-results/**/*.xml"
+          reporter: java-junit
