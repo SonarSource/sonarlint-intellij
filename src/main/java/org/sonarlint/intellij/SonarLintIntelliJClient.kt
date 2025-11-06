@@ -967,6 +967,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             }
         } else {
             findModule(configurationScopeId)?.let { module ->
+                // In Rider, getRelativePathForAnalysis prioritizes project base dir over module base dir
+                if (isRider()) {
+                    module.project.guessProjectDir()?.let {
+                        return Paths.get(it.path)
+                    }
+                }
                 // If we don't find a base directory for the module, fallback on the base directory of the project
                 module.guessModuleDir()?.let {
                     return Paths.get(it.path)

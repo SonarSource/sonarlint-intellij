@@ -371,4 +371,68 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         verify(toolWindow).refreshViews()
     }
 
+    @Test
+    fun should_return_file_exclusions_for_module() {
+        setProjectLevelExclusions(listOf("DIRECTORY:wwwroot", "FILE:test.js"))
+        globalSettings.fileExclusions = listOf("GLOB:**/*.min.js")
+
+        val exclusions = client.getFileExclusions(BackendService.moduleId(module))
+
+        assertThat(exclusions).contains("**/wwwroot/**")
+        assertThat(exclusions).contains("**/test.js")
+        assertThat(exclusions).contains("GLOB:**/*.min.js")
+    }
+
+    @Test
+    fun should_return_file_exclusions_for_project() {
+        setProjectLevelExclusions(listOf("DIRECTORY:build", "FILE:generated.java"))
+        globalSettings.fileExclusions = listOf("GLOB:**/target/**")
+
+        val exclusions = client.getFileExclusions(projectBackendId)
+
+        assertThat(exclusions).contains("**/build/**")
+        assertThat(exclusions).contains("**/generated.java")
+        assertThat(exclusions).contains("GLOB:**/target/**")
+    }
+
+    @Test
+    fun should_return_only_global_exclusions_when_no_project_exclusions() {
+        setProjectLevelExclusions(emptyList())
+        globalSettings.fileExclusions = listOf("GLOB:**/*.log")
+
+        val exclusions = client.getFileExclusions(BackendService.moduleId(module))
+
+        assertThat(exclusions).containsOnly("GLOB:**/*.log")
+    }
+
+    @Test
+    fun should_normalize_directory_exclusion_patterns() {
+        setProjectLevelExclusions(listOf("DIRECTORY:wwwroot"))
+
+        val exclusions = client.getFileExclusions(BackendService.moduleId(module))
+
+        assertThat(exclusions).contains("**/wwwroot/**")
+        assertThat(exclusions).doesNotContain("DIRECTORY:wwwroot")
+    }
+
+    @Test
+    fun should_normalize_file_exclusion_patterns() {
+        setProjectLevelExclusions(listOf("FILE:wwwroot/app.js"))
+
+        val exclusions = client.getFileExclusions(BackendService.moduleId(module))
+
+        assertThat(exclusions).contains("**/wwwroot/app.js")
+        assertThat(exclusions).doesNotContain("FILE:wwwroot/app.js")
+    }
+
+    @Test
+    fun should_handle_windows_paths_in_exclusions() {
+        setProjectLevelExclusions(listOf("DIRECTORY:wwwroot\\dist", "FILE:src\\main\\test.js"))
+
+        val exclusions = client.getFileExclusions(BackendService.moduleId(module))
+
+        assertThat(exclusions).anyMatch { it.contains("wwwroot/dist") && !it.contains("\\") }
+        assertThat(exclusions).anyMatch { it.contains("src/main/test.js") && !it.contains("\\") }
+    }
+
 }
