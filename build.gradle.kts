@@ -207,6 +207,10 @@ intellijPlatform {
             // Fix deprecated implicit compilation
             property("sonar.gradle.skipCompile", "true")
             property("sonar.organization", "sonarsource")
+            // Include JaCoCo coverage reports from both unit tests and UI tests
+            property("sonar.coverage.jacoco.xmlReportPaths", 
+                "${layout.buildDirectory.get().asFile}/reports/jacoco/test/jacocoTestReport.xml," +
+                "${project(":its").layout.buildDirectory.get().asFile}/reports/jacoco/test/jacocoTestReport.xml")
         }
     }
 
