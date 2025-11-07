@@ -20,6 +20,8 @@ jobs:
   build:
     runs-on: github-ubuntu-latest-m
     name: Build
+    outputs:
+      PROJECT_VERSION: ${{ steps.build-gradle.outputs.PROJECT_VERSION }}
     steps:
       - uses: actions/checkout@v5
 
@@ -34,6 +36,7 @@ jobs:
           secrets: |
 
       - uses: SonarSource/ci-github-actions/build-gradle@v1
+        id: build-gradle
         with:
           deploy-pull-request: true
           use-develocity: true
@@ -83,8 +86,8 @@ jobs:
           path: "**/test-results/**/*.xml"
           reporter: java-junit
 
-  test_windows:
-    runs-on: github-ubuntu-windows-m
+  check_windows:
+    runs-on: warp-custom-sonarlint-intellij
     name: Test Windows
     steps:
       - uses: actions/checkout@v5
@@ -93,41 +96,23 @@ jobs:
         with:
           version: 2025.9.12
 
-      - uses: SonarSource/ci-github-actions/build-gradle@v1
+        #      - uses: SonarSource/ci-github-actions/build-gradle@v1
         #        env:
         #          IDEA_HOME: /C/Program Files/intellij
         #          RIDER_HOME: /C/Program Files/rider
         #          RESHARPER_HOME: /C/Program Files/resharper
         #          CLION_HOME: /C/Program Files/clion
         #          ULTIMATE_HOME: /C/Program Files/ultimate
-        with:
-          deploy-pull-request: true
-          use-develocity: true
-          artifactory-reader-role: private-reader
-          artifactory-deployer-role: qa-deployer
-          gradle-args: :check
+      #        with:
+      #          deploy-pull-request: true
+      #          use-develocity: true
+      #          artifactory-reader-role: private-reader
+      #          artifactory-deployer-role: qa-deployer
+      #          gradle-args: :check
 
-      - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: test-reports-windows
-          path: "**/reports/**/**"
-
-      - name: Upload JUnit test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: junit-results-windows
-          path: "**/test-results/**/*.xml"
-
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: failure()
-        with:
-          name: JUnit Test Results
-          path: "**/test-results/**/*.xml"
-          reporter: java-junit
+      - name: Run checks
+        run: |
+          .\gradlew.bat :check
 
   qa:
     runs-on: github-ubuntu-latest-m
@@ -257,17 +242,13 @@ jobs:
           echo "XVFB_PID=$!" >> $GITHUB_ENV
           sleep 5
 
-      - name: Get project version
-        id: version
-        run: |
-          # Extract version directly from gradle.properties
-          PROJECT_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2)
-          echo "PROJECT_VERSION=${PROJECT_VERSION}" >> $GITHUB_ENV
-          echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
-
       - name: Extract and setup plugin
+        env:
+          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
         run: |
           set -euo pipefail
+          
+          echo "Using project version: ${PROJECT_VERSION}"
           
           # Unpack plugin from Artifactory
           mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B \
