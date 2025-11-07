@@ -121,14 +121,25 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
     }
 
     task {
-        jvmArgumentProviders += CommandLineArgumentProvider {
-            val jacocoAgentJar = project.configurations.getByName("jacocoAgent").singleFile.absolutePath
-            val jacocoExecFile = project.layout.buildDirectory.file("jacoco/its.exec").get().asFile
+        val jacocoExecFile = project.layout.buildDirectory.file("jacoco/its.exec").get().asFile
+        
+        doFirst {
             jacocoExecFile.parentFile.mkdirs()
+            // Resolve jacocoAgent configuration in doFirst to ensure dependencies are resolved
+            val jacocoAgentConfig = project.configurations.getByName("jacocoAgent")
+            jacocoAgentConfig.isCanBeResolved = true
+            // Force resolution
+            jacocoAgentConfig.resolve()
+        }
+        
+        jvmArgumentProviders += CommandLineArgumentProvider {
+            // Get the agent JAR file - configuration should be resolved by now
+            val jacocoAgentConfig = project.configurations.getByName("jacocoAgent")
+            val agentJar = jacocoAgentConfig.singleFile.absolutePath
             
             listOf(
                 "-Xmx1G",
-                "-javaagent:$jacocoAgentJar=destfile=${jacocoExecFile.absolutePath}",
+                "-javaagent:$agentJar=destfile=${jacocoExecFile.absolutePath}",
                 "-Drobot-server.port=8082",
                 "-Drobot-server.host.public=true",
                 "-Dsonarlint.internal.sonarcloud.url=https://sc-staging.io",
