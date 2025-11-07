@@ -128,3 +128,273 @@ jobs:
           name: JUnit Test Results
           path: "**/test-results/**/*.xml"
           reporter: java-junit
+
+  qa:
+    runs-on: github-ubuntu-latest-xl
+    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ide_version: 'IC-2023.1.7'
+            qa_category: 'Idea2023'
+            test_suite: 'OpenInIdeTests'
+          - ide_version: 'IC-2023.1.7'
+            qa_category: 'Idea2023'
+            test_suite: 'ConnectedAnalysisTests'
+          - ide_version: 'IC-2023.1.7'
+            qa_category: 'Idea2023'
+            test_suite: 'ConfigurationTests'
+          - ide_version: 'IC-2023.1.7'
+            qa_category: 'Idea2023'
+            test_suite: 'Standalone'
+          - ide_version: 'IC-2025.2'
+            qa_category: 'Idea2025'
+            test_suite: 'OpenInIdeTests'
+          - ide_version: 'IC-2025.2'
+            qa_category: 'Idea2025'
+            test_suite: 'ConnectedAnalysisTests'
+          - ide_version: 'IC-2025.2'
+            qa_category: 'Idea2025'
+            test_suite: 'ConfigurationTests'
+          - ide_version: 'IC-2025.2'
+            qa_category: 'Idea2025'
+            test_suite: 'Standalone'
+          - ide_version: 'IU-2023.1.7'
+            qa_category: 'IdeaUltimate2023'
+          - ide_version: 'IU-2025.2'
+            qa_category: 'IdeaUltimate2025'
+          - ide_version: 'PY-2023.1.6'
+            qa_category: 'PyCharmProfessional2023'
+          - ide_version: 'PY-2025.2'
+            qa_category: 'PyCharmProfessional2025'
+          - ide_version: 'PC-2023.1.6'
+            qa_category: 'PyCharmCommunity2023'
+          - ide_version: 'PC-2025.2'
+            qa_category: 'PyCharmCommunity2025'
+          - ide_version: 'RD-2023.3.6'
+            qa_category: 'Rider2023'
+          - ide_version: 'RD-2025.1.5'
+            qa_category: 'Rider2025'
+          - ide_version: 'PS-2023.1.6'
+            qa_category: 'PhpStorm2023'
+          - ide_version: 'PS-2025.2'
+            qa_category: 'PhpStorm2025'
+          - ide_version: 'GO-2023.3.8'
+            qa_category: 'GoLand2023'
+          - ide_version: 'GO-2025.2'
+            qa_category: 'GoLand2025'
+          - ide_version: 'CL-2023.1.7'
+            qa_category: 'CLion2023'
+          - ide_version: 'CL-2025.2'
+            qa_category: 'CLion2025'
+    env:
+      DISPLAY: ':10'
+      JDK_VERSION: '17'
+      IDEA_VERSION: ${{ matrix.ide_version }}
+      QA_CATEGORY: ${{ matrix.qa_category }}
+      TEST_SUITE: ${{ matrix.test_suite }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Vault Secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/team/sonarlint/kv/data/ide.keys data.clion | CLION_KEY;
+            development/team/sonarlint/kv/data/ide.keys data.goland | GOLAND_KEY;
+            development/team/sonarlint/kv/data/ide.keys data.datagrip | DATAGRIP_KEY;
+            development/team/sonarlint/kv/data/ide.keys data.idea | IDEA_KEY;
+            development/team/sonarlint/kv/data/ide.keys data.phpstorm | PHPSTORM_KEY;
+            development/team/sonarlint/kv/data/ide.keys data.pycharm | PYCHARM_KEY;
+            development/team/sonarlint/kv/data/ide.keys data.rider | RIDER_KEY;
+            development/team/sonarlint/kv/data/ide.keys data.rubymine | RUBYMINE_KEY;
+            development/team/sonarlint/kv/data/ide.keys data.webstorm | WEBSTORM_KEY;
+            development/artifactory/token/${{ github.repository_owner }}-${{ github.event.repository.name }}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+            development/github/token/licenses-ro token | GITHUB_TOKEN_LICENSES;
+            development/team/sonarlint/kv/data/sonarcloud-it data.token | SONARCLOUD_IT_TOKEN;
+            development/kv/data/repox data.url | ARTIFACTORY_URL;
+
+      - name: Setup Orchestrator cache
+        id: setup-orchestrator
+        run: |
+          export THIS_MONTH=$(date '+%Y-%m')
+          echo "THIS_MONTH=${THIS_MONTH}" >> $GITHUB_ENV
+          echo "ORCHESTRATOR_HOME=${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}" >> $GITHUB_ENV
+          echo "this_month=${THIS_MONTH}" >> $GITHUB_OUTPUT
+          mkdir -p ${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}
+
+      - name: Cache Orchestrator
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/orchestrator/${{ steps.setup-orchestrator.outputs.this_month }}
+          key: orchestrator-${{ steps.setup-orchestrator.outputs.this_month }}
+
+      - name: Prepare IDE license keys
+        run: |
+          mkdir -p its/build/idea-sandbox/config-uiTest
+          echo "${{ steps.secrets.outputs.CLION_KEY }}" > its/build/idea-sandbox/config-uiTest/clion.key.b64
+          echo "${{ steps.secrets.outputs.GOLAND_KEY }}" > its/build/idea-sandbox/config-uiTest/goland.key.b64
+          echo "${{ steps.secrets.outputs.DATAGRIP_KEY }}" > its/build/idea-sandbox/config-uiTest/datagrip.key.b64
+          echo "${{ steps.secrets.outputs.IDEA_KEY }}" > its/build/idea-sandbox/config-uiTest/idea.key.b64
+          echo "${{ steps.secrets.outputs.PHPSTORM_KEY }}" > its/build/idea-sandbox/config-uiTest/phpstorm.key.b64
+          echo "${{ steps.secrets.outputs.PYCHARM_KEY }}" > its/build/idea-sandbox/config-uiTest/pycharm.key.b64
+          echo "${{ steps.secrets.outputs.RIDER_KEY }}" > its/build/idea-sandbox/config-uiTest/rider.key.b64
+          echo "${{ steps.secrets.outputs.RUBYMINE_KEY }}" > its/build/idea-sandbox/config-uiTest/rubymine.key.b64
+          echo "${{ steps.secrets.outputs.WEBSTORM_KEY }}" > its/build/idea-sandbox/config-uiTest/webstorm.key.b64
+
+      - name: Start Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb metacity ffmpeg
+          Xvfb ${DISPLAY} -screen 0 1280x960x24 &
+          echo "XVFB_PID=$!" >> $GITHUB_ENV
+          sleep 5
+
+      - name: Get project version
+        id: version
+        run: |
+          # Extract version directly from gradle.properties
+          PROJECT_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2)
+          echo "PROJECT_VERSION=${PROJECT_VERSION}" >> $GITHUB_ENV
+          echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Extract and setup plugin
+        run: |
+          set -euo pipefail
+          
+          # Unpack plugin from Artifactory
+          mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B \
+            -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip \
+            -DoutputDirectory=${GITHUB_WORKSPACE}/staged-plugin
+          
+          mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
+          
+          # Decode license keys
+          base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/clion.key
+          base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/goland.key
+          base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/datagrip.key
+          base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/idea.key
+          base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/phpstorm.key
+          base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/pycharm.key
+          base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rider.key
+          base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rubymine.key
+          base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/webstorm.key
+          
+          # Start metacity
+          metacity --sm-disable --replace &
+          sleep 10
+
+      - name: Start IDE in background
+        run: |
+          # Start IDE in background using Gradle
+          nohup gradle :its:runIdeForUiTests --stacktrace -i \
+            -PijVersion=${IDEA_VERSION} \
+            -PslPluginDirectory=${GITHUB_WORKSPACE}/staged-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
+          echo "IDE_PID=$!" >> $GITHUB_ENV
+
+      - name: Wait for IDE to start
+        run: |
+          echo "Wait for IDE to start"
+          timeout=750
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if curl -s http://127.0.0.1:8082 > /dev/null 2>&1; then
+              echo "IDE is ready!"
+              exit 0
+            fi
+            sleep 5
+            elapsed=$((elapsed + 5))
+          done
+          echo "Timeout waiting for IDE to start"
+          exit 1
+
+      - name: Start recording
+        run: |
+          echo 'Recording tests on video'
+          ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -i ${DISPLAY} \
+            -codec:v libx264 -r 12 ${GITHUB_WORKSPACE}/recording_${IDEA_VERSION}.mp4 &
+          echo "FFMPEG_PID=$!" >> $GITHUB_ENV
+
+      - name: Run integration tests
+        uses: SonarSource/ci-github-actions/build-gradle@v1
+        with:
+          use-develocity: true
+          artifactory-reader-role: private-reader
+          gradle-args: :its:check --stacktrace -i -PijVersion=${{ matrix.ide_version }} -PslPluginDirectory=${{ github.workspace }}/staged-plugin --dependency-verification lenient
+
+      - name: Stop recording
+        if: always()
+        run: |
+          if [ -n "$FFMPEG_PID" ] && kill -0 $FFMPEG_PID 2>/dev/null; then
+            kill -SIGINT $FFMPEG_PID
+            # Wait for ffmpeg to finish
+            timeout=30
+            while kill -0 $FFMPEG_PID 2>/dev/null && [ $timeout -gt 0 ]; do
+              sleep 1
+              timeout=$((timeout - 1))
+            done
+          fi
+          if [ -n "$XVFB_PID" ] && kill -0 $XVFB_PID 2>/dev/null; then
+            kill $XVFB_PID
+          fi
+
+      - name: Display IDE log
+        if: always()
+        run: |
+          if [ -f ${GITHUB_WORKSPACE}/runIdeGradle.log ]; then
+            cat ${GITHUB_WORKSPACE}/runIdeGradle.log
+          fi
+
+      - name: Upload test recording
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-recording-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
+          path: ${{ github.workspace }}/recording_${{ matrix.ide_version }}.mp4
+          if-no-files-found: warn
+
+      - name: Upload IDE logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ide-logs-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
+          path: its/build/idea-sandbox/system/log
+          if-no-files-found: warn
+
+      - name: Upload Xvfb log
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: xvfb-log-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
+          path: ${{ github.workspace }}/Xvfb.out
+          if-no-files-found: warn
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
+          path: "**/reports/**/*"
+          if-no-files-found: warn
+
+      - name: Upload JUnit test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
+          path: "**/test-results/**/*.xml"
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: failure()
+        with:
+          name: JUnit Test Results - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
+          path: "**/test-results/**/*.xml"
+          reporter: java-junit
