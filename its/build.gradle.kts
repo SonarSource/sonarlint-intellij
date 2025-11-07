@@ -46,18 +46,6 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.four)
     testRuntimeOnly(libs.junit.launcher)
-    
-    // Ensure jacocoAgent configuration is resolvable
-    // The Gradle JaCoCo plugin should provide the correct agent JAR
-    configurations.getByName("jacocoAgent").apply {
-        isCanBeResolved = true
-    }
-}
-
-// Configure JaCoCo extension to ensure correct version
-// This ensures we get the agent JAR with Premain-Class manifest
-configure<org.gradle.testing.jacoco.plugins.JacocoPluginExtension> {
-    toolVersion = "0.8.13"
 }
 
 tasks {
@@ -134,20 +122,28 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
 
     task {
         val jacocoExecFile = project.layout.buildDirectory.file("jacoco/its.exec").get().asFile
+        var agentJarPath: String? = null
         
         doFirst {
             jacocoExecFile.parentFile.mkdirs()
+            
+            // Resolve the JaCoCo agent JAR using the extension's agentJar property
+            // This ensures we get the correct agent JAR with Premain-Class manifest
+            val jacocoExtension = project.extensions.getByName("jacoco")
+            val agentJarMethod = jacocoExtension.javaClass.getMethod("getAgentJar")
+            val agentJarProvider = agentJarMethod.invoke(jacocoExtension) as Provider<*>
+            val agentJarFile = agentJarProvider.get() as File
+            
+            if (!agentJarFile.exists()) {
+                throw GradleException("JaCoCo agent JAR not found at: ${agentJarFile.absolutePath}")
+            }
+            
+            agentJarPath = agentJarFile.absolutePath
         }
         
         jvmArgumentProviders += CommandLineArgumentProvider {
-            // Get the JaCoCo agent JAR from the plugin's configuration
-            // The Gradle JaCoCo plugin should provide the correct agent JAR with Premain-Class
-            val jacocoAgentConfig = project.configurations.getByName("jacocoAgent")
-            jacocoAgentConfig.isCanBeResolved = true
-            
-            // Use the singleFile provided by the plugin - it should be the correct agent JAR
-            // In JaCoCo 0.8.x, the main agent JAR should have Premain-Class manifest attribute
-            val agentJar = jacocoAgentConfig.singleFile.absolutePath
+            // Use the agent JAR path resolved in doFirst
+            val agentJar = agentJarPath ?: throw GradleException("JaCoCo agent JAR path not resolved. Ensure doFirst has run.")
             
             listOf(
                 "-Xmx1G",
