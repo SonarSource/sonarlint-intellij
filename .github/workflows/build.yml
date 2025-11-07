@@ -84,7 +84,7 @@ jobs:
           reporter: java-junit
 
   test_windows:
-    runs-on: warp-custom-sonarlint-intellij
+    runs-on: github-ubuntu-windows-m
     name: Test Windows
     steps:
       - uses: actions/checkout@v5
@@ -94,12 +94,12 @@ jobs:
           version: 2025.9.12
 
       - uses: SonarSource/ci-github-actions/build-gradle@v1
-        env:
-          IDEA_HOME: /C/Program Files/intellij
-          RIDER_HOME: /C/Program Files/rider
-          RESHARPER_HOME: /C/Program Files/resharper
-          CLION_HOME: /C/Program Files/clion
-          ULTIMATE_HOME: /C/Program Files/ultimate
+        #        env:
+        #          IDEA_HOME: /C/Program Files/intellij
+        #          RIDER_HOME: /C/Program Files/rider
+        #          RESHARPER_HOME: /C/Program Files/resharper
+        #          CLION_HOME: /C/Program Files/clion
+        #          ULTIMATE_HOME: /C/Program Files/ultimate
         with:
           deploy-pull-request: true
           use-develocity: true
@@ -130,7 +130,7 @@ jobs:
           reporter: java-junit
 
   qa:
-    runs-on: github-ubuntu-latest-xl
+    runs-on: github-ubuntu-latest-m
     name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
     needs: build
     strategy:
@@ -207,19 +207,19 @@ jobs:
         uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
-            development/team/sonarlint/kv/data/ide.keys data.clion | CLION_KEY;
-            development/team/sonarlint/kv/data/ide.keys data.goland | GOLAND_KEY;
-            development/team/sonarlint/kv/data/ide.keys data.datagrip | DATAGRIP_KEY;
-            development/team/sonarlint/kv/data/ide.keys data.idea | IDEA_KEY;
-            development/team/sonarlint/kv/data/ide.keys data.phpstorm | PHPSTORM_KEY;
-            development/team/sonarlint/kv/data/ide.keys data.pycharm | PYCHARM_KEY;
-            development/team/sonarlint/kv/data/ide.keys data.rider | RIDER_KEY;
-            development/team/sonarlint/kv/data/ide.keys data.rubymine | RUBYMINE_KEY;
-            development/team/sonarlint/kv/data/ide.keys data.webstorm | WEBSTORM_KEY;
+            development/team/sonarlint/kv/data/ide.keys clion | CLION_KEY;
+            development/team/sonarlint/kv/data/ide.keys goland | GOLAND_KEY;
+            development/team/sonarlint/kv/data/ide.keys datagrip | DATAGRIP_KEY;
+            development/team/sonarlint/kv/data/ide.keys idea | IDEA_KEY;
+            development/team/sonarlint/kv/data/ide.keys phpstorm | PHPSTORM_KEY;
+            development/team/sonarlint/kv/data/ide.keys pycharm | PYCHARM_KEY;
+            development/team/sonarlint/kv/data/ide.keys rider | RIDER_KEY;
+            development/team/sonarlint/kv/data/ide.keys rubymine | RUBYMINE_KEY;
+            development/team/sonarlint/kv/data/ide.keys webstorm | WEBSTORM_KEY;
             development/artifactory/token/${{ github.repository_owner }}-${{ github.event.repository.name }}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
             development/github/token/licenses-ro token | GITHUB_TOKEN_LICENSES;
-            development/team/sonarlint/kv/data/sonarcloud-it data.token | SONARCLOUD_IT_TOKEN;
-            development/kv/data/repox data.url | ARTIFACTORY_URL;
+            development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
+            development/kv/data/repox url | ARTIFACTORY_URL;
 
       - name: Setup Orchestrator cache
         id: setup-orchestrator
