@@ -47,15 +47,17 @@ dependencies {
     testImplementation(libs.junit.four)
     testRuntimeOnly(libs.junit.launcher)
     
-    // Explicitly add JaCoCo agent with runtime classifier to jacocoAgent configuration
-    // This ensures we get the JAR with Premain-Class manifest attribute
-    // The plugin's default might not include the runtime classifier
-    val jacocoAgentConfig = configurations.getByName("jacocoAgent")
-    jacocoAgentConfig.isCanBeResolved = true
-    // Add explicit dependency with runtime classifier
-    // Using version 0.8.13 (matching the version from the error message)
-    // The runtime classifier ensures we get the JAR with Premain-Class manifest
-    dependencies.add(jacocoAgentConfig.name, "org.jacoco:org.jacoco.agent:0.8.13:runtime")
+    // Ensure jacocoAgent configuration is resolvable
+    // The Gradle JaCoCo plugin should provide the correct agent JAR
+    configurations.getByName("jacocoAgent").apply {
+        isCanBeResolved = true
+    }
+}
+
+// Configure JaCoCo extension to ensure correct version
+// This ensures we get the agent JAR with Premain-Class manifest
+configure<org.gradle.testing.jacoco.plugins.JacocoPluginExtension> {
+    toolVersion = "0.8.13"
 }
 
 tasks {
@@ -138,36 +140,14 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
         }
         
         jvmArgumentProviders += CommandLineArgumentProvider {
-            // Get the JaCoCo agent runtime JAR (the one with Premain-Class manifest)
-            // The Gradle JaCoCo plugin's jacocoAgent configuration should provide the runtime JAR
+            // Get the JaCoCo agent JAR from the plugin's configuration
+            // The Gradle JaCoCo plugin should provide the correct agent JAR with Premain-Class
             val jacocoAgentConfig = project.configurations.getByName("jacocoAgent")
             jacocoAgentConfig.isCanBeResolved = true
             
-            // The jacocoAgent configuration from Gradle's JaCoCo plugin should already point to the runtime JAR
-            // But if it doesn't, we'll look for it explicitly in resolved artifacts
-            val agentJar = try {
-                val resolvedArtifacts = jacocoAgentConfig.resolvedConfiguration.resolvedArtifacts
-                // First, try to find the runtime JAR explicitly by classifier
-                resolvedArtifacts.firstOrNull { it.classifier == "runtime" }?.file?.absolutePath
-                    ?: run {
-                        // If no runtime classifier, check if any JAR has the Premain-Class by checking file name
-                        // The runtime JAR typically has "-runtime" in the name or is the main JAR
-                        val runtimeJar = resolvedArtifacts.firstOrNull { artifact ->
-                            artifact.extension == "jar" && 
-                            (artifact.name.contains("runtime") || 
-                             (artifact.classifier == null && artifact.name.contains("agent")))
-                        }?.file?.absolutePath
-                        
-                        runtimeJar ?: resolvedArtifacts.firstOrNull { 
-                            // Last resort: any JAR that's not sources/javadoc
-                            it.extension == "jar" && it.classifier != "sources" && it.classifier != "javadoc" 
-                        }?.file?.absolutePath
-                    }
-                    ?: jacocoAgentConfig.singleFile.absolutePath
-            } catch (e: Exception) {
-                // If resolution fails, use singleFile (should work if plugin is configured correctly)
-                jacocoAgentConfig.singleFile.absolutePath
-            }
+            // Use the singleFile provided by the plugin - it should be the correct agent JAR
+            // In JaCoCo 0.8.x, the main agent JAR should have Premain-Class manifest attribute
+            val agentJar = jacocoAgentConfig.singleFile.absolutePath
             
             listOf(
                 "-Xmx1G",
