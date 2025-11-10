@@ -110,9 +110,21 @@ jobs:
       #          artifactory-deployer-role: qa-deployer
       #          gradle-args: :check
 
+      - name: Fetch vault secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
       - name: Run checks
-        run: |
-          .\gradlew.bat :check
+        env:
+          ARTIFACTORY_URL: ${{ steps.secrets.outputs.ARTIFACTORY_URL }}
+          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ steps.secrets.outputs.ARTIFACTORY_ACCESS_TOKEN }}
+        run: .\gradlew.bat :check
 
   qa:
     runs-on: github-ubuntu-latest-m
