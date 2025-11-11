@@ -56,13 +56,13 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
-import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -107,7 +107,6 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
     var serversPanelToolbar = toolbarDecorator.createPanel();
     serversPanelToolbar.setMinimumSize(new Dimension(170, 170));
-    serversPanelToolbar.setPreferredSize(new Dimension(170, 170));
     serversPanel.add(serversPanelToolbar, BorderLayout.CENTER);
 
     var emptyLabel = new JBLabel("No connection selected", SwingConstants.CENTER);
@@ -120,11 +119,14 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     var connectedModeDescription = initConnectedModeDescription();
     optionsPanel.add(connectedModeDescription);
 
-    panel = new JPanel(new VerticalFlowLayout());
-    panel.add(new SeparatorComponent(5, 0, JBUI.CurrentTheme.CustomFrameDecorations.separatorForeground(), null));
-    panel.add(titlePanel);
-    panel.add(optionsPanel);
-    panel.add(serversPanel);
+    var topPanel = new JPanel(new VerticalFlowLayout());
+    topPanel.add(new SeparatorComponent(5, 0, JBUI.CurrentTheme.CustomFrameDecorations.separatorForeground(), null));
+    topPanel.add(titlePanel);
+    topPanel.add(optionsPanel);
+
+    panel = new JPanel(new BorderLayout());
+    panel.add(topPanel, BorderLayout.NORTH);
+    panel.add(serversPanel, BorderLayout.CENTER);
 
     connectionList.setCellRenderer(new ColoredListCellRenderer<>() {
       @Override

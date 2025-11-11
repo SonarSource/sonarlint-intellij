@@ -23,6 +23,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
@@ -30,6 +31,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.ScrollPaneConstants;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
@@ -159,9 +161,13 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       settingsPanel.add(globalPanel.getComponent(), BorderLayout.NORTH);
       settingsPanel.add(connectionsPanel.getComponent(), BorderLayout.CENTER);
 
+      var settingsScrollPane = ScrollPaneFactory.createScrollPane(settingsPanel, true);
+      settingsScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+      settingsScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
       rootPanel = new JPanel(new BorderLayout());
       tabs = new JBTabbedPane();
-      tabs.insertTab("Settings", null, settingsPanel, "Configure SonarQube for IDE for all projects", SETTINGS_TAB_INDEX);
+      tabs.insertTab("Settings", null, settingsScrollPane, "Configure SonarQube for IDE for all projects", SETTINGS_TAB_INDEX);
       tabs.insertTab("File Exclusions", null, exclusions.getComponent(), "Configure which files should be excluded from analysis", FILE_EXCLUSIONS_TAB_INDEX);
       tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not bound to SonarQube (Server, Cloud)", RULES_TAB_INDEX);
       tabs.insertTab("About", null, about.getComponent(), "About SonarQube for IDE", ABOUT_TAB_INDEX);
