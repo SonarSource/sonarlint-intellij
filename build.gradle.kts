@@ -64,6 +64,7 @@ configurations {
         extendsFrom(sqplugins)
         isTransitive = true
     }
+    create("cfamilySignature") { isTransitive = false }
     register("omnisharp")
     register("sloop")
 }
@@ -110,7 +111,7 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
     "sqplugins"(libs.bundles.sonar.analyzers)
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"(libs.sonar.cfamily)
+        "cfamilySignature"("${libs.sonar.cfamily.get()}@jar.asc")
         "sqplugins"(libs.sonar.dotnet.enterprise)
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
@@ -264,11 +265,19 @@ intellijPlatformTesting {
 fun setupSandbox(destinationDir: File, pluginName: Property<String>) {
     val pluginsDir = file("$destinationDir/${pluginName.get()}/plugins")
 
+    copyAsc(pluginsDir)
     copyPlugins(pluginsDir)
     renameCsharpPlugins(pluginsDir)
     copyOmnisharp(destinationDir, pluginName)
     copySloop(destinationDir, pluginName)
     unzipEslintBridgeBundle(pluginsDir)
+}
+
+fun copyAsc(pluginsDir: File) {
+    copy {
+        from(project.configurations["cfamilySignature"])
+        into(pluginsDir)
+    }
 }
 
 fun copyPlugins(pluginsDir: File) {
