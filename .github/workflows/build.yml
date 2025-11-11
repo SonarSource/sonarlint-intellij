@@ -37,14 +37,7 @@ jobs:
           use-develocity: false # Not supported by the github-ubuntu-latest-m runner yet
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
-          gradle-args: -x build -x sonar :buildPlugin :cyclonedxBom
-
-      - name: Test and Analyze
-        uses: SonarSource/ci-github-actions/build-gradle@v1
-        with:
-          deploy-pull-request: false
-          use-develocity: false # Not supported by the github-ubuntu-latest-m runner yet
-          gradle-args: check -x :its:check -x artifactoryPublish sonar jacocoTestReport :verifyPlugin
+          gradle-args: -x build -x sonar -x :its:check :buildPlugin :cyclonedxBom check sonar jacocoTestReport :verifyPlugin
 
       - name: Upload test reports
         if: ${{ !cancelled() }}
