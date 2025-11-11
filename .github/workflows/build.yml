@@ -21,7 +21,7 @@ jobs:
     runs-on: github-ubuntu-latest-m
     name: Build
     outputs:
-      PROJECT_VERSION: ${{ steps.build-gradle.outputs.PROJECT_VERSION }}
+      PROJECT_VERSION: ${{ steps.build_plugin.outputs.project-version }}
     steps:
       - uses: actions/checkout@v5
 
@@ -36,7 +36,7 @@ jobs:
           secrets: |
 
       - uses: SonarSource/ci-github-actions/build-gradle@v1
-        id: build-gradle
+        id: build_plugin
         with:
           deploy-pull-request: true
           use-develocity: true
