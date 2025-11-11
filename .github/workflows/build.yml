@@ -216,7 +216,7 @@ jobs:
       - name: Start Xvfb
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb metacity ffmpeg
+          sudo apt-get install -y xvfb metacity ffmpeg dbus-x11
           Xvfb ${DISPLAY} -screen 0 1280x960x24 &
           echo "XVFB_PID=$!" >> $GITHUB_ENV
           sleep 5
