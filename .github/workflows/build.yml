@@ -170,6 +170,9 @@ jobs:
         uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
             development/team/sonarlint/kv/data/ide.keys clion | CLION_KEY;
             development/team/sonarlint/kv/data/ide.keys goland | GOLAND_KEY;
             development/team/sonarlint/kv/data/ide.keys datagrip | DATAGRIP_KEY;
@@ -179,10 +182,8 @@ jobs:
             development/team/sonarlint/kv/data/ide.keys rider | RIDER_KEY;
             development/team/sonarlint/kv/data/ide.keys rubymine | RUBYMINE_KEY;
             development/team/sonarlint/kv/data/ide.keys webstorm | WEBSTORM_KEY;
-            development/artifactory/token/${{ github.repository_owner }}-${{ github.event.repository.name }}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
             development/github/token/licenses-ro token | GITHUB_TOKEN_LICENSES;
             development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
-            development/kv/data/repox url | ARTIFACTORY_URL;
 
       - name: Setup Orchestrator cache
         id: setup-orchestrator
@@ -253,6 +254,10 @@ jobs:
           sleep 10
 
       - name: Start IDE in background
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
           # Start IDE in background using Gradle
           nohup gradle :its:runIdeForUiTests --stacktrace -i \
