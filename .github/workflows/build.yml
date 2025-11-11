@@ -96,20 +96,6 @@ jobs:
         with:
           version: 2025.9.12
 
-        #      - uses: SonarSource/ci-github-actions/build-gradle@v1
-        #        env:
-        #          IDEA_HOME: /C/Program Files/intellij
-        #          RIDER_HOME: /C/Program Files/rider
-        #          RESHARPER_HOME: /C/Program Files/resharper
-        #          CLION_HOME: /C/Program Files/clion
-        #          ULTIMATE_HOME: /C/Program Files/ultimate
-      #        with:
-      #          deploy-pull-request: true
-      #          use-develocity: true
-      #          artifactory-reader-role: private-reader
-      #          artifactory-deployer-role: qa-deployer
-      #          gradle-args: :check
-
       - name: Fetch vault secrets
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
@@ -124,6 +110,11 @@ jobs:
           ARTIFACTORY_URL: ${{ steps.secrets.outputs.ARTIFACTORY_URL }}
           ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_ACCESS_TOKEN: ${{ steps.secrets.outputs.ARTIFACTORY_ACCESS_TOKEN }}
+          IDEA_HOME: /C/Program Files/intellij
+          RIDER_HOME: /C/Program Files/rider
+          RESHARPER_HOME: /C/Program Files/resharper
+          CLION_HOME: /C/Program Files/clion
+          ULTIMATE_HOME: /C/Program Files/ultimate
         run: .\gradlew.bat :check
 
   qa:
