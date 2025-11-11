@@ -34,6 +34,22 @@ jobs:
         uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
+      - name: Download staged plugin from Artifactory
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_PRIVATE_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+          PROJECT_VERSION: 11.5.0.82656 #${{ needs.build.outputs.PROJECT_VERSION }}
+        run: |
+          curl -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
+            -o sonarlint-intellij.zip \
+            "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
+          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/staged-plugin
+          rm sonarlint-intellij.zip
 
       - uses: SonarSource/ci-github-actions/build-gradle@v1
         id: build_plugin
@@ -44,24 +60,11 @@ jobs:
           artifactory-deployer-role: qa-deployer
           gradle-args: -x build -x sonar :buildPlugin :cyclonedxBom
 
-  test_linux:
-    runs-on: github-ubuntu-latest-m
-    name: Test linux and Analyze
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: jdx/mise-action@v2.4.4
-        with:
-          version: 2025.9.12
-
       - uses: SonarSource/ci-github-actions/build-gradle@v1
-        env:
-          PULL_REQUEST_SHA: ${{ github.sha }}
+        name: "Test and Analyze"
         with:
-          deploy-pull-request: true
+          deploy-pull-request: false
           use-develocity: true
-          artifactory-reader-role: private-reader
-          artifactory-deployer-role: qa-deployer
           gradle-args: check -x :its:check -x artifactoryPublish sonar jacocoTestReport :verifyPlugin
 
       - name: Upload test reports
@@ -247,16 +250,18 @@ jobs:
 
       - name: Extract and setup plugin
         env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_PRIVATE_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
         run: |
           set -euo pipefail
-          
           echo "Using project version: ${PROJECT_VERSION}"
-          
-          # Unpack plugin from Artifactory
-          mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B \
-            -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:${PROJECT_VERSION}:zip \
-            -DoutputDirectory=${GITHUB_WORKSPACE}/staged-plugin
+          curl -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
+            -o sonarlint-intellij.zip \
+            "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
+          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/staged-plugin
+          rm sonarlint-intellij.zip
           
           mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
           
