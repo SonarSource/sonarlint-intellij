@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
     alias(libs.plugins.kotlin)
+    jacoco
 }
 
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
@@ -69,6 +70,48 @@ tasks {
             }
         }
         testLogging.showStandardStreams = true
+        
+        // Configure JaCoCo for test coverage
+        configure<org.gradle.testing.jacoco.plugins.JacocoTaskExtension> {
+            isIncludeNoLocationClasses = true
+            excludes = listOf("jdk.internal.*")
+        }
+        
+        // Finalize with coverage report generation
+        finalizedBy(jacocoTestReport)
+    }
+    
+    // Generate JaCoCo coverage report for UI tests
+    jacocoTestReport {
+        dependsOn(test)
+        // Ensure root project's instrumented code is available (instrumentCode task is created by IntelliJ Platform Plugin)
+        val rootInstrumentCode = project(":").tasks.findByName("instrumentCode")
+        if (rootInstrumentCode != null) {
+            mustRunAfter(rootInstrumentCode)
+        } else {
+            // Fallback to buildPlugin if instrumentCode doesn't exist
+            mustRunAfter(project(":").tasks.named("buildPlugin"))
+        }
+        
+        // Use the coverage data collected from the IDE process
+        val execFile = project.layout.buildDirectory.file("jacoco/its.exec").get().asFile
+        executionData.setFrom(
+            files(execFile).filter { it.exists() }
+        )
+        
+        // Only generate report if execution data exists
+        onlyIf { execFile.exists() }
+        
+        // Report on the instrumented plugin code from the root project
+        val instrumentedCodeDir = project(":").layout.buildDirectory.dir("instrumented/instrumentCode").get().asFile
+        classDirectories.setFrom(
+            files(instrumentedCodeDir).filter { it.exists() }
+        )
+        
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
     }
 }
 
@@ -78,9 +121,33 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
     }
 
     task {
+        val jacocoExecFile = project.layout.buildDirectory.file("jacoco/its.exec").get().asFile
+        var agentJarPath: String? = null
+        
+        doFirst {
+            jacocoExecFile.parentFile.mkdirs()
+            
+            // Resolve the JaCoCo agent JAR using the extension's agentJar property
+            // This ensures we get the correct agent JAR with Premain-Class manifest
+            val jacocoExtension = project.extensions.getByName("jacoco")
+            val agentJarMethod = jacocoExtension.javaClass.getMethod("getAgentJar")
+            val agentJarProvider = agentJarMethod.invoke(jacocoExtension) as Provider<*>
+            val agentJarFile = agentJarProvider.get() as File
+            
+            if (!agentJarFile.exists()) {
+                throw GradleException("JaCoCo agent JAR not found at: ${agentJarFile.absolutePath}")
+            }
+            
+            agentJarPath = agentJarFile.absolutePath
+        }
+        
         jvmArgumentProviders += CommandLineArgumentProvider {
+            // Use the agent JAR path resolved in doFirst
+            val agentJar = agentJarPath ?: throw GradleException("JaCoCo agent JAR path not resolved. Ensure doFirst has run.")
+            
             listOf(
                 "-Xmx1G",
+                "-javaagent:$agentJar=destfile=${jacocoExecFile.absolutePath}",
                 "-Drobot-server.port=8082",
                 "-Drobot-server.host.public=true",
                 "-Dsonarlint.internal.sonarcloud.url=https://sc-staging.io",
@@ -127,7 +194,8 @@ intellijPlatform {
         }
         name = "sonarlint-intellij-its"
     }
-    instrumentCode.set(false)
+    // Enable code instrumentation for JaCoCo coverage collection
+    instrumentCode.set(true)
 }
 
 license {
