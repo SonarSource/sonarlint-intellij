@@ -294,6 +294,7 @@ jobs:
           ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
+          GITHUB_TOKEN_LICENSES: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN_LICENSES }}
         run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/staged-plugin --dependency-verification lenient
 
       - name: Stop recording
