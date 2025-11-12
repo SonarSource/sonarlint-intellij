@@ -182,7 +182,7 @@ jobs:
             development/team/sonarlint/kv/data/ide.keys rider | RIDER_KEY;
             development/team/sonarlint/kv/data/ide.keys rubymine | RUBYMINE_KEY;
             development/team/sonarlint/kv/data/ide.keys webstorm | WEBSTORM_KEY;
-            development/github/token/licenses-ro token | GITHUB_TOKEN_LICENSES;
+            development/github/token/licenses-ro token | GITHUB_TOKEN;
             development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
 
       - name: Setup Orchestrator cache
@@ -294,7 +294,7 @@ jobs:
           ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
-          GITHUB_TOKEN_LICENSES: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN_LICENSES }}
+          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
         run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/staged-plugin --dependency-verification lenient
 
       - name: Stop recording
