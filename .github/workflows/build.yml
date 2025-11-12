@@ -233,7 +233,7 @@ jobs:
           curl -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
             -o sonarlint-intellij.zip \
             "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
-          unzip -q sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/staged-plugin
+          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/staged-plugin
           rm sonarlint-intellij.zip
           
           mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
