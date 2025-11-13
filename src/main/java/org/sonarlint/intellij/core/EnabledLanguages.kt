@@ -28,6 +28,7 @@ import java.util.EnumSet
 import kotlin.io.path.name
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.core.cfamily.CFamilyAnalyzerManager
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
@@ -74,8 +75,13 @@ object EnabledLanguages {
     fun getEmbeddedPluginsForConnectedMode(): Map<String, Path> {
         val embeddedPlugins = mutableMapOf<String, Path>()
         EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.forEach {
-            findEmbeddedPlugin(getPluginsDir(), it)?.let { path ->
-                embeddedPlugins.put(it.pluginKey, path)
+            val path = if (it.pluginKey == SonarLanguage.valueOf(Language.CPP.name).pluginKey) {
+                findCFamilyPlugin(it)
+            } else {
+                findEmbeddedPlugin(getPluginsDir(), it)
+            }
+            path?.let { pluginPath ->
+                embeddedPlugins.put(it.pluginKey, pluginPath)
             }
         }
         findEmbeddedPlugin(getPluginsDir(), "sonarlint-omnisharp-plugin-*.jar", "OmniSharp")?.let {
@@ -140,12 +146,39 @@ object EnabledLanguages {
     @JvmStatic
     @Throws(IOException::class)
     fun findEmbeddedPlugins(): Set<Path> {
-        return getPluginsUrls(getPluginsDir())
+        val plugins = getPluginsUrls(getPluginsDir()).toMutableSet()
+        
+        // Add cached CFamily analyzer if available
+        val cachedCFamily = SonarLintUtils.getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
+        if (cachedCFamily != null) {
+            plugins.add(cachedCFamily)
+            SonarLintUtils.getService(GlobalLogOutput::class.java).log(
+                "Including cached CFamily plugin: ${cachedCFamily.fileName}",
+                ClientLogOutput.Level.DEBUG
+            )
+        }
+        
+        return plugins
     }
 
     private fun getPluginsDir(): Path {
         val plugin = SonarLintUtils.getService(SonarLintPlugin::class.java)
         return plugin.path.resolve("plugins")
+    }
+
+    private fun findCFamilyPlugin(embeddedPlugin: EmbeddedPlugin): Path? {
+        // Check cache directory first
+        val cachedPath = SonarLintUtils.getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
+        if (cachedPath != null) {
+            SonarLintUtils.getService(GlobalLogOutput::class.java).log(
+                "Found CFamily plugin in cache: ${cachedPath.fileName}",
+                ClientLogOutput.Level.DEBUG
+            )
+            return cachedPath
+        }
+        
+        // Fallback to plugins directory
+        return findEmbeddedPlugin(getPluginsDir(), embeddedPlugin)
     }
 
     private fun findEmbeddedPlugin(pluginsDir: Path, embeddedPlugin: EmbeddedPlugin): Path? {

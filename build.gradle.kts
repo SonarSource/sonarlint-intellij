@@ -100,6 +100,8 @@ dependencies {
     implementation(libs.sonarlint.rpc.impl)
     implementation(libs.commons.langs3)
     implementation(libs.commons.text)
+    implementation(libs.bouncycastle.bcpg)
+    implementation(libs.bouncycastle.bcprov)
     compileOnly(libs.findbugs.jsr305)
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)
@@ -357,6 +359,14 @@ fun unzipEslintBridgeBundle(pluginsDir: File) {
 configurations.archives.get().isCanBeResolved = true
 
 tasks {
+    processResources {
+        val cfamilyVersion = providers.provider { libs.versions.sonar.cpp.get() }
+        inputs.property("cfamilyVersion", cfamilyVersion)
+        filesMatching("cfamily-version.properties") {
+            expand(mapOf("cfamilyVersion" to cfamilyVersion.get()))
+        }
+    }
+
     compileKotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)

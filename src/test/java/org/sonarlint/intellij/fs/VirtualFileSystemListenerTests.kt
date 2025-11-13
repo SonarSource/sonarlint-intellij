@@ -61,6 +61,10 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         actualBackendService = ApplicationManager.getApplication().getService(BackendService::class.java)
         backendService = spy(actualBackendService)
         ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
+        // Wait for backend to be fully initialized before running tests
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            assertThat(backendService.isAlive()).isTrue()
+        }
         file = myFixture.copyFileToProject(FILE_NAME, FILE_NAME)
         virtualFileSystemListener = VirtualFileSystemListener()
     }

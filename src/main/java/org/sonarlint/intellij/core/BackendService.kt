@@ -28,6 +28,7 @@ import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -75,6 +76,7 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
+import org.sonarlint.intellij.core.cfamily.CFamilyAnalyzerManager
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
@@ -86,6 +88,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Compan
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.ProgressUtils
 import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarlint.intellij.util.VirtualFileUtils.getFileContent
@@ -269,6 +272,9 @@ class BackendService : Disposable {
         return object : Task.Backgroundable(null, "Starting SonarQube for IDE service\u2026", false, ALWAYS_BACKGROUND) {
             override fun run(indicator: ProgressIndicator) {
                 try {
+                    // Check CFamily analyzer availability before starting backend
+                    waitForCFamilyAnalyzer(indicator)
+                    
                     val sloop = startSloopProcess()
                     this@BackendService.sloop = sloop
                     getService(GlobalLogOutput::class.java).log("Migrating the storage...", ClientLogOutput.Level.INFO)
@@ -298,6 +304,98 @@ class BackendService : Disposable {
                     backendFuture.cancel(true)
                 }
             }
+        }
+    }
+
+    private fun waitForCFamilyAnalyzer(indicator: ProgressIndicator) {
+        // Skip CFamily analyzer check during unit tests
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            return
+        }
+
+        try {
+            val manager = getService(CFamilyAnalyzerManager::class.java)
+            val result = ProgressUtils.waitForFuture(indicator, manager.ensureAnalyzerAvailable(indicator))
+
+            when (result) {
+                is CFamilyAnalyzerManager.CheckResult.Available -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer is ready and signature verified",
+                        ClientLogOutput.Level.DEBUG
+                    )
+                }
+
+                is CFamilyAnalyzerManager.CheckResult.Downloaded -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer downloaded and verified",
+                        ClientLogOutput.Level.INFO
+                    )
+                    projectLessNotification(
+                        null,
+                        "CFamily analyzer has been downloaded and verified.",
+                        NotificationType.INFORMATION
+                    )
+                }
+
+                is CFamilyAnalyzerManager.CheckResult.InvalidSignature -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer signature invalid",
+                        ClientLogOutput.Level.ERROR
+                    )
+                    projectLessNotification(
+                        null,
+                        "CFamily analyzer signature validation failed. C/C++ analysis is disabled for security reasons.",
+                        NotificationType.ERROR
+                    )
+                }
+
+                is CFamilyAnalyzerManager.CheckResult.DownloadFailed -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer download failed: ${result.reason}",
+                        ClientLogOutput.Level.WARN
+                    )
+                    projectLessNotification(
+                        null,
+                        "Failed to download CFamily analyzer: ${result.reason}. C/C++ analysis will not be available.",
+                        NotificationType.WARNING
+                    )
+                }
+
+                is CFamilyAnalyzerManager.CheckResult.MissingAndDownloadDisabled -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer not available",
+                        ClientLogOutput.Level.DEBUG
+                    )
+                }
+
+                is CFamilyAnalyzerManager.CheckResult.Cancelled -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer download cancelled",
+                        ClientLogOutput.Level.DEBUG
+                    )
+                    projectLessNotification(
+                        null,
+                        "CFamily analyzer check was cancelled. C/C++ analysis may not be available until the analyzer is downloaded.",
+                        NotificationType.INFORMATION
+                    )
+                }
+            }
+        } catch (e: ProcessCanceledException) {
+            getService(GlobalLogOutput::class.java).log(
+                "CFamily analyzer check cancelled while starting backend",
+                ClientLogOutput.Level.DEBUG
+            )
+            projectLessNotification(
+                null,
+                "CFamily analyzer check was cancelled while starting the backend. C/C++ analysis may not be available until the analyzer is downloaded.",
+                NotificationType.INFORMATION
+            )
+        } catch (e: Exception) {
+            // Don't fail backend initialization if CFamily check fails
+            getService(GlobalLogOutput::class.java).logError(
+                "Error checking CFamily analyzer, continuing with backend initialization",
+                e
+            )
         }
     }
 
