@@ -283,6 +283,7 @@
       <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
 
+        <postStartupActivity implementation="org.sonarlint.intellij.core.cfamily.CFamilyStartupActivity"/>
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
         <postStartupActivity implementation="org.sonarlint.intellij.OpenWelcomePageOnceOneProjectOpened"/>
 

@@ -100,6 +100,8 @@ dependencies {
     implementation(libs.sonarlint.rpc.impl)
     implementation(libs.commons.langs3)
     implementation(libs.commons.text)
+    implementation(libs.bouncycastle.bcpg)
+    implementation(libs.bouncycastle.bcprov)
     compileOnly(libs.findbugs.jsr305)
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)

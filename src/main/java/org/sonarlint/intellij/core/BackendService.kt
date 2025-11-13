@@ -75,6 +75,7 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
+import org.sonarlint.intellij.core.cfamily.CFamilyAnalyzerManager
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
@@ -269,6 +270,9 @@ class BackendService : Disposable {
         return object : Task.Backgroundable(null, "Starting SonarQube for IDE service\u2026", false, ALWAYS_BACKGROUND) {
             override fun run(indicator: ProgressIndicator) {
                 try {
+                    // Check CFamily analyzer availability before starting backend
+                    waitForCFamilyAnalyzer(indicator)
+                    
                     val sloop = startSloopProcess()
                     this@BackendService.sloop = sloop
                     getService(GlobalLogOutput::class.java).log("Migrating the storage...", ClientLogOutput.Level.INFO)
@@ -298,6 +302,58 @@ class BackendService : Disposable {
                     backendFuture.cancel(true)
                 }
             }
+        }
+    }
+
+    private fun waitForCFamilyAnalyzer(indicator: ProgressIndicator) {
+        try {
+            val manager = getService(CFamilyAnalyzerManager::class.java)
+            val result = manager.ensureAnalyzerAvailable(indicator).get()
+            
+            when (result) {
+                is CFamilyAnalyzerManager.CheckResult.Available -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer is ready and signature verified",
+                        ClientLogOutput.Level.DEBUG
+                    )
+                }
+                is CFamilyAnalyzerManager.CheckResult.Downloaded -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer downloaded and verified, restart required",
+                        ClientLogOutput.Level.INFO
+                    )
+                }
+                is CFamilyAnalyzerManager.CheckResult.InvalidSignature -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer signature invalid",
+                        ClientLogOutput.Level.ERROR
+                    )
+                }
+                is CFamilyAnalyzerManager.CheckResult.DownloadFailed -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer download failed: ${result.reason}",
+                        ClientLogOutput.Level.WARN
+                    )
+                }
+                is CFamilyAnalyzerManager.CheckResult.MissingAndDownloadDisabled -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer not available",
+                        ClientLogOutput.Level.DEBUG
+                    )
+                }
+                is CFamilyAnalyzerManager.CheckResult.Cancelled -> {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer download cancelled",
+                        ClientLogOutput.Level.DEBUG
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            // Don't fail backend initialization if CFamily check fails
+            getService(GlobalLogOutput::class.java).logError(
+                "Error checking CFamily analyzer, continuing with backend initialization",
+                e
+            )
         }
     }
 
