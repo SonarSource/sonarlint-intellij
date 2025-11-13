@@ -49,6 +49,7 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 /**
  * Service to manage CFamily analyzer availability, download, and verification.
+ * The analyzer version is determined from build metadata (cfamily-version.properties).
  * The analyzer signature is included during build via copyAsc in build.gradle.kts.
  * The analyzer JAR is downloaded at runtime if missing and verified against the signature using BouncyCastle.
  */
@@ -61,11 +62,10 @@ class CFamilyAnalyzerManager {
 
     companion object {
         private const val CFAMILY_PLUGIN_PATTERN = "sonar-cfamily-plugin-*.jar"
-        private const val CFAMILY_SIGNATURE_PATTERN = "sonar-cfamily-plugin-*.jar.asc"
         private const val SONAR_PUBLIC_KEY = "sonarsource-public.key"
+        private const val CFAMILY_VERSION_PROPERTIES = "cfamily-version.properties"
         private const val CFAMILY_DOWNLOAD_URL_TEMPLATE =
             "https://binaries.sonarsource.com/CommercialDistribution/sonar-cfamily-plugin/sonar-cfamily-plugin-%s.jar"
-        private val VERSION_REGEX = Regex("sonar-cfamily-plugin-(.*)\\.jar\\.asc")
     }
 
     init {
@@ -242,19 +242,19 @@ class CFamilyAnalyzerManager {
     }
 
 
-    private fun getVersionFromSignature(pluginsDir: Path): String? {
-        if (!Files.isDirectory(pluginsDir)) {
-            return null
-        }
+    private fun getCFamilyVersion(): String? {
+        return try {
+            val propertiesStream = javaClass.classLoader.getResourceAsStream(CFAMILY_VERSION_PROPERTIES)
+                ?: throw FileNotFoundException("CFamily version properties not found: $CFAMILY_VERSION_PROPERTIES")
 
-        return Files.newDirectoryStream(pluginsDir, CFAMILY_SIGNATURE_PATTERN).use { stream ->
-            val signatureFile = stream.firstOrNull()
-            if (signatureFile != null) {
-                val match = VERSION_REGEX.matchEntire(signatureFile.fileName.toString())
-                match?.groupValues?.get(1)
-            } else {
-                null
+            propertiesStream.use { input ->
+                val properties = java.util.Properties()
+                properties.load(input)
+                properties.getProperty("cfamily.version")
             }
+        } catch (e: Exception) {
+            getService(GlobalLogOutput::class.java).logError("Error loading CFamily version from properties", e)
+            null
         }
     }
 
@@ -262,13 +262,13 @@ class CFamilyAnalyzerManager {
         progressIndicator?.text = "Downloading CFamily analyzer..."
         progressIndicator?.isIndeterminate = false
 
-        val version = getVersionFromSignature(pluginsDir)
+        val version = getCFamilyVersion()
         if (version == null) {
             getService(GlobalLogOutput::class.java).log(
-                "Cannot determine CFamily version - signature file not found",
+                "Cannot determine CFamily version from build metadata",
                 ClientLogOutput.Level.ERROR
             )
-            return CheckResult.DownloadFailed("Signature file not found")
+            return CheckResult.DownloadFailed("Version metadata not found")
         }
 
         getService(GlobalLogOutput::class.java).log(
@@ -283,6 +283,7 @@ class CFamilyAnalyzerManager {
             val tempFile = Files.createTempFile(pluginsDir, "cfamily-download-", ".jar")
 
             try {
+                // Download the JAR file
                 HttpRequests.request(downloadUrl)
                     .connectTimeout(30000)
                     .readTimeout(30000)
@@ -294,6 +295,30 @@ class CFamilyAnalyzerManager {
                     "CFamily analyzer downloaded successfully to: ${targetFile.fileName}",
                     ClientLogOutput.Level.INFO
                 )
+
+                // Download the signature file
+                val signatureUrl = "$downloadUrl.asc"
+                val signatureFile = pluginsDir.resolve("${targetFile.fileName}.asc")
+                val tempSignatureFile = Files.createTempFile(pluginsDir, "cfamily-signature-", ".asc")
+
+                try {
+                    HttpRequests.request(signatureUrl)
+                        .connectTimeout(30000)
+                        .readTimeout(30000)
+                        .saveToFile(tempSignatureFile.toFile(), progressIndicator)
+
+                    Files.move(tempSignatureFile, signatureFile, StandardCopyOption.REPLACE_EXISTING)
+
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer signature downloaded successfully",
+                        ClientLogOutput.Level.INFO
+                    )
+                } catch (e: Exception) {
+                    Files.deleteIfExists(tempSignatureFile)
+                    getService(GlobalLogOutput::class.java).logError("Error downloading signature file", e)
+                    Files.deleteIfExists(targetFile)
+                    return CheckResult.DownloadFailed("Failed to download signature: ${e.message}")
+                }
 
                 val verificationResult = verifySignature(targetFile, progressIndicator)
                 return when (verificationResult) {

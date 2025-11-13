@@ -359,6 +359,14 @@ fun unzipEslintBridgeBundle(pluginsDir: File) {
 configurations.archives.get().isCanBeResolved = true
 
 tasks {
+    processResources {
+        val cfamilyVersion = providers.provider { libs.versions.sonar.cpp.get() }
+        inputs.property("cfamilyVersion", cfamilyVersion)
+        filesMatching("cfamily-version.properties") {
+            expand(mapOf("cfamilyVersion" to cfamilyVersion.get()))
+        }
+    }
+
     compileKotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
