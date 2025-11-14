@@ -147,7 +147,19 @@ object EnabledLanguages {
     @JvmStatic
     @Throws(IOException::class)
     fun findEmbeddedPlugins(): Set<Path> {
-        return getPluginsUrls(getPluginsDir())
+        val plugins = getPluginsUrls(getPluginsDir()).toMutableSet()
+        
+        // Add cached CFamily analyzer if available
+        val cachedCFamily = SonarLintUtils.getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
+        if (cachedCFamily != null) {
+            plugins.add(cachedCFamily)
+            SonarLintUtils.getService(GlobalLogOutput::class.java).log(
+                "Including cached CFamily plugin: ${cachedCFamily.fileName}",
+                ClientLogOutput.Level.DEBUG
+            )
+        }
+        
+        return plugins
     }
 
     private fun getPluginsDir(): Path {

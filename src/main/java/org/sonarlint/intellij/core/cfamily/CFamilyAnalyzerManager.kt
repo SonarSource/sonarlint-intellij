@@ -22,14 +22,11 @@ package org.sonarlint.intellij.core.cfamily
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.util.io.HttpRequests
 import java.io.BufferedInputStream
 import java.io.FileInputStream
 import java.io.FileNotFoundException
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.security.Security
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
@@ -48,7 +45,8 @@ import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 /**
- * Service to manage CFamily analyzer availability, download, and verification.
+ * Service to manage CFamily analyzer availability and verification.
+ * Downloads are delegated to CFamilyAnalyzerDownloader service.
  * 
  * Storage:
  * - Downloaded analyzers are stored in {plugin.path}/analyzer-cache/cfamily/
@@ -64,7 +62,6 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
  * This service supports:
  * - Detailed progress reporting through ProgressIndicator with text updates
  * - Cancellation via ProgressIndicator.isCanceled at strategic checkpoints
- * - Automatic cleanup of temporary files on cancellation
  * - PGP signature verification using BouncyCastle
  */
 @Service(Service.Level.APP)
@@ -78,8 +75,6 @@ class CFamilyAnalyzerManager {
         private const val CFAMILY_PLUGIN_PATTERN = "sonar-cfamily-plugin-*.jar"
         private const val SONAR_PUBLIC_KEY = "sonarsource-public.key"
         private const val CFAMILY_VERSION_PROPERTIES = "cfamily-version.properties"
-        private const val CFAMILY_DOWNLOAD_URL_TEMPLATE =
-            "https://binaries.sonarsource.com/CommercialDistribution/sonar-cfamily-plugin/sonar-cfamily-plugin-%s.jar"
         private const val ANALYZER_CACHE_DIR = "analyzer-cache"
         private const val CFAMILY_CACHE_DIR = "cfamily"
     }
@@ -144,7 +139,7 @@ class CFamilyAnalyzerManager {
                     "CFamily analyzer not found in cache, attempting download...",
                     ClientLogOutput.Level.INFO
                 )
-                downloadAnalyzer(cacheDir, progressIndicator)
+                downloadAndVerifyAnalyzer(progressIndicator)
             }
         }
     }
@@ -288,11 +283,7 @@ class CFamilyAnalyzerManager {
         }
     }
 
-    private fun downloadAnalyzer(cacheDir: Path, progressIndicator: ProgressIndicator?): CheckResult {
-        progressIndicator?.text = "Preparing to download CFamily analyzer..."
-        progressIndicator?.isIndeterminate = false
-        checkCancellation(progressIndicator)
-
+    private fun downloadAndVerifyAnalyzer(progressIndicator: ProgressIndicator?): CheckResult {
         val version = getCFamilyVersion()
         if (version == null) {
             getService(GlobalLogOutput::class.java).log(
@@ -302,59 +293,30 @@ class CFamilyAnalyzerManager {
             return CheckResult.DownloadFailed("Version metadata not found")
         }
 
-        getService(GlobalLogOutput::class.java).log(
-            "Downloading CFamily analyzer version: $version to cache",
-            ClientLogOutput.Level.INFO
-        )
-
         try {
-            Files.createDirectories(cacheDir)
-            val downloadUrl = String.format(CFAMILY_DOWNLOAD_URL_TEMPLATE, version)
-            val targetFile = cacheDir.resolve("sonar-cfamily-plugin-$version.jar")
-            val tempFile = Files.createTempFile(cacheDir, "cfamily-download-", ".jar")
+            val downloader = getService(CFamilyAnalyzerDownloader::class.java)
+            val downloadResult = downloader.downloadAnalyzer(version, progressIndicator)
 
-            try {
-                // Download the JAR file
-                progressIndicator?.text = "Downloading CFamily analyzer JAR ($version)..."
-                checkCancellation(progressIndicator)
-                
-                HttpRequests.request(downloadUrl)
-                    .connectTimeout(30000)
-                    .readTimeout(30000)
-                    .saveToFile(tempFile.toFile(), progressIndicator)
-                
-                checkCancellation(progressIndicator)
-
-                Files.move(tempFile, targetFile, StandardCopyOption.REPLACE_EXISTING)
-
-                getService(GlobalLogOutput::class.java).log(
-                    "CFamily analyzer downloaded successfully to cache: ${targetFile.fileName}",
-                    ClientLogOutput.Level.INFO
-                )
-
-                progressIndicator?.text = "Verifying downloaded analyzer..."
-                checkCancellation(progressIndicator)
-                
-                val verificationResult = verifySignature(targetFile, progressIndicator)
-                return when (verificationResult) {
-                    is CheckResult.Available -> CheckResult.Downloaded(targetFile)
-                    else -> verificationResult
+            return when (downloadResult) {
+                is CFamilyAnalyzerDownloader.DownloadResult.Success -> {
+                    progressIndicator?.text = "Verifying downloaded analyzer..."
+                    checkCancellation(progressIndicator)
+                    
+                    val verificationResult = verifySignature(downloadResult.path, progressIndicator)
+                    when (verificationResult) {
+                        is CheckResult.Available -> CheckResult.Downloaded(downloadResult.path)
+                        else -> verificationResult
+                    }
                 }
-            } catch (e: ProcessCanceledException) {
-                Files.deleteIfExists(tempFile)
-                getService(GlobalLogOutput::class.java).log(
-                    "CFamily analyzer download cancelled",
-                    ClientLogOutput.Level.INFO
-                )
-                return CheckResult.Cancelled
-            } catch (e: IOException) {
-                Files.deleteIfExists(tempFile)
-                getService(GlobalLogOutput::class.java).logError("Error downloading CFamily analyzer", e)
-                return CheckResult.DownloadFailed(e.message ?: "Unknown error")
+                is CFamilyAnalyzerDownloader.DownloadResult.Failed -> {
+                    CheckResult.DownloadFailed(downloadResult.reason)
+                }
+                CFamilyAnalyzerDownloader.DownloadResult.Cancelled -> {
+                    CheckResult.Cancelled
+                }
             }
-        } catch (e: Exception) {
-            getService(GlobalLogOutput::class.java).logError("Error preparing download", e)
-            return CheckResult.DownloadFailed(e.message ?: "Unknown error")
+        } catch (e: ProcessCanceledException) {
+            return CheckResult.Cancelled
         }
     }
 
