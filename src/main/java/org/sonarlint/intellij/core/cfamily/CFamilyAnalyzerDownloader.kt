@@ -27,6 +27,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.analyzer.AnalyzerCacheManager
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
@@ -70,12 +71,18 @@ class CFamilyAnalyzerDownloader {
             ClientLogOutput.Level.INFO
         )
 
+        val cacheManager = getService(AnalyzerCacheManager::class.java)
+        val targetFileName = "sonar-cfamily-plugin-$version.jar"
+
         try {
             val cacheDir = getCFamilyCacheDir()
             Files.createDirectories(cacheDir)
             
+            // Mark as downloading to prevent cleanup
+            cacheManager.markDownloading(targetFileName)
+            
             val downloadUrl = String.format(CFAMILY_DOWNLOAD_URL_TEMPLATE, version)
-            val targetFile = cacheDir.resolve("sonar-cfamily-plugin-$version.jar")
+            val targetFile = cacheDir.resolve(targetFileName)
             val tempFile = Files.createTempFile(cacheDir, "cfamily-download-", ".jar")
 
             try {
@@ -99,6 +106,10 @@ class CFamilyAnalyzerDownloader {
 
                 Files.move(tempFile, targetFile, StandardCopyOption.REPLACE_EXISTING)
 
+                // Update access timestamp for newly downloaded analyzer
+                cacheManager.updateAnalyzerTimestamp(targetFile)
+                cacheManager.unmarkDownloading(targetFileName)
+
                 getService(GlobalLogOutput::class.java).log(
                     "CFamily analyzer downloaded successfully to cache: ${targetFile.fileName}",
                     ClientLogOutput.Level.INFO
@@ -107,10 +118,12 @@ class CFamilyAnalyzerDownloader {
                 return DownloadResult.Success(targetFile)
             } catch (e: Exception) {
                 Files.deleteIfExists(tempFile)
+                cacheManager.unmarkDownloading(targetFileName)
                 getService(GlobalLogOutput::class.java).logError("Error downloading CFamily analyzer", e)
                 return DownloadResult.Failed(e.message ?: "Unknown error")
             }
         } catch (e: Exception) {
+            cacheManager.unmarkDownloading(targetFileName)
             getService(GlobalLogOutput::class.java).logError("Error preparing download", e)
             return DownloadResult.Failed(e.message ?: "Unknown error")
         }

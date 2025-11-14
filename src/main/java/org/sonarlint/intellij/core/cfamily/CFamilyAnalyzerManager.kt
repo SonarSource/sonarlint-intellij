@@ -41,6 +41,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProv
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
+import org.sonarlint.intellij.core.analyzer.AnalyzerCacheManager
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
@@ -75,6 +76,7 @@ class CFamilyAnalyzerManager {
     private val checkInProgress = AtomicBoolean(false)
     private val checkFuture = AtomicReference<CompletableFuture<CheckResult>?>()
     private val analyzerReady = AtomicBoolean(false)
+    private val cacheManager = getService(AnalyzerCacheManager::class.java)
 
     companion object {
         private const val CFAMILY_PLUGIN_PATTERN = "sonar-cfamily-plugin-*.jar"
@@ -85,6 +87,9 @@ class CFamilyAnalyzerManager {
     }
 
     init {
+        // Start async cleanup task at service initialization
+        cacheManager.startCleanupTask()
+
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(BouncyCastleProvider())
         }
@@ -134,6 +139,9 @@ class CFamilyAnalyzerManager {
                     "Found CFamily analyzer at: ${analyzerPath.fileName}",
                     ClientLogOutput.Level.INFO
                 )
+
+                // Update access timestamp
+                cacheManager.updateAnalyzerTimestamp(analyzerPath)
 
                 val signatureResult = verifySignature(analyzerPath, progressIndicator)
                 signatureResult
@@ -213,6 +221,8 @@ class CFamilyAnalyzerManager {
                     "CFamily analyzer signature verified successfully",
                     ClientLogOutput.Level.INFO
                 )
+                // Update timestamp after successful verification
+                cacheManager.updateAnalyzerTimestamp(analyzerPath)
                 return CheckResult.Available(analyzerPath)
             } else {
                 getService(GlobalLogOutput::class.java).log(
