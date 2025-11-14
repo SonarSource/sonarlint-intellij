@@ -63,6 +63,7 @@ import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.filter.StatusFilter
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
+import org.sonarlint.intellij.ui.tree.TreeExpansionStateManager
 import org.sonarlint.intellij.util.SonarLintActions
 import org.sonarlint.intellij.util.runOnPooledThread
 
@@ -382,6 +383,20 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         displayManager.updateMqrMode(filteredFindingsCache)
         displayManager.updateIcons(filteredFindingsCache, file)
 
+        // Take snapshot of expansion state before populating trees (only in all files mode)
+        val treeStateSnapshot = if (filtersPanel.findingsScope == FindingsScope.ALL_FILES) {
+            TreeType.values().associateWith { treeType ->
+                val tree = getTree(treeType, isOld = false)
+                val oldTree = getTree(treeType, isOld = true)
+                Pair(
+                    TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(tree),
+                    TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldTree)
+                )
+            }
+        } else {
+            null
+        }
+
         // Populate trees
         populateTreesWithNewCodeFilter(TreeType.ISSUES, filteredFindingsCache.issues) { !summaryPanel.areIssuesEnabled() }
 
@@ -415,7 +430,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         
         // Handle display status and expand trees
         handleDisplayStatus()
-        expandTrees()
+        expandTreesWithStatePreservation(treeStateSnapshot)
         updateSummaryButtons()
     }
 
@@ -681,6 +696,35 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         
         // For taint trees, expand only file nodes (not the full tree as it can be very deep)
         expandFileNodes(getTree(TreeType.TAINTS, isOld = false))
+    }
+    
+    /**
+     * Expands trees while preserving the expansion state of file nodes in "all files" mode.
+     */
+    private fun expandTreesWithStatePreservation(treeStateSnapshot: Map<TreeType, Pair<Set<String>, Set<String>>>?) {
+        val findingsScope = filtersPanel.findingsScope
+        
+        // Only restore state in "all files" mode and if we have a snapshot
+        if (findingsScope == FindingsScope.ALL_FILES && treeStateSnapshot != null) {
+            // In all files mode with snapshot, expand root only and restore file node states
+            TreeType.values().forEach { treeType ->
+                val tree = getTree(treeType, isOld = false)
+                val oldTree = getTree(treeType, isOld = true)
+                
+                if (treeType == TreeType.DEPENDENCY_RISKS) {
+                    // Dependency risks don't have file nodes, expand normally
+                    TreeUtil.expandAll(tree)
+                } else {
+                    // Restore expansion state for file nodes (this will also expand root)
+                    val (newState, oldState) = treeStateSnapshot[treeType] ?: return@forEach
+                    TreeExpansionStateManager.restoreFileNodeExpansionState(tree, newState)
+                    TreeExpansionStateManager.restoreFileNodeExpansionState(oldTree, oldState)
+                }
+            }
+        } else {
+            // In current file mode or no snapshot, expand trees as usual
+            expandTrees()
+        }
     }
     
     fun expandAllTrees() {
