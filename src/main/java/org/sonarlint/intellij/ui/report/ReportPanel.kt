@@ -125,9 +125,15 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         applyFiltering()
         val findings = ReportFilteringUtils.convertFilteredFindingsToMap(filteredFindingsCache)
 
+        // Save expansion state before updating tree models (which will reset expansion state)
+        val savedExpansionStates = treeManager.saveFileNodeExpansionStates()
+        
         updateTreeModels(findings, isFocusOnNewCode)
         treeManager.configureTreeVisibility(isFocusOnNewCode)
         treeManager.expandTrees()
+        
+        // Restore expansion state after trees are expanded
+        treeManager.restoreFileNodeExpansionStates(savedExpansionStates)
 
         // Transition from loading to results
         if (isLoadingState) {
