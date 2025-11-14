@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.core.cfamily
 
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import java.io.BufferedInputStream
 import java.io.FileInputStream
@@ -61,7 +60,7 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
  * 
  * This service supports:
  * - Detailed progress reporting through ProgressIndicator with text updates
- * - Cancellation via ProgressIndicator.isCanceled at strategic checkpoints
+ * - Cancellation via ProgressIndicator.isCanceled checks (returns CheckResult.Cancelled)
  * - PGP signature verification using BouncyCastle
  */
 @Service(Service.Level.APP)
@@ -97,12 +96,6 @@ class CFamilyAnalyzerManager {
                 val result = performCheck(progressIndicator)
                 future.complete(result)
                 analyzerReady.set(result is CheckResult.Available)
-            } catch (e: ProcessCanceledException) {
-                getService(GlobalLogOutput::class.java).log(
-                    "CFamily analyzer check was cancelled",
-                    ClientLogOutput.Level.INFO
-                )
-                future.complete(CheckResult.Cancelled)
             } catch (e: Exception) {
                 getService(GlobalLogOutput::class.java).logError("Error checking CFamily analyzer", e)
                 future.completeExceptionally(e)
@@ -116,12 +109,18 @@ class CFamilyAnalyzerManager {
     }
 
     private fun performCheck(progressIndicator: ProgressIndicator?): CheckResult {
+        if (progressIndicator?.isCanceled == true) {
+            return CheckResult.Cancelled
+        }
+        
         progressIndicator?.text = "Checking CFamily analyzer..."
-        checkCancellation(progressIndicator)
 
         val cacheDir = getCFamilyCacheDir()
         val analyzerPath = findCFamilyAnalyzer(cacheDir)
-        checkCancellation(progressIndicator)
+        
+        if (progressIndicator?.isCanceled == true) {
+            return CheckResult.Cancelled
+        }
 
         return when {
             analyzerPath != null -> {
@@ -155,8 +154,11 @@ class CFamilyAnalyzerManager {
     }
 
     private fun verifySignature(analyzerPath: Path, progressIndicator: ProgressIndicator?): CheckResult {
+        if (progressIndicator?.isCanceled == true) {
+            return CheckResult.Cancelled
+        }
+        
         progressIndicator?.text = "Verifying CFamily analyzer signature..."
-        checkCancellation(progressIndicator)
 
         try {
             // Signature file is bundled in the plugins directory, not the cache
@@ -169,7 +171,10 @@ class CFamilyAnalyzerManager {
                 return CheckResult.Available(analyzerPath) // Analyzer exists but no signature
             }
 
-            checkCancellation(progressIndicator)
+            if (progressIndicator?.isCanceled == true) {
+                return CheckResult.Cancelled
+            }
+            
             val keyRing = loadPublicKeyRing()
             if (keyRing == null) {
                 getService(GlobalLogOutput::class.java).log(
@@ -179,8 +184,11 @@ class CFamilyAnalyzerManager {
                 return CheckResult.InvalidSignature(analyzerPath)
             }
 
+            if (progressIndicator?.isCanceled == true) {
+                return CheckResult.Cancelled
+            }
+            
             progressIndicator?.text = "Verifying signature cryptographically..."
-            checkCancellation(progressIndicator)
             
             val isValid = verifyPgpSignature(analyzerPath, signatureFile, keyRing)
             if (isValid) {
@@ -293,30 +301,29 @@ class CFamilyAnalyzerManager {
             return CheckResult.DownloadFailed("Version metadata not found")
         }
 
-        try {
-            val downloader = getService(CFamilyAnalyzerDownloader::class.java)
-            val downloadResult = downloader.downloadAnalyzer(version, progressIndicator)
+        val downloader = getService(CFamilyAnalyzerDownloader::class.java)
+        val downloadResult = downloader.downloadAnalyzer(version, progressIndicator)
 
-            return when (downloadResult) {
-                is CFamilyAnalyzerDownloader.DownloadResult.Success -> {
-                    progressIndicator?.text = "Verifying downloaded analyzer..."
-                    checkCancellation(progressIndicator)
-                    
-                    val verificationResult = verifySignature(downloadResult.path, progressIndicator)
-                    when (verificationResult) {
-                        is CheckResult.Available -> CheckResult.Downloaded(downloadResult.path)
-                        else -> verificationResult
-                    }
+        return when (downloadResult) {
+            is CFamilyAnalyzerDownloader.DownloadResult.Success -> {
+                if (progressIndicator?.isCanceled == true) {
+                    return CheckResult.Cancelled
                 }
-                is CFamilyAnalyzerDownloader.DownloadResult.Failed -> {
-                    CheckResult.DownloadFailed(downloadResult.reason)
-                }
-                CFamilyAnalyzerDownloader.DownloadResult.Cancelled -> {
-                    CheckResult.Cancelled
+                
+                progressIndicator?.text = "Verifying downloaded analyzer..."
+                
+                val verificationResult = verifySignature(downloadResult.path, progressIndicator)
+                when (verificationResult) {
+                    is CheckResult.Available -> CheckResult.Downloaded(downloadResult.path)
+                    else -> verificationResult
                 }
             }
-        } catch (e: ProcessCanceledException) {
-            return CheckResult.Cancelled
+            is CFamilyAnalyzerDownloader.DownloadResult.Failed -> {
+                CheckResult.DownloadFailed(downloadResult.reason)
+            }
+            CFamilyAnalyzerDownloader.DownloadResult.Cancelled -> {
+                CheckResult.Cancelled
+            }
         }
     }
 
@@ -350,11 +357,6 @@ class CFamilyAnalyzerManager {
         return analyzerReady.get()
     }
 
-    private fun checkCancellation(progressIndicator: ProgressIndicator?) {
-        if (progressIndicator?.isCanceled == true) {
-            throw ProcessCanceledException()
-        }
-    }
 
     /**
      * Result of checking/downloading CFamily analyzer

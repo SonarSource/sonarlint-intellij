@@ -21,7 +21,6 @@ package org.sonarlint.intellij.core.cfamily
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.util.io.HttpRequests
 import java.nio.file.Files
 import java.nio.file.Path
@@ -59,9 +58,12 @@ class CFamilyAnalyzerDownloader {
      * @return DownloadResult indicating success, failure, or cancellation
      */
     fun downloadAnalyzer(version: String, progressIndicator: ProgressIndicator?): DownloadResult {
+        if (progressIndicator?.isCanceled == true) {
+            return DownloadResult.Cancelled
+        }
+        
         progressIndicator?.text = "Preparing to download CFamily analyzer..."
         progressIndicator?.isIndeterminate = false
-        checkCancellation(progressIndicator)
 
         getService(GlobalLogOutput::class.java).log(
             "Downloading CFamily analyzer version: $version to cache",
@@ -77,16 +79,23 @@ class CFamilyAnalyzerDownloader {
             val tempFile = Files.createTempFile(cacheDir, "cfamily-download-", ".jar")
 
             try {
+                if (progressIndicator?.isCanceled == true) {
+                    Files.deleteIfExists(tempFile)
+                    return DownloadResult.Cancelled
+                }
+                
                 // Download the JAR file
                 progressIndicator?.text = "Downloading CFamily analyzer JAR ($version)..."
-                checkCancellation(progressIndicator)
                 
                 HttpRequests.request(downloadUrl)
                     .connectTimeout(30000)
                     .readTimeout(30000)
                     .saveToFile(tempFile.toFile(), progressIndicator)
                 
-                checkCancellation(progressIndicator)
+                if (progressIndicator?.isCanceled == true) {
+                    Files.deleteIfExists(tempFile)
+                    return DownloadResult.Cancelled
+                }
 
                 Files.move(tempFile, targetFile, StandardCopyOption.REPLACE_EXISTING)
 
@@ -96,20 +105,11 @@ class CFamilyAnalyzerDownloader {
                 )
 
                 return DownloadResult.Success(targetFile)
-            } catch (e: ProcessCanceledException) {
-                Files.deleteIfExists(tempFile)
-                getService(GlobalLogOutput::class.java).log(
-                    "CFamily analyzer download was cancelled",
-                    ClientLogOutput.Level.INFO
-                )
-                throw e
             } catch (e: Exception) {
                 Files.deleteIfExists(tempFile)
                 getService(GlobalLogOutput::class.java).logError("Error downloading CFamily analyzer", e)
                 return DownloadResult.Failed(e.message ?: "Unknown error")
             }
-        } catch (e: ProcessCanceledException) {
-            return DownloadResult.Cancelled
         } catch (e: Exception) {
             getService(GlobalLogOutput::class.java).logError("Error preparing download", e)
             return DownloadResult.Failed(e.message ?: "Unknown error")
@@ -121,9 +121,4 @@ class CFamilyAnalyzerDownloader {
         return plugin.path.resolve(ANALYZER_CACHE_DIR).resolve(CFAMILY_CACHE_DIR)
     }
 
-    private fun checkCancellation(progressIndicator: ProgressIndicator?) {
-        if (progressIndicator?.isCanceled == true) {
-            throw ProcessCanceledException()
-        }
-    }
 }
