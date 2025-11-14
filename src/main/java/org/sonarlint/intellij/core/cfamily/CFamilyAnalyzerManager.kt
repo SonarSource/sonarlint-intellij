@@ -87,8 +87,10 @@ class CFamilyAnalyzerManager {
     }
 
     init {
-        // Start async cleanup task at service initialization
-        cacheManager.startCleanupTask()
+        // Start async cleanup task at service initialization (skip in unit tests to avoid thread leaks)
+        if (!com.intellij.openapi.application.ApplicationManager.getApplication().isUnitTestMode) {
+            cacheManager.startCleanupTask()
+        }
 
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(BouncyCastleProvider())

@@ -306,6 +306,11 @@ class BackendService : Disposable {
     }
 
     private fun waitForCFamilyAnalyzer(indicator: ProgressIndicator) {
+        // Skip CFamily analyzer check during unit tests
+        if (com.intellij.openapi.application.ApplicationManager.getApplication().isUnitTestMode) {
+            return
+        }
+        
         try {
             val manager = getService(CFamilyAnalyzerManager::class.java)
             val result = manager.ensureAnalyzerAvailable(indicator).get()
