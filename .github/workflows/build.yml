@@ -200,19 +200,6 @@ jobs:
           path: ${{ github.workspace }}/orchestrator/${{ steps.setup-orchestrator.outputs.this_month }}
           key: orchestrator-${{ steps.setup-orchestrator.outputs.this_month }}
 
-      - name: Prepare IDE license keys
-        run: |
-          mkdir -p its/build/idea-sandbox/config-uiTest
-          echo "${{ fromJSON(steps.secrets.outputs.vault).CLION_KEY }}" > its/build/idea-sandbox/config-uiTest/clion.key.b64
-          echo "${{ fromJSON(steps.secrets.outputs.vault).GOLAND_KEY }}" > its/build/idea-sandbox/config-uiTest/goland.key.b64
-          echo "${{ fromJSON(steps.secrets.outputs.vault).DATAGRIP_KEY }}" > its/build/idea-sandbox/config-uiTest/datagrip.key.b64
-          echo "${{ fromJSON(steps.secrets.outputs.vault).IDEA_KEY }}" > its/build/idea-sandbox/config-uiTest/idea.key.b64
-          echo "${{ fromJSON(steps.secrets.outputs.vault).PHPSTORM_KEY }}" > its/build/idea-sandbox/config-uiTest/phpstorm.key.b64
-          echo "${{ fromJSON(steps.secrets.outputs.vault).PYCHARM_KEY }}" > its/build/idea-sandbox/config-uiTest/pycharm.key.b64
-          echo "${{ fromJSON(steps.secrets.outputs.vault).RIDER_KEY }}" > its/build/idea-sandbox/config-uiTest/rider.key.b64
-          echo "${{ fromJSON(steps.secrets.outputs.vault).RUBYMINE_KEY }}" > its/build/idea-sandbox/config-uiTest/rubymine.key.b64
-          echo "${{ fromJSON(steps.secrets.outputs.vault).WEBSTORM_KEY }}" > its/build/idea-sandbox/config-uiTest/webstorm.key.b64
-
       - name: Start Xvfb
         run: |
           sudo apt-get update
@@ -240,15 +227,15 @@ jobs:
           mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
           
           # Decode license keys
-          base64 --decode its/build/idea-sandbox/config-uiTest/clion.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/clion.key
-          base64 --decode its/build/idea-sandbox/config-uiTest/goland.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/goland.key
-          base64 --decode its/build/idea-sandbox/config-uiTest/datagrip.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/datagrip.key
-          base64 --decode its/build/idea-sandbox/config-uiTest/idea.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/idea.key
-          base64 --decode its/build/idea-sandbox/config-uiTest/phpstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/phpstorm.key
-          base64 --decode its/build/idea-sandbox/config-uiTest/pycharm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/pycharm.key
-          base64 --decode its/build/idea-sandbox/config-uiTest/rider.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rider.key
-          base64 --decode its/build/idea-sandbox/config-uiTest/rubymine.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rubymine.key
-          base64 --decode its/build/idea-sandbox/config-uiTest/webstorm.key.b64 > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/webstorm.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).CLION_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/clion.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).GOLAND_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/goland.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).DATAGRIP_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/datagrip.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).IDEA_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/idea.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).PHPSTORM_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/phpstorm.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).PYCHARM_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/pycharm.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).RIDER_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rider.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).RUBYMINE_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rubymine.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).WEBSTORM_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/webstorm.key
           
           # Start metacity
           metacity --sm-disable --replace &
