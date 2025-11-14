@@ -25,8 +25,8 @@ jobs:
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/build-gradle@master # dogfood
         env:
-          ARTIFACTORY_PRIVATE_USERNAME: vault-SonarSource-sonarlint-intellij-private-reader
-          ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+          ARTIFACTORY_ACCESS_USERNAME: vault-SonarSource-sonarlint-intellij-private-reader
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         with:
           run-shadow-scans: true
           artifactory-reader-role: private-reader
