@@ -55,18 +55,19 @@ class CFamilyStartupActivity : ProjectActivity {
             hasRun = true
         }
 
-        // Check CFamily in background
         ProgressManager.getInstance().run(object : Task.Backgroundable(
             project,
-            "Checking CFamily Analyzer Availability",
+            "SonarQube: Checking CFamily Analyzer",
             true,
             ALWAYS_BACKGROUND
         ) {
             override fun run(indicator: ProgressIndicator) {
+                indicator.isIndeterminate = false
+                indicator.text = "Checking CFamily analyzer..."
+                
                 try {
                     val manager = getService(CFamilyAnalyzerManager::class.java)
                     val result = manager.ensureAnalyzerAvailable(indicator).get()
-                    
                     handleCheckResult(result, project)
                 } catch (e: Exception) {
                     getService(GlobalLogOutput::class.java).logError(
@@ -74,6 +75,13 @@ class CFamilyStartupActivity : ProjectActivity {
                         e
                     )
                 }
+            }
+            
+            override fun onCancel() {
+                getService(GlobalLogOutput::class.java).log(
+                    "CFamily analyzer check was cancelled by user",
+                    ClientLogOutput.Level.INFO
+                )
             }
         })
     }
@@ -96,7 +104,7 @@ class CFamilyStartupActivity : ProjectActivity {
                 // Notify user that restart is required
                 SonarLintProjectNotifications.projectLessNotification(
                     null,
-                    "CFamily analyzer has been downloaded and verified. Please restart your IDE to activate C/C++ analysis.",
+                    "CFamily analyzer has been downloaded and verified",
                     NotificationType.INFORMATION
                 )
             }

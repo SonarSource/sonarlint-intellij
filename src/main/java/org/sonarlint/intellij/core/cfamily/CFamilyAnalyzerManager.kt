@@ -49,9 +49,23 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 /**
  * Service to manage CFamily analyzer availability, download, and verification.
- * The analyzer version is determined from build metadata (cfamily-version.properties).
- * The analyzer signature is included during build via copyAsc in build.gradle.kts.
- * The analyzer JAR is downloaded at runtime if missing and verified against the signature using BouncyCastle.
+ * 
+ * Storage:
+ * - Downloaded analyzers are stored in {plugin.path}/analyzer-cache/cfamily/
+ * - Signature file is bundled in {plugin.path}/plugins/ during build (via copyAsc in build.gradle.kts)
+ * 
+ * Version determination:
+ * - The analyzer version is determined from build metadata (cfamily-version.properties)
+ * 
+ * Connected Mode integration:
+ * - EnabledLanguages.getEmbeddedPluginsForConnectedMode() checks the cache directory first
+ * - Falls back to the bundled plugins directory if not found in cache
+ * 
+ * This service supports:
+ * - Detailed progress reporting through ProgressIndicator with text updates
+ * - Cancellation via ProgressIndicator.isCanceled at strategic checkpoints
+ * - Automatic cleanup of temporary files on cancellation
+ * - PGP signature verification using BouncyCastle
  */
 @Service(Service.Level.APP)
 class CFamilyAnalyzerManager {
@@ -66,6 +80,8 @@ class CFamilyAnalyzerManager {
         private const val CFAMILY_VERSION_PROPERTIES = "cfamily-version.properties"
         private const val CFAMILY_DOWNLOAD_URL_TEMPLATE =
             "https://binaries.sonarsource.com/CommercialDistribution/sonar-cfamily-plugin/sonar-cfamily-plugin-%s.jar"
+        private const val ANALYZER_CACHE_DIR = "analyzer-cache"
+        private const val CFAMILY_CACHE_DIR = "cfamily"
     }
 
     init {
@@ -86,6 +102,12 @@ class CFamilyAnalyzerManager {
                 val result = performCheck(progressIndicator)
                 future.complete(result)
                 analyzerReady.set(result is CheckResult.Available)
+            } catch (e: ProcessCanceledException) {
+                getService(GlobalLogOutput::class.java).log(
+                    "CFamily analyzer check was cancelled",
+                    ClientLogOutput.Level.INFO
+                )
+                future.complete(CheckResult.Cancelled)
             } catch (e: Exception) {
                 getService(GlobalLogOutput::class.java).logError("Error checking CFamily analyzer", e)
                 future.completeExceptionally(e)
@@ -100,9 +122,11 @@ class CFamilyAnalyzerManager {
 
     private fun performCheck(progressIndicator: ProgressIndicator?): CheckResult {
         progressIndicator?.text = "Checking CFamily analyzer..."
+        checkCancellation(progressIndicator)
 
-        val pluginsDir = getPluginsDir()
-        val analyzerPath = findCFamilyAnalyzer(pluginsDir)
+        val cacheDir = getCFamilyCacheDir()
+        val analyzerPath = findCFamilyAnalyzer(cacheDir)
+        checkCancellation(progressIndicator)
 
         return when {
             analyzerPath != null -> {
@@ -117,37 +141,40 @@ class CFamilyAnalyzerManager {
 
             else -> {
                 getService(GlobalLogOutput::class.java).log(
-                    "CFamily analyzer not found, attempting download...",
+                    "CFamily analyzer not found in cache, attempting download...",
                     ClientLogOutput.Level.INFO
                 )
-                downloadAnalyzer(pluginsDir, progressIndicator)
+                downloadAnalyzer(cacheDir, progressIndicator)
             }
         }
     }
 
-    private fun findCFamilyAnalyzer(pluginsDir: Path): Path? {
-        if (!Files.isDirectory(pluginsDir)) {
+    private fun findCFamilyAnalyzer(cacheDir: Path): Path? {
+        if (!Files.isDirectory(cacheDir)) {
             return null
         }
 
-        return Files.newDirectoryStream(pluginsDir, CFAMILY_PLUGIN_PATTERN).use { stream ->
+        return Files.newDirectoryStream(cacheDir, CFAMILY_PLUGIN_PATTERN).use { stream ->
             stream.firstOrNull()
         }
     }
 
     private fun verifySignature(analyzerPath: Path, progressIndicator: ProgressIndicator?): CheckResult {
         progressIndicator?.text = "Verifying CFamily analyzer signature..."
+        checkCancellation(progressIndicator)
 
         try {
-            val signatureFile = analyzerPath.parent.resolve("${analyzerPath.fileName}.asc")
-            if (!Files.exists(signatureFile)) {
+            // Signature file is bundled in the plugins directory, not the cache
+            val signatureFile = findBundledSignatureFile()
+            if (signatureFile == null || !Files.exists(signatureFile)) {
                 getService(GlobalLogOutput::class.java).log(
-                    "Signature file not found for ${analyzerPath.fileName}",
+                    "Bundled signature file not found for CFamily analyzer",
                     ClientLogOutput.Level.WARN
                 )
                 return CheckResult.Available(analyzerPath) // Analyzer exists but no signature
             }
 
+            checkCancellation(progressIndicator)
             val keyRing = loadPublicKeyRing()
             if (keyRing == null) {
                 getService(GlobalLogOutput::class.java).log(
@@ -157,6 +184,9 @@ class CFamilyAnalyzerManager {
                 return CheckResult.InvalidSignature(analyzerPath)
             }
 
+            progressIndicator?.text = "Verifying signature cryptographically..."
+            checkCancellation(progressIndicator)
+            
             val isValid = verifyPgpSignature(analyzerPath, signatureFile, keyRing)
             if (isValid) {
                 getService(GlobalLogOutput::class.java).log(
@@ -258,9 +288,10 @@ class CFamilyAnalyzerManager {
         }
     }
 
-    private fun downloadAnalyzer(pluginsDir: Path, progressIndicator: ProgressIndicator?): CheckResult {
-        progressIndicator?.text = "Downloading CFamily analyzer..."
+    private fun downloadAnalyzer(cacheDir: Path, progressIndicator: ProgressIndicator?): CheckResult {
+        progressIndicator?.text = "Preparing to download CFamily analyzer..."
         progressIndicator?.isIndeterminate = false
+        checkCancellation(progressIndicator)
 
         val version = getCFamilyVersion()
         if (version == null) {
@@ -272,54 +303,38 @@ class CFamilyAnalyzerManager {
         }
 
         getService(GlobalLogOutput::class.java).log(
-            "Downloading CFamily analyzer version: $version",
+            "Downloading CFamily analyzer version: $version to cache",
             ClientLogOutput.Level.INFO
         )
 
         try {
-            Files.createDirectories(pluginsDir)
+            Files.createDirectories(cacheDir)
             val downloadUrl = String.format(CFAMILY_DOWNLOAD_URL_TEMPLATE, version)
-            val targetFile = pluginsDir.resolve("sonar-cfamily-plugin-$version.jar")
-            val tempFile = Files.createTempFile(pluginsDir, "cfamily-download-", ".jar")
+            val targetFile = cacheDir.resolve("sonar-cfamily-plugin-$version.jar")
+            val tempFile = Files.createTempFile(cacheDir, "cfamily-download-", ".jar")
 
             try {
                 // Download the JAR file
+                progressIndicator?.text = "Downloading CFamily analyzer JAR ($version)..."
+                checkCancellation(progressIndicator)
+                
                 HttpRequests.request(downloadUrl)
                     .connectTimeout(30000)
                     .readTimeout(30000)
                     .saveToFile(tempFile.toFile(), progressIndicator)
+                
+                checkCancellation(progressIndicator)
 
                 Files.move(tempFile, targetFile, StandardCopyOption.REPLACE_EXISTING)
 
                 getService(GlobalLogOutput::class.java).log(
-                    "CFamily analyzer downloaded successfully to: ${targetFile.fileName}",
+                    "CFamily analyzer downloaded successfully to cache: ${targetFile.fileName}",
                     ClientLogOutput.Level.INFO
                 )
 
-                // Download the signature file
-                val signatureUrl = "$downloadUrl.asc"
-                val signatureFile = pluginsDir.resolve("${targetFile.fileName}.asc")
-                val tempSignatureFile = Files.createTempFile(pluginsDir, "cfamily-signature-", ".asc")
-
-                try {
-                    HttpRequests.request(signatureUrl)
-                        .connectTimeout(30000)
-                        .readTimeout(30000)
-                        .saveToFile(tempSignatureFile.toFile(), progressIndicator)
-
-                    Files.move(tempSignatureFile, signatureFile, StandardCopyOption.REPLACE_EXISTING)
-
-                    getService(GlobalLogOutput::class.java).log(
-                        "CFamily analyzer signature downloaded successfully",
-                        ClientLogOutput.Level.INFO
-                    )
-                } catch (e: Exception) {
-                    Files.deleteIfExists(tempSignatureFile)
-                    getService(GlobalLogOutput::class.java).logError("Error downloading signature file", e)
-                    Files.deleteIfExists(targetFile)
-                    return CheckResult.DownloadFailed("Failed to download signature: ${e.message}")
-                }
-
+                progressIndicator?.text = "Verifying downloaded analyzer..."
+                checkCancellation(progressIndicator)
+                
                 val verificationResult = verifySignature(targetFile, progressIndicator)
                 return when (verificationResult) {
                     is CheckResult.Available -> CheckResult.Downloaded(targetFile)
@@ -343,13 +358,40 @@ class CFamilyAnalyzerManager {
         }
     }
 
+    private fun getCFamilyCacheDir(): Path {
+        val plugin = getService(SonarLintPlugin::class.java)
+        return plugin.path.resolve(ANALYZER_CACHE_DIR).resolve(CFAMILY_CACHE_DIR)
+    }
+
+    fun getCachedAnalyzerPath(): Path? {
+        return findCFamilyAnalyzer(getCFamilyCacheDir())
+    }
+
     private fun getPluginsDir(): Path {
         val plugin = getService(SonarLintPlugin::class.java)
         return plugin.path.resolve("plugins")
     }
 
+    private fun findBundledSignatureFile(): Path? {
+        val pluginsDir = getPluginsDir()
+        if (!Files.isDirectory(pluginsDir)) {
+            return null
+        }
+        
+        // Find the signature file matching the pattern sonar-cfamily-plugin-*.jar.asc
+        return Files.newDirectoryStream(pluginsDir, "sonar-cfamily-plugin-*.jar.asc").use { stream ->
+            stream.firstOrNull()
+        }
+    }
+
     fun isAnalyzerReady(): Boolean {
         return analyzerReady.get()
+    }
+
+    private fun checkCancellation(progressIndicator: ProgressIndicator?) {
+        if (progressIndicator?.isCanceled == true) {
+            throw ProcessCanceledException()
+        }
     }
 
     /**
