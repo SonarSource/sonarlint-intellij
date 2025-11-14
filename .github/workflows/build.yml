@@ -203,15 +203,15 @@ jobs:
       - name: Prepare IDE license keys
         run: |
           mkdir -p its/build/idea-sandbox/config-uiTest
-          echo "${{ steps.secrets.outputs.CLION_KEY }}" > its/build/idea-sandbox/config-uiTest/clion.key.b64
-          echo "${{ steps.secrets.outputs.GOLAND_KEY }}" > its/build/idea-sandbox/config-uiTest/goland.key.b64
-          echo "${{ steps.secrets.outputs.DATAGRIP_KEY }}" > its/build/idea-sandbox/config-uiTest/datagrip.key.b64
-          echo "${{ steps.secrets.outputs.IDEA_KEY }}" > its/build/idea-sandbox/config-uiTest/idea.key.b64
-          echo "${{ steps.secrets.outputs.PHPSTORM_KEY }}" > its/build/idea-sandbox/config-uiTest/phpstorm.key.b64
-          echo "${{ steps.secrets.outputs.PYCHARM_KEY }}" > its/build/idea-sandbox/config-uiTest/pycharm.key.b64
-          echo "${{ steps.secrets.outputs.RIDER_KEY }}" > its/build/idea-sandbox/config-uiTest/rider.key.b64
-          echo "${{ steps.secrets.outputs.RUBYMINE_KEY }}" > its/build/idea-sandbox/config-uiTest/rubymine.key.b64
-          echo "${{ steps.secrets.outputs.WEBSTORM_KEY }}" > its/build/idea-sandbox/config-uiTest/webstorm.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).CLION_KEY }}" > its/build/idea-sandbox/config-uiTest/clion.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).GOLAND_KEY }}" > its/build/idea-sandbox/config-uiTest/goland.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).DATAGRIP_KEY }}" > its/build/idea-sandbox/config-uiTest/datagrip.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).IDEA_KEY }}" > its/build/idea-sandbox/config-uiTest/idea.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).PHPSTORM_KEY }}" > its/build/idea-sandbox/config-uiTest/phpstorm.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).PYCHARM_KEY }}" > its/build/idea-sandbox/config-uiTest/pycharm.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).RIDER_KEY }}" > its/build/idea-sandbox/config-uiTest/rider.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).RUBYMINE_KEY }}" > its/build/idea-sandbox/config-uiTest/rubymine.key.b64
+          echo "${{ fromJSON(steps.secrets.outputs.vault).WEBSTORM_KEY }}" > its/build/idea-sandbox/config-uiTest/webstorm.key.b64
 
       - name: Start Xvfb
         run: |
