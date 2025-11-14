@@ -59,7 +59,7 @@ object SettingsUtils {
             }
 
             // let the SonarLint view settle (sometimes the UI thread blocks for a few seconds)
-            Pause.pause(4000)
+            Pause.pause(8000)
 
             function(this)
         }
