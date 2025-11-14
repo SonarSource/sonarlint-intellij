@@ -233,8 +233,8 @@ jobs:
           curl -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
             -o sonarlint-intellij.zip \
             "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
-          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}
-          mv sonarlint-intellij staged-plugin
+          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
+          mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
           rm sonarlint-intellij.zip
           
           mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
@@ -263,7 +263,7 @@ jobs:
           # Start IDE in background using Gradle
           nohup gradle :its:runIdeForUiTests --stacktrace -i \
             -PijVersion=${IDEA_VERSION} \
-            -PslPluginDirectory=${GITHUB_WORKSPACE}/staged-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
+            -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
           echo "IDE_PID=$!" >> $GITHUB_ENV
 
       - name: Wait for IDE to start
@@ -296,7 +296,7 @@ jobs:
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
-        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/staged-plugin --dependency-verification lenient
+        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient
 
       - name: Stop recording
         if: always()
