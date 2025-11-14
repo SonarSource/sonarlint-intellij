@@ -40,6 +40,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
@@ -53,6 +54,11 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
  * 
  * Version determination:
  * - The analyzer version is determined from build metadata (cfamily-version.properties)
+ * 
+ * User preferences:
+ * - Users can disable automatic download via Settings > Tools > SonarQube > General
+ * - When disabled, returns CheckResult.MissingAndDownloadDisabled
+ * - Re-enabling the setting allows download on next check
  * 
  * Connected Mode integration:
  * - EnabledLanguages.getEmbeddedPluginsForConnectedMode() checks the cache directory first
@@ -134,6 +140,17 @@ class CFamilyAnalyzerManager {
             }
 
             else -> {
+                // Check if user has disabled CFamily downloads
+                if (getGlobalSettings().isNeverDownloadCFamilyAnalyzer) {
+                    getService(GlobalLogOutput::class.java).log(
+                        "CFamily analyzer not found and automatic download is disabled. " +
+                        "C/C++ analysis will not be available. " +
+                        "To enable, go to Settings > Tools > SonarQube > General and uncheck 'Never download CFamily analyzer'",
+                        ClientLogOutput.Level.WARN
+                    )
+                    return CheckResult.MissingAndDownloadDisabled
+                }
+                
                 getService(GlobalLogOutput::class.java).log(
                     "CFamily analyzer not found in cache, attempting download...",
                     ClientLogOutput.Level.INFO

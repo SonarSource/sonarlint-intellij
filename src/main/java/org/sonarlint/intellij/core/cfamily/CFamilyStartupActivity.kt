@@ -137,8 +137,15 @@ class CFamilyStartupActivity : ProjectActivity {
             
             is CFamilyAnalyzerManager.CheckResult.MissingAndDownloadDisabled -> {
                 getService(GlobalLogOutput::class.java).log(
-                    "CFamily analyzer is not available",
+                    "CFamily analyzer is not available and download is disabled by user preference",
                     ClientLogOutput.Level.INFO
+                )
+                
+                SonarLintProjectNotifications.projectLessNotification(
+                    null,
+                    "CFamily analyzer not available. C/C++ analysis is disabled. " +
+                    "To enable, uncheck 'Never download CFamily analyzer' in Settings > Tools > SonarQube > General.",
+                    NotificationType.INFORMATION
                 )
             }
             
