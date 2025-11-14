@@ -18,6 +18,7 @@ sonar-cpp = "6.74.0.91793"
 sonar-dotnet = "10.15.0.120848"
 
 sonarqube = "4.4.1.3373"
+orchestrator = "5.6.2.2625"
 
 kotlin-plugin = "2.2.0"
 license-plugin = "0.16.1"
@@ -72,6 +73,7 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito"}
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj"}
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 
+its-orchestrator = { module = "org.sonarsource.orchestrator:sonar-orchestrator-junit5", version.ref = "orchestrator"}
 its-sonar-scala = { module = "org.sonarsource.slang:sonar-scala-plugin", version.ref = "its-sonar-scala" }
 its-sonar-ws = { module = "org.sonarsource.sonarqube:sonar-ws", version.ref = "its-sonar-ws" }
 its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.ref = "its-remote" }
