@@ -24,16 +24,16 @@ import javax.swing.tree.TreePath
 import org.sonarlint.intellij.ui.nodes.FileNode
 
 /**
- * Utility class to save and restore the expansion state of file nodes in trees.
+ * Utility class to snapshot and restore the expansion state of file nodes in trees.
  * This is used to preserve the user's expanded/collapsed state when trees are refreshed.
  */
 object TreeExpansionStateManager {
     
     /**
-     * Saves the expansion state of file nodes in the tree.
+     * Takes a snapshot of the expansion state of file nodes in the tree.
      * Returns a set of file paths that are currently expanded.
      */
-    fun saveFileNodeExpansionState(tree: Tree): Set<String> {
+    fun takeFileNodeExpansionStateSnapshot(tree: Tree): Set<String> {
         val root = tree.model.root ?: return emptySet()
         val rootChildCount = tree.model.getChildCount(root)
         if (rootChildCount == 0) return emptySet()
@@ -58,7 +58,7 @@ object TreeExpansionStateManager {
     }
     
     /**
-     * Restores the expansion state of file nodes in the tree based on saved file paths.
+     * Restores the expansion state of file nodes in the tree based on a snapshot.
      * Only expands file nodes that were previously expanded.
      */
     fun restoreFileNodeExpansionState(tree: Tree, expandedFilePaths: Set<String>) {

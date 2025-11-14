@@ -165,27 +165,27 @@ class ReportTreeManager(
     }
     
     /**
-     * Saves the expansion state of file nodes for all trees.
+     * Takes a snapshot of the expansion state of file nodes for all trees.
      * This should be called before updating tree models.
      */
-    fun saveFileNodeExpansionStates(): Map<Tree, Set<String>> {
+    fun takeTreeStateSnapshot(): Map<Tree, Set<String>> {
         return mapOf(
-            issuesTree to TreeExpansionStateManager.saveFileNodeExpansionState(issuesTree),
-            oldIssuesTree to TreeExpansionStateManager.saveFileNodeExpansionState(oldIssuesTree),
-            securityHotspotsTree to TreeExpansionStateManager.saveFileNodeExpansionState(securityHotspotsTree),
-            oldSecurityHotspotsTree to TreeExpansionStateManager.saveFileNodeExpansionState(oldSecurityHotspotsTree),
-            taintsTree to TreeExpansionStateManager.saveFileNodeExpansionState(taintsTree),
-            oldTaintsTree to TreeExpansionStateManager.saveFileNodeExpansionState(oldTaintsTree)
+            issuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(issuesTree),
+            oldIssuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldIssuesTree),
+            securityHotspotsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(securityHotspotsTree),
+            oldSecurityHotspotsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldSecurityHotspotsTree),
+            taintsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(taintsTree),
+            oldTaintsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldTaintsTree)
         )
     }
     
     /**
-     * Restores the expansion state of file nodes for all trees.
+     * Restores the expansion state of file nodes for all trees from a snapshot.
      * This should be called after trees are expanded.
      */
-    fun restoreFileNodeExpansionStates(savedStates: Map<Tree, Set<String>>) {
+    fun restoreTreeState(snapshot: Map<Tree, Set<String>>) {
         runOnUiThread(project) {
-            savedStates.forEach { (tree, expandedPaths) ->
+            snapshot.forEach { (tree, expandedPaths) ->
                 TreeExpansionStateManager.restoreFileNodeExpansionState(tree, expandedPaths)
             }
         }

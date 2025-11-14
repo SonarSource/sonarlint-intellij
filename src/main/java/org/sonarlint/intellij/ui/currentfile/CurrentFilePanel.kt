@@ -383,14 +383,14 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         displayManager.updateMqrMode(filteredFindingsCache)
         displayManager.updateIcons(filteredFindingsCache, file)
 
-        // Save expansion state before populating trees (only in all files mode)
-        val savedExpansionStates = if (filtersPanel.findingsScope == FindingsScope.ALL_FILES) {
+        // Take snapshot of expansion state before populating trees (only in all files mode)
+        val treeStateSnapshot = if (filtersPanel.findingsScope == FindingsScope.ALL_FILES) {
             TreeType.values().associateWith { treeType ->
                 val tree = getTree(treeType, isOld = false)
                 val oldTree = getTree(treeType, isOld = true)
                 Pair(
-                    TreeExpansionStateManager.saveFileNodeExpansionState(tree),
-                    TreeExpansionStateManager.saveFileNodeExpansionState(oldTree)
+                    TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(tree),
+                    TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldTree)
                 )
             }
         } else {
@@ -430,7 +430,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         
         // Handle display status and expand trees
         handleDisplayStatus()
-        expandTreesWithStatePreservation(savedExpansionStates)
+        expandTreesWithStatePreservation(treeStateSnapshot)
         updateSummaryButtons()
     }
 
@@ -700,16 +700,13 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     
     /**
      * Expands trees while preserving the expansion state of file nodes in "all files" mode.
-     * This prevents disturbing the user's manual expand/collapse choices when the view refreshes.
-     * 
-     * @param savedExpansionStates The expansion states saved before tree models were updated, or null if not in all files mode
      */
-    private fun expandTreesWithStatePreservation(savedExpansionStates: Map<TreeType, Pair<Set<String>, Set<String>>>?) {
+    private fun expandTreesWithStatePreservation(treeStateSnapshot: Map<TreeType, Pair<Set<String>, Set<String>>>?) {
         val findingsScope = filtersPanel.findingsScope
         
-        // Only restore state in "all files" mode and if we have saved states
-        if (findingsScope == FindingsScope.ALL_FILES && savedExpansionStates != null) {
-            // In all files mode with saved states, expand root only and restore file node states
+        // Only restore state in "all files" mode and if we have a snapshot
+        if (findingsScope == FindingsScope.ALL_FILES && treeStateSnapshot != null) {
+            // In all files mode with snapshot, expand root only and restore file node states
             TreeType.values().forEach { treeType ->
                 val tree = getTree(treeType, isOld = false)
                 val oldTree = getTree(treeType, isOld = true)
@@ -718,14 +715,14 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                     // Dependency risks don't have file nodes, expand normally
                     TreeUtil.expandAll(tree)
                 } else {
-                    // Restore expansion state for file nodes
-                    val (newState, oldState) = savedExpansionStates[treeType] ?: return@forEach
+                    // Restore expansion state for file nodes (this will also expand root)
+                    val (newState, oldState) = treeStateSnapshot[treeType] ?: return@forEach
                     TreeExpansionStateManager.restoreFileNodeExpansionState(tree, newState)
                     TreeExpansionStateManager.restoreFileNodeExpansionState(oldTree, oldState)
                 }
             }
         } else {
-            // In current file mode or no saved states, expand trees as usual
+            // In current file mode or no snapshot, expand trees as usual
             expandTrees()
         }
     }
