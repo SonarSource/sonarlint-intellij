@@ -200,10 +200,11 @@ jobs:
           path: ${{ github.workspace }}/orchestrator/${{ steps.setup-orchestrator.outputs.this_month }}
           key: orchestrator-${{ steps.setup-orchestrator.outputs.this_month }}
 
+      - name: Prepare xvfb and ffmpeg
+        run: mise run install-system-deps
+
       - name: Start Xvfb
         run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb metacity ffmpeg dbus-x11 gettext-base libsecret-1-0
           Xvfb ${DISPLAY} -screen 0 1280x960x24 &
           echo "XVFB_PID=$!" >> $GITHUB_ENV
           sleep 5
@@ -354,3 +355,71 @@ jobs:
           name: JUnit Test Results - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
           path: "**/test-results/**/*.xml"
           reporter: java-junit
+
+  promote:
+    runs-on: github-ubuntu-latest-m
+    name: Promote
+    needs:
+      - build
+      - check_windows
+      - qa
+    if: ${{ github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-') }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Promote artifacts
+        uses: SonarSource/ci-github-actions/promote@v1
+        env:
+          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
+        with:
+          promote-pull-request: true
+
+  dogfood:
+    runs-on: github-ubuntu-latest-m
+    name: Update Dogfood Repository
+    needs:
+      - build
+      - promote
+    if: ${{ github.ref_name == github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+          experimental: true
+
+      - name: Fetch vault secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | ARTIFACTORY_API_KEY;
+
+      - uses: SonarSource/ci-github-actions/get-build-number@v1
+
+      - name: Update dogfood repository
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_API_KEY: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_API_KEY }}
+          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
+        run: |
+          cat > updatePlugins.xml << EOF
+          <plugins>
+            <plugin id="org.sonarlint.idea" url="${ARTIFACTORY_URL}/sonarsource/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip" version="${PROJECT_VERSION}"/>
+          </plugins>
+          EOF
+          cat updatePlugins.xml
+          
+          # Upload to Artifactory using jfrog CLI
+          jf rt u updatePlugins.xml \
+            sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/ \
+            --url "${ARTIFACTORY_URL}" \
+            --access-token "${ARTIFACTORY_API_KEY}" \
+            --build-name "${{ github.event.repository.name }}" \
+            --build-number "$BUILD_NUMBER"
