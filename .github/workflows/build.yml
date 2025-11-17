@@ -185,20 +185,22 @@ jobs:
             development/github/token/licenses-ro token | GITHUB_TOKEN;
             development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
 
-      - name: Setup Orchestrator cache
-        id: setup-orchestrator
+      - name: Compute month key
+        id: month
         run: |
-          export THIS_MONTH=$(date '+%Y-%m')
-          echo "THIS_MONTH=${THIS_MONTH}" >> $GITHUB_ENV
-          echo "ORCHESTRATOR_HOME=${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}" >> $GITHUB_ENV
-          echo "this_month=${THIS_MONTH}" >> $GITHUB_OUTPUT
-          mkdir -p ${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}
+          THIS_MONTH="$(date +%Y-%m)"
+          echo "month=${THIS_MONTH}" >> "$GITHUB_OUTPUT"
+          ORCHESTRATOR_HOME="${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}"
+          echo "ORCHESTRATOR_HOME=${ORCHESTRATOR_HOME}" >> "$GITHUB_ENV"
+          echo "Create dir ${ORCHESTRATOR_HOME}"
+          mkdir -p "${ORCHESTRATOR_HOME}"
 
-      - name: Cache Orchestrator
-        uses: actions/cache@v4
+      - uses: SonarSource/ci-github-actions/cache@v1
         with:
-          path: ${{ github.workspace }}/orchestrator/${{ steps.setup-orchestrator.outputs.this_month }}
-          key: orchestrator-${{ steps.setup-orchestrator.outputs.this_month }}
+          path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
+          key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
+          restore-keys: |
+            cache-${{ runner.os }}
 
       - name: Prepare xvfb and ffmpeg
         run: mise run install-system-deps
