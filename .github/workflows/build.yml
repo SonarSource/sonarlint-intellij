@@ -47,6 +47,13 @@ jobs:
           name: test-reports-linux
           path: "**/reports/**/**"
 
+      - name: Upload JUnit test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-linux
+          path: "**/test-results/**/*.xml"
+
   check_windows:
     runs-on: warp-custom-sonarlint-intellij
     name: Test Windows
@@ -299,31 +306,15 @@ jobs:
           fi
 
       - name: Upload test recording
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v5
         with:
           name: test-recording-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
           path: ${{ github.workspace }}/recording_${{ matrix.ide_version }}.mp4
           if-no-files-found: warn
 
-      - name: Upload IDE logs
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: ide-logs-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
-          path: its/build/idea-sandbox/system/log
-          if-no-files-found: warn
-
-      - name: Upload Xvfb log
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: xvfb-log-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
-          path: ${{ github.workspace }}/Xvfb.out
-          if-no-files-found: warn
-
       - name: Upload test reports
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v5
         with:
           name: test-reports-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
@@ -331,19 +322,11 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload JUnit test results
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v5
         with:
           name: junit-results-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
           path: "**/test-results/**/*.xml"
-
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: failure()
-        with:
-          name: JUnit Test Results - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
-          path: "**/test-results/**/*.xml"
-          reporter: java-junit
 
   promote:
     runs-on: github-ubuntu-latest-m
