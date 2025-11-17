@@ -30,10 +30,19 @@ import java.time.Duration
 
 @DefaultXpath(by = "IdeStatusBarImpl type", xpath = "//div[@class='IdeStatusBarImpl']")
 @FixtureName(name = "Status Bar")
-class IdeStatusBarFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
-  val backgroundTaskPendingIcon
-    get() = find(ComponentFixture::class.java, byXpath("//div[@class='AsyncProcessIcon']"), Duration.ofSeconds(1))
+class IdeStatusBarFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
+    CommonContainerFixture(remoteRobot, remoteComponent) {
+    val backgroundTaskPendingIndicator
+        get() = find(
+            ComponentFixture::class.java,
+            byXpath("//div[@class='InlineProgressPanel']//div[@class='JProgressBar']"),
+            Duration.ofSeconds(1)
+        )
 
-  val pauseButton
-    get() = find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Pause' and @class='InplaceButton']"), Duration.ofSeconds(1))
+    val pauseButton
+        get() = find(
+            ComponentFixture::class.java,
+            byXpath("//div[@accessiblename='Pause' and @class='InplaceButton']"),
+            Duration.ofSeconds(1)
+        )
 }
