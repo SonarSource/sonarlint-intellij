@@ -34,7 +34,8 @@ jobs:
         id: build_plugin
         with:
           deploy-pull-request: true
-          use-develocity: false # Not supported by the github-ubuntu-latest-m runner yet
+          use-develocity: true
+          develocity-url: https://develocity-public.sonar.build
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
           gradle-args: -x build -x sonar -x :its:check :buildPlugin :cyclonedxBom check sonar jacocoTestReport :verifyPlugin

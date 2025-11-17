@@ -43,7 +43,7 @@ buildCache {
 }
 
 develocity {
-    server = "https://develocity.sonar.build"
+    server = "https://develocity-public.sonar.build"
     buildScan {
         publishing.onlyIf { isCiServer && it.isAuthenticated }
         capture {
