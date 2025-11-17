@@ -38,6 +38,7 @@ import org.sonarlint.intellij.ui.report.tree.ReportSecurityHotspotTreeModelBuild
 import org.sonarlint.intellij.ui.report.tree.ReportTaintTreeModelBuilder
 import org.sonarlint.intellij.ui.tree.IssueTree
 import org.sonarlint.intellij.ui.tree.SecurityHotspotTree
+import org.sonarlint.intellij.ui.tree.TreeExpansionStateManager
 import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
 
 /**
@@ -161,6 +162,33 @@ class ReportTreeManager(
     private fun clearSelection() {
         findingDetailsPanel.clear()
         getService(project, EditorDecorator::class.java).removeHighlights()
+    }
+    
+    /**
+     * Takes a snapshot of the expansion state of file nodes for all trees.
+     * This should be called before updating tree models.
+     */
+    fun takeTreeStateSnapshot(): Map<Tree, Set<String>> {
+        return mapOf(
+            issuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(issuesTree),
+            oldIssuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldIssuesTree),
+            securityHotspotsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(securityHotspotsTree),
+            oldSecurityHotspotsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldSecurityHotspotsTree),
+            taintsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(taintsTree),
+            oldTaintsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldTaintsTree)
+        )
+    }
+    
+    /**
+     * Restores the expansion state of file nodes for all trees from a snapshot.
+     * This should be called after trees are expanded.
+     */
+    fun restoreTreeState(snapshot: Map<Tree, Set<String>>) {
+        runOnUiThread(project) {
+            snapshot.forEach { (tree, expandedPaths) ->
+                TreeExpansionStateManager.restoreFileNodeExpansionState(tree, expandedPaths)
+            }
+        }
     }
     
     fun expandTrees() {
