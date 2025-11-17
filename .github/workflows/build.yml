@@ -38,7 +38,7 @@ jobs:
           develocity-url: https://develocity-public.sonar.build
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
-          gradle-args: -x build -x sonar -x :its:check :buildPlugin :cyclonedxBom check sonar jacocoTestReport :verifyPlugin
+          gradle-args: -x build -x :its:check :buildPlugin :cyclonedxBom check jacocoTestReport sonar :verifyPlugin
 
       - name: Upload test reports
         if: ${{ !cancelled() }}
@@ -46,21 +46,6 @@ jobs:
         with:
           name: test-reports-linux
           path: "**/reports/**/**"
-
-      - name: Upload JUnit test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: junit-results-linux
-          path: "**/test-results/**/*.xml"
-
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: failure()
-        with:
-          name: JUnit Test Results (Linux)
-          path: "**/test-results/**/*.xml"
-          reporter: java-junit
 
   check_windows:
     runs-on: warp-custom-sonarlint-intellij
