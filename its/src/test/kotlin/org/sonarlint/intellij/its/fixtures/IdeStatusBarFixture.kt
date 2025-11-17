@@ -38,11 +38,4 @@ class IdeStatusBarFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompo
             byXpath("//div[@class='InlineProgressPanel']//div[@class='JProgressBar']"),
             Duration.ofSeconds(1)
         )
-
-    val pauseButton
-        get() = find(
-            ComponentFixture::class.java,
-            byXpath("//div[@accessiblename='Pause' and @class='InplaceButton']"),
-            Duration.ofSeconds(1)
-        )
 }
