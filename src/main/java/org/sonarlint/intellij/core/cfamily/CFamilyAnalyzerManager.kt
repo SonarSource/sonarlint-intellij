@@ -119,21 +119,11 @@ class CFamilyAnalyzerManager {
                 // Run the check asynchronously on a pooled thread so waitForFuture can poll and cancel
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
-                        // Bind indicator to thread-local context so HttpRequests and other APIs can detect cancellation
-                        if (progressIndicator != null) {
-                            ProgressManager.getInstance().runProcess(
-                                {
-                                    val result = performCheck(progressIndicator)
-                                    newFuture.complete(result)
-                                    analyzerReady.set(result is CheckResult.Available)
-                                },
-                                progressIndicator
-                            )
-                        } else {
-                            val result = performCheck(null)
-                            newFuture.complete(result)
-                            analyzerReady.set(result is CheckResult.Available)
-                        }
+                        // Don't use ProgressManager.runProcess to avoid conflicts when already under a progress indicator
+                        // The indicator is still passed to performCheck for cancellation checks and to child operations
+                        val result = performCheck(progressIndicator)
+                        newFuture.complete(result)
+                        analyzerReady.set(result is CheckResult.Available)
                     } catch (e: ProcessCanceledException) {
                         // User cancelled - complete with Cancelled result, don't log as error
                         newFuture.complete(CheckResult.Cancelled)
