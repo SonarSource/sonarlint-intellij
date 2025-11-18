@@ -3,7 +3,6 @@ name: Plugin Verifier Nightly
 on:
   schedule:
     - cron: '0 0 * * *'  # Daily at midnight UTC
-  pull_request:
   workflow_dispatch:
 
 permissions:
