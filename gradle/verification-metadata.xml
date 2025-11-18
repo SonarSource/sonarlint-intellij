@@ -10,12 +10,15 @@
          <trust name="verifier-cli" reason="Ignore verifier-cli from JetBrains"/>
          <trust group="bundledModule" reason="JetBrains artifacts for local development"/>
          <trust group="cpp" reason="JetBrains artifacts for local development"/>
+         <trust group="datagrip" reason="JetBrains artifacts for local development"/>
          <trust group="go" reason="JetBrains artifacts for local development"/>
          <trust group="gradle" version="8.14.3" file="gradle-8.14.3-src.zip" reason="Gradle 8.14.3"/>
          <trust group="idea" reason="JetBrains artifacts for local development"/>
          <trust group="localIde" reason="JetBrains artifacts for local development"/>
          <trust group="python" reason="JetBrains artifacts for local development"/>
          <trust group="rider" reason="JetBrains artifacts for local development"/>
+         <trust group="ruby" reason="JetBrains artifacts for local development"/>
+         <trust group="webstorm" reason="JetBrains artifacts for local development"/>
          <trust group="unzipped.com.jetbrains.plugins" reason="Plugin verifier"/>
          <trust group="webide" reason="JetBrains artifacts for local development"/>
          <trust file=".*-javadoc[.]jar" regex="true"
