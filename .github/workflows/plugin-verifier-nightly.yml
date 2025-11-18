@@ -1,0 +1,110 @@
+name: Plugin Verifier Nightly
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build_plugin:
+    runs-on: github-ubuntu-latest-m
+    name: Build Plugin
+    if: github.ref_name == github.event.repository.default_branch
+    outputs:
+      PROJECT_VERSION: ${{ steps.build_plugin.outputs.project-version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Build Plugin
+        uses: SonarSource/ci-github-actions/build-gradle@v1
+        id: build_plugin
+        with:
+          deploy-pull-request: false
+          use-develocity: true
+          develocity-url: https://develocity-public.sonar.build
+          artifactory-reader-role: private-reader
+          gradle-args: -x build -x sonar :buildPlugin :cyclonedxBom
+
+  verify_plugin:
+    runs-on: github-ubuntu-latest-m
+    name: Verify Plugin - ${{ matrix.verifier_env }}
+    needs: build_plugin
+    if: github.ref_name == github.event.repository.default_branch
+    strategy:
+      fail-fast: false
+      matrix:
+        verifier_env:
+          - 'EAP'
+          - 'MINIMAL'
+          - 'LATEST'
+    env:
+      VERIFIER_ENV: ${{ matrix.verifier_env }}
+      ALLOWED_IDE: "AS|CL|DG|GO|IIU|IIC|IIE|PS|PCP|PCC|PCE|RDCPPP|RD|RM|WS"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Fetch vault secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+            development/kv/data/slack token | SLACK_BOT_TOKEN;
+            development/kv/data/develocity token | DEVELOCITY_TOKEN;
+
+      - name: Setup Gradle cache
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Run plugin verifier
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+          DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+          DEVELOCITY_ACCESS_KEY: develocity-public.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+        run: ./gradlew :verifyPlugin -PverifierEnv=${VERIFIER_ENV}
+
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: verifier-reports-${{ matrix.verifier_env }}
+          path: "**/reports/**/*"
+          if-no-files-found: warn
+
+      - name: Slack Notification on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ fromJSON(steps.secrets.outputs.vault).SLACK_BOT_TOKEN }}
+          payload: |
+            channel: squad-ide-intellij-family-bots
+            text: "Plugin Verifier Nightly job failed in ${{ github.repository }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: ":x: *Plugin Verifier Failed (${{ matrix.verifier_env }})*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Job:* Verify Plugin - ${{ matrix.verifier_env }}\n*Workflow:* ${{ github.workflow }}\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|#${{ github.run_number }}>"
+
