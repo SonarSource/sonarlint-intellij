@@ -3,6 +3,7 @@ name: Plugin Verifier Nightly
 on:
   schedule:
     - cron: '0 0 * * *'  # Daily at midnight UTC
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -13,7 +14,7 @@ jobs:
   build_plugin:
     runs-on: github-ubuntu-latest-m
     name: Build Plugin
-    if: github.ref_name == github.event.repository.default_branch
+    #    if: github.ref_name == github.event.repository.default_branch
     outputs:
       PROJECT_VERSION: ${{ steps.build_plugin.outputs.project-version }}
     steps:
@@ -37,7 +38,7 @@ jobs:
     runs-on: github-ubuntu-latest-m
     name: Verify Plugin - ${{ matrix.verifier_env }}
     needs: build_plugin
-    if: github.ref_name == github.event.repository.default_branch
+    #    if: github.ref_name == github.event.repository.default_branch
     strategy:
       fail-fast: false
       matrix:

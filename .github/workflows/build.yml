@@ -5,7 +5,7 @@ on:
       - master
       - branch-*
       - dogfood-*
-  pull_request:
+  #  pull_request:
   workflow_dispatch:
 
 concurrency:
