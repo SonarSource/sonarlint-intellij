@@ -32,6 +32,7 @@ jobs:
           use-develocity: true
           develocity-url: https://develocity-public.sonar.build
           artifactory-reader-role: private-reader
+          artifactory-deployer-role: qa-deployer
           gradle-args: -x build -x sonar :buildPlugin :cyclonedxBom
 
   verify_plugin:
