@@ -60,7 +60,7 @@ jobs:
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
           DEVELOCITY_ACCESS_KEY: develocity-public.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-        run: ./gradlew :buildPlugin :verifyPlugin -PverifierEnv=${VERIFIER_ENV}
+        run: ./gradlew :verifyPlugin -PverifierEnv=${VERIFIER_ENV}
 
       - name: Upload reports on failure
         if: failure()
