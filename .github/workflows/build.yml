@@ -85,6 +85,20 @@ jobs:
           ULTIMATE_HOME: C:\Program Files\ultimate
         run: .\gradlew.bat :check
 
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-windows
+          path: "**/reports/**/**"
+
+      - name: Upload JUnit test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-windows
+          path: "**/test-results/**/*.xml"
+
   qa:
     runs-on: github-ubuntu-latest-m
     name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
