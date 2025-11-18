@@ -470,8 +470,8 @@ tasks {
 
     signing {
         setRequired {
-            val branch = System.getenv("CIRRUS_BRANCH") ?: ""
-            val pr = System.getenv("CIRRUS_PR") ?: ""
+            val branch = System.getenv("GITHUB_REF_NAME") ?: ""
+            val pr = System.getenv("GITHUB_HEAD_REF") ?: ""
             (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
                 pr == "" &&
                 gradle.taskGraph.hasTask(":artifactoryPublish")
