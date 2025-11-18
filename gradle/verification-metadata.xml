@@ -9,6 +9,7 @@
          <trust name="marketplace-zip-signer" reason="Plugin Zip Signer"/>
          <trust name="verifier-cli" reason="Ignore verifier-cli from JetBrains"/>
          <trust group="bundledModule" reason="JetBrains artifacts for local development"/>
+         <trust group="com.google.android.studio" reason="JetBrains artifacts for local development"/>
          <trust group="cpp" reason="JetBrains artifacts for local development"/>
          <trust group="datagrip" reason="JetBrains artifacts for local development"/>
          <trust group="go" reason="JetBrains artifacts for local development"/>
