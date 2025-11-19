@@ -153,10 +153,7 @@ class CFamilyAnalyzerStartupActivity : StartupActivity {
                         NotificationType.INFORMATION
                     )
                 } catch (e: Exception) {
-                    getService(GlobalLogOutput::class.java).logError(
-                        "Error checking CFamily analyzer availability",
-                        e
-                    )
+                    getService(GlobalLogOutput::class.java).logError("Error checking CFamily analyzer availability", e)
                 }
             }
         }

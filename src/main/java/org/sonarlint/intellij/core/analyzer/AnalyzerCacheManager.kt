@@ -116,10 +116,7 @@ class AnalyzerCacheManager {
             try {
                 performCleanup()
             } catch (e: Exception) {
-                getService(GlobalLogOutput::class.java).logError(
-                    "Analyzer cache cleanup failed",
-                    e
-                )
+                getService(GlobalLogOutput::class.java).logError("Analyzer cache cleanup failed", e)
             } finally {
                 cleanupInProgress.set(false)
             }
