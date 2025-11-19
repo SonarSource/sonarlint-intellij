@@ -28,6 +28,7 @@ import java.util.EnumSet
 import kotlin.io.path.name
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.cfamily.CFamilyAnalyzerManager
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
@@ -152,7 +153,7 @@ object EnabledLanguages {
         val cachedCFamily = SonarLintUtils.getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
         if (cachedCFamily != null) {
             plugins.add(cachedCFamily)
-            SonarLintUtils.getService(GlobalLogOutput::class.java).log(
+            getService(GlobalLogOutput::class.java).log(
                 "Including cached CFamily plugin: ${cachedCFamily.fileName}",
                 ClientLogOutput.Level.DEBUG
             )
@@ -162,7 +163,7 @@ object EnabledLanguages {
     }
 
     private fun getPluginsDir(): Path {
-        val plugin = SonarLintUtils.getService(SonarLintPlugin::class.java)
+        val plugin = getService(SonarLintPlugin::class.java)
         return plugin.path.resolve("plugins")
     }
 

@@ -45,6 +45,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.analyzer.AnalyzerCacheManager
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 /**
@@ -117,7 +118,7 @@ class CFamilyAnalyzerManager {
             val newFuture = CompletableFuture<CheckResult>()
             if (checkFuture.compareAndSet(null, newFuture)) {
                 // Run the check asynchronously on a pooled thread so waitForFuture can poll and cancel
-                ApplicationManager.getApplication().executeOnPooledThread {
+                runOnPooledThread {
                     try {
                         // Don't use ProgressManager.runProcess to avoid conflicts when already under a progress indicator
                         // The indicator is still passed to performCheck for cancellation checks and to child operations

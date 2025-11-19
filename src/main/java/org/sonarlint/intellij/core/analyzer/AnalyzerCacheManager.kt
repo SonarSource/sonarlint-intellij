@@ -19,10 +19,8 @@
  */
 package org.sonarlint.intellij.core.analyzer
 
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import java.nio.file.Files
 import java.nio.file.Path
@@ -35,6 +33,7 @@ import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 /**
@@ -52,7 +51,7 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 @Service(Service.Level.APP)
 class AnalyzerCacheManager {
 
-    private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
+    private val gson = GsonBuilder().setPrettyPrinting().create()
     private val cleanupInProgress = AtomicBoolean(false)
     private val currentlyDownloading = ConcurrentHashMap.newKeySet<String>()
 
@@ -122,7 +121,7 @@ class AnalyzerCacheManager {
             return
         }
 
-        ApplicationManager.getApplication().executeOnPooledThread {
+        runOnPooledThread {
             try {
                 performCleanup()
             } catch (e: Exception) {
