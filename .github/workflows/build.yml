@@ -92,6 +92,12 @@ jobs:
           ULTIMATE_HOME: C:\Program Files\ultimate
         run: .\gradlew.bat :check
 
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: ${{ !cancelled() }}
+        with:
+          report_paths: '**/test-results/**/*.xml'
+
       - name: Upload test reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v5
@@ -325,6 +331,12 @@ jobs:
           if [ -f ${GITHUB_WORKSPACE}/runIdeGradle.log ]; then
             cat ${GITHUB_WORKSPACE}/runIdeGradle.log
           fi
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: ${{ !cancelled() }}
+        with:
+          report_paths: '**/test-results/**/*.xml'
 
       - name: Upload test recording
         if: ${{ !cancelled() }}
