@@ -26,7 +26,6 @@ import com.intellij.util.io.HttpRequests
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.analyzer.AnalyzerCacheManager
 import org.sonarlint.intellij.util.GlobalLogOutput
