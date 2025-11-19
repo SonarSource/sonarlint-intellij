@@ -88,15 +88,9 @@ class AnalyzerCacheManager {
             metadata.updateAccessTime(fileName)
             saveMetadata(cacheDir, metadata)
 
-            getService(GlobalLogOutput::class.java).log(
-                "Updated access timestamp for analyzer: $fileName",
-                ClientLogOutput.Level.DEBUG
-            )
+            getService(GlobalLogOutput::class.java).log("Updated access timestamp for analyzer: $fileName", ClientLogOutput.Level.DEBUG)
         } catch (e: Exception) {
-            getService(GlobalLogOutput::class.java).logError(
-                "Failed to update analyzer access timestamp",
-                e
-            )
+            getService(GlobalLogOutput::class.java).logError("Failed to update analyzer access timestamp", e)
         }
     }
 
@@ -114,10 +108,7 @@ class AnalyzerCacheManager {
 
     fun startCleanupTask() {
         if (!cleanupInProgress.compareAndSet(false, true)) {
-            getService(GlobalLogOutput::class.java).log(
-                "Analyzer cache cleanup is already in progress",
-                ClientLogOutput.Level.DEBUG
-            )
+            getService(GlobalLogOutput::class.java).log("Analyzer cache cleanup is already in progress", ClientLogOutput.Level.DEBUG)
             return
         }
 
@@ -139,10 +130,7 @@ class AnalyzerCacheManager {
         val retentionDays = getGlobalSettings().cFamilyAnalyzerRetentionDays
         val cutoffTime = Instant.now().minus(retentionDays, ChronoUnit.DAYS)
 
-        getService(GlobalLogOutput::class.java).log(
-            "Starting analyzer cache cleanup (retention: $retentionDays days)",
-            ClientLogOutput.Level.INFO
-        )
+        getService(GlobalLogOutput::class.java).log("Starting analyzer cache cleanup (retention: $retentionDays days)", ClientLogOutput.Level.INFO)
 
         val cacheDir = getCFamilyCacheDir()
         if (!shouldPerformCleanup(cacheDir)) {
@@ -159,19 +147,13 @@ class AnalyzerCacheManager {
 
     private fun shouldPerformCleanup(cacheDir: Path): Boolean {
         if (!Files.isDirectory(cacheDir)) {
-            getService(GlobalLogOutput::class.java).log(
-                "Analyzer cache directory does not exist, skipping cleanup",
-                ClientLogOutput.Level.DEBUG
-            )
+            getService(GlobalLogOutput::class.java).log("Analyzer cache directory does not exist, skipping cleanup", ClientLogOutput.Level.DEBUG)
             return false
         }
 
         val analyzerFiles = findAnalyzerFiles(cacheDir)
         if (analyzerFiles.size <= 1) {
-            getService(GlobalLogOutput::class.java).log(
-                "Only one or no analyzer found, skipping cleanup",
-                ClientLogOutput.Level.DEBUG
-            )
+            getService(GlobalLogOutput::class.java).log("Only one or no analyzer found, skipping cleanup", ClientLogOutput.Level.DEBUG)
             return false
         }
 
@@ -190,10 +172,7 @@ class AnalyzerCacheManager {
             val fileName = analyzerFile.fileName.toString()
 
             if (isDownloading(fileName)) {
-                getService(GlobalLogOutput::class.java).log(
-                    "Skipping $fileName - currently downloading",
-                    ClientLogOutput.Level.DEBUG
-                )
+                getService(GlobalLogOutput::class.java).log("Skipping $fileName - currently downloading", ClientLogOutput.Level.DEBUG)
                 continue
             }
 
@@ -229,15 +208,9 @@ class AnalyzerCacheManager {
 
     private fun logCleanupResults(deletedCount: Int, failedCount: Int) {
         if (deletedCount > 0 || failedCount > 0) {
-            getService(GlobalLogOutput::class.java).log(
-                "Analyzer cache cleanup completed: $deletedCount deleted, $failedCount failed",
-                ClientLogOutput.Level.INFO
-            )
+            getService(GlobalLogOutput::class.java).log("Analyzer cache cleanup completed: $deletedCount deleted, $failedCount failed", ClientLogOutput.Level.INFO)
         } else {
-            getService(GlobalLogOutput::class.java).log(
-                "Analyzer cache cleanup completed: no old analyzers found",
-                ClientLogOutput.Level.DEBUG
-            )
+            getService(GlobalLogOutput::class.java).log("Analyzer cache cleanup completed: no old analyzers found", ClientLogOutput.Level.DEBUG)
         }
     }
 
@@ -247,16 +220,10 @@ class AnalyzerCacheManager {
             Files.deleteIfExists(analyzerFile)
             metadata.removeEntry(fileName)
 
-            getService(GlobalLogOutput::class.java).log(
-                "Deleted old analyzer: $fileName",
-                ClientLogOutput.Level.INFO
-            )
+            getService(GlobalLogOutput::class.java).log("Deleted old analyzer: $fileName", ClientLogOutput.Level.INFO)
             true
         } catch (e: Exception) {
-            getService(GlobalLogOutput::class.java).logError(
-                "Failed to delete analyzer: $fileName",
-                e
-            )
+            getService(GlobalLogOutput::class.java).logError("Failed to delete analyzer: $fileName", e)
             false
         }
     }
@@ -267,10 +234,7 @@ class AnalyzerCacheManager {
                 stream.toList()
             }
         } catch (e: Exception) {
-            getService(GlobalLogOutput::class.java).logError(
-                "Failed to list analyzer files",
-                e
-            )
+            getService(GlobalLogOutput::class.java).logError("Failed to list analyzer files", e)
             emptyList()
         }
     }
@@ -286,10 +250,7 @@ class AnalyzerCacheManager {
                 AnalyzerMetadata()
             }
         } catch (e: Exception) {
-            getService(GlobalLogOutput::class.java).logError(
-                "Failed to load analyzer metadata, creating new",
-                e
-            )
+            getService(GlobalLogOutput::class.java).logError("Failed to load analyzer metadata, creating new", e)
             AnalyzerMetadata()
         }
     }
@@ -305,10 +266,7 @@ class AnalyzerCacheManager {
             Files.move(tempFile, metadataFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
         } catch (e: Exception) {
             Files.deleteIfExists(tempFile)
-            getService(GlobalLogOutput::class.java).logError(
-                "Failed to save analyzer metadata",
-                e
-            )
+            getService(GlobalLogOutput::class.java).logError("Failed to save analyzer metadata", e)
         }
     }
 
