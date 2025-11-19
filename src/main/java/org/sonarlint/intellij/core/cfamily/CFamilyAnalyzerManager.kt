@@ -95,45 +95,69 @@ class CFamilyAnalyzerManager {
     fun ensureAnalyzerAvailable(progressIndicator: ProgressIndicator?): CompletableFuture<CheckResult> {
         var attempts = 0
         while (true) {
-            if (attempts++ > 100) {
-                val error = IllegalStateException("CFamily analyzer check future CAS loop did not stabilize after 100 attempts")
-                getService(GlobalLogOutput::class.java).logError("CFamily analyzer check CAS loop exceeded max attempts", error)
-                val failed = CompletableFuture<CheckResult>()
-                failed.completeExceptionally(error)
-                return failed
-            }
+            val errorFuture = checkMaxAttemptsNotExceeded(attempts++)
+            if (errorFuture != null) return errorFuture
 
             val current = checkFuture.get()
-
             if (current != null) {
-                if (!current.isDone || (!current.isCompletedExceptionally && !current.isCancelled)) {
-                    return current
-                }
-
-                if (!checkFuture.compareAndSet(current, null)) {
-                    continue
-                }
+                val reusableFuture = tryReuseExistingFuture(current)
+                if (reusableFuture != null) return reusableFuture
+                continue
             }
 
-            val newFuture = CompletableFuture<CheckResult>()
-            if (checkFuture.compareAndSet(null, newFuture)) {
-                // Run the check asynchronously on a pooled thread so waitForFuture can poll and cancel
-                runOnPooledThread {
-                    try {
-                        // Don't use ProgressManager.runProcess to avoid conflicts when already under a progress indicator
-                        // The indicator is still passed to performCheck for cancellation checks and to child operations
-                        val result = performCheck(progressIndicator)
-                        newFuture.complete(result)
-                        analyzerReady.set(result is CheckResult.Available)
-                    } catch (e: ProcessCanceledException) {
-                        // User cancelled - complete with Cancelled result, don't log as error
-                        newFuture.complete(CheckResult.Cancelled)
-                    } catch (e: Exception) {
-                        getService(GlobalLogOutput::class.java).logError("Error checking CFamily analyzer", e)
-                        newFuture.completeExceptionally(e)
-                    }
-                }
-                return newFuture
+            val newFuture = tryCreateNewCheckFuture(progressIndicator)
+            if (newFuture != null) return newFuture
+        }
+    }
+
+    private fun checkMaxAttemptsNotExceeded(attempts: Int): CompletableFuture<CheckResult>? {
+        if (attempts > 100) {
+            val error = IllegalStateException("CFamily analyzer check future CAS loop did not stabilize after 100 attempts")
+            getService(GlobalLogOutput::class.java).logError("CFamily analyzer check CAS loop exceeded max attempts", error)
+            val failed = CompletableFuture<CheckResult>()
+            failed.completeExceptionally(error)
+            return failed
+        }
+        return null
+    }
+
+    private fun tryReuseExistingFuture(current: CompletableFuture<CheckResult>): CompletableFuture<CheckResult>? {
+        if (shouldReuseFuture(current)) {
+            return current
+        }
+
+        // Try to clear the completed/failed future
+        checkFuture.compareAndSet(current, null)
+        return null
+    }
+
+    private fun shouldReuseFuture(future: CompletableFuture<CheckResult>): Boolean {
+        return !future.isDone || (!future.isCompletedExceptionally && !future.isCancelled)
+    }
+
+    private fun tryCreateNewCheckFuture(progressIndicator: ProgressIndicator?): CompletableFuture<CheckResult>? {
+        val newFuture = CompletableFuture<CheckResult>()
+        if (!checkFuture.compareAndSet(null, newFuture)) {
+            return null
+        }
+
+        startAsyncCheck(newFuture, progressIndicator)
+        return newFuture
+    }
+
+    private fun startAsyncCheck(future: CompletableFuture<CheckResult>, progressIndicator: ProgressIndicator?) {
+        runOnPooledThread {
+            try {
+                // The indicator is passed to performCheck for cancellation checks and to child operations
+                val result = performCheck(progressIndicator)
+                future.complete(result)
+                analyzerReady.set(result is CheckResult.Available)
+            } catch (e: ProcessCanceledException) {
+                // User cancelled - complete with Cancelled result, don't log as error
+                future.complete(CheckResult.Cancelled)
+            } catch (e: Exception) {
+                getService(GlobalLogOutput::class.java).logError("Error checking CFamily analyzer", e)
+                future.completeExceptionally(e)
             }
         }
     }
