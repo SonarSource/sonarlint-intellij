@@ -290,10 +290,6 @@ public final class SonarLintGlobalSettings {
     return cFamilyAnalyzerRetentionDays;
   }
 
-  public void setCFamilyAnalyzerRetentionDays(long cFamilyAnalyzerRetentionDays) {
-    this.cFamilyAnalyzerRetentionDays = cFamilyAnalyzerRetentionDays;
-  }
-
   public static class Rule {
     String key;
     boolean isActive;

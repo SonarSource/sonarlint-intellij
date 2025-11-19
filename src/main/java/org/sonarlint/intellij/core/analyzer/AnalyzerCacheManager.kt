@@ -57,7 +57,6 @@ class AnalyzerCacheManager {
 
     companion object {
         private const val METADATA_FILE_NAME = ".metadata.json"
-        private const val DEFAULT_RETENTION_DAYS = 60L // 2 months
         private const val ANALYZER_CACHE_DIR = "analyzer-cache"
         private const val CFAMILY_CACHE_DIR = "cfamily"
     }
