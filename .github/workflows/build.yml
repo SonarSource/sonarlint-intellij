@@ -307,7 +307,7 @@ jobs:
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
           DEVELOCITY_ACCESS_KEY: develocity-public.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient
+        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks
 
       - name: Stop recording
         if: always()
@@ -428,3 +428,35 @@ jobs:
             --access-token "${ARTIFACTORY_API_KEY}" \
             --build-name "${{ github.event.repository.name }}" \
             --build-number "$BUILD_NUMBER"
+
+  notify_failure:
+    runs-on: github-ubuntu-latest-s
+    name: Notify on Failure
+    needs:
+      - build
+      - check_windows
+      - qa
+      - promote
+      - dogfood
+    if: ${{ !cancelled() && (needs.build.result == 'failure' || needs.check_windows.result == 'failure' || needs.qa.result == 'failure' || needs.promote.result == 'failure' || needs.dogfood.result == 'failure') }}
+    steps:
+      - name: Fetch vault secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/slack token | SLACK_BOT_TOKEN;
+
+      - name: Slack Notification on Failure
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ fromJSON(steps.secrets.outputs.vault).SLACK_BOT_TOKEN }}
+          payload: |
+            channel: squad-ide-intellij-family-bots
+            text: "Build workflow failed in ${{ github.repository }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: ":x: *Build Workflow Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|#${{ github.run_number }}>"
