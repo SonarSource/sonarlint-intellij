@@ -81,8 +81,6 @@ class CFamilyAnalyzerManager {
         private const val CFAMILY_PLUGIN_PATTERN = "sonar-cfamily-plugin-*.jar"
         private const val SONAR_PUBLIC_KEY = "sonarsource-public.key"
         private const val CFAMILY_VERSION_PROPERTIES = "cfamily-version.properties"
-        private const val ANALYZER_CACHE_DIR = "analyzer-cache"
-        private const val CFAMILY_CACHE_DIR = "cfamily"
     }
 
     init {
@@ -165,7 +163,7 @@ class CFamilyAnalyzerManager {
     private fun performCheck(progressIndicator: ProgressIndicator?): CheckResult {
         progressIndicator?.text = "Checking CFamily analyzer..."
 
-        val cacheDir = getCFamilyCacheDir()
+        val cacheDir = cacheManager.getCFamilyCacheDir()
         val analyzerPath = findCFamilyAnalyzer(cacheDir)
 
         return when {
@@ -396,13 +394,8 @@ class CFamilyAnalyzerManager {
         }
     }
 
-    private fun getCFamilyCacheDir(): Path {
-        val plugin = getService(SonarLintPlugin::class.java)
-        return plugin.path.resolve(ANALYZER_CACHE_DIR).resolve(CFAMILY_CACHE_DIR)
-    }
-
     fun getCachedAnalyzerPath(): Path? {
-        return findCFamilyAnalyzer(getCFamilyCacheDir())
+        return findCFamilyAnalyzer(cacheManager.getCFamilyCacheDir())
     }
 
     private fun getPluginsDir(): Path {
@@ -421,11 +414,6 @@ class CFamilyAnalyzerManager {
             stream.firstOrNull()
         }
     }
-
-    fun isAnalyzerReady(): Boolean {
-        return analyzerReady.get()
-    }
-
 
     /**
      * Result of checking/downloading CFamily analyzer

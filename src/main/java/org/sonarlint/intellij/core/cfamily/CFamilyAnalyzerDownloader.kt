@@ -42,8 +42,6 @@ class CFamilyAnalyzerDownloader {
     companion object {
         private const val CFAMILY_DOWNLOAD_URL_TEMPLATE =
             "https://binaries.sonarsource.com/CommercialDistribution/sonar-cfamily-plugin/sonar-cfamily-plugin-%s.jar"
-        private const val ANALYZER_CACHE_DIR = "analyzer-cache"
-        private const val CFAMILY_CACHE_DIR = "cfamily"
     }
 
     sealed class DownloadResult {
@@ -72,7 +70,7 @@ class CFamilyAnalyzerDownloader {
         val targetFileName = "sonar-cfamily-plugin-$version.jar"
 
         try {
-            val cacheDir = getCFamilyCacheDir()
+            val cacheDir = cacheManager.getCFamilyCacheDir()
             Files.createDirectories(cacheDir)
 
             // Mark as downloading to prevent cleanup
@@ -129,11 +127,6 @@ class CFamilyAnalyzerDownloader {
             getService(GlobalLogOutput::class.java).logError("Error preparing download", e)
             return DownloadResult.Failed(e.message ?: "Unknown error")
         }
-    }
-
-    private fun getCFamilyCacheDir(): Path {
-        val plugin = getService(SonarLintPlugin::class.java)
-        return plugin.path.resolve(ANALYZER_CACHE_DIR).resolve(CFAMILY_CACHE_DIR)
     }
 
 }

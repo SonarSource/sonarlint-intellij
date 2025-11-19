@@ -266,7 +266,7 @@ class AnalyzerCacheManager {
         }
     }
 
-    private fun getCFamilyCacheDir(): Path {
+    fun getCFamilyCacheDir(): Path {
         val plugin = getService(SonarLintPlugin::class.java)
         return plugin.path.resolve(ANALYZER_CACHE_DIR).resolve(CFAMILY_CACHE_DIR)
     }
