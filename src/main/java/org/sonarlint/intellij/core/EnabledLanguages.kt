@@ -20,7 +20,9 @@
 package org.sonarlint.intellij.core
 
 import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.extensions.PluginId
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -77,7 +79,7 @@ object EnabledLanguages {
         val embeddedPlugins = mutableMapOf<String, Path>()
         EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.forEach {
             val path = if (it.pluginKey == SonarLanguage.valueOf(Language.CPP.name).pluginKey) {
-                findCFamilyPlugin(it)
+                findCFamilyPlugin()
             } else {
                 findEmbeddedPlugin(getPluginsDir(), it)
             }
@@ -148,15 +150,11 @@ object EnabledLanguages {
     @Throws(IOException::class)
     fun findEmbeddedPlugins(): Set<Path> {
         val plugins = getPluginsUrls(getPluginsDir()).toMutableSet()
-        
-        // Add cached CFamily analyzer if available
-        val cachedCFamily = SonarLintUtils.getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
+
+        val cachedCFamily = getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
         if (cachedCFamily != null) {
             plugins.add(cachedCFamily)
-            getService(GlobalLogOutput::class.java).log(
-                "Including cached CFamily plugin: ${cachedCFamily.fileName}",
-                ClientLogOutput.Level.DEBUG
-            )
+            getService(GlobalLogOutput::class.java).log("Including cached CFamily plugin: ${cachedCFamily.fileName}", ClientLogOutput.Level.DEBUG)
         }
         
         return plugins
@@ -167,19 +165,18 @@ object EnabledLanguages {
         return plugin.path.resolve("plugins")
     }
 
-    private fun findCFamilyPlugin(embeddedPlugin: EmbeddedPlugin): Path? {
-        // Check cache directory first
-        val cachedPath = SonarLintUtils.getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
+    private fun findCFamilyPlugin(): Path? {
+        val cachedPath = getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
         if (cachedPath != null) {
-            SonarLintUtils.getService(GlobalLogOutput::class.java).log(
-                "Found CFamily plugin in cache: ${cachedPath.fileName}",
-                ClientLogOutput.Level.DEBUG
-            )
+            getService(GlobalLogOutput::class.java).log("Found CFamily plugin in cache: ${cachedPath.fileName}", ClientLogOutput.Level.DEBUG)
             return cachedPath
         }
-        
-        // Fallback to plugins directory
-        return findEmbeddedPlugin(getPluginsDir(), embeddedPlugin)
+
+        SonarLintProjectNotifications.projectLessNotification("CFamily plugin not found",
+            "The CFamily plugin was not found in the cache.",
+            NotificationType.WARNING
+        )
+        return null
     }
 
     private fun findEmbeddedPlugin(pluginsDir: Path, embeddedPlugin: EmbeddedPlugin): Path? {
