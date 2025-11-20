@@ -24,7 +24,6 @@ dependencyResolutionManagement {
         mavenCentral()
         intellijPlatform {
             defaultRepositories()
-            nightly()
         }
     }
 }
