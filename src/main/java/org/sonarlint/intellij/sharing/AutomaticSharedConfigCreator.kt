@@ -65,7 +65,6 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.ProgressUtils.waitForFuture
 import org.sonarlint.intellij.util.RegionUtils
 import org.sonarlint.intellij.util.computeOnPooledThread
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse
@@ -187,7 +186,7 @@ class AutomaticSharedConfigCreator(
                 .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
 
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, overridesPerModule,
-                BindingMode.FROM_SUGGESTION, origin)
+                origin)
             val connectionTypeMessage = if (isSQ) "SonarQube Server instance" else "SonarQube Cloud organization"
             SonarLintProjectNotifications.get(project).simpleNotification(
                 "Project successfully bound",
