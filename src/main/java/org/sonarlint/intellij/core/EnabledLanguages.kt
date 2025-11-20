@@ -165,7 +165,7 @@ object EnabledLanguages {
             } else {
                 SonarLintProjectNotifications.projectLessNotification(
                     "CFamily plugin not found",
-                    "The CFamily plugin was not found in the cache.",
+                    "The CFamily plugin was not found in the cache for Embedded Plugins.",
                     NotificationType.WARNING
                 )
             }
@@ -187,7 +187,7 @@ object EnabledLanguages {
         }
 
         SonarLintProjectNotifications.projectLessNotification("CFamily plugin not found",
-            "The CFamily plugin was not found in the cache.",
+            "The CFamily plugin was not found in the cache for Connected Mode Embedded Plugins.",
             NotificationType.WARNING
         )
         return null
