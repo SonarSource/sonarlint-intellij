@@ -1,4 +1,11 @@
 import com.jetbrains.plugin.blockmap.core.BlockMap
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.models.ProductRelease
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
@@ -8,13 +15,6 @@ import java.nio.file.Paths
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
-import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-import org.jetbrains.intellij.platform.gradle.models.ProductRelease
-import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 tasks.matching { it.name == "signArchives" }.configureEach {
     dependsOn(":composedJar")
@@ -51,11 +51,11 @@ val omnisharpVersion: String by project
 val runIdeDirectory: String by project
 val verifierEnv: String by project
 
-// The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env
+// The environment variables ARTIFACTORY_ACCESS_USERNAME and ARTIFACTORY_ACCESS_TOKEN are used on CI env
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
-val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_USERNAME")
+val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME")
     ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_PASSWORD")
+val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN")
     ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 configurations {
@@ -160,10 +160,12 @@ intellijPlatform {
             VerifyPluginTask.FailureLevel.INVALID_PLUGIN
         )
 
-        val ideTypes = listOf(IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
+        val ideTypes = listOf(
+            IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
             IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.DataGrip, IntelliJPlatformType.GoLand,
             IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
-            IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity)
+            IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity
+        )
 
         ides {
             ide(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
@@ -212,7 +214,7 @@ intellijPlatform {
 
     artifactory {
         clientConfig.info.buildName = "sonarlint-intellij"
-        clientConfig.info.buildNumber = System.getenv("BUILD_ID")
+        clientConfig.info.buildNumber = System.getenv("BUILD_NUMBER")
         clientConfig.isIncludeEnvVars = true
         clientConfig.envVarsExcludePatterns =
             "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
@@ -225,16 +227,16 @@ intellijPlatform {
             repository {
                 setProperty("repoKey", System.getenv("ARTIFACTORY_DEPLOY_REPO"))
                 setProperty("username", System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
-                setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_PASSWORD"))
+                setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_ACCESS_TOKEN"))
             }
             defaults {
                 setProperties(
                     mapOf(
-                        "vcs.revision" to System.getenv("CIRRUS_CHANGE_IN_REPO"),
-                        "vcs.branch" to (System.getenv("CIRRUS_BASE_BRANCH")
-                            ?: System.getenv("CIRRUS_BRANCH")),
+                        "vcs.revision" to System.getenv("GITHUB_SHA"),
+                        "vcs.branch" to (System.getenv("GITHUB_HEAD_REF")
+                            ?: System.getenv("GITHUB_REF_NAME")),
                         "build.name" to "sonarlint-intellij",
-                        "build.number" to System.getenv("BUILD_ID")
+                        "build.number" to System.getenv("BUILD_NUMBER")
                     )
                 )
                 publishConfigs("archives")
@@ -284,6 +286,7 @@ fun renameCsharpPlugins(pluginsDir: File) {
             file.name.matches(Regex("sonar-csharp-enterprise-plugin-.*\\.jar")) -> {
                 file.renameTo(File(pluginsDir, "sonar-csharp-enterprise-plugin.jar"))
             }
+
             file.name.matches(Regex("sonar-csharp-plugin-.*\\.jar")) -> {
                 file.renameTo(File(pluginsDir, "sonar-csharp-plugin.jar"))
             }
@@ -467,8 +470,8 @@ tasks {
 
     signing {
         setRequired {
-            val branch = System.getenv("CIRRUS_BRANCH") ?: ""
-            val pr = System.getenv("CIRRUS_PR") ?: ""
+            val branch = System.getenv("GITHUB_REF_NAME") ?: ""
+            val pr = System.getenv("GITHUB_HEAD_REF") ?: ""
             (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
                 pr == "" &&
                 gradle.taskGraph.hasTask(":artifactoryPublish")
