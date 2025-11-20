@@ -29,6 +29,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.core.EnabledLanguages
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.ProgressUtils
@@ -51,7 +52,9 @@ class CFamilyAnalyzerStartupActivity : StartupActivity {
     }
 
     override fun runActivity(project: Project) {
-        if (ApplicationManager.getApplication().isUnitTestMode) {
+        if (ApplicationManager.getApplication().isUnitTestMode ||
+            !EnabledLanguages.isClionEnabled()
+        ) {
             return
         }
 

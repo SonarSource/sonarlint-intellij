@@ -44,6 +44,7 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.ConfigurationPanel;
+import org.sonarlint.intellij.core.EnabledLanguages;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.HelpLabelUtils;
 
@@ -112,8 +113,10 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     neverDownloadCFamily = new JBCheckBox("Never download CFamily analyzer");
     neverDownloadCFamily.setFocusable(false);
     neverDownloadCFamily.setToolTipText("Prevent automatic download of CFamily analyzer for C/C++ analysis");
-    optionsPanel.add(neverDownloadCFamily, new GridBagConstraints(0, 2, 3, 1, 0.0, 0.0,
-      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+    if (EnabledLanguages.isClionEnabled()) {
+      optionsPanel.add(neverDownloadCFamily, new GridBagConstraints(0, 2, 3, 1, 0.0, 0.0,
+        WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
+    }
 
     var label = new JLabel("Node.js path (20.12 minimum): ");
     label.setToolTipText(NODE_JS_TOOLTIP);

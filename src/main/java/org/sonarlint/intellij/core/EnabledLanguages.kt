@@ -22,7 +22,6 @@ package org.sonarlint.intellij.core
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.extensions.PluginId
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -32,6 +31,7 @@ import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.cfamily.CFamilyAnalyzerManager
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
@@ -78,13 +78,16 @@ object EnabledLanguages {
     fun getEmbeddedPluginsForConnectedMode(): Map<String, Path> {
         val embeddedPlugins = mutableMapOf<String, Path>()
         EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.forEach {
-            val path = if (it.pluginKey == SonarLanguage.valueOf(Language.CPP.name).pluginKey) {
-                findCFamilyPlugin()
+            if (it.pluginKey == SonarLanguage.valueOf(Language.CPP.name).pluginKey) {
+                if (isIdeModuleEnabled(CLION_MODULE_ID)) {
+                    findCFamilyPlugin()?.let { pluginPath ->
+                        embeddedPlugins.put(it.pluginKey, pluginPath)
+                    }
+                }
             } else {
-                findEmbeddedPlugin(getPluginsDir(), it)
-            }
-            path?.let { pluginPath ->
-                embeddedPlugins.put(it.pluginKey, pluginPath)
+                findEmbeddedPlugin(getPluginsDir(), it)?.let { pluginPath ->
+                    embeddedPlugins.put(it.pluginKey, pluginPath)
+                }
             }
         }
         findEmbeddedPlugin(getPluginsDir(), "sonarlint-omnisharp-plugin-*.jar", "OmniSharp")?.let {
@@ -151,10 +154,21 @@ object EnabledLanguages {
     fun findEmbeddedPlugins(): Set<Path> {
         val plugins = getPluginsUrls(getPluginsDir()).toMutableSet()
 
-        val cachedCFamily = getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
-        if (cachedCFamily != null) {
-            plugins.add(cachedCFamily)
-            getService(GlobalLogOutput::class.java).log("Including cached CFamily plugin: ${cachedCFamily.fileName}", ClientLogOutput.Level.DEBUG)
+        if (isIdeModuleEnabled(CLION_MODULE_ID)) {
+            val cachedCFamily = getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
+            if (cachedCFamily != null) {
+                plugins.add(cachedCFamily)
+                getService(GlobalLogOutput::class.java).log(
+                    "Including cached CFamily plugin: ${cachedCFamily.fileName}",
+                    ClientLogOutput.Level.DEBUG
+                )
+            } else {
+                SonarLintProjectNotifications.projectLessNotification(
+                    "CFamily plugin not found",
+                    "The CFamily plugin was not found in the cache.",
+                    NotificationType.WARNING
+                )
+            }
         }
         
         return plugins
@@ -219,6 +233,9 @@ object EnabledLanguages {
     private class EmbeddedPlugin(val pluginKey: String, val name: String, val jarFilePattern: String) {
         constructor(language: Language, name: String, jarFilePattern: String) : this(SonarLanguage.valueOf(language.name).pluginKey, name, jarFilePattern)
     }
+
+    @JvmStatic
+    fun isClionEnabled() = isIdeModuleEnabled(CLION_MODULE_ID)
 
     private fun isIdeModuleEnabled(pluginId: String) = PluginManagerCore.getPlugin(PluginId.getId(pluginId))?.isEnabled == true
 }
