@@ -107,7 +107,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConn
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingConfigurationDto
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpdateBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.ConfigurationScopeDto
@@ -177,6 +176,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.DependencyRiskTra
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.OpenDependencyRiskInBrowserParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AcceptedBindingSuggestionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
@@ -587,16 +587,19 @@ class BackendService : Disposable {
         ConfigurationScopeDto(projectId(project), null, true, project.name,
             BindingConfigurationDto(binding?.connectionName, binding?.projectKey, areBindingSuggestionsDisabledFor(project)))
 
-    fun projectBound(project: Project, newBinding: ProjectBinding, mode: BindingMode, origin: BindingSuggestionOrigin?) {
+    fun projectBound(project: Project, newBinding: ProjectBinding, origin: BindingSuggestionOrigin?) {
         runOnPooledThread(project) {
             notifyBackend {
+                if (origin == null) {
+                    it.telemetryService.addedManualBindings()
+                } else {
+                    it.telemetryService.acceptedBindingSuggestion(AcceptedBindingSuggestionParams(origin))
+                }
                 it.configurationService.didUpdateBinding(
                     DidUpdateBindingParams(
                         projectId(project), BindingConfigurationDto(
                             newBinding.connectionName, newBinding.projectKey, areBindingSuggestionsDisabledFor(project),
-                        ),
-                        mode,
-                        origin
+                        )
                     )
                 )
             }
@@ -608,9 +611,7 @@ class BackendService : Disposable {
                             moduleId, BindingConfigurationDto(
                                 // we don't want binding suggestions for modules
                                 newBinding.connectionName, projectKey, true
-                            ),
-                            mode,
-                            origin
+                            )
                         )
                     )
                 }
@@ -626,9 +627,7 @@ class BackendService : Disposable {
             it.configurationService.didUpdateBinding(
                 DidUpdateBindingParams(
                     projectId(project),
-                    BindingConfigurationDto(null, null, areBindingSuggestionsDisabledFor(project)),
-                    BindingMode.MANUAL,
-                    null
+                    BindingConfigurationDto(null, null, areBindingSuggestionsDisabledFor(project))
                 )
             )
         }
@@ -677,9 +676,7 @@ class BackendService : Disposable {
                     BindingConfigurationDto(
                         // we don't want binding suggestions for modules
                         null, null, true
-                    ),
-                    BindingMode.MANUAL,
-                    null
+                    )
                 )
             )
         }
@@ -694,9 +691,7 @@ class BackendService : Disposable {
             it.configurationService.didUpdateBinding(
                 DidUpdateBindingParams(
                     projectId(project),
-                    BindingConfigurationDto(binding?.connectionName, binding?.projectKey, true),
-                    BindingMode.MANUAL,
-                    null
+                    BindingConfigurationDto(binding?.connectionName, binding?.projectKey, true)
                 )
             )
         }

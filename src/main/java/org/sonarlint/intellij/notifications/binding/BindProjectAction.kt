@@ -26,12 +26,10 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 
 class BindProjectAction(
     private val bindingSuggestion: BindingSuggestion,
-    private val mode: BindingMode,
     private val origin: BindingSuggestionOrigin?,
 ) : AbstractSonarAction("Bind project") {
 
@@ -47,7 +45,6 @@ class BindProjectAction(
                     connection,
                     bindingSuggestion.projectKey,
                     emptyMap(),
-                    mode,
                     origin
                 )
             },
