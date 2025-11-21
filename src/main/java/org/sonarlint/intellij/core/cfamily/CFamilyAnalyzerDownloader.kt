@@ -46,7 +46,6 @@ class CFamilyAnalyzerDownloader {
     sealed class DownloadResult {
         data class Success(val path: Path) : DownloadResult()
         data class Failed(val reason: String) : DownloadResult()
-        object Cancelled : DownloadResult()
     }
 
     fun downloadAnalyzer(version: String, progressIndicator: ProgressIndicator): DownloadResult {
@@ -99,7 +98,7 @@ class CFamilyAnalyzerDownloader {
                     "CFamily analyzer download cancelled by user",
                     ClientLogOutput.Level.INFO
                 )
-                return DownloadResult.Cancelled
+                throw e
             } catch (e: Exception) {
                 Files.deleteIfExists(tempFile)
                 cacheManager.unmarkDownloading(targetFileName)
@@ -113,7 +112,7 @@ class CFamilyAnalyzerDownloader {
                 "CFamily analyzer download cancelled during setup",
                 ClientLogOutput.Level.INFO
             )
-            return DownloadResult.Cancelled
+            throw e
         } catch (e: Exception) {
             cacheManager.unmarkDownloading(targetFileName)
             getService(GlobalLogOutput::class.java).logError("Error preparing download", e)

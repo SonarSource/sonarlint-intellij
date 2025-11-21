@@ -334,10 +334,6 @@ class CFamilyAnalyzerManager {
             is CFamilyAnalyzerDownloader.DownloadResult.Failed -> {
                 CheckResult.DownloadFailed(downloadResult.reason)
             }
-
-            CFamilyAnalyzerDownloader.DownloadResult.Cancelled -> {
-                CheckResult.Cancelled
-            }
         }
     }
 
