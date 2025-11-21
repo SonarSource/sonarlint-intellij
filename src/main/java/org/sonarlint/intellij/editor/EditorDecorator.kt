@@ -42,7 +42,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
 import java.awt.Font
 import java.util.function.Consumer
-import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
@@ -287,7 +286,7 @@ class EditorDecorator(private val project: Project) : Disposable {
         if (!message.isNullOrEmpty() && "..." != message) {
             builder.descriptionAndTooltip("SonarQube: $message")
         }
-        return builder.create()?.let { hl -> computeReadActionSafely { Highlight(location.document, hl) } }
+        return builder.create()?.let { hl -> Highlight(location.document, hl) }
     }
 
     override fun dispose() {

@@ -26,9 +26,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
-
 import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -68,13 +66,12 @@ class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
   @Test
   void should_restart_all_open() {
-    var file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "class Foo {}");
-    var file2 = createAndOpenTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "class Bar {}");
+    createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "class Foo {}");
+    createAndOpenTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "class Bar {}");
 
     analyzerRestarter.refreshOpenFiles();
 
-    verify(codeAnalyzer, timeout(1000)).restart(file1);
-    verify(codeAnalyzer).restart(file2);
+    verify(codeAnalyzer, timeout(1000)).restart();
     verifyNoMoreInteractions(codeAnalyzer);
   }
 
@@ -85,7 +82,19 @@ class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
     analyzerRestarter.refreshFiles(List.of(file1.getVirtualFile(), file2.getVirtualFile()));
 
-    verify(codeAnalyzer, timeout(1000)).restart(file1);
+    verify(codeAnalyzer, timeout(1000)).restart();
     verifyNoMoreInteractions(codeAnalyzer);
   }
+
+  @Test
+  void should_restart_only_one_file() {
+    createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "class Foo {}");
+    var file2 = createAndOpenTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "class Bar {}");
+
+    analyzerRestarter.refreshFiles(List.of(file2.getVirtualFile()));
+
+    verify(codeAnalyzer, timeout(1000)).restart(file2);
+    verifyNoMoreInteractions(codeAnalyzer);
+  }
+
 }
