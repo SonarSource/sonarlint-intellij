@@ -187,7 +187,7 @@ object EnabledLanguages {
 
     private class EmbeddedPlugin(val pluginKey: String, val name: String, val jarFilePattern: String) {
         constructor(language: Language, name: String, jarFilePattern: String) : this(SonarLanguage.valueOf(language.name).pluginKey, name, jarFilePattern)
-    }
+    }//
 
     private fun isIdeModuleEnabled(pluginId: String) = PluginManagerCore.getPlugin(PluginId.getId(pluginId))?.isEnabled == true
 }
