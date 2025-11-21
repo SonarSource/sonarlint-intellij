@@ -301,7 +301,6 @@ class BackendService : Disposable {
         }
     }
 
-
     private fun startSloopProcess(): Sloop {
         // SLI-1330
         val lsp4jLogger = Logger.getLogger("org.eclipse.lsp4j.jsonrpc.RemoteEndpoint")

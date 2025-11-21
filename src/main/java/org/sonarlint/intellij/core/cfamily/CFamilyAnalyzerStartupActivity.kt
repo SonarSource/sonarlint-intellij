@@ -78,9 +78,8 @@ class CFamilyAnalyzerStartupActivity : StartupActivity {
                 try {
                     val manager = getService(CFamilyAnalyzerManager::class.java)
                     val future = manager.ensureAnalyzerAvailable(indicator)
-                    val result = ProgressUtils.waitForFuture(indicator, future)
 
-                    when (result) {
+                    when (val result = ProgressUtils.waitForFuture(indicator, future)) {
                         is CFamilyAnalyzerManager.CheckResult.Downloaded -> {
                             getService(GlobalLogOutput::class.java).log(
                                 "CFamily analyzer downloaded and verified, restarting backend...",
@@ -147,14 +146,15 @@ class CFamilyAnalyzerStartupActivity : StartupActivity {
                     }
                 } catch (e: ProcessCanceledException) {
                     getService(GlobalLogOutput::class.java).log(
-                        "CFamily analyzer check cancelled",
-                        ClientLogOutput.Level.DEBUG
-                    )
+                        "CFamily analyzer check cancelled", ClientLogOutput.Level.DEBUG)
+
                     projectLessNotification(
                         null,
                         "CFamily analyzer check was cancelled. C/C++ analysis may not be available until the analyzer is downloaded.",
                         NotificationType.INFORMATION
                     )
+
+                    throw e
                 } catch (e: Exception) {
                     getService(GlobalLogOutput::class.java).logError("Error checking CFamily analyzer availability", e)
                 }

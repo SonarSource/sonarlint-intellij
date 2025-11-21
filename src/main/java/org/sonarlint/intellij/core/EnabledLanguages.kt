@@ -78,11 +78,9 @@ object EnabledLanguages {
     fun getEmbeddedPluginsForConnectedMode(): Map<String, Path> {
         val embeddedPlugins = mutableMapOf<String, Path>()
         EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.forEach {
-            if (it.pluginKey == SonarLanguage.valueOf(Language.CPP.name).pluginKey) {
-                if (isIdeModuleEnabled(CLION_MODULE_ID)) {
-                    findCFamilyPlugin()?.let { pluginPath ->
-                        embeddedPlugins.put(it.pluginKey, pluginPath)
-                    }
+            if (it.pluginKey == SonarLanguage.valueOf(Language.CPP.name).pluginKey && isClionEnabled()) {
+                findCFamilyPlugin()?.let { pluginPath ->
+                    embeddedPlugins.put(it.pluginKey, pluginPath)
                 }
             } else {
                 findEmbeddedPlugin(getPluginsDir(), it)?.let { pluginPath ->
@@ -100,7 +98,7 @@ object EnabledLanguages {
     val enabledLanguagesInStandaloneMode: Set<Language>
         get() {
             return when {
-                isIdeModuleEnabled(CLION_MODULE_ID) -> {
+                isClionEnabled() -> {
                     EnumSet.of(Language.C, Language.CPP, Language.SECRETS)
                 }
 
@@ -139,7 +137,7 @@ object EnabledLanguages {
                     if (isIdeModuleEnabled(DATABASE_PLUGIN_ID)) {
                         extraEnabledLanguages.add(Language.PLSQL)
                     }
-                    if (!isIdeModuleEnabled(CLION_MODULE_ID)) {
+                    if (!isClionEnabled()) {
                         // all other IDEs
                         extraEnabledLanguages.addAll(EnumSet.of(Language.SCALA, Language.SWIFT))
                     }
@@ -154,7 +152,7 @@ object EnabledLanguages {
     fun findEmbeddedPlugins(): Set<Path> {
         val plugins = getPluginsUrls(getPluginsDir()).toMutableSet()
 
-        if (isIdeModuleEnabled(CLION_MODULE_ID)) {
+        if (isClionEnabled()) {
             val cachedCFamily = getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
             if (cachedCFamily != null) {
                 plugins.add(cachedCFamily)

@@ -29,6 +29,7 @@ import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Properties
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import org.bouncycastle.jce.provider.BouncyCastleProvider
@@ -48,25 +49,12 @@ import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 /**
- * Service to manage CFamily analyzer availability and verification.
- * Downloads are delegated to CFamilyAnalyzerDownloader service.
- *
  * Storage:
  * - Downloaded analyzers are stored in {plugin.path}/analyzer-cache/cfamily/
  * - Signature file is bundled in {plugin.path}/plugins/ during build (via copyAsc in build.gradle.kts)
  *
  * Version determination:
  * - The analyzer version is determined from build metadata (cfamily-version.properties)
- *
- * User preferences:
- * - Users can disable automatic download via Settings > Tools > SonarQube > General
- * - When disabled, returns CheckResult.MissingAndDownloadDisabled
- * - Re-enabling the setting allows download on next check
- *
- * This service supports:
- * - Detailed progress reporting through ProgressIndicator with text updates
- * - Cancellation via ProgressIndicator.isCanceled checks (returns CheckResult.Cancelled)
- * - PGP signature verification using BouncyCastle
  */
 @Service(Service.Level.APP)
 class CFamilyAnalyzerManager {
@@ -79,6 +67,7 @@ class CFamilyAnalyzerManager {
         private const val CFAMILY_PLUGIN_PATTERN = "sonar-cfamily-plugin-*.jar"
         private const val SONAR_PUBLIC_KEY = "sonarsource-public.key"
         private const val CFAMILY_VERSION_PROPERTIES = "cfamily-version.properties"
+        private const val CFAMILY_VERSION = "cfamily.version"
     }
 
     init {
@@ -90,13 +79,13 @@ class CFamilyAnalyzerManager {
 
     // This function is only meant to be called at the startup activity, if you intend to use it elsewhere,
     // consider implementing a compare and set logic since multiple calls may lead to multiple downloads.
-    fun ensureAnalyzerAvailable(progressIndicator: ProgressIndicator?): CompletableFuture<CheckResult> {
+    fun ensureAnalyzerAvailable(progressIndicator: ProgressIndicator): CompletableFuture<CheckResult> {
         val future = CompletableFuture<CheckResult>()
         startAsyncCheck(future, progressIndicator)
         return future
     }
 
-    private fun startAsyncCheck(future: CompletableFuture<CheckResult>, progressIndicator: ProgressIndicator?) {
+    private fun startAsyncCheck(future: CompletableFuture<CheckResult>, progressIndicator: ProgressIndicator) {
         runOnPooledThread {
             try {
                 // The indicator is passed to performCheck for cancellation checks and to child operations
@@ -106,6 +95,7 @@ class CFamilyAnalyzerManager {
             } catch (e: ProcessCanceledException) {
                 // User cancelled - complete with Cancelled result, don't log as error
                 future.complete(CheckResult.Cancelled)
+                throw e
             } catch (e: Exception) {
                 getService(GlobalLogOutput::class.java).logError("Error checking CFamily analyzer", e)
                 future.completeExceptionally(e)
@@ -113,8 +103,8 @@ class CFamilyAnalyzerManager {
         }
     }
 
-    private fun performCheck(progressIndicator: ProgressIndicator?): CheckResult {
-        progressIndicator?.text = "Checking CFamily analyzer..."
+    private fun performCheck(progressIndicator: ProgressIndicator): CheckResult {
+        progressIndicator.text = "Checking CFamily analyzer..."
 
         val cacheDir = cacheManager.getCFamilyCacheDir()
         val analyzerPath = findCFamilyAnalyzer(cacheDir)
@@ -129,8 +119,7 @@ class CFamilyAnalyzerManager {
                 // Update access timestamp
                 cacheManager.updateAnalyzerTimestamp(analyzerPath)
 
-                val signatureResult = verifySignature(analyzerPath, progressIndicator)
-                signatureResult
+                verifySignature(analyzerPath, progressIndicator)
             }
 
             else -> {
@@ -139,7 +128,7 @@ class CFamilyAnalyzerManager {
                     getService(GlobalLogOutput::class.java).log(
                         "CFamily analyzer not found and automatic download is disabled. " +
                             "C/C++ analysis will not be available. " +
-                            "To enable, go to Settings > Tools > SonarQube > General and uncheck 'Never download CFamily analyzer'",
+                            "To enable, go to Settings > Tools > SonarQube and uncheck 'Never download CFamily analyzer'",
                         ClientLogOutput.Level.WARN
                     )
                     return CheckResult.MissingAndDownloadDisabled
@@ -164,8 +153,8 @@ class CFamilyAnalyzerManager {
         }
     }
 
-    private fun verifySignature(analyzerPath: Path, progressIndicator: ProgressIndicator?): CheckResult {
-        progressIndicator?.text = "Verifying CFamily analyzer signature..."
+    private fun verifySignature(analyzerPath: Path, progressIndicator: ProgressIndicator): CheckResult {
+        progressIndicator.text = "Verifying CFamily analyzer signature..."
 
         try {
             // Signature file is bundled in the plugins directory, not the cache
@@ -178,7 +167,7 @@ class CFamilyAnalyzerManager {
                 return CheckResult.Available(analyzerPath) // Analyzer exists but no signature
             }
 
-            if (progressIndicator?.isCanceled == true) {
+            if (progressIndicator.isCanceled == true) {
                 return CheckResult.Cancelled
             }
 
@@ -191,11 +180,11 @@ class CFamilyAnalyzerManager {
                 return CheckResult.InvalidSignature(analyzerPath)
             }
 
-            if (progressIndicator?.isCanceled == true) {
+            if (progressIndicator.isCanceled == true) {
                 return CheckResult.Cancelled
             }
 
-            progressIndicator?.text = "Verifying signature..."
+            progressIndicator.text = "Verifying signature..."
 
             val isValid = verifyPgpSignature(analyzerPath, signatureFile, keyRing)
             val result = if (isValid) {
@@ -244,7 +233,7 @@ class CFamilyAnalyzerManager {
                 val decoderStream = PGPUtil.getDecoderStream(BufferedInputStream(sigIn))
                 val pgpFact = PGPObjectFactory(decoderStream, JcaKeyFingerprintCalculator())
 
-                val signatureList: PGPSignatureList = when (val obj = pgpFact.nextObject()) {
+                val signatureList = when (val obj = pgpFact.nextObject()) {
                     is PGPCompressedData -> {
                         val pgpFact2 = PGPObjectFactory(obj.dataStream, JcaKeyFingerprintCalculator())
                         pgpFact2.nextObject() as PGPSignatureList
@@ -299,9 +288,9 @@ class CFamilyAnalyzerManager {
                 ?: throw FileNotFoundException("CFamily version properties not found: $CFAMILY_VERSION_PROPERTIES")
 
             propertiesStream.use { input ->
-                val properties = java.util.Properties()
+                val properties = Properties()
                 properties.load(input)
-                properties.getProperty("cfamily.version")
+                properties.getProperty(CFAMILY_VERSION)
             }
         } catch (e: Exception) {
             getService(GlobalLogOutput::class.java).logError("Error loading CFamily version from properties", e)
@@ -309,7 +298,7 @@ class CFamilyAnalyzerManager {
         }
     }
 
-    private fun downloadAndVerifyAnalyzer(progressIndicator: ProgressIndicator?): CheckResult {
+    private fun downloadAndVerifyAnalyzer(progressIndicator: ProgressIndicator): CheckResult {
         val version = getCFamilyVersion()
         if (version == null) {
             getService(GlobalLogOutput::class.java).log(
@@ -320,18 +309,16 @@ class CFamilyAnalyzerManager {
         }
 
         val downloader = getService(CFamilyAnalyzerDownloader::class.java)
-        val downloadResult = downloader.downloadAnalyzer(version, progressIndicator)
 
-        return when (downloadResult) {
+        return when (val downloadResult = downloader.downloadAnalyzer(version, progressIndicator)) {
             is CFamilyAnalyzerDownloader.DownloadResult.Success -> {
-                if (progressIndicator?.isCanceled == true) {
+                if (progressIndicator.isCanceled == true) {
                     return CheckResult.Cancelled
                 }
 
-                progressIndicator?.text = "Verifying downloaded analyzer..."
+                progressIndicator.text = "Verifying downloaded analyzer..."
 
-                val verificationResult = verifySignature(downloadResult.path, progressIndicator)
-                when (verificationResult) {
+                when (val verificationResult = verifySignature(downloadResult.path, progressIndicator)) {
                     is CheckResult.Available -> CheckResult.Downloaded(downloadResult.path)
                     else -> verificationResult
                 }
@@ -351,13 +338,8 @@ class CFamilyAnalyzerManager {
         return findCFamilyAnalyzer(cacheManager.getCFamilyCacheDir())
     }
 
-    private fun getPluginsDir(): Path {
-        val plugin = getService(SonarLintPlugin::class.java)
-        return plugin.path.resolve("plugins")
-    }
-
     private fun findBundledSignatureFile(): Path? {
-        val pluginsDir = getPluginsDir()
+        val pluginsDir = getService(SonarLintPlugin::class.java).path.resolve("plugins")
         if (!Files.isDirectory(pluginsDir)) {
             return null
         }

@@ -49,16 +49,9 @@ class CFamilyAnalyzerDownloader {
         object Cancelled : DownloadResult()
     }
 
-    /**
-     * Download the CFamily analyzer for the specified version.
-     *
-     * @param version The version to download
-     * @param progressIndicator Optional progress indicator for UI updates and cancellation
-     * @return DownloadResult indicating success, failure, or cancellation
-     */
-    fun downloadAnalyzer(version: String, progressIndicator: ProgressIndicator?): DownloadResult {
-        progressIndicator?.text = "Preparing to download CFamily analyzer..."
-        progressIndicator?.isIndeterminate = false
+    fun downloadAnalyzer(version: String, progressIndicator: ProgressIndicator): DownloadResult {
+        progressIndicator.text = "Preparing to download CFamily analyzer..."
+        progressIndicator.isIndeterminate = false
 
         getService(GlobalLogOutput::class.java).log(
             "Downloading CFamily analyzer version: $version to cache",
@@ -80,7 +73,7 @@ class CFamilyAnalyzerDownloader {
             val tempFile = Files.createTempFile(cacheDir, "cfamily-download-", ".jar")
 
             try {
-                progressIndicator?.text = "Downloading CFamily analyzer ($version)"
+                progressIndicator.text = "Downloading CFamily analyzer ($version)"
 
                 HttpRequests.request(downloadUrl)
                     .connectTimeout(30000)

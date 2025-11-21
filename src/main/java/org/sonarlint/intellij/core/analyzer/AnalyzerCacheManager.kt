@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
@@ -59,6 +58,7 @@ class AnalyzerCacheManager {
         private const val METADATA_FILE_NAME = ".metadata.json"
         private const val ANALYZER_CACHE_DIR = "analyzer-cache"
         private const val CFAMILY_CACHE_DIR = "cfamily"
+        private const val RETENTION_DAYS = 60L
     }
 
     data class AnalyzerMetadata(
@@ -123,10 +123,9 @@ class AnalyzerCacheManager {
     }
 
     private fun performCleanup() {
-        val retentionDays = getGlobalSettings().cFamilyAnalyzerRetentionDays
-        val cutoffTime = Instant.now().minus(retentionDays, ChronoUnit.DAYS)
+        val cutoffTime = Instant.now().minus(RETENTION_DAYS, ChronoUnit.DAYS)
 
-        getService(GlobalLogOutput::class.java).log("Starting analyzer cache cleanup (retention: $retentionDays days)", ClientLogOutput.Level.INFO)
+        getService(GlobalLogOutput::class.java).log("Starting analyzer cache cleanup (retention: $RETENTION_DAYS days)", ClientLogOutput.Level.INFO)
 
         val cacheDir = getCFamilyCacheDir()
         if (!shouldPerformCleanup(cacheDir)) {
