@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 class SonarLintGlobalSettingsTests {
 
-  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 15;
+  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 16;
   private static final String RULE = "rule";
   private static final String RULE1 = "rule1";
   private static final String PARAM = "param";

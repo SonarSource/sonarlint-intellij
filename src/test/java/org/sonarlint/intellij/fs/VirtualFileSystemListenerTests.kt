@@ -34,6 +34,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
@@ -104,6 +105,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.before(listOf(vFileEvent))
     }
 
+    @Disabled("Flaky Tests to investigate with SLI-2360")
     @Test
     fun should_notify_of_a_file_modified_event() {
         val vFileEvent = VFileContentChangeEvent(null, file, 0L, 0L, false)

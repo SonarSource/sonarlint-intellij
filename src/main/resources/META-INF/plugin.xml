@@ -285,6 +285,7 @@
 
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
         <postStartupActivity implementation="org.sonarlint.intellij.OpenWelcomePageOnceOneProjectOpened"/>
+        <postStartupActivity implementation="org.sonarlint.intellij.core.cfamily.CFamilyAnalyzerStartupActivity"/>
 
         <notificationGroup id="SonarQube for IDE: In Context Promotions"
                            displayType="BALLOON"/>

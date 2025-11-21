@@ -64,6 +64,7 @@ configurations {
         extendsFrom(sqplugins)
         isTransitive = true
     }
+    create("cfamilySignature") { isTransitive = false }
     register("omnisharp")
     register("sloop")
 }
@@ -99,6 +100,8 @@ dependencies {
     implementation(libs.sonarlint.rpc.impl)
     implementation(libs.commons.langs3)
     implementation(libs.commons.text)
+    implementation(libs.bouncycastle.bcpg)
+    implementation(libs.bouncycastle.bcprov)
     compileOnly(libs.findbugs.jsr305)
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)
@@ -110,7 +113,7 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
     "sqplugins"(libs.bundles.sonar.analyzers)
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"(libs.sonar.cfamily)
+        "cfamilySignature"("${libs.sonar.cfamily.get()}@jar.asc")
         "sqplugins"(libs.sonar.dotnet.enterprise)
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
@@ -266,11 +269,19 @@ intellijPlatformTesting {
 fun setupSandbox(destinationDir: File, pluginName: Property<String>) {
     val pluginsDir = file("$destinationDir/${pluginName.get()}/plugins")
 
+    copyAsc(pluginsDir)
     copyPlugins(pluginsDir)
     renameCsharpPlugins(pluginsDir)
     copyOmnisharp(destinationDir, pluginName)
     copySloop(destinationDir, pluginName)
     unzipEslintBridgeBundle(pluginsDir)
+}
+
+fun copyAsc(pluginsDir: File) {
+    copy {
+        from(project.configurations["cfamilySignature"])
+        into(pluginsDir)
+    }
 }
 
 fun copyPlugins(pluginsDir: File) {
@@ -351,6 +362,14 @@ fun unzipEslintBridgeBundle(pluginsDir: File) {
 configurations.archives.get().isCanBeResolved = true
 
 tasks {
+    processResources {
+        val cfamilyVersion = providers.provider { libs.versions.sonar.cpp.get() }
+        inputs.property("cfamilyVersion", cfamilyVersion)
+        filesMatching("cfamily-version.properties") {
+            expand(mapOf("cfamilyVersion" to cfamilyVersion.get()))
+        }
+    }
+
     compileKotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
