@@ -45,11 +45,8 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
  */
 class CFamilyAnalyzerStartupActivity : StartupActivity {
 
-    companion object {
-        @Volatile
-        private var hasRun = false
-        private val lock = Any()
-    }
+    private var hasRun = false
+    private val lock = Any()
 
     override fun runActivity(project: Project) {
         if (ApplicationManager.getApplication().isUnitTestMode ||
