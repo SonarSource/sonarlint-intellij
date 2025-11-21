@@ -174,7 +174,7 @@ class CFamilyAnalyzerManager {
                 return CheckResult.Available(analyzerPath)
             }
 
-            if (progressIndicator.isCanceled == true) {
+            if (progressIndicator.isCanceled) {
                 return CheckResult.Cancelled
             }
 
@@ -187,7 +187,7 @@ class CFamilyAnalyzerManager {
                 return CheckResult.InvalidSignature(analyzerPath)
             }
 
-            if (progressIndicator.isCanceled == true) {
+            if (progressIndicator.isCanceled) {
                 return CheckResult.Cancelled
             }
 
@@ -319,7 +319,7 @@ class CFamilyAnalyzerManager {
 
         return when (val downloadResult = downloader.downloadAnalyzer(version, progressIndicator)) {
             is CFamilyAnalyzerDownloader.DownloadResult.Success -> {
-                if (progressIndicator.isCanceled == true) {
+                if (progressIndicator.isCanceled) {
                     return CheckResult.Cancelled
                 }
 
