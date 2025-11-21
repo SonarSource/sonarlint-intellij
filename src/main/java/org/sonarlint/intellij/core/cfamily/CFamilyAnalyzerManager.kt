@@ -148,8 +148,19 @@ class CFamilyAnalyzerManager {
             return null
         }
 
-        return Files.newDirectoryStream(cacheDir, CFAMILY_PLUGIN_PATTERN).use { stream ->
-            stream.firstOrNull()
+        val expectedVersion = getCFamilyVersion() ?: return null
+
+        val expectedFileName = "sonar-cfamily-plugin-$expectedVersion.jar"
+        val expectedPath = cacheDir.resolve(expectedFileName)
+
+        return if (Files.exists(expectedPath)) {
+            expectedPath
+        } else {
+            getService(GlobalLogOutput::class.java).log(
+                "Expected CFamily analyzer version $expectedVersion not found at: $expectedFileName",
+                ClientLogOutput.Level.DEBUG
+            )
+            null
         }
     }
 
@@ -157,14 +168,10 @@ class CFamilyAnalyzerManager {
         progressIndicator.text = "Verifying CFamily analyzer signature..."
 
         try {
-            // Signature file is bundled in the plugins directory, not the cache
             val signatureFile = findBundledSignatureFile()
             if (signatureFile == null || !Files.exists(signatureFile)) {
-                getService(GlobalLogOutput::class.java).log(
-                    "Bundled signature file not found for CFamily analyzer",
-                    ClientLogOutput.Level.WARN
-                )
-                return CheckResult.Available(analyzerPath) // Analyzer exists but no signature
+                getService(GlobalLogOutput::class.java).log("Bundled signature file not found for CFamily analyzer", ClientLogOutput.Level.WARN)
+                return CheckResult.Available(analyzerPath)
             }
 
             if (progressIndicator.isCanceled == true) {
@@ -344,9 +351,19 @@ class CFamilyAnalyzerManager {
             return null
         }
 
-        // Find the signature file matching the pattern sonar-cfamily-plugin-*.jar.asc
-        return Files.newDirectoryStream(pluginsDir, "sonar-cfamily-plugin-*.jar.asc").use { stream ->
-            stream.firstOrNull()
+        val expectedVersion = getCFamilyVersion() ?: return null
+
+        val expectedFileName = "sonar-cfamily-plugin-$expectedVersion.jar.asc"
+        val expectedPath = pluginsDir.resolve(expectedFileName)
+
+        return if (Files.exists(expectedPath)) {
+            expectedPath
+        } else {
+            getService(GlobalLogOutput::class.java).log(
+                "Expected CFamily signature file version $expectedVersion not found at: $expectedFileName",
+                ClientLogOutput.Level.DEBUG
+            )
+            null
         }
     }
 
