@@ -28,6 +28,7 @@ cyclonedx-plugin = "1.10.0"
 commons-lang3 = "3.18.0"
 commons-text = "1.14.0"
 findbugs-jsr305 = "3.0.2"
+bouncycastle = "1.82"
 junit-five = "5.13.4"
 junit-four = "4.13.2"
 junit-launcher = "1.13.4"
@@ -65,6 +66,8 @@ sonar-dotnet-enterprise = { module = "com.sonarsource.dotnet:sonar-csharp-enterp
 commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
+bouncycastle-bcpg = { module = "org.bouncycastle:bcpg-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-five" }
 junit-four = { module = "junit:junit", version.ref = "junit-four" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-launcher" }
