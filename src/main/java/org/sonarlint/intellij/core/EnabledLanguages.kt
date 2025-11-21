@@ -80,11 +80,11 @@ object EnabledLanguages {
         EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.forEach {
             if (it.pluginKey == SonarLanguage.valueOf(Language.CPP.name).pluginKey && isClionEnabled()) {
                 findCFamilyPlugin()?.let { pluginPath ->
-                    embeddedPlugins.put(it.pluginKey, pluginPath)
+                    embeddedPlugins[it.pluginKey] = pluginPath
                 }
             } else {
                 findEmbeddedPlugin(getPluginsDir(), it)?.let { pluginPath ->
-                    embeddedPlugins.put(it.pluginKey, pluginPath)
+                    embeddedPlugins[it.pluginKey] = pluginPath
                 }
             }
         }
@@ -162,9 +162,9 @@ object EnabledLanguages {
                 )
             } else {
                 SonarLintProjectNotifications.projectLessNotification(
-                    "CFamily plugin not found",
-                    "The CFamily plugin was not found in the cache for Embedded Plugins.",
-                    NotificationType.WARNING
+                    null, "The CFamily plugin was not found in the current installed plugins. " +
+                        "C/C++ analysis might not be available." +
+                        " Check the logs for more details.", NotificationType.WARNING
                 )
             }
         }
@@ -184,9 +184,10 @@ object EnabledLanguages {
             return cachedPath
         }
 
-        SonarLintProjectNotifications.projectLessNotification("CFamily plugin not found",
-            "The CFamily plugin was not found in the cache for Connected Mode Embedded Plugins.",
-            NotificationType.WARNING
+        SonarLintProjectNotifications.projectLessNotification(
+            null, "The CFamily plugin was not found in the current installed plugins. " +
+                "C/C++ analysis might not be available." +
+                " Check the logs for more details.", NotificationType.WARNING
         )
         return null
     }
