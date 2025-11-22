@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.editor
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -28,26 +29,63 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.serviceContainer.NonInjectable
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.PROJECT)
-class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myProject: Project, private val codeAnalyzer: DaemonCodeAnalyzer) {
+class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myProject: Project, private val codeAnalyzer: DaemonCodeAnalyzer) : Disposable {
     constructor(project: Project) : this(project, DaemonCodeAnalyzer.getInstance(project))
+
+    // Debounce multiple rapid calls to refreshFiles
+    private val pendingFiles = ConcurrentHashMap.newKeySet<VirtualFile>()
+    private val scheduler = Executors.newScheduledThreadPool(1) { r -> 
+        Thread(r, "sonarlint-analyzer-restarter-${myProject.name}")
+    }
+    private var scheduledTask: ScheduledFuture<*>? = null
+    private val debounceDelayMs = 100L
 
     fun refreshOpenFiles() {
         refreshFiles(FileEditorManager.getInstance(myProject).openFiles.toList())
     }
 
     fun refreshFiles(changedFiles: Collection<VirtualFile>) {
+        if (changedFiles.isEmpty()) {
+            return
+        }
+        pendingFiles.addAll(changedFiles)
+        scheduledTask?.cancel(false)
+        scheduledTask = scheduler.schedule({
+            processPendingFiles()
+        }, debounceDelayMs, TimeUnit.MILLISECONDS)
+    }
+
+    private fun processPendingFiles() {
+        val filesToProcess = pendingFiles.toSet()
+        pendingFiles.clear()
+        
+        if (filesToProcess.isEmpty()) {
+            return
+        }
+        
         runOnPooledThread(myProject) {
             val fileEditorManager = FileEditorManager.getInstance(myProject)
             val openFiles = fileEditorManager.openFiles
             runReadActionSafely(myProject) {
-                openFiles
-                    .filter { it in changedFiles }
+                val psiFilesToRestart = openFiles
+                    .filter { it in filesToProcess }
                     .mapNotNull { getPsi(it) }
-                    .forEach { codeAnalyzer.restart(it) }
+                
+                // If we need to restart all open files, use the more efficient single call
+                if (psiFilesToRestart.size == openFiles.size) {
+                    codeAnalyzer.restart()
+                } else {
+                    // Restart individual files - IntelliJ's daemon will batch these internally
+                    psiFilesToRestart.forEach { codeAnalyzer.restart(it) }
+                }
             }
         }
     }
@@ -58,5 +96,11 @@ class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myPr
         }
         ApplicationManager.getApplication().assertReadAccessAllowed()
         return PsiManager.getInstance(myProject).findFile(virtualFile)
+    }
+
+    override fun dispose() {
+        scheduledTask?.cancel(false)
+        scheduler.shutdownNow()
+        pendingFiles.clear()
     }
 }

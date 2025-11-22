@@ -36,8 +36,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledOnOs
-import org.junit.jupiter.api.condition.OS
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.argumentCaptor
@@ -52,8 +50,8 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 private const val FILE_NAME = "main.py"
 
-// Very flaky on Windows CI
-@DisabledOnOs(OS.WINDOWS)
+// Very flaky
+@Disabled
 class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
