@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -28,6 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import org.apache.commons.lang3.tuple.Pair
+import org.jetbrains.annotations.VisibleForTesting
 import org.sonarlint.intellij.callable.CheckInCallable
 import org.sonarlint.intellij.callable.ShowFindingCallable
 import org.sonarlint.intellij.callable.ShowReportCallable
@@ -137,18 +139,36 @@ class AnalysisSubmitter(private val project: Project) {
                 ShowReportCallable(project, moduleCount)
             }
             
-            val taskState = createGlobalTaskIfNeeded("Analyzing files", filesByModule.size, true)
-            filesByModule.forEach { (module, files) ->
-                module?.let {
-                    getService(project, PromotionProvider::class.java).handlePromotionOnAnalysisReport(files)
-                    getService(BackendService::class.java).analyzeFileList(module, files).thenAccept { response ->
-                        response.analysisId?.let { analysisId ->
-                            getService(project, AnalysisStatus::class.java).tryRun(analysisId)
-                            val analysisState = AnalysisState(analysisId, callback, module)
-                            getService(project, RunningAnalysesTracker::class.java).track(analysisState)
-                        }
-                        taskState?.trackTask(module, response.analysisId?.toString())
+            analyzeFiles(filesByModule, callback)
+        }
+    }
+
+    /**
+     * Only for testing
+     */
+    @VisibleForTesting
+    fun analyzeFilesWithCallback(files: Set<VirtualFile>, callback: AnalysisCallback) {
+        if (!ApplicationManager.getApplication().isUnitTestMode) return
+        runOnPooledThread(project) {
+            val filesByModule = files.groupBy { file ->
+                findModuleForFile(file, project)
+            }
+            analyzeFiles(filesByModule, callback)
+        }
+    }
+
+    private fun analyzeFiles(filesByModule: Map<Module?, List<VirtualFile>>, callback: AnalysisCallback) {
+        val taskState = createGlobalTaskIfNeeded("Analyzing files", filesByModule.size, true)
+        filesByModule.forEach { (module, files) ->
+            module?.let {
+                getService(project, PromotionProvider::class.java).handlePromotionOnAnalysisReport(files)
+                getService(BackendService::class.java).analyzeFileList(module, files).thenAccept { response ->
+                    response.analysisId?.let { analysisId ->
+                        getService(project, AnalysisStatus::class.java).tryRun(analysisId)
+                        val analysisState = AnalysisState(analysisId, callback, module)
+                        getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
+                    taskState?.trackTask(module, response.analysisId?.toString())
                 }
             }
         }

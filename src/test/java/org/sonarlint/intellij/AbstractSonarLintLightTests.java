@@ -20,21 +20,24 @@
 package org.sonarlint.intellij;
 
 import com.intellij.ide.util.PropertiesComponent;
-import com.intellij.lang.Language;
 import com.intellij.notification.Notification;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileFactory;
+import com.intellij.psi.PsiManager;
 import com.intellij.serviceContainer.ComponentManagerImpl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +69,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   private Disposable disposable;
   protected static final Path storageRoot = Paths.get(PathManager.getSystemPath()).resolve("sonarlint").resolve("storage");
+  private final List<Path> createdTempDirs = new ArrayList<>();
 
   @Override
   protected final String getTestDataPath() {
@@ -119,7 +123,14 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   @AfterEach
   final void afterEach() {
-    getService(BackendService.class).moduleRemoved(getModule());
+    createdTempDirs.forEach(dir -> {
+      try {
+        PathUtils.deleteDirectory(dir);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    });
+    createdTempDirs.clear();
     getService(BackendService.class).projectClosed(getProject());
     if (!getProject().isDisposed()) {
       getService(getProject(), RunningAnalysesTracker.class).cancelAll();
@@ -166,24 +177,41 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
     return getService(getProject(), SonarLintConsole.class);
   }
 
-  protected VirtualFile createTestFile(String fileName, Language language, String text) {
-    return createTestPsiFile(fileName, language, text).getVirtualFile();
+  protected VirtualFile createTestFile(String fileName, String text) {
+    return createTestPsiFile(fileName, text).getVirtualFile();
   }
 
-  protected VirtualFile createAndOpenTestVirtualFile(String fileName, Language language, String text) {
-    var file = createTestFile(fileName, language, text);
+  protected VirtualFile createAndOpenTestVirtualFile(String fileName, String text) {
+    var file = createTestFile(fileName, text);
     FileEditorManager.getInstance(getProject()).openFile(file, false);
     return file;
   }
 
-  protected PsiFile createAndOpenTestPsiFile(String fileName, Language language, String text) {
-    var file = createTestPsiFile(fileName, language, text);
+  protected PsiFile createAndOpenTestPsiFile(String fileName, String text) {
+    var file = createTestPsiFile(fileName, text);
     FileEditorManager.getInstance(getProject()).openFile(file.getVirtualFile(), false);
     return file;
   }
 
-  protected PsiFile createTestPsiFile(String fileName, Language language, String text) {
-    return PsiFileFactory.getInstance(getProject()).createFileFromText(fileName, language, text, true, true);
+  protected PsiFile createTestPsiFile(String fileName, String text) {
+    try {
+      if (createdTempDirs.isEmpty()) {
+        var tempDir = Files.createTempDirectory("sonarlint-light-test-src");
+        createdTempDirs.add(tempDir);
+        var virtualDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(tempDir);
+        WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model ->
+          model.addContentEntry(virtualDir).addSourceFolder(virtualDir, false)));
+      }
+
+      var root = createdTempDirs.get(0);
+      var file = root.resolve(fileName);
+      Files.createDirectories(file.getParent());
+      Files.writeString(file, text);
+      var virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(file);
+      return PsiManager.getInstance(getProject()).findFile(virtualFile);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {
