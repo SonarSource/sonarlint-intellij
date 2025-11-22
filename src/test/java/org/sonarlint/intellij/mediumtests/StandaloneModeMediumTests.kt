@@ -584,7 +584,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         )
 
         // Safety before triggering an analysis: ensure backend processes the FS update
-        Thread.sleep(500)
+        Thread.sleep(1000)
 
         return virtualFile
     }
