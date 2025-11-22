@@ -58,13 +58,10 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
  */
 @Service(Service.Level.APP)
 class CFamilyAnalyzerManager {
-
-    private val analyzerReady = AtomicBoolean(false)
     private val cacheManager = getService(AnalyzerCacheManager::class.java)
     private val bouncyCastleProvider = BouncyCastleProvider()
 
     companion object {
-        private const val CFAMILY_PLUGIN_PATTERN = "sonar-cfamily-plugin-*.jar"
         private const val SONAR_PUBLIC_KEY = "sonarsource-public.key"
         private const val CFAMILY_VERSION_PROPERTIES = "cfamily-version.properties"
         private const val CFAMILY_VERSION = "cfamily.version"
@@ -91,7 +88,6 @@ class CFamilyAnalyzerManager {
                 // The indicator is passed to performCheck for cancellation checks and to child operations
                 val result = performCheck(progressIndicator)
                 future.complete(result)
-                analyzerReady.set(result is CheckResult.Available)
             } catch (e: ProcessCanceledException) {
                 // User cancelled - complete with Cancelled result, don't log as error
                 future.complete(CheckResult.Cancelled)
@@ -168,32 +164,13 @@ class CFamilyAnalyzerManager {
         progressIndicator.text = "Verifying CFamily analyzer signature..."
 
         try {
-            val signatureFile = findBundledSignatureFile()
-            if (signatureFile == null || !Files.exists(signatureFile)) {
-                getService(GlobalLogOutput::class.java).log("Bundled signature file not found for CFamily analyzer", ClientLogOutput.Level.WARN)
-                return CheckResult.Available(analyzerPath)
-            }
-
-            if (progressIndicator.isCanceled) {
-                return CheckResult.Cancelled
-            }
-
-            val keyRing = loadPublicKeyRing()
-            if (keyRing == null) {
-                getService(GlobalLogOutput::class.java).log(
-                    "Could not load SonarSource public key ring",
-                    ClientLogOutput.Level.WARN
-                )
-                return CheckResult.InvalidSignature(analyzerPath)
-            }
-
             if (progressIndicator.isCanceled) {
                 return CheckResult.Cancelled
             }
 
             progressIndicator.text = "Verifying signature..."
 
-            val isValid = verifyPgpSignature(analyzerPath, signatureFile, keyRing)
+            val isValid = performSignatureVerification(analyzerPath)
             val result = if (isValid) {
                 getService(GlobalLogOutput::class.java).log(
                     "CFamily analyzer signature verified successfully",
@@ -203,7 +180,7 @@ class CFamilyAnalyzerManager {
                 CheckResult.Available(analyzerPath)
             } else {
                 getService(GlobalLogOutput::class.java).log(
-                    "CFamily analyzer signature verification failed",
+                    "CFamily analyzer signature verification failed. Analyzer will not be used.",
                     ClientLogOutput.Level.ERROR
                 )
                 CheckResult.InvalidSignature(analyzerPath)
@@ -214,10 +191,38 @@ class CFamilyAnalyzerManager {
             // Re-throw cancellation instead of treating as verification failure
             throw e
         } catch (e: Exception) {
-            getService(GlobalLogOutput::class.java).logError("Error verifying signature", e)
+            getService(GlobalLogOutput::class.java).logError("Error verifying signature. Analyzer will not be used.", e)
             return CheckResult.InvalidSignature(analyzerPath)
         }
     }
+
+    private fun performSignatureVerification(analyzerPath: Path): Boolean {
+        try {
+            val signatureFile = findBundledSignatureFile()
+            if (signatureFile == null || !Files.exists(signatureFile)) {
+                getService(GlobalLogOutput::class.java).log(
+                    "Bundled signature file not found for CFamily analyzer",
+                    ClientLogOutput.Level.ERROR
+                )
+                return false
+            }
+
+            val keyRing = loadPublicKeyRing()
+            if (keyRing == null) {
+                getService(GlobalLogOutput::class.java).log(
+                    "Could not load SonarSource public key ring",
+                    ClientLogOutput.Level.ERROR
+                )
+                return false
+            }
+
+            return verifyPgpSignature(analyzerPath, signatureFile, keyRing)
+        } catch (e: Exception) {
+            getService(GlobalLogOutput::class.java).logError("Error during signature verification", e)
+            return false
+        }
+    }
+
 
     private fun loadPublicKeyRing(): PGPPublicKeyRingCollection? {
         return try {
@@ -338,7 +343,23 @@ class CFamilyAnalyzerManager {
     }
 
     fun getCachedAnalyzerPath(): Path? {
-        return findCFamilyAnalyzer(cacheManager.getCFamilyCacheDir())
+        val analyzerPath = findCFamilyAnalyzer(cacheManager.getCFamilyCacheDir()) ?: return null
+
+        val isValid = performSignatureVerification(analyzerPath)
+        
+        return if (isValid) {
+            getService(GlobalLogOutput::class.java).log(
+                "CFamily analyzer signature verified successfully",
+                ClientLogOutput.Level.DEBUG
+            )
+            analyzerPath
+        } else {
+            getService(GlobalLogOutput::class.java).log(
+                "CFamily analyzer signature verification failed. Analyzer will not be used.",
+                ClientLogOutput.Level.ERROR
+            )
+            null
+        }
     }
 
     private fun findBundledSignatureFile(): Path? {
