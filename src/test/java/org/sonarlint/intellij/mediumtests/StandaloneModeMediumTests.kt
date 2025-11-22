@@ -583,8 +583,8 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
             mapOf(module to listModuleFileEvent), true
         )
 
-        // Safety before triggering an analysis
-        Awaitility.await().during(1, TimeUnit.SECONDS)
+        // Safety before triggering an analysis: ensure backend processes the FS update
+        Thread.sleep(500)
 
         return virtualFile
     }
