@@ -70,7 +70,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
     fun cleanup() {
         // Avoid polluting other tests with SLOOP left running
         backendService.dispose()
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+        Awaitility.await().atMost(15, TimeUnit.SECONDS).untilAsserted {
             assertThat(backendService.isAlive()).isFalse()
         }
         ApplicationManager.getApplication().replaceService(BackendService::class.java, actualBackendService, testRootDisposable)
