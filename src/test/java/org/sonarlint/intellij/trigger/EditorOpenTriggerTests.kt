@@ -51,7 +51,7 @@ class EditorOpenTriggerTests : AbstractSonarLintLightTests() {
         editorTrigger = EditorOpenTrigger(project)
         globalSettings.isAutoTrigger = true
 
-        file = createAndOpenTestVirtualFile("MyClass.java", "class MyClass{}")
+        file = createTestFile("MyClass.java", "class MyClass{}")
         editorManager = mock(FileEditorManager::class.java)
         `when`(editorManager.project).thenReturn(project)
 
