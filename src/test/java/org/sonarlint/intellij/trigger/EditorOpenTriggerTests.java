@@ -19,14 +19,12 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
@@ -40,7 +38,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-@Disabled // Disabled due to flakiness. It seems to be too affected by other tests.
 class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
 
   private final AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
@@ -56,7 +53,7 @@ class EditorOpenTriggerTests extends AbstractSonarLintLightTests {
     getGlobalSettings().setAutoTrigger(true);
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
 
-    file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "class MyClass{}");
+    file = createAndOpenTestVirtualFile("MyClass.java", "class MyClass{}");
     editorManager = mock(FileEditorManager.class);
     when(editorManager.getProject()).thenReturn(getProject());
     reset(analysisSubmitter);

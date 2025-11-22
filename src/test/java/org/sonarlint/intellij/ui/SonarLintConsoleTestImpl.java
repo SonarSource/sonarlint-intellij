@@ -29,7 +29,6 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
   private StringWriter stringWriter;
   private PrintWriter printWriter;
-  private String lastMessage = "";
 
   public SonarLintConsoleTestImpl() {
     reset();
@@ -38,10 +37,6 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
   private void reset() {
     this.stringWriter = new StringWriter();
     this.printWriter = new PrintWriter(stringWriter);
-  }
-
-  public String getLastMessage() {
-    return lastMessage;
   }
 
   @Override
@@ -71,7 +66,6 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
   }
 
   private void print(String msg) {
-    lastMessage = msg;
     System.out.println(msg);
     printWriter.println(msg);
   }
