@@ -69,7 +69,7 @@ public abstract class AbstractSonarAction extends AnAction implements DumbAware 
 
   static boolean isRiderSlnOrCsproj(VirtualFile[] files) {
     return Stream.of(files)
-      .allMatch(f -> f.getName().endsWith(".sln") || f.getName().endsWith(".csproj"));
+      .allMatch(f -> f.getName().endsWith(".sln") || f.getName().endsWith(".slnx") || f.getName().endsWith(".csproj"));
   }
 
   /**
