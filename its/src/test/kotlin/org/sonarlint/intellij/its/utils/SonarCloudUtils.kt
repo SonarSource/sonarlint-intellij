@@ -61,7 +61,7 @@ object SonarCloudUtils {
     fun analyzeSonarCloudWithMaven(adminWsClient: WsClient, projectKey: String, projectDirName: String, token: String) {
         val projectDir = Paths.get("projects/$projectDirName").toAbsolutePath()
         runMaven(
-            projectDir, "clean", "package", "sonar:sonar",
+            projectDir, "clean", "package", "org.sonarsource.scanner.maven:sonar-maven-plugin:sonar",
             "-Dsonar.projectKey=$projectKey",
             "-Dsonar.host.url=$SONARCLOUD_STAGING_URL",
             "-Dsonar.organization=$SONARCLOUD_ORGANIZATION",
