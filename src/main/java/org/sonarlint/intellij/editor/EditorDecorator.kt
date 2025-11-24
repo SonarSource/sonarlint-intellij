@@ -42,6 +42,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
 import java.awt.Font
 import java.util.function.Consumer
+import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
@@ -265,9 +266,27 @@ class EditorDecorator(private val project: Project) : Disposable {
     }
 
     private fun createHighlights(locations: List<Location>): MutableList<Highlight> {
-        return locations
-            .mapNotNull { createHighlight(it.range, it.message) }
-            .toMutableList()
+        // Batch document access: collect all valid locations first, then get documents in one read action
+        data class LocationData(val range: RangeMarker, val message: String?)
+        
+        val validLocations = locations.mapNotNull { location ->
+            val range = location.range
+            if (locationInvalid(range)) null else LocationData(range!!, location.message)
+        }
+        
+        if (validLocations.isEmpty()) {
+            return mutableListOf()
+        }
+        
+        // Get all documents in one read action
+        val locationToDocument = computeReadActionSafely(project) {
+            validLocations.associateWith { it.range.document }
+        } ?: return mutableListOf()
+
+        return validLocations.mapNotNull { locationData ->
+            val document = locationToDocument[locationData] ?: return@mapNotNull null
+            createHighlightForRange(locationData.range, locationData.message, document)
+        }.toMutableList()
     }
 
     private fun locationInvalid(location: RangeMarker?): Boolean {
@@ -278,15 +297,20 @@ class EditorDecorator(private val project: Project) : Disposable {
         if (locationInvalid(location)) {
             return null
         }
+        val document = computeReadActionSafely(project) { location!!.document } ?: return null
+        return createHighlightForRange(location!!, message, document)
+    }
+
+    private fun createHighlightForRange(location: RangeMarker, message: String?, document: Document): Highlight? {
         // Creating the HighlightInfo with high severity will ensure that it will override most other highlighters.
         val builder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
-            .range(location!!.startOffset, location.endOffset)
+            .range(location.startOffset, location.endOffset)
             .severity(HighlightSeverity.ERROR)
             .textAttributes(SonarLintTextAttributes.SELECTED)
         if (!message.isNullOrEmpty() && "..." != message) {
             builder.descriptionAndTooltip("SonarQube: $message")
         }
-        return builder.create()?.let { hl -> Highlight(location.document, hl) }
+        return builder.create()?.let { Highlight(document, it) }
     }
 
     override fun dispose() {
