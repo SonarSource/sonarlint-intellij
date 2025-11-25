@@ -27,7 +27,6 @@ import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
@@ -65,6 +64,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     var project = psiFile.getProject();
     var isFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
+    var isBindingEnabled = getSettingsFor(project).isBindingEnabled();
 
     var toolWindowService = getService(project, SonarLintToolWindow.class);
     var fileTextRange = psiFile.getTextRange();
@@ -76,7 +76,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .forEach(issue -> {
         var validTextRange = issue.getValidTextRange();
         if (validTextRange != null && fileTextRange.contains(validTextRange)) {
-          addAnnotation(project, issue, validTextRange, holder);
+          addAnnotation(issue, validTextRange, holder, isBindingEnabled, isFocusOnNewCode);
         }
       });
 
@@ -85,7 +85,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .forEach(securityHotspot -> {
         var validTextRange = securityHotspot.getValidTextRange();
         if (validTextRange != null && fileTextRange.contains(validTextRange)) {
-          addAnnotation(project, securityHotspot, validTextRange, holder);
+          addAnnotation(securityHotspot, validTextRange, holder, isBindingEnabled, isFocusOnNewCode);
         }
       });
 
@@ -116,10 +116,11 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private static void addAnnotation(Project project, LiveFinding finding, TextRange validTextRange, AnnotationHolder annotationHolder) {
-    var intentionActions = new ArrayList<IntentionAction>();
+  private static void addAnnotation(LiveFinding finding, TextRange validTextRange, AnnotationHolder annotationHolder,
+    boolean isBindingEnabled, boolean isFocusOnNewCode) {
+    var intentionActions = new ArrayList<IntentionAction>(8);
     intentionActions.add(new ShowRuleDescriptionIntentionAction(finding));
-    if (!getSettingsFor(project).isBindingEnabled()) {
+    if (!isBindingEnabled) {
       intentionActions.add(new DisableRuleIntentionAction(finding.getRuleKey()));
     }
 
@@ -159,7 +160,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (finding.getRange() == null) {
       annotationBuilder = annotationBuilder.fileLevel();
     } else {
-      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(finding.getHighestImpact(), finding.getUserSeverity(), finding.isOnNewCode()));
+      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(finding.getHighestImpact(), finding.getUserSeverity(), finding.isOnNewCode(), isFocusOnNewCode));
     }
 
     annotationBuilder.highlightType(getType(finding.getHighestImpact(), finding.getUserSeverity()))
@@ -180,13 +181,14 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .range(textRange)
       .withFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability))
       .withFix(new MarkAsResolvedAction(vulnerability))
-      .textAttributes(getTextAttrsKey(vulnerability.getHighestImpact(), vulnerability.severity(), vulnerability.isOnNewCode()))
+      .textAttributes(getTextAttrsKey(vulnerability.getHighestImpact(), vulnerability.severity(), vulnerability.isOnNewCode(),
+        getService(CleanAsYouCodeService.class).shouldFocusOnNewCode()))
       .highlightType(getType(vulnerability.getHighestImpact(), vulnerability.severity()))
       .create();
   }
 
-  static TextAttributesKey getTextAttrsKey(@Nullable ImpactSeverity impact, @Nullable IssueSeverity severity, boolean isOnNewCode) {
-    if (getService(CleanAsYouCodeService.class).shouldFocusOnNewCode() && !isOnNewCode) {
+  static TextAttributesKey getTextAttrsKey(@Nullable ImpactSeverity impact, @Nullable IssueSeverity severity, boolean isOnNewCode, boolean isFocusOnNewCode) {
+    if (isFocusOnNewCode && !isOnNewCode) {
       return SonarLintTextAttributes.OLD_CODE;
     }
 
