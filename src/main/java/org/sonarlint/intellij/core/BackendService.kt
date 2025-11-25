@@ -576,8 +576,8 @@ class BackendService : Disposable {
     }
 
     fun projectClosed(project: Project) {
-        ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
         projectsOpened.remove(project)
+        ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
         val projectId = projectId(project)
         notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId)) }
         getService(GlobalBackgroundTaskTracker::class.java).cleanupTasksForProject(project)
@@ -663,7 +663,31 @@ class BackendService : Disposable {
     }
 
     fun moduleRemoved(module: Module) {
+        val project = module.project
         val moduleId = moduleId(module)
+        
+        // Don't remove if project is disposed (cleanup will happen via projectClosed)
+        if (project.isDisposed) {
+            GlobalLogOutput.get().log("Skipping module removal for '$moduleId' - project is disposed", ClientLogOutput.Level.DEBUG)
+            return
+        }
+        
+        // Verify the module is actually gone from the project
+        // This handles the race condition where a module is removed and immediately re-added
+        // during project opening/reloading
+        if (projectsOpened.contains(project)) {
+            val moduleStillExists = computeReadActionSafely(project) {
+                ModuleManager.getInstance(project).modules.any { existingModule ->
+                    moduleId(existingModule) == moduleId
+                }
+            } ?: false
+            
+            if (moduleStillExists) {
+                GlobalLogOutput.get().log("Skipping module removal for '$moduleId' - module with same ID still exists (likely reloaded)", ClientLogOutput.Level.DEBUG)
+                return
+            }
+        }
+        
         notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(moduleId)) }
     }
 

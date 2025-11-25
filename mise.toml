@@ -1,3 +1,9 @@
 [tools]
 java = "17.0"
 gradle = "8.14.3"
+gh = "2.83.0"
+jfrog-cli = "2.77.0"
+
+[tasks.install-system-deps]
+# Install system dependences and disable man-db auto-update to prevent it from hanging during installation
+run = "echo 'man-db man-db/auto-update boolean false' | sudo debconf-set-selections && sudo dpkg-reconfigure man-db && sudo apt-get update && sudo apt-get install -y xvfb metacity ffmpeg dbus-x11 gettext-base libsecret-1-0"

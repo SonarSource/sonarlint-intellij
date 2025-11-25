@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.trigger
 
-import com.intellij.lang.Language
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions
 import org.awaitility.Awaitility
@@ -57,7 +56,7 @@ class EventSchedulerTests : AbstractSonarLintLightTests() {
     @Test
     fun should_trigger_single_file_analysis() {
         val eventScheduler = EventScheduler("testScheduler", 200, false)
-        val file = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "")
+        val file = createAndOpenTestVirtualFile("MyClass1.java", "")
         eventScheduler.notify(file)
 
         verify(backend, timeout(2000))
@@ -67,8 +66,8 @@ class EventSchedulerTests : AbstractSonarLintLightTests() {
     @Test
     fun should_trigger_multiple_file_analysis() {
         val eventScheduler = EventScheduler("testScheduler",  200, false)
-        val file1 = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "")
-        val file2 = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "")
+        val file1 = createAndOpenTestVirtualFile("MyClass1.java", "")
+        val file2 = createAndOpenTestVirtualFile("MyClass2.java", "")
         eventScheduler.notify(file1)
         eventScheduler.notify(file2)
 
@@ -82,8 +81,8 @@ class EventSchedulerTests : AbstractSonarLintLightTests() {
     @Test
     fun should_trigger_different_analysis_at_interval() {
         val eventScheduler = EventScheduler("testScheduler",  200, true)
-        val file1 = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "")
-        val file2 = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "")
+        val file1 = createAndOpenTestVirtualFile("MyClass1.java", "")
+        val file2 = createAndOpenTestVirtualFile("MyClass2.java", "")
         eventScheduler.notify(file1)
         Thread.sleep(250)
         eventScheduler.notify(file2)
@@ -96,8 +95,8 @@ class EventSchedulerTests : AbstractSonarLintLightTests() {
     @Test
     fun should_trigger_single_analysis_without_interval() {
         val eventScheduler = EventScheduler("testScheduler", 200, false)
-        val file1 = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "")
-        val file2 = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "")
+        val file1 = createAndOpenTestVirtualFile("MyClass1.java", "")
+        val file2 = createAndOpenTestVirtualFile("MyClass2.java", "")
         eventScheduler.notify(file1)
         Thread.sleep(150)
         eventScheduler.notify(file2)

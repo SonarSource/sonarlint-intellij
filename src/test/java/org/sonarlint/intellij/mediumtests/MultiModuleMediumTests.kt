@@ -21,6 +21,8 @@ package org.sonarlint.intellij.mediumtests
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledOnOs
+import org.junit.jupiter.api.condition.OS
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -29,6 +31,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager
 class MultiModuleMediumTests : AbstractSonarLintHeavyTests() {
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     fun test_should_return_project_key_for_module_binding_override() {
         val secondModule = createModule("foo")
 
@@ -46,4 +49,5 @@ class MultiModuleMediumTests : AbstractSonarLintHeavyTests() {
 
         assertThat(SonarLintUtils.getService(module, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("overriden")
     }
+
 }

@@ -22,13 +22,11 @@ package org.sonarlint.intellij
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.ComponentManagerImpl
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.fixtures.AbstractHeavyTests
 
 abstract class AbstractSonarLintHeavyTests : AbstractHeavyTests() {
@@ -54,10 +52,6 @@ abstract class AbstractSonarLintHeavyTests : AbstractHeavyTests() {
     protected fun connectProjectTo(connection: ServerConnection, projectKey: String) {
         Settings.getGlobalSettings().addServerConnection(connection)
         Settings.getSettingsFor(project).bindTo(connection, projectKey)
-    }
-
-    protected fun unbindProject() {
-        getService(project, ProjectBindingManager::class.java).unbind()
     }
 
     protected open fun <T : Any> replaceProjectService(clazz: Class<T>, newInstance: T) {

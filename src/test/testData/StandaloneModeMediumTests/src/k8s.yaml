@@ -1,0 +1,6 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  CustomApi:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      SecurityPolicy: "TLS_1_0"  # Noncompliant

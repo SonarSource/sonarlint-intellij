@@ -1,0 +1,462 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+      - branch-*
+      - dogfood-*
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: write
+  checks: write
+
+jobs:
+  build:
+    runs-on: github-ubuntu-latest-m
+    name: Build
+    outputs:
+      PROJECT_VERSION: ${{ steps.build_plugin.outputs.project-version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Build Plugin
+        uses: SonarSource/ci-github-actions/build-gradle@v1
+        id: build_plugin
+        with:
+          deploy-pull-request: true
+          use-develocity: true
+          develocity-url: https://develocity-public.sonar.build
+          artifactory-reader-role: private-reader
+          artifactory-deployer-role: qa-deployer
+          gradle-args: -x :its:check check jacocoTestReport :buildPlugin :cyclonedxBom sonar :verifyPlugin
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: ${{ !cancelled() }}
+        with:
+          report_paths: '**/test-results/**/*.xml'
+
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-linux
+          path: "**/reports/**/**"
+
+      - name: Upload JUnit test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-linux
+          path: "**/test-results/**/*.xml"
+
+  check_windows:
+    runs-on: warp-custom-sonarlint-intellij
+    name: Test Windows
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Fetch vault secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
+      - name: Run checks
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+          IDEA_HOME: C:\Program Files\intellij
+          RIDER_HOME: C:\Program Files\rider
+          RESHARPER_HOME: C:\Program Files\resharper
+          CLION_HOME: C:\Program Files\clion
+          ULTIMATE_HOME: C:\Program Files\ultimate
+        run: .\gradlew.bat :check
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: ${{ !cancelled() }}
+        with:
+          report_paths: '**/test-results/**/*.xml'
+
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-windows
+          path: "**/reports/**/**"
+
+      - name: Upload JUnit test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-windows
+          path: "**/test-results/**/*.xml"
+
+  qa:
+    runs-on: github-ubuntu-latest-m
+    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ide_version: 'IC-2023.1.7'
+            qa_category: 'Idea2023'
+            test_suite: 'OpenInIdeTests'
+          - ide_version: 'IC-2023.1.7'
+            qa_category: 'Idea2023'
+            test_suite: 'ConnectedAnalysisTests'
+          - ide_version: 'IC-2023.1.7'
+            qa_category: 'Idea2023'
+            test_suite: 'ConfigurationTests'
+          - ide_version: 'IC-2023.1.7'
+            qa_category: 'Idea2023'
+            test_suite: 'Standalone'
+          - ide_version: 'IC-2025.2'
+            qa_category: 'Idea2025'
+            test_suite: 'OpenInIdeTests'
+          - ide_version: 'IC-2025.2'
+            qa_category: 'Idea2025'
+            test_suite: 'ConnectedAnalysisTests'
+          - ide_version: 'IC-2025.2'
+            qa_category: 'Idea2025'
+            test_suite: 'ConfigurationTests'
+          - ide_version: 'IC-2025.2'
+            qa_category: 'Idea2025'
+            test_suite: 'Standalone'
+          - ide_version: 'IU-2023.1.7'
+            qa_category: 'IdeaUltimate2023'
+          - ide_version: 'IU-2025.2'
+            qa_category: 'IdeaUltimate2025'
+          - ide_version: 'PY-2023.1.6'
+            qa_category: 'PyCharmProfessional2023'
+          - ide_version: 'PY-2025.2'
+            qa_category: 'PyCharmProfessional2025'
+          - ide_version: 'PC-2023.1.6'
+            qa_category: 'PyCharmCommunity2023'
+          - ide_version: 'PC-2025.2'
+            qa_category: 'PyCharmCommunity2025'
+          - ide_version: 'RD-2023.3.6'
+            qa_category: 'Rider2023'
+          - ide_version: 'RD-2025.1.5'
+            qa_category: 'Rider2025'
+          - ide_version: 'PS-2023.1.6'
+            qa_category: 'PhpStorm2023'
+          - ide_version: 'PS-2025.2'
+            qa_category: 'PhpStorm2025'
+          - ide_version: 'GO-2023.3.8'
+            qa_category: 'GoLand2023'
+          - ide_version: 'GO-2025.2'
+            qa_category: 'GoLand2025'
+          - ide_version: 'CL-2023.1.7'
+            qa_category: 'CLion2023'
+          - ide_version: 'CL-2025.2'
+            qa_category: 'CLion2025'
+    env:
+      DISPLAY: ':10'
+      JDK_VERSION: '17'
+      IDEA_VERSION: ${{ matrix.ide_version }}
+      QA_CATEGORY: ${{ matrix.qa_category }}
+      TEST_SUITE: ${{ matrix.test_suite }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Vault Secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+            development/team/sonarlint/kv/data/ide.keys clion | CLION_KEY;
+            development/team/sonarlint/kv/data/ide.keys goland | GOLAND_KEY;
+            development/team/sonarlint/kv/data/ide.keys datagrip | DATAGRIP_KEY;
+            development/team/sonarlint/kv/data/ide.keys idea | IDEA_KEY;
+            development/team/sonarlint/kv/data/ide.keys phpstorm | PHPSTORM_KEY;
+            development/team/sonarlint/kv/data/ide.keys pycharm | PYCHARM_KEY;
+            development/team/sonarlint/kv/data/ide.keys rider | RIDER_KEY;
+            development/team/sonarlint/kv/data/ide.keys rubymine | RUBYMINE_KEY;
+            development/team/sonarlint/kv/data/ide.keys webstorm | WEBSTORM_KEY;
+            development/github/token/licenses-ro token | GITHUB_TOKEN;
+            development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
+            development/kv/data/develocity token | DEVELOCITY_TOKEN;
+
+      - name: Compute month key
+        id: month
+        run: |
+          THIS_MONTH="$(date +%Y-%m)"
+          echo "month=${THIS_MONTH}" >> "$GITHUB_OUTPUT"
+          ORCHESTRATOR_HOME="${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}"
+          echo "ORCHESTRATOR_HOME=${ORCHESTRATOR_HOME}" >> "$GITHUB_ENV"
+          echo "Create dir ${ORCHESTRATOR_HOME}"
+          mkdir -p "${ORCHESTRATOR_HOME}"
+
+      - uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
+          key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
+          restore-keys: |
+            cache-${{ runner.os }}
+
+      - name: Prepare xvfb and ffmpeg
+        run: mise run install-system-deps
+
+      - name: Start Xvfb
+        run: |
+          Xvfb ${DISPLAY} -screen 0 1280x960x24 &
+          echo "XVFB_PID=$!" >> $GITHUB_ENV
+          sleep 5
+
+      - name: Extract and setup plugin
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_PRIVATE_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
+        run: |
+          set -euo pipefail
+          echo "Using project version: ${PROJECT_VERSION}"
+          curl -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
+            -o sonarlint-intellij.zip \
+            "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
+          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
+          mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
+          rm sonarlint-intellij.zip
+          
+          mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
+          
+          # Decode license keys
+          echo "${{ fromJSON(steps.secrets.outputs.vault).CLION_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/clion.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).GOLAND_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/goland.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).DATAGRIP_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/datagrip.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).IDEA_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/idea.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).PHPSTORM_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/phpstorm.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).PYCHARM_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/pycharm.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).RIDER_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rider.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).RUBYMINE_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rubymine.key
+          echo "${{ fromJSON(steps.secrets.outputs.vault).WEBSTORM_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/webstorm.key
+          
+          # Start metacity
+          metacity --sm-disable --replace &
+          sleep 10
+
+      - name: Start IDE in background
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        run: |
+          # Start IDE in background using Gradle
+          nohup gradle :its:runIdeForUiTests --stacktrace -i \
+            -PijVersion=${IDEA_VERSION} \
+            -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
+          echo "IDE_PID=$!" >> $GITHUB_ENV
+
+      - name: Wait for IDE to start
+        run: |
+          echo "Waiting for IDE to start..."
+          # retry every 5 seconds, max 150 times (750 seconds total)
+          curl --retry 150 \
+               --retry-delay 5 \
+               --retry-all-errors \
+               --fail \
+               --max-time 3 \
+               --connect-timeout 2 \
+               --silent \
+               --output /dev/null \
+               http://127.0.0.1:8082 2>/dev/null && echo "IDE is ready!" || (echo "Timeout waiting for IDE to start" && exit 1)
+
+      - name: Start recording
+        run: |
+          echo 'Recording tests on video'
+          ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -i ${DISPLAY} \
+            -codec:v libx264 -r 12 ${GITHUB_WORKSPACE}/recording_${IDEA_VERSION}.mp4 &
+          echo "FFMPEG_PID=$!" >> $GITHUB_ENV
+
+      - name: Run integration tests
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+          SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
+          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+          DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+          DEVELOCITY_ACCESS_KEY: develocity-public.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks
+
+      - name: Stop recording
+        if: always()
+        run: |
+          if [ -n "$FFMPEG_PID" ] && kill -0 $FFMPEG_PID 2>/dev/null; then
+            kill -SIGINT $FFMPEG_PID
+            # Wait for ffmpeg to finish
+            timeout=30
+            while kill -0 $FFMPEG_PID 2>/dev/null && [ $timeout -gt 0 ]; do
+              sleep 1
+              timeout=$((timeout - 1))
+            done
+          fi
+          if [ -n "$XVFB_PID" ] && kill -0 $XVFB_PID 2>/dev/null; then
+            kill $XVFB_PID
+          fi
+
+      - name: Display IDE log
+        if: always()
+        run: |
+          if [ -f ${GITHUB_WORKSPACE}/runIdeGradle.log ]; then
+            cat ${GITHUB_WORKSPACE}/runIdeGradle.log
+          fi
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: ${{ !cancelled() }}
+        with:
+          report_paths: '**/test-results/**/*.xml'
+
+      - name: Upload test recording
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-recording-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
+          path: ${{ github.workspace }}/recording_${{ matrix.ide_version }}.mp4
+          if-no-files-found: warn
+
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
+          path: "**/reports/**/*"
+          if-no-files-found: warn
+
+      - name: Upload JUnit test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
+          path: "**/test-results/**/*.xml"
+
+  promote:
+    runs-on: github-ubuntu-latest-m
+    name: Promote
+    needs:
+      - build
+      - check_windows
+      - qa
+    if: ${{ github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-') }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Promote artifacts
+        uses: SonarSource/ci-github-actions/promote@v1
+        env:
+          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
+        with:
+          promote-pull-request: true
+
+  dogfood:
+    runs-on: github-ubuntu-latest-m
+    name: Update Dogfood Repository
+    needs:
+      - build
+      - promote
+    if: ${{ github.ref_name == github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+          experimental: true
+
+      - name: Fetch vault secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | ARTIFACTORY_API_KEY;
+
+      - uses: SonarSource/ci-github-actions/get-build-number@v1
+
+      - name: Update dogfood repository
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_API_KEY: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_API_KEY }}
+          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
+        run: |
+          cat > updatePlugins.xml << EOF
+          <plugins>
+            <plugin id="org.sonarlint.idea" url="${ARTIFACTORY_URL}/sonarsource/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip" version="${PROJECT_VERSION}"/>
+          </plugins>
+          EOF
+          cat updatePlugins.xml
+          
+          # Upload to Artifactory using jfrog CLI
+          jf rt u updatePlugins.xml \
+            sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/ \
+            --url "${ARTIFACTORY_URL}" \
+            --access-token "${ARTIFACTORY_API_KEY}" \
+            --build-name "${{ github.event.repository.name }}" \
+            --build-number "$BUILD_NUMBER"
+
+  notify_failure:
+    runs-on: github-ubuntu-latest-s
+    name: Notify on Failure
+    needs:
+      - build
+      - check_windows
+      - qa
+      - promote
+      - dogfood
+    if: ${{ !cancelled() && (needs.build.result == 'failure' || needs.check_windows.result == 'failure' || needs.qa.result == 'failure' || needs.promote.result == 'failure' || needs.dogfood.result == 'failure') }}
+    steps:
+      - name: Fetch vault secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/slack token | SLACK_BOT_TOKEN;
+
+      - name: Slack Notification on Failure
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ fromJSON(steps.secrets.outputs.vault).SLACK_BOT_TOKEN }}
+          payload: |
+            channel: squad-ide-intellij-family-bots
+            text: "Build workflow failed in ${{ github.repository }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: ":x: *Build Workflow Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|#${{ github.run_number }}>"

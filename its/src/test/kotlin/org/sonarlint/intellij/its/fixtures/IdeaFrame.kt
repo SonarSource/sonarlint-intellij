@@ -74,21 +74,15 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     private fun isBackgroundTaskRunning(): Boolean {
         for (i in 0..2) {
             try {
-                ideStatusBar.backgroundTaskPendingIcon
+                ideStatusBar.backgroundTaskPendingIndicator
                 println("Task running")
                 return true
             } catch (_: WaitForConditionTimeoutException) {
                 try {
-                    ideStatusBar.pauseButton
-                    println("Task running")
-                    return true
-                } catch (_: WaitForConditionTimeoutException) {
-                    try {
-                        // could be between 2 background tasks, wait and retry
-                        Thread.sleep(1000)
-                    } catch (e: InterruptedException) {
-                        e.printStackTrace()
-                    }
+                    // could be between 2 background tasks, wait and retry
+                    Thread.sleep(1000)
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
                 }
             }
         }

@@ -20,15 +20,12 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
-import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
-
 import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -41,6 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
+
   private PsiManager psiManager = mock(PsiManager.class);
   private DaemonCodeAnalyzer codeAnalyzer = mock(DaemonCodeAnalyzer.class);
   private FileEditorManager fileEditorManager = mock(FileEditorManager.class);
@@ -68,24 +66,35 @@ class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
   @Test
   void should_restart_all_open() {
-    var file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "class Foo {}");
-    var file2 = createAndOpenTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "class Bar {}");
+    createAndOpenTestPsiFile("Foo.java", "class Foo {}");
+    createAndOpenTestPsiFile("Bar.java", "class Bar {}");
 
     analyzerRestarter.refreshOpenFiles();
 
-    verify(codeAnalyzer, timeout(1000)).restart(file1);
-    verify(codeAnalyzer).restart(file2);
+    verify(codeAnalyzer, timeout(1000)).restart();
     verifyNoMoreInteractions(codeAnalyzer);
   }
 
   @Test
   void should_restart_files() {
-    var file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "class Foo {}");
-    var file2 = createTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "class Bar {}");
+    var file1 = createAndOpenTestPsiFile("Foo.java", "class Foo {}");
+    var file2 = createTestPsiFile("Bar.java", "class Bar {}");
 
     analyzerRestarter.refreshFiles(List.of(file1.getVirtualFile(), file2.getVirtualFile()));
 
-    verify(codeAnalyzer, timeout(1000)).restart(file1);
+    verify(codeAnalyzer, timeout(1000)).restart();
     verifyNoMoreInteractions(codeAnalyzer);
   }
+
+  @Test
+  void should_restart_only_one_file() {
+    createAndOpenTestPsiFile("Foo.java", "class Foo {}");
+    var file2 = createAndOpenTestPsiFile("Bar.java", "class Bar {}");
+
+    analyzerRestarter.refreshFiles(List.of(file2.getVirtualFile()));
+
+    verify(codeAnalyzer, timeout(1000)).restart(file2);
+    verifyNoMoreInteractions(codeAnalyzer);
+  }
+
 }
