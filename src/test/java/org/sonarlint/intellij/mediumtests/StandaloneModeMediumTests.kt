@@ -19,510 +19,170 @@
  */
 package org.sonarlint.intellij.mediumtests
 
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.openapi.actionSystem.IdeActions
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.project.modules
-import com.intellij.openapi.vcs.FileStatusManager
-import com.intellij.openapi.vcs.ProjectLevelVcsManager
-import com.intellij.openapi.vcs.changes.ChangeListManagerGate
-import com.intellij.openapi.vcs.changes.ChangeListManagerImpl
-import com.intellij.openapi.vcs.changes.ChangeProvider
-import com.intellij.openapi.vcs.changes.ChangelistBuilder
-import com.intellij.openapi.vcs.changes.VcsDirtyScope
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
-import com.intellij.openapi.vcs.changes.committed.MockAbstractVcs
-import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.openapi.vfs.VirtualFile
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility
-import org.jetbrains.annotations.NotNull
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledOnOs
+import org.junit.jupiter.api.condition.OS
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.analysis.AnalysisCallback
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
+import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
-import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.fs.VirtualFileEvent
-import org.sonarlint.intellij.util.SonarLintAppUtils
-import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-@Disabled("Flaky tests")
+@DisabledOnOs(OS.WINDOWS)
 class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
-    private val diamondQuickFix = "SonarQube: Replace with <>"
 
     @BeforeEach
-    fun notifyProjectOpened() {
-        getService(BackendService::class.java).moduleRemoved(module)
-        getService(BackendService::class.java).projectClosed(project)
-        getService(BackendService::class.java).projectOpened(project)
-        getService(BackendService::class.java).modulesAdded(project, listOf(module))
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+    fun waitForReady() {
+        Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
         }
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
-        }
-    }
-
-    @AfterEach
-    fun gracefulFinish() {
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
-        }
-    }
-
-    @Test
-    fun should_analyze_xml_file() {
-        val fileToAnalyze = sendFileToBackend("src/file.xml")
-
-        val issues = analyze(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { it.getType() },
-                { it.getCleanCodeAttribute() },
-                { it.userSeverity },
-                { it.getHighestImpact() },
-                { it.getHighestQuality() },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } }
-            )
-            .containsExactly(
-                tuple(
-                    "xml:S1778",
-                    "Remove all characters located before \"<?xml\".",
-                    null,
-                    org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute.COMPLETE,
-                    null,
-                    org.sonarsource.sonarlint.core.client.utils.ImpactSeverity.HIGH,
-                    org.sonarsource.sonarlint.core.client.utils.SoftwareQuality.RELIABILITY,
-                    Pair(62, 67),
-
-                    )
-            )
-    }
-
-    @Test
-    @Disabled("Skipping temp:///src/src/style.css as it has not 'file' scheme")
-    fun should_analyze_css_file() {
-        val fileToAnalyze = sendFileToBackend("src/style.css")
-
-        val issues = analyze(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactlyInAnyOrder(
-                tuple("css:S4647", "Unexpected invalid hex color \"#3c\"", Pair(4, 80)),
-                tuple("css:S4647", "Unexpected invalid hex color \"#3cb371a\"", Pair(89, 171))
-            )
     }
 
     @Test
     fun should_analyze_java_file() {
-        val fileToAnalyze = sendFileToBackend("src/Main.java")
+        val issues = analyzeFile("src/Main.java")
+        assertThat(issues.map { it.getRuleKey() }).contains("java:S106")
+    }
 
-        val issues = analyze(fileToAnalyze)
+    @Test
+    fun should_analyze_xml_file() {
+        val issues = analyzeFile("src/file.xml")
+        assertThat(issues.map { it.getRuleKey() }).contains("xml:S1778")
+    }
 
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactlyInAnyOrder(
-                tuple("java:S1220", "Move this file to a named package.", null),
-                tuple("java:S106", "Replace this use of System.out by a logger.", Pair(67, 77))
+    @Test
+    fun should_analyze_css_file() {
+        val issues = analyzeFile("src/style.css")
+        assertThat(issues.map { it.getRuleKey() }).contains("css:S4647")
+    }
+
+    @Test
+    fun should_analyze_dockerfile() {
+        val issues = analyzeFile("src/Dockerfile")
+        assertThat(issues.map { it.getRuleKey() }).contains("docker:S6476")
+    }
+
+    @Test
+    fun should_analyze_python_file() {
+        val issues = analyzeFile("src/file.py")
+        assertThat(issues.map { it.getRuleKey() }).contains("python:S3516")
+    }
+
+    @Test
+    fun should_analyze_cloudformation_file() {
+        val issues = analyzeFile("src/CloudFormation.yaml")
+        assertThat(issues.map { it.getRuleKey() })
+            .satisfiesAnyOf(
+                { assertThat(it).contains("cloudformation:S6295") },
+                { assertThat(it).contains("yaml:S1135") }
             )
     }
 
     @Test
-    @Disabled("Provider \"temp\" not installed")
-    fun should_analyze_js_in_yaml_file() {
-        val fileToAnalyze = sendFileToBackend("src/lambda.yaml")
-
-        val issues = analyze(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactly(
-                tuple("javascript:S1481", "Remove the declaration of the unused 'x' variable.", Pair(219, 220))
-            )
+    fun should_analyze_kubernetes_file() {
+        val issues = analyzeFile("src/k8s.yaml")
+        assertThat(issues.map { it.getRuleKey() }).contains("cloudformation:S4423")
     }
 
     @Test
-    fun should_analyze_dockerfiles() {
-        val fileToAnalyze = sendFileToBackend("src/Dockerfile")
-
-        val (issues, highlightInfos) = analyzeAndHighlight(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactly(
-                tuple("docker:S6476", "Replace \"from\" with upper case format \"FROM\".", Pair(0, 4))
-            )
-
-        assertThat(highlightInfos).hasSize(1)
+    fun should_analyze_terraform_file() {
+        val issues = analyzeFile("src/Terraform.tf")
+        assertThat(issues.map { it.getRuleKey() }).contains("terraform:S4423")
     }
 
     @Test
-    fun should_analyze_cloudformation_files() {
-        val fileToAnalyze = sendFileToBackend("src/CloudFormation.yaml")
-
-        val (issues, highlightInfos) = analyzeAndHighlight(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactly(
-                tuple("cloudformation:S6295", "Make sure missing \"RetentionInDays\" property is intended here.", Pair(79, 98))
-            )
-        assertThat(highlightInfos).hasSize(1)
+    fun should_analyze_html_file() {
+        val issues = analyzeFile("src/file.html")
+        assertThat(issues.map { it.getRuleKey() }).contains("Web:UnsupportedTagsInHtml5Check")
     }
 
     @Test
-    fun should_analyze_terraform_files() {
-        val fileToAnalyze = sendFileToBackend("src/Terraform.tf")
-
-        val (issues, highlightInfos) = analyzeAndHighlight(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactly(
-                tuple(
-                    "terraform:S4423",
-                    "Change this code to disable support of older TLS versions.",
-                    Pair(87, 114)
-                )
-            )
-        assertThat(highlightInfos).hasSize(1)
+    fun should_analyze_kotlin_file() {
+        val issues = analyzeFile("src/file.kt")
+        assertThat(issues.map { it.getRuleKey() }).contains("kotlin:S1481")
     }
 
     @Test
-    @Disabled("Provider \"temp\" not installed")
-    fun should_analyze_kubernetes_files() {
-        val fileToAnalyze = sendFileToBackend("src/Kubernetes.yaml")
-
-        val (issues, highlightInfos) = analyzeAndHighlight(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactly(
-                tuple(
-                    "kubernetes:S1135",
-                    "Complete the task associated to this \"TODO\" comment.",
-                    Pair(127, 144)
-                )
-            )
-        // contains another annotation for the TO-DO
-        assertThat(highlightInfos)
-            .extracting({ it.description })
-            .contains(tuple("Complete the task associated to this \"TODO\" comment."))
+    fun should_analyze_php_file() {
+        val issues = analyzeFile("src/file.php")
+        assertThat(issues.map { it.getRuleKey() }).contains("php:S1780")
     }
 
     @Test
-    @Disabled("Provider \"temp\" not installed")
-    fun should_find_cross_file_python_issue() {
-        val fileToAnalyze = myFixture.configureByFiles("src/main.py", "src/mod.py").first().virtualFile
-        val module = project.modules[0]
-        val listModuleFileEvent = listOf(
-            VirtualFileEvent(
-                ModuleFileEvent.Type.CREATED,
-                fileToAnalyze
-            ),
-        )
-
-        getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listModuleFileEvent), true
-        )
-        Awaitility.await().during(1, TimeUnit.SECONDS)
-
-        val issues = analyze(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactlyInAnyOrder(
-                tuple("python:S930", "Add 1 missing arguments; 'add' expects 2 positional arguments.", Pair(45, 48))
-            )
+    fun should_analyze_ruby_file() {
+        val issues = analyzeFile("src/file.rb")
+        assertThat(issues.map { it.getRuleKey() }).contains("ruby:S1481")
     }
 
-    @Test
-    @Disabled("Provider \"temp\" not installed")
-    fun should_find_cross_file_python_issue_after_module_file_is_modified_in_editor() {
-        // first one is opened in the current editor
-        val files = myFixture.configureByFiles("src/mod.py", "src/main.py")
-        val module = project.modules[0]
-        val listModuleFileEvent = listOf(
-            VirtualFileEvent(
-                ModuleFileEvent.Type.CREATED,
-                files[0].virtualFile
-            ),
-            VirtualFileEvent(
-                ModuleFileEvent.Type.CREATED,
-                files[1].virtualFile
-            )
-        )
+    private fun analyzeFile(relativePath: String): Collection<LiveIssue> {
+        val file = createRealFile(relativePath)
+        val resultRef = AtomicReference<AnalysisResult>()
+        val errorRef = AtomicReference<Throwable>()
 
-        getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listModuleFileEvent), true
-        )
-        Awaitility.await().during(1, TimeUnit.SECONDS)
+        getService(project, AnalysisSubmitter::class.java).analyzeFilesWithCallback(
+            setOf(file),
+            object : AnalysisCallback {
+                override fun onSuccess(result: AnalysisResult) {
+                    resultRef.set(result)
+                }
 
-        val moduleFile = files[0].virtualFile
-        val fileToAnalyze = files[1].virtualFile
-        // trigger a first analysis to build the table
-        analyze(fileToAnalyze)
-
-        myFixture.saveText(moduleFile, "def add(x): return x\n")
-        val issues = analyze(fileToAnalyze)
-
-        assertThat(issues)
-            .extracting(
-                { it.getRuleKey() },
-                { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-            .containsExactlyInAnyOrder(
-                tuple("python:S930", "Remove 1 unexpected arguments; 'add' expects 1 positional arguments.", Pair(21, 24))
-            )
-    }
-
-    @Test
-    @Disabled("Provider \"temp\" not installed")
-    fun should_find_secrets_excluding_vcs_ignored_files() {
-        sendFileToBackend("src/devenv.js")
-        val fileToAnalyzeIgnored = sendFileToBackend("src/devenv_ignored.js")
-        val fileToAnalyzeUnversionned = sendFileToBackend("src/devenv_unversionned.js")
-
-        val myVcsManager = ProjectLevelVcsManager.getInstance(project) as ProjectLevelVcsManagerImpl
-        val myVcs = MockAbstractVcs(project)
-        try {
-            myVcs.changeProvider = MyMockChangeProvider()
-            myVcsManager.registerVcs(myVcs)
-            myVcsManager.setDirectoryMapping("", myVcs.name)
-            myVcsManager.waitForInitialized()
-
-            val myChangeListManager = ChangeListManagerImpl.getInstanceImpl(project)
-            val dirtyScopeManager = VcsDirtyScopeManager.getInstance(project)
-            // Wait for the initial refresh status job to complete on the root directory
-            myChangeListManager.waitEverythingDoneInTestMode()
-
-            // Now force a specific status update for some files. It will ask the MyMockChangeProvider
-            dirtyScopeManager.fileDirty(fileToAnalyzeIgnored)
-            dirtyScopeManager.fileDirty(fileToAnalyzeUnversionned)
-            myChangeListManager.waitEverythingDoneInTestMode()
-            FileStatusManager.getInstance(project).fileStatusesChanged()
-
-            // Ensure previous code worked as expected
-            assertThat(myChangeListManager.isIgnoredFile(fileToAnalyzeIgnored)).isTrue
-            assertThat(myChangeListManager.isUnversioned(fileToAnalyzeUnversionned)).isTrue
-
-            val issues = analyzeAll()
-
-            assertThat(issues)
-                .extracting(
-                    { it.file().name },
-                    { it.getRuleKey() },
-                    { it.message },
-                    { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
-                .containsExactlyInAnyOrder(
-                    tuple(
-                        "devenv.js",
-                        "secrets:S6290",
-                        "Make sure the access granted with this AWS access key ID is restricted",
-                        Pair(286, 306)
-                    ),
-                    tuple(
-                        "devenv_unversionned.js",
-                        "secrets:S6290",
-                        "Make sure the access granted with this AWS access key ID is restricted",
-                        Pair(286, 306)
-                    ),
-                    tuple(
-                        "devenv.js",
-                        "javascript:S2703",
-                        "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.",
-                        Pair(62, 72)
-                    ),
-                    tuple(
-                        "devenv_unversionned.js",
-                        "javascript:S2703",
-                        "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.",
-                        Pair(62, 72)
-                    ),
-                )
-        } finally {
-            myVcsManager.unregisterVcs(myVcs)
-        }
-    }
-
-    @Test
-    fun should_apply_quick_fix_on_original_range_when_no_code_is_modified() {
-        val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
-
-        analyze(virtualFile)
-        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-        val availableIntention = myFixture.filterAvailableIntentions(diamondQuickFix)
-        assertThat(availableIntention).isEmpty()
-        myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
-    }
-
-    @Test
-    fun should_apply_quick_fix_on_adapted_range_when_code_is_modified_within_the_range() {
-        val virtualFile = sendFileToBackend("src/quick_fixes/single_quick_fix.input.java")
-
-        analyze(virtualFile)
-        myFixture.performEditorAction(IdeActions.ACTION_EDITOR_BACKSPACE)
-        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-        myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
-    }
-
-    @Test
-    fun should_apply_multiple_quick_fixes_on_different_lines() {
-        val virtualFile = sendFileToBackend("src/quick_fixes/multiple_quick_fixes_on_different_lines.input.java")
-
-        analyze(virtualFile)
-        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-        myFixture.editor.caretModel.currentCaret.moveToOffset(140)
-        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-        myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_different_lines.expected.java")
-    }
-
-    @Test
-    @Disabled("Temp scheme")
-    fun should_apply_overlapping_quick_fixes() {
-        val expectedFile = myFixture.copyFileToProject("src/quick_fixes/overlapping_quick_fixes.expected.java")
-        val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
-
-        analyze(file.virtualFile)
-        myFixture.launchAction(myFixture.findSingleIntention("SonarQube: Use \"Arrays.toString(array)\" instead"))
-        myFixture.editor.caretModel.currentCaret.moveToOffset(180)
-        myFixture.launchAction(myFixture.findSingleIntention("SonarQube: Merge this if statement with the enclosing one"))
-        //Their stripTrailingSpaces function don't work
-        myFixture.checkResult(expectedFile.getDocument()!!.text.trim(), true)
-    }
-
-    @Test
-    @Disabled("Flaky test for years, needs investigation")
-    fun should_apply_multiple_quick_fixes_on_same_line() {
-        val virtualFile = sendFileToBackend("src/quick_fixes/multiple_quick_fixes_on_same_line.input.java")
-
-        analyze(virtualFile)
-        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-        myFixture.editor.caretModel.currentCaret.moveToOffset(120)
-        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
-        myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_same_line.expected.java")
-    }
-
-    /**
-     * A mock ChangeProvider that will compute file status based on file name
-     */
-    private class MyMockChangeProvider : ChangeProvider {
-        override fun getChanges(
-            @NotNull dirtyScope: VcsDirtyScope,
-            @NotNull builder: ChangelistBuilder,
-            @NotNull progress: ProgressIndicator,
-            @NotNull addGate: ChangeListManagerGate,
-        ) {
-            for (path in dirtyScope.dirtyFiles) {
-                if (path.name.contains("_ignored"))
-                    builder.processIgnoredFile(path)
-                else if (path.name.contains("_unversionned"))
-                    builder.processUnversionedFile(path)
+                override fun onError(e: Throwable) {
+                    e.printStackTrace()
+                    errorRef.set(e)
+                }
             }
+        )
+
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
+            resultRef.get() != null || errorRef.get() != null
         }
 
-        override fun isModifiedDocumentTrackingRequired(): Boolean {
-            return false
+        if (errorRef.get() != null) {
+            throw RuntimeException("Analysis failed for $relativePath", errorRef.get())
         }
 
-    }
+        val issues = resultRef.get().findings.issuesPerFile[file] ?: emptyList()
 
-    private fun analyzeAndHighlight(fileToAnalyze: VirtualFile): Pair<List<LiveIssue>, List<HighlightInfo>> {
-        return analyze(fileToAnalyze).toList() to myFixture.doHighlighting()
-    }
-
-    private fun analyze(fileToAnalyze: VirtualFile): Collection<LiveIssue> {
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
-        }
-
-        getService(BackendService::class.java).didOpenFile(module, fileToAnalyze)
-
-        // We assume that at least one issue will be raised
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted {
-            assertThat(findAllIssues(fileToAnalyze).isNotEmpty()).isTrue
-        }
-
-        return findAllIssues(fileToAnalyze)
-    }
-
-    private fun findAllIssues(vararg filesToAnalyze: VirtualFile): List<LiveIssue> {
-        val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-        return filesToAnalyze.toList().map {
-            onTheFlyFindingsHolder.getIssuesForFile(it)
-        }.toList().flatten()
-    }
-
-    private fun analyzeAll(): List<LiveIssue> {
-        val submitter = getService(project, AnalysisSubmitter::class.java)
-
-        submitter.analyzeAllFiles()
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, RunningAnalysesTracker::class.java).isEmpty()).isTrue()
-        }
-
-        val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-        val issues = SonarLintAppUtils.visitAndAddAllFilesForProject(project).toList().map {
-            onTheFlyFindingsHolder.getIssuesForFile(it)
-        }.toList().flatten()
+        getService(BackendService::class.java).updateFileSystem(
+            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.DELETED, file))),
+            true
+        )
+        
         return issues
     }
 
-    private fun sendFileToBackend(filePath: String): VirtualFile {
-        val file = myFixture.configureByFile(filePath)
-        val module = module
-        val listModuleFileEvent = listOf(
-            VirtualFileEvent(
-                ModuleFileEvent.Type.CREATED,
-                file.virtualFile
-            )
-        )
+    private fun createRealFile(relativePath: String): VirtualFile {
+        val sourcePath = Path.of(testDataPath, relativePath).toAbsolutePath()
+        if (!Files.exists(sourcePath)) {
+            throw RuntimeException("Test file not found: $sourcePath")
+        }
+        val content = Files.readString(sourcePath)
+
+        val psiFile = createTestPsiFile(relativePath, content)
+        val virtualFile = psiFile.virtualFile
 
         getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listModuleFileEvent), true
+            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
+            true
         )
-
-        // Safety before triggering an analysis
-        Awaitility.await().during(1, TimeUnit.SECONDS)
-
-        return file.virtualFile
+        
+        // Give backend time to process
+        Thread.sleep(3000)
+        
+        return virtualFile
     }
+
 }

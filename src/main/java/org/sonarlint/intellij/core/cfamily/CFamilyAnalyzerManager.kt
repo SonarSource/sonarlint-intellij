@@ -31,7 +31,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicBoolean
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.openpgp.PGPCompressedData
 import org.bouncycastle.openpgp.PGPObjectFactory
