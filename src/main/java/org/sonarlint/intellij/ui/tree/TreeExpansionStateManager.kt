@@ -31,59 +31,53 @@ object TreeExpansionStateManager {
     
     /**
      * Takes a snapshot of the expansion state of file nodes in the tree.
-     * Returns a set of file paths that are currently expanded.
+     * Returns a set of file paths that are currently collapsed.
+     * Files not in this set (expanded or new) will be expanded by default.
      */
     fun takeFileNodeExpansionStateSnapshot(tree: Tree): Set<String> {
         val root = tree.model.root ?: return emptySet()
         val rootChildCount = tree.model.getChildCount(root)
         if (rootChildCount == 0) return emptySet()
 
-        // Pre-allocate with estimated size to reduce reallocations
-        val expandedFilePaths = HashSet<String>(rootChildCount)
+        val collapsedFilePaths = HashSet<String>()
 
         for (i in 0 until rootChildCount) {
             val child = tree.model.getChild(root, i)
             if (child is FileNode) {
                 val filePath = TreePath(arrayOf(root, child))
-                if (tree.isExpanded(filePath)) {
+                // Track only collapsed nodes - expanded and new nodes will be expanded by default
+                if (!tree.isExpanded(filePath)) {
                     val file = child.file()
                     if (file != null && file.isValid) {
-                        expandedFilePaths.add(file.path)
+                        collapsedFilePaths.add(file.path)
                     }
                 }
             }
         }
         
-        return expandedFilePaths
+        return collapsedFilePaths
     }
     
     /**
      * Restores the expansion state of file nodes in the tree based on a snapshot.
-     * Only expands file nodes that were previously expanded.
+     * Assumes the tree is already fully expanded. Collapses only the file nodes
+     * that were previously collapsed (those in the snapshot).
      */
-    fun restoreFileNodeExpansionState(tree: Tree, expandedFilePaths: Set<String>) {
-        // Early return if nothing to restore
-        if (expandedFilePaths.isEmpty()) {
-            val root = tree.model.root ?: return
-            // Still expand root to show the tree structure
-            tree.expandPath(TreePath(root))
-            return
-        }
+    fun restoreFileNodeExpansionState(tree: Tree, collapsedFilePaths: Set<String>) {
+        if (collapsedFilePaths.isEmpty()) return
         
         val root = tree.model.root ?: return
         val rootChildCount = tree.model.getChildCount(root)
         if (rootChildCount == 0) return
-        
-        // Expand root first to make file nodes accessible
-        tree.expandPath(TreePath(root))
 
+        // Collapse file nodes that were previously collapsed
         for (i in 0 until rootChildCount) {
             val child = tree.model.getChild(root, i)
             if (child is FileNode) {
                 val file = child.file()
-                if (file != null && file.isValid && expandedFilePaths.contains(file.path)) {
+                if (file != null && file.isValid && collapsedFilePaths.contains(file.path)) {
                     val filePath = TreePath(arrayOf(root, child))
-                    tree.expandPath(filePath)
+                    tree.collapsePath(filePath)
                 }
             }
         }
