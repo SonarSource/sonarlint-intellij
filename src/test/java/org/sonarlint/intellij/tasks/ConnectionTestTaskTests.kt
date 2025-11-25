@@ -27,6 +27,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledOnOs
+import org.junit.jupiter.api.condition.OS
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
@@ -61,6 +63,7 @@ class ConnectionTestTaskTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     fun should_not_validate_connection_when_host_does_not_exist() {
         val server = ServerConnection.newBuilder().setHostUrl("invalid_url").setName(CONNECTION_NAME).build()
         val task = ConnectionTestTask(server)

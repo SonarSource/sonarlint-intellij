@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
-import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
@@ -39,6 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
+
   private PsiManager psiManager = mock(PsiManager.class);
   private DaemonCodeAnalyzer codeAnalyzer = mock(DaemonCodeAnalyzer.class);
   private FileEditorManager fileEditorManager = mock(FileEditorManager.class);
@@ -66,8 +66,8 @@ class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
   @Test
   void should_restart_all_open() {
-    createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "class Foo {}");
-    createAndOpenTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "class Bar {}");
+    createAndOpenTestPsiFile("Foo.java", "class Foo {}");
+    createAndOpenTestPsiFile("Bar.java", "class Bar {}");
 
     analyzerRestarter.refreshOpenFiles();
 
@@ -77,8 +77,8 @@ class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
   @Test
   void should_restart_files() {
-    var file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "class Foo {}");
-    var file2 = createTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "class Bar {}");
+    var file1 = createAndOpenTestPsiFile("Foo.java", "class Foo {}");
+    var file2 = createTestPsiFile("Bar.java", "class Bar {}");
 
     analyzerRestarter.refreshFiles(List.of(file1.getVirtualFile(), file2.getVirtualFile()));
 
@@ -88,8 +88,8 @@ class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
   @Test
   void should_restart_only_one_file() {
-    createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "class Foo {}");
-    var file2 = createAndOpenTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "class Bar {}");
+    createAndOpenTestPsiFile("Foo.java", "class Foo {}");
+    var file2 = createAndOpenTestPsiFile("Bar.java", "class Bar {}");
 
     analyzerRestarter.refreshFiles(List.of(file2.getVirtualFile()));
 

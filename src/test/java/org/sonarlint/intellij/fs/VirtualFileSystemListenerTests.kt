@@ -29,12 +29,8 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import com.intellij.testFramework.replaceService
-import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.Awaitility
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
@@ -50,8 +46,6 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 private const val FILE_NAME = "main.py"
 
-// Very flaky
-@Disabled
 class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
@@ -62,16 +56,6 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
         file = myFixture.copyFileToProject(FILE_NAME, FILE_NAME)
         virtualFileSystemListener = VirtualFileSystemListener()
-    }
-
-    @AfterEach
-    fun cleanup() {
-        // Avoid polluting other tests with SLOOP left running
-        backendService.dispose()
-        Awaitility.await().atMost(15, TimeUnit.SECONDS).untilAsserted {
-            assertThat(backendService.isAlive()).isFalse()
-        }
-        ApplicationManager.getApplication().replaceService(BackendService::class.java, actualBackendService, testRootDisposable)
     }
 
     @Test
@@ -103,7 +87,6 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
         virtualFileSystemListener.before(listOf(vFileEvent))
     }
 
-    @Disabled("Flaky Tests to investigate with SLI-2360")
     @Test
     fun should_notify_of_a_file_modified_event() {
         val vFileEvent = VFileContentChangeEvent(null, file, 0L, 0L, false)
