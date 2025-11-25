@@ -61,6 +61,7 @@ import org.sonarlint.intellij.ui.filter.FindingsFilter
 import org.sonarlint.intellij.ui.filter.FindingsScope
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.filter.StatusFilter
+import org.sonarlint.intellij.ui.nodes.FileNode
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.tree.TreeExpansionStateManager
@@ -715,10 +716,10 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                     // Dependency risks don't have file nodes, expand normally
                     TreeUtil.expandAll(tree)
                 } else {
-                    // Restore expansion state for file nodes (this will also expand root)
+                    // Selectively expand only the nodes that should be expanded
                     val (newState, oldState) = treeStateSnapshot[treeType] ?: return@forEach
-                    TreeExpansionStateManager.restoreFileNodeExpansionState(tree, newState)
-                    TreeExpansionStateManager.restoreFileNodeExpansionState(oldTree, oldState)
+                    expandFileNodesSelectively(tree, newState)
+                    expandFileNodesSelectively(oldTree, oldState)
                 }
             }
         } else {
@@ -799,6 +800,28 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             for (i in 0 until tree.model.getChildCount(root)) {
                 val fileNode = tree.model.getChild(root, i)
                 tree.expandPath(TreePath(arrayOf(root, fileNode)))
+            }
+        }
+    }
+    
+    /**
+     * Expands file nodes selectively, skipping those that were previously collapsed.
+     */
+    private fun expandFileNodesSelectively(tree: Tree, collapsedFilePaths: Set<String>) {
+        tree.model.root?.let { root ->
+            tree.expandPath(TreePath(root))
+            for (i in 0 until tree.model.getChildCount(root)) {
+                val fileNode = tree.model.getChild(root, i)
+                // Only expand if this file was not previously collapsed
+                if (fileNode is FileNode) {
+                    val file = fileNode.file()
+                    if (file != null && file.isValid && !collapsedFilePaths.contains(file.path)) {
+                        tree.expandPath(TreePath(arrayOf(root, fileNode)))
+                    }
+                } else {
+                    // If it's not a FileNode, expand it normally
+                    tree.expandPath(TreePath(arrayOf(root, fileNode)))
+                }
             }
         }
     }

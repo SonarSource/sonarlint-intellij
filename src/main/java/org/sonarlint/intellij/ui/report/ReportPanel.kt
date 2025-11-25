@@ -130,9 +130,8 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         updateTreeModels(findings, isFocusOnNewCode)
         treeManager.configureTreeVisibility(isFocusOnNewCode)
-        treeManager.expandTrees()
         
-        // Restore expansion state from snapshot after trees are expanded
+        // Restore expansion state from snapshot
         treeManager.restoreTreeState(treeStateSnapshot)
 
         // Transition from loading to results

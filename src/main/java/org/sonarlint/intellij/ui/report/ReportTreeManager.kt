@@ -181,21 +181,21 @@ class ReportTreeManager(
     
     /**
      * Restores the expansion state of file nodes for all trees from a snapshot.
-     * This should be called after trees are expanded.
+     * Expands everything by default, then collapses file nodes that were previously collapsed.
      */
     fun restoreTreeState(snapshot: Map<Tree, Set<String>>) {
         runOnUiThread(project) {
-            snapshot.forEach { (tree, expandedPaths) ->
-                TreeExpansionStateManager.restoreFileNodeExpansionState(tree, expandedPaths)
+            // Expand everything by default
+            allTrees.forEach { tree ->
+                if (tree.isVisible && tree.model.root != null) {
+                    TreeUtil.expandAll(tree)
+                }
             }
-        }
-    }
-    
-    fun expandTrees() {
-        runOnUiThread(project) {
-            expandTreeIfSmall(issuesTree, issuesTreeBuilder.numberOfDisplayedFindings())
-            expandTreeIfSmall(securityHotspotsTree, securityHotspotsTreeBuilder.numberOfDisplayedFindings())
-            expandTreeIfSmall(taintsTree, taintsTreeBuilder.numberOfDisplayedFindings())
+            
+            // Then collapse file nodes that were previously collapsed
+            snapshot.forEach { (tree, collapsedPaths) ->
+                TreeExpansionStateManager.restoreFileNodeExpansionState(tree, collapsedPaths)
+            }
         }
     }
     
