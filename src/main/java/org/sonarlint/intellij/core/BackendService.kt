@@ -409,6 +409,7 @@ class BackendService : Disposable {
         )
         if (!System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()) {
             capabilities.add(BackendCapability.TELEMETRY)
+            capabilities.add(BackendCapability.GESSIE_TELEMETRY)
         }
         if (!System.getProperty("sonarlint.monitoring.disabled", "false").toBoolean()) {
             capabilities.add(BackendCapability.MONITORING)
