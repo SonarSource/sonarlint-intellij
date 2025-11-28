@@ -30,7 +30,6 @@ import com.intellij.openapi.project.Project
 import java.util.Arrays
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.stream.Stream
-import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.actions.ShareConfigurationAction
@@ -47,6 +46,7 @@ import org.sonarlint.intellij.notifications.binding.DisableBindingSuggestionsAct
 import org.sonarlint.intellij.promotion.DontAskAgainAction
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarlint.intellij.telemetry.LinkTelemetry
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.client.smartnotification.ShowSmartNotificationParams
@@ -138,7 +138,7 @@ class SonarLintProjectNotifications(private val myProject: Project) {
             val suggestedBinding = suggestedBindings[0]
             notifyBindingSuggestions(
                 "Bind this project to '${suggestedBinding.projectName}' on '${suggestedBinding.connectionId}'?",
-                BindProjectAction(suggestedBinding, suggestedBinding.mode, suggestedBinding.origin), OpenProjectSettingsAction(myProject, "Select another one")
+                BindProjectAction(suggestedBinding, suggestedBinding.origin), OpenProjectSettingsAction(myProject, "Select another one")
             )
         } else {
             notifyBindingSuggestions(

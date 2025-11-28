@@ -35,7 +35,6 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin;
 
 import static java.util.Objects.requireNonNull;
@@ -91,14 +90,14 @@ public final class ProjectBindingManager {
   }
 
   public void bindTo(ServerConnection connection, String projectKey, Map<Module, String> moduleBindingsOverrides,
-    BindingMode mode, @Nullable BindingSuggestionOrigin origin) {
+    @Nullable BindingSuggestionOrigin origin) {
     var previousBinding = getProjectBinding(connection, projectKey, moduleBindingsOverrides);
 
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
-      getService(BackendService.class).projectBound(myProject, newBinding, mode, origin);
+      getService(BackendService.class).projectBound(myProject, newBinding, origin);
     }
   }
 
@@ -110,7 +109,7 @@ public final class ProjectBindingManager {
 
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
-      getService(BackendService.class).projectBound(myProject, newBinding, BindingMode.MANUAL, null);
+      getService(BackendService.class).projectBound(myProject, newBinding, null);
 
       showSharedConfigurationNotification(myProject, String.format("""
         Project successfully bound with '%s' on '%s'.

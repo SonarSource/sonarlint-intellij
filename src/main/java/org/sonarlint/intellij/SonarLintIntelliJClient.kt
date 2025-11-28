@@ -137,7 +137,6 @@ import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingMode
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
@@ -247,7 +246,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         if (getSettingsFor(project).isBindingSuggestionsEnabled && !getSettingsFor(project).isBound) {
             val notifications = get(project)
             notifications.suggestBindingOptions(suggestions.map {
-                BindingSuggestion(it.connectionId, it.sonarProjectKey, it.sonarProjectName, BindingMode.FROM_SUGGESTION, it.origin)
+                BindingSuggestion(it.connectionId, it.sonarProjectKey, it.sonarProjectName, it.origin)
             })
         }
     }
@@ -522,7 +521,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             val binding = getService(project, ProjectBindingManager::class.java).binding
             if (binding == null || binding.projectKey != projectKey || binding.connectionName != connection.name) {
                 getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap(),
-                    BindingMode.FROM_SUGGESTION, params.origin)
+                    params.origin)
                 get(project).simpleNotification(
                     "Project successfully bound",
                     "Local project bound to project '$projectKey' of SonarQube Server instance '${connection.name}'. "
