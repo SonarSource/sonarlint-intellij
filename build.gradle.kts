@@ -52,7 +52,9 @@ val runIdeDirectory: String by project
 val verifierEnv: String by project
 
 // The environment variables ARTIFACTORY_ACCESS_USERNAME and ARTIFACTORY_ACCESS_TOKEN are used on CI env
-// On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
+// On local box, please add artifactoryUrl, artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
+val artifactoryUrl = System.getenv("ARTIFACTORY_URL")
+	?: (if (project.hasProperty("artifactoryUrl")) project.property("artifactoryUrl").toString() else "")
 val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME")
     ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
 val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN")
@@ -112,7 +114,7 @@ dependencies {
     testImplementation(testFixtures(project("test-common")))
     testRuntimeOnly(libs.junit.launcher)
     "sqplugins"(libs.bundles.sonar.analyzers)
-    if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+    if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "cfamilySignature"("${libs.sonar.cfamily.get()}@jar.asc")
         "sqplugins"(libs.sonar.dotnet.enterprise)
         "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")

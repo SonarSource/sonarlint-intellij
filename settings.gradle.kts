@@ -8,6 +8,9 @@ plugins {
 }
 
 rootProject.name = "sonarlint-intellij"
+val artifactoryUrl = System.getenv("ARTIFACTORY_URL") ?: (extra["artifactoryUrl"] as? String ?: "")
+val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra["artifactoryUsername"] as? String ?: "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra["artifactoryPassword"] as? String ?: "")
 
 dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
@@ -15,13 +18,16 @@ dependencyResolutionManagement {
 
     @Suppress("UnstableApiUsage")
     repositories {
-        maven("https://repox.jfrog.io/repox/sonarsource") {
-            credentials {
-                username = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra["artifactoryUsername"] as? String ?: "")
-                password = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra["artifactoryPassword"] as? String ?: "")
+        if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+            maven("$artifactoryUrl/sonarsource") {
+                credentials {
+                    username = artifactoryUsername
+                    password = artifactoryPassword
+                }
             }
+        } else {
+            mavenCentral()
         }
-        mavenCentral()
         intellijPlatform {
             defaultRepositories()
         }
