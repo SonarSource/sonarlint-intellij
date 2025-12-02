@@ -1,4 +1,6 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
+import java.net.URI
 
 plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.10.4"
@@ -13,8 +15,8 @@ val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra
 val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra["artifactoryPassword"] as? String ?: "")
 
 dependencyResolutionManagement {
-    @Suppress("UnstableApiUsage")
-    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+
+    repositoriesMode = RepositoriesMode.PREFER_SETTINGS
 
     @Suppress("UnstableApiUsage")
     repositories {
@@ -25,11 +27,75 @@ dependencyResolutionManagement {
                     password = artifactoryPassword
                 }
             }
+            intellijPlatform {
+                localPlatformArtifacts()
+                maven("$artifactoryUrl/jetbrains-intellij-dependencies") {
+                    name = "IntelliJ Platform Dependencies Repository"
+                    credentials {
+                        username = artifactoryUsername
+                        password = artifactoryPassword
+                    }
+                }
+                ivy {
+                    name = "JetBrains IDE Installers"
+                    url = URI("$artifactoryUrl/jetbrains-download")
+                    credentials {
+                        username = artifactoryUsername
+                        password = artifactoryPassword
+                    }
+                    patternLayout {
+                        artifact("[organization]/[module]-[revision](-[classifier]).[ext]",)
+                        artifact("[organization]/[module]-[revision](.[classifier]).[ext]")
+                        artifact("[organization]/[revision]/[module]-[revision](-[classifier]).[ext]")
+                        artifact("[organization]/[revision]/[module]-[revision](.[classifier]).[ext]")
+                        artifact("[organization]/[module]-[revision]-[classifier].tar.gz")
+                    }
+                    content {
+                        IntelliJPlatformType.values()
+                            .filter { it != IntelliJPlatformType.AndroidStudio }
+                            .mapNotNull { it.installer }
+                            .forEach {
+                                includeModule(it.groupId, it.artifactId)
+                            }
+                    }
+                    metadataSources { artifact() }
+                }
+                ivy {
+                    name = "Android Studio Installers"
+                    url = URI("$artifactoryUrl/android-studio")
+                    credentials {
+                        username = artifactoryUsername
+                        password = artifactoryPassword
+                    }
+                    patternLayout {
+                        artifact("/ide-zips/[revision]/[artifact]-[revision]-[classifier].[ext]")
+                        artifact("/install/[revision]/[artifact]-[revision]-[classifier].[ext]")
+                    }
+                    content {
+                        val coordinates = IntelliJPlatformType.AndroidStudio.installer
+                        requireNotNull(coordinates)
+
+                        includeModule(coordinates.groupId, coordinates.artifactId)
+                    }
+                    metadataSources { artifact() }
+                }
+                maven("$artifactoryUrl/intellij-releases") {
+                    name = "IntelliJ Repository (Releases)"
+                    credentials {
+                        username = artifactoryUsername
+                        password = artifactoryPassword
+                    }
+                }
+            }
         } else {
             mavenCentral()
-        }
-        intellijPlatform {
-            defaultRepositories()
+            intellijPlatform {
+                localPlatformArtifacts()
+                jetbrainsIdeInstallers()
+                androidStudioInstallers()
+                intellijDependencies()
+                releases()
+            }
         }
     }
 }
