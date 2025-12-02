@@ -29,7 +29,10 @@ dependencyResolutionManagement {
             mavenCentral()
         }
         intellijPlatform {
-            defaultRepositories()
+            localPlatformArtifacts()
+            jetbrainsIdeInstallers()
+            androidStudioInstallers()
+            intellijDependencies()
         }
     }
 }
