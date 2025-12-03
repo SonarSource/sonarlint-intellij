@@ -42,7 +42,6 @@ class ChooseBindingSuggestionAction(private val suggestedBindings: List<BindingS
                     connection,
                     acceptedSuggestion.projectKey,
                     emptyMap(),
-                    acceptedSuggestion.mode,
                     acceptedSuggestion.origin
                 )
             },
