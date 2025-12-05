@@ -39,7 +39,7 @@ jobs:
           develocity-url: https://develocity-public.sonar.build
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
-          gradle-args: -x :its:check check jacocoTestReport :buildPlugin :cyclonedxBom sonar :verifyPlugin
+          gradle-args: --stacktrace -x :its:check check jacocoTestReport :buildPlugin :cyclonedxBom sonar :verifyPlugin
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v5
