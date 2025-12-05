@@ -192,12 +192,12 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
     });
 
     // info
-    var info = new JBLabel("<html>By sharing anonymous SonarQube for IDE usage statistics, you help us understand how SonarQube for IDE is used so "
-      + "we can improve the plugin to work even better for you. We don't collect source code, IP addresses, or any personally identifying "
-      + "information. And we don't share the data with anyone else.</html>");
+    var info = new JBLabel("<html>By sharing anonymous SonarQube for IDE usage statistics and error data, you help us understand how SonarQube for IDE is used so "
+      + "we can improve the plugin to work even better for you. This data is aggregated and does not contain source code, IP addresses, or any personally identifying "
+      + "information. And we don't share the data with anyone else. Uncheck this box to opt-out of this collection.</html>");
 
     // checkbox
-    enableTelemetryCheckBox = new JCheckBox("Share anonymous SonarQube for IDE statistics");
+    enableTelemetryCheckBox = new JCheckBox("Share anonymous SonarQube for IDE usage data");
     enableTelemetryCheckBox.setFocusable(false);
     var tickOptions = new JPanel(new VerticalFlowLayout());
     tickOptions.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
