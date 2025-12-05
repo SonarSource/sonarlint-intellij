@@ -72,7 +72,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     var findings = toolWindowService.getDisplayedFindings(currentFile);
 
     findings.getIssues().stream()
-      .filter(issue -> !issue.isResolved() && (!isFocusOnNewCode || issue.isOnNewCode()))
+      .filter(issue -> !issue.isResolved())
       .forEach(issue -> {
         var validTextRange = issue.getValidTextRange();
         if (validTextRange != null && fileTextRange.contains(validTextRange)) {
@@ -81,7 +81,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       });
 
     findings.getHotspots().stream()
-      .filter(securityHotspot -> !securityHotspot.isResolved() && (!isFocusOnNewCode || securityHotspot.isOnNewCode()))
+      .filter(securityHotspot -> !securityHotspot.isResolved())
       .forEach(securityHotspot -> {
         var validTextRange = securityHotspot.getValidTextRange();
         if (validTextRange != null && fileTextRange.contains(validTextRange)) {
@@ -90,7 +90,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       });
 
     findings.getTaints().stream()
-      .filter(vulnerability -> !vulnerability.isResolved() && (!isFocusOnNewCode || vulnerability.isOnNewCode()))
+      .filter(vulnerability -> !vulnerability.isResolved())
       .filter(vulnerability -> currentFile.equals(vulnerability.file()))
       .forEach(vulnerability -> addAnnotation(vulnerability, fileTextRange, holder));
   }
