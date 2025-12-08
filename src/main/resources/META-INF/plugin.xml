@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>11.7 - Improved detection of frameworks imported in PHP files.</li>
+        <li>11.7 - Support Bash analysis with Docker and GitHub Actions. Improved detection of frameworks imported in PHP files.</li>
         <li>11.6 - Added SLNX support in Rider. Introduced runtime downloading of the C/C++ analyzer. 6 new rules for Bash. 7 new rules for Python 3.14. Enhanced analysis for WordPress frameworks. Improved annotation performance on large files. Refined the behavior of opened/closed finding nodes in the tool window. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.5 - Fixed an issue where exclusion settings did not work in Rider. Resolved a problem causing Go analysis to hang. Disabled secret detection in test files and improved overall secret analysis performance. Added new secret patterns for HTTP authentication. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.4 - 58 new QuickFixes for JS/TS/CSS. Support of Python 3.14. Support of PHP 8.5. 14 new rules for C++. 4 new rules for HTML. Fixed a potential memory leak on running analysis for closed projects. Bug fixes, fewer FPs and improvements for many languages and secret detection.</li>
