@@ -25,6 +25,8 @@ jobs:
       PROJECT_VERSION: ${{ steps.build_plugin.outputs.project-version }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: jdx/mise-action@v2.4.4
         with:
