@@ -29,6 +29,7 @@ commons-lang3 = "3.20.0"
 commons-text = "1.14.0"
 findbugs-jsr305 = "3.0.2"
 bouncycastle = "1.82"
+sentry = "8.20.0"
 junit-five = "5.14.1"
 junit-four = "4.13.2"
 junit-launcher = "1.14.1"
@@ -69,6 +70,7 @@ findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "f
 bouncycastle-bcpg = { module = "org.bouncycastle:bcpg-jdk18on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-five" }
+sentry = { module = "io.sentry:sentry", version.ref = "sentry" }
 junit-four = { module = "junit:junit", version.ref = "junit-four" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-launcher" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }

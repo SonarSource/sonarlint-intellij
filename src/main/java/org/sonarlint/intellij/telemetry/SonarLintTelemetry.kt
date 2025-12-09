@@ -23,6 +23,7 @@ import com.intellij.openapi.components.Service
 import java.util.concurrent.CompletableFuture
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.monitoring.MonitoringService
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
@@ -39,8 +40,10 @@ class SonarLintTelemetry {
     fun optOut(optOut: Boolean) {
         if (optOut) {
             notifyTelemetry { it.disableTelemetry() }
+            MonitoringService.close()
         } else {
             notifyTelemetry { it.enableTelemetry() }
+            MonitoringService.reinit()
         }
     }
 
