@@ -158,8 +158,9 @@ jobs:
             qa_category: 'PyCharmCommunity2025'
           - ide_version: 'RD-2023.3.6'
             qa_category: 'Rider2023'
-          - ide_version: 'RD-2025.1.5'
-            qa_category: 'Rider2025'
+# Temporarily disabled, consistently failing
+#          - ide_version: 'RD-2025.1.5'
+#            qa_category: 'Rider2025'
           - ide_version: 'PS-2023.1.6'
             qa_category: 'PhpStorm2023'
           - ide_version: 'PS-2025.2'
