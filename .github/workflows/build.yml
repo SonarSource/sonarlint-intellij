@@ -31,7 +31,7 @@ jobs:
           version: 2025.9.12
 
       - name: Build Plugin
-        uses: SonarSource/ci-github-actions/build-gradle@master
+        uses: SonarSource/ci-github-actions/build-gradle@v1
         id: build_plugin
         with:
           deploy-pull-request: true
