@@ -71,7 +71,7 @@ object SonarCloudUtils {
         )
 
         val request = GetRequest("api/analysis_reports/is_queue_empty")
-        waitFor(Duration.ofMinutes(1), interval = Duration.ofSeconds(5)) {
+        waitFor(Duration.ofMinutes(2), interval = Duration.ofSeconds(5)) {
             adminWsClient.wsConnector().call(request).use { response ->
                 "true" == response.content()
             }
