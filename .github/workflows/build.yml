@@ -9,7 +9,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: >-
+    ${{ github.workflow }}-
+    ${{ github.event.pull_request.base.ref || 'push' }}-
+    ${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -25,6 +28,8 @@ jobs:
       PROJECT_VERSION: ${{ steps.build_plugin.outputs.project-version }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: jdx/mise-action@v2.4.4
         with:
