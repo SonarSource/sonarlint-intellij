@@ -23,7 +23,6 @@ import com.intellij.openapi.application.ApplicationInfo
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import org.apache.commons.lang3.SystemUtils
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 
@@ -32,6 +31,10 @@ object MonitoringService {
     private const val CLIENT_DSN = "https://68144d3abca48b0ea9e3ca1a6a24bf74@o1316750.ingest.us.sentry.io/4510509893353472"
 
     private var active = false
+
+    fun isDogfoodingEnvironment(): Boolean {
+        return "1" == System.getenv("SONARSOURCE_DOGFOODING")
+    }
 
     @JvmStatic
     fun init() {
@@ -58,7 +61,7 @@ object MonitoringService {
     @JvmStatic
     fun reinit() {
         if (active) {
-            Sentry.close()
+            return
         }
         active = true
         initializeSentry()
@@ -67,8 +70,12 @@ object MonitoringService {
     private fun initializeSentry() {
         Sentry.init { options: SentryOptions ->
             options.dsn = CLIENT_DSN
-            options.release = SonarLintUtils.getService(org.sonarlint.intellij.SonarLintPlugin::class.java).version
-            options.environment = "dogfood"
+            options.release = getService(org.sonarlint.intellij.SonarLintPlugin::class.java).version
+            if (isDogfoodingEnvironment()) {
+                options.environment = "dogfood"
+            } else {
+                options.environment = "production"
+            }
             options.setTag("ideVersion", ApplicationInfo.getInstance().fullVersion)
             options.setTag("platform", System.getProperty(SystemUtils.OS_NAME))
             options.setTag("architecture", System.getProperty(SystemUtils.OS_ARCH))
