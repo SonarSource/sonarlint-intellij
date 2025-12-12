@@ -43,6 +43,7 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
         backendService = spy(ApplicationManager.getApplication().getService(BackendService::class.java))
         ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
         submitter = AnalysisSubmitter(project)
+        //Test tests2
     }
 
     @Test
