@@ -18,11 +18,25 @@ permissions:
   checks: write
 
 jobs:
+  build-number:
+    outputs:
+      BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
+    runs-on: github-ubuntu-latest-m
+    name: Get build number
+    permissions:
+      id-token: write
+    steps:
+      - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
+
   build:
     runs-on: github-ubuntu-latest-m
+    needs: build-number
     name: Build
     outputs:
       PROJECT_VERSION: ${{ steps.build_plugin.outputs.project-version }}
+    env:
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@v5
 
@@ -63,7 +77,10 @@ jobs:
 
   check_windows:
     runs-on: warp-custom-sonarlint-intellij
+    needs: build-number
     name: Test Windows
+    env:
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@v5
 
@@ -115,7 +132,9 @@ jobs:
   qa:
     runs-on: github-ubuntu-latest-m
     name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
-    needs: build
+    needs:
+      - build-number
+      - build
     strategy:
       fail-fast: false
       matrix:
@@ -179,6 +198,7 @@ jobs:
       IDEA_VERSION: ${{ matrix.ide_version }}
       QA_CATEGORY: ${{ matrix.qa_category }}
       TEST_SUITE: ${{ matrix.test_suite }}
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@v5
 
@@ -366,10 +386,13 @@ jobs:
     runs-on: github-ubuntu-latest-m
     name: Promote
     needs:
+      - build-number
       - build
       - check_windows
       - qa
     if: ${{ github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-') }}
+    env:
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@v5
 
@@ -388,9 +411,12 @@ jobs:
     runs-on: github-ubuntu-latest-m
     name: Update Dogfood Repository
     needs:
+      - build-number
       - build
       - promote
     if: ${{ github.ref_name == github.event.repository.default_branch }}
+    env:
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@v5
 
@@ -406,8 +432,6 @@ jobs:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | ARTIFACTORY_API_KEY;
-
-      - uses: SonarSource/ci-github-actions/get-build-number@v1
 
       - name: Update dogfood repository
         env:
