@@ -1,9 +1,9 @@
+import java.net.URI
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
-import java.net.URI
 
 plugins {
-    id("org.jetbrains.intellij.platform.settings") version "2.10.4"
+    id("org.jetbrains.intellij.platform.settings") version "2.10.5"
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
     id("com.gradle.develocity") version "4.0"
     id("com.gradle.common-custom-user-data-gradle-plugin") version "2.2.1"

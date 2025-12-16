@@ -197,6 +197,9 @@ To run plugin verification locally:
 ./gradlew :verifyPlugin -PverifierEnv=EAP
 ./gradlew :verifyPlugin -PverifierEnv=MINIMAL
 ./gradlew :verifyPlugin -PverifierEnv=LATEST
+
+# For PR, only minimal version of IC
+./gradlew :verifyPlugin -PverifierEnv=PR
 ```
 
 License
