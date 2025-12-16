@@ -53,6 +53,15 @@ jobs:
         with:
           version: 2025.9.12
 
+      - name: Fetch Artifactory credentials
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
       - name: Cache JetBrains IDEs
         id: cache-ides
         uses: actions/cache@v4
@@ -60,21 +69,26 @@ jobs:
           path: ${{ env.IDE_CACHE_DIR }}
           key: ${{ runner.os }}-jetbrains-ides-${{ env.INTELLIJ_VERSION }}-${{ env.CLION_VERSION }}-${{ env.RIDER_VERSION }}-${{ env.RESHARPER_VERSION }}-${{ env.ULTIMATE_VERSION }}
 
-      - name: Download and Install IDEs
+      - name: Download and Install IDEs from Repox
         if: steps.cache-ides.outputs.cache-hit != 'true'
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           
           sudo mkdir -p ${{ env.IDE_CACHE_DIR }}
           sudo chown -R $USER:$USER ${{ env.IDE_CACHE_DIR }}
           
-          echo "Downloading all IDEs in parallel..."
+          echo "Downloading all IDEs from Repox in parallel..."
           
           # Download IntelliJ IDEA Community
           (
-            echo "Downloading IntelliJ IDEA Community ${INTELLIJ_VERSION}..."
+            echo "Downloading IntelliJ IDEA Community ${INTELLIJ_VERSION} from Repox..."
             TMPDIR=$(mktemp -d)
-            curl -fsSL "https://download.jetbrains.com/idea/ideaIC-${INTELLIJ_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
+            curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+              "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIC-${INTELLIJ_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
             mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/intellij
             rm -rf "$TMPDIR"
             echo "✓ IntelliJ IDEA Community done"
@@ -83,9 +97,10 @@ jobs:
           
           # Download CLion
           (
-            echo "Downloading CLion ${CLION_VERSION}..."
+            echo "Downloading CLion ${CLION_VERSION} from Repox..."
             TMPDIR=$(mktemp -d)
-            curl -fsSL "https://download.jetbrains.com/cpp/CLion-${CLION_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
+            curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+              "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${CLION_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
             mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/clion
             rm -rf "$TMPDIR"
             echo "✓ CLion done"
@@ -94,9 +109,10 @@ jobs:
           
           # Download Rider
           (
-            echo "Downloading Rider ${RIDER_VERSION}..."
+            echo "Downloading Rider ${RIDER_VERSION} from Repox..."
             TMPDIR=$(mktemp -d)
-            curl -fsSL "https://download.jetbrains.com/rider/JetBrains.Rider-${RIDER_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
+            curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+              "${ARTIFACTORY_URL}/jetbrains-download/rider/JetBrains.Rider-${RIDER_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
             mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/rider
             rm -rf "$TMPDIR"
             echo "✓ Rider done"
@@ -105,9 +121,10 @@ jobs:
           
           # Download CLion for ReSharper (different version, needs separate temp dir)
           (
-            echo "Downloading CLion ${RESHARPER_VERSION} (for ReSharper)..."
+            echo "Downloading CLion ${RESHARPER_VERSION} (for ReSharper) from Repox..."
             TMPDIR=$(mktemp -d)
-            curl -fsSL "https://download.jetbrains.com/cpp/CLion-${RESHARPER_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
+            curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+              "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${RESHARPER_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
             mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/resharper
             rm -rf "$TMPDIR"
             echo "✓ CLion (ReSharper) done"
@@ -116,9 +133,10 @@ jobs:
           
           # Download IntelliJ IDEA Ultimate
           (
-            echo "Downloading IntelliJ IDEA Ultimate ${ULTIMATE_VERSION}..."
+            echo "Downloading IntelliJ IDEA Ultimate ${ULTIMATE_VERSION} from Repox..."
             TMPDIR=$(mktemp -d)
-            curl -fsSL "https://download.jetbrains.com/idea/ideaIU-${ULTIMATE_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
+            curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+              "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIU-${ULTIMATE_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
             mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/ultimate
             rm -rf "$TMPDIR"
             echo "✓ IntelliJ IDEA Ultimate done"
@@ -138,7 +156,7 @@ jobs:
             exit 1
           fi
           
-          echo "All IDEs downloaded and installed successfully!"
+          echo "All IDEs downloaded from Repox successfully!"
           ls -la ${{ env.IDE_CACHE_DIR }}/
 
       - name: Set IDE environment variables
@@ -258,7 +276,7 @@ jobs:
           use-develocity: true
           develocity-url: https://develocity-public.sonar.build
           artifactory-reader-role: private-reader
-          gradle-args: -x :its:check check jacocoTestReport
+          gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v5
@@ -425,8 +443,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/.intellijPlatform/localPlatformArtifacts
           key: ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}
-          restore-keys: |
-            ${{ runner.os }}-jetbrains-ide-
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -435,8 +451,6 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-its-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-its-
 
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
