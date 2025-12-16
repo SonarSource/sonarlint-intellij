@@ -62,9 +62,9 @@ jobs:
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
 
-      - name: Prepare IDE cache directories
+      - name: Prepare IDE cache directory
         run: |
-          sudo mkdir -p ${{ env.IDE_CACHE_DIR }}/{intellij,clion,rider,resharper,ultimate}
+          sudo mkdir -p ${{ env.IDE_CACHE_DIR }}
           sudo chown -R $USER:$USER ${{ env.IDE_CACHE_DIR }}
 
       - name: Cache IntelliJ IDEA Community
@@ -117,11 +117,10 @@ jobs:
           if [ "${{ steps.cache-intellij.outputs.cache-hit }}" != "true" ]; then
             (
               echo "Downloading IntelliJ IDEA Community ${INTELLIJ_VERSION} from Repox..."
-              TMPDIR=$(mktemp -d)
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/intellij
               curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIC-${INTELLIJ_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
-              mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/intellij
-              rm -rf "$TMPDIR"
+                "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIC-${INTELLIJ_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/intellij
               echo "✓ IntelliJ IDEA Community done"
             ) &
             PIDS+=($!)
@@ -133,11 +132,10 @@ jobs:
           if [ "${{ steps.cache-clion.outputs.cache-hit }}" != "true" ]; then
             (
               echo "Downloading CLion ${CLION_VERSION} from Repox..."
-              TMPDIR=$(mktemp -d)
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/clion
               curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${CLION_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
-              mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/clion
-              rm -rf "$TMPDIR"
+                "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${CLION_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/clion
               echo "✓ CLion done"
             ) &
             PIDS+=($!)
@@ -149,11 +147,10 @@ jobs:
           if [ "${{ steps.cache-rider.outputs.cache-hit }}" != "true" ]; then
             (
               echo "Downloading Rider ${RIDER_VERSION} from Repox..."
-              TMPDIR=$(mktemp -d)
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/rider
               curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/rider/JetBrains.Rider-${RIDER_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
-              mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/rider
-              rm -rf "$TMPDIR"
+                "${ARTIFACTORY_URL}/jetbrains-download/rider/JetBrains.Rider-${RIDER_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/rider
               echo "✓ Rider done"
             ) &
             PIDS+=($!)
@@ -165,11 +162,10 @@ jobs:
           if [ "${{ steps.cache-resharper.outputs.cache-hit }}" != "true" ]; then
             (
               echo "Downloading CLion ${RESHARPER_VERSION} (for ReSharper) from Repox..."
-              TMPDIR=$(mktemp -d)
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/resharper
               curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${RESHARPER_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
-              mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/resharper
-              rm -rf "$TMPDIR"
+                "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${RESHARPER_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/resharper
               echo "✓ CLion (ReSharper) done"
             ) &
             PIDS+=($!)
@@ -181,11 +177,10 @@ jobs:
           if [ "${{ steps.cache-ultimate.outputs.cache-hit }}" != "true" ]; then
             (
               echo "Downloading IntelliJ IDEA Ultimate ${ULTIMATE_VERSION} from Repox..."
-              TMPDIR=$(mktemp -d)
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/ultimate
               curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIU-${ULTIMATE_VERSION}.tar.gz" | tar -xz -C "$TMPDIR"
-              mv "$TMPDIR"/* ${{ env.IDE_CACHE_DIR }}/ultimate
-              rm -rf "$TMPDIR"
+                "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIU-${ULTIMATE_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/ultimate
               echo "✓ IntelliJ IDEA Ultimate done"
             ) &
             PIDS+=($!)
