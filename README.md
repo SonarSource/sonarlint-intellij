@@ -198,8 +198,8 @@ To run plugin verification locally:
 ./gradlew :verifyPlugin -PverifierEnv=MINIMAL
 ./gradlew :verifyPlugin -PverifierEnv=LATEST
 
-# For PR, only minimal version of IC
-./gradlew :verifyPlugin -PverifierEnv=PR
+# For regular CI builds, only minimal version of IC
+./gradlew :verifyPlugin -PverifierEnv=CI
 ```
 
 License

@@ -184,7 +184,7 @@ intellijPlatform {
 
         if (project.hasProperty("verifierEnv")) {
             when (verifierEnv) {
-                "PR" -> ides {
+                "CI" -> ides {
                     select {
                         types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
                         channels = listOf(ProductRelease.Channel.RELEASE)
