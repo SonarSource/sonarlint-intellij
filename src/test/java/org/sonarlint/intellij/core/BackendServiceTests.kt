@@ -110,6 +110,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     private lateinit var backendFileService: FileRpcService
     private lateinit var backendTelemetryService: TelemetryRpcService
     private lateinit var service: BackendService
+    private var previousTelemetryDisabledValue: String = System.getProperty("sonarlint.telemetry.disabled")
+    private var previousMonitoringDisabledValue: String = System.getProperty("sonarlint.monitoring.disabled")
 
     override fun initApplication() {
         super.initApplication()
@@ -156,12 +158,18 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     fun resetMockBackend() {
         // Ignore previous events caused by HeavyTestFrameworkOpening a project
         reset(backendConfigurationService)
+
+        previousTelemetryDisabledValue = System.getProperty("sonarlint.telemetry.disabled")
+        previousMonitoringDisabledValue = System.getProperty("sonarlint.monitoring.disabled")
     }
 
     @AfterEach
     override fun tearDown() {
         PasswordSafe.instance.eraseToken(CONNECTION_NAME)
         PasswordSafe.instance.eraseUsernamePassword(CONNECTION_NAME)
+
+        System.setProperty("sonarlint.telemetry.disabled", previousTelemetryDisabledValue)
+        System.setProperty("sonarlint.monitoring.disabled", previousMonitoringDisabledValue)
     }
 
     @Test
@@ -237,21 +245,18 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_initialize_params_backend_capabilities() {
-        try {
-            System.setProperty("sonarlint.telemetry.disabled", "true")
-            System.setProperty("sonarlint.monitoring.disabled", "true")
-            service.restartBackendService()
-            val paramsCaptor = argumentCaptor<InitializeParams>()
-            verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
-            val params = paramsCaptor.firstValue
-            assertThat(params.backendCapabilities).doesNotContain(
-                org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability.TELEMETRY,
-                org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability.MONITORING
-            )
-        } finally {
-            System.clearProperty("sonarlint.telemetry.disabled")
-            System.clearProperty("sonarlint.monitoring.disabled")
-        }
+        System.setProperty("sonarlint.telemetry.disabled", "true")
+        System.setProperty("sonarlint.monitoring.disabled", "true")
+        service.restartBackendService()
+        val paramsCaptor = argumentCaptor<InitializeParams>()
+
+        verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
+
+        val params = paramsCaptor.firstValue
+        assertThat(params.backendCapabilities).doesNotContain(
+            org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability.TELEMETRY,
+            org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability.MONITORING
+        )
     }
 
     @Test
