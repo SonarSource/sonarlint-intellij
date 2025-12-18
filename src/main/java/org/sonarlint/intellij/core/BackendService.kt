@@ -1001,7 +1001,11 @@ class BackendService : Disposable {
 
     override fun dispose() {
         GlobalLogOutput.get().log("Shutting down backend service...", ClientLogOutput.Level.INFO)
-        backendFuture.thenAccept { it.shutdown() }
+        try {
+            backendFuture.thenCompose { it.shutdown() }[10, TimeUnit.SECONDS]
+        } catch (e: Exception) {
+            GlobalLogOutput.get().logError("Error during backend shutdown: ${e.message}", e)
+        }
     }
 
     fun refreshTaintVulnerabilities(project: Project) {

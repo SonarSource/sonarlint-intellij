@@ -124,6 +124,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
         backend = mock(SonarLintRpcServer::class.java)
         `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
+        `when`(backend.shutdown()).thenReturn(CompletableFuture.completedFuture(null))
         backendConnectionService = mock(ConnectionRpcService::class.java)
         backendConfigurationService = mock(ConfigurationRpcService::class.java)
         backendRuleService = mock(RulesRpcService::class.java)
