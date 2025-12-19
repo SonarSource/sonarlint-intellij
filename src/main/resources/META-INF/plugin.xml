@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>11.9 - Added detection for 3 new secret patterns. 7 new GitHub Actions rules. Support parsing of Heredoc in bash. Better support for Helm templates. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>11.9 - Added detection for 3 new secret patterns. 7 new GitHub Actions rules. Support parsing of Heredoc in bash. Better support for Helm templates. Support detection of xAI API keys. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.8 – New storage system.</li>
         <li>11.7 – Added Bash analysis support with Docker and GitHub Actions. Improved detection of frameworks imported in PHP files. 8 new C/C++ rules, including 7 MISRA C++:2023 rules. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.6 - Added SLNX support in Rider. Introduced runtime downloading of the C/C++ analyzer. 6 new rules for Bash. 7 new rules for Python 3.14. Enhanced analysis for WordPress frameworks. Improved annotation performance on large files. Refined the behavior of opened/closed finding nodes in the tool window. Bug fixes, fewer FPs and improvements for many languages.</li>
