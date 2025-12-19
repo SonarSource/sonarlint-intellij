@@ -904,7 +904,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             runningAnalysis.addRawIssues(analysisId, issuesByFileUri, isIntermediatePublication)
         } else if (module != null) {
             val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-            onTheFlyFindingsHolder.updateViewsWithNewIssues(module, issuesByFileUri)
+            onTheFlyFindingsHolder.updateViewsWithNewIssues(module, issuesByFileUri, isIntermediatePublication)
         }
     }
 

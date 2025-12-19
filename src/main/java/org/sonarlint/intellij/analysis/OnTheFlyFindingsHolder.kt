@@ -53,13 +53,16 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
     }
 
-    fun updateOnAnalysisResult(analysisResult: AnalysisResult) =
-        updateViewsWithNewFindings(analysisResult.findings)
+    fun updateOnAnalysisResult(analysisResult: AnalysisResult) {
+        val files = updateViewsWithNewFindings(analysisResult.findings)
+        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(files)
+    }
 
-    fun updateOnAnalysisIntermediateResult(intermediateResult: AnalysisIntermediateResult) =
+    fun updateOnAnalysisIntermediateResult(intermediateResult: AnalysisIntermediateResult) {
         updateViewsWithNewFindings(intermediateResult.findings)
+    }
 
-    private fun updateViewsWithNewFindings(findings: LiveFindings) {
+    private fun updateViewsWithNewFindings(findings: LiveFindings): Set<VirtualFile> {
         if (selectedFile == null) {
             runOnUiThread(project) {
                 selectedFile = SonarLintUtils.getSelectedFile(project)
@@ -72,10 +75,10 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
         }
         updateCurrentFileTab()
-        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(findings.onlyFor(openedFiles).filesInvolved)
+        return openedFiles
     }
 
-    fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>) {
+    fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>, isIntermediate: Boolean) {
         val issues = raisedIssues.mapNotNull { (uri, rawIssues) ->
             val virtualFile = uriToVirtualFile(uri) ?: return@mapNotNull null
             // Only include issues for files that are still open
@@ -96,7 +99,9 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             }
         }
         updateCurrentFileTab()
-        getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(issues.keys)
+        if (!isIntermediate) {
+            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(issues.keys)
+        }
     }
 
     fun updateViewsWithNewSecurityHotspots(module: Module, raisedSecurityHotspots: Map<URI, List<RaisedHotspotDto>>) {
