@@ -1,11 +1,5 @@
+
 import com.jetbrains.plugin.blockmap.core.BlockMap
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
-import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-import org.jetbrains.intellij.platform.gradle.models.ProductRelease
-import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.FileInputStream
@@ -15,6 +9,13 @@ import java.nio.file.Paths
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.models.ProductRelease
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 tasks.matching { it.name == "signArchives" }.configureEach {
     dependsOn(":composedJar")
@@ -164,6 +165,11 @@ intellijPlatform {
             VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES,
             VerifyPluginTask.FailureLevel.INVALID_PLUGIN
         )
+        
+        // Ignore expected compatibility problems for optional dependencies
+        freeArgs = listOf(
+            "-ignored-problems", "${project.rootDir}/.verifier-ignored-problems.txt"
+        )
 
         val ideTypes = listOf(
             IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
@@ -178,6 +184,15 @@ intellijPlatform {
 
         if (project.hasProperty("verifierEnv")) {
             when (verifierEnv) {
+                "CI" -> ides {
+                    select {
+                        types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
+                        channels = listOf(ProductRelease.Channel.RELEASE)
+                        sinceBuild = "231.*"
+                        untilBuild = "231.*"
+                    }
+                }
+
                 "EAP" -> ides {
                     select {
                         types = ideTypes

@@ -20,6 +20,15 @@ permissions:
   contents: write
   checks: write
 
+env:
+  # IDE installation paths for Linux
+  IDE_CACHE_DIR: /opt/jetbrains
+  INTELLIJ_VERSION: "2023.1.7"
+  CLION_VERSION: "2023.1.7"
+  RIDER_VERSION: "2023.1.7"
+  RESHARPER_VERSION: "2024.1"
+  ULTIMATE_VERSION: "2023.1.7"
+
 jobs:
   build-number:
     outputs:
@@ -32,12 +41,12 @@ jobs:
       - uses: SonarSource/ci-github-actions/get-build-number@v1
         id: build-number
 
-  build:
+  build-plugin:
     runs-on: github-ubuntu-latest-m
     needs: build-number
-    name: Build
+    name: Build Plugin
     outputs:
-      PROJECT_VERSION: ${{ steps.build_plugin.outputs.project-version }}
+      PROJECT_VERSION: ${{ steps.set_version.outputs.project-version }}
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
@@ -49,36 +58,178 @@ jobs:
         with:
           version: 2025.9.12
 
+      - name: Fetch Artifactory credentials
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
+      - name: Prepare IDE cache directory
+        run: |
+          sudo mkdir -p ${{ env.IDE_CACHE_DIR }}
+          sudo chown -R $USER:$USER ${{ env.IDE_CACHE_DIR }}
+
+      - name: Cache IntelliJ IDEA Community
+        id: cache-intellij
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/intellij
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+
+      - name: Cache CLion
+        id: cache-clion
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/clion
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+
+      - name: Cache Rider
+        id: cache-rider
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/rider
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+
+      - name: Cache CLion for ReSharper
+        id: cache-resharper
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/resharper
+          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+
+      - name: Cache IntelliJ IDEA Ultimate
+        id: cache-ultimate
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/ultimate
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+
+      - name: Download IDEs from Repox (parallel, only missing ones)
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          
+          echo "Downloading missing IDEs from Repox in parallel..."
+          PIDS=()
+          
+          # Download IntelliJ IDEA Community (if not cached)
+          if [ "${{ steps.cache-intellij.outputs.cache-hit }}" != "true" ]; then
+            (
+              echo "Downloading IntelliJ IDEA Community ${INTELLIJ_VERSION} from Repox..."
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/intellij
+              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+                "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIC-${INTELLIJ_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/intellij
+              echo "✓ IntelliJ IDEA Community done"
+            ) &
+            PIDS+=($!)
+          else
+            echo "✓ IntelliJ IDEA Community (cached)"
+          fi
+          
+          # Download CLion (if not cached)
+          if [ "${{ steps.cache-clion.outputs.cache-hit }}" != "true" ]; then
+            (
+              echo "Downloading CLion ${CLION_VERSION} from Repox..."
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/clion
+              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+                "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${CLION_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/clion
+              echo "✓ CLion done"
+            ) &
+            PIDS+=($!)
+          else
+            echo "✓ CLion (cached)"
+          fi
+          
+          # Download Rider (if not cached)
+          if [ "${{ steps.cache-rider.outputs.cache-hit }}" != "true" ]; then
+            (
+              echo "Downloading Rider ${RIDER_VERSION} from Repox..."
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/rider
+              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+                "${ARTIFACTORY_URL}/jetbrains-download/rider/JetBrains.Rider-${RIDER_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/rider
+              echo "✓ Rider done"
+            ) &
+            PIDS+=($!)
+          else
+            echo "✓ Rider (cached)"
+          fi
+          
+          # Download CLion for ReSharper (if not cached)
+          if [ "${{ steps.cache-resharper.outputs.cache-hit }}" != "true" ]; then
+            (
+              echo "Downloading CLion ${RESHARPER_VERSION} (for ReSharper) from Repox..."
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/resharper
+              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+                "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${RESHARPER_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/resharper
+              echo "✓ CLion (ReSharper) done"
+            ) &
+            PIDS+=($!)
+          else
+            echo "✓ CLion (ReSharper) (cached)"
+          fi
+          
+          # Download IntelliJ IDEA Ultimate (if not cached)
+          if [ "${{ steps.cache-ultimate.outputs.cache-hit }}" != "true" ]; then
+            (
+              echo "Downloading IntelliJ IDEA Ultimate ${ULTIMATE_VERSION} from Repox..."
+              mkdir -p ${{ env.IDE_CACHE_DIR }}/ultimate
+              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
+                "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIU-${ULTIMATE_VERSION}.tar.gz" | \
+                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/ultimate
+              echo "✓ IntelliJ IDEA Ultimate done"
+            ) &
+            PIDS+=($!)
+          else
+            echo "✓ IntelliJ IDEA Ultimate (cached)"
+          fi
+          
+          # Wait for all downloads to complete
+          FAILED=0
+          for pid in "${PIDS[@]}"; do
+            wait "$pid" || FAILED=1
+          done
+          
+          if [ $FAILED -eq 1 ]; then
+            echo "One or more IDE downloads failed!"
+            exit 1
+          fi
+          
+          echo "All required IDEs ready"
+          ls -la ${{ env.IDE_CACHE_DIR }}/
+
+      - name: Set IDE environment variables
+        run: |
+          echo "IDEA_HOME=${{ env.IDE_CACHE_DIR }}/intellij" >> $GITHUB_ENV
+          echo "CLION_HOME=${{ env.IDE_CACHE_DIR }}/clion" >> $GITHUB_ENV
+          echo "RIDER_HOME=${{ env.IDE_CACHE_DIR }}/rider" >> $GITHUB_ENV
+          echo "RESHARPER_HOME=${{ env.IDE_CACHE_DIR }}/resharper" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${{ env.IDE_CACHE_DIR }}/ultimate" >> $GITHUB_ENV
+
       - name: Build Plugin
         uses: SonarSource/ci-github-actions/build-gradle@v1
         id: build_plugin
         with:
+          sonar-platform: none
           deploy-pull-request: true
           use-develocity: true
           develocity-url: https://develocity-public.sonar.build
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
-          gradle-args: -x :its:check check jacocoTestReport :buildPlugin :cyclonedxBom sonar :verifyPlugin
+          gradle-args: -x test -x :its:check :buildPlugin :cyclonedxBom
 
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
-        if: ${{ !cancelled() }}
-        with:
-          report_paths: '**/test-results/**/*.xml'
-
-      - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: test-reports-linux
-          path: "**/reports/**/**"
-
-      - name: Upload JUnit test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: junit-results-linux
-          path: "**/test-results/**/*.xml"
+      - name: Set project version output
+        id: set_version
+        run: echo "project-version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
 
   check_windows:
     runs-on: warp-custom-sonarlint-intellij
@@ -134,12 +285,127 @@ jobs:
           name: junit-results-windows
           path: "**/test-results/**/*.xml"
 
+  test-and-sonar:
+    runs-on: github-ubuntu-latest-m
+    name: Tests and Sonar
+    needs:
+      - build-plugin
+      - build-number
+    env:
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Full history needed for Sonar blame
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      # Cache each IDE separately for granular caching
+      - name: Cache IntelliJ IDEA Community
+        id: cache-intellij
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/intellij
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+
+      - name: Cache CLion
+        id: cache-clion
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/clion
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+
+      - name: Cache Rider
+        id: cache-rider
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/rider
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+
+      - name: Cache CLion for ReSharper
+        id: cache-resharper
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/resharper
+          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+
+      - name: Cache IntelliJ IDEA Ultimate
+        id: cache-ultimate
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/ultimate
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+
+      - name: Set IDE environment variables
+        run: |
+          echo "IDEA_HOME=${{ env.IDE_CACHE_DIR }}/intellij" >> $GITHUB_ENV
+          echo "CLION_HOME=${{ env.IDE_CACHE_DIR }}/clion" >> $GITHUB_ENV
+          echo "RIDER_HOME=${{ env.IDE_CACHE_DIR }}/rider" >> $GITHUB_ENV
+          echo "RESHARPER_HOME=${{ env.IDE_CACHE_DIR }}/resharper" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${{ env.IDE_CACHE_DIR }}/ultimate" >> $GITHUB_ENV
+
+      - name: Run Tests and Sonar Analysis
+        uses: SonarSource/ci-github-actions/build-gradle@v1
+        with:
+          deploy: false
+          use-develocity: true
+          develocity-url: https://develocity-public.sonar.build
+          artifactory-reader-role: private-reader
+          gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: ${{ !cancelled() }}
+        with:
+          report_paths: '**/test-results/**/*.xml'
+
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-linux
+          path: "**/reports/**/**"
+
+      - name: Upload JUnit test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: junit-results-linux
+          path: "**/test-results/**/*.xml"
+
+  verify-plugin:
+    runs-on: github-ubuntu-latest-m
+    name: Verify Plugin
+    needs:
+      - build-plugin
+      - build-number
+    env:
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
+        with:
+          version: 2025.9.12
+
+      - name: Verify Plugin Compatibility
+        uses: SonarSource/ci-github-actions/build-gradle@v1
+        with:
+          deploy: false
+          sonar-platform: none
+          use-develocity: true
+          develocity-url: https://develocity-public.sonar.build
+          artifactory-reader-role: private-reader
+          gradle-args: -x test -x check -x :its:check :verifyPlugin -PverifierEnv=CI
+
   qa:
     runs-on: github-ubuntu-latest-m
     name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
     needs:
+      - build-plugin
       - build-number
-      - build
     strategy:
       fail-fast: false
       matrix:
@@ -249,6 +515,26 @@ jobs:
           restore-keys: |
             cache-${{ runner.os }}
 
+      - name: Cache JetBrains IDE for ITs
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.intellijPlatform/localPlatformArtifacts
+          key: ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-its-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: xvfb ffmpeg metacity dbus-x11 gettext-base
+          version: 1.0
+
       - name: Prepare xvfb and ffmpeg
         run: mise run install-system-deps
 
@@ -256,14 +542,14 @@ jobs:
         run: |
           Xvfb ${DISPLAY} -screen 0 1280x960x24 &
           echo "XVFB_PID=$!" >> $GITHUB_ENV
-          sleep 5
+          sleep 2
 
       - name: Extract and setup plugin
         env:
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
           ARTIFACTORY_PRIVATE_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
+          PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         run: |
           set -euo pipefail
           echo "Using project version: ${PROJECT_VERSION}"
@@ -289,7 +575,7 @@ jobs:
           
           # Start metacity
           metacity --sm-disable --replace &
-          sleep 10
+          sleep 3
 
       - name: Start IDE in background
         env:
@@ -392,7 +678,8 @@ jobs:
     name: Promote
     needs:
       - build-number
-      - build
+      - build-plugin
+      - test-and-sonar
       - check_windows
       - qa
     if: ${{ github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-') }}
@@ -408,7 +695,7 @@ jobs:
       - name: Promote artifacts
         uses: SonarSource/ci-github-actions/promote@v1
         env:
-          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
+          PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         with:
           promote-pull-request: true
 
@@ -417,7 +704,7 @@ jobs:
     name: Update Dogfood Repository
     needs:
       - build-number
-      - build
+      - build-plugin
       - promote
     if: ${{ github.ref_name == github.event.repository.default_branch }}
     env:
@@ -442,7 +729,7 @@ jobs:
         env:
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
           ARTIFACTORY_API_KEY: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_API_KEY }}
-          PROJECT_VERSION: ${{ needs.build.outputs.PROJECT_VERSION }}
+          PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         run: |
           cat > updatePlugins.xml << EOF
           <plugins>
@@ -463,12 +750,14 @@ jobs:
     runs-on: github-ubuntu-latest-s
     name: Notify on Failure
     needs:
-      - build
+      - build-plugin
+      - test-and-sonar
       - check_windows
+      - verify-plugin
       - qa
       - promote
       - dogfood
-    if: ${{ !cancelled() && (needs.build.result == 'failure' || needs.check_windows.result == 'failure' || needs.qa.result == 'failure' || needs.promote.result == 'failure' || needs.dogfood.result == 'failure') }}
+    if: ${{ !cancelled() && (needs.build-plugin.result == 'failure' || needs.test-and-sonar.result == 'failure' || needs.check_windows.result == 'failure' || needs.verify-plugin.result == 'failure' || needs.qa.result == 'failure' || needs.promote.result == 'failure' || needs.dogfood.result == 'failure') }}
     steps:
       - name: Fetch vault secrets
         id: secrets
