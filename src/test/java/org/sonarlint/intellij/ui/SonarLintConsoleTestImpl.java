@@ -83,4 +83,9 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
   @Override
   public void setConsoleView(ConsoleView consoleView) { }
 
+  @Override
+  public String getContent() {
+    return "";
+  }
+
 }
