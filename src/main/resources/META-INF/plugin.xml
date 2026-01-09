@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>11.11 - Change Flight Recorder implementation to be fully local</li>
         <li>11.10 - Bug fixes, fewer FPs and improvements for Python.</li>
         <li>11.9 - Added detection for 3 new secret patterns. 7 new GitHub Actions rules. Support parsing of Heredoc in bash. Better support for Helm templates. Support detection of xAI API keys. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.8 – New storage system.</li>
