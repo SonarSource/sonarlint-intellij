@@ -206,13 +206,6 @@ class BackendService : Disposable {
 
     init {
         registerListeners()
-
-        // Automatically disable flight recorder upon restart
-        val globalSettings = getGlobalSettings()
-        if (globalSettings.isFlightRecorderEnabled) {
-            globalSettings.isFlightRecorderEnabled = false
-            getService(SonarLintGlobalSettingsStore::class.java).save(globalSettings)
-        }
     }
 
     private fun registerListeners() {
@@ -349,6 +342,10 @@ class BackendService : Disposable {
         }
     }
 
+    fun getPid(): Long? {
+        return sloop?.pid
+    }
+
     private fun initRpcServer(rpcServer: SonarLintRpcServer): CompletableFuture<Void> {
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
@@ -413,9 +410,6 @@ class BackendService : Disposable {
         }
         if (!System.getProperty("sonarlint.monitoring.disabled", "false").toBoolean()) {
             capabilities.add(BackendCapability.MONITORING)
-        }
-        if (getGlobalSettings().isFlightRecorderEnabled) {
-            capabilities.add(BackendCapability.FLIGHT_RECORDER)
         }
         return capabilities
     }
@@ -1185,22 +1179,6 @@ class BackendService : Disposable {
     fun checkIfDependencyRiskSupported(project: Project): CompletableFuture<CheckDependencyRiskSupportedResponse> {
         val projectId = projectId(project)
         return requestFromBackend { it.dependencyRiskService.checkSupported(CheckDependencyRiskSupportedParams(projectId)) }
-    }
-
-    fun captureThreadDump() {
-        return notifyBackend { it.flightRecordingService.captureThreadDump() }
-    }
-
-    fun updateFlightRecorder(enabled: Boolean) {
-        val globalSettings = getGlobalSettings()
-        val newSettings = SonarLintGlobalSettings(globalSettings)
-        newSettings.isFlightRecorderEnabled = enabled
-        getService(SonarLintGlobalSettingsStore::class.java).save(newSettings)
-
-        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-            .applied(globalSettings, newSettings)
-
-        restartBackendService(true)
     }
 
 }

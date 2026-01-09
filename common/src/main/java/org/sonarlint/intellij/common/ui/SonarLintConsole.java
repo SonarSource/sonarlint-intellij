@@ -48,4 +48,6 @@ public interface SonarLintConsole {
    */
   void setConsoleView(ConsoleView consoleView);
 
+  String getContent();
+
 }

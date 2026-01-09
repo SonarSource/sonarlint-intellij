@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.execution.impl.ConsoleViewImpl;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.Disposable;
@@ -107,6 +108,11 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
     }
     this.consoleView = consoleView;
     Disposer.register(this, consoleView);
+  }
+
+  @Override
+  public String getContent() {
+    return ((ConsoleViewImpl) this.consoleView).getText();
   }
 
   @Override

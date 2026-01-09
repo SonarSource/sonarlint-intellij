@@ -19,8 +19,13 @@
  */
 package org.sonarlint.intellij.ui
 
+import com.intellij.ide.actions.RevealFileAction
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -31,25 +36,30 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
+import com.sun.management.HotSpotDiagnosticMXBean
+import org.sonar.api.utils.ZipUtils
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
+import org.sonarlint.intellij.telemetry.LinkTelemetry
 import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
+import java.lang.management.ManagementFactory
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Arrays
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JSeparator
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
-import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.config.Settings.getGlobalSettings
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.messages.GlobalConfigurationListener
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
-import org.sonarlint.intellij.telemetry.LinkTelemetry
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.util.runOnPooledThread
 
 data class HelpCard(
     val title: String,
@@ -75,7 +85,7 @@ private val FEATURE_CARD = HelpCard(
     LinkTelemetry.SUGGEST_FEATURE_HELP
 )
 
-class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWindowPanel(false, false), Disposable {
+class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWindowPanel(false, false) {
 
     private val topLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val cardPanel = JBPanel<SonarLintHelpAndFeedbackPanel>()
@@ -84,10 +94,12 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
     private lateinit var startButton: JButton
     private lateinit var stopButton: JButton
     private lateinit var threadDumpButton: JButton
+    private lateinit var heapDumpButton: JButton
+
+    private var currentRecordingFolder: Path? = null
 
     init {
         setupContent()
-        setupConfigurationListener()
     }
 
     private fun setupContent() {
@@ -158,23 +170,6 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
         setContent(scrollPane)
     }
 
-    private fun setupConfigurationListener() {
-        val busConnection = project.messageBus.connect(this)
-        busConnection.subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
-            override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                if (previousSettings.isFlightRecorderEnabled != newSettings.isFlightRecorderEnabled) {
-                    runOnUiThread(project) {
-                        updateButtonStates()
-                    }
-                }
-            }
-        })
-    }
-
-    override fun dispose() {
-        // Cleanup is handled automatically by the message bus connection
-    }
-
     private fun generateHelpCard(card: HelpCard): JBPanel<SonarLintHelpAndFeedbackPanel> {
         return JBPanel<SonarLintHelpAndFeedbackPanel>(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, false)).apply {
             add(JBLabel(card.title).apply {
@@ -199,50 +194,41 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
             add(SwingHelper.createHtmlViewer(false, null, null, null).apply {
                 text = """
                 Flight Recorder mode enables advanced diagnostics for troubleshooting SonarQube for IDE issues. When enabled, it collects detailed execution traces, logs, and system metrics.<br>
-                To report a problem, please share the generated session UUID (shown in the first notification) on our Community Forum.
+                Stopping the recording will create a folder on disk with diagnostic details. Please share an archive of this folder on our Community Forum when reporting a problem.
             """.trimIndent()
             })
 
-            val backendService = getService(BackendService::class.java)
             val buttonPanel = JBPanel<SonarLintHelpAndFeedbackPanel>()
             buttonPanel.layout = BoxLayout(buttonPanel, BoxLayout.X_AXIS)
 
             startButton = JButton("Start Flight Recorder").apply {
-                addActionListener { 
-                    text = "Restarting..."
-                    isEnabled = false
-                    runOnPooledThread {
-                        backendService.updateFlightRecorder(true)
-                        runOnUiThread(project) {
-                            text = "Start Flight Recorder"
-                            updateButtonStates()
-                        }
-                    }
+                addActionListener {
+                    startRecording()
+                    updateButtonStates()
                 }
             }
 
             stopButton = JButton("Stop Flight Recorder").apply {
-                addActionListener { 
-                    text = "Restarting..."
-                    isEnabled = false
-                    runOnPooledThread {
-                        backendService.updateFlightRecorder(false)
-                        runOnUiThread(project) {
-                            text = "Stop Flight Recorder"
-                            updateButtonStates()
-                        }
+                addActionListener {
+                    runLongAction("Stopping Flight Recorder...") {
+                        stopRecording()
                     }
                 }
             }
 
-            threadDumpButton = JButton("Generate Thread Dump").apply {
+            threadDumpButton = JButton("Capture Thread Dumps").apply {
                 addActionListener {
-                    backendService.captureThreadDump()
-                    SonarLintProjectNotifications.projectLessNotification(
-                        null,
-                        "Thread dump captured successfully.",
-                        NotificationType.INFORMATION
-                    )
+                    runLongAction("Capturing Thread Dumps...") {
+                        captureThreadDumps()
+                    }
+                }
+            }
+
+            heapDumpButton = JButton("Capture Heap Dumps").apply {
+                addActionListener {
+                    runLongAction("Capturing Heap Dumps...") {
+                        captureHeapDumps()
+                    }
                 }
             }
 
@@ -251,6 +237,8 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
             buttonPanel.add(stopButton)
             buttonPanel.add(Box.createHorizontalStrut(10))
             buttonPanel.add(threadDumpButton)
+            buttonPanel.add(Box.createHorizontalStrut(10))
+            buttonPanel.add(heapDumpButton)
 
             add(buttonPanel)
 
@@ -258,12 +246,175 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
         }
     }
 
-    fun updateButtonStates() {
-        val isEnabled = getGlobalSettings().isFlightRecorderEnabled
+    private fun runLongAction(title: String, runnable: Runnable) {
+        disableAllButtons()
+        ProgressManager.getInstance().run(object : Backgroundable(project, title, false, ALWAYS_BACKGROUND) {
+            override fun run(indicator: ProgressIndicator) {
+                try {
+                    indicator.isIndeterminate = true
+                    runnable.run()
+                } finally {
+                    invokeLater { updateButtonStates() }
+                }
+            }
+        })
+    }
 
-        startButton.isEnabled = !isEnabled
-        stopButton.isEnabled = isEnabled
-        threadDumpButton.isEnabled = isEnabled
+    private fun stopRecording() {
+        captureLogs()
+        currentRecordingFolder?.let {
+            archive(it)
+            RevealFileAction.openDirectory(it.parent)
+            currentRecordingFolder = null
+        }
+    }
+
+    private fun archive(folder: Path) {
+        ZipUtils.zipDir(folder.toFile(), recordingsRootPath.resolve("${folder.fileName}.zip").toFile())
+    }
+
+    private fun captureLogs() {
+        // ideally logs shouldn't come from the console, as it can be cleared and has limited size
+        // they should come from the backend. Depends on SLCORE-1865
+        writeFile("logs-", SonarLintConsole.get(project).content)
+    }
+
+    private fun startRecording() {
+        currentRecordingFolder = recordingsRootPath.resolve("recording-" + timestamp())
+    }
+
+    private fun captureThreadDumps() {
+        try {
+            captureIdeThreadDump()
+            captureBackendThreadDump()
+            notify("Thread dumps captured successfully.")
+        } catch (e: Exception) {
+            handleError(e, "Unable to capture thread dumps")
+        }
+    }
+
+    private fun handleError(exception: Exception, message: String) {
+        SonarLintConsole.get(project).error(message, exception)
+        SonarLintProjectNotifications.projectLessNotification(
+            null,
+            "$message, see logs for more details.",
+            NotificationType.ERROR
+        )
+    }
+
+    private fun captureBackendThreadDump() {
+        // this should point to the JBR, that comes with jstack installed
+        val jstackPath = System.getProperty("java.home")?.let { Paths.get(it).resolve("bin").resolve("jstack") }
+        if (jstackPath == null) {
+            SonarLintConsole.get(project).info("Unable to capture thread dumps, jstack not found")
+            return
+        }
+        val folderPath = currentRecordingFolder ?: return
+        val pid = getService(BackendService::class.java).getPid()
+        if (pid == null) {
+            SonarLintConsole.get(project).info("Unable to capture thread dumps, backend is not alive")
+            return
+        }
+        val pb = ProcessBuilder(jstackPath.toAbsolutePath().toString(), pid.toString())
+        val outputFile = folderPath.resolve("slcore-thread-dump-" + timestamp()).toFile()
+        pb.redirectOutput(outputFile)
+        pb.redirectErrorStream(true)
+        val process = pb.start()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            SonarLintConsole.get(project).info("Unable to capture thread dumps, jstack failed with exit code: $exitCode")
+        }
+    }
+
+    private fun captureIdeThreadDump() {
+        val threadDump = StringBuilder()
+        val threadBean = ManagementFactory.getThreadMXBean()
+        Arrays.stream(threadBean.dumpAllThreads(true, true))
+            .forEach { t -> threadDump.append(t.toString()).append(System.lineSeparator()) }
+        writeFile("ide-thread-dump-", threadDump.toString())
+    }
+
+    private fun captureHeapDumps() {
+        try {
+            captureIdeHeapDump()
+            captureBackendHeapDump()
+            notify("Heap dump captured successfully.")
+        } catch (e: Exception) {
+            handleError(e, "Unable to capture heap dump")
+        }
+    }
+
+    private fun captureIdeHeapDump() {
+        currentRecordingFolder?.let { folder ->
+            val server = ManagementFactory.getPlatformMBeanServer()
+            val bean = ManagementFactory.newPlatformMXBeanProxy(
+                server, "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean::class.java
+            )
+            bean.dumpHeap(folder.resolve("ide-heap-dump-" + timestamp()).toAbsolutePath().toString() + ".hprof", true)
+        }
+    }
+
+    private fun captureBackendHeapDump() {
+        // this should point to the JBR, that comes with jcmd installed
+        val jcmdPath = System.getProperty("java.home")?.let { Paths.get(it).resolve("bin").resolve("jcmd") }
+        if (jcmdPath == null) {
+            SonarLintConsole.get(project).info("Unable to capture thread dumps, jstack not found")
+            return
+        }
+        val pid = getService(BackendService::class.java).getPid()
+        if (pid == null) {
+            SonarLintConsole.get(project).info("Unable to capture heap dump, backend is not alive")
+            return
+        }
+        val folderPath = currentRecordingFolder ?: return
+        val heapDumpFile = folderPath.resolve("backend-heap-dump-" + timestamp() + ".hprof")
+        val pb =
+            ProcessBuilder(jcmdPath.toAbsolutePath().toString(), pid.toString(), "GC.heap_dump", heapDumpFile.toAbsolutePath().toString())
+        val process = pb.start()
+        val exitCode = process.waitFor()
+        if (exitCode == 0) {
+            SonarLintConsole.get(project).info("Dump created at: ${heapDumpFile.toAbsolutePath()}")
+        } else {
+            SonarLintConsole.get(project).error("jcmd failed with exit code: $exitCode")
+        }
+    }
+
+    private fun updateButtonStates() {
+        val isFlightRecorderEnabled = currentRecordingFolder != null
+        startButton.isEnabled = !isFlightRecorderEnabled
+        stopButton.isEnabled = isFlightRecorderEnabled
+        threadDumpButton.isEnabled = isFlightRecorderEnabled
+        heapDumpButton.isEnabled = isFlightRecorderEnabled
+    }
+
+    private fun disableAllButtons() {
+        startButton.isEnabled = false
+        stopButton.isEnabled = false
+        threadDumpButton.isEnabled = false
+        heapDumpButton.isEnabled = false
+    }
+
+    private fun writeFile(fileNamePrefix: String, content: String) {
+        currentRecordingFolder?.let { folder ->
+            // ensure parent folder exists
+            Files.createDirectories(folder)
+            Files.writeString(folder.resolve(fileNamePrefix + timestamp()), content)
+        }
+    }
+
+    private fun timestamp() = dateTimeFormatter.format(LocalDateTime.now())
+
+    private fun notify(message: String) {
+        SonarLintProjectNotifications.projectLessNotification(
+            null,
+            message,
+            NotificationType.INFORMATION
+        )
+    }
+
+    companion object {
+        val recordingsRootPath: Path = Paths.get(PathManager.getTempPath()).resolve("sonarqube").resolve("flight_recorder")
+        val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-n")
     }
 
 }
