@@ -13,7 +13,7 @@ sonar-html = "3.22.0.7011"
 sonar-xml = "2.15.0.7513"
 sonar-omnisharp = "1.37.0.101606"
 sonar-text = "2.38.0.10279"
-sonar-iac = "2.3.0.18572"
+sonar-iac = "2.5.0.18803"
 sonar-cpp = "6.77.0.95488"
 sonar-dotnet = "10.17.0.131074"
 
