@@ -82,6 +82,7 @@ import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.CredentialsChangeListener
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.monitoring.MonitoringService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -305,6 +306,7 @@ class BackendService : Disposable {
             } else true
         }
         getService(GlobalLogOutput::class.java).log("Starting the SonarQube for IDE service process...", ClientLogOutput.Level.INFO)
+        MonitoringService.init()
         val sloopLauncher = this.defaultSloopLauncher ?: SloopLauncher(SonarLintIntelliJClient)
         val customJrePath = getPathProperty("sonarlint.jre.path")?.also {
             getService(GlobalLogOutput::class.java).log("Custom JRE detected: $it", ClientLogOutput.Level.INFO)

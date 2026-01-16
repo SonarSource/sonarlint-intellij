@@ -29,7 +29,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse
@@ -48,7 +50,7 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
     @Test
     fun `analyzeAllFiles should call analyzeFullProject and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
-        `when`(backendService.analyzeFullProject(module)).thenReturn(future)
+        doReturn(future).whenever(backendService).analyzeFullProject(module)
 
         submitter.analyzeAllFiles()
 
@@ -58,7 +60,7 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
     @Test
     fun `analyzeVcsChangedFiles should call analyzeVCSChangedFiles and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
-        `when`(backendService.analyzeVCSChangedFiles(module)).thenReturn(future)
+        doReturn(future).whenever(backendService).analyzeVCSChangedFiles(module)
 
         submitter.analyzeVcsChangedFiles()
 
@@ -68,7 +70,7 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
     @Test
     fun `autoAnalyzeOpenFiles should call analyzeOpenFiles and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
-        `when`(backendService.analyzeOpenFiles(module)).thenReturn(future)
+        doReturn(future).whenever(backendService).analyzeOpenFiles(module)
 
         submitter.autoAnalyzeOpenFiles()
 

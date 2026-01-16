@@ -105,6 +105,7 @@ dependencies {
     implementation(libs.commons.text)
     implementation(libs.bouncycastle.bcpg)
     implementation(libs.bouncycastle.bcprov)
+    implementation(libs.sentry)
     compileOnly(libs.findbugs.jsr305)
     testImplementation(libs.junit.four)
     testImplementation(libs.junit.jupiter)
