@@ -45,14 +45,12 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
         backendService = spy(ApplicationManager.getApplication().getService(BackendService::class.java))
         ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
         submitter = AnalysisSubmitter(project)
-        clearInvocations(backendService)
     }
 
     @Test
     fun `analyzeAllFiles should call analyzeFullProject and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
         doReturn(future).whenever(backendService).analyzeFullProject(module)
-        clearInvocations(backendService)
 
         submitter.analyzeAllFiles()
 
@@ -63,7 +61,6 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
     fun `analyzeVcsChangedFiles should call analyzeVCSChangedFiles and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
         doReturn(future).whenever(backendService).analyzeVCSChangedFiles(module)
-        clearInvocations(backendService)
 
         submitter.analyzeVcsChangedFiles()
 
@@ -74,7 +71,6 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
     fun `autoAnalyzeOpenFiles should call analyzeOpenFiles and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
         doReturn(future).whenever(backendService).analyzeOpenFiles(module)
-        clearInvocations(backendService)
 
         submitter.autoAnalyzeOpenFiles()
 
