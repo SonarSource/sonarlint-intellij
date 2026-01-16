@@ -51,29 +51,8 @@ public class ServerConnection {
   private String region;
   @OptionTag
   private String hostUrl;
-  /**
-   * @deprecated as we are moving to persisting data with IntelliJ Credentials store API.
-   * Now used for reading the old data and migrating it to a new way of storage. Will be removed after the migration is done.
-   */
-  @Deprecated(since = "11.1", forRemoval = true)
-  @Tag
-  private String token;
   @OptionTag
   private String name;
-  /**
-   * @deprecated as we are moving to persisting data with IntelliJ Credentials store API.
-   * Now used for reading the old data and migrating it to a new way of storage. Will be removed after the migration is done.
-   */
-  @Deprecated(since = "11.1", forRemoval = true)
-  @OptionTag
-  private String login;
-  /**
-   * @deprecated as we are moving to persisting data with IntelliJ Credentials store API.
-   * Now used for reading the old data and migrating it to a new way of storage. Will be removed after the migration is done.
-   */
-  @Deprecated(since = "11.1", forRemoval = true)
-  @Tag
-  private String password;
   @OptionTag
   private boolean enableProxy;
   @Tag
@@ -87,10 +66,7 @@ public class ServerConnection {
 
   private ServerConnection(Builder builder) {
     this.hostUrl = builder.hostUrl;
-    this.token = builder.token;
     this.name = builder.name;
-    this.login = builder.login;
-    this.password = builder.password;
     this.enableProxy = builder.enableProxy;
     this.organizationKey = builder.organizationKey;
     this.disableNotifications = builder.disableNotifications;
@@ -104,9 +80,6 @@ public class ServerConnection {
     }
 
     return Objects.equals(getHostUrl(), other.getHostUrl()) &&
-      Objects.equals(getPassword(), other.getPassword()) &&
-      Objects.equals(getToken(), other.getToken()) &&
-      Objects.equals(getLogin(), other.getLogin()) &&
       Objects.equals(getName(), other.getName()) &&
       Objects.equals(getOrganizationKey(), other.getOrganizationKey()) &&
       Objects.equals(isEnableProxy(), other.isEnableProxy()) &&
@@ -115,16 +88,11 @@ public class ServerConnection {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy, disableNotifications);
+    return Objects.hash(getHostUrl(), getOrganizationKey(), getName(), enableProxy, disableNotifications);
   }
 
   public boolean isDisableNotifications() {
     return disableNotifications;
-  }
-
-  @CheckForNull
-  public String getLogin() {
-    return login;
   }
 
   public String getHostUrl() {
@@ -141,10 +109,6 @@ public class ServerConnection {
     return organizationKey;
   }
 
-  @CheckForNull
-  public String getToken() {
-    return token;
-  }
   public boolean isSonarCloud() {
     return SonarLintUtils.isSonarCloudAlias(hostUrl);
   }
@@ -163,10 +127,6 @@ public class ServerConnection {
 
   public boolean isEnableProxy() {
     return enableProxy;
-  }
-
-  public String getPassword() {
-    return password;
   }
 
   public String getName() {
@@ -188,11 +148,8 @@ public class ServerConnection {
 
   public static class Builder {
     private String hostUrl;
-    private String token;
     private String organizationKey;
     private String name;
-    private String login;
-    private String password;
     private boolean enableProxy;
     private boolean disableNotifications;
     private String region;
@@ -203,11 +160,6 @@ public class ServerConnection {
 
     public ServerConnection build() {
       return new ServerConnection(this);
-    }
-
-    public Builder setLogin(@Nullable String login) {
-      this.login = login;
-      return this;
     }
 
     public Builder setDisableNotifications(boolean disableNotifications) {
@@ -232,16 +184,6 @@ public class ServerConnection {
 
     public Builder setEnableProxy(boolean enableProxy) {
       this.enableProxy = enableProxy;
-      return this;
-    }
-
-    public Builder setToken(@Nullable String token) {
-      this.token = token;
-      return this;
-    }
-
-    public Builder setPassword(@Nullable String password) {
-      this.password = password;
       return this;
     }
 

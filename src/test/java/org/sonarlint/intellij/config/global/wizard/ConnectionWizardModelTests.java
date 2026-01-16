@@ -67,9 +67,6 @@ class ConnectionWizardModelTests {
     var server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("url");
     assertThat(server.isEnableProxy()).isTrue();
-    assertThat(server.getLogin()).isNull();
-    assertThat(server.getPassword()).isNull();
-    assertThat(server.getToken()).isNull();
     assertThat(server.getOrganizationKey()).isEqualTo("org");
   }
 
@@ -85,9 +82,6 @@ class ConnectionWizardModelTests {
 
     var server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
-    assertThat(server.getLogin()).isNull();
-    assertThat(server.getPassword()).isNull();
-    assertThat(server.getToken()).isNull();
     assertThat(server.getOrganizationKey()).isEqualTo("org");
   }
 

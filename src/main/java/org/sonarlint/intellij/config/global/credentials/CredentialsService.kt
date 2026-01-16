@@ -23,12 +23,9 @@ import com.intellij.credentialStore.Credentials
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.util.PasswordUtil
 import java.util.Objects
 import org.apache.commons.lang3.BooleanUtils
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.dogfood.DogfoodCredentialsStore
 import org.sonarlint.intellij.messages.CredentialsChangeListener
 import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
@@ -128,64 +125,9 @@ class CredentialsService {
         passwordSafe.eraseUsernamePassword(connection.name)
     }
 
-    fun migrateCredentials(connection: ServerConnection): ServerConnection {
-        if (connection.token != null) {
-            PasswordSafe.instance.setToken(connection.name,
-                decodeOld(connection.token))
-        }
-        if (connection.password != null) {
-            PasswordSafe.instance.setUsernamePassword(connection.name,
-                Credentials(connection.login, decodeOld(connection.password)))
-        }
-        return ServerConnection.newBuilder()
-            .setRegion(connection.region)
-            .setHostUrl(connection.hostUrl)
-            .setName(connection.name)
-            .setEnableProxy(connection.isEnableProxy)
-            .setOrganizationKey(connection.organizationKey)
-            .setDisableNotifications(connection.isDisableNotifications)
-            .build()
-    }
-
     fun saveDogfoodCredentials(username: String?, pass: String?) {
         PasswordSafe.instance.setDogfoodUsernamePassword(username, pass)
     }
 
-    fun getDogfoodCredentials(): Credentials? {
-        migrateDogfoodCredentials()
-
-        return PasswordSafe.instance.getDogfoodCredentials()
-    }
-
-    @Suppress("DEPRECATION")
-    private fun migrateDogfoodCredentials() {
-        val oldStore = getService(DogfoodCredentialsStore::class.java)
-        val oldCredentials = oldStore.state
-        if (oldCredentials != null && oldCredentials.username != null && oldCredentials.pass != null) {
-            migrateDogfoodCredentials(oldCredentials.username, oldCredentials.pass)
-            oldStore.erase()
-        }
-    }
-
-    private fun migrateDogfoodCredentials(username: String?, pass: String?) {
-        saveDogfoodCredentials(username, decodeOld(pass))
-    }
-
-    @Suppress("DEPRECATION")
-    private fun decodeOld(string: String?): String? {
-        if (string == null) {
-            return null
-        }
-        return try {
-            PasswordUtil.decodePassword(string)
-        } catch (e: NumberFormatException) {
-            null
-        }
-    }
-
-    fun hasOldCredentials(connection: ServerConnection): Boolean {
-        return connection.login != null
-            || connection.password != null
-            || connection.token != null
-    }
+    fun getDogfoodCredentials(): Credentials? = PasswordSafe.instance.getDogfoodCredentials()
 }
