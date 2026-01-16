@@ -263,9 +263,6 @@
       <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
       <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
 
-      <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
-      <applicationService serviceImplementation="org.sonarlint.intellij.dogfood.DogfoodCredentialsStore"/>
-
       <!-- Cannot be moved to service annotation because of getService on 'serviceInterface' -->
       <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
                           serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"
