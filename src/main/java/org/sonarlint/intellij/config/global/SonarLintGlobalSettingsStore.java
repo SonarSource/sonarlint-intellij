@@ -19,20 +19,12 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.PersistentStateComponentWithModificationTracker;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.config.global.credentials.CredentialsService;
-
-import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @State(name = "SonarLintGlobalSettings",
   storages = {@Storage("sonarlint.xml")},
