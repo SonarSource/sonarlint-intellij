@@ -74,38 +74,48 @@ jobs:
 
       - name: Cache IntelliJ IDEA Community
         id: cache-intellij
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/intellij
           key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-intellij-
 
       - name: Cache CLion
         id: cache-clion
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/clion
           key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-clion-
 
       - name: Cache Rider
         id: cache-rider
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/rider
           key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-rider-
 
       - name: Cache CLion for ReSharper
         id: cache-resharper
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/resharper
           key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-resharper-
 
       - name: Cache IntelliJ IDEA Ultimate
         id: cache-ultimate
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/ultimate
           key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-ultimate-
 
       - name: Download IDEs from Repox (parallel, only missing ones)
         env:
@@ -305,38 +315,48 @@ jobs:
       # Cache each IDE separately for granular caching
       - name: Cache IntelliJ IDEA Community
         id: cache-intellij
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/intellij
           key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-intellij-
 
       - name: Cache CLion
         id: cache-clion
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/clion
           key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-clion-
 
       - name: Cache Rider
         id: cache-rider
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/rider
           key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-rider-
 
       - name: Cache CLion for ReSharper
         id: cache-resharper
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/resharper
           key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-resharper-
 
       - name: Cache IntelliJ IDEA Ultimate
         id: cache-ultimate
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/ultimate
           key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-ultimate-
 
       - name: Set IDE environment variables
         run: |
@@ -382,6 +402,12 @@ jobs:
       - build-plugin
       - build-number
     env:
+      IDE_CACHE_DIR: /opt/jetbrains
+      INTELLIJ_VERSION: "2023.1.7"
+      CLION_VERSION: "2023.1.7"
+      RIDER_VERSION: "2023.1.7"
+      RESHARPER_VERSION: "2024.1"
+      ULTIMATE_VERSION: "2023.1.7"
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@v5
@@ -389,6 +415,46 @@ jobs:
       - uses: jdx/mise-action@v2.4.4
         with:
           version: 2025.9.12
+
+      - name: Cache IntelliJ IDEA Community
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/intellij
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-intellij-
+
+      - name: Cache CLion
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/clion
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-clion-
+
+      - name: Cache Rider
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/rider
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-rider-
+
+      - name: Cache CLion for ReSharper
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/resharper
+          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-resharper-
+
+      - name: Cache IntelliJ IDEA Ultimate
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/ultimate
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-ultimate-
 
       - name: Verify Plugin Compatibility
         uses: SonarSource/ci-github-actions/build-gradle@v1
@@ -464,6 +530,12 @@ jobs:
           - ide_version: 'CL-2025.2'
             qa_category: 'CLion2025'
     env:
+      IDE_CACHE_DIR: /opt/jetbrains
+      INTELLIJ_VERSION: "2023.1.7"
+      CLION_VERSION: "2023.1.7"
+      RIDER_VERSION: "2023.1.7"
+      RESHARPER_VERSION: "2024.1"
+      ULTIMATE_VERSION: "2023.1.7"
       DISPLAY: ':10'
       JDK_VERSION: '17'
       IDEA_VERSION: ${{ matrix.ide_version }}
@@ -476,6 +548,140 @@ jobs:
       - uses: jdx/mise-action@v2.4.4
         with:
           version: 2025.9.12
+
+      - name: Prepare IDE cache directory
+        run: |
+          sudo mkdir -p ${{ env.IDE_CACHE_DIR }}
+          sudo chown -R $USER:$USER ${{ env.IDE_CACHE_DIR }}
+
+      - name: Restore cached IntelliJ Community
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/intellij
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-intellij-
+
+      - name: Restore cached CLion
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/clion
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-clion-
+
+      - name: Restore cached Rider
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/rider
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-rider-
+
+      - name: Restore cached IntelliJ Ultimate
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/ultimate
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-ultimate-
+
+      # Cache additional IDEs used by QA matrix
+      - name: Cache IntelliJ Community 2025.2
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/IdeaIC/2025.2
+          key: ${{ runner.os }}-jetbrains-ide-IC-2025.2
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-IC-
+
+      - name: Cache IntelliJ Ultimate 2025.2
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/IdeaIU/2025.2
+          key: ${{ runner.os }}-jetbrains-ide-IU-2025.2
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-IU-
+
+      - name: Cache PyCharm Professional 2023.1.6
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/PyCharm/2023.1.6
+          key: ${{ runner.os }}-jetbrains-ide-PY-2023.1.6
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-PY-
+
+      - name: Cache PyCharm Professional 2025.2
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/PyCharm/2025.2
+          key: ${{ runner.os }}-jetbrains-ide-PY-2025.2
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-PY-
+
+      - name: Cache PyCharm Community 2023.1.6
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/PyCharmCE/2023.1.6
+          key: ${{ runner.os }}-jetbrains-ide-PC-2023.1.6
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-PC-
+
+      - name: Cache PyCharm Community 2025.2
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/PyCharmCE/2025.2
+          key: ${{ runner.os }}-jetbrains-ide-PC-2025.2
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-PC-
+
+      - name: Cache PhpStorm 2023.1.6
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/PhpStorm/2023.1.6
+          key: ${{ runner.os }}-jetbrains-ide-PS-2023.1.6
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-PS-
+
+      - name: Cache PhpStorm 2025.2
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/PhpStorm/2025.2
+          key: ${{ runner.os }}-jetbrains-ide-PS-2025.2
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-PS-
+
+      - name: Cache GoLand 2023.3.8
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/GoLand/2023.3.8
+          key: ${{ runner.os }}-jetbrains-ide-GO-2023.3.8
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-GO-
+
+      - name: Cache GoLand 2025.2
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/GoLand/2025.2
+          key: ${{ runner.os }}-jetbrains-ide-GO-2025.2
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-GO-
+
+      - name: Cache CLion 2025.2
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/CLion/2025.2
+          key: ${{ runner.os }}-jetbrains-ide-CL-2025.2
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-CL-
+
+      - name: Cache Rider 2023.3.6
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.cache/JetBrains/Rider/2023.3.6
+          key: ${{ runner.os }}-jetbrains-ide-RD-2023.3.6
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-RD-
 
       - name: Vault Secrets
         id: secrets
@@ -498,36 +704,24 @@ jobs:
             development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
             development/kv/data/develocity token | DEVELOCITY_TOKEN;
 
-      - name: Compute month key
-        id: month
+      - name: Set IDE environment variables
         run: |
-          THIS_MONTH="$(date +%Y-%m)"
-          echo "month=${THIS_MONTH}" >> "$GITHUB_OUTPUT"
-          ORCHESTRATOR_HOME="${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}"
-          echo "ORCHESTRATOR_HOME=${ORCHESTRATOR_HOME}" >> "$GITHUB_ENV"
-          echo "Create dir ${ORCHESTRATOR_HOME}"
-          mkdir -p "${ORCHESTRATOR_HOME}"
-
-      - uses: SonarSource/ci-github-actions/cache@v1
-        with:
-          path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
-          key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
-          restore-keys: |
-            cache-${{ runner.os }}
-
-      - name: Cache JetBrains IDE for ITs
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/.intellijPlatform/localPlatformArtifacts
-          key: ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}
+          echo "IDEA_HOME=${{ env.IDE_CACHE_DIR }}/intellij" >> $GITHUB_ENV
+          echo "CLION_HOME=${{ env.IDE_CACHE_DIR }}/clion" >> $GITHUB_ENV
+          echo "RIDER_HOME=${{ env.IDE_CACHE_DIR }}/rider" >> $GITHUB_ENV
+          echo "RESHARPER_HOME=${{ env.IDE_CACHE_DIR }}/resharper" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${{ env.IDE_CACHE_DIR }}/ultimate" >> $GITHUB_ENV
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-its-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-its-
+            ${{ runner.os }}-gradle-
 
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest

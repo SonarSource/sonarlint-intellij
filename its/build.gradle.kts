@@ -16,6 +16,36 @@ val runIdeDirectory: String by project
 group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
+val ideCacheDir: String? = System.getenv("IDE_CACHE_DIR")
+val cachedIntellijVersion: String? = System.getenv("INTELLIJ_VERSION")
+val cachedClionVersion: String? = System.getenv("CLION_VERSION")
+val cachedRiderVersion: String? = System.getenv("RIDER_VERSION")
+val cachedResharperVersion: String? = System.getenv("RESHARPER_VERSION")
+val cachedUltimateVersion: String? = System.getenv("ULTIMATE_VERSION")
+
+/**
+ * Check if the given ijVersion (e.g., "IC-2023.1.7") matches one of the cached IDEs.
+ * Returns the local path if cached, null otherwise.
+ */
+fun getCachedIdePath(ijVersion: String?): String? {
+    if (ijVersion.isNullOrBlank()) return null
+    
+    val parts = ijVersion.split('-')
+    if (parts.size != 2) return null
+    
+    val type = parts[0]
+    val version = parts[1]
+    
+    return when {
+        type == "IC" && version == cachedIntellijVersion -> "$ideCacheDir/intellij"
+        type == "IU" && version == cachedUltimateVersion -> "$ideCacheDir/ultimate"
+        type == "CL" && version == cachedClionVersion -> "$ideCacheDir/clion"
+        type == "CL" && version == cachedResharperVersion -> "$ideCacheDir/resharper"
+        type == "RD" && version == cachedRiderVersion -> "$ideCacheDir/rider"
+        else -> null
+    }
+}
+
 intellijPlatform {
     projectName = "sonarlint-intellij"
     buildSearchableOptions = false
@@ -24,10 +54,18 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         if (project.hasProperty("ijVersion")) {
-            val type = ijVersion.split('-')[0]
-            val version = ijVersion.split('-')[1]
-            create(type, version) {
-                useCache = true
+            val cachedPath = getCachedIdePath(ijVersion)
+            
+            if (cachedPath != null && File(cachedPath).exists()) {
+                println("ITs: Using cached IDE from workflow: $cachedPath (ijVersion=$ijVersion)")
+                local(cachedPath)
+            } else {
+                println("ITs: IDE $ijVersion not in cache, downloading from repository")
+                val type = ijVersion.split('-')[0]
+                val version = ijVersion.split('-')[1]
+                create(type, version) {
+                    useCache = true
+                }
             }
         } else {
             intellijIdeaCommunity(intellijBuildVersion)
