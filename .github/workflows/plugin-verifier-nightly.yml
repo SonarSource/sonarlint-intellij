@@ -31,6 +31,38 @@ jobs:
         with:
           version: 2025.9.12
 
+      - name: Setup Gradle cache
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # Cache Gradle dependencies and IDE downloads
+      - name: Cache Gradle
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-nightly-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-nightly-
+
+      # Cache JetBrains IDE downloads (used by IntelliJ Platform Plugin)
+      - name: Cache JetBrains IDEs
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: |
+            ~/.cache/JetBrains
+            ~/.local/share/JetBrains
+          key: ${{ runner.os }}-jetbrains-verifier-${{ matrix.verifier_env }}-${{ hashFiles('gradle.properties', 'build.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-verifier-${{ matrix.verifier_env }}-
+
       - name: Fetch vault secrets
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
@@ -41,16 +73,6 @@ jobs:
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
             development/kv/data/slack token | SLACK_BOT_TOKEN;
             development/kv/data/develocity token | DEVELOCITY_TOKEN;
-
-      - name: Setup Gradle cache
-        uses: SonarSource/ci-github-actions/cache@v1
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
 
       - name: Run plugin verifier
         env:
