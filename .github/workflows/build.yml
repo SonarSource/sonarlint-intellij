@@ -553,7 +553,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Using project version: ${PROJECT_VERSION}"
-          curl -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
+          curl -fsSL -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
             -o sonarlint-intellij.zip \
             "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
           unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
