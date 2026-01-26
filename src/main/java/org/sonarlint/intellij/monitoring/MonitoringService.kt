@@ -71,6 +71,7 @@ object MonitoringService {
                 setTag("platform", System.getProperty(SystemUtils.OS_NAME))
                 setTag("architecture", System.getProperty(SystemUtils.OS_ARCH))
                 addInAppInclude("org.sonarlint.intellij")
+                isEnableUncaughtExceptionHandler = false
             }
         }
     }
