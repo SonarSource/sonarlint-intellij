@@ -35,7 +35,7 @@ junit-four = "4.13.2"
 junit-launcher = "1.14.1"
 mockito-kotlin = "5.4.0"
 mockito = "5.20.0"
-assertj = "3.27.6"
+assertj = "3.27.7"
 awaitility = "4.3.0"
 
 its-remote = "0.11.23"
