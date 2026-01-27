@@ -64,6 +64,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.Companion.collectContributedLanguages
 import org.sonarlint.intellij.analysis.GlobalBackgroundTaskTracker
+import org.sonarlint.intellij.cayc.NewCodePeriodCache
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -73,7 +74,6 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
@@ -614,6 +614,7 @@ class BackendService : Disposable {
                 }
             }
             refreshTaintVulnerabilities(project)
+            getService(project, NewCodePeriodCache::class.java).refreshAsync()
             // Workaround as SLCORE does not always trigger analysis when binding a project, if synchro is already done
             getService(project, AnalysisSubmitter::class.java).autoAnalyzeOpenFiles()
         }
@@ -630,6 +631,7 @@ class BackendService : Disposable {
         }
         runOnPooledThread {
             refreshTaintVulnerabilities(project)
+            getService(project, NewCodePeriodCache::class.java).refreshAsync()
         }
     }
 
@@ -648,6 +650,7 @@ class BackendService : Disposable {
         projectScope?.let {
             runOnPooledThread {
                 refreshTaintVulnerabilities(project)
+                getService(project, NewCodePeriodCache::class.java).refreshAsync()
             }
         }
     }
@@ -960,6 +963,7 @@ class BackendService : Disposable {
                 )
             )
             refreshTaintVulnerabilities(project)
+            getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
             rpcServer.configurationService.didAddConfigurationScopes(
                 DidAddConfigurationScopesParams(
