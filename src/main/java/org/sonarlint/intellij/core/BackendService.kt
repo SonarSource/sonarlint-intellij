@@ -73,7 +73,6 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
@@ -997,7 +996,15 @@ class BackendService : Disposable {
 
     override fun dispose() {
         GlobalLogOutput.get().log("Shutting down backend service...", ClientLogOutput.Level.INFO)
-        backendFuture.thenAccept { it.shutdown() }
+        try {
+            backendFuture
+                .thenCompose { it.shutdown() }
+                .get(5, TimeUnit.SECONDS)
+        } catch (_: TimeoutException) {
+            GlobalLogOutput.get().log("Backend shutdown timed out after 5 seconds", ClientLogOutput.Level.WARN)
+        } catch (e: Exception) {
+            GlobalLogOutput.get().logError("Error during backend shutdown: ${e.message}", e)
+        }
     }
 
     fun refreshTaintVulnerabilities(project: Project) {
