@@ -110,6 +110,7 @@ import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
+import org.sonarlint.intellij.notifications.GenerateTokenAction
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
@@ -990,6 +991,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     null,
                     "The token used for connection '${it.name}' is invalid, please update your credentials",
                     NotificationType.ERROR,
+                    GenerateTokenAction(project, it),
                     OpenProjectSettingsAction(project)
                 )
             }

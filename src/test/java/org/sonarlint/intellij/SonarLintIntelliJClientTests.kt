@@ -39,6 +39,8 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.aDependencyRiskDto
+import org.sonarlint.intellij.notifications.GenerateTokenAction
+import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
@@ -309,6 +311,20 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
                 "The token used for connection 'connectionId' is invalid, please update your credentials"
             )
         )
+    }
+
+    @Test
+    fun it_should_include_generate_token_action_in_invalid_token_notification() {
+        val connection = ServerConnection.newBuilder().setName("connectionId").setHostUrl("https://sonarcloud.io").build()
+        globalSettings.serverConnections = listOf(connection)
+        
+        client.invalidToken("connectionId")
+
+        assertThat(projectNotifications).hasSize(1)
+        val notification = projectNotifications[0]
+        assertThat(notification.actions).hasSize(2)
+        assertThat(notification.actions[0]).isInstanceOf(GenerateTokenAction::class.java)
+        assertThat(notification.actions[1]).isInstanceOf(OpenProjectSettingsAction::class.java)
     }
 
     @Test
