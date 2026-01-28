@@ -73,7 +73,6 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
@@ -404,7 +403,8 @@ class BackendService : Disposable {
             BackendCapability.SMART_NOTIFICATIONS,
             BackendCapability.ISSUE_STREAMING,
             BackendCapability.SCA_SYNCHRONIZATION,
-            BackendCapability.CONTEXT_GENERATION
+            BackendCapability.CONTEXT_GENERATION,
+            BackendCapability.PROMOTIONAL_CAMPAIGNS
         )
         if (!System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()) {
             capabilities.add(BackendCapability.TELEMETRY)
