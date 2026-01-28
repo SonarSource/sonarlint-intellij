@@ -39,7 +39,7 @@ jobs:
 
       - name: Cache IntelliJ IDEA Community
         id: cache-intellij
-        uses: SonarSource/ci-github-actions/cache@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/intellij
           key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
@@ -48,7 +48,7 @@ jobs:
 
       - name: Cache CLion
         id: cache-clion
-        uses: SonarSource/ci-github-actions/cache@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/clion
           key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
@@ -57,7 +57,7 @@ jobs:
 
       - name: Cache Rider
         id: cache-rider
-        uses: SonarSource/ci-github-actions/cache@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/rider
           key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
@@ -66,7 +66,7 @@ jobs:
 
       - name: Cache CLion for ReSharper
         id: cache-resharper
-        uses: SonarSource/ci-github-actions/cache@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/resharper
           key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
@@ -75,7 +75,7 @@ jobs:
 
       - name: Cache IntelliJ IDEA Ultimate
         id: cache-ultimate
-        uses: SonarSource/ci-github-actions/cache@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/ultimate
           key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
@@ -88,96 +88,12 @@ jobs:
           ARTIFACTORY_USER: vault-SonarSource-sonarlint-intellij-private-reader
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
-          set -euo pipefail
-          
-          echo "Downloading missing IDEs from Repox in parallel..."
-          PIDS=()
-          
-          # Download IntelliJ IDEA Community (if not cached)
-          if [ "${{ steps.cache-intellij.outputs.cache-hit }}" != "true" ]; then
-            (
-              echo "Downloading IntelliJ IDEA Community ${INTELLIJ_VERSION} from Repox..."
-              mkdir -p ${{ env.IDE_CACHE_DIR }}/intellij
-              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIC-${INTELLIJ_VERSION}.tar.gz" | \
-                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/intellij
-              echo "✓ IntelliJ IDEA Community done"
-            ) &
-            PIDS+=($!)
-          else
-            echo "✓ IntelliJ IDEA Community (cached)"
-          fi
-          
-          # Download CLion (if not cached)
-          if [ "${{ steps.cache-clion.outputs.cache-hit }}" != "true" ]; then
-            (
-              echo "Downloading CLion ${CLION_VERSION} from Repox..."
-              mkdir -p ${{ env.IDE_CACHE_DIR }}/clion
-              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${CLION_VERSION}.tar.gz" | \
-                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/clion
-              echo "✓ CLion done"
-            ) &
-            PIDS+=($!)
-          else
-            echo "✓ CLion (cached)"
-          fi
-          
-          # Download Rider (if not cached)
-          if [ "${{ steps.cache-rider.outputs.cache-hit }}" != "true" ]; then
-            (
-              echo "Downloading Rider ${RIDER_VERSION} from Repox..."
-              mkdir -p ${{ env.IDE_CACHE_DIR }}/rider
-              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/rider/JetBrains.Rider-${RIDER_VERSION}.tar.gz" | \
-                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/rider
-              echo "✓ Rider done"
-            ) &
-            PIDS+=($!)
-          else
-            echo "✓ Rider (cached)"
-          fi
-          
-          # Download CLion for ReSharper (if not cached)
-          if [ "${{ steps.cache-resharper.outputs.cache-hit }}" != "true" ]; then
-            (
-              echo "Downloading CLion ${RESHARPER_VERSION} (for ReSharper) from Repox..."
-              mkdir -p ${{ env.IDE_CACHE_DIR }}/resharper
-              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/cpp/CLion-${RESHARPER_VERSION}.tar.gz" | \
-                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/resharper
-              echo "✓ CLion (ReSharper) done"
-            ) &
-            PIDS+=($!)
-          else
-            echo "✓ CLion (ReSharper) (cached)"
-          fi
-          
-          # Download IntelliJ IDEA Ultimate (if not cached)
-          if [ "${{ steps.cache-ultimate.outputs.cache-hit }}" != "true" ]; then
-            (
-              echo "Downloading IntelliJ IDEA Ultimate ${ULTIMATE_VERSION} from Repox..."
-              mkdir -p ${{ env.IDE_CACHE_DIR }}/ultimate
-              curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" \
-                "${ARTIFACTORY_URL}/jetbrains-download/idea/ideaIU-${ULTIMATE_VERSION}.tar.gz" | \
-                tar -xz --strip-components=1 -C ${{ env.IDE_CACHE_DIR }}/ultimate
-              echo "✓ IntelliJ IDEA Ultimate done"
-            ) &
-            PIDS+=($!)
-          else
-            echo "✓ IntelliJ IDEA Ultimate (cached)"
-          fi
-          
-          # Wait for all downloads to complete
-          FAILED=0
-          for pid in "${PIDS[@]}"; do
-            wait "$pid" || FAILED=1
-          done
-          
-          if [ $FAILED -eq 1 ]; then
-            echo "One or more IDE downloads failed!"
-            exit 1
-          fi
+          .github/scripts/download-ides.sh \
+            "${{ steps.cache-intellij.outputs.cache-hit }}" \
+            "${{ steps.cache-clion.outputs.cache-hit }}" \
+            "${{ steps.cache-rider.outputs.cache-hit }}" \
+            "${{ steps.cache-resharper.outputs.cache-hit }}" \
+            "${{ steps.cache-ultimate.outputs.cache-hit }}"
           
           echo "All required IDEs ready"
           ls -la ${{ env.IDE_CACHE_DIR }}/

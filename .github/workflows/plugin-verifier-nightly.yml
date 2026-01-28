@@ -32,7 +32,7 @@ jobs:
           version: 2025.9.12
 
       - name: Setup Gradle cache
-        uses: SonarSource/ci-github-actions/cache@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: |
             ~/.gradle/caches
@@ -43,7 +43,7 @@ jobs:
 
       # Cache Gradle dependencies and IDE downloads
       - name: Cache Gradle
-        uses: SonarSource/ci-github-actions/cache@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: |
             ~/.gradle/caches
@@ -54,7 +54,7 @@ jobs:
 
       # Cache JetBrains IDE downloads (used by IntelliJ Platform Plugin)
       - name: Cache JetBrains IDEs
-        uses: SonarSource/ci-github-actions/cache@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: |
             ~/.cache/JetBrains
