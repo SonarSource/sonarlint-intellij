@@ -16,6 +16,12 @@ val runIdeDirectory: String by project
 group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 intellijPlatform {
     projectName = "sonarlint-intellij"
     buildSearchableOptions = false
@@ -50,13 +56,13 @@ dependencies {
 tasks {
     compileKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
     compileTestKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
@@ -70,6 +76,14 @@ tasks {
         }
         testLogging.showStandardStreams = true
     }
+}
+
+tasks.named<Test>("test") {
+    javaLauncher.set(
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    )
 }
 
 val runIdeForUiTests by intellijPlatformTesting.runIde.registering {

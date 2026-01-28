@@ -465,7 +465,7 @@ jobs:
             qa_category: 'CLion2025'
     env:
       DISPLAY: ':10'
-      JDK_VERSION: '17'
+      JDK_VERSION: '21'
       IDEA_VERSION: ${{ matrix.ide_version }}
       QA_CATEGORY: ${{ matrix.qa_category }}
       TEST_SUITE: ${{ matrix.test_suite }}
@@ -476,6 +476,9 @@ jobs:
       - uses: jdx/mise-action@v2.4.4
         with:
           version: 2025.9.12
+
+      - name: Select Java ${{ env.JDK_VERSION }}
+        run: mise use java@${{ env.JDK_VERSION }}
 
       - name: Vault Secrets
         id: secrets
