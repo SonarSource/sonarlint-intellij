@@ -3,27 +3,110 @@ on:
   schedule:
     # Run the workflow every day at 04:00 UTC
     - cron: '0 4 * * *'
-  workflow_dispatch:
 
 jobs:
   scan:
-    runs-on: github-ubuntu-latest-s
+    runs-on: github-ubuntu-latest-m
     name: Scan on shadow platforms
     permissions:
       id-token: write
       contents: write
+    env:
+      IDE_CACHE_DIR: /opt/jetbrains
+      INTELLIJ_VERSION: "2023.1.7"
+      CLION_VERSION: "2023.1.7"
+      RIDER_VERSION: "2023.1.7"
+      RESHARPER_VERSION: "2024.1"
+      ULTIMATE_VERSION: "2023.1.7"
     steps:
       - name: Vault
         id: secrets
-        uses: SonarSource/vault-action-wrapper@320bd31b03e5dacaac6be51bbbb15adf7caccc32 # 3.1.0
+        uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
             development/artifactory/token/SonarSource-sonarlint-intellij-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2.4.4
         with:
-          version: 2025.7.12
-      - uses: SonarSource/ci-github-actions/build-gradle@master # dogfood
+          version: 2025.9.12
+
+      - name: Prepare IDE cache directory
+        run: |
+          sudo mkdir -p ${{ env.IDE_CACHE_DIR }}
+          sudo chown -R $USER:$USER ${{ env.IDE_CACHE_DIR }}
+
+      - name: Cache IntelliJ IDEA Community
+        id: cache-intellij
+        uses: SonarSource/gh-action_cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/intellij
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-intellij-
+
+      - name: Cache CLion
+        id: cache-clion
+        uses: SonarSource/gh-action_cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/clion
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-clion-
+
+      - name: Cache Rider
+        id: cache-rider
+        uses: SonarSource/gh-action_cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/rider
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-rider-
+
+      - name: Cache CLion for ReSharper
+        id: cache-resharper
+        uses: SonarSource/gh-action_cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/resharper
+          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-resharper-
+
+      - name: Cache IntelliJ IDEA Ultimate
+        id: cache-ultimate
+        uses: SonarSource/gh-action_cache@v1
+        with:
+          path: ${{ env.IDE_CACHE_DIR }}/ultimate
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-ultimate-
+
+      - name: Download IDEs from Repox (parallel, only missing ones)
+        env:
+          ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
+          ARTIFACTORY_USER: vault-SonarSource-sonarlint-intellij-private-reader
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        run: |
+          .github/scripts/download-ides.sh \
+            "${{ steps.cache-intellij.outputs.cache-hit }}" \
+            "${{ steps.cache-clion.outputs.cache-hit }}" \
+            "${{ steps.cache-rider.outputs.cache-hit }}" \
+            "${{ steps.cache-resharper.outputs.cache-hit }}" \
+            "${{ steps.cache-ultimate.outputs.cache-hit }}"
+          
+          echo "All required IDEs ready"
+          ls -la ${{ env.IDE_CACHE_DIR }}/
+
+      - name: Set IDE environment variables
+        run: |
+          echo "IDEA_HOME=${{ env.IDE_CACHE_DIR }}/intellij" >> $GITHUB_ENV
+          echo "CLION_HOME=${{ env.IDE_CACHE_DIR }}/clion" >> $GITHUB_ENV
+          echo "RIDER_HOME=${{ env.IDE_CACHE_DIR }}/rider" >> $GITHUB_ENV
+          echo "RESHARPER_HOME=${{ env.IDE_CACHE_DIR }}/resharper" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${{ env.IDE_CACHE_DIR }}/ultimate" >> $GITHUB_ENV
+
+      - uses: SonarSource/ci-github-actions/build-gradle@v1
         env:
           ARTIFACTORY_ACCESS_USERNAME: vault-SonarSource-sonarlint-intellij-private-reader
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
@@ -31,7 +114,8 @@ jobs:
           run-shadow-scans: true
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
-          gradle-args: -x :its:check sonar jacocoTestReport
+          gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
+
       - name: Run IRIS Analysis
         uses: SonarSource/unified-dogfooding-actions/run-iris@v1
         with:
