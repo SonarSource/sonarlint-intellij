@@ -1,5 +1,5 @@
 [tools]
-java = "17.0"
+java = ["17", "21"]
 gradle = "8.14.3"
 gh = "2.83.0"
 jfrog-cli = "2.77.0"
