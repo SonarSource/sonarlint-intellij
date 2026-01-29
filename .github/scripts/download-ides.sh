@@ -95,6 +95,6 @@ for pid in "${PIDS[@]}"; do
 done
 
 if [[ $FAILED -eq 1 ]]; then
-  echo "One or more IDE downloads failed!"
+  echo "::error title=One or more IDE downloads failed!"
   exit 1
 fi
