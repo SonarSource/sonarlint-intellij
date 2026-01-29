@@ -55,7 +55,7 @@ class CurrentFileTabTests {
         private fun changeStatusAndPressChange(windowTitle: String, status: String) {
             with(remoteRobot) {
                 idea {
-                    dialog(windowTitle) {
+                    dialog(windowTitle, Duration.ofSeconds(60)) {
                         content(status) {
                             click()
                         }

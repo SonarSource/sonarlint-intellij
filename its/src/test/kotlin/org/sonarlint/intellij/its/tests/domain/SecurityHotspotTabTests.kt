@@ -55,7 +55,7 @@ class SecurityHotspotTabTests {
         fun changeSecurityHotspotStatusAndPressChange(status: String) {
             with(remoteRobot) {
                 idea {
-                    dialog("Change Security Hotspot Status on SonarQube Server") {
+                    dialog("Change Security Hotspot Status on SonarQube Server", Duration.ofSeconds(60)) {
                         content(status) {
                             click()
                         }
