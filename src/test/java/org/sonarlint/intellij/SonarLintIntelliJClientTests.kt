@@ -46,6 +46,7 @@ import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageActionItem
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
@@ -449,6 +450,31 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
         assertThat(exclusions).anyMatch { it.contains("wwwroot/dist") && !it.contains("\\") }
         assertThat(exclusions).anyMatch { it.contains("src/main/test.js") && !it.contains("\\") }
+    }
+
+    @Test
+    fun should_show_message_request_with_no_actions() {
+        val response = client.showMessageRequest(MessageType.INFO, "Test message", emptyList())
+
+        assertThat(response).isNotNull
+        assertThat(response.selectedKey).isNull()
+        assertThat(projectNotifications.first().content).isEqualTo("Test message")
+    }
+
+    @Test
+    fun should_show_message_request_with_actions() {
+        val action1 = MessageActionItem("key1", "Action 1", false)
+        val action2 = MessageActionItem("key2", "Action 2", true)
+
+        client.showMessageRequest(
+            MessageType.INFO,
+            "Please choose an option",
+            listOf(action1, action2)
+        )
+
+        assertThat(projectNotifications).extracting("content").containsExactly("Please choose an option")
+        assertThat(projectNotifications).hasSize(1)
+        assertThat(projectNotifications.first().actions).hasSize(2)
     }
 
 }
