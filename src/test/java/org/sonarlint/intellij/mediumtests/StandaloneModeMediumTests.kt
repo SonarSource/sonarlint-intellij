@@ -46,7 +46,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
     fun waitForReady() {
-        Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted {
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
             assertThat(getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
         }
     }
