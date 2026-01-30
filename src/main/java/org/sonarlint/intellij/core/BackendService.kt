@@ -1142,6 +1142,10 @@ class BackendService : Disposable {
     }
 
     fun isAlive(): Boolean {
+        // In test mode without a mock launcher, report as "alive" to allow UI actions to function
+        if (ApplicationManager.getApplication().isUnitTestMode && defaultSloopLauncher == null) {
+            return true
+        }
         return sloop?.isAlive == true
     }
 

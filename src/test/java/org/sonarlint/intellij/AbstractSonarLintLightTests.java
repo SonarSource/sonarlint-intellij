@@ -48,6 +48,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -105,6 +106,10 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
     getService(BackendService.class).projectOpened(getProject());
     getService(BackendService.class).modulesAdded(getProject(), List.of(getModule()));
     PropertiesComponent.getInstance().unsetValue("SonarLint.lastPromotionNotificationDate");
+    // Set up readiness state since no mock backend is injected in light tests
+    var readinessCache = getService(getProject(), AnalysisReadinessCache.class);
+    readinessCache.setProjectReady(true);
+    readinessCache.setReadinessForModule(getModule(), true);
   }
 
   @RegisterExtension
