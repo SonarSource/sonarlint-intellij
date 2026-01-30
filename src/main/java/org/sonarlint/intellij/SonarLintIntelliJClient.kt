@@ -21,8 +21,11 @@ package org.sonarlint.intellij
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
@@ -156,7 +159,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.IssueDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogLevel
 import org.sonarsource.sonarlint.core.rpc.protocol.client.log.LogParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageActionItem
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
+import org.sonarsource.sonarlint.core.rpc.protocol.client.message.ShowMessageRequestResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.ShowSoonUnsupportedMessageParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.progress.ReportProgressParams
@@ -260,6 +265,41 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun showMessage(type: MessageType, text: String) {
         projectLessNotification(null, text, convert(type))
+    }
+
+    override fun showMessageRequest(type: MessageType, text: String, actions: List<MessageActionItem>): ShowMessageRequestResponse {
+        GlobalLogOutput.get().log("Received a message request", ClientLogOutput.Level.DEBUG)
+        if (actions.isEmpty()) {
+            showMessage(type, text)
+            return ShowMessageRequestResponse(null, false)
+        }
+
+        val responseFuture = CompletableFuture<String>()
+
+        val notificationActions = actions.map { actionItem ->
+            object : NotificationAction(actionItem.displayText) {
+                override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                    responseFuture.complete(actionItem.key)
+                    notification.expire()
+                }
+            }
+        }.toTypedArray()
+
+        val notification = projectLessNotification(null, text, convert(type), *notificationActions)
+
+        notification.whenExpired {
+            if (!responseFuture.isDone) {
+                responseFuture.complete(null)
+            }
+        }
+        
+        val selectedActionKey = try {
+            responseFuture.get()
+        } catch (_: Exception) {
+            null
+        }
+
+        return ShowMessageRequestResponse(selectedActionKey, false)
     }
 
     override fun log(params: LogParams) {
