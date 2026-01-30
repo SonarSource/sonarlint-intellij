@@ -228,7 +228,15 @@ jobs:
         with:
           version: 2025.9.12
 
-      # Cache each IDE separately for granular caching
+      - name: Fetch vault secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
       - name: Cache IntelliJ IDEA Community
         id: cache-intellij
         uses: SonarSource/gh-action_cache@v1
@@ -273,6 +281,22 @@ jobs:
           key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
           restore-keys: |
             ${{ runner.os }}-ultimate-
+
+      - name: Download IDEs from Repox (parallel, only missing ones)
+        env:
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        run: |
+          .github/scripts/download-ides.sh \
+            "${{ steps.cache-intellij.outputs.cache-hit }}" \
+            "${{ steps.cache-clion.outputs.cache-hit }}" \
+            "${{ steps.cache-rider.outputs.cache-hit }}" \
+            "${{ steps.cache-resharper.outputs.cache-hit }}" \
+            "${{ steps.cache-ultimate.outputs.cache-hit }}"
+          
+          echo "All required IDEs ready"
+          ls -la ${{ env.IDE_CACHE_DIR }}/
 
       - name: Set IDE environment variables
         run: |
