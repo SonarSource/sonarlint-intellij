@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>11.2 - 10 new QuickFixes for JavaScript.</li>
         <li>11.11.1 - Minor bug fix. Remove deprecated code.</li>
         <li>11.11 - Change Flight Recorder implementation to be fully local. Better parsing of scripts embedded in CI/Docker files. Bug fixes, fewer FPs and improvements for many languages and secret detection.</li>
         <li>11.10 - Bug fixes, fewer FPs and improvements for Python.</li>
