@@ -156,6 +156,13 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @BeforeEach
     fun resetMockBackend() {
+        // Trigger initialization on the mock-based service (since ModuleChangeListener skips in test mode)
+        service.modulesAdded(project, listOf())
+
+        // Wait for async initialization and configuration scope setup to complete before resetting mocks
+        verify(backend, timeout(2000)).initialize(any())
+        verify(backendConfigurationService, timeout(2000)).didAddConfigurationScopes(any())
+
         // Ignore previous events caused by HeavyTestFrameworkOpening a project
         reset(backendConfigurationService)
 
@@ -245,6 +252,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_initialize_params_backend_capabilities() {
+        clearInvocations(backend)
         System.setProperty("sonarlint.telemetry.disabled", "true")
         System.setProperty("sonarlint.monitoring.disabled", "true")
         service.restartBackendService()
