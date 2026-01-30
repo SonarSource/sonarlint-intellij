@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.module
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
@@ -32,16 +31,10 @@ import org.sonarlint.intellij.util.runOnPooledThread
 class ModuleChangeListener(val project: Project) : ModuleListener {
 
     override fun modulesAdded(project: Project, modules: List<Module>) {
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            return
-        }
         runOnPooledThread(project) { getService(BackendService::class.java).modulesAdded(project, modules) }
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            return
-        }
         runOnPooledThread(project) { getService(BackendService::class.java).moduleRemoved(module) }
     }
 

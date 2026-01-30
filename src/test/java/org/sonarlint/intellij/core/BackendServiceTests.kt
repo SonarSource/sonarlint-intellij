@@ -124,6 +124,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
         backend = mock(SonarLintRpcServer::class.java)
         `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
+        `when`(backend.shutdown()).thenReturn(CompletableFuture.completedFuture(null))
         backendConnectionService = mock(ConnectionRpcService::class.java)
         backendConfigurationService = mock(ConfigurationRpcService::class.java)
         backendRuleService = mock(RulesRpcService::class.java)
@@ -148,6 +149,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         sloop = mock(Sloop::class.java)
         `when`(sloop.rpcServer).thenReturn(backend)
         `when`(sloop.onExit()).thenReturn(CompletableFuture.completedFuture(null))
+        // Return false so that restartBackendService() actually restarts
+        `when`(sloop.isAlive).thenReturn(false)
         val sloopLauncher = mock(SloopLauncher::class.java)
         `when`(sloopLauncher.start(any(), any(), any())).thenReturn(sloop)
         service = BackendService(sloopLauncher)
@@ -156,14 +159,12 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @BeforeEach
     fun resetMockBackend() {
-        // Trigger initialization on the mock-based service (since ModuleChangeListener skips in test mode)
-        service.modulesAdded(project, listOf())
-
         // Wait for async initialization and configuration scope setup to complete before resetting mocks
+        // ModuleChangeListener triggers modulesAdded() during project setup, which initializes the backend
         verify(backend, timeout(2000)).initialize(any())
-        verify(backendConfigurationService, timeout(2000)).didAddConfigurationScopes(any())
+        verify(backendConfigurationService, timeout(2000).atLeastOnce()).didAddConfigurationScopes(any())
 
-        // Ignore previous events caused by HeavyTestFrameworkOpening a project
+        // Ignore previous events caused by HeavyTestFramework opening a project
         reset(backendConfigurationService)
 
         previousTelemetryDisabledValue = System.getProperty("sonarlint.telemetry.disabled")

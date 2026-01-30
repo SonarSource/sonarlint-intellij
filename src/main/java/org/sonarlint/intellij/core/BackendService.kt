@@ -245,6 +245,11 @@ class BackendService : Disposable {
 
     private fun ensureBackendInitialized(): CompletableFuture<SonarLintRpcServer> {
         if (!initializationTriedOnce.getAndSet(true)) {
+            if (ApplicationManager.getApplication().isUnitTestMode && defaultSloopLauncher == null) {
+                // In test mode without a custom launcher, don't start a real backend.
+                // Tests that need the backend should provide a mock SloopLauncher via the constructor.
+                return backendFuture
+            }
             if (ApplicationManager.getApplication().isUnitTestMode) {
                 // workaround for tests as tasks are executed on UI thread
                 runOnPooledThread {
