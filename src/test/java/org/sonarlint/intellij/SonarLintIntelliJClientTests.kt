@@ -23,8 +23,11 @@ import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
 import java.nio.file.Paths
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -466,15 +469,28 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         val action1 = MessageActionItem("key1", "Action 1", false)
         val action2 = MessageActionItem("key2", "Action 2", true)
 
-        client.showMessageRequest(
-            MessageType.INFO,
-            "Please choose an option",
-            listOf(action1, action2)
-        )
+        // Run in background as showMessageRequest blocks waiting for user response
+        val future = CompletableFuture.runAsync {
+            client.showMessageRequest(
+                MessageType.INFO,
+                "Please choose an option",
+                listOf(action1, action2)
+            )
+        }
+
+        // Wait for notification to be displayed
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            assertThat(projectNotifications).hasSize(1)
+        }
 
         assertThat(projectNotifications).extracting("content").containsExactly("Please choose an option")
-        assertThat(projectNotifications).hasSize(1)
         assertThat(projectNotifications.first().actions).hasSize(2)
+
+        // Expire notification to unblock the future
+        projectNotifications.first().expire()
+
+        // Wait for the background task to complete
+        future.get(5, TimeUnit.SECONDS)
     }
 
 }
