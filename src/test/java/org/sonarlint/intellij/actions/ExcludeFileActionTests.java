@@ -29,6 +29,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests;
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore;
@@ -62,6 +63,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
     when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file1});
     when(e.getPlace()).thenReturn(EDITOR_POPUP);
 
+    Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(myProject, AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue());
     Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() -> assertThat(getService(myProject, RunningAnalysesTracker.class).isEmpty()).isTrue());
     clearInvocations(analysisSubmitter);
   }

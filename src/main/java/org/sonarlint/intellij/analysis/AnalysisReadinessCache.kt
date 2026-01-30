@@ -27,7 +27,6 @@ class AnalysisReadinessCache {
 
     private val readinessPerModule = mutableMapOf<Module, Boolean>()
 
-    @get:JvmName("isProjectReady")
     var isProjectReady: Boolean = false
 
     fun setReadinessForModule(module: Module, isReady: Boolean) {
