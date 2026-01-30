@@ -403,7 +403,8 @@ class BackendService : Disposable {
             BackendCapability.SMART_NOTIFICATIONS,
             BackendCapability.ISSUE_STREAMING,
             BackendCapability.SCA_SYNCHRONIZATION,
-            BackendCapability.CONTEXT_GENERATION
+            BackendCapability.CONTEXT_GENERATION,
+            BackendCapability.PROMOTIONAL_CAMPAIGNS
         )
         if (!System.getProperty("sonarlint.telemetry.disabled", "false").toBoolean()) {
             capabilities.add(BackendCapability.TELEMETRY)
