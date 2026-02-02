@@ -47,6 +47,7 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.eraseToken
 import org.sonarlint.intellij.config.global.credentials.eraseUsernamePassword
@@ -124,6 +125,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
         backend = mock(SonarLintRpcServer::class.java)
         `when`(backend.initialize(any())).thenReturn(CompletableFuture.completedFuture(null))
+        `when`(backend.shutdown()).thenReturn(CompletableFuture.completedFuture(null))
         backendConnectionService = mock(ConnectionRpcService::class.java)
         backendConfigurationService = mock(ConfigurationRpcService::class.java)
         backendRuleService = mock(RulesRpcService::class.java)
@@ -148,15 +150,24 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         sloop = mock(Sloop::class.java)
         `when`(sloop.rpcServer).thenReturn(backend)
         `when`(sloop.onExit()).thenReturn(CompletableFuture.completedFuture(null))
+        // Return false so that restartBackendService() actually restarts
+        `when`(sloop.isAlive).thenReturn(false)
         val sloopLauncher = mock(SloopLauncher::class.java)
         `when`(sloopLauncher.start(any(), any(), any())).thenReturn(sloop)
         service = BackendService(sloopLauncher)
+        // modulesAdded() is triggered when the test project is opened during super.initApplication(), before replaceService() is called
+        getService(BackendService::class.java).dispose()
         ApplicationManager.getApplication().replaceService(BackendService::class.java, service, testRootDisposable)
     }
 
     @BeforeEach
     fun resetMockBackend() {
-        // Ignore previous events caused by HeavyTestFrameworkOpening a project
+        // Wait for async initialization and configuration scope setup to complete before resetting mocks
+        // ModuleChangeListener triggers modulesAdded() during project setup, which initializes the backend
+        verify(backend, timeout(2000)).initialize(any())
+        verify(backendConfigurationService, timeout(2000).atLeastOnce()).didAddConfigurationScopes(any())
+
+        // Ignore previous events caused by HeavyTestFramework opening a project
         reset(backendConfigurationService)
 
         previousTelemetryDisabledValue = System.getProperty("sonarlint.telemetry.disabled")
@@ -245,6 +256,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun test_initialize_params_backend_capabilities() {
+        clearInvocations(backend)
         System.setProperty("sonarlint.telemetry.disabled", "true")
         System.setProperty("sonarlint.monitoring.disabled", "true")
         service.restartBackendService()
