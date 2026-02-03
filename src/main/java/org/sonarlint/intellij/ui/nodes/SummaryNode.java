@@ -25,7 +25,7 @@ import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.ui.tree.TreeSummary;
 
 public class SummaryNode extends AbstractNode {
-  private final TreeSummary treeSummary;
+  private final transient TreeSummary treeSummary;
 
   public SummaryNode(TreeSummary treeSummary) {
     this.treeSummary = treeSummary;
