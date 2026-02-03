@@ -36,10 +36,10 @@ import org.sonarlint.intellij.util.SonarLintActions;
 public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarQube for IDE";
 
-  private final ToolWindow toolWindow;
-  private final Project project;
+  private transient ToolWindow toolWindow;
+  private transient Project project;
 
-  private transient ActionToolbar mainToolbar;
+  private ActionToolbar mainToolbar;
 
   public SonarLintLogPanel(ToolWindow toolWindow, Project project) {
     super(false, false);
