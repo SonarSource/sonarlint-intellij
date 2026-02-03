@@ -32,7 +32,7 @@ import javax.swing.JTree;
 import org.jdesktop.swingx.renderer.DefaultTreeRenderer;
 
 public class RulesTreeTableRenderer extends DefaultTreeRenderer {
-  private final Supplier<String> filterSupplier;
+  private final transient Supplier<String> filterSupplier;
 
   public RulesTreeTableRenderer(Supplier<String> filterSupplier) {
     this.filterSupplier = filterSupplier;
