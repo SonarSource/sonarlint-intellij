@@ -43,7 +43,7 @@ import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
 public class FlowsTree extends Tree {
-  private final Project project;
+  private final transient Project project;
 
   public FlowsTree(Project project, TreeModel model) {
     super(model);
