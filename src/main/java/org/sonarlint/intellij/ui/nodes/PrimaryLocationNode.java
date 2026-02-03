@@ -33,7 +33,7 @@ public class PrimaryLocationNode extends AbstractNode {
   private final Flow associatedFlow;
   private final VirtualFile file;
   private final Integer number;
-  private final RangeMarker rangeMarker;
+  private final transient RangeMarker rangeMarker;
   private boolean bold = false;
 
   public PrimaryLocationNode(VirtualFile file, RangeMarker rangeMarker, @Nullable String message, Flow associatedFlow) {
