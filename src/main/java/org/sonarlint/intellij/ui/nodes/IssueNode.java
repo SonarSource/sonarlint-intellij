@@ -45,7 +45,7 @@ public class IssueNode extends FindingNode {
   private static final SimpleTextAttributes GRAYED_SMALL_ATTRIBUTES = new SimpleTextAttributes(STYLE_SMALLER,
     UIUtil.getInactiveTextColor());
 
-  private final LiveIssue issue;
+  private final transient LiveIssue issue;
 
   public IssueNode(LiveIssue issue) {
     super(issue);
