@@ -121,7 +121,7 @@ public class ExclusionTable {
   }
 
   private static class Model extends AbstractTableModel {
-    private List<ExclusionItem> rows = new ArrayList<>();
+    private transient List<ExclusionItem> rows = new ArrayList<>();
 
     @Override public int getRowCount() {
       return rows.size();
