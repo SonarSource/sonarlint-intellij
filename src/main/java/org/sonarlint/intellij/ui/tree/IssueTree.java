@@ -49,7 +49,7 @@ import static org.sonarlint.intellij.util.DataKeys.ISSUE_DATA_KEY;
  * Extends {@link Tree} to provide context data for actions and initialize it
  */
 public class IssueTree extends FindingTree implements DataProvider {
-  private final Project project;
+  private final transient Project project;
 
   public IssueTree(Project project, TreeModel model) {
     super(project, model);
