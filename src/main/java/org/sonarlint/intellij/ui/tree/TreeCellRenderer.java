@@ -29,7 +29,7 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
  * that doesn't exist in the pico container used by SonarLint (different versions), causing NoSuchMethodError.
  */
 public class TreeCellRenderer extends ColoredTreeCellRenderer {
-  private final NodeRenderer<Object> nodeRenderer;
+  private transient NodeRenderer<Object> nodeRenderer;
 
   public TreeCellRenderer() {
     nodeRenderer = null;
