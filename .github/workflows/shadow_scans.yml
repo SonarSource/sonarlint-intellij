@@ -12,12 +12,18 @@ jobs:
       id-token: write
       contents: write
     env:
+      # Docker image configuration
+      DOCKER_IMAGE_TAG: "pr-139"
+      AWS_ACCOUNT_ID: "460386131003"
+      AWS_REGION: "eu-central-1"
+
+      # IDE installation paths and versions
       IDE_CACHE_DIR: /opt/jetbrains
-      INTELLIJ_VERSION: "2023.1.7"
-      CLION_VERSION: "2023.1.7"
-      RIDER_VERSION: "2023.1.7"
-      RESHARPER_VERSION: "2024.1"
-      ULTIMATE_VERSION: "2023.1.7"
+      INTELLIJ_VERSION: "2023.3.8"
+      CLION_VERSION: "2023.3.6"
+      RIDER_VERSION: "2024.3.9"  # Rider 2023.3.6 disabled in Docker image
+      RESHARPER_VERSION: "2024.3.6"
+      ULTIMATE_VERSION: "2023.3.8"
     steps:
       - name: Vault
         id: secrets
@@ -26,85 +32,80 @@ jobs:
           secrets: |
             development/artifactory/token/SonarSource-sonarlint-intellij-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
-      - name: Prepare IDE cache directory
-        run: |
-          sudo mkdir -p ${{ env.IDE_CACHE_DIR }}
-          sudo chown -R $USER:$USER ${{ env.IDE_CACHE_DIR }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
 
       - name: Cache IntelliJ IDEA Community
         id: cache-intellij
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/intellij
-          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-intellij-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-
 
       - name: Cache CLion
         id: cache-clion
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/clion
-          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-clion-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-
 
       - name: Cache Rider
         id: cache-rider
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/rider
-          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-rider-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-
 
       - name: Cache CLion for ReSharper
         id: cache-resharper
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/resharper
-          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-resharper-
+            ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-docker-
+            ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-
 
       - name: Cache IntelliJ IDEA Ultimate
         id: cache-ultimate
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/ultimate
-          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-ultimate-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-
 
-      - name: Download IDEs from Repox (parallel, only missing ones)
+      - name: Extract IDEs from Docker images (parallel, only missing ones)
         env:
-          ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
-          ARTIFACTORY_USER: vault-SonarSource-sonarlint-intellij-private-reader
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: |
-          .github/scripts/download-ides.sh \
-            "${{ steps.cache-intellij.outputs.cache-hit }}" \
-            "${{ steps.cache-clion.outputs.cache-hit }}" \
-            "${{ steps.cache-rider.outputs.cache-hit }}" \
-            "${{ steps.cache-resharper.outputs.cache-hit }}" \
-            "${{ steps.cache-ultimate.outputs.cache-hit }}"
-          
-          echo "All required IDEs ready"
-          ls -la ${{ env.IDE_CACHE_DIR }}/
-
-      - name: Set IDE environment variables
-        run: |
-          echo "IDEA_HOME=${{ env.IDE_CACHE_DIR }}/intellij" >> $GITHUB_ENV
-          echo "CLION_HOME=${{ env.IDE_CACHE_DIR }}/clion" >> $GITHUB_ENV
-          echo "RIDER_HOME=${{ env.IDE_CACHE_DIR }}/rider" >> $GITHUB_ENV
-          echo "RESHARPER_HOME=${{ env.IDE_CACHE_DIR }}/resharper" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${{ env.IDE_CACHE_DIR }}/ultimate" >> $GITHUB_ENV
+          CACHE_INTELLIJ: ${{ steps.cache-intellij.outputs.cache-hit }}
+          CACHE_CLION: ${{ steps.cache-clion.outputs.cache-hit }}
+          CACHE_RIDER: ${{ steps.cache-rider.outputs.cache-hit }}
+          CACHE_RESHARPER: ${{ steps.cache-resharper.outputs.cache-hit }}
+          CACHE_ULTIMATE: ${{ steps.cache-ultimate.outputs.cache-hit }}
+        run: .github/scripts/setup-ides-from-docker.sh
 
       - uses: SonarSource/ci-github-actions/build-gradle@v1
         env:

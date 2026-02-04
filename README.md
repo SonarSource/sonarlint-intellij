@@ -23,7 +23,8 @@ How to install
 You can install SonarQube for IntelliJ from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly
 available in the IDE preferences.
 
-Full up-to-date details are available on the [Requirements](https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/requirements/)
+Full up-to-date details are available on
+the [Requirements](https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/requirements/)
 and [Installation](https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/installation/) pages.
 
 Questions and Feedback?
@@ -156,10 +157,55 @@ For example:
 Keep in mind that the `clean` task will wipe out the content of `build/`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
 
+CI/CD and IDE Testing
+---------------------
+
+The project uses Docker images to provide consistent IDE installations across CI/CD pipelines. This approach eliminates the need for
+downloading IDEs from Artifactory and ensures reproducible builds.
+
+### Docker Images
+
+IDE installations are provided by Docker images hosted in AWS ECR:
+
+- **sonarlint-idea**: IntelliJ IDEA Community (IC) and Ultimate (IU)
+- **sonarlint-clion**: CLion (CL) and ReSharper C++ (RS)
+- **sonarlint-rider**: Rider (RD)
+- **sonarlint-pycharm**: PyCharm Professional (PY) and Community (PC)
+- **sonarlint-phpstorm**: PhpStorm (PS)
+- **sonarlint-goland**: GoLand (GO)
+
+### Tested IDE Versions
+
+The following IDE versions are tested in CI/CD pipelines (defined in `.github/workflows/build.yml`):
+
+- **IntelliJ IDEA Community**: 2023.1.7
+- **IntelliJ IDEA Ultimate**: 2023.1.7
+- **CLion**: 2023.1.7
+- **Rider**: 2024.3.4
+- **ReSharper C++** (CLion with radler plugin): 2024.3.6
+
+These versions must match the content available in the Docker images and are also defined in `gradle.properties`.
+
+### IDE Setup Script
+
+The `.github/scripts/setup-ides-from-docker.sh` script extracts IDEs from Docker images and sets up the required environment variables (
+`IDEA_HOME`, `CLION_HOME`, etc.):
+
+```bash
+# Extract a single IDE
+.github/scripts/setup-ides-from-docker.sh IC-2023.1.7
+
+# Extract multiple IDEs in parallel (batch mode)
+.github/scripts/setup-ides-from-docker.sh --batch "IC-2023.1.7 CL-2023.1.7 RD-2024.3.4"
+```
+
+The script uses the `IDE_CACHE_DIR` environment variable (default: `/opt/jetbrains`) to determine where to extract IDEs.
+
 Plugin Verification
 --------------------------
 
-The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier. This ensures compatibility across different IDE
+The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier. This ensures
+compatibility across different IDE
 versions and types.
 
 ### Automated Nightly Testing

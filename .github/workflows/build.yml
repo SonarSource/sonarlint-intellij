@@ -21,13 +21,20 @@ permissions:
   checks: write
 
 env:
+  # Docker image configuration
+  DOCKER_IMAGE_TAG: "pr-139"
+  AWS_ACCOUNT_ID: "460386131003"
+  AWS_REGION: "eu-central-1"
+
   # IDE installation paths for Linux
   IDE_CACHE_DIR: /opt/jetbrains
-  INTELLIJ_VERSION: "2023.1.7"
-  CLION_VERSION: "2023.1.7"
-  RIDER_VERSION: "2023.1.7"
-  RESHARPER_VERSION: "2024.1"
-  ULTIMATE_VERSION: "2023.1.7"
+
+  # Base IDE versions for build and test
+  INTELLIJ_VERSION: "2023.3.8"
+  CLION_VERSION: "2023.3.6"
+  RIDER_VERSION: "2024.3.9"
+  RESHARPER_VERSION: "2024.3.6"
+  ULTIMATE_VERSION: "2023.3.8"
 
 jobs:
   build-number:
@@ -50,22 +57,24 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
-      - name: Fetch Artifactory credentials
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
-          secrets: |
-            development/kv/data/repox url | ARTIFACTORY_URL;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: sonarlint-intellij-${{ github.run_id }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
 
       - name: Prepare IDE cache directory
         run: |
@@ -77,69 +86,59 @@ jobs:
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/intellij
-          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-intellij-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-
 
       - name: Cache CLion
         id: cache-clion
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/clion
-          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-clion-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-
 
       - name: Cache Rider
         id: cache-rider
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/rider
-          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-rider-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-
 
       - name: Cache CLion for ReSharper
         id: cache-resharper
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/resharper
-          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-resharper-
+            ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-docker-
+            ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-
 
       - name: Cache IntelliJ IDEA Ultimate
         id: cache-ultimate
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/ultimate
-          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-ultimate-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-
 
-      - name: Download IDEs from Repox (parallel, only missing ones)
+      - name: Extract IDEs from Docker images (parallel, only missing ones)
         env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: |
-          .github/scripts/download-ides.sh \
-            "${{ steps.cache-intellij.outputs.cache-hit }}" \
-            "${{ steps.cache-clion.outputs.cache-hit }}" \
-            "${{ steps.cache-rider.outputs.cache-hit }}" \
-            "${{ steps.cache-resharper.outputs.cache-hit }}" \
-            "${{ steps.cache-ultimate.outputs.cache-hit }}"
-          
-          echo "All required IDEs ready"
-          ls -la ${{ env.IDE_CACHE_DIR }}/
-
-      - name: Set IDE environment variables
-        run: |
-          echo "IDEA_HOME=${{ env.IDE_CACHE_DIR }}/intellij" >> $GITHUB_ENV
-          echo "CLION_HOME=${{ env.IDE_CACHE_DIR }}/clion" >> $GITHUB_ENV
-          echo "RIDER_HOME=${{ env.IDE_CACHE_DIR }}/rider" >> $GITHUB_ENV
-          echo "RESHARPER_HOME=${{ env.IDE_CACHE_DIR }}/resharper" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${{ env.IDE_CACHE_DIR }}/ultimate" >> $GITHUB_ENV
+          CACHE_INTELLIJ: ${{ steps.cache-intellij.outputs.cache-hit }}
+          CACHE_CLION: ${{ steps.cache-clion.outputs.cache-hit }}
+          CACHE_RIDER: ${{ steps.cache-rider.outputs.cache-hit }}
+          CACHE_RESHARPER: ${{ steps.cache-resharper.outputs.cache-hit }}
+          CACHE_ULTIMATE: ${{ steps.cache-ultimate.outputs.cache-hit }}
+        run: .github/scripts/setup-ides-from-docker.sh
 
       - name: Build Plugin
         uses: SonarSource/ci-github-actions/build-gradle@v1
@@ -164,9 +163,9 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
@@ -192,21 +191,21 @@ jobs:
         run: .\gradlew.bat :check
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@3585e9575db828022551b4231f165eb59a0e74e3 # v5.6.2
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/test-results/**/*.xml'
 
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: test-reports-windows
           path: "**/reports/**/**"
 
       - name: Upload JUnit test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: junit-results-windows
           path: "**/test-results/**/*.xml"
@@ -220,91 +219,82 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0  # Full history needed for Sonar blame
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
-      - name: Fetch vault secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
-          secrets: |
-            development/kv/data/repox url | ARTIFACTORY_URL;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
 
       - name: Cache IntelliJ IDEA Community
         id: cache-intellij
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/intellij
-          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-intellij-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-
 
       - name: Cache CLion
         id: cache-clion
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/clion
-          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-clion-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-
 
       - name: Cache Rider
         id: cache-rider
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/rider
-          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-rider-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-
 
       - name: Cache CLion for ReSharper
         id: cache-resharper
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/resharper
-          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-resharper-
+            ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-docker-
+            ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-
 
       - name: Cache IntelliJ IDEA Ultimate
         id: cache-ultimate
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/ultimate
-          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-ultimate-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-
 
-      - name: Download IDEs from Repox (parallel, only missing ones)
+      - name: Extract IDEs from Docker images (parallel, only missing ones)
         env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: |
-          .github/scripts/download-ides.sh \
-            "${{ steps.cache-intellij.outputs.cache-hit }}" \
-            "${{ steps.cache-clion.outputs.cache-hit }}" \
-            "${{ steps.cache-rider.outputs.cache-hit }}" \
-            "${{ steps.cache-resharper.outputs.cache-hit }}" \
-            "${{ steps.cache-ultimate.outputs.cache-hit }}"
-          
-          echo "All required IDEs ready"
-          ls -la ${{ env.IDE_CACHE_DIR }}/
-
-      - name: Set IDE environment variables
-        run: |
-          echo "IDEA_HOME=${{ env.IDE_CACHE_DIR }}/intellij" >> $GITHUB_ENV
-          echo "CLION_HOME=${{ env.IDE_CACHE_DIR }}/clion" >> $GITHUB_ENV
-          echo "RIDER_HOME=${{ env.IDE_CACHE_DIR }}/rider" >> $GITHUB_ENV
-          echo "RESHARPER_HOME=${{ env.IDE_CACHE_DIR }}/resharper" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${{ env.IDE_CACHE_DIR }}/ultimate" >> $GITHUB_ENV
+          CACHE_INTELLIJ: ${{ steps.cache-intellij.outputs.cache-hit }}
+          CACHE_CLION: ${{ steps.cache-clion.outputs.cache-hit }}
+          CACHE_RIDER: ${{ steps.cache-rider.outputs.cache-hit }}
+          CACHE_RESHARPER: ${{ steps.cache-resharper.outputs.cache-hit }}
+          CACHE_ULTIMATE: ${{ steps.cache-ultimate.outputs.cache-hit }}
+        run: .github/scripts/setup-ides-from-docker.sh
 
       - name: Run Tests and Sonar Analysis
         uses: SonarSource/ci-github-actions/build-gradle@v1
@@ -316,21 +306,21 @@ jobs:
           gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@3585e9575db828022551b4231f165eb59a0e74e3 # v5.6.2
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/test-results/**/*.xml'
 
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: test-reports-linux
           path: "**/reports/**/**"
 
       - name: Upload JUnit test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: junit-results-linux
           path: "**/test-results/**/*.xml"
@@ -343,16 +333,16 @@ jobs:
       - build-number
     env:
       IDE_CACHE_DIR: /opt/jetbrains
-      INTELLIJ_VERSION: "2023.1.7"
-      CLION_VERSION: "2023.1.7"
-      RIDER_VERSION: "2023.1.7"
-      RESHARPER_VERSION: "2024.1"
-      ULTIMATE_VERSION: "2023.1.7"
+      INTELLIJ_VERSION: "2023.3.8"
+      CLION_VERSION: "2023.3.6"
+      RIDER_VERSION: "2024.3.9"
+      RESHARPER_VERSION: "2024.3.6"
+      ULTIMATE_VERSION: "2023.3.8"
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
@@ -360,41 +350,46 @@ jobs:
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/intellij
-          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-intellij-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-
 
       - name: Cache CLion
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/clion
-          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-clion-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-
 
       - name: Cache Rider
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/rider
-          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-rider-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-
 
       - name: Cache CLion for ReSharper
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/resharper
-          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
+          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-resharper-
+            ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-docker-
+            ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}-
 
       - name: Cache IntelliJ IDEA Ultimate
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/ultimate
-          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-ultimate-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-
 
       - name: Verify Plugin Compatibility
         uses: SonarSource/ci-github-actions/build-gradle@v1
@@ -416,66 +411,69 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ide_version: 'IC-2023.1.7'
+          - ide_version: 'IC-2023.3.8'
             qa_category: 'Idea2023'
             test_suite: 'OpenInIdeTests'
-          - ide_version: 'IC-2023.1.7'
+          - ide_version: 'IC-2023.3.8'
             qa_category: 'Idea2023'
             test_suite: 'ConnectedAnalysisTests'
-          - ide_version: 'IC-2023.1.7'
+          - ide_version: 'IC-2023.3.8'
             qa_category: 'Idea2023'
             test_suite: 'ConfigurationTests'
-          - ide_version: 'IC-2023.1.7'
+          - ide_version: 'IC-2023.3.8'
             qa_category: 'Idea2023'
             test_suite: 'Standalone'
-          - ide_version: 'IC-2025.2'
+          - ide_version: 'IC-2025.3.2'
             qa_category: 'Idea2025'
             test_suite: 'OpenInIdeTests'
-          - ide_version: 'IC-2025.2'
+          - ide_version: 'IC-2025.3.2'
             qa_category: 'Idea2025'
             test_suite: 'ConnectedAnalysisTests'
-          - ide_version: 'IC-2025.2'
+          - ide_version: 'IC-2025.3.2'
             qa_category: 'Idea2025'
             test_suite: 'ConfigurationTests'
-          - ide_version: 'IC-2025.2'
+          - ide_version: 'IC-2025.3.2'
             qa_category: 'Idea2025'
             test_suite: 'Standalone'
-          - ide_version: 'IU-2023.1.7'
+          - ide_version: 'IU-2023.3.8'
             qa_category: 'IdeaUltimate2023'
-          - ide_version: 'IU-2025.2'
+          - ide_version: 'IU-2025.3.2'
             qa_category: 'IdeaUltimate2025'
-          - ide_version: 'PY-2023.1.6'
+          - ide_version: 'PY-2023.3.7'
             qa_category: 'PyCharmProfessional2023'
-          - ide_version: 'PY-2025.2'
+          - ide_version: 'PY-2025.3.2.1'
             qa_category: 'PyCharmProfessional2025'
-          - ide_version: 'PC-2023.1.6'
+          - ide_version: 'PC-2023.3.7'
             qa_category: 'PyCharmCommunity2023'
-          - ide_version: 'PC-2025.2'
+          - ide_version: 'PC-2025.3.2.1'
             qa_category: 'PyCharmCommunity2025'
-          - ide_version: 'RD-2023.3.6'
-            qa_category: 'Rider2023'
+          # Rider 2023.3.6 disabled in Docker image
+          # - ide_version: 'RD-2023.3.6'
+          #   qa_category: 'Rider2023'
+          - ide_version: 'RD-2024.3.9'
+            qa_category: 'Rider2024'
           # Temporarily disabled, consistently failing
           #          - ide_version: 'RD-2025.1.5'
           #            qa_category: 'Rider2025'
-          - ide_version: 'PS-2023.1.6'
+          - ide_version: 'PS-2023.3.8'
             qa_category: 'PhpStorm2023'
-          - ide_version: 'PS-2025.2'
+          - ide_version: 'PS-2025.3.2'
             qa_category: 'PhpStorm2025'
           - ide_version: 'GO-2023.3.8'
             qa_category: 'GoLand2023'
-          - ide_version: 'GO-2025.2'
+          - ide_version: 'GO-2025.3.2'
             qa_category: 'GoLand2025'
-          - ide_version: 'CL-2023.1.7'
+          - ide_version: 'CL-2023.3.6'
             qa_category: 'CLion2023'
-          - ide_version: 'CL-2025.2'
+          - ide_version: 'CL-2025.3.2'
             qa_category: 'CLion2025'
     env:
       IDE_CACHE_DIR: /opt/jetbrains
-      INTELLIJ_VERSION: "2023.1.7"
-      CLION_VERSION: "2023.1.7"
-      RIDER_VERSION: "2023.1.7"
-      RESHARPER_VERSION: "2024.1"
-      ULTIMATE_VERSION: "2023.1.7"
+      INTELLIJ_VERSION: "2023.3.8"
+      CLION_VERSION: "2023.3.6"
+      RIDER_VERSION: "2024.3.9"
+      RESHARPER_VERSION: "2024.3.6"
+      ULTIMATE_VERSION: "2023.3.8"
       DISPLAY: ':10'
       JDK_VERSION: '21'
       IDEA_VERSION: ${{ matrix.ide_version }}
@@ -483,9 +481,9 @@ jobs:
       TEST_SUITE: ${{ matrix.test_suite }}
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
@@ -497,100 +495,104 @@ jobs:
           sudo mkdir -p ${{ env.IDE_CACHE_DIR }}
           sudo chown -R $USER:$USER ${{ env.IDE_CACHE_DIR }}
 
-      - name: Restore cached IntelliJ Community
+      - name: Restore cached IntelliJ Community (base)
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/intellij
-          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
+          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-intellij-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-docker-
+            ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}-
 
-      - name: Restore cached CLion
+      - name: Restore cached CLion (base)
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/clion
-          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
+          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-clion-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-docker-
+            ${{ runner.os }}-clion-${{ env.CLION_VERSION }}-
 
-      - name: Restore cached Rider
+      - name: Restore cached Rider (base)
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/rider
-          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
+          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-rider-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-docker-
+            ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}-
 
-      - name: Restore cached IntelliJ Ultimate
+      - name: Restore cached IntelliJ Ultimate (base)
         uses: SonarSource/gh-action_cache@v1
         with:
           path: ${{ env.IDE_CACHE_DIR }}/ultimate
-          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
+          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-${{ env.DOCKER_IMAGE_TAG }}
           restore-keys: |
-            ${{ runner.os }}-ultimate-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-docker-
+            ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}-
 
-      # Cache additional IDEs used by QA matrix
-      - name: Cache IntelliJ Community 2025.2
+      # Cache additional IDEs used by QA matrix (IntelliJ Gradle plugin will download if missing)
+      - name: Cache IntelliJ Community 2025.3.2
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/IdeaIC/2025.2
-          key: ${{ runner.os }}-jetbrains-ide-IC-2025.2
+          path: ~/.cache/JetBrains/IdeaIC/2025.3.2
+          key: ${{ runner.os }}-jetbrains-ide-IC-2025.3.2
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-IC-
 
-      - name: Cache IntelliJ Ultimate 2025.2
+      - name: Cache IntelliJ Ultimate 2025.3.2
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/IdeaIU/2025.2
-          key: ${{ runner.os }}-jetbrains-ide-IU-2025.2
+          path: ~/.cache/JetBrains/IdeaIU/2025.3.2
+          key: ${{ runner.os }}-jetbrains-ide-IU-2025.3.2
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-IU-
 
-      - name: Cache PyCharm Professional 2023.1.6
+      - name: Cache PyCharm Professional 2023.3.7
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/PyCharm/2023.1.6
-          key: ${{ runner.os }}-jetbrains-ide-PY-2023.1.6
+          path: ~/.cache/JetBrains/PyCharm/2023.3.7
+          key: ${{ runner.os }}-jetbrains-ide-PY-2023.3.7
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-PY-
 
-      - name: Cache PyCharm Professional 2025.2
+      - name: Cache PyCharm Professional 2025.3.2.1
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/PyCharm/2025.2
-          key: ${{ runner.os }}-jetbrains-ide-PY-2025.2
+          path: ~/.cache/JetBrains/PyCharm/2025.3.2.1
+          key: ${{ runner.os }}-jetbrains-ide-PY-2025.3.2.1
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-PY-
 
-      - name: Cache PyCharm Community 2023.1.6
+      - name: Cache PyCharm Community 2023.3.7
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/PyCharmCE/2023.1.6
-          key: ${{ runner.os }}-jetbrains-ide-PC-2023.1.6
+          path: ~/.cache/JetBrains/PyCharmCE/2023.3.7
+          key: ${{ runner.os }}-jetbrains-ide-PC-2023.3.7
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-PC-
 
-      - name: Cache PyCharm Community 2025.2
+      - name: Cache PyCharm Community 2025.3.2.1
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/PyCharmCE/2025.2
-          key: ${{ runner.os }}-jetbrains-ide-PC-2025.2
+          path: ~/.cache/JetBrains/PyCharmCE/2025.3.2.1
+          key: ${{ runner.os }}-jetbrains-ide-PC-2025.3.2.1
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-PC-
 
-      - name: Cache PhpStorm 2023.1.6
+      - name: Cache PhpStorm 2023.3.8
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/PhpStorm/2023.1.6
-          key: ${{ runner.os }}-jetbrains-ide-PS-2023.1.6
+          path: ~/.cache/JetBrains/PhpStorm/2023.3.8
+          key: ${{ runner.os }}-jetbrains-ide-PS-2023.3.8
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-PS-
 
-      - name: Cache PhpStorm 2025.2
+      - name: Cache PhpStorm 2025.3.2
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/PhpStorm/2025.2
-          key: ${{ runner.os }}-jetbrains-ide-PS-2025.2
+          path: ~/.cache/JetBrains/PhpStorm/2025.3.2
+          key: ${{ runner.os }}-jetbrains-ide-PS-2025.3.2
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-PS-
 
@@ -602,27 +604,35 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-GO-
 
-      - name: Cache GoLand 2025.2
+      - name: Cache GoLand 2025.3.2
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/GoLand/2025.2
-          key: ${{ runner.os }}-jetbrains-ide-GO-2025.2
+          path: ~/.cache/JetBrains/GoLand/2025.3.2
+          key: ${{ runner.os }}-jetbrains-ide-GO-2025.3.2
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-GO-
 
-      - name: Cache CLion 2025.2
+      - name: Cache CLion 2023.3.6
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/CLion/2025.2
-          key: ${{ runner.os }}-jetbrains-ide-CL-2025.2
+          path: ~/.cache/JetBrains/CLion/2023.3.6
+          key: ${{ runner.os }}-jetbrains-ide-CL-2023.3.6
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-CL-
 
-      - name: Cache Rider 2023.3.6
+      - name: Cache CLion 2025.3.2
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: ~/.cache/JetBrains/Rider/2023.3.6
-          key: ${{ runner.os }}-jetbrains-ide-RD-2023.3.6
+          path: ~/.cache/JetBrains/CLion/2025.3.2
+          key: ${{ runner.os }}-jetbrains-ide-CL-2025.3.2
+          restore-keys: |
+            ${{ runner.os }}-jetbrains-ide-CL-
+
+      - name: Cache Rider 2024.3.9
+        uses: SonarSource/gh-action_cache@v1
+        with:
+          path: ~/.cache/JetBrains/Rider/2024.3.9
+          key: ${{ runner.os }}-jetbrains-ide-RD-2024.3.9
           restore-keys: |
             ${{ runner.os }}-jetbrains-ide-RD-
 
@@ -799,14 +809,14 @@ jobs:
           fi
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@3585e9575db828022551b4231f165eb59a0e74e3 # v5.6.2
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/test-results/**/*.xml'
 
       - name: Upload test recording
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: test-recording-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
           path: ${{ github.workspace }}/recording_${{ matrix.ide_version }}.mp4
@@ -814,7 +824,7 @@ jobs:
 
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: test-reports-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
           path: "**/reports/**/*"
@@ -822,7 +832,7 @@ jobs:
 
       - name: Upload JUnit test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: junit-results-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
           path: "**/test-results/**/*.xml"
@@ -840,9 +850,9 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
@@ -864,9 +874,9 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
           experimental: true
