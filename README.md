@@ -23,7 +23,8 @@ How to install
 You can install SonarQube for IntelliJ from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly
 available in the IDE preferences.
 
-Full up-to-date details are available on the [Requirements](https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/requirements/)
+Full up-to-date details are available on
+the [Requirements](https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/requirements/)
 and [Installation](https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/installation/) pages.
 
 Questions and Feedback?
@@ -156,10 +157,155 @@ For example:
 Keep in mind that the `clean` task will wipe out the content of `build/`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
 
+CI/CD and IDE Testing
+---------------------
+
+The project uses Docker images to provide consistent IDE installations across CI/CD pipelines. This approach eliminates the need for
+downloading IDEs from Artifactory and ensures reproducible builds.
+### IDE Provisioning Strategy
+
+The project uses a hybrid approach for IDE provisioning in CI:
+
+- **Embedded IDEs** (2023, 2024 versions): Pre-installed in the Docker container
+- **Non-embedded IDEs** (2025+ versions, specific products): Downloaded from Repox on-demand
+
+### Docker Container and Embedded IDEs
+
+The project uses a single Docker image (`sonarlint-intellij`) as a container for all CI jobs. This container includes pre-installed
+IDEs:
+
+- **IntelliJ IDEA Community 2023**: `IDEA_2023_DIR`
+- **IntelliJ IDEA Ultimate 2023**: `IDEA_ULTIMATE_2023_DIR`
+- **CLion 2023**: `CLION_2023_DIR`
+- **CLion 2024**: `CLION_2024_DIR` (for ReSharper testing)
+- **Rider 2023**: `RIDER_2023_DIR`
+- **Rider 2024**: `RIDER_2024_DIR`
+
+These environment variables point to the installation directories within the container.
+
+### QA Matrix Testing
+
+The QA job (`.github/workflows/build.yml`) tests against a matrix of IDE versions. The workflow:
+
+1. **Runs in container**: All Linux jobs execute in the Docker container with embedded IDEs
+2. **Determines IDE source**: Checks if the IDE version is embedded or needs downloading
+3. **Runs setup-qa-ide.sh**: Sets up the IDE and exports environment variables (IDEA_HOME, RIDER_HOME, etc.)
+4. **Gradle uses env vars**: The Gradle build reads these variables to locate the IDE
+
+### Setup Script: setup-qa-ide.sh
+
+Located at `.github/scripts/setup-qa-ide.sh`, this script:
+
+- Detects if the requested IDE version is embedded in the container
+- For embedded IDEs: Sets environment variable to container path
+- For non-embedded IDEs: Downloads from Repox (with caching), extracts, and sets environment variable
+- Supports unified distributions (IDEA 2025.3+, PyCharm 2025.3+)
+
+Usage:
+
+```bash
+.github/scripts/setup-qa-ide.sh IC-2025.3.2
+```
+
+Sets `IDEA_HOME` to the IDE location.
+
+### Gradle IDE Resolution (its/build.gradle.kts)
+
+The integration tests module resolves IDEs in this order:
+
+1. **Environment variable** (set by setup-qa-ide.sh): `IDEA_HOME`, `RIDER_HOME`, etc.
+2. **On CI**: If env var not set, build FAILS (setup-qa-ide.sh should have provided it)
+3. **Local development**: If env var not set, falls back to downloading from Repox
+
+This ensures CI never masks setup failures by downloading IDEs.
+
+### Adding or Changing IDE Versions
+
+#### To Add an Embedded IDE Version
+
+1. **Update Docker image**: Add the IDE to the `sonarlint-intellij` Docker image
+   in [docker-images repository](https://github.com/SonarSource/docker-images)
+2. **Set environment variable**: The Dockerfile should export `<IDE>_<YEAR>_DIR` (e.g., `IDEA_2025_DIR`)
+3. **Update workflow**: Add the version to the embedded pattern in `.github/workflows/build.yml` (line ~435):
+   ```yaml
+   case "$IDE_CODE-$IDE_YEAR" in
+     IC-2023|IU-2023|CL-2023|CL-2024|RD-2023|RD-2024|IC-2025)  # Add new version here
+   ```
+4. **Update setup-qa-ide.sh**: Add detection case for the new version (line ~60-100):
+   ```bash
+   IC-2025)
+       if [[ -n "${IDEA_2025_DIR:-}" && -d "${IDEA_2025_DIR}" ]]; then
+           EMBEDDED="true"
+           IDE_PATH="${IDEA_2025_DIR}"
+           ENV_VAR="IDEA_HOME"
+       fi
+       ;;
+   ```
+5. **Update QA matrix**: Add the version to the QA matrix in `.github/workflows/build.yml` (line ~310)
+
+#### To Add a Non-Embedded IDE Version
+
+1. **Verify Repox availability**: Ensure the IDE version exists in Repox (check with Infrastructure team)
+2. **Update QA matrix**: Add the version to the QA matrix in `.github/workflows/build.yml` (line ~310):
+   ```yaml
+   - ide_version: "IC-2025.4.1"
+     suite: "its"
+   ```
+3. **No other changes needed**: setup-qa-ide.sh will automatically download from Repox
+4. **Test locally**: Run the setup script to verify download works:
+   ```bash
+   export ARTIFACTORY_URL="..."
+   export ARTIFACTORY_USER="..."
+   export ARTIFACTORY_ACCESS_TOKEN="..."
+   .github/scripts/setup-qa-ide.sh IC-2025.4.1
+   ```
+
+#### IDE Version Naming Convention
+
+- Format: `{CODE}-{VERSION}` (e.g., `IC-2025.3.2`, `RD-2024.3.9`)
+- Codes: `IC` (IDEA Community), `IU` (IDEA Ultimate), `CL` (CLion), `RD` (Rider), `PY` (PyCharm Pro), `PC` (PyCharm Community), `PS` (
+  PhpStorm), `GO` (GoLand)
+
+### Local Development
+
+Developers running integration tests locally have three options:
+
+1. **Set environment variable**: Export the IDE home path:
+   ```bash
+   export IDEA_HOME=/path/to/idea
+   ./gradlew :its:runIdeForUiTests -PijVersion=IC-2025.3.2
+   ```
+
+2. **Let Gradle download**: Don't set the env var, Gradle will download from Repox:
+   ```bash
+   # Requires Artifactory credentials in ~/.gradle/gradle.properties
+   ./gradlew :its:runIdeForUiTests -PijVersion=IC-2025.3.2
+   ```
+
+3. **Use runIdeDirectory property**: Point directly to an IDE installation:
+   ```bash
+   ./gradlew :its:runIdeForUiTests -PrunIdeDirectory=/Applications/IntelliJ\ IDEA.app/Contents
+   ```
+
+### Download Script: download-ides.sh
+
+Located at `.github/scripts/download-ides.sh`, this script handles downloading a single IDE from Repox:
+
+- Supports unified distributions (2025.3+)
+- Downloads to `~/.cache/JetBrains/{Product}/{Version}`
+- Verifies product-info.json after extraction
+- Called by setup-qa-ide.sh for non-embedded IDEs
+
+Direct usage (usually not needed):
+```bash
+.github/scripts/download-ides.sh IC 2025.3.2
+```
+
 Plugin Verification
 --------------------------
 
-The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier. This ensures compatibility across different IDE
+The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier. This ensures
+compatibility across different IDE
 versions and types.
 
 ### Automated Nightly Testing

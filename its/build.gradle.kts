@@ -30,18 +30,53 @@ val cachedResharperVersion: String? = System.getenv("RESHARPER_VERSION")
 val cachedUltimateVersion: String? = System.getenv("ULTIMATE_VERSION")
 
 /**
+ * Check if the IDE is available via container environment variables.
+ * Returns the path from container env vars like IDEA_2023_DIR, IDEA_2024_DIR, etc.
+ */
+fun getContainerIdePath(type: String, version: String): String? {
+    // Extract year from version (e.g., "2023.3.8" -> "2023")
+    val year = version.split('.').firstOrNull()
+
+    return when (type) {
+        "IC" -> System.getenv("IDEA_${year}_DIR")
+        "IU" -> System.getenv("IDEA_ULTIMATE_${year}_DIR")
+        "CL" -> System.getenv("CLION_${year}_DIR")
+        "RD" -> System.getenv("RIDER_${year}_DIR")
+        "PY" -> when (year) {
+            "2023", "2024" -> System.getenv("PYCHARM_PRO_${year}_DIR")
+            else -> System.getenv("PYCHARM_${year}_DIR")
+        }
+        "PC" -> when (year) {
+            "2023", "2024" -> System.getenv("PYCHARM_COM_${year}_DIR")
+            else -> System.getenv("PYCHARM_${year}_DIR")  // 2025+ uses unified path
+        }
+        "PS" -> System.getenv("PHPSTORM_${year}_DIR")
+        "GO" -> System.getenv("GOLAND_${year}_DIR")
+        else -> null
+    }
+}
+
+/**
  * Check if the given ijVersion (e.g., "IC-2023.1.7") matches one of the cached IDEs.
  * Returns the local path if cached, null otherwise.
+ * Checks container environment variables first, then falls back to legacy cache dir.
  */
 fun getCachedIdePath(ijVersion: String?): String? {
     if (ijVersion.isNullOrBlank()) return null
-    
+
     val parts = ijVersion.split('-')
     if (parts.size != 2) return null
-    
+
     val type = parts[0]
     val version = parts[1]
-    
+
+    // First, check container environment variables (for container-based jobs)
+    val containerPath = getContainerIdePath(type, version)
+    if (containerPath != null && File(containerPath).exists()) {
+        return containerPath
+    }
+
+    // Fallback to legacy cache dir approach
     return when {
         type == "IC" && version == cachedIntellijVersion -> "$ideCacheDir/intellij"
         type == "IU" && version == cachedUltimateVersion -> "$ideCacheDir/ultimate"
@@ -60,17 +95,36 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         if (project.hasProperty("ijVersion")) {
-            val cachedPath = getCachedIdePath(ijVersion)
-            
-            if (cachedPath != null && File(cachedPath).exists()) {
-                println("ITs: Using cached IDE from workflow: $cachedPath (ijVersion=$ijVersion)")
-                local(cachedPath)
+            val type = ijVersion.split('-')[0]
+            val version = ijVersion.split('-')[1]
+
+            // First check if setup-qa-ide.sh set an environment variable
+            val envVarPath = when (type) {
+                "IC", "IU" -> System.getenv("IDEA_HOME")
+                "CL" -> System.getenv("CLION_HOME")
+                "RD" -> System.getenv("RIDER_HOME")
+                "PY", "PC" -> System.getenv("PYCHARM_HOME")
+                "PS" -> System.getenv("PHPSTORM_HOME")
+                "GO" -> System.getenv("GOLAND_HOME")
+                else -> null
+            }
+
+            if (envVarPath != null && File(envVarPath).exists()) {
+                println("ITs: Using IDE from setup-qa-ide.sh: $envVarPath (ijVersion=$ijVersion)")
+                local(envVarPath)
             } else {
-                println("ITs: IDE $ijVersion not in cache, downloading from repository")
-                val type = ijVersion.split('-')[0]
-                val version = ijVersion.split('-')[1]
-                create(type, version) {
-                    useCache = true
+                // Fall back to legacy resolution with warning
+                println("ITs: WARNING: Environment variable not set by setup-qa-ide.sh, using legacy resolution")
+                val cachedPath = getCachedIdePath(ijVersion)
+
+                if (cachedPath != null && File(cachedPath).exists()) {
+                    println("ITs: Using cached IDE from workflow: $cachedPath (ijVersion=$ijVersion)")
+                    local(cachedPath)
+                } else {
+                    println("ITs: IDE $ijVersion not in cache, downloading from repository")
+                    create(type, version) {
+                        useCache = true
+                    }
                 }
             }
         } else {
