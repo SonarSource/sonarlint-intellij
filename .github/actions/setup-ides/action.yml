@@ -1,0 +1,89 @@
+name: 'Setup JetBrains IDEs'
+description: 'Extract JetBrains IDEs from Docker images for SonarLint IntelliJ build'
+
+inputs:
+  ides:
+    description: 'Space-separated list of IDE versions to install (e.g., "IC-2023.1.7 CL-2023.1.7 RS-2024.3.7 RD-2024.3.7 IU-2023.1.7")'
+    required: true
+  ide-cache-dir:
+    description: 'Base directory for IDE installation'
+    required: false
+    default: '/opt/jetbrains'
+
+outputs:
+  idea-home:
+    description: 'Path to IntelliJ IDEA Community'
+    value: ${{ steps.set-vars.outputs.idea-home }}
+  clion-home:
+    description: 'Path to CLion'
+    value: ${{ steps.set-vars.outputs.clion-home }}
+  resharper-home:
+    description: 'Path to ReSharper (CLion with radler)'
+    value: ${{ steps.set-vars.outputs.resharper-home }}
+  rider-home:
+    description: 'Path to Rider'
+    value: ${{ steps.set-vars.outputs.rider-home }}
+  ultimate-home:
+    description: 'Path to IntelliJ IDEA Ultimate'
+    value: ${{ steps.set-vars.outputs.ultimate-home }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract IDEs from Docker images
+      shell: bash
+      env:
+        IDES_LIST: ${{ inputs.ides }}
+        IDE_CACHE_DIR_INPUT: ${{ inputs.ide-cache-dir }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        sudo mkdir -p "$IDE_CACHE_DIR_INPUT"
+        sudo chown -R $USER:$USER "$IDE_CACHE_DIR_INPUT"
+
+        # Install IDEs in parallel
+        PIDS=()
+        for ide in $IDES_LIST; do
+          echo "Starting setup for ${ide}..."
+          ("${ACTION_PATH}/../../scripts/setup-ides-from-docker.sh" "${ide}" "$IDE_CACHE_DIR_INPUT") &
+          PIDS+=($!)
+        done
+
+        # Wait for all parallel installations
+        echo "Waiting for all IDE installations to complete..."
+        for pid in "${PIDS[@]}"; do
+          if ! wait "$pid"; then
+            echo "::error title=IDE installation failed (PID: $pid)"
+            exit 1
+          fi
+        done
+
+        echo "✓ All IDEs installed successfully"
+        ls -la "$IDE_CACHE_DIR_INPUT"
+
+    - name: Set environment variables
+      id: set-vars
+      shell: bash
+      env:
+        IDE_CACHE_DIR_INPUT: ${{ inputs.ide-cache-dir }}
+      run: |
+        if [ -d "$IDE_CACHE_DIR_INPUT/intellij" ]; then
+          echo "IDEA_HOME=$IDE_CACHE_DIR_INPUT/intellij" >> $GITHUB_ENV
+          echo "idea-home=$IDE_CACHE_DIR_INPUT/intellij" >> $GITHUB_OUTPUT
+        fi
+        if [ -d "$IDE_CACHE_DIR_INPUT/clion" ]; then
+          echo "CLION_HOME=$IDE_CACHE_DIR_INPUT/clion" >> $GITHUB_ENV
+          echo "clion-home=$IDE_CACHE_DIR_INPUT/clion" >> $GITHUB_OUTPUT
+        fi
+        if [ -d "$IDE_CACHE_DIR_INPUT/resharper" ]; then
+          echo "RESHARPER_HOME=$IDE_CACHE_DIR_INPUT/resharper" >> $GITHUB_ENV
+          echo "resharper-home=$IDE_CACHE_DIR_INPUT/resharper" >> $GITHUB_OUTPUT
+        fi
+        if [ -d "$IDE_CACHE_DIR_INPUT/rider" ]; then
+          echo "RIDER_HOME=$IDE_CACHE_DIR_INPUT/rider" >> $GITHUB_ENV
+          echo "rider-home=$IDE_CACHE_DIR_INPUT/rider" >> $GITHUB_OUTPUT
+        fi
+        if [ -d "$IDE_CACHE_DIR_INPUT/ultimate" ]; then
+          echo "ULTIMATE_HOME=$IDE_CACHE_DIR_INPUT/ultimate" >> $GITHUB_ENV
+          echo "ultimate-home=$IDE_CACHE_DIR_INPUT/ultimate" >> $GITHUB_OUTPUT
+        fi
+        echo "✓ IDE environment variables set"
