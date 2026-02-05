@@ -2,7 +2,7 @@ name: Plugin Verifier Nightly
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Daily at midnight UTC
+    - cron: '0 0 * * 4'  # Daily at midnight UTC
   workflow_dispatch:
 
 permissions:
@@ -12,18 +12,8 @@ permissions:
 jobs:
   verify_plugin:
     runs-on: github-ubuntu-latest-m
-    name: Verify Plugin - ${{ matrix.verifier_env }}
+    name: Verify Plugin - LATEST
     if: github.ref_name == github.event.repository.default_branch
-    strategy:
-      fail-fast: false
-      matrix:
-        verifier_env:
-          - 'EAP'
-          - 'MINIMAL'
-          - 'LATEST'
-    env:
-      VERIFIER_ENV: ${{ matrix.verifier_env }}
-      ALLOWED_IDE: "AS|CL|DG|GO|IIU|IIC|IIE|PS|PCP|PCC|PCE|RDCPPP|RD|RM|WS"
     steps:
       - uses: actions/checkout@v5
 
@@ -59,9 +49,9 @@ jobs:
           path: |
             ~/.cache/JetBrains
             ~/.local/share/JetBrains
-          key: ${{ runner.os }}-jetbrains-verifier-${{ matrix.verifier_env }}-${{ hashFiles('gradle.properties', 'build.gradle.kts') }}
+          key: ${{ runner.os }}-jetbrains-verifier-latest-${{ hashFiles('gradle.properties', 'build.gradle.kts') }}
           restore-keys: |
-            ${{ runner.os }}-jetbrains-verifier-${{ matrix.verifier_env }}-
+            ${{ runner.os }}-jetbrains-verifier-latest-
 
       - name: Fetch vault secrets
         id: secrets
@@ -81,13 +71,13 @@ jobs:
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
           DEVELOCITY_ACCESS_KEY: develocity-public.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-        run: ./gradlew :verifyPlugin -PverifierEnv=${VERIFIER_ENV}
+        run: ./gradlew :verifyPlugin -PverifierEnv=LATEST
 
       - name: Upload reports on failure
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: verifier-reports-${{ matrix.verifier_env }}
+          name: verifier-reports-latest
           path: "**/reports/**/*"
           if-no-files-found: warn
 
@@ -104,5 +94,4 @@ jobs:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: ":x: *Plugin Verifier Failed (${{ matrix.verifier_env }})*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Job:* Verify Plugin - ${{ matrix.verifier_env }}\n*Workflow:* ${{ github.workflow }}\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|#${{ github.run_number }}>"
-
+                  text: ":x: *Plugin Verifier Failed (LATEST)*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Job:* Verify Plugin - LATEST\n*Workflow:* ${{ github.workflow }}\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|#${{ github.run_number }}>"

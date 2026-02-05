@@ -176,7 +176,6 @@ The verification covers most of the major JetBrains IDEs that we support:
 
 - Android Studio
 - CLion
-- DataGrip
 - GoLand
 - IntelliJ IDEA (Community & Ultimate)
 - PhpStorm
@@ -194,8 +193,6 @@ To run plugin verification locally:
 ./gradlew :verifyPlugin
 
 # Test against specific environment
-./gradlew :verifyPlugin -PverifierEnv=EAP
-./gradlew :verifyPlugin -PverifierEnv=MINIMAL
 ./gradlew :verifyPlugin -PverifierEnv=LATEST
 
 # For regular CI builds, only minimal version of IC

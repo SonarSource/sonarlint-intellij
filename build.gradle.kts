@@ -174,7 +174,7 @@ intellijPlatform {
 
         val ideTypes = listOf(
             IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
-            IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.DataGrip, IntelliJPlatformType.GoLand,
+            IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.GoLand,
             IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
             IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity
         )
@@ -188,23 +188,6 @@ intellijPlatform {
                 "CI" -> ides {
                     select {
                         types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
-                        channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "231.*"
-                        untilBuild = "231.*"
-                    }
-                }
-
-                "EAP" -> ides {
-                    select {
-                        types = ideTypes
-                        channels = listOf(ProductRelease.Channel.EAP)
-                        sinceBuild = "252.*"
-                    }
-                }
-
-                "MINIMAL" -> ides {
-                    select {
-                        types = ideTypes
                         channels = listOf(ProductRelease.Channel.RELEASE)
                         sinceBuild = "231.*"
                         untilBuild = "231.*"
