@@ -161,7 +161,9 @@ class ReportTreeManager(
     
     private fun clearSelection() {
         findingDetailsPanel.clear()
-        getService(project, EditorDecorator::class.java).removeHighlights()
+        runOnUiThread(project) {
+            getService(project, EditorDecorator::class.java).removeHighlights()
+        }
     }
     
     /**

@@ -68,9 +68,11 @@ class EditorDecorator(private val project: Project) : Disposable {
         currentHighlightedDoc.forEach {
             clearSecondaryLocationNumbers(it)
             if (!project.isDisposed) {
-                UpdateHighlightersUtil.setHighlightersToEditor(
-                    project, it, 0, it.textLength, emptyList(), null, HIGHLIGHT_GROUP_ID
-                )
+                computeReadActionSafely(project) {
+                    UpdateHighlightersUtil.setHighlightersToEditor(
+                        project, it, 0, it.textLength, emptyList(), null, HIGHLIGHT_GROUP_ID
+                    )
+                }
             }
         }
         currentHighlightedDoc.clear()
@@ -142,10 +144,12 @@ class EditorDecorator(private val project: Project) : Disposable {
     }
 
     private fun highlightInDocument(highlights: List<HighlightInfo?>, document: Document) {
-        UpdateHighlightersUtil.setHighlightersToEditor(
-            project, document, 0,
-            document.textLength, highlights, null, HIGHLIGHT_GROUP_ID
-        )
+        computeReadActionSafely(project) {
+            UpdateHighlightersUtil.setHighlightersToEditor(
+                project, document, 0,
+                document.textLength, highlights, null, HIGHLIGHT_GROUP_ID
+            )
+        }
         currentHighlightedDoc.add(document)
     }
 
