@@ -454,9 +454,9 @@ jobs:
             qa_category: 'PyCharmCommunity2025'
           - ide_version: 'RD-2023.3.6'
             qa_category: 'Rider2023'
-# Temporarily disabled, consistently failing
-#          - ide_version: 'RD-2025.1.5'
-#            qa_category: 'Rider2025'
+          # Temporarily disabled, consistently failing
+          #          - ide_version: 'RD-2025.1.5'
+          #            qa_category: 'Rider2025'
           - ide_version: 'PS-2023.1.6'
             qa_category: 'PhpStorm2023'
           - ide_version: 'PS-2025.2'
@@ -899,37 +899,3 @@ jobs:
             --access-token "${ARTIFACTORY_API_KEY}" \
             --build-name "${{ github.event.repository.name }}" \
             --build-number "$BUILD_NUMBER"
-
-  notify_failure:
-    runs-on: github-ubuntu-latest-s
-    name: Notify on Failure
-    needs:
-      - build-plugin
-      - test-and-sonar
-      - check_windows
-      - verify-plugin
-      - qa
-      - promote
-      - dogfood
-    if: ${{ !cancelled() && (needs.build-plugin.result == 'failure' || needs.test-and-sonar.result == 'failure' || needs.check_windows.result == 'failure' || needs.verify-plugin.result == 'failure' || needs.qa.result == 'failure' || needs.promote.result == 'failure' || needs.dogfood.result == 'failure') }}
-    steps:
-      - name: Fetch vault secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
-        with:
-          secrets: |
-            development/kv/data/slack token | SLACK_BOT_TOKEN;
-
-      - name: Slack Notification on Failure
-        uses: slackapi/slack-github-action@v2.1.1
-        with:
-          method: chat.postMessage
-          token: ${{ fromJSON(steps.secrets.outputs.vault).SLACK_BOT_TOKEN }}
-          payload: |
-            channel: squad-ide-intellij-family-bots
-            text: "Build workflow failed in ${{ github.repository }}"
-            blocks:
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: ":x: *Build Workflow Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|#${{ github.run_number }}>"
