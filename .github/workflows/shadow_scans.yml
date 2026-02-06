@@ -15,8 +15,8 @@ jobs:
       IDE_CACHE_DIR: /opt/jetbrains
       INTELLIJ_VERSION: "2023.1.7"
       CLION_VERSION: "2023.1.7"
-      RIDER_VERSION: "2023.1.7"
-      RESHARPER_VERSION: "2024.1"
+      RIDER_VERSION: "2024.3.7"  # Rider 2023.3.6 disabled in Docker image
+      RESHARPER_VERSION: "2024.3.7"
       ULTIMATE_VERSION: "2023.1.7"
     steps:
       - name: Vault
@@ -26,85 +26,27 @@ jobs:
           secrets: |
             development/artifactory/token/SonarSource-sonarlint-intellij-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
-      - name: Prepare IDE cache directory
-        run: |
-          sudo mkdir -p ${{ env.IDE_CACHE_DIR }}
-          sudo chown -R $USER:$USER ${{ env.IDE_CACHE_DIR }}
-
-      - name: Cache IntelliJ IDEA Community
-        id: cache-intellij
-        uses: SonarSource/gh-action_cache@v1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
-          path: ${{ env.IDE_CACHE_DIR }}/intellij
-          key: ${{ runner.os }}-intellij-${{ env.INTELLIJ_VERSION }}
-          restore-keys: |
-            ${{ runner.os }}-intellij-
+          role-to-assume: arn:aws:iam::460386131003:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
+          aws-region: eu-central-1
 
-      - name: Cache CLion
-        id: cache-clion
-        uses: SonarSource/gh-action_cache@v1
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+
+      - name: Setup IDEs from Docker images
+        uses: ./.github/actions/setup-ides
         with:
-          path: ${{ env.IDE_CACHE_DIR }}/clion
-          key: ${{ runner.os }}-clion-${{ env.CLION_VERSION }}
-          restore-keys: |
-            ${{ runner.os }}-clion-
-
-      - name: Cache Rider
-        id: cache-rider
-        uses: SonarSource/gh-action_cache@v1
-        with:
-          path: ${{ env.IDE_CACHE_DIR }}/rider
-          key: ${{ runner.os }}-rider-${{ env.RIDER_VERSION }}
-          restore-keys: |
-            ${{ runner.os }}-rider-
-
-      - name: Cache CLion for ReSharper
-        id: cache-resharper
-        uses: SonarSource/gh-action_cache@v1
-        with:
-          path: ${{ env.IDE_CACHE_DIR }}/resharper
-          key: ${{ runner.os }}-resharper-${{ env.RESHARPER_VERSION }}
-          restore-keys: |
-            ${{ runner.os }}-resharper-
-
-      - name: Cache IntelliJ IDEA Ultimate
-        id: cache-ultimate
-        uses: SonarSource/gh-action_cache@v1
-        with:
-          path: ${{ env.IDE_CACHE_DIR }}/ultimate
-          key: ${{ runner.os }}-ultimate-${{ env.ULTIMATE_VERSION }}
-          restore-keys: |
-            ${{ runner.os }}-ultimate-
-
-      - name: Download IDEs from Repox (parallel, only missing ones)
-        env:
-          ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
-          ARTIFACTORY_USER: vault-SonarSource-sonarlint-intellij-private-reader
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: |
-          .github/scripts/download-ides.sh \
-            "${{ steps.cache-intellij.outputs.cache-hit }}" \
-            "${{ steps.cache-clion.outputs.cache-hit }}" \
-            "${{ steps.cache-rider.outputs.cache-hit }}" \
-            "${{ steps.cache-resharper.outputs.cache-hit }}" \
-            "${{ steps.cache-ultimate.outputs.cache-hit }}"
-          
-          echo "All required IDEs ready"
-          ls -la ${{ env.IDE_CACHE_DIR }}/
-
-      - name: Set IDE environment variables
-        run: |
-          echo "IDEA_HOME=${{ env.IDE_CACHE_DIR }}/intellij" >> $GITHUB_ENV
-          echo "CLION_HOME=${{ env.IDE_CACHE_DIR }}/clion" >> $GITHUB_ENV
-          echo "RIDER_HOME=${{ env.IDE_CACHE_DIR }}/rider" >> $GITHUB_ENV
-          echo "RESHARPER_HOME=${{ env.IDE_CACHE_DIR }}/resharper" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${{ env.IDE_CACHE_DIR }}/ultimate" >> $GITHUB_ENV
+          ides: IC-${{ env.INTELLIJ_VERSION }} IU-${{ env.ULTIMATE_VERSION }} CL-${{ env.CLION_VERSION }} RS-${{ env.RESHARPER_VERSION }} RD-${{ env.RIDER_VERSION }}
+          ide-cache-dir: ${{ env.IDE_CACHE_DIR }}
 
       - uses: SonarSource/ci-github-actions/build-gradle@v1
         env:
