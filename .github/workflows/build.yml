@@ -685,14 +685,14 @@ jobs:
           rm -f gradle-md5-sums.txt
 
       - name: Restore Gradle Cache
-        uses: SonarSource/gh-action_cache/restore@v1
+        uses: SonarSource/gh-action_cache@v1
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-Build-${{ steps.gradle-cache-key.outputs.key }}
+          key: gradle-${{ runner.os }}-${{ github.workflow }}-${{ steps.gradle-cache-key.outputs.key }}
           restore-keys: |
-            gradle-${{ runner.os }}-Build-
+            gradle-${{ runner.os }}-${{ github.workflow }}-
 
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
