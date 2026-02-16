@@ -1,5 +1,7 @@
-SonarQube for IntelliJ Plugin
-=========================
+SonarQube for IntelliJ Plugin — DevoxxGenie Fork
+=================================================
+
+> **Fork notice:** This is a fork of [SonarSource/sonarlint-intellij](https://github.com/SonarSource/sonarlint-intellij) that adds integration with the [DevoxxGenie](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) IntelliJ plugin. When DevoxxGenie is installed, SonarLint issues can be sent directly to DevoxxGenie for AI-assisted fix suggestions.
 
 [![Build Status](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/build.yml/badge.svg)](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/build.yml?query=branch%3Amaster)
 [![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
@@ -7,6 +9,37 @@ SonarQube for IntelliJ Plugin
 SonarQube for IDE is an IDE extension that helps you detect and fix quality issues, ensuring you
 deliever [integrated code quality and security](https://www.sonarsource.com/solutions/for-developers/).
 Like a spell checker, SonarQube for IntelliJ squiggles flaws so they can be fixed before committing code.
+
+DevoxxGenie Integration
+-----------------------
+
+This fork adds a seamless bridge between SonarLint findings and the DevoxxGenie AI coding assistant. When the [DevoxxGenie plugin](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) is installed alongside SonarQube for IntelliJ, two new entry points become available:
+
+### Editor Intention Action
+
+When your cursor is on a SonarLint issue, the lightbulb menu includes a **"DevoxxGenie: Fix '...'"** action. Selecting it sends the issue details and surrounding code context to DevoxxGenie, which generates a fix suggestion using the LLM provider you have configured.
+
+### Rule Description Panel Button
+
+When viewing a finding in the SonarLint tool window, a styled **"Fix with DevoxxGenie"** button appears in the rule header panel. Clicking it sends a structured prompt containing:
+
+- The rule name and key
+- The issue message
+- The file path and line number
+- A code snippet with surrounding context (~20 lines)
+
+### How It Works
+
+The integration uses a reflective bridge (`DevoxxGenieBridge`) to communicate with DevoxxGenie's `ExternalPromptService` at runtime. This means:
+
+- **No compile-time dependency** on DevoxxGenie — the plugin works normally without it
+- **Automatic detection** — the "Fix with DevoxxGenie" options only appear when the DevoxxGenie plugin is installed and enabled
+- **Any LLM provider** — DevoxxGenie supports multiple LLM providers (OpenAI, Anthropic, Ollama, etc.), so the fix suggestions use whichever provider you have configured
+
+### Requirements
+
+- SonarQube for IntelliJ (this plugin)
+- [DevoxxGenie](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) plugin installed and configured with an LLM provider
 
 Useful links
 ------------
@@ -16,6 +49,7 @@ Useful links
       on the [Rules page](https://docs.sonarsource.com/sonarqube-for-intellij/using/rules/).
 - [Community](https://community.sonarsource.com/c/help/sl)
     - Report an issue, ask for some help, or suggest new features.
+- [DevoxxGenie](https://github.com/devoxx/DevoxxGenieIDEAPlugin) — the AI coding assistant plugin this fork integrates with
 
 How to install
 --------------
