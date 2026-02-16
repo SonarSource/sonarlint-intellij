@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(git -C /Users/stephan/IdeaProjects/sonarlint-devoxxgenie-intellij add settings.gradle.kts)",
-      "Bash(git -C:*)"
+      "Bash(git -C:*)",
+      "Bash(./gradlew buildPlugin:*)",
+      "Bash(/usr/libexec/java_home:*)",
+      "Bash(JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/temurin-17.0.18/Contents/Home ./gradlew:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
