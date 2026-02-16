@@ -1,6 +1,8 @@
 SonarQube for IntelliJ Plugin — DevoxxGenie Fork
 =================================================
 
+![SonarMeetsDevoxxGenie](https://github.com/user-attachments/assets/4c32019b-cdca-4973-a339-454ee91fc7f2)
+
 > **Fork notice:** This is a fork of [SonarSource/sonarlint-intellij](https://github.com/SonarSource/sonarlint-intellij) that adds integration with the [DevoxxGenie](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) IntelliJ plugin. When DevoxxGenie is installed, SonarLint issues can be sent directly to DevoxxGenie for AI-assisted fix suggestions.
 
 [![Build Status](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/build.yml/badge.svg)](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/build.yml?query=branch%3Amaster)
@@ -19,6 +21,8 @@ This fork adds a seamless bridge between SonarLint findings and the DevoxxGenie 
 
 When your cursor is on a SonarLint issue, the lightbulb menu includes a **"DevoxxGenie: Fix '...'"** action. Selecting it sends the issue details and surrounding code context to DevoxxGenie, which generates a fix suggestion using the LLM provider you have configured.
 
+<img width="909" height="267" alt="Screenshot 2026-02-16 at 12 24 31" src="https://github.com/user-attachments/assets/bc9b0fbf-4f5d-49eb-a233-2050d7bac47a" />
+
 ### Rule Description Panel Button
 
 When viewing a finding in the SonarLint tool window, a styled **"Fix with DevoxxGenie"** button appears in the rule header panel. Clicking it sends a structured prompt containing:
@@ -27,6 +31,8 @@ When viewing a finding in the SonarLint tool window, a styled **"Fix with Devoxx
 - The issue message
 - The file path and line number
 - A code snippet with surrounding context (~20 lines)
+
+<img width="1794" height="300" alt="Screenshot 2026-02-16 at 12 21 09" src="https://github.com/user-attachments/assets/eadd62d9-9533-4192-a213-49cb1aa89e23" />
 
 ### How It Works
 
