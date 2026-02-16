@@ -10,7 +10,18 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(java -version:*)",
-      "Bash(export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/temurin-17.0.18/Contents/Home)"
+      "Bash(export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/temurin-17.0.18/Contents/Home)",
+      "Bash(./gradlew:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Contents/Home ./gradlew:*)",
+      "WebFetch(domain:www.jetbrains.com)",
+      "Bash(for v in 2024.2 2024.2.1 2024.2.2 2024.2.3 2024.2.4 2024.2.5)",
+      "Bash(do echo -n \"CLion $v: \")",
+      "Bash(curl:*)",
+      "Bash(done)",
+      "Bash(for v in 2024.2 2024.2.1 2024.2.2 2024.2.3 2024.2.4 2024.2.5 2024.2.6 2024.2.7)",
+      "Bash(do echo -n \"Rider $v: \")"
     ]
   },
   "enableAllProjectMcpServers": true,
