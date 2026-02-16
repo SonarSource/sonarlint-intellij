@@ -49,6 +49,7 @@ import org.sonarlint.intellij.ui.icons.SonarLintIcons.backgroundColorsByVulnerab
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.borderColorsByImpact
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.borderColorsBySeverity
 import org.sonarlint.intellij.ui.icons.SonarLintIcons.borderColorsByVulnerabilityProbability
+import org.sonarlint.intellij.actions.FixWithLlmAction
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.canBeMarkedAsResolved
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.openMarkAsResolvedDialogAsync
 import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.canBeReopened
@@ -56,6 +57,7 @@ import org.sonarlint.intellij.actions.ReopenIssueAction.Companion.reopenIssueDia
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CLEAN_CODE_LINK
 import org.sonarlint.intellij.finding.Issue
+import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.util.RoundedPanelWithBackgroundColor
 import org.sonarsource.sonarlint.core.client.utils.CleanCodeAttribute
@@ -75,6 +77,7 @@ class RuleHeaderPanel(parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayou
     companion object {
         private const val MARK_AS_RESOLVED = "Mark Issue as\u2026"
         private const val REOPEN = "Reopen"
+        private const val FIX_WITH_DEVOXX_GENIE = "Fix with DevoxxGenie"
     }
 
     private val wrappedPanel = JBPanel<JBPanel<*>>(WrapLayout(FlowLayout.LEFT))
@@ -85,6 +88,7 @@ class RuleHeaderPanel(parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayou
     private val hotspotVulnerabilityValueLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
     private val changeStatusButton = JButton()
+    private val fixWithLlmButton = JButton(FIX_WITH_DEVOXX_GENIE)
     private val learnMore = HyperlinkLabel("Learn more")
     private val disposableFlag = Disposer.newCheckedDisposable()
 
@@ -102,6 +106,7 @@ class RuleHeaderPanel(parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayou
         hotspotVulnerabilityValueLabel.text = ""
         hotspotVulnerabilityValueLabel.border = BorderFactory.createEmptyBorder()
         changeStatusButton.isVisible = false
+        fixWithLlmButton.isVisible = false
         wrappedPanel.removeAll()
         removeAll()
         repaint()
@@ -115,7 +120,7 @@ class RuleHeaderPanel(parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayou
         updateCommonFieldsInMQRMode(cleanCodeAttribute, impacts, ruleKey)
     }
 
-    fun updateForIssue(project: Project, severityDetails: Either<StandardModeDetails, MQRModeDetails>, ruleKey: String, issue: Issue) {
+    fun updateForIssue(project: Project, severityDetails: Either<StandardModeDetails, MQRModeDetails>, ruleKey: String, issue: Issue, ruleName: String? = null) {
         updateCommonFields(severityDetails, ruleKey)
 
         if (canBeReopened(project, issue)) {
@@ -132,6 +137,16 @@ class RuleHeaderPanel(parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayou
                     openMarkAsResolvedDialogAsync(project, issue)
                 }
             }
+        }
+
+        if (FixWithLlmAction.canFixWithLlm() && ruleName != null && issue is LiveFinding) {
+            fixWithLlmButton.isVisible = true
+            fixWithLlmButton.action = object : AbstractAction(FIX_WITH_DEVOXX_GENIE) {
+                override fun actionPerformed(e: ActionEvent?) {
+                    FixWithLlmAction.fixWithLlm(project, issue as LiveFinding, ruleName, ruleKey)
+                }
+            }
+            styleFixWithDevoxxGenieButton()
         }
     }
 
@@ -261,12 +276,31 @@ class RuleHeaderPanel(parent: Disposable) : JBPanel<RuleHeaderPanel>(BorderLayou
 
         changeStatusPanel.add(changeStatusButton)
         wrappedPanel.add(changeStatusPanel)
+        val fixWithLlmPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
+        fixWithLlmPanel.add(fixWithLlmButton)
+        wrappedPanel.add(fixWithLlmPanel)
         if (isMQRMode) {
             wrappedPanel.add(learnMore)
         }
         add(wrappedPanel, BorderLayout.CENTER)
         revalidate()
         repaint()
+    }
+
+    private fun styleFixWithDevoxxGenieButton() {
+        fixWithLlmButton.apply {
+            background = JBColor(java.awt.Color(0x3574F0), java.awt.Color(0x3574F0))
+            foreground = java.awt.Color.WHITE
+            isOpaque = true
+            isContentAreaFilled = true
+            isBorderPainted = true
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(JBColor(java.awt.Color(0x2B5FC3), java.awt.Color(0x4A8AF4)), 1, true),
+                BorderFactory.createEmptyBorder(2, 8, 2, 8)
+            )
+            isFocusPainted = false
+            putClientProperty("JButton.buttonType", "text")
+        }
     }
 
     private fun cleanCapitalized(txt: String): String {

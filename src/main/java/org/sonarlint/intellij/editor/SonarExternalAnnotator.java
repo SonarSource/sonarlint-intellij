@@ -32,10 +32,12 @@ import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Set;
 import javax.annotation.Nullable;
+import org.sonarlint.intellij.actions.FixWithDevoxxGenieIntentionAction;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction;
+import org.sonarlint.intellij.integration.DevoxxGenieBridge;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.finding.LiveFinding;
@@ -145,6 +147,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       intentionActions.add(new MarkAsResolvedAction(liveIssue));
       if (liveIssue.isAiCodeFixable()) {
         intentionActions.add(new SuggestCodeFixIntentionAction(liveIssue));
+      }
+      if (DevoxxGenieBridge.INSTANCE.isAvailable()) {
+        intentionActions.add(new FixWithDevoxxGenieIntentionAction(liveIssue));
       }
     }
 

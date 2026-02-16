@@ -413,7 +413,7 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
                 headerPanel.updateForSecurityHotspot(project, issueDetails.ruleKey, finding)
             }
 
-            else -> headerPanel.updateForIssue(project, issueDetails.severityDetails, issueDetails.ruleKey, finding as Issue)
+            else -> headerPanel.updateForIssue(project, issueDetails.severityDetails, issueDetails.ruleKey, finding as Issue, issueDetails.name)
         }
     }
 
