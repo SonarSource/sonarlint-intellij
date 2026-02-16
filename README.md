@@ -17,7 +17,7 @@ DevoxxGenie Integration
 
 This fork adds a seamless bridge between SonarLint findings and the DevoxxGenie AI coding assistant. When the [DevoxxGenie plugin](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) is installed alongside SonarQube for IntelliJ, two new entry points become available:
 
-[![SonarQube with DevoxxGenie](https://img.youtube.com/vi/vWEK0jEIU3s/maxresdefault.jpg)](https://www.youtube.com/watch?v=vWEK0jEIU3s)
+[![SonarQube with DevoxxGenie](https://img.youtube.com/vi/vWEK0jEIU3s/sddefault.jpg)](https://www.youtube.com/watch?v=vWEK0jEIU3s)
 
 ### Editor Intention Action
 
