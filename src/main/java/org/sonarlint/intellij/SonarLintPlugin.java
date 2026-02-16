@@ -39,7 +39,7 @@ public final class SonarLintPlugin {
 
   private IdeaPluginDescriptor getPlugin() {
     if (plugin == null) {
-      plugin = PluginManagerCore.getPlugin(PluginId.getId("org.sonarlint.idea"));
+      plugin = PluginManagerCore.getPlugin(PluginId.getId("org.sonarlint.idea.devoxxgenie"));
     }
     return plugin;
   }

@@ -26,7 +26,7 @@ import java.util.Set;
 
 public interface FilesContributor {
   // Name is constructed from plugin-id.extension-point-name
-  ExtensionPointName<FilesContributor> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.filesContributor");
+  ExtensionPointName<FilesContributor> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.devoxxgenie.filesContributor");
 
   Set<VirtualFile> listFiles(Module module);
 }

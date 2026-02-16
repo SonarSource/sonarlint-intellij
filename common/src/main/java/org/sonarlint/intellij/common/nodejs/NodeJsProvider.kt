@@ -29,7 +29,7 @@ fun interface NodeJsProvider {
 
   companion object {
     // Name is constructed from plugin-id.extension-point-name
-    val EP_NAME: ExtensionPointName<NodeJsProvider> = ExtensionPointName.create("org.sonarlint.idea.nodeJsProvider");
+    val EP_NAME: ExtensionPointName<NodeJsProvider> = ExtensionPointName.create("org.sonarlint.idea.devoxxgenie.nodeJsProvider");
   }
 
 }

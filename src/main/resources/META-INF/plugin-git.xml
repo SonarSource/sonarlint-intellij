@@ -20,7 +20,7 @@
 
 -->
 <idea-plugin>
-  <extensions defaultExtensionNs="org.sonarlint.idea">
+  <extensions defaultExtensionNs="org.sonarlint.idea.devoxxgenie">
     <vcsProvider implementation="org.sonarlint.intellij.git.GitRepoProvider"/>
   </extensions>
 

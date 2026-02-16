@@ -8,7 +8,9 @@
       "Bash(JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/temurin-17.0.18/Contents/Home ./gradlew:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(java -version:*)",
+      "Bash(export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/temurin-17.0.18/Contents/Home)"
     ]
   },
   "enableAllProjectMcpServers": true,

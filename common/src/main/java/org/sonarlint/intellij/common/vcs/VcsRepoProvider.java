@@ -25,7 +25,7 @@ import com.intellij.openapi.project.Project;
 
 public interface VcsRepoProvider {
   // Name is constructed from plugin-id.extension-point-name
-  ExtensionPointName<VcsRepoProvider> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.vcsProvider");
+  ExtensionPointName<VcsRepoProvider> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.devoxxgenie.vcsProvider");
 
   VcsRepo getRepoFor(Module module);
 

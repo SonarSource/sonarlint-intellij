@@ -20,7 +20,7 @@
 
 -->
 <idea-plugin>
-    <extensions defaultExtensionNs="org.sonarlint.idea">
+    <extensions defaultExtensionNs="org.sonarlint.idea.devoxxgenie">
         <analysisConfiguration implementation="org.sonarlint.intellij.clion.CFamilyAnalysisConfigurator"/>
         <fileExclusionContributor implementation="org.sonarlint.intellij.clion.CFamilyFileExclusionContributor"/>
     </extensions>

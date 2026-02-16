@@ -1,4 +1,4 @@
-org.sonarlint.idea::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake' is not found.*
-org.sonarlint.idea::.*Package 'com\.jetbrains\.cidr\.cpp\.toolchains' is not found.*
-org.sonarlint.idea::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake\.model' is not found.*
-org.sonarlint.idea::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake\.workspace' is not found.*
+org.sonarlint.idea.devoxxgenie::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake' is not found.*
+org.sonarlint.idea.devoxxgenie::.*Package 'com\.jetbrains\.cidr\.cpp\.toolchains' is not found.*
+org.sonarlint.idea.devoxxgenie::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake\.model' is not found.*
+org.sonarlint.idea.devoxxgenie::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake\.workspace' is not found.*

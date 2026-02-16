@@ -20,8 +20,8 @@
 
 -->
 <idea-plugin url="https://docs.sonarsource.com/sonarqube-for-intellij/" require-restart="true">
-    <id>org.sonarlint.idea</id>
-    <name>SonarQube for IDE</name>
+    <id>org.sonarlint.idea.devoxxgenie</id>
+    <name>SonarQube with DevoxxGenie</name>
     <version>${project.version}</version>
     <vendor url="https://www.sonarsource.com">SonarSource</vendor>
 

@@ -25,7 +25,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 
 public interface FileExclusionContributor {
   // Name is constructed from plugin-id.extension-point-name
-  ExtensionPointName<FileExclusionContributor> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.fileExclusionContributor");
+  ExtensionPointName<FileExclusionContributor> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.devoxxgenie.fileExclusionContributor");
 
   ExcludeResult shouldExclude(Project project, VirtualFile filesToAnalyze);
 
