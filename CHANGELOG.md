@@ -8,6 +8,12 @@
 - **"Fix with DevoxxGenie" button**: A styled button in the rule description header panel sends a structured prompt containing the rule name, issue message, file location, and a ~20-line code snippet to DevoxxGenie.
 - **Reflective bridge**: Uses runtime reflection to communicate with DevoxxGenie's `ExternalPromptService`, so there is no compile-time dependency. The integration activates automatically when DevoxxGenie is installed and works with any LLM provider configured in DevoxxGenie.
 
+### Build
+
+- Upgraded minimum IntelliJ platform from 2023.1 to 2024.2 (first version bundling JBR 21).
+- Upgraded Java/Kotlin toolchain and JVM target from 17 to 21.
+- Updated IDE build versions: IntelliJ/CLion 2024.2.5, Rider 2024.2.7.
+
 ### Fork Changes
 
 - Changed plugin ID from `org.sonarlint.idea` to `org.sonarlint.idea.devoxxgenie` to prevent the official SonarLint marketplace release from overwriting the fork.
