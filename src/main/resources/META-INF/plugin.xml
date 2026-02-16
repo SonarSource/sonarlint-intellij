@@ -28,11 +28,35 @@
     <description><![CDATA[
         <html>
             <p>
-                SonarQube for IDE (formerly SonarLint) by <a href="https://www.sonarsource.com/">Sonar</a> is a free, sophisticated static analysis tool that
+                <b>SonarQube with DevoxxGenie</b> is a fork of
+                <a href="https://plugins.jetbrains.com/plugin/7973-sonarlint">SonarQube for IDE</a> by
+                <a href="https://www.sonarsource.com/">Sonar</a> that adds integration with the
+                <a href="https://plugins.jetbrains.com/plugin/24169-devoxxgenie">DevoxxGenie</a> AI coding assistant.
+                When DevoxxGenie is installed, you can send any SonarLint finding directly to your preferred LLM for an AI-assisted fix suggestion.
+            </p>
+            <br/>
+            <h3>DevoxxGenie Integration</h3>
+            <p>
+                When the <a href="https://plugins.jetbrains.com/plugin/24169-devoxxgenie">DevoxxGenie plugin</a> is installed:
+            </p>
+            <ul>
+                <li><b>Editor intention action</b> — place your cursor on an issue and use the lightbulb menu to select
+                    <i>"DevoxxGenie: Fix '...'"</i>. The issue details and surrounding code context are sent to DevoxxGenie.</li>
+                <li><b>"Fix with DevoxxGenie" button</b> — when viewing a finding in the SonarLint tool window, click
+                    the button in the rule header to send a structured prompt with the rule name, issue message, file location, and code snippet.</li>
+            </ul>
+            <p>
+                DevoxxGenie supports multiple LLM providers (OpenAI, Anthropic, Google, Mistral, Ollama, and more),
+                so the fix suggestions use whichever provider you have configured. No additional setup is needed beyond
+                having both plugins installed.
+            </p>
+            <br/>
+            <h3>SonarQube for IDE</h3>
+            <p>
+                All standard SonarQube for IDE features are included. It is a free, sophisticated static analysis tool that
                 enhances both your code quality and security. Start analyzing your code early—as you write or generate it.
                 Local analysis automatically identifies quality and security issues in real-time, even with AI-generated code.
                 Then, fix any issues found using a QuickFix or the AI CodeFix feature before pushing to your SCM.
-                This assures your code meets your quality standards and is safe for running in production.
             </p>
             <br/>
             <p>
@@ -49,16 +73,9 @@
             </p>
             <br/>
             <p>
-                SonarQube for IDE is the only extension you need in your JetBrains IDE for ensuring both code quality and security.
                 It supports a wide range of languages, including C, C++, Java, Go, JavaScript, TypeScript, Python, C#, Kotlin, Ruby, HTML,
                 CSS, PHP, and PL/SQL. Please check out our <a href="https://docs.sonarsource.com/sonarqube-for-intellij/using/rules/">documentation</a>
                 for the complete list of supported languages, rules and secret detection capabilities.
-            </p>
-            <br/>
-            <br/>
-            <p>
-                Get started today for free. Check the <a href="https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/requirements/">Requirements</a> and <a href="https://docs.sonarsource.com/sonarqube-for-intellij/getting-started/installation/">Installation</a>
-                pages— download SonarQube for IDE in the Extension Marketplace and enjoy safe coding!
             </p>
         </html>
       ]]></description>
