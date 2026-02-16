@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/stephan/IdeaProjects/sonarlint-devoxxgenie-intellij add settings.gradle.kts)",
+      "Bash(git -C:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "playwright"
+  ]
+}
