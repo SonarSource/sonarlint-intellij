@@ -47,7 +47,7 @@ The integration uses a reflective bridge (`DevoxxGenieBridge`) to communicate wi
 ### Requirements
 
 - SonarQube for IntelliJ (this plugin)
-- [DevoxxGenie](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) plugin installed and configured with an LLM provider
+- [DevoxxGenie](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) plugin installed (v0.9.12 or higher) and configured with an LLM provider
 
 Useful links
 ------------
