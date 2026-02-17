@@ -19,7 +19,8 @@
  */
 package org.sonarlint.intellij.its.tests.domain
 
-import org.assertj.core.api.Assertions.assertThat
+import com.intellij.remoterobot.utils.waitFor
+import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
@@ -31,9 +32,17 @@ class ReportTabTests {
             with(remoteRobot) {
                 idea {
                     analyzeFile()
+                    waitBackgroundTasksFinished()
                     toolWindow {
                         content("ReportPanel") {
-                            expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
+                            expectedMessages.forEach {
+                                waitFor(
+                                    duration = Duration.ofSeconds(45),
+                                    errorMessage = "Unable to find '$it' in: ${findAllText()}"
+                                ) {
+                                    hasText(it)
+                                }
+                            }
                         }
                     }
                 }

@@ -111,12 +111,16 @@ class CurrentFileTabTests {
         fun verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
             with(remoteRobot) {
                 idea {
+                    waitBackgroundTasksFinished()
                     toolWindow {
                         tabTitleContains("Findings") { select() }
                         content("CurrentFilePanel") {
                             expectedMessages.forEach {
-                                // the synchronization can take a while to happen
-                                waitFor(duration = Duration.ofSeconds(30)) {
+                                // The synchronization might take a while
+                                waitFor(
+                                    duration = Duration.ofMinutes(1),
+                                    errorMessage = "Unable to find '$it' in: ${findAllText()}"
+                                ) {
                                     hasText(it)
                                 }
                             }
