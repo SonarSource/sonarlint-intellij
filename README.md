@@ -36,6 +36,13 @@ When viewing a finding in the SonarLint tool window, a styled **"Fix with Devoxx
 
 <img width="1794" height="300" alt="Screenshot 2026-02-16 at 12 21 09" src="https://github.com/user-attachments/assets/eadd62d9-9533-4192-a213-49cb1aa89e23" />
 
+### Backlog Task Creation
+
+The report panel toolbar includes a **"Create DevoxxGenie Task(s)"** button. Select one or more issues using the checkboxes next to each finding, then click the button to generate structured backlog task files in `backlog/tasks/`. Each file is formatted with YAML frontmatter and a markdown body that DevoxxGenie's CLI Runner can pick up directly:
+
+- Rule key, severity, file path, and line number are included
+- Task IDs are kept in sync with any existing DevoxxGenie tasks by scanning `backlog/tasks/`, `backlog/completed/`, and `backlog/archive/tasks/`
+
 ### How It Works
 
 The integration uses a reflective bridge (`DevoxxGenieBridge`) to communicate with DevoxxGenie's `ExternalPromptService` at runtime. This means:
