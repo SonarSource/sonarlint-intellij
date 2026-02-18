@@ -113,17 +113,37 @@ dependencies {
                 println("ITs: Using IDE from setup-qa-ide.sh: $envVarPath (ijVersion=$ijVersion)")
                 local(envVarPath)
             } else {
-                // Fall back to legacy resolution with warning
-                println("ITs: WARNING: Environment variable not set by setup-qa-ide.sh, using legacy resolution")
-                val cachedPath = getCachedIdePath(ijVersion)
-
-                if (cachedPath != null && File(cachedPath).exists()) {
-                    println("ITs: Using cached IDE from workflow: $cachedPath (ijVersion=$ijVersion)")
-                    local(cachedPath)
+                val isCI = System.getenv("CI") == "true"
+                if (isCI) {
+                    // On CI: FAIL - setup-qa-ide.sh should have provided the IDE
+                    throw GradleException("""
+                        |IDE not provided for ITs on CI (ijVersion=$ijVersion)
+                        |Expected environment variable: ${when(type) {
+                            "IC", "IU" -> "IDEA_HOME"
+                            "CL" -> "CLION_HOME"
+                            "RD" -> "RIDER_HOME"
+                            "PY", "PC" -> "PYCHARM_HOME"
+                            "PS" -> "PHPSTORM_HOME"
+                            "GO" -> "GOLAND_HOME"
+                            else -> "<IDE>_HOME"
+                        }}
+                        |
+                        |This means setup-qa-ide.sh did not run successfully or did not set the environment variable.
+                        |Check the 'Setup IDE' step in the workflow logs.
+                    """.trimMargin())
                 } else {
-                    println("ITs: IDE $ijVersion not in cache, downloading from repository")
-                    create(type, version) {
-                        useCache = true
+                    // Local development: allow fallback to download
+                    println("ITs: WARNING: Environment variable not set, using legacy resolution (local development)")
+                    val cachedPath = getCachedIdePath(ijVersion)
+
+                    if (cachedPath != null && File(cachedPath).exists()) {
+                        println("ITs: Using cached IDE from container or cache: $cachedPath (ijVersion=$ijVersion)")
+                        local(cachedPath)
+                    } else {
+                        println("ITs: Downloading IDE $ijVersion from repository (local development only)")
+                        create(type, version) {
+                            useCache = true
+                        }
                     }
                 }
             }

@@ -160,6 +160,53 @@ so you will need to repeat some setup steps for that instance, such as configuri
 CI/CD and IDE Testing
 ---------------------
 
+### IDE Provisioning Strategy
+
+The project uses a hybrid approach for IDE provisioning in CI:
+
+- **Embedded IDEs** (2023, 2024 versions): Pre-installed in the Docker container
+- **Non-embedded IDEs** (2025+ versions, specific products): Downloaded from Repox on-demand
+
+### Embedded IDEs in Container
+
+The Docker image (`sonarlint-intellij:pr-141`) includes these IDEs:
+
+- **IntelliJ IDEA Community 2023**: `IDEA_2023_DIR`
+- **IntelliJ IDEA Ultimate 2023**: `IDEA_ULTIMATE_2023_DIR`
+- **CLion 2023**: `CLION_2023_DIR`
+- **CLion 2024**: `CLION_2024_DIR` (for ReSharper testing)
+- **Rider 2023**: `RIDER_2023_DIR`
+- **Rider 2024**: `RIDER_2024_DIR`
+
+These are available as container environment variables pointing to the installation directories.
+
+### QA Matrix Testing
+
+The QA job (`.github/workflows/build.yml`) tests against a matrix of IDE versions. The workflow:
+
+1. **Runs in container**: All Linux jobs execute in the Docker container with embedded IDEs
+2. **Determines IDE source**: Checks if the IDE version is embedded or needs downloading
+3. **Runs setup-qa-ide.sh**: Sets up the IDE and exports environment variables (IDEA_HOME, RIDER_HOME, etc.)
+4. **Gradle uses env vars**: The Gradle build reads these variables to locate the IDE
+
+### Setup Script: setup-qa-ide.sh
+
+Located at `.github/scripts/setup-qa-ide.sh`, this script:
+
+- Detects if the requested IDE version is embedded in the container
+- For embedded IDEs: Sets environment variable to container path
+- For non-embedded IDEs: Downloads from Repox (with caching), extracts, and sets environment variable
+- Supports unified distributions (IDEA 2025.3+, PyCharm 2025.3+)
+
+Usage:
+
+```bash
+.github/scripts/setup-qa-ide.sh IC-2025.3.2
+```
+
+Sets `IDEA_HOME` to the IDE location.
+
+### Gradle IDE Resolution (its/build.gradle.kts)
 The project uses Docker images to provide consistent IDE installations across CI/CD pipelines. This approach eliminates the need for
 downloading IDEs from Artifactory and ensures reproducible builds.
 ### IDE Provisioning Strategy
