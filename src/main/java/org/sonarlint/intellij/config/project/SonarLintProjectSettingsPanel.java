@@ -40,21 +40,27 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
+  static final int BINDING_TAB_INDEX = 0;
+
   private final SonarLintProjectPropertiesPanel propsPanel;
   private final JPanel root;
   private final JPanel rootBindPane;
   private final JPanel rootPropertiesPane;
   private final ProjectExclusionsPanel exclusionsPanel;
   private final SupportedLanguagesPanel supportedLanguagesPanel;
+  private final JBTabbedPane tabs;
   private SonarLintProjectBindPanel bindPanel;
 
   public SonarLintProjectSettingsPanel(Project project) {
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
     exclusionsPanel = new ProjectExclusionsPanel(project);
-    supportedLanguagesPanel = new SupportedLanguagesPanel();
     root = new JPanel(new BorderLayout());
-    var tabs = new JBTabbedPane();
+    tabs = new JBTabbedPane();
+    supportedLanguagesPanel = new SupportedLanguagesPanel(() -> {
+      tabs.setSelectedIndex(BINDING_TAB_INDEX);
+      return kotlin.Unit.INSTANCE;
+    });
 
     rootBindPane = new JPanel(new BorderLayout());
     rootBindPane.add(bindPanel.create(project), BorderLayout.NORTH);
