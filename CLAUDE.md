@@ -4,9 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build Commands
 
+**JDK requirement:** This project requires JDK 17. The active JVM on this machine defaults to JDK 25, which is incompatible with the Kotlin compiler used here. Always prefix Gradle commands with `JAVA_HOME`:
+
+```bash
+export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/temurin-17.0.18/Contents/Home
+```
+
 ```bash
 # Build the plugin (no tests)
-./gradlew buildPlugin
+JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/temurin-17.0.18/Contents/Home ./gradlew buildPlugin
 
 # Build with tests and checks
 ./gradlew check buildPlugin
