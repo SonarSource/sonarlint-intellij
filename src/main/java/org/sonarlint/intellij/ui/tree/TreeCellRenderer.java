@@ -19,10 +19,16 @@
  */
 package org.sonarlint.intellij.ui.tree;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.ui.ColoredTreeCellRenderer;
+import com.intellij.ui.RowIcon;
 import java.awt.event.MouseEvent;
+import javax.annotation.Nullable;
+import javax.swing.Icon;
 import javax.swing.JTree;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarlint.intellij.ui.report.FindingSelectionManager;
 
 /**
  * Can't unit test this because the parent uses a service, depending on a pico container with a method
@@ -30,6 +36,8 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
  */
 public class TreeCellRenderer extends ColoredTreeCellRenderer {
   private final NodeRenderer<Object> nodeRenderer;
+  @Nullable
+  private FindingSelectionManager selectionManager;
 
   public TreeCellRenderer() {
     nodeRenderer = null;
@@ -37,6 +45,10 @@ public class TreeCellRenderer extends ColoredTreeCellRenderer {
 
   public TreeCellRenderer(NodeRenderer<Object> nodeRenderer) {
     this.nodeRenderer = nodeRenderer;
+  }
+
+  public void setSelectionManager(@Nullable FindingSelectionManager manager) {
+    this.selectionManager = manager;
   }
 
   private String iconToolTip = null;
@@ -48,6 +60,20 @@ public class TreeCellRenderer extends ColoredTreeCellRenderer {
     } else {
       var node = (AbstractNode) value;
       node.render(this);
+    }
+
+    if (selectionManager != null && value instanceof IssueNode issueNode) {
+      boolean checked = selectionManager.isSelected(issueNode.issue().getId());
+      Icon checkboxIcon = checked ? AllIcons.Diff.GutterCheckBoxSelected : AllIcons.Diff.GutterCheckBox;
+      Icon existing = getIcon();
+      if (existing != null) {
+        RowIcon rowIcon = new RowIcon(2, RowIcon.Alignment.CENTER);
+        rowIcon.setIcon(checkboxIcon, 0);
+        rowIcon.setIcon(existing, 1);
+        setIcon(rowIcon);
+      } else {
+        setIcon(checkboxIcon);
+      }
     }
   }
 

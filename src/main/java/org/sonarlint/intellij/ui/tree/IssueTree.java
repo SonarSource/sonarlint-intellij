@@ -31,9 +31,13 @@ import com.intellij.ui.PopupHandler;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
+import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
@@ -42,6 +46,7 @@ import org.sonarlint.intellij.actions.ReopenIssueAction;
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarlint.intellij.ui.report.FindingSelectionManager;
 
 import static org.sonarlint.intellij.util.DataKeys.ISSUE_DATA_KEY;
 
@@ -50,10 +55,17 @@ import static org.sonarlint.intellij.util.DataKeys.ISSUE_DATA_KEY;
  */
 public class IssueTree extends FindingTree implements DataProvider {
   private final Project project;
+  @Nullable
+  private final FindingSelectionManager selectionManager;
 
   public IssueTree(Project project, TreeModel model) {
+    this(project, model, null);
+  }
+
+  public IssueTree(Project project, TreeModel model, @Nullable FindingSelectionManager selectionManager) {
     super(project, model);
     this.project = project;
+    this.selectionManager = selectionManager;
     init();
   }
 
@@ -75,8 +87,32 @@ public class IssueTree extends FindingTree implements DataProvider {
 
   private void init() {
     this.setShowsRootHandles(false);
-    this.setCellRenderer(new TreeCellRenderer());
+    var renderer = new TreeCellRenderer();
+    renderer.setSelectionManager(selectionManager);
+    this.setCellRenderer(renderer);
     this.expandRow(0);
+
+    if (selectionManager != null) {
+      var sm = selectionManager;
+      addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+          TreePath path = getPathForLocation(e.getX(), e.getY());
+          if (path == null) return;
+          Object node = path.getLastPathComponent();
+          if (!(node instanceof IssueNode issueNode)) return;
+          Rectangle bounds = getPathBounds(path);
+          if (bounds == null) return;
+          int clickOffset = e.getX() - bounds.x;
+          // First ~20px is the checkbox icon area
+          if (clickOffset >= 0 && clickOffset <= 20) {
+            sm.toggle(issueNode.issue().getId());
+            repaint();
+            e.consume();
+          }
+        }
+      });
+    }
 
     var group = new DefaultActionGroup();
     group.add(new SuggestCodeFixIntentionAction(getSelectedIssue()));

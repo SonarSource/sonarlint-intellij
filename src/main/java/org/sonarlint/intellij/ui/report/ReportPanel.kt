@@ -39,6 +39,7 @@ import java.awt.FlowLayout
 import javax.swing.Box
 import javax.swing.JScrollPane
 import javax.swing.SwingConstants
+import org.sonarlint.intellij.actions.CreateDevoxxGenieTasksAction
 import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.actions.ShowReportFiltersAction
 import org.sonarlint.intellij.analysis.AnalysisResult
@@ -81,7 +82,8 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private val filtersPanel = createFiltersPanel()
     private val findingsFilter = FindingsFilter(project)
     private val displayManager = ReportDisplayManager(filtersPanel)
-    private val treeManager = ReportTreeManager(project, findingDetailsPanel)
+    private val selectionManager = FindingSelectionManager()
+    private val treeManager = ReportTreeManager(project, findingDetailsPanel, selectionManager)
     
     // UI components
     private lateinit var findingsPanel: JBPanelWithEmptyText
@@ -246,11 +248,13 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     
     private fun createToolbar() {
         val sonarLintActions = SonarLintActions.getInstance()
-        
+        val createTasksAction = CreateDevoxxGenieTasksAction(selectionManager, treeManager)
+
         val sections = listOf(
             listOf(ShowReportFiltersAction(this@ReportPanel)),
             listOf(sonarLintActions.analyzeChangedFiles(), sonarLintActions.analyzeAllFiles()),
             listOf(sonarLintActions.expandAllTreesAction(), sonarLintActions.collapseAllTreesAction()),
+            listOf(createTasksAction),
             listOf(sonarLintActions.configure())
         )
 
@@ -595,6 +599,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
 
     override fun dispose() {
+        selectionManager.clear()
         loadingIcon?.dispose()
         analysisStatusIcon?.dispose()
         

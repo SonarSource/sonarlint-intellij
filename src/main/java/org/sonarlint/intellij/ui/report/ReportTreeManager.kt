@@ -47,7 +47,8 @@ import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
  */
 class ReportTreeManager(
     private val project: Project,
-    private val findingDetailsPanel: FindingDetailsPanel
+    private val findingDetailsPanel: FindingDetailsPanel,
+    private val selectionManager: FindingSelectionManager? = null
 ) {
     companion object {
         private const val TREE_EXPANSION_THRESHOLD = 30
@@ -56,8 +57,8 @@ class ReportTreeManager(
     // Issue trees
     val issuesTreeBuilder = ReportIssueTreeModelBuilder(project, isOld = false)
     val oldIssuesTreeBuilder = ReportIssueTreeModelBuilder(project, isOld = true)
-    val issuesTree = IssueTree(project, issuesTreeBuilder.model)
-    val oldIssuesTree = IssueTree(project, oldIssuesTreeBuilder.model)
+    val issuesTree = IssueTree(project, issuesTreeBuilder.model, selectionManager)
+    val oldIssuesTree = IssueTree(project, oldIssuesTreeBuilder.model, selectionManager)
     
     // Security hotspot trees  
     val securityHotspotsTreeBuilder = ReportSecurityHotspotTreeModelBuilder(project, isOld = false)
