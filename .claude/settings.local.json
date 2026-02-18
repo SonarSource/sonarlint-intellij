@@ -21,7 +21,10 @@
       "Bash(curl:*)",
       "Bash(done)",
       "Bash(for v in 2024.2 2024.2.1 2024.2.2 2024.2.3 2024.2.4 2024.2.5 2024.2.6 2024.2.7)",
-      "Bash(do echo -n \"Rider $v: \")"
+      "Bash(do echo -n \"Rider $v: \")",
+      "Bash(for img in maxresdefault.jpg hqdefault.jpg mqdefault.jpg sddefault.jpg 0.jpg)",
+      "Bash(do echo -n \"$img: \")",
+      "Bash(grep:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
