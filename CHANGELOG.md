@@ -1,5 +1,12 @@
 # Changelog
 
+## 11.14.1 (2026-02-18)
+
+### DevoxxGenie Integration
+
+- **Backlog task creation**: A "Create DevoxxGenie Task(s)" toolbar button in the report panel lets users select one or more issues via checkboxes and generate structured backlog task files in `backlog/tasks/`. Each file uses YAML frontmatter compatible with DevoxxGenie's CLI Runner, including rule key, severity, file path, and line number.
+- **Task ID synchronisation**: Task numbering scans all three backlog directories (`tasks/`, `completed/`, `archive/tasks/`) and reads the `id:` YAML frontmatter field to find the highest existing task number, avoiding collisions with tasks already managed by DevoxxGenie.
+
 ## 11.14.0 (2026-02-16)
 
 ### DevoxxGenie Integration
