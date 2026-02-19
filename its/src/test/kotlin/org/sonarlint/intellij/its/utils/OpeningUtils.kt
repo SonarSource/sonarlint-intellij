@@ -28,16 +28,20 @@ import java.io.File
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
+import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.findElement
+import org.sonarlint.intellij.its.fixtures.getIdeVersionYear
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
-import org.sonarlint.intellij.its.fixtures.isRider
+import org.sonarlint.intellij.its.fixtures.isPyCharm
+import org.sonarlint.intellij.its.fixtures.isRider as isRiderExtension
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
+import org.sonarlint.intellij.its.utils.optionalStep
 
 object OpeningUtils {
 
@@ -112,13 +116,19 @@ object OpeningUtils {
                 }
             } catch (e: Throwable) {
                 // Starting from 2025.2+ there's no welcome frame
-                if (isGoLand()) {
+                // Rider has never shown a welcome frame
+                val isPyCharm2025Plus = remoteRobot.isPyCharm() && remoteRobot.getIdeVersionYear() >= 2025
+                if (remoteRobot.isGoLand() || isPyCharm2025Plus || remoteRobot.isRiderExtension()) {
+                    idea {
+                        // Close any dialogs (like "What's New") that might be blocking the main window
+                        remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach { it.close() }
+                    }
                     openFileSelector()
                 } else {
                     throw e
                 }
             }
-            if (remoteRobot.isRider()) {
+            if (remoteRobot.isRiderExtension()) {
                 openSolutionBrowserDialog {
                     selectProjectFile(projectName)
                 }
@@ -134,7 +144,7 @@ object OpeningUtils {
                     }
                 }
             }
-            if (remoteRobot.isRider()) {
+            if (remoteRobot.isRiderExtension()) {
                 optionalStep {
                     dialog("Select a Solution to Open") {
                         jList(JListFixture.byType()) {
