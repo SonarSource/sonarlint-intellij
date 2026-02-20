@@ -36,9 +36,11 @@ import javax.annotation.Nullable;
 import javax.swing.tree.TreeModel;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.OpenSecurityHotspotInBrowserAction;
+import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction;
 import org.sonarlint.intellij.actions.OpenSecurityHotspotInBrowserActionKt;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 
 /**
@@ -63,6 +65,8 @@ public class SecurityHotspotTree extends FindingTree implements DataProvider {
     group.add(new ReviewSecurityHotspotAction());
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL));
+    group.addSeparator();
+    group.add(new SonarAnalyzeFilesAction("Analyse file", "Run SonarQube for IDE analysis on the selected file", SonarLintIcons.PLAY));
 
     PopupHandler.installPopupMenu(this, group, ActionPlaces.TODO_VIEW_POPUP);
 

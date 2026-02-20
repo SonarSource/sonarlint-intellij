@@ -41,10 +41,12 @@ import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
+import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReopenIssueAction;
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.report.FindingSelectionManager;
 
@@ -124,6 +126,7 @@ public class IssueTree extends FindingTree implements DataProvider {
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL));
     group.addSeparator();
+    group.add(new SonarAnalyzeFilesAction("Analyse file", "Run SonarQube for IDE analysis on the selected file", SonarLintIcons.PLAY));
     group.add(new ExcludeFileAction("Exclude file(s) from automatic analysis"));
     group.add(new DisableRuleAction());
     PopupHandler.installPopupMenu(this, group, ActionPlaces.TODO_VIEW_POPUP);
