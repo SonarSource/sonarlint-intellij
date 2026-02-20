@@ -24,7 +24,12 @@
       "Bash(do echo -n \"Rider $v: \")",
       "Bash(for img in maxresdefault.jpg hqdefault.jpg mqdefault.jpg sddefault.jpg 0.jpg)",
       "Bash(do echo -n \"$img: \")",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(git stash pop:*)",
+      "Bash(python3:*)",
+      "Bash(git tag:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
