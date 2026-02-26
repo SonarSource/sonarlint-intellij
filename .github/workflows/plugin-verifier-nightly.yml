@@ -13,6 +13,7 @@ jobs:
   verify_plugin:
     runs-on: github-ubuntu-latest-m
     name: Verify Plugin - LATEST
+    timeout-minutes: 60
     if: github.ref_name == github.event.repository.default_branch
     steps:
       - uses: actions/checkout@v5
@@ -30,17 +31,6 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
             gradle-${{ runner.os }}-
-
-      # Cache Gradle dependencies and IDE downloads
-      - name: Cache Gradle
-        uses: SonarSource/gh-action_cache@v1
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-nightly-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-nightly-
 
       # Cache JetBrains IDE downloads (used by IntelliJ Platform Plugin)
       - name: Cache JetBrains IDEs

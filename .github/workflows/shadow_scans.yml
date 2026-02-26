@@ -8,6 +8,7 @@ jobs:
   scan:
     runs-on: github-ubuntu-latest-m
     name: Scan on shadow platforms
+    timeout-minutes: 60
     permissions:
       id-token: write
       contents: write
@@ -94,7 +95,7 @@ jobs:
             "${{ steps.cache-rider.outputs.cache-hit }}" \
             "${{ steps.cache-resharper.outputs.cache-hit }}" \
             "${{ steps.cache-ultimate.outputs.cache-hit }}"
-          
+
           echo "All required IDEs ready"
           ls -la ${{ env.IDE_CACHE_DIR }}/
 

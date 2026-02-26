@@ -5,7 +5,17 @@ on:
       - master
       - branch-*
       - dogfood-*
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/CODEOWNERS'
+      - 'LICENSE'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/CODEOWNERS'
+      - 'LICENSE'
   workflow_dispatch:
 
 concurrency:
@@ -35,6 +45,7 @@ jobs:
       BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
     runs-on: github-ubuntu-latest-m
     name: Get build number
+    timeout-minutes: 10
     permissions:
       id-token: write
     steps:
@@ -45,6 +56,7 @@ jobs:
     runs-on: github-ubuntu-latest-m
     needs: build-number
     name: Build Plugin
+    timeout-minutes: 60
     outputs:
       PROJECT_VERSION: ${{ steps.set_version.outputs.project-version }}
     env:
@@ -129,7 +141,7 @@ jobs:
             "${{ steps.cache-rider.outputs.cache-hit }}" \
             "${{ steps.cache-resharper.outputs.cache-hit }}" \
             "${{ steps.cache-ultimate.outputs.cache-hit }}"
-          
+
           echo "All required IDEs ready"
           ls -la ${{ env.IDE_CACHE_DIR }}/
 
@@ -161,6 +173,7 @@ jobs:
     runs-on: warp-custom-sonarlint-intellij
     needs: build-number
     name: Test Windows
+    timeout-minutes: 60
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
@@ -214,6 +227,7 @@ jobs:
   test-and-sonar:
     runs-on: github-ubuntu-latest-m
     name: Tests and Sonar
+    timeout-minutes: 60
     needs:
       - build-plugin
       - build-number
@@ -294,7 +308,7 @@ jobs:
             "${{ steps.cache-rider.outputs.cache-hit }}" \
             "${{ steps.cache-resharper.outputs.cache-hit }}" \
             "${{ steps.cache-ultimate.outputs.cache-hit }}"
-          
+
           echo "All required IDEs ready"
           ls -la ${{ env.IDE_CACHE_DIR }}/
 
@@ -338,6 +352,7 @@ jobs:
   verify-plugin:
     runs-on: github-ubuntu-latest-m
     name: Verify Plugin
+    timeout-minutes: 60
     needs:
       - build-plugin
       - build-number
@@ -409,6 +424,7 @@ jobs:
   qa:
     runs-on: github-ubuntu-latest-m
     name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
+    timeout-minutes: 60
     needs:
       - build-plugin
       - build-number
@@ -724,9 +740,9 @@ jobs:
           unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
           mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
           rm sonarlint-intellij.zip
-          
+
           mkdir -p its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/
-          
+
           # Decode license keys
           echo "${{ fromJSON(steps.secrets.outputs.vault).CLION_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/clion.key
           echo "${{ fromJSON(steps.secrets.outputs.vault).GOLAND_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/goland.key
@@ -734,7 +750,7 @@ jobs:
           echo "${{ fromJSON(steps.secrets.outputs.vault).PHPSTORM_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/phpstorm.key
           echo "${{ fromJSON(steps.secrets.outputs.vault).PYCHARM_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/pycharm.key
           echo "${{ fromJSON(steps.secrets.outputs.vault).RIDER_KEY }}" | base64 -d > its/build/idea-sandbox/${IDEA_VERSION}/config_runIdeForUiTests/rider.key
-          
+
           # Start metacity
           metacity --sm-disable --replace &
           sleep 3
@@ -838,6 +854,7 @@ jobs:
   promote:
     runs-on: github-ubuntu-latest-m
     name: Promote
+    timeout-minutes: 30
     needs:
       - build-number
       - build-plugin
@@ -864,6 +881,7 @@ jobs:
   dogfood:
     runs-on: github-ubuntu-latest-m
     name: Update Dogfood Repository
+    timeout-minutes: 30
     needs:
       - build-number
       - build-plugin
@@ -899,7 +917,7 @@ jobs:
           </plugins>
           EOF
           cat updatePlugins.xml
-          
+
           # Upload to Artifactory using jfrog CLI
           jf rt u updatePlugins.xml \
             sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/ \
