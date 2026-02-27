@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>11.14 - Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.13 - New rules for FastAPI and Flask framework for Python. Fixed analysis failure on empty kustomization files. Fixed errors related to read access. Avoid locking git files. Fixed a race-condition issue where analyzers would not get correctly loaded. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.12 - 10 new QuickFixes for JS/TS. Users can now quickly generate a new token if their current one is invalid. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.11.1 - Minor bug fix. Remove deprecated code.</li>
