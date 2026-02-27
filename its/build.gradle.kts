@@ -170,6 +170,10 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
             localPlugin(rootProject.dependencies.project(":"))
         }
     }
+
+    prepareSandboxTask {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
 }
 
 intellijPlatform {
