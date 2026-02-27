@@ -2,39 +2,31 @@
 # Script to download a single JetBrains IDE from Repox/Artifactory
 #
 # Usage:
-#   download-ides.sh <IDE_CODE> <CACHE_HIT> <DEST_DIR>
+#   download-ides.sh <IDE_CODE> <DEST_DIR>
 #
 # Parameters:
-#   IDE_CODE:   IDE identifier (e.g., IC-2025.3.2, PY-2023.3.7)
-#   CACHE_HIT:  "true" to skip download (already cached), "false" to download
-#   DEST_DIR:   Destination directory for extraction
+#   IDE_CODE:  IDE identifier (e.g., IC-2025.3.2, PY-2023.3.7)
+#   DEST_DIR:  Destination directory for extraction
 #
-# Environment variables (required when CACHE_HIT is false):
+# Environment variables (required):
 #   ARTIFACTORY_URL:          Repox/Artifactory base URL
 #   ARTIFACTORY_USER:         Authentication username
 #   ARTIFACTORY_ACCESS_TOKEN: Authentication token
 #
 # Exit codes:
-#   0: Success (downloaded or skipped due to cache hit)
+#   0: Success
 #   1: Invalid parameters or download/extraction failure
 
 set -euo pipefail
 
 # Validate parameters
-if [[ $# -ne 3 ]]; then
-    echo "Usage: $0 <IDE_CODE> <CACHE_HIT> <DEST_DIR>" >&2
-    echo "Example: $0 IC-2025.3.2 false ~/.cache/JetBrains/IdeaIC/2025.3.2" >&2
+if [[ $# -ne 2 ]]; then
+    echo "Usage: $0 <IDE_CODE> <DEST_DIR>" >&2
+    echo "Example: $0 IC-2025.3.2 ~/.cache/JetBrains/IdeaIC/2025.3.2" >&2
     exit 1
 fi
 IDE_CODE="$1"
-CACHE_HIT="$2"
-DEST_DIR="$3"
-
-# Skip download if cache hit
-if [[ "${CACHE_HIT}" == "true" ]]; then
-    echo "✓ Cache hit for ${IDE_CODE}, skipping download"
-    exit 0
-fi
+DEST_DIR="$2"
 
 # Parse IDE code and version
 if [[ ! "${IDE_CODE}" =~ ^([A-Z]+)-(.+)$ ]]; then
@@ -46,52 +38,33 @@ IDE_VERSION="${BASH_REMATCH[2]}"
 
 : "${ARTIFACTORY_URL:?}" "${ARTIFACTORY_USER:?}" "${ARTIFACTORY_ACCESS_TOKEN:?}"
 
-# Helper function to check if IDEA version is 2025.3 or later (unified distribution)
-is_idea_unified() {
+# Returns 0 (true) if the version is 2025.3 or later (unified distribution), 1 otherwise.
+# Unified distributions (2025.3+) no longer ship separate Community/Ultimate/Professional variants.
+is_unified_distribution() {
     local version="$1"
-    # Extract major and minor version (e.g., "2025.3.2" -> major=2025, minor=3)
     if [[ "${version}" =~ ^([0-9]+)\.([0-9]+) ]]; then
         local major="${BASH_REMATCH[1]}"
         local minor="${BASH_REMATCH[2]}"
-        # Unified distribution started at 2025.3
         if [[ ${major} -gt 2025 ]] || [[ ${major} -eq 2025 && ${minor} -ge 3 ]]; then
-            return 0  # true
+            return 0
         fi
     fi
-    return 1  # false
-}
-
-# Helper function to check if PyCharm version is 2025.3 or later (unified distribution)
-is_pycharm_unified() {
-    local version="$1"
-    # Extract major and minor version (e.g., "2025.3.2.1" -> major=2025, minor=3)
-    if [[ "${version}" =~ ^([0-9]+)\.([0-9]+) ]]; then
-        local major="${BASH_REMATCH[1]}"
-        local minor="${BASH_REMATCH[2]}"
-        # Unified distribution started at 2025.3
-        if [[ ${major} -gt 2025 ]] || [[ ${major} -eq 2025 && ${minor} -ge 3 ]]; then
-            return 0  # true
-        fi
-    fi
-    return 1  # false
+    return 1
 }
 
 # Map IDE type to Repox artifact path
 case "${IDE_TYPE}" in
     IC|IU)
-        # IDEA 2025.3+ uses unified distribution (no IC/IU distinction)
-        if is_idea_unified "${IDE_VERSION}"; then
+        # 2025.3+ uses a single unified distribution (no IC/IU distinction)
+        if is_unified_distribution "${IDE_VERSION}"; then
             ARTIFACT_PATH="jetbrains-download/idea/idea-${IDE_VERSION}.tar.gz"
             IDE_NAME="IntelliJ IDEA"
+        elif [[ "${IDE_TYPE}" == "IC" ]]; then
+            ARTIFACT_PATH="jetbrains-download/idea/ideaIC-${IDE_VERSION}.tar.gz"
+            IDE_NAME="IntelliJ IDEA Community"
         else
-            # Pre-2025.3 uses separate Community/Ultimate distributions
-            if [[ "${IDE_TYPE}" == "IC" ]]; then
-                ARTIFACT_PATH="jetbrains-download/idea/ideaIC-${IDE_VERSION}.tar.gz"
-                IDE_NAME="IntelliJ IDEA Community"
-            else
-                ARTIFACT_PATH="jetbrains-download/idea/ideaIU-${IDE_VERSION}.tar.gz"
-                IDE_NAME="IntelliJ IDEA Ultimate"
-            fi
+            ARTIFACT_PATH="jetbrains-download/idea/ideaIU-${IDE_VERSION}.tar.gz"
+            IDE_NAME="IntelliJ IDEA Ultimate"
         fi
         ;;
     CL)
@@ -103,19 +76,16 @@ case "${IDE_TYPE}" in
         IDE_NAME="Rider"
         ;;
     PY|PC)
-        # PyCharm 2025.3+ uses unified distribution (no Community/Professional distinction)
-        if is_pycharm_unified "${IDE_VERSION}"; then
+        # 2025.3+ uses a single unified distribution (no Community/Professional distinction)
+        if is_unified_distribution "${IDE_VERSION}"; then
             ARTIFACT_PATH="jetbrains-download/python/pycharm-${IDE_VERSION}.tar.gz"
             IDE_NAME="PyCharm"
+        elif [[ "${IDE_TYPE}" == "PC" ]]; then
+            ARTIFACT_PATH="jetbrains-download/python/pycharm-community-${IDE_VERSION}.tar.gz"
+            IDE_NAME="PyCharm Community"
         else
-            # Pre-2025.3 uses separate Community/Professional distributions
-            if [[ "${IDE_TYPE}" == "PC" ]]; then
-                ARTIFACT_PATH="jetbrains-download/python/pycharm-community-${IDE_VERSION}.tar.gz"
-                IDE_NAME="PyCharm Community"
-            else
-                ARTIFACT_PATH="jetbrains-download/python/pycharm-professional-${IDE_VERSION}.tar.gz"
-                IDE_NAME="PyCharm Professional"
-            fi
+            ARTIFACT_PATH="jetbrains-download/python/pycharm-professional-${IDE_VERSION}.tar.gz"
+            IDE_NAME="PyCharm Professional"
         fi
         ;;
     PS)

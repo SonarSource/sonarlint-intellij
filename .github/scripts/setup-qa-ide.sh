@@ -11,7 +11,6 @@
 #   ARTIFACTORY_URL:          Required for non-embedded IDEs (unless cached)
 #   ARTIFACTORY_USER:         Required for non-embedded IDEs (unless cached)
 #   ARTIFACTORY_ACCESS_TOKEN: Required for non-embedded IDEs (unless cached)
-#   CACHE_HIT:                "true" if IDE was restored from cache
 #   GITHUB_ENV:               GitHub Actions environment file (for setting variables)
 #
 # Container environment variables (for embedded IDEs):
@@ -52,52 +51,40 @@ EMBEDDED="false"
 IDE_PATH=""
 case "${IDE_CODE}-${YEAR}" in
     IC-2023)
-        if [[ -n "${IDEA_2023_DIR:-}" && -d "${IDEA_2023_DIR}" ]]; then
-            EMBEDDED="true"
-            IDE_PATH="${IDEA_2023_DIR}"
-            ENV_VAR="IDEA_HOME"
-            echo "✓ Using embedded IntelliJ Community 2023 from container"
-        fi
+        EMBEDDED="true"
+        IDE_PATH="${IDEA_2023_DIR:?IDEA_2023_DIR is not set in the container}"
+        ENV_VAR="IDEA_HOME"
+        echo "✓ Using embedded IntelliJ Community 2023 from container"
         ;;
     IU-2023)
-        if [[ -n "${IDEA_ULTIMATE_2023_DIR:-}" && -d "${IDEA_ULTIMATE_2023_DIR}" ]]; then
-            EMBEDDED="true"
-            IDE_PATH="${IDEA_ULTIMATE_2023_DIR}"
-            ENV_VAR="IDEA_HOME"
-            echo "✓ Using embedded IntelliJ Ultimate 2023 from container"
-        fi
+        EMBEDDED="true"
+        IDE_PATH="${IDEA_ULTIMATE_2023_DIR:?IDEA_ULTIMATE_2023_DIR is not set in the container}"
+        ENV_VAR="IDEA_HOME"
+        echo "✓ Using embedded IntelliJ Ultimate 2023 from container"
         ;;
     CL-2023)
-        if [[ -n "${CLION_2023_DIR:-}" && -d "${CLION_2023_DIR}" ]]; then
-            EMBEDDED="true"
-            IDE_PATH="${CLION_2023_DIR}"
-            ENV_VAR="CLION_HOME"
-            echo "✓ Using embedded CLion 2023 from container"
-        fi
+        EMBEDDED="true"
+        IDE_PATH="${CLION_2023_DIR:?CLION_2023_DIR is not set in the container}"
+        ENV_VAR="CLION_HOME"
+        echo "✓ Using embedded CLion 2023 from container"
         ;;
     CL-2024)
-        if [[ -n "${CLION_2024_DIR:-}" && -d "${CLION_2024_DIR}" ]]; then
-            EMBEDDED="true"
-            IDE_PATH="${CLION_2024_DIR}"
-            ENV_VAR="CLION_HOME"
-            echo "✓ Using embedded CLion 2024 from container"
-        fi
+        EMBEDDED="true"
+        IDE_PATH="${CLION_2024_DIR:?CLION_2024_DIR is not set in the container}"
+        ENV_VAR="CLION_HOME"
+        echo "✓ Using embedded CLion 2024 from container"
         ;;
     RD-2023)
-        if [[ -n "${RIDER_2023_DIR:-}" && -d "${RIDER_2023_DIR}" ]]; then
-            EMBEDDED="true"
-            IDE_PATH="${RIDER_2023_DIR}"
-            ENV_VAR="RIDER_HOME"
-            echo "✓ Using embedded Rider 2023 from container"
-        fi
+        EMBEDDED="true"
+        IDE_PATH="${RIDER_2023_DIR:?RIDER_2023_DIR is not set in the container}"
+        ENV_VAR="RIDER_HOME"
+        echo "✓ Using embedded Rider 2023 from container"
         ;;
     RD-2024)
-        if [[ -n "${RIDER_2024_DIR:-}" && -d "${RIDER_2024_DIR}" ]]; then
-            EMBEDDED="true"
-            IDE_PATH="${RIDER_2024_DIR}"
-            ENV_VAR="RIDER_HOME"
-            echo "✓ Using embedded Rider 2024 from container"
-        fi
+        EMBEDDED="true"
+        IDE_PATH="${RIDER_2024_DIR:?RIDER_2024_DIR is not set in the container}"
+        ENV_VAR="RIDER_HOME"
+        echo "✓ Using embedded Rider 2024 from container"
         ;;
 esac
 
@@ -152,7 +139,7 @@ if [[ "${EMBEDDED}" == "false" ]]; then
     else
         echo "IDE not in cache, downloading from Repox..."
         SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        if ! "${SCRIPT_DIR}/download-ides.sh" "${IDE_VERSION}" "${CACHE_HIT:-false}" "${CACHE_PATH}"; then
+        if ! "${SCRIPT_DIR}/download-ides.sh" "${IDE_VERSION}" "${CACHE_PATH}"; then
             echo "::error::Failed to download IDE from Repox"
             exit 1
         fi

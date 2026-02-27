@@ -22,71 +22,6 @@ java {
     }
 }
 
-val ideCacheDir: String? = System.getenv("IDE_CACHE_DIR")
-val cachedIntellijVersion: String? = System.getenv("INTELLIJ_VERSION")
-val cachedClionVersion: String? = System.getenv("CLION_VERSION")
-val cachedRiderVersion: String? = System.getenv("RIDER_VERSION")
-val cachedResharperVersion: String? = System.getenv("RESHARPER_VERSION")
-val cachedUltimateVersion: String? = System.getenv("ULTIMATE_VERSION")
-
-/**
- * Check if the IDE is available via container environment variables.
- * Returns the path from container env vars like IDEA_2023_DIR, IDEA_2024_DIR, etc.
- */
-fun getContainerIdePath(type: String, version: String): String? {
-    // Extract year from version (e.g., "2023.3.8" -> "2023")
-    val year = version.split('.').firstOrNull()
-
-    return when (type) {
-        "IC" -> System.getenv("IDEA_${year}_DIR")
-        "IU" -> System.getenv("IDEA_ULTIMATE_${year}_DIR")
-        "CL" -> System.getenv("CLION_${year}_DIR")
-        "RD" -> System.getenv("RIDER_${year}_DIR")
-        "PY" -> when (year) {
-            "2023", "2024" -> System.getenv("PYCHARM_PRO_${year}_DIR")
-            else -> System.getenv("PYCHARM_${year}_DIR")
-        }
-        "PC" -> when (year) {
-            "2023", "2024" -> System.getenv("PYCHARM_COM_${year}_DIR")
-            else -> System.getenv("PYCHARM_${year}_DIR")  // 2025+ uses unified path
-        }
-        "PS" -> System.getenv("PHPSTORM_${year}_DIR")
-        "GO" -> System.getenv("GOLAND_${year}_DIR")
-        else -> null
-    }
-}
-
-/**
- * Check if the given ijVersion (e.g., "IC-2023.1.7") matches one of the cached IDEs.
- * Returns the local path if cached, null otherwise.
- * Checks container environment variables first, then falls back to legacy cache dir.
- */
-fun getCachedIdePath(ijVersion: String?): String? {
-    if (ijVersion.isNullOrBlank()) return null
-
-    val parts = ijVersion.split('-')
-    if (parts.size != 2) return null
-
-    val type = parts[0]
-    val version = parts[1]
-
-    // First, check container environment variables (for container-based jobs)
-    val containerPath = getContainerIdePath(type, version)
-    if (containerPath != null && File(containerPath).exists()) {
-        return containerPath
-    }
-
-    // Fallback to legacy cache dir approach
-    return when {
-        type == "IC" && version == cachedIntellijVersion -> "$ideCacheDir/intellij"
-        type == "IU" && version == cachedUltimateVersion -> "$ideCacheDir/ultimate"
-        type == "CL" && version == cachedClionVersion -> "$ideCacheDir/clion"
-        type == "CL" && version == cachedResharperVersion -> "$ideCacheDir/resharper"
-        type == "RD" && version == cachedRiderVersion -> "$ideCacheDir/rider"
-        else -> null
-    }
-}
-
 intellijPlatform {
     projectName = "sonarlint-intellij"
     buildSearchableOptions = false
@@ -132,18 +67,10 @@ dependencies {
                         |Check the 'Setup IDE' step in the workflow logs.
                     """.trimMargin())
                 } else {
-                    // Local development: allow fallback to download
-                    println("ITs: WARNING: Environment variable not set, using legacy resolution (local development)")
-                    val cachedPath = getCachedIdePath(ijVersion)
-
-                    if (cachedPath != null && File(cachedPath).exists()) {
-                        println("ITs: Using cached IDE from container or cache: $cachedPath (ijVersion=$ijVersion)")
-                        local(cachedPath)
-                    } else {
-                        println("ITs: Downloading IDE $ijVersion from repository (local development only)")
-                        create(type, version) {
-                            useCache = true
-                        }
+                    // Local development: fall back to downloading from Repox
+                    println("ITs: WARNING: No *_HOME env var set, downloading $ijVersion from Repox (local development only)")
+                    create(type, version) {
+                        useCache = true
                     }
                 }
             }

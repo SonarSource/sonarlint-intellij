@@ -31,7 +31,7 @@ jobs:
     needs: aws-auth
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260219180730
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -61,7 +61,7 @@ jobs:
         env:
           IDEA_HOME: ${{ env.IDEA_2023_DIR }}
           CLION_HOME: ${{ env.CLION_2023_DIR }}
-          RIDER_HOME: ${{ env.RIDER_2024_DIR }}
+          RIDER_HOME: ${{ env.RIDER_2023_DIR }}
           RESHARPER_HOME: ${{ env.CLION_2024_DIR }}
           ULTIMATE_HOME: ${{ env.IDEA_ULTIMATE_2023_DIR }}
           ARTIFACTORY_ACCESS_USERNAME: vault-SonarSource-sonarlint-intellij-private-reader

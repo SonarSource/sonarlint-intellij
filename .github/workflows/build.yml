@@ -20,17 +20,6 @@ permissions:
   contents: write
   checks: write
 
-env:
-  # IDE installation paths for Linux
-  IDE_CACHE_DIR: /opt/jetbrains
-
-  # Base IDE versions for build and test
-  INTELLIJ_VERSION: "2023.1.7"
-  CLION_VERSION: "2023.1.7"
-  RIDER_VERSION: "2023.1.7"
-  RESHARPER_VERSION: "2024.1"
-  ULTIMATE_VERSION: "2023.1.7"
-
 jobs:
   build-number:
     outputs:
@@ -68,7 +57,7 @@ jobs:
   build-plugin:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260219180730
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -93,13 +82,15 @@ jobs:
         with:
           version: 2025.9.12
 
+      - name: Export embedded IDE paths from container
+        run: |
+          echo "IDEA_HOME=${IDEA_2023_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2023_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2023_DIR}" >> $GITHUB_ENV
+          echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
+
       - name: Build Plugin
-        env:
-          IDEA_HOME: ${{ env.IDEA_2023_DIR }}
-          CLION_HOME: ${{ env.CLION_2023_DIR }}
-          RIDER_HOME: ${{ env.RIDER_2024_DIR }}
-          RESHARPER_HOME: ${{ env.CLION_2024_DIR }}
-          ULTIMATE_HOME: ${{ env.IDEA_ULTIMATE_2023_DIR }}
         uses: SonarSource/ci-github-actions/build-gradle@v1
         id: build_plugin
         with:
@@ -172,7 +163,7 @@ jobs:
   test-and-sonar:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260219180730
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -196,13 +187,15 @@ jobs:
         with:
           version: 2025.9.12
 
+      - name: Export embedded IDE paths from container
+        run: |
+          echo "IDEA_HOME=${IDEA_2023_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2023_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2023_DIR}" >> $GITHUB_ENV
+          echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
+
       - name: Run Tests and Sonar Analysis
-        env:
-          IDEA_HOME: ${{ env.IDEA_2023_DIR }}
-          CLION_HOME: ${{ env.CLION_2023_DIR }}
-          RIDER_HOME: ${{ env.RIDER_2024_DIR }}
-          RESHARPER_HOME: ${{ env.CLION_2024_DIR }}
-          ULTIMATE_HOME: ${{ env.IDEA_ULTIMATE_2023_DIR }}
         uses: SonarSource/ci-github-actions/build-gradle@v1
         with:
           deploy: false
@@ -234,7 +227,7 @@ jobs:
   verify-plugin:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260219180730
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -256,13 +249,15 @@ jobs:
         with:
           version: 2025.9.12
 
+      - name: Export embedded IDE paths from container
+        run: |
+          echo "IDEA_HOME=${IDEA_2023_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2023_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2023_DIR}" >> $GITHUB_ENV
+          echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
+
       - name: Verify Plugin Compatibility
-        env:
-          IDEA_HOME: ${{ env.IDEA_2023_DIR }}
-          CLION_HOME: ${{ env.CLION_2023_DIR }}
-          RIDER_HOME: ${{ env.RIDER_2024_DIR }}
-          RESHARPER_HOME: ${{ env.CLION_2024_DIR }}
-          ULTIMATE_HOME: ${{ env.IDEA_ULTIMATE_2023_DIR }}
         uses: SonarSource/ci-github-actions/build-gradle@v1
         with:
           deploy: false
@@ -275,7 +270,7 @@ jobs:
   qa:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260219180730
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -424,6 +419,14 @@ jobs:
           echo "XVFB_PID=$!" >> $GITHUB_ENV
           sleep 2
 
+      - name: Export embedded IDE paths from container
+        run: |
+          echo "IDEA_HOME=${IDEA_2023_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2023_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2023_DIR}" >> $GITHUB_ENV
+          echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
+
       - name: Determine IDE source (embedded vs Repox)
         id: ide-source
         run: |
@@ -478,7 +481,6 @@ jobs:
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-          CACHE_HIT: ${{ steps.cache-ide.outputs.cache-hit }}
         run: .github/scripts/setup-qa-ide.sh "${{ matrix.ide_version }}"
 
       - name: Validate IDE setup for ${{ matrix.ide_version }}
