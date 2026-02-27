@@ -3,6 +3,7 @@ java = ["17", "21"]
 gradle = "8.14.3"
 gh = "2.83.0"
 jfrog-cli = "2.77.0"
+maven = "3.9.9"
 
 [tasks.install-system-deps]
 # Install system dependences and disable man-db auto-update to prevent it from hanging during installation

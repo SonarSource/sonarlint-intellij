@@ -22,36 +22,6 @@ java {
     }
 }
 
-val ideCacheDir: String? = System.getenv("IDE_CACHE_DIR")
-val cachedIntellijVersion: String? = System.getenv("INTELLIJ_VERSION")
-val cachedClionVersion: String? = System.getenv("CLION_VERSION")
-val cachedRiderVersion: String? = System.getenv("RIDER_VERSION")
-val cachedResharperVersion: String? = System.getenv("RESHARPER_VERSION")
-val cachedUltimateVersion: String? = System.getenv("ULTIMATE_VERSION")
-
-/**
- * Check if the given ijVersion (e.g., "IC-2023.1.7") matches one of the cached IDEs.
- * Returns the local path if cached, null otherwise.
- */
-fun getCachedIdePath(ijVersion: String?): String? {
-    if (ijVersion.isNullOrBlank()) return null
-    
-    val parts = ijVersion.split('-')
-    if (parts.size != 2) return null
-    
-    val type = parts[0]
-    val version = parts[1]
-    
-    return when {
-        type == "IC" && version == cachedIntellijVersion -> "$ideCacheDir/intellij"
-        type == "IU" && version == cachedUltimateVersion -> "$ideCacheDir/ultimate"
-        type == "CL" && version == cachedClionVersion -> "$ideCacheDir/clion"
-        type == "CL" && version == cachedResharperVersion -> "$ideCacheDir/resharper"
-        type == "RD" && version == cachedRiderVersion -> "$ideCacheDir/rider"
-        else -> null
-    }
-}
-
 intellijPlatform {
     projectName = "sonarlint-intellij"
     buildSearchableOptions = false
@@ -60,17 +30,48 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         if (project.hasProperty("ijVersion")) {
-            val cachedPath = getCachedIdePath(ijVersion)
-            
-            if (cachedPath != null && File(cachedPath).exists()) {
-                println("ITs: Using cached IDE from workflow: $cachedPath (ijVersion=$ijVersion)")
-                local(cachedPath)
+            val type = ijVersion.split('-')[0]
+            val version = ijVersion.split('-')[1]
+
+            // First check if setup-qa-ide.sh set an environment variable
+            val envVarPath = when (type) {
+                "IC", "IU" -> System.getenv("IDEA_HOME")
+                "CL" -> System.getenv("CLION_HOME")
+                "RD" -> System.getenv("RIDER_HOME")
+                "PY", "PC" -> System.getenv("PYCHARM_HOME")
+                "PS" -> System.getenv("PHPSTORM_HOME")
+                "GO" -> System.getenv("GOLAND_HOME")
+                else -> null
+            }
+
+            if (envVarPath != null && File(envVarPath).exists()) {
+                println("ITs: Using IDE from setup-qa-ide.sh: $envVarPath (ijVersion=$ijVersion)")
+                local(envVarPath)
             } else {
-                println("ITs: IDE $ijVersion not in cache, downloading from repository")
-                val type = ijVersion.split('-')[0]
-                val version = ijVersion.split('-')[1]
-                create(type, version) {
-                    useCache = true
+                val isCI = System.getenv("CI") == "true"
+                if (isCI) {
+                    // On CI: FAIL - setup-qa-ide.sh should have provided the IDE
+                    throw GradleException("""
+                        |IDE not provided for ITs on CI (ijVersion=$ijVersion)
+                        |Expected environment variable: ${when(type) {
+                            "IC", "IU" -> "IDEA_HOME"
+                            "CL" -> "CLION_HOME"
+                            "RD" -> "RIDER_HOME"
+                            "PY", "PC" -> "PYCHARM_HOME"
+                            "PS" -> "PHPSTORM_HOME"
+                            "GO" -> "GOLAND_HOME"
+                            else -> "<IDE>_HOME"
+                        }}
+                        |
+                        |This means setup-qa-ide.sh did not run successfully or did not set the environment variable.
+                        |Check the 'Setup IDE' step in the workflow logs.
+                    """.trimMargin())
+                } else {
+                    // Local development: fall back to downloading from Repox
+                    println("ITs: WARNING: No *_HOME env var set, downloading $ijVersion from Repox (local development only)")
+                    create(type, version) {
+                        useCache = true
+                    }
                 }
             }
         } else {
