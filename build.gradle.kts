@@ -97,7 +97,7 @@ dependencies {
         pluginComposedModule(runtimeOnly(project(":git")))
         bundledPlugins("com.intellij.java", "Git4Idea")
         testFramework(TestFrameworkType.Platform)
-        pluginVerifier("1.398")
+        pluginVerifier("1.400")
     }
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
