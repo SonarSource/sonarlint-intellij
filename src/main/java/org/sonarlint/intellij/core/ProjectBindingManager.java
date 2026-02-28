@@ -96,8 +96,8 @@ public final class ProjectBindingManager {
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
-      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
       getService(BackendService.class).projectBound(myProject, newBinding, origin);
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
     }
   }
 
@@ -108,8 +108,8 @@ public final class ProjectBindingManager {
     var newBinding = requireNonNull(getBinding());
 
     if (!Objects.equals(previousBinding, newBinding)) {
-      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
       getService(BackendService.class).projectBound(myProject, newBinding, null);
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
 
       showSharedConfigurationNotification(myProject, String.format("""
         Project successfully bound with '%s' on '%s'.
@@ -152,8 +152,8 @@ public final class ProjectBindingManager {
     SonarLintProjectNotifications.Companion.get(myProject).reset();
     if (previousBinding != null) {
       runOnPooledThread(myProject, () -> {
-        myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
         getService(BackendService.class).projectUnbound(myProject);
+        myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged();
       });
     }
   }
