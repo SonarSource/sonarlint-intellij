@@ -90,16 +90,6 @@ class SupportedLanguagesPanelTests {
         AnalyzerStatus.values().forEach { assertThat(it.label).isNotBlank() }
     }
 
-    @Test
-    fun `only PREMIUM and UNSUPPORTED are dimmed`() {
-        assertThat(AnalyzerStatus.PREMIUM.isDimmed).isTrue()
-        assertThat(AnalyzerStatus.UNSUPPORTED.isDimmed).isTrue()
-        assertThat(AnalyzerStatus.ACTIVE.isDimmed).isFalse()
-        assertThat(AnalyzerStatus.SYNCED.isDimmed).isFalse()
-        assertThat(AnalyzerStatus.DOWNLOADING.isDimmed).isFalse()
-        assertThat(AnalyzerStatus.FAILED.isDimmed).isFalse()
-    }
-
     // -------------------------------------------------------------------------
     // AnalyzerSource
     // -------------------------------------------------------------------------
@@ -336,6 +326,3 @@ class SupportedLanguagesPanelTests {
     }
 }
 
-// Extension to expose the dimmed concept for tests without breaking encapsulation
-private val AnalyzerStatus.isDimmed: Boolean
-    get() = this == AnalyzerStatus.PREMIUM || this == AnalyzerStatus.UNSUPPORTED
