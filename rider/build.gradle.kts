@@ -25,4 +25,8 @@ dependencies {
     }
     compileOnly(libs.findbugs.jsr305)
     testImplementation(libs.junit.four)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testRuntimeOnly(libs.junit.launcher)
 }
