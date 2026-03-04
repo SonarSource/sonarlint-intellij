@@ -56,14 +56,11 @@ private val COLOR_DIMMED = UIUtil.getContextHelpForeground()
 /** Cell padding applied uniformly to every column. */
 private val CELL_PADDING = JBUI.Borders.empty(0, 8)
 
-/** Whether this row's content should be visually dimmed (greyed out). */
-private val AnalyzerStatus.isDimmed: Boolean
-    get() = this == AnalyzerStatus.PREMIUM || this == AnalyzerStatus.UNSUPPORTED
 
 class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : ConfigurationPanel<SonarLintProjectSettings> {
 
     private val panel = JPanel(BorderLayout())
-    private val bannerPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+    private val bannerPanel = JPanel(BorderLayout())
     private val table = JBTable()
     private var tableModel = SupportedLanguagesTableModel(emptyList())
 
@@ -90,7 +87,7 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
             JBUI.Borders.empty(6, 10)
         )
 
-        val infoLabel = JBLabel("Connect to SonarQube Cloud or Server to access premium analyzers.  ")
+        val infoLabel = JBLabel("Connect to SonarQube Cloud or Server to access premium analyzers.")
         infoLabel.foreground = UIUtil.getLabelForeground()
 
         val setupLink = JButton("<html><a href=''>Setup Connected Mode</a></html>")
@@ -101,8 +98,13 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
         setupLink.cursor = java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
         setupLink.addActionListener { onSetupConnectedMode() }
 
-        bannerPanel.add(infoLabel)
-        bannerPanel.add(setupLink)
+        val contentRow = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
+            isOpaque = false
+            add(infoLabel)
+            add(Box.createHorizontalStrut(JBUI.scale(4)))
+            add(setupLink)
+        }
+        bannerPanel.add(contentRow, BorderLayout.CENTER)
         bannerPanel.isVisible = false
     }
 
@@ -169,11 +171,8 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
             val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
             if (value is SupportedLanguageRow) {
                 val fileType = RuleLanguages.findFileTypeByRuleLanguage(value.language)
-                label.icon = if (fileType is UnknownFileType) null else fileType.icon
+                label.icon = if (fileType is UnknownFileType) PlaceholderIcon else fileType.icon
                 label.text = value.displayName
-                if (!isSelected && value.status.isDimmed) {
-                    label.foreground = COLOR_DIMMED
-                }
             }
             label.border = CELL_PADDING
             return label
@@ -204,18 +203,10 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
             horizontalAlignment = SwingConstants.LEFT
         }
 
-        private val retryButton = JButton("Retry").apply {
-            putClientProperty("ActionButton.smallVariant", true)
-            isFocusPainted = false
-            isOpaque = false
-            border = JBUI.Borders.empty(0, 4)
-        }
-
         private val cell = JPanel(BorderLayout()).apply {
             isOpaque = true
             add(dotPlaceholder, BorderLayout.WEST)
             add(textLabel, BorderLayout.CENTER)
-            add(retryButton, BorderLayout.EAST)
         }
 
         override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
@@ -226,7 +217,6 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
             textLabel.background = bg
             cell.border = CELL_PADDING
             textLabel.toolTipText = null
-            retryButton.isVisible = false
             dotPlaceholder.showDot = false
 
             if (value is AnalyzerStatus) {
@@ -237,12 +227,10 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
                     AnalyzerStatus.ACTIVE -> COLOR_GREEN
                     AnalyzerStatus.SYNCED -> COLOR_BLUE
                     AnalyzerStatus.FAILED -> COLOR_RED
-                    AnalyzerStatus.PREMIUM, AnalyzerStatus.UNSUPPORTED -> COLOR_DIMMED
                     else -> fg
                 }
 
                 dotPlaceholder.showDot = value == AnalyzerStatus.ACTIVE
-                retryButton.isVisible = value == AnalyzerStatus.FAILED
             }
 
             return cell
@@ -256,7 +244,7 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
                 label.icon = when (value) {
                     AnalyzerSource.SONARQUBE_SERVER -> SonarLintIcons.ICON_SONARQUBE_SERVER_16
                     AnalyzerSource.SONARQUBE_CLOUD -> SonarLintIcons.ICON_SONARQUBE_CLOUD_16
-                    AnalyzerSource.LOCAL -> null
+                    AnalyzerSource.LOCAL -> PlaceholderIcon
                 }
                 label.text = value.label
                 // SQS / SQC sources are highlighted in blue; LOCAL uses the default foreground
@@ -264,7 +252,7 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
                     label.foreground = COLOR_BLUE
                 }
             }
-            label.horizontalAlignment = SwingConstants.CENTER
+            label.horizontalAlignment = SwingConstants.LEFT
             label.border = CELL_PADDING
             return label
         }
@@ -280,7 +268,7 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
     private class VersionCellRenderer : DefaultTableCellRenderer() {
         override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
             val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
-            label.horizontalAlignment = CENTER
+            label.horizontalAlignment = LEFT
             label.toolTipText = null
             label.border = CELL_PADDING
 
@@ -300,6 +288,17 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
             }
 
             return label
+        }
+    }
+
+    internal object PlaceholderIcon : Icon {
+        private const val SIZE = 16
+
+        override fun getIconWidth() = SIZE
+        override fun getIconHeight() = SIZE
+
+        override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
+            // Empty placeholder to reserve space for alignment
         }
     }
 
