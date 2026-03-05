@@ -159,6 +159,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResp
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.log.LogLevel
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.GetPluginStatusesParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.GetPluginStatusesResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.progress.CancelTaskParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.remediation.aicodefix.SuggestFixResponse
@@ -1189,6 +1191,11 @@ class BackendService : Disposable {
     fun checkIfDependencyRiskSupported(project: Project): CompletableFuture<CheckDependencyRiskSupportedResponse> {
         val projectId = projectId(project)
         return requestFromBackend { it.dependencyRiskService.checkSupported(CheckDependencyRiskSupportedParams(projectId)) }
+    }
+
+    fun getPluginStatuses(project: Project): CompletableFuture<GetPluginStatusesResponse> {
+        val projectId = projectId(project)
+        return requestFromBackend { it.pluginService.getPluginStatuses(GetPluginStatusesParams(projectId)) }
     }
 
 }

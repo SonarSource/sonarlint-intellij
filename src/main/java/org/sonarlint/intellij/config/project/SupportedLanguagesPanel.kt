@@ -19,7 +19,10 @@
  */
 package org.sonarlint.intellij.config.project
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileTypes.UnknownFileType
+import com.intellij.openapi.project.Project
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
@@ -44,7 +47,11 @@ import javax.swing.JTable
 import javax.swing.SwingConstants
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellRenderer
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.ConfigurationPanel
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
+import org.sonarlint.intellij.messages.PluginStatusChangeListener
 import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
 
@@ -57,7 +64,10 @@ private val COLOR_DIMMED = UIUtil.getContextHelpForeground()
 private val CELL_PADDING = JBUI.Borders.empty(0, 8)
 
 
-class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : ConfigurationPanel<SonarLintProjectSettings> {
+class SupportedLanguagesPanel(
+    private val project: Project,
+    private val onSetupConnectedMode: () -> Unit,
+) : ConfigurationPanel<SonarLintProjectSettings> {
 
     private val panel = JPanel(BorderLayout())
     private val bannerPanel = JPanel(BorderLayout())
@@ -78,6 +88,11 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
         panel.add(northPanel, BorderLayout.NORTH)
         panel.add(scrollPane, BorderLayout.CENTER)
         panel.border = JBUI.Borders.empty(8)
+
+        ApplicationManager.getApplication().messageBus.connect()
+            .subscribe(PLUGIN_STATUS_CHANGE_TOPIC, PluginStatusChangeListener {
+                fetchAndRefreshStatuses()
+            })
     }
 
     private fun buildBanner() {
@@ -153,11 +168,22 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
     }
 
     override fun load(settings: SonarLintProjectSettings) {
-        val isBound = settings.isBound()
-        bannerPanel.isVisible = !isBound
-        tableModel = SupportedLanguagesTableModel(buildMockedRows(isBound))
-        table.model = tableModel
-        applyColumnRenderers()
+        bannerPanel.isVisible = !settings.isBound()
+        fetchAndRefreshStatuses()
+    }
+
+    private fun fetchAndRefreshStatuses() {
+        getService(BackendService::class.java).getPluginStatuses(project)
+            .thenAccept { response ->
+                val rows = PluginStatusMapper.mapToRows(response.pluginStatuses)
+                ApplicationManager.getApplication().invokeLater({
+                    if (!project.isDisposed) {
+                        tableModel = SupportedLanguagesTableModel(rows)
+                        table.model = tableModel
+                        applyColumnRenderers()
+                    }
+                }, ModalityState.any())
+            }
     }
 
     // -------------------------------------------------------------------------
@@ -317,59 +343,4 @@ class SupportedLanguagesPanel(private val onSetupConnectedMode: () -> Unit) : Co
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Mocked data
-    // -------------------------------------------------------------------------
-
-    companion object {
-        fun buildMockedRows(isBound: Boolean): List<SupportedLanguageRow> {
-            val standaloneRows = listOf(
-                SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1", localVersion = "7.30.1"),
-                SupportedLanguageRow(Language.JS, "JavaScript", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "10.22.0", localVersion = "10.22.0"),
-                SupportedLanguageRow(Language.TS, "TypeScript", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "10.22.0", localVersion = "10.22.0"),
-                SupportedLanguageRow(Language.PYTHON, "Python", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "4.23.0", localVersion = "4.23.0"),
-                SupportedLanguageRow(Language.KOTLIN, "Kotlin", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "2.21.0", localVersion = "2.21.0"),
-                SupportedLanguageRow(Language.PHP, "PHP", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "3.38.0", localVersion = "3.38.0"),
-                SupportedLanguageRow(Language.XML, "XML", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "2.10.0", localVersion = "2.10.0"),
-                SupportedLanguageRow(Language.HTML, "HTML", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "3.13.0", localVersion = "3.13.0"),
-                SupportedLanguageRow(Language.CSS, "CSS", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "10.22.0", localVersion = "10.22.0"),
-                SupportedLanguageRow(Language.SECRETS, "Secrets", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "10.12.0", localVersion = "10.12.0"),
-                SupportedLanguageRow(Language.GO, "Go", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "1.15.0", localVersion = "1.15.0"),
-                SupportedLanguageRow(Language.CLOUDFORMATION, "CloudFormation", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "1.41.0", localVersion = "1.41.0"),
-                SupportedLanguageRow(Language.DOCKER, "Docker", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "1.41.0", localVersion = "1.41.0"),
-                SupportedLanguageRow(Language.KUBERNETES, "Kubernetes", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "1.41.0", localVersion = "1.41.0"),
-                SupportedLanguageRow(Language.TERRAFORM, "Terraform", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "1.41.0", localVersion = "1.41.0"),
-                SupportedLanguageRow(Language.YAML, "YAML", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "1.41.0", localVersion = "1.41.0"),
-                SupportedLanguageRow(Language.RUBY, "Ruby", AnalyzerStatus.FAILED, AnalyzerSource.LOCAL, "1.15.0", localVersion = "1.15.0"),
-                SupportedLanguageRow(Language.SCALA, "Scala", AnalyzerStatus.PREMIUM, AnalyzerSource.LOCAL, null),
-                SupportedLanguageRow(Language.SWIFT, "Swift", AnalyzerStatus.PREMIUM, AnalyzerSource.LOCAL, null),
-                SupportedLanguageRow(Language.PLSQL, "PL/SQL", AnalyzerStatus.UNSUPPORTED, AnalyzerSource.LOCAL, null),
-            )
-
-            if (!isBound) return standaloneRows
-
-            return standaloneRows.map { row ->
-                when (row.status) {
-                    AnalyzerStatus.PREMIUM -> row.copy(
-                        status = AnalyzerStatus.SYNCED,
-                        source = AnalyzerSource.SONARQUBE_SERVER,
-                        version = "1.2.41",
-                    )
-                    // Java demonstrates a server override: server pushes a newer version
-                    AnalyzerStatus.ACTIVE -> if (row.language == Language.JAVA) {
-                        row.copy(
-                            status = AnalyzerStatus.SYNCED,
-                            source = AnalyzerSource.SONARQUBE_SERVER,
-                            version = "7.31.0",
-                        )
-                    } else {
-                        row
-                    }
-                    else -> row
-                }
-            }
-        }
-    }
 }
-
-private typealias Language = org.sonarsource.sonarlint.core.rpc.protocol.common.Language
