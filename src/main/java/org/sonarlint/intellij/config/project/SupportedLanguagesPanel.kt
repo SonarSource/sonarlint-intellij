@@ -89,8 +89,8 @@ class SupportedLanguagesPanel(
         panel.add(scrollPane, BorderLayout.CENTER)
         panel.border = JBUI.Borders.empty(8)
 
-        ApplicationManager.getApplication().messageBus.connect()
-            .subscribe(PLUGIN_STATUS_CHANGE_TOPIC, PluginStatusChangeListener {
+        ApplicationManager.getApplication()?.messageBus?.connect()
+            ?.subscribe(PLUGIN_STATUS_CHANGE_TOPIC, PluginStatusChangeListener {
                 fetchAndRefreshStatuses()
             })
     }
@@ -156,8 +156,6 @@ class SupportedLanguagesPanel(
             preferredWidth = 130
         }
     }
-
-    fun triggerSetupConnectedMode() = onSetupConnectedMode()
 
     override fun getComponent(): JComponent = panel
 
