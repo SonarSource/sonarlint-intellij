@@ -52,6 +52,7 @@ import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageActionItem
@@ -278,6 +279,42 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         client.didChangePluginStatuses(emptyList<PluginStatusDto>())
 
         assertThat(notificationReceived).isTrue()
+    }
+
+    @Test
+    fun should_notify_failed_plugin_statuses() {
+        client.didChangePluginStatuses(listOf(PluginStatusDto("Python", PluginStateDto.FAILED, null, null, null)))
+
+        assertThat(projectNotifications).extracting("title", "content").containsExactly(
+            tuple(
+                "",
+                "The Python analyzer is unavailable. See logs for more details."
+            )
+        )
+    }
+
+    @Test
+    fun should_aggregate_failed_plugin_statuses_when_multiple_analyzers_fail() {
+        client.didChangePluginStatuses(
+            listOf(
+                PluginStatusDto("Python", PluginStateDto.FAILED, null, null, null),
+                PluginStatusDto("JavaScript", PluginStateDto.FAILED, null, null, null),
+            )
+        )
+
+        assertThat(projectNotifications).extracting("title", "content").containsExactly(
+            tuple(
+                "",
+                "Some analyzers are unavailable: Python, JavaScript. See logs for more details."
+            )
+        )
+    }
+
+    @Test
+    fun should_not_notify_non_failed_plugin_statuses() {
+        client.didChangePluginStatuses(listOf(PluginStatusDto("Python", PluginStateDto.SYNCED, null, null, null)))
+
+        assertThat(projectNotifications).isEmpty()
     }
 
     @Test
