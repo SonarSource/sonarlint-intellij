@@ -106,6 +106,13 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     }
   }
 
+  public void selectSupportedLanguagesTab() {
+    if (panel == null) {
+      panel = new SonarLintProjectSettingsPanel(project);
+    }
+    panel.selectSupportedLanguagesTab();
+  }
+
   @Override
   public void reset() {
     if (panel == null) {

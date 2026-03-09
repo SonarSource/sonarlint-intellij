@@ -48,6 +48,7 @@ import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
 import org.sonarlint.intellij.messages.PluginStatusChangeListener
 import org.sonarlint.intellij.notifications.GenerateTokenAction
 import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
+import org.sonarlint.intellij.notifications.OpenSupportedLanguagesPanelAction
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
@@ -291,6 +292,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
                 "The Python analyzer is unavailable. See logs for more details."
             )
         )
+        assertThat(projectNotifications[0].actions).singleElement().isInstanceOf(OpenSupportedLanguagesPanelAction::class.java)
     }
 
     @Test
@@ -308,6 +310,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
                 "Some analyzers are unavailable: Python, JavaScript. See logs for more details."
             )
         )
+        assertThat(projectNotifications[0].actions).singleElement().isInstanceOf(OpenSupportedLanguagesPanelAction::class.java)
     }
 
     @Test
