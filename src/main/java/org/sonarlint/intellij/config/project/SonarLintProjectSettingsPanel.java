@@ -41,6 +41,7 @@ import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   static final int BINDING_TAB_INDEX = 0;
+  static final int SUPPORTED_LANGUAGES_TAB_INDEX = 3;
 
   private final SonarLintProjectPropertiesPanel propsPanel;
   private final JPanel root;
@@ -78,6 +79,10 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
   public JPanel getRootPane() {
     return root;
+  }
+
+  public void selectSupportedLanguagesTab() {
+    tabs.setSelectedIndex(SUPPORTED_LANGUAGES_TAB_INDEX);
   }
 
   public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings, Map<Module, String> moduleOverrides) {
