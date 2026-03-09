@@ -141,6 +141,7 @@ import org.sonarsource.sonarlint.core.rpc.client.SonarLintCancelChecker
 import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
@@ -1046,6 +1047,22 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun didChangePluginStatuses(pluginStatuses: List<org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto>) {
+        val failedPluginNames = pluginStatuses
+            .filter { it.state == PluginStateDto.FAILED }
+            .map { it.pluginName }
+
+        if (failedPluginNames.isNotEmpty()) {
+            val message = if (failedPluginNames.size == 1) {
+                "The ${failedPluginNames.single()} analyzer is unavailable. See logs for more details."
+            } else {
+                "Some analyzers are unavailable: ${failedPluginNames.joinToString(", ")}. See logs for more details."
+            }
+            projectLessNotification(
+                null,
+                message,
+                NotificationType.WARNING
+            )
+        }
         ApplicationManager.getApplication().messageBus
             .syncPublisher(org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC)
             .pluginStatusesChanged()
