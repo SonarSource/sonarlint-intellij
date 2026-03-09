@@ -1045,6 +1045,12 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return collectContributedExtraProperties(module, console, contributedConfigurations)
     }
 
+    override fun didChangePluginStatuses(pluginStatuses: List<org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto>) {
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC)
+            .pluginStatusesChanged()
+    }
+
     override fun getFileExclusions(configurationScopeId: String): Set<String> {
         return findModule(configurationScopeId)?.let { module ->
             getService(module.project, LocalFileExclusions::class.java).projectExclusions + getGlobalSettings().fileExclusions.toSet()
