@@ -116,6 +116,7 @@ import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.not
 import org.sonarlint.intellij.notifications.GenerateTokenAction
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
+import org.sonarlint.intellij.notifications.OpenSupportedLanguagesPanelAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
@@ -1057,7 +1058,14 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             } else {
                 "Some analyzers are unavailable: ${failedPluginNames.joinToString(", ")}. See logs for more details."
             }
-            projectLessNotification(
+            ProjectManager.getInstance().openProjects.firstOrNull()?.let { project ->
+                projectLessNotification(
+                    null,
+                    message,
+                    NotificationType.WARNING,
+                    OpenSupportedLanguagesPanelAction(project)
+                )
+            } ?: projectLessNotification(
                 null,
                 message,
                 NotificationType.WARNING
