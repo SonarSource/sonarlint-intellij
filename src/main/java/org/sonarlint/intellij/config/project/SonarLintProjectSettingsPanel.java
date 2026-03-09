@@ -57,7 +57,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     exclusionsPanel = new ProjectExclusionsPanel(project);
     root = new JPanel(new BorderLayout());
     tabs = new JBTabbedPane();
-    supportedLanguagesPanel = new SupportedLanguagesPanel(() -> {
+    supportedLanguagesPanel = new SupportedLanguagesPanel(project, () -> {
       tabs.setSelectedIndex(BINDING_TAB_INDEX);
       return kotlin.Unit.INSTANCE;
     });

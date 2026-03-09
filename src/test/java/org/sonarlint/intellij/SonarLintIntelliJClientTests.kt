@@ -21,6 +21,8 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.util.application
+import com.intellij.util.messages.MessageBusConnection
 import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -42,12 +44,15 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.aDependencyRiskDto
+import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
+import org.sonarlint.intellij.messages.PluginStatusChangeListener
 import org.sonarlint.intellij.notifications.GenerateTokenAction
 import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageActionItem
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
@@ -260,6 +265,19 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
                     "Please refer to the SonarQube for IDE tool window for more information."
             )
         )
+    }
+
+    @Test
+    fun should_publish_plugin_status_change_event() {
+        var notificationReceived = false
+        val connection: MessageBusConnection = application.messageBus.connect(testRootDisposable)
+        connection.subscribe(PLUGIN_STATUS_CHANGE_TOPIC, PluginStatusChangeListener {
+            notificationReceived = true
+        })
+
+        client.didChangePluginStatuses(emptyList<PluginStatusDto>())
+
+        assertThat(notificationReceived).isTrue()
     }
 
     @Test
