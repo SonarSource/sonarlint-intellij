@@ -44,7 +44,6 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.ConfigurationPanel;
-import org.sonarlint.intellij.core.EnabledLanguages;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.util.HelpLabelUtils;
 
@@ -59,7 +58,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     " Restarting your IDE is recommended.";
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
-  private JBCheckBox neverDownloadCFamily;
   private JBCheckBox enableRegion;
   private JBTextField nodeJsPath;
   private JBLabel nodeJsVersion;
@@ -112,14 +110,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     optionsPanel.add(autoTrigger, new GridBagConstraints(0, gridy++, 3, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
-    neverDownloadCFamily = new JBCheckBox("Never download CFamily analyzer");
-    neverDownloadCFamily.setFocusable(false);
-    neverDownloadCFamily.setToolTipText("Prevent automatic download of CFamily analyzer for C/C++ analysis");
-    if (EnabledLanguages.isClionEnabled()) {
-      optionsPanel.add(neverDownloadCFamily, new GridBagConstraints(0, gridy++, 3, 1, 0.0, 0.0,
-        WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
-    }
-
     var label = new JLabel("Node.js path (20.12 minimum): ");
     label.setToolTipText(NODE_JS_TOOLTIP);
     optionsPanel.add(label, new GridBagConstraints(0, gridy, 1, 1, 0.0, 0.0,
@@ -155,7 +145,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     return model.isRegionEnabled() != enableRegion.isSelected()
       || model.isAutoTrigger() != autoTrigger.isSelected()
-      || model.isNeverDownloadCFamilyAnalyzer() != neverDownloadCFamily.isSelected()
       || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText())
       || model.isFocusOnNewCode() != focusOnNewCode.isSelected();
   }
@@ -164,7 +153,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   public void load(SonarLintGlobalSettings model) {
     getComponent();
     autoTrigger.setSelected(model.isAutoTrigger());
-    neverDownloadCFamily.setSelected(model.isNeverDownloadCFamilyAnalyzer());
     enableRegion.setSelected(model.isRegionEnabled());
     nodeJsPath.setText(model.getNodejsPath());
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
@@ -221,7 +209,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
-    settings.setNeverDownloadCFamilyAnalyzer(neverDownloadCFamily.isSelected());
     settings.setRegionEnabled(enableRegion.isSelected());
     // Do not let the user save an invalid path, this way we fall back to the auto-detection
     if (isNodejsPathValid(nodeJsPath.getText())) {
