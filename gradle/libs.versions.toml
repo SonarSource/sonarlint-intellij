@@ -17,7 +17,7 @@ sonar-iac = "2.6.1.19203"
 sonar-cpp = "6.78.0.96395"
 sonar-dotnet = "10.20.0.135146"
 
-sonarqube = "4.4.1.3373"
+sonarqube = "5.0.0.4638"
 orchestrator = "6.1.0.3962"
 
 kotlin-plugin = "2.2.21"
