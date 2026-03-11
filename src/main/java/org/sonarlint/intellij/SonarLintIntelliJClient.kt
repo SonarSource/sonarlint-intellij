@@ -117,6 +117,7 @@ import org.sonarlint.intellij.notifications.GenerateTokenAction
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
 import org.sonarlint.intellij.notifications.OpenSupportedLanguagesPanelAction
+import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
@@ -1049,7 +1050,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun didChangePluginStatuses(pluginStatuses: List<org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto>) {
         val failedPluginNames = pluginStatuses
-            .filter { it.state == PluginStateDto.FAILED }
+            .filter { it.state == PluginStateDto.ACTIVE }
             .map { it.pluginName }
 
         if (failedPluginNames.isNotEmpty()) {
@@ -1063,7 +1064,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     null,
                     message,
                     NotificationType.WARNING,
-                    OpenSupportedLanguagesPanelAction(project)
+                    OpenSupportedLanguagesPanelAction(project),
+                    RestartBackendNotificationAction()
                 )
             } ?: projectLessNotification(
                 null,
