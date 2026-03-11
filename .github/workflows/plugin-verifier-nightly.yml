@@ -24,37 +24,28 @@ jobs:
         with:
           version: 2025.9.12
 
-      - name: Setup Gradle cache
+      # Cache verifier IDE binaries separately with a stable key (not invalidated by unrelated Gradle changes)
+      # IDEs are stored by the IntelliJ Platform Gradle Plugin v2.x in ~/.gradle/caches/<gradle-version>/transforms/
+      - name: Restore verifier IDEs cache
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          path: ~/.gradle/caches/*/transforms/
+          key: verifier-ides-${{ runner.os }}-LATEST-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
           restore-keys: |
-            gradle-${{ runner.os }}-
+            verifier-ides-${{ runner.os }}-LATEST-
+            verifier-ides-${{ runner.os }}-
 
-      # Cache Gradle dependencies and IDE downloads
       - name: Cache Gradle
         uses: SonarSource/gh-action_cache@v1
         with:
           path: |
             ~/.gradle/caches
+            !~/.gradle/caches/*/transforms/
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-nightly-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-nightly-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-nightly-
-
-      # Cache JetBrains IDE downloads (used by IntelliJ Platform Plugin)
-      - name: Cache JetBrains IDEs
-        uses: SonarSource/gh-action_cache@v1
-        with:
-          path: |
-            ~/.cache/JetBrains
-            ~/.local/share/JetBrains
-          key: ${{ runner.os }}-jetbrains-verifier-latest-${{ hashFiles('gradle.properties', 'build.gradle.kts') }}
-          restore-keys: |
-            ${{ runner.os }}-jetbrains-verifier-latest-
+            gradle-${{ runner.os }}-nightly-
+            gradle-${{ runner.os }}-
 
       - name: Fetch vault secrets
         id: secrets

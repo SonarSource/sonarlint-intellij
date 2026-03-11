@@ -104,6 +104,9 @@ jobs:
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
           gradle-args: -x test -x :its:check :buildPlugin :cyclonedxBom
+          cache-paths: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
 
       - name: Set project version output
         id: set_version
@@ -206,6 +209,9 @@ jobs:
           develocity-url: https://develocity-public.sonar.build
           artifactory-reader-role: private-reader
           gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
+          cache-paths: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@3585e9575db828022551b4231f165eb59a0e74e3 # v5.6.2
@@ -260,6 +266,14 @@ jobs:
           echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
 
+      - name: Restore verifier IDEs cache
+        uses: SonarSource/gh-action_cache@v1
+        with:
+          path: /home/runner/.gradle/caches/*/transforms/
+          key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-231
+          restore-keys: |
+            verifier-ides-${{ runner.os }}-
+
       - name: Verify Plugin Compatibility
         uses: SonarSource/ci-github-actions/build-gradle@v1
         with:
@@ -269,6 +283,10 @@ jobs:
           develocity-url: https://develocity-public.sonar.build
           artifactory-reader-role: private-reader
           gradle-args: -x test -x check -x :its:check :verifyPlugin -PverifierEnv=CI
+          cache-paths: |
+            /home/runner/.gradle/caches
+            !/home/runner/.gradle/caches/*/transforms/
+            /home/runner/.gradle/wrapper
 
   qa:
     runs-on: github-ubuntu-latest-m
@@ -410,8 +428,8 @@ jobs:
         uses: SonarSource/gh-action_cache@v1
         with:
           path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ github.workflow }}-${{ steps.gradle-cache-key.outputs.key }}
           restore-keys: |
             gradle-${{ runner.os }}-${{ github.workflow }}-
