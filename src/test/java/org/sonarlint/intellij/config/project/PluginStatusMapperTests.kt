@@ -60,12 +60,23 @@ class PluginStatusMapperTests {
 
     @Test
     fun `maps null source as local`() {
-        val dto = PluginStatusDto("Scala", PluginStateDto.PREMIUM, null, null, null)
+        val dto = PluginStatusDto("Java", PluginStateDto.ACTIVE, null, "7.30.1", "7.30.1")
 
         val row = PluginStatusMapper.mapToRows(listOf(dto)).single()
 
         assertThat(row.source).isEqualTo(AnalyzerSource.LOCAL)
-        assertThat(row.status).isEqualTo(AnalyzerStatus.PREMIUM)
+    }
+
+    @Test
+    fun `filters out premium and unsupported statuses`() {
+        val active = PluginStatusDto("Java", PluginStateDto.ACTIVE, ArtifactSourceDto.EMBEDDED, "7.30.1", "7.30.1")
+        val premium = PluginStatusDto("Scala", PluginStateDto.PREMIUM, null, null, null)
+        val unsupported = PluginStatusDto("Abap", PluginStateDto.UNSUPPORTED, null, null, null)
+
+        val rows = PluginStatusMapper.mapToRows(listOf(active, premium, unsupported))
+
+        assertThat(rows).hasSize(1)
+        assertThat(rows.single().displayName).isEqualTo("Java")
     }
 
     @Test

@@ -77,6 +77,7 @@ object PluginStatusMapper {
 
     fun mapToRows(pluginStatuses: List<PluginStatusDto>): List<SupportedLanguageRow> {
         return pluginStatuses.mapNotNull { dto -> mapToRow(dto) }
+            .filter { it.status != AnalyzerStatus.UNSUPPORTED && it.status != AnalyzerStatus.PREMIUM }
     }
 
     private fun mapToRow(dto: PluginStatusDto): SupportedLanguageRow? {

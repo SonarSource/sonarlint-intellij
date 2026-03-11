@@ -31,9 +31,9 @@ enum class AnalyzerStatus(val label: String, val tooltip: String? = null) {
 }
 
 enum class AnalyzerSource(val label: String) {
-    LOCAL("Local"),
-    SONARQUBE_SERVER("SQS"),
-    SONARQUBE_CLOUD("SQC"),
+    LOCAL("SonarQube for IDE"),
+    SONARQUBE_SERVER("SonarQube Server"),
+    SONARQUBE_CLOUD("SonarQube Cloud"),
 }
 
 data class SupportedLanguageRow(

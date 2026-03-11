@@ -62,7 +62,7 @@ class SupportedLanguagesPanelTests {
     fun `setup connected mode callback is invoked when clicking setup link`() {
         var invoked = false
         val p = panel { invoked = true }
-        val setupButton = findButtonByText(p.component, "Setup Connected Mode")
+        val setupButton = findButtonByText(p.component, "Set up connection")
         assertThat(setupButton).isNotNull()
         setupButton!!.doClick()
         assertThat(invoked).isTrue()
@@ -198,12 +198,11 @@ class SupportedLanguagesPanelTests {
     }
 
     @Test
-    fun `table model getValueAt returns full row for LANGUAGE and VERSION columns`() {
+    fun `table model getValueAt returns full row for ANALYSIS_TYPE column`() {
         val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1", localVersion = "7.30.1")
         val model = SupportedLanguagesTableModel(listOf(row))
 
-        assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.LANGUAGE.ordinal)).isEqualTo(row)
-        assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.VERSION.ordinal)).isEqualTo(row)
+        assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.ANALYSIS_TYPE.ordinal)).isEqualTo(row)
     }
 
     @Test
@@ -216,20 +215,12 @@ class SupportedLanguagesPanelTests {
     }
 
     @Test
-    fun `table model VERSION column class is SupportedLanguageRow`() {
-        val model = SupportedLanguagesTableModel(emptyList())
-        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.VERSION.ordinal))
-            .isEqualTo(SupportedLanguageRow::class.java)
-    }
-
-    @Test
     fun `table model column classes are correct`() {
         val model = SupportedLanguagesTableModel(emptyList())
 
-        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.LANGUAGE.ordinal)).isEqualTo(SupportedLanguageRow::class.java)
+        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.ANALYSIS_TYPE.ordinal)).isEqualTo(SupportedLanguageRow::class.java)
         assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.STATUS.ordinal)).isEqualTo(AnalyzerStatus::class.java)
         assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.SOURCE.ordinal)).isEqualTo(AnalyzerSource::class.java)
-        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.VERSION.ordinal)).isEqualTo(SupportedLanguageRow::class.java)
     }
 
     @Test
