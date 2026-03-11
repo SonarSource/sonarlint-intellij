@@ -9,6 +9,9 @@ permissions:
   id-token: write
   contents: write
 
+env:
+  CACHE_BACKEND: s3
+
 jobs:
   verify_plugin:
     runs-on: github-ubuntu-latest-m
