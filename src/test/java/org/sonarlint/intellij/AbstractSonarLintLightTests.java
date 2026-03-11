@@ -68,6 +68,7 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   private Disposable disposable;
+  private BackendService realBackendService;
   protected static final Path storageRoot = Paths.get(PathManager.getSystemPath()).resolve("sonarlint").resolve("storage");
   private final List<Path> createdTempDirs = new ArrayList<>();
 
@@ -90,6 +91,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   @BeforeEach
   final void beforeEach() {
     disposable = Disposer.newDisposable();
+    realBackendService = getService(BackendService.class);
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
     getGlobalSettings().setFocusOnNewCode(false);
@@ -101,9 +103,9 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
     getProjectSettings().setVerboseEnabled(true);
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().clearBindingOverride();
-    getService(BackendService.class).connectionsUpdated(Collections.emptyList());
-    getService(BackendService.class).projectOpened(getProject());
-    getService(BackendService.class).modulesAdded(getProject(), List.of(getModule()));
+    realBackendService.connectionsUpdated(Collections.emptyList());
+    realBackendService.projectOpened(getProject());
+    realBackendService.modulesAdded(getProject(), List.of(getModule()));
     PropertiesComponent.getInstance().unsetValue("SonarLint.lastPromotionNotificationDate");
   }
 
@@ -131,7 +133,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
       }
     });
     createdTempDirs.clear();
-    getService(BackendService.class).projectClosed(getProject());
+    realBackendService.projectClosed(getProject());
     if (!getProject().isDisposed()) {
       getService(getProject(), RunningAnalysesTracker.class).cancelAll();
       AnalysisStatus.get(getProject()).stopRun();
