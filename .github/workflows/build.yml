@@ -20,6 +20,9 @@ permissions:
   contents: write
   checks: write
 
+env:
+  CACHE_BACKEND: s3
+
 jobs:
   build-number:
     outputs:

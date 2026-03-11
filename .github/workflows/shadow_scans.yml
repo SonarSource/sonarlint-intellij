@@ -4,6 +4,9 @@ on:
     # Run the workflow every day at 04:00 UTC
     - cron: '0 4 * * *'
 
+env:
+  CACHE_BACKEND: s3
+
 jobs:
   aws-auth:
     runs-on: github-ubuntu-latest-m
