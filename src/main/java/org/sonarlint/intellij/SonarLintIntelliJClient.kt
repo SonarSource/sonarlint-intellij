@@ -1050,7 +1050,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun didChangePluginStatuses(pluginStatuses: List<org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto>) {
         val failedPluginNames = pluginStatuses
-            .filter { it.state == PluginStateDto.ACTIVE }
+            .filter { it.state == PluginStateDto.FAILED }
             .map { it.pluginName }
 
         if (failedPluginNames.isNotEmpty()) {

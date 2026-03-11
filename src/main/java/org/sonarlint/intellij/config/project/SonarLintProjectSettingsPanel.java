@@ -72,7 +72,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     tabs.insertTab("Bind to SonarQube (Server, Cloud)", null, rootBindPane, "Configure the binding to SonarQube (Server, Cloud)", 0);
     tabs.insertTab("File Exclusions", null, exclusionsPanel.getComponent(), "Configure which files to exclude from analysis", 1);
     tabs.insertTab("Analysis Properties", null, rootPropertiesPane, "Configure analysis properties", 2);
-    tabs.insertTab("Supported Languages", null, supportedLanguagesPanel.getComponent(), "View supported languages", 3);
+    tabs.insertTab("Supported Languages & Analyzers", null, supportedLanguagesPanel.getComponent(), "View supported languages and analyzers", 3);
 
     root.add(tabs, BorderLayout.CENTER);
   }

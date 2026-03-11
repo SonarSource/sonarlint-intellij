@@ -31,7 +31,7 @@ public class OpenSupportedLanguagesPanelAction extends NotificationAction {
   private final Project project;
 
   public OpenSupportedLanguagesPanelAction(Project project) {
-    super("Open Supported Languages");
+    super("Open Supported Languages and Analyzers");
     this.project = project;
   }
 
