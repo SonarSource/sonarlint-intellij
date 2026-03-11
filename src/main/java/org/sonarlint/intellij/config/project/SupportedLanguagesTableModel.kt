@@ -24,10 +24,9 @@ import javax.swing.table.AbstractTableModel
 class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>) : AbstractTableModel() {
 
     enum class Column(val header: String) {
-        LANGUAGE("Language"),
+        ANALYSIS_TYPE("Analysis Type"),
         STATUS("Status"),
         SOURCE("Source"),
-        VERSION("Version"),
     }
 
     override fun getRowCount(): Int = rows.size
@@ -37,11 +36,9 @@ class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>)
     override fun getColumnName(column: Int): String = Column.values()[column].header
 
     override fun getColumnClass(columnIndex: Int): Class<*> = when (Column.values()[columnIndex]) {
-        Column.LANGUAGE -> SupportedLanguageRow::class.java
+        Column.ANALYSIS_TYPE -> SupportedLanguageRow::class.java
         Column.STATUS -> AnalyzerStatus::class.java
         Column.SOURCE -> AnalyzerSource::class.java
-        // Full row returned so the renderer can compare version vs localVersion
-        Column.VERSION -> SupportedLanguageRow::class.java
     }
 
     override fun isCellEditable(rowIndex: Int, columnIndex: Int): Boolean = false
@@ -49,10 +46,9 @@ class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>)
     override fun getValueAt(rowIndex: Int, columnIndex: Int): Any? {
         val row = rows[rowIndex]
         return when (Column.values()[columnIndex]) {
-            Column.LANGUAGE -> row
+            Column.ANALYSIS_TYPE -> row
             Column.STATUS -> row.status
             Column.SOURCE -> row.source
-            Column.VERSION -> row
         }
     }
 

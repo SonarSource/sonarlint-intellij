@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.project
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileTypes.UnknownFileType
@@ -35,7 +36,11 @@ import java.awt.Component
 import java.awt.FlowLayout
 import java.awt.Graphics
 import java.awt.Graphics2D
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
 import java.awt.RenderingHints
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.Icon
@@ -47,9 +52,11 @@ import javax.swing.JTable
 import javax.swing.SwingConstants
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellRenderer
+import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.ConfigurationPanel
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
 import org.sonarlint.intellij.messages.PluginStatusChangeListener
 import org.sonarlint.intellij.ui.icons.SonarLintIcons
@@ -58,10 +65,14 @@ import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
 private val COLOR_GREEN = JBColor(Color(34, 139, 34), Color(80, 200, 80))
 private val COLOR_BLUE = JBColor(Color(30, 100, 200), Color(100, 160, 255))
 private val COLOR_RED = JBColor(Color(180, 30, 30), Color(230, 80, 80))
-private val COLOR_DIMMED = UIUtil.getContextHelpForeground()
 
 /** Cell padding applied uniformly to every column. */
 private val CELL_PADDING = JBUI.Borders.empty(0, 8)
+
+private val PREMIUM_LANGUAGES = listOf(
+    "ABAP", "Apex", "C", "C#", "C++", "COBOL", "Kotlin",
+    "Objective-C", "PL/SQL", "Scala", "Swift", "T-SQL", "VB.NET"
+)
 
 
 class SupportedLanguagesPanel(
@@ -96,30 +107,63 @@ class SupportedLanguagesPanel(
     }
 
     private fun buildBanner() {
-        bannerPanel.background = JBColor(Color(255, 248, 225), Color(80, 70, 30))
+        bannerPanel.background = JBColor(Color(49, 52, 56), Color(49, 52, 56))
         bannerPanel.border = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(JBColor(Color(230, 200, 100), Color(140, 120, 50))),
-            JBUI.Borders.empty(6, 10)
+            BorderFactory.createLineBorder(JBColor(Color(69, 73, 78), Color(69, 73, 78))),
+            JBUI.Borders.empty(10, 14)
         )
-
-        val infoLabel = JBLabel("Connect to SonarQube Cloud or Server to access premium analyzers.")
-        infoLabel.foreground = UIUtil.getLabelForeground()
-
-        val setupLink = JButton("<html><a href=''>Setup Connected Mode</a></html>")
-        setupLink.isBorderPainted = false
-        setupLink.isContentAreaFilled = false
-        setupLink.isFocusPainted = false
-        setupLink.foreground = JBUI.CurrentTheme.Link.Foreground.ENABLED
-        setupLink.cursor = java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
-        setupLink.addActionListener { onSetupConnectedMode() }
-
-        val contentRow = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
-            isOpaque = false
-            add(infoLabel)
-            add(Box.createHorizontalStrut(JBUI.scale(4)))
-            add(setupLink)
+        bannerPanel.layout = GridBagLayout()
+        val gbc = GridBagConstraints().apply {
+            gridx = 0; anchor = GridBagConstraints.WEST; fill = GridBagConstraints.HORIZONTAL; weightx = 1.0
         }
-        bannerPanel.add(contentRow, BorderLayout.CENTER)
+
+        val titleLabel = JBLabel("Get more from your analysis").apply {
+            foreground = UIUtil.getLabelForeground()
+            font = font.deriveFont(java.awt.Font.BOLD)
+        }
+        gbc.gridy = 0
+        gbc.insets = JBUI.insetsBottom(4)
+        bannerPanel.add(titleLabel, gbc)
+
+        val descRow = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply { isOpaque = false }
+        descRow.add(JBLabel("Connect to ").apply { foreground = UIUtil.getLabelForeground() })
+
+        val serverCloudLink = JBLabel("<html><a href=''>SonarQube Server or Cloud</a></html>").apply {
+            foreground = JBUI.CurrentTheme.Link.Foreground.ENABLED
+            cursor = java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent?) {
+                    BrowserUtil.browse(SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK)
+                }
+            })
+        }
+        descRow.add(serverCloudLink)
+
+        descRow.add(JBLabel(" to unlock ").apply { foreground = UIUtil.getLabelForeground() })
+
+        val premiumTooltipText = PREMIUM_LANGUAGES.joinToString(", ")
+        val extendedLangLabel = JBLabel("<html><u>extended language support</u></html>").apply {
+            foreground = UIUtil.getLabelForeground()
+            toolTipText = premiumTooltipText
+        }
+        descRow.add(extendedLangLabel)
+
+        descRow.add(JBLabel(" and advanced security rules for your existing code.").apply {
+            foreground = UIUtil.getLabelForeground()
+        })
+
+        gbc.gridy = 1
+        gbc.insets = JBUI.insetsBottom(8)
+        bannerPanel.add(descRow, gbc)
+
+        val setupButton = JButton("Set up connection").apply {
+            addActionListener { onSetupConnectedMode() }
+        }
+        gbc.gridy = 2
+        gbc.fill = GridBagConstraints.NONE
+        gbc.insets = JBUI.emptyInsets()
+        bannerPanel.add(setupButton, gbc)
+
         bannerPanel.isVisible = false
     }
 
@@ -136,7 +180,7 @@ class SupportedLanguagesPanel(
     private fun applyColumnRenderers() {
         val cm = table.columnModel
 
-        cm.getColumn(SupportedLanguagesTableModel.Column.LANGUAGE.ordinal).apply {
+        cm.getColumn(SupportedLanguagesTableModel.Column.ANALYSIS_TYPE.ordinal).apply {
             cellRenderer = LanguageCellRenderer()
             preferredWidth = 200
         }
@@ -148,12 +192,7 @@ class SupportedLanguagesPanel(
 
         cm.getColumn(SupportedLanguagesTableModel.Column.SOURCE.ordinal).apply {
             cellRenderer = SourceCellRenderer()
-            preferredWidth = 80
-        }
-
-        cm.getColumn(SupportedLanguagesTableModel.Column.VERSION.ordinal).apply {
-            cellRenderer = VersionCellRenderer()
-            preferredWidth = 130
+            preferredWidth = 200
         }
     }
 
@@ -262,6 +301,8 @@ class SupportedLanguagesPanel(
     }
 
     private class SourceCellRenderer : DefaultTableCellRenderer() {
+        private val pluginVersion: String = getService(SonarLintPlugin::class.java).version
+
         override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
             val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
             if (value is AnalyzerSource) {
@@ -270,47 +311,16 @@ class SupportedLanguagesPanel(
                     AnalyzerSource.SONARQUBE_CLOUD -> SonarLintIcons.ICON_SONARQUBE_CLOUD_16
                     AnalyzerSource.LOCAL -> PlaceholderIcon
                 }
-                label.text = value.label
-                // SQS / SQC sources are highlighted in blue; LOCAL uses the default foreground
+                label.text = when (value) {
+                    AnalyzerSource.LOCAL -> "${value.label} $pluginVersion"
+                    else -> value.label
+                }
                 if (!isSelected && value != AnalyzerSource.LOCAL) {
                     label.foreground = COLOR_BLUE
                 }
             }
             label.horizontalAlignment = SwingConstants.LEFT
             label.border = CELL_PADDING
-            return label
-        }
-    }
-
-    /**
-     * Renders the VERSION column.
-     *
-     * - No version (null): em-dash in dimmed colour
-     * - Server overrides local version: blue text + tooltip "Overriding local version X.Y.Z"
-     * - Same version: normal label foreground
-     */
-    private class VersionCellRenderer : DefaultTableCellRenderer() {
-        override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
-            val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
-            label.horizontalAlignment = LEFT
-            label.toolTipText = null
-            label.border = CELL_PADDING
-
-            if (value is SupportedLanguageRow) {
-                val version = value.version
-                if (version == null) {
-                    label.text = "\u2013"
-                    if (!isSelected) label.foreground = COLOR_DIMMED
-                } else if (!isSelected && value.isVersionOverriddenByServer) {
-                    label.text = version
-                    label.foreground = COLOR_BLUE
-                    label.toolTipText = "Overriding local version ${value.localVersion}"
-                } else {
-                    label.text = version
-                    if (!isSelected) label.foreground = UIUtil.getLabelForeground()
-                }
-            }
-
             return label
         }
     }
