@@ -15,9 +15,9 @@ jobs:
     name: Verify Plugin - LATEST
     if: github.ref_name == github.event.repository.default_branch
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@665d82088236dd987b2af6165be29d21e2e11184 # v3.0.0
         with:
           version: 2025.9.12
 
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload reports on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: verifier-reports-latest
           path: "**/reports/**/*"
