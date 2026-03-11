@@ -15,14 +15,14 @@ jobs:
     name: Verify Plugin - LATEST
     if: github.ref_name == github.event.repository.default_branch
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - uses: jdx/mise-action@v2.4.4
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           version: 2025.9.12
 
       - name: Setup Gradle cache
-        uses: SonarSource/gh-action_cache@v1
+        uses: SonarSource/gh-action_cache@v1.2.2
         with:
           path: |
             ~/.gradle/caches
@@ -33,7 +33,7 @@ jobs:
 
       # Cache Gradle dependencies and IDE downloads
       - name: Cache Gradle
-        uses: SonarSource/gh-action_cache@v1
+        uses: SonarSource/gh-action_cache@v1.2.2
         with:
           path: |
             ~/.gradle/caches
@@ -44,7 +44,7 @@ jobs:
 
       # Cache JetBrains IDE downloads (used by IntelliJ Platform Plugin)
       - name: Cache JetBrains IDEs
-        uses: SonarSource/gh-action_cache@v1
+        uses: SonarSource/gh-action_cache@v1.2.2
         with:
           path: |
             ~/.cache/JetBrains
@@ -55,7 +55,7 @@ jobs:
 
       - name: Fetch vault secrets
         id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
+        uses: SonarSource/vault-action-wrapper@3.3.0
         with:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload reports on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: verifier-reports-latest
           path: "**/reports/**/*"
