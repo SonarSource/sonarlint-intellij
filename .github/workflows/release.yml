@@ -10,6 +10,6 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v5
+    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@5.19.1-beta
     with:
       slackChannel: squad-ide-private
