@@ -63,7 +63,6 @@ public final class SonarLintGlobalSettings {
 
   private boolean taintVulnerabilitiesTabDisclaimerDismissed;
   private boolean secretsNeverBeenAnalysed = true;
-  private boolean neverDownloadCFamilyAnalyzer = false;
 
   public SonarLintGlobalSettings() {}
 
@@ -78,7 +77,6 @@ public final class SonarLintGlobalSettings {
     this.hasWalkthroughRunOnce = original.hasWalkthroughRunOnce;
     this.secretsNeverBeenAnalysed = original.secretsNeverBeenAnalysed;
     this.taintVulnerabilitiesTabDisclaimerDismissed = original.taintVulnerabilitiesTabDisclaimerDismissed;
-    this.neverDownloadCFamilyAnalyzer = original.neverDownloadCFamilyAnalyzer;
 
     this.servers = new LinkedList<>(original.servers);
     this.fileExclusions = new LinkedList<>(original.fileExclusions);
@@ -263,14 +261,6 @@ public final class SonarLintGlobalSettings {
     return servers.stream()
       .filter(it -> equalsIgnoringTrailingSlash(it.getHostUrl(), serverUrl))
       .toList();
-  }
-
-  public boolean isNeverDownloadCFamilyAnalyzer() {
-    return neverDownloadCFamilyAnalyzer;
-  }
-
-  public void setNeverDownloadCFamilyAnalyzer(boolean neverDownloadCFamilyAnalyzer) {
-    this.neverDownloadCFamilyAnalyzer = neverDownloadCFamilyAnalyzer;
   }
 
   public static class Rule {
