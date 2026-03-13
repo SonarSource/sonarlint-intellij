@@ -70,8 +70,7 @@ private val COLOR_RED = JBColor(Color(180, 30, 30), Color(230, 80, 80))
 private val CELL_PADDING = JBUI.Borders.empty(0, 8)
 
 private val PREMIUM_LANGUAGES = listOf(
-    "ABAP", "Apex", "C", "C#", "C++", "COBOL", "Kotlin",
-    "Objective-C", "PL/SQL", "Scala", "Swift", "T-SQL", "VB.NET"
+    "Text", "Secrets", "PL/SQL", "Scala", "Swift"
 )
 
 
