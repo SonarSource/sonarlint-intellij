@@ -22,8 +22,8 @@ package org.sonarlint.intellij.config.project
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.fileTypes.UnknownFileType
 import com.intellij.openapi.project.Project
+import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
@@ -32,47 +32,29 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Color
-import java.awt.Component
 import java.awt.FlowLayout
-import java.awt.Graphics
-import java.awt.Graphics2D
+import java.awt.Font
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
-import java.awt.RenderingHints
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
-import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.JComponent
-import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.JTable
-import javax.swing.SwingConstants
-import javax.swing.table.DefaultTableCellRenderer
-import javax.swing.table.TableCellRenderer
-import org.sonarlint.intellij.SonarLintPlugin
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.ConfigurationPanel
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
 import org.sonarlint.intellij.messages.PluginStatusChangeListener
-import org.sonarlint.intellij.ui.icons.SonarLintIcons
-import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
 
-private val COLOR_GREEN = JBColor(Color(34, 139, 34), Color(80, 200, 80))
-private val COLOR_BLUE = JBColor(Color(30, 100, 200), Color(100, 160, 255))
-private val COLOR_RED = JBColor(Color(180, 30, 30), Color(230, 80, 80))
-
-/** Cell padding applied uniformly to every column. */
-private val CELL_PADDING = JBUI.Borders.empty(0, 8)
+private val BACKGROUND_COLOR = JBColor(Color(49, 52, 56), Color(49, 52, 56))
+private val BORDER_COLOR = JBColor(Color(69, 73, 78), Color(69, 73, 78))
 
 private val PREMIUM_LANGUAGES = listOf(
     "Text", "Secrets", "PL/SQL", "Scala", "Swift"
 )
-
 
 class SupportedLanguagesPanel(
     private val project: Project,
@@ -99,16 +81,16 @@ class SupportedLanguagesPanel(
         panel.add(scrollPane, BorderLayout.CENTER)
         panel.border = JBUI.Borders.empty(8)
 
-        ApplicationManager.getApplication()?.messageBus?.connect()
+        ApplicationManager.getApplication()?.messageBus?.connect(project)
             ?.subscribe(PLUGIN_STATUS_CHANGE_TOPIC, PluginStatusChangeListener {
                 fetchAndRefreshStatuses()
             })
     }
 
     private fun buildBanner() {
-        bannerPanel.background = JBColor(Color(49, 52, 56), Color(49, 52, 56))
+        bannerPanel.background = BACKGROUND_COLOR
         bannerPanel.border = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(JBColor(Color(69, 73, 78), Color(69, 73, 78))),
+            BorderFactory.createLineBorder(BORDER_COLOR),
             JBUI.Borders.empty(10, 14)
         )
         bannerPanel.layout = GridBagLayout()
@@ -118,7 +100,7 @@ class SupportedLanguagesPanel(
 
         val titleLabel = JBLabel("Get more from your analysis").apply {
             foreground = UIUtil.getLabelForeground()
-            font = font.deriveFont(java.awt.Font.BOLD)
+            font = font.deriveFont(Font.BOLD)
         }
         gbc.gridy = 0
         gbc.insets = JBUI.insetsBottom(4)
@@ -127,14 +109,8 @@ class SupportedLanguagesPanel(
         val descRow = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply { isOpaque = false }
         descRow.add(JBLabel("Connect to ").apply { foreground = UIUtil.getLabelForeground() })
 
-        val serverCloudLink = JBLabel("<html><a href=''>SonarQube Server or Cloud</a></html>").apply {
-            foreground = JBUI.CurrentTheme.Link.Foreground.ENABLED
-            cursor = java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
-            addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent?) {
-                    BrowserUtil.browse(SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK)
-                }
-            })
+        val serverCloudLink = HyperlinkLabel("SonarQube Server or Cloud").apply {
+            addHyperlinkListener { BrowserUtil.browse(SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK) }
         }
         descRow.add(serverCloudLink)
 
@@ -218,136 +194,11 @@ class SupportedLanguagesPanel(
                         table.model = tableModel
                         applyColumnRenderers()
                     }
-                }, ModalityState.any())
+                }, ModalityState.stateForComponent(panel))
+            }
+            .exceptionally { error ->
+                SonarLintConsole.get(project).error("Failed to fetch plugin statuses", error)
+                null
             }
     }
-
-    // -------------------------------------------------------------------------
-    // Cell renderers
-    // -------------------------------------------------------------------------
-
-    private class LanguageCellRenderer : DefaultTableCellRenderer() {
-        override fun getTableCellRendererComponent(
-            table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int,
-        ): Component {
-            val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
-            if (value is SupportedLanguageRow) {
-                val fileType = RuleLanguages.findFileTypeByRuleLanguage(value.language)
-                label.icon = if (fileType is UnknownFileType) PlaceholderIcon else fileType.icon
-                label.text = value.displayName
-            }
-            label.border = CELL_PADDING
-            return label
-        }
-    }
-
-    private class StatusCellRenderer : TableCellRenderer {
-
-        private val DOT_AREA_WIDTH = JBUI.scale(GreenDotIcon.SIZE + 4)
-
-        // Dot placeholder: fixed-width panel that shows the green dot for ACTIVE
-        private val dotPlaceholder = object : JPanel() {
-            var showDot = false
-            init {
-                isOpaque = false
-                preferredSize = java.awt.Dimension(DOT_AREA_WIDTH, 0)
-            }
-            override fun paintComponent(g: Graphics) {
-                if (showDot) GreenDotIcon.paintIcon(
-                    this, g,
-                    (width - GreenDotIcon.SIZE) / 2,
-                    (height - GreenDotIcon.SIZE) / 2
-                )
-            }
-        }
-
-        private val textLabel = JLabel().apply {
-            horizontalAlignment = SwingConstants.LEFT
-        }
-
-        private val cell = JPanel(BorderLayout()).apply {
-            isOpaque = true
-            add(dotPlaceholder, BorderLayout.WEST)
-            add(textLabel, BorderLayout.CENTER)
-        }
-
-        override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
-            val bg = if (isSelected) table.selectionBackground else table.background
-            val fg = if (isSelected) table.selectionForeground else table.foreground
-
-            cell.background = bg
-            textLabel.background = bg
-            cell.border = CELL_PADDING
-            textLabel.toolTipText = null
-            dotPlaceholder.showDot = false
-
-            if (value is AnalyzerStatus) {
-                textLabel.text = value.label
-                textLabel.toolTipText = value.tooltip
-
-                textLabel.foreground = if (isSelected) fg else when (value) {
-                    AnalyzerStatus.ACTIVE -> COLOR_GREEN
-                    AnalyzerStatus.SYNCED -> COLOR_BLUE
-                    AnalyzerStatus.FAILED -> COLOR_RED
-                    else -> fg
-                }
-
-                dotPlaceholder.showDot = value == AnalyzerStatus.ACTIVE
-            }
-
-            return cell
-        }
-    }
-
-    private class SourceCellRenderer : DefaultTableCellRenderer() {
-        private val pluginVersion: String = getService(SonarLintPlugin::class.java).version
-
-        override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
-            val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
-            if (value is AnalyzerSource) {
-                label.icon = when (value) {
-                    AnalyzerSource.SONARQUBE_SERVER -> SonarLintIcons.ICON_SONARQUBE_SERVER_16
-                    AnalyzerSource.SONARQUBE_CLOUD -> SonarLintIcons.ICON_SONARQUBE_CLOUD_16
-                    AnalyzerSource.LOCAL -> PlaceholderIcon
-                }
-                label.text = when (value) {
-                    AnalyzerSource.LOCAL -> "${value.label} $pluginVersion"
-                    else -> value.label
-                }
-                if (!isSelected && value != AnalyzerSource.LOCAL) {
-                    label.foreground = COLOR_BLUE
-                }
-            }
-            label.horizontalAlignment = SwingConstants.LEFT
-            label.border = CELL_PADDING
-            return label
-        }
-    }
-
-    internal object PlaceholderIcon : Icon {
-        private const val SIZE = 16
-
-        override fun getIconWidth() = SIZE
-        override fun getIconHeight() = SIZE
-
-        override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
-            // Empty placeholder to reserve space for alignment
-        }
-    }
-
-    internal object GreenDotIcon : Icon {
-        const val SIZE = 8
-
-        override fun getIconWidth() = SIZE
-        override fun getIconHeight() = SIZE
-
-        override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
-            val g2 = g.create() as Graphics2D
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = COLOR_GREEN
-            g2.fillOval(x, y, SIZE, SIZE)
-            g2.dispose()
-        }
-    }
-
 }
