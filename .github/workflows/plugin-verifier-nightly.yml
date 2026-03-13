@@ -19,7 +19,7 @@ jobs:
 
       - uses: jdx/mise-action@v2.4.4
         with:
-          version: 2025.9.12
+          version: 2025.9.13
 
       - name: Setup Gradle cache
         uses: SonarSource/gh-action_cache@v1
