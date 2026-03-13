@@ -80,7 +80,6 @@ import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.findOverriddenModules
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.getAutoShareConfigParams
 import org.sonarlint.intellij.binding.ClientBindingSuggestion
-import org.sonarlint.intellij.cayc.NewCodePeriodCache
 import org.sonarlint.intellij.common.analysis.FilesContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -936,7 +935,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
-        getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
         if (runningAnalysis != null) {
             runningAnalysis.addRawIssues(analysisId, issuesByFileUri, isIntermediatePublication)
@@ -955,7 +953,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
         val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
-        getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
         if (runningAnalysis != null) {
             runningAnalysis.addRawHotspots(analysisId, hotspotsByFileUri, isIntermediatePublication)
