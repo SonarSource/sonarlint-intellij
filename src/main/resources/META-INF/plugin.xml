@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>11.15 - Support Java 25 with new rules. 8 new rules for Python. Bug fixes, fewer FPs, FNs, and improvements for Java, PHP and Python.</li>
+        <li>11.15 - Introduction of a new 'Supported Languages' page. Support Java 25 with new rules. 8 new rules for Python. Bug fixes, fewer FPs, FNs, and improvements for Java, PHP and Python.</li>
         <li>11.14 - 2 new rules for Java. Fixed a noisy error related to parsing HTTP responses. Bug fixes, fewer FPs, FNs, and improvements for JS/TS, Java, Python, XML, secret and C#.</li>
         <li>11.13 - New rules for FastAPI and Flask framework for Python. Fixed analysis failure on empty kustomization files. Fixed errors related to read access. Avoid locking git files. Fixed a race-condition issue where analyzers would not get correctly loaded. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>11.12 - 10 new QuickFixes for JS/TS. Users can now quickly generate a new token if their current one is invalid. Bug fixes, fewer FPs and improvements for many languages.</li>
