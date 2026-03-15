@@ -21,8 +21,6 @@ package org.sonarlint.intellij
 
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.util.application
-import com.intellij.util.messages.MessageBusConnection
 import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -39,6 +37,7 @@ import org.mockito.Mockito.verify
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
+import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
@@ -49,7 +48,6 @@ import org.sonarlint.intellij.messages.PluginStatusChangeListener
 import org.sonarlint.intellij.notifications.GenerateTokenAction
 import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
 import org.sonarlint.intellij.notifications.OpenSupportedLanguagesPanelAction
-import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.promotion.UtmParameters
 import org.sonarsource.sonarlint.core.rpc.client.ConfigScopeNotFoundException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
@@ -273,19 +271,19 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     @Test
     fun should_publish_plugin_status_change_event() {
         var notificationReceived = false
-        val connection: MessageBusConnection = application.messageBus.connect(testRootDisposable)
+        val connection = project.messageBus.connect(testRootDisposable)
         connection.subscribe(PLUGIN_STATUS_CHANGE_TOPIC, PluginStatusChangeListener {
             notificationReceived = true
         })
 
-        client.didChangePluginStatuses(emptyList<PluginStatusDto>())
+        client.didChangePluginStatuses(projectBackendId, emptyList())
 
         assertThat(notificationReceived).isTrue()
     }
 
     @Test
     fun should_notify_failed_plugin_statuses() {
-        client.didChangePluginStatuses(listOf(PluginStatusDto("Python", PluginStateDto.FAILED, null, null, null)))
+        client.didChangePluginStatuses(projectBackendId, listOf(PluginStatusDto("Python", PluginStateDto.FAILED, null, null, null)))
 
         assertThat(projectNotifications).extracting("title", "content").containsExactly(
             tuple(
@@ -301,6 +299,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     @Test
     fun should_aggregate_failed_plugin_statuses_when_multiple_analyzers_fail() {
         client.didChangePluginStatuses(
+            projectBackendId,
             listOf(
                 PluginStatusDto("Python", PluginStateDto.FAILED, null, null, null),
                 PluginStatusDto("JavaScript", PluginStateDto.FAILED, null, null, null),
@@ -320,7 +319,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_not_notify_non_failed_plugin_statuses() {
-        client.didChangePluginStatuses(listOf(PluginStatusDto("Python", PluginStateDto.SYNCED, null, null, null)))
+        client.didChangePluginStatuses(projectBackendId, listOf(PluginStatusDto("Python", PluginStateDto.SYNCED, null, null, null)))
 
         assertThat(projectNotifications).isEmpty()
     }

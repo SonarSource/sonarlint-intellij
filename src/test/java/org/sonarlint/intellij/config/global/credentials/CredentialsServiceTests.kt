@@ -54,11 +54,8 @@ class CredentialsServiceTests : AbstractSonarLintLightTests() {
     fun beforeEach() {
         updatedConnectionIds = ArrayList()
         busConnection = ApplicationManager.getApplication().messageBus.connect(testRootDisposable)
-        busConnection.subscribe(CredentialsChangeListener.TOPIC, object : CredentialsChangeListener {
-            override fun onCredentialsChanged(connectionId: String) {
-                updatedConnectionIds.add(connectionId)
-            }
-        })
+        busConnection.subscribe(CredentialsChangeListener.TOPIC,
+            CredentialsChangeListener { connectionId -> updatedConnectionIds.add(connectionId) })
     }
 
     @AfterEach
