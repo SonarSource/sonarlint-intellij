@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.project
 
 import com.intellij.ide.BrowserUtil
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.ui.HyperlinkLabel
@@ -46,8 +45,8 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.ConfigurationPanel
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
-import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
 import org.sonarlint.intellij.messages.PluginStatusChangeListener
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
 private val BACKGROUND_COLOR = JBColor(Color(49, 52, 56), Color(49, 52, 56))
 private val BORDER_COLOR = JBColor(Color(69, 73, 78), Color(69, 73, 78))
@@ -59,7 +58,7 @@ private val PREMIUM_LANGUAGES = listOf(
 class SupportedLanguagesPanel(
     private val project: Project,
     private val onSetupConnectedMode: () -> Unit,
-) : ConfigurationPanel<SonarLintProjectSettings> {
+) : ConfigurationPanel<SonarLintProjectSettings>, PluginStatusChangeListener {
 
     private val panel = JPanel(BorderLayout())
     private val bannerPanel = JPanel(BorderLayout())
@@ -80,11 +79,6 @@ class SupportedLanguagesPanel(
         panel.add(northPanel, BorderLayout.NORTH)
         panel.add(scrollPane, BorderLayout.CENTER)
         panel.border = JBUI.Borders.empty(8)
-
-        ApplicationManager.getApplication()?.messageBus?.connect(project)
-            ?.subscribe(PLUGIN_STATUS_CHANGE_TOPIC, PluginStatusChangeListener {
-                fetchAndRefreshStatuses()
-            })
     }
 
     private fun buildBanner() {
@@ -180,7 +174,7 @@ class SupportedLanguagesPanel(
     }
 
     override fun load(settings: SonarLintProjectSettings) {
-        bannerPanel.isVisible = !settings.isBound()
+        bannerPanel.isVisible = !settings.isBound
         fetchAndRefreshStatuses()
     }
 
@@ -188,17 +182,22 @@ class SupportedLanguagesPanel(
         getService(BackendService::class.java).getPluginStatuses(project)
             .thenAccept { response ->
                 val rows = PluginStatusMapper.mapToRows(response.pluginStatuses)
-                ApplicationManager.getApplication().invokeLater({
+                runOnUiThread(project, ModalityState.stateForComponent(panel)) {
                     if (!project.isDisposed) {
                         tableModel = SupportedLanguagesTableModel(rows)
                         table.model = tableModel
                         applyColumnRenderers()
                     }
-                }, ModalityState.stateForComponent(panel))
+                }
             }
             .exceptionally { error ->
                 SonarLintConsole.get(project).error("Failed to fetch plugin statuses", error)
                 null
             }
     }
+
+    override fun pluginStatusesChanged() {
+        fetchAndRefreshStatuses()
+    }
+
 }

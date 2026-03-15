@@ -89,4 +89,5 @@ class PluginStatusMapperTests {
         assertThat(rows).hasSize(1)
         assertThat(rows.single().displayName).isEqualTo("Java")
     }
+
 }

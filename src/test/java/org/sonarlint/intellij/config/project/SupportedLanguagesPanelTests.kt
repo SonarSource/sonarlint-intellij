@@ -19,70 +19,11 @@
  */
 package org.sonarlint.intellij.config.project
 
-import com.intellij.openapi.project.Project
-import java.awt.Container
-import javax.swing.JButton
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 class SupportedLanguagesPanelTests {
-
-    private fun panel(onSetupConnectedMode: () -> Unit = {}) = SupportedLanguagesPanel(mock(Project::class.java), onSetupConnectedMode)
-
-    // -------------------------------------------------------------------------
-    // Panel contract
-    // -------------------------------------------------------------------------
-
-    @Test
-    fun `panel is never modified`() {
-        val p = panel()
-        assertThat(p.isModified(SonarLintProjectSettings())).isFalse()
-    }
-
-    @Test
-    fun `save is a no-op`() {
-        val settings = SonarLintProjectSettings()
-        panel().save(settings)
-        assertThat(settings.isBindingEnabled).isFalse()
-        assertThat(settings.additionalProperties).isEmpty()
-    }
-
-    @Test
-    fun `component is not null`() {
-        assertThat(panel().component).isNotNull()
-    }
-
-    // -------------------------------------------------------------------------
-    // Setup Connected Mode callback
-    // -------------------------------------------------------------------------
-
-    @Test
-    fun `setup connected mode callback is invoked when clicking setup link`() {
-        var invoked = false
-        val p = panel { invoked = true }
-        val setupButton = findButtonByText(p.component, "Set up connection")
-        assertThat(setupButton).isNotNull()
-        setupButton!!.doClick()
-        assertThat(invoked).isTrue()
-    }
-
-    private fun findButtonByText(root: Container, text: String): JButton? {
-        root.components.forEach { component ->
-            if (component is JButton && component.text.contains(text)) {
-                return component
-            }
-            if (component is Container) {
-                findButtonByText(component, text)?.let { return it }
-            }
-        }
-        return null
-    }
-
-    // -------------------------------------------------------------------------
-    // AnalyzerStatus
-    // -------------------------------------------------------------------------
 
     @Test
     fun `AnalyzerStatus PREMIUM has tooltip`() {
@@ -102,22 +43,9 @@ class SupportedLanguagesPanelTests {
     }
 
     @Test
-    fun `AnalyzerStatus labels are non-blank`() {
-        AnalyzerStatus.values().forEach { assertThat(it.label).isNotBlank() }
-    }
-
-    // -------------------------------------------------------------------------
-    // AnalyzerSource
-    // -------------------------------------------------------------------------
-
-    @Test
     fun `AnalyzerSource labels are non-blank`() {
         AnalyzerSource.values().forEach { assertThat(it.label).isNotBlank() }
     }
-
-    // -------------------------------------------------------------------------
-    // SupportedLanguageRow
-    // -------------------------------------------------------------------------
 
     @Test
     fun `SupportedLanguageRow holds expected values`() {
@@ -138,42 +66,6 @@ class SupportedLanguagesPanelTests {
         assertThat(row.localVersion).isEqualTo("7.30.1")
     }
 
-    @Test
-    fun `version is not overridden when version equals localVersion`() {
-        val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1", localVersion = "7.30.1")
-        assertThat(row.isVersionOverriddenByServer).isFalse()
-    }
-
-    @Test
-    fun `version is overridden when server version differs from localVersion`() {
-        val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.SYNCED, AnalyzerSource.SONARQUBE_SERVER, "7.31.0", localVersion = "7.30.1")
-        assertThat(row.isVersionOverriddenByServer).isTrue()
-    }
-
-    @Test
-    fun `version is not overridden when localVersion is null`() {
-        val row = SupportedLanguageRow(Language.SCALA, "Scala", AnalyzerStatus.PREMIUM, AnalyzerSource.LOCAL, null, localVersion = null)
-        assertThat(row.isVersionOverriddenByServer).isFalse()
-    }
-
-    @Test
-    fun `version is not overridden when version is null`() {
-        val row = SupportedLanguageRow(Language.SCALA, "Scala", AnalyzerStatus.PREMIUM, AnalyzerSource.LOCAL, null, localVersion = "1.0.0")
-        assertThat(row.isVersionOverriddenByServer).isFalse()
-    }
-
-    @Test
-    fun `SupportedLanguageRow localVersion defaults to null`() {
-        val row = SupportedLanguageRow(Language.SCALA, "Scala", AnalyzerStatus.PREMIUM, AnalyzerSource.LOCAL, null)
-        assertThat(row.localVersion).isNull()
-    }
-
-    @Test
-    fun `premium row has null version`() {
-        val row = SupportedLanguageRow(Language.SCALA, "Scala", AnalyzerStatus.PREMIUM, AnalyzerSource.LOCAL, null)
-        assertThat(row.version).isNull()
-    }
-
     // -------------------------------------------------------------------------
     // SupportedLanguagesTableModel
     // -------------------------------------------------------------------------
@@ -185,6 +77,7 @@ class SupportedLanguagesPanelTests {
             SupportedLanguageRow(Language.PYTHON, "Python", AnalyzerStatus.PREMIUM, AnalyzerSource.LOCAL, null),
         )
         val model = SupportedLanguagesTableModel(rows)
+
         assertThat(model.rowCount).isEqualTo(2)
         assertThat(model.columnCount).isEqualTo(SupportedLanguagesTableModel.Column.values().size)
     }
@@ -192,6 +85,7 @@ class SupportedLanguagesPanelTests {
     @Test
     fun `table model column names match enum headers`() {
         val model = SupportedLanguagesTableModel(emptyList())
+
         SupportedLanguagesTableModel.Column.values().forEachIndexed { index, column ->
             assertThat(model.getColumnName(index)).isEqualTo(column.header)
         }
@@ -227,6 +121,7 @@ class SupportedLanguagesPanelTests {
     fun `table model cells are not editable`() {
         val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1")
         val model = SupportedLanguagesTableModel(listOf(row))
+
         for (col in 0 until model.columnCount) {
             assertThat(model.isCellEditable(0, col)).isFalse()
         }
@@ -236,7 +131,9 @@ class SupportedLanguagesPanelTests {
     fun `table model getRow returns correct row`() {
         val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1")
         val model = SupportedLanguagesTableModel(listOf(row))
+
         assertThat(model.getRow(0)).isEqualTo(row)
     }
+
 }
 

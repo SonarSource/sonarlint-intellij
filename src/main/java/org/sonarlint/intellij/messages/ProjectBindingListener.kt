@@ -26,7 +26,7 @@ val PROJECT_BINDING_TOPIC = Topic.create(
     ProjectBindingListener::class.java
 )
 
-interface ProjectBindingListener {
+fun interface ProjectBindingListener {
 
     fun bindingChanged()
 

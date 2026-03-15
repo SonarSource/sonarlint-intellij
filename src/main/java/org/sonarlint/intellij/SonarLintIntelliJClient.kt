@@ -68,6 +68,7 @@ import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.sonarlint.intellij.actions.OpenInBrowserAction
+import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
@@ -112,12 +113,12 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMa
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fix.ShowFixSuggestion
+import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
 import org.sonarlint.intellij.notifications.GenerateTokenAction
 import org.sonarlint.intellij.notifications.OpenLinkAction
 import org.sonarlint.intellij.notifications.OpenProjectSettingsAction
 import org.sonarlint.intellij.notifications.OpenSupportedLanguagesPanelAction
-import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.get
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
@@ -144,6 +145,7 @@ import org.sonarsource.sonarlint.core.rpc.client.SonarLintRpcClientDelegate
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.BindingSuggestionOrigin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
@@ -1048,7 +1050,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         return collectContributedExtraProperties(module, console, contributedConfigurations)
     }
 
-    override fun didChangePluginStatuses(pluginStatuses: List<org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto>) {
+    override fun didChangePluginStatuses(configScopeId: String, pluginStatuses: List<PluginStatusDto>) {
+        val project = findProject(configScopeId) ?: return
+
         val failedPluginNames = pluginStatuses
             .filter { it.state == PluginStateDto.FAILED }
             .map { it.pluginName }
@@ -1059,23 +1063,17 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             } else {
                 "Some analyzers are unavailable: ${failedPluginNames.joinToString(", ")}. See logs for more details."
             }
-            ProjectManager.getInstance().openProjects.firstOrNull()?.let { project ->
-                projectLessNotification(
-                    null,
-                    message,
-                    NotificationType.WARNING,
-                    OpenSupportedLanguagesPanelAction(project),
-                    RestartBackendNotificationAction()
-                )
-            } ?: projectLessNotification(
+
+            get(project).simpleNotification(
                 null,
                 message,
-                NotificationType.WARNING
+                NotificationType.WARNING,
+                OpenSupportedLanguagesPanelAction(project),
+                RestartBackendNotificationAction()
             )
         }
-        ApplicationManager.getApplication().messageBus
-            .syncPublisher(org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC)
-            .pluginStatusesChanged()
+
+        project.messageBus.syncPublisher(PLUGIN_STATUS_CHANGE_TOPIC).pluginStatusesChanged()
     }
 
     override fun getFileExclusions(configurationScopeId: String): Set<String> {
