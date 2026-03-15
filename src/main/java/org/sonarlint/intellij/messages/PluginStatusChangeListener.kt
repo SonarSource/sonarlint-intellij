@@ -21,7 +21,7 @@ package org.sonarlint.intellij.messages
 
 import com.intellij.util.messages.Topic
 
-val PLUGIN_STATUS_CHANGE_TOPIC: Topic<PluginStatusChangeListener> = Topic.create(
+val PLUGIN_STATUS_CHANGE_TOPIC = Topic.create(
     "Plugin status change events",
     PluginStatusChangeListener::class.java
 )

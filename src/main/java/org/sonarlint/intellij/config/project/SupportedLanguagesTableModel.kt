@@ -43,7 +43,7 @@ class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>)
 
     override fun isCellEditable(rowIndex: Int, columnIndex: Int): Boolean = false
 
-    override fun getValueAt(rowIndex: Int, columnIndex: Int): Any? {
+    override fun getValueAt(rowIndex: Int, columnIndex: Int): Any {
         val row = rows[rowIndex]
         return when (Column.values()[columnIndex]) {
             Column.ANALYSIS_TYPE -> row
