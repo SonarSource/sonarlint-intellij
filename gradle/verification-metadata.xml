@@ -13,7 +13,7 @@
          <trust group="cpp" reason="JetBrains artifacts for local development"/>
          <trust group="datagrip" reason="JetBrains artifacts for local development"/>
          <trust group="go" reason="JetBrains artifacts for local development"/>
-         <trust group="gradle" version="8.14.4" file="gradle-8.14.4-src.zip" reason="Gradle 8.14.4"/>
+         <trust group="gradle" version="9.0.0" file="gradle-9.0.0-src.zip" reason="Gradle 9.0.0"/>
          <trust group="idea" reason="JetBrains artifacts for local development"/>
          <trust group="localIde" reason="JetBrains artifacts for local development"/>
          <trust group="python" reason="JetBrains artifacts for local development"/>
