@@ -17,7 +17,8 @@ sonar-iac = "2.6.1.19203"
 sonar-cpp = "6.78.0.96395"
 sonar-dotnet = "10.20.0.135146"
 
-sonarqube = "4.4.1.3373"
+# Keep sonarqube < 6.1 as it dropped support of Java 11 (used by omnisharp atm)
+sonarqube = "6.0.1.5171"
 orchestrator = "6.1.0.3962"
 
 kotlin-plugin = "2.3.0"
