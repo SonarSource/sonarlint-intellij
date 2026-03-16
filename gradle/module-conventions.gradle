@@ -4,7 +4,7 @@ tasks.withType(Test).configureEach {
     useJUnitPlatform()
 }
 
-tasks.matching { it.name == "signArchives" }.configureEach {
+tasks.withType(Sign).configureEach {
   dependsOn(":composedJar")
 }
 
@@ -18,22 +18,20 @@ kotlin {
     jvmToolchain(17)
 }
 
-configurations.archives.canBeResolved = true
-
 tasks {
-  cyclonedxBom {
-    setIncludeConfigs(List.of("runtimeClasspath"))
-    inputs.files(configurations.named("runtimeClasspath").get(), configurations.archives)
+  cyclonedxDirectBom {
+    includeConfigs.set(List.of("runtimeClasspath"))
+    xmlOutput.unsetConvention()
     mustRunAfter(getTasksByName("buildPluginBlockmap", true))
   }
 }
 
-var bomFile = layout.buildDirectory.file("reports/bom.json")
+var bomFile = layout.buildDirectory.file("reports/cyclonedx-direct/bom.json")
 artifacts.add("archives", bomFile.get().asFile) {
     name = "sonarlint-intellij"
     type = "json"
     classifier = "cyclonedx"
-    builtBy("cyclonedxBom")
+    builtBy("cyclonedxDirectBom")
 }
 
 license {

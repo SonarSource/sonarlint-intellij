@@ -17,7 +17,7 @@ import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-tasks.matching { it.name == "signArchives" }.configureEach {
+tasks.withType<Sign>().configureEach {
     dependsOn(":composedJar")
 }
 
@@ -32,6 +32,7 @@ plugins {
     idea
     signing
     alias(libs.plugins.cyclonedx)
+    `maven-publish`
 }
 
 buildscript {
@@ -127,14 +128,7 @@ dependencies {
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
-val bomFile = layout.buildDirectory.file("reports/bom.json")
-artifacts.add("archives", bomFile.get().asFile) {
-    name = "sonarlint-intellij"
-    type = "json"
-    classifier = "cyclonedx"
-    builtBy("cyclonedxBom")
-}
-
+val bomFile = layout.buildDirectory.file("reports/cyclonedx-direct/bom.json")
 license {
     header = rootProject.file("HEADER")
     mapping(
@@ -181,7 +175,7 @@ intellijPlatform {
         )
 
         ides {
-            ide(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
+            create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
         }
 
         if (project.hasProperty("verifierEnv")) {
@@ -227,12 +221,12 @@ intellijPlatform {
             "ARTIFACTS_TO_DOWNLOAD",
             "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip,org.sonarsource.sonarlint.intellij:sonarlint-intellij:json:cyclonedx"
         )
-        setContextUrl(System.getenv("ARTIFACTORY_URL"))
         publish {
+            setContextUrl(System.getenv("ARTIFACTORY_URL"))
             repository {
-                setProperty("repoKey", System.getenv("ARTIFACTORY_DEPLOY_REPO"))
-                setProperty("username", System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
-                setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_ACCESS_TOKEN"))
+                setRepoKey(System.getenv("ARTIFACTORY_DEPLOY_REPO"))
+                setUsername(System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
+                setPassword(System.getenv("ARTIFACTORY_DEPLOY_ACCESS_TOKEN"))
             }
             defaults {
                 setProperties(
@@ -244,9 +238,43 @@ intellijPlatform {
                         "build.number" to System.getenv("BUILD_NUMBER")
                     )
                 )
-                publishConfigs("archives")
                 setPublishPom(true)
                 setPublishIvy(false)
+                publications("pluginPublication")
+            }
+        }
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("pluginPublication") {
+            artifactId = project.name
+            
+            project.afterEvaluate {
+                val distribZip = layout.buildDirectory.file("distributions/${project.name}-${project.version}.zip").get().asFile
+                artifact(distribZip) {
+                    extension = "zip"
+                    builtBy(tasks.named("buildPluginBlockmap"))
+                }
+
+                artifact(file("${distribZip.absolutePath}.blockmap.zip")) {
+                    extension = "zip"
+                    classifier = "blockmap"
+                    builtBy(tasks.named("buildPluginBlockmap"))
+                }
+
+                artifact(file("${distribZip.absolutePath}.hash.json")) {
+                    extension = "json"
+                    classifier = "hash"
+                    builtBy(tasks.named("buildPluginBlockmap"))
+                }
+
+                artifact(layout.buildDirectory.file("reports/cyclonedx-direct/bom.json")) {
+                    extension = "json"
+                    classifier = "cyclonedx"
+                    builtBy(tasks.named("cyclonedxDirectBom"))
+                }
             }
         }
     }
@@ -361,8 +389,6 @@ fun unzipEslintBridgeBundle(pluginsDir: File) {
     }
 }
 
-configurations.archives.get().isCanBeResolved = true
-
 tasks {
     processResources {
         val cfamilyVersion = providers.provider { libs.versions.sonar.cpp.get() }
@@ -413,53 +439,46 @@ tasks {
         }
     }
 
-    cyclonedxBom {
-        setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
-        inputs.files(configurations.runtimeClasspath, configurations.archives.get())
+    cyclonedxDirectBom {
+        includeConfigs.set(listOf("runtimeClasspath", "sqplugins_deps"))
+        xmlOutput.unsetConvention()
         mustRunAfter(
             getTasksByName("buildPluginBlockmap", true)
         )
     }
 
+    cyclonedxBom {
+        xmlOutput.unsetConvention()
+    }
+
     val buildPluginBlockmap by registering {
-        inputs.file(buildPlugin.get().archiveFile)
+        dependsOn(buildPlugin)
+
+        // project.version is fully resolved at configuration time (from gradle.properties or -Pversion=...),
+        // so these paths are safe to compute eagerly — no task output provider needed.
+        val distribZip = layout.buildDirectory.file("distributions/${project.name}-${project.version}.zip").get().asFile
+        val blockMapFileZipFile = file("${distribZip.absolutePath}.blockmap.zip")
+        val fileHashJsonFile = file("${distribZip.absolutePath}.hash.json")
+
+        inputs.file(distribZip).optional()
+        outputs.files(blockMapFileZipFile, fileHashJsonFile)
+
         doLast {
-            val distribZip = buildPlugin.get().archiveFile.get().asFile
-            artifacts.add("archives", distribZip) {
-                name = project.name
-                extension = "zip"
-                type = "zip"
-                builtBy("buildPluginBlockmap")
-            }
             val blockMapBytes =
                 com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
             val blockMapFile = File(distribZip.parentFile, "blockmap.json")
             blockMapFile.writeBytes(blockMapBytes)
-            val blockMapFileZipFile = file(distribZip.absolutePath + ".blockmap.zip")
-            val blockMapFileZip = ZipOutputStream(BufferedOutputStream(FileOutputStream(blockMapFileZipFile)))
+            val zipOut = ZipOutputStream(BufferedOutputStream(FileOutputStream(blockMapFileZipFile)))
             val fi = FileInputStream(blockMapFile)
             val origin = BufferedInputStream(fi)
             val entry = ZipEntry(blockMapFile.name)
-            blockMapFileZip.putNextEntry(entry)
-            origin.copyTo(blockMapFileZip, 1024)
+            zipOut.putNextEntry(entry)
+            origin.copyTo(zipOut, 1024)
             origin.close()
-            blockMapFileZip.close()
-            artifacts.add("archives", blockMapFileZipFile) {
-                name = project.name
-                extension = "zip.blockmap.zip"
-                type = "zip"
-                builtBy("buildPluginBlockmap")
-            }
+            zipOut.close()
             val fileHash = com.fasterxml.jackson.databind.ObjectMapper()
                 .writeValueAsString(com.jetbrains.plugin.blockmap.core.FileHash(distribZip.inputStream()))
-            val fileHashJsonFile = file(distribZip.absolutePath + ".hash.json")
             fileHashJsonFile.writeText(fileHash)
-            artifacts.add("archives", fileHashJsonFile) {
-                name = project.name
-                extension = "zip.hash.json"
-                type = "json"
-                builtBy("buildPluginBlockmap")
-            }
         }
     }
 
@@ -483,7 +502,7 @@ tasks {
 
     artifactoryPublish {
         mustRunAfter(
-            getTasksByName("cyclonedxBom", true),
+            getTasksByName("cyclonedxDirectBom", true),
             buildPlugin,
             getTasksByName("buildPluginBlockmap", true)
         )
@@ -501,6 +520,6 @@ tasks {
         val signingKey: String? by project
         val signingPassword: String? by project
         useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-        sign(configurations.archives.get())
+        sign(publishing.publications["pluginPublication"])
     }
 }
