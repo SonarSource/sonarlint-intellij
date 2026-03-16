@@ -1,5 +1,5 @@
 [versions]
-sonarlint-core = "10.46.0.84435"
+sonarlint-core = "10.47-SNAPSHOT"
 
 sonar-java = "8.26.0.42915"
 sonar-java-symbolic = "8.16.3.1589"
@@ -14,7 +14,6 @@ sonar-xml = "2.16.0.7616"
 sonar-omnisharp = "1.40.0.101699"
 sonar-text = "2.41.0.10709"
 sonar-iac = "2.6.1.19203"
-sonar-cpp = "6.78.0.96395"
 sonar-dotnet = "10.20.0.135146"
 
 sonarqube = "4.4.1.3373"
@@ -60,15 +59,12 @@ sonar-omnisharp = { module = "org.sonarsource.sonarlint.omnisharp:sonarlint-omni
 sonar-text = { module = "org.sonarsource.text:sonar-text-plugin", version.ref = "sonar-text" }
 sonar-go = { module = "org.sonarsource.go:sonar-go-plugin", version.ref = "sonar-go" }
 sonar-iac = { module = "org.sonarsource.iac:sonar-iac-plugin", version.ref = "sonar-iac" }
-sonar-cfamily = { module = "com.sonarsource.cpp:sonar-cfamily-plugin", version.ref = "sonar-cpp" }
 sonar-dotnet = { module = "org.sonarsource.dotnet:sonar-csharp-plugin", version.ref = "sonar-dotnet" }
 sonar-dotnet-enterprise = { module = "com.sonarsource.dotnet:sonar-csharp-enterprise-plugin", version.ref = "sonar-dotnet" }
 
 commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
-bouncycastle-bcpg = { module = "org.bouncycastle:bcpg-jdk18on", version.ref = "bouncycastle" }
-bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-five" }
 sentry = { module = "io.sentry:sentry", version.ref = "sentry" }
 junit-four = { module = "junit:junit", version.ref = "junit-four" }
