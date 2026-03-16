@@ -2,20 +2,20 @@
 sonarlint-core = "10.46.0.84435"
 
 sonar-java = "8.26.0.42915"
-sonar-java-symbolic = "8.16.3.1589"
+sonar-java-symbolic = "8.19.0.1586"
 sonar-javascript = "12.0.0.38664"
 sonar-php = "3.55.0.15704"
 sonar-python = "5.19.0.32098"
 sonar-kotlin = "3.4.0.8957"
 sonar-ruby = "1.22.0.1992"
 sonar-go = "1.33.0.5387"
-sonar-html = "3.22.0.7011"
+sonar-html = "3.25.0.7473"
 sonar-xml = "2.16.0.7616"
 sonar-omnisharp = "1.40.0.101699"
 sonar-text = "2.41.0.10709"
-sonar-iac = "2.6.1.19203"
-sonar-cpp = "6.78.0.96395"
-sonar-dotnet = "10.20.0.135146"
+sonar-iac = "2.7.0.19672"
+sonar-cpp = "6.79.0.97291"
+sonar-dotnet = "10.21.0.135717"
 
 sonarqube = "4.4.1.3373"
 orchestrator = "6.1.0.3962"
@@ -39,8 +39,8 @@ assertj = "3.27.7"
 awaitility = "4.3.0"
 
 its-remote = "0.11.23"
-its-sonar-scala = "1.8.3.2219"
-its-sonar-ws = "8.5.1.38104"
+its-sonar-scala = "1.22.0.2217"
+its-sonar-ws = "8.9.10.61524"
 
 [libraries]
 sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarlint-java-client-utils", version.ref = "sonarlint-core" }
