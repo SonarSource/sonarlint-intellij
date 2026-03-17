@@ -198,11 +198,12 @@ class SupportedLanguagesPanelTests {
     }
 
     @Test
-    fun `table model getValueAt returns full row for ANALYSIS_TYPE column`() {
+    fun `table model getValueAt returns full row for ANALYSIS_TYPE and VERSION columns`() {
         val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1", localVersion = "7.30.1")
         val model = SupportedLanguagesTableModel(listOf(row))
 
         assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.ANALYSIS_TYPE.ordinal)).isEqualTo(row)
+        assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.VERSION.ordinal)).isEqualTo(row)
     }
 
     @Test
@@ -220,6 +221,7 @@ class SupportedLanguagesPanelTests {
 
         assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.ANALYSIS_TYPE.ordinal)).isEqualTo(SupportedLanguageRow::class.java)
         assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.STATUS.ordinal)).isEqualTo(AnalyzerStatus::class.java)
+        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.VERSION.ordinal)).isEqualTo(SupportedLanguageRow::class.java)
         assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.SOURCE.ordinal)).isEqualTo(AnalyzerSource::class.java)
     }
 

@@ -165,6 +165,11 @@ class SupportedLanguagesPanel(
             preferredWidth = 150
         }
 
+        cm.getColumn(SupportedLanguagesTableModel.Column.VERSION.ordinal).apply {
+            cellRenderer = VersionCellRenderer()
+            preferredWidth = 110
+        }
+
         cm.getColumn(SupportedLanguagesTableModel.Column.SOURCE.ordinal).apply {
             cellRenderer = SourceCellRenderer()
             preferredWidth = 200

@@ -26,6 +26,7 @@ class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>)
     enum class Column(val header: String) {
         ANALYSIS_TYPE("Analysis Type"),
         STATUS("Status"),
+        VERSION("Version"),
         SOURCE("Source"),
     }
 
@@ -38,6 +39,7 @@ class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>)
     override fun getColumnClass(columnIndex: Int): Class<*> = when (Column.values()[columnIndex]) {
         Column.ANALYSIS_TYPE -> SupportedLanguageRow::class.java
         Column.STATUS -> AnalyzerStatus::class.java
+        Column.VERSION -> SupportedLanguageRow::class.java
         Column.SOURCE -> AnalyzerSource::class.java
     }
 
@@ -48,6 +50,7 @@ class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>)
         return when (Column.values()[columnIndex]) {
             Column.ANALYSIS_TYPE -> row
             Column.STATUS -> row.status
+            Column.VERSION -> row
             Column.SOURCE -> row.source
         }
     }
