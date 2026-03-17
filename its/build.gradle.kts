@@ -180,7 +180,7 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "231.9423.4"
+            sinceBuild = "242.20224.300"
         }
         name = "sonarlint-intellij-its"
     }
