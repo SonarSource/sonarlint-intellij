@@ -309,7 +309,8 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
 
     override fun log(params: LogParams) {
         val configScopeId = params.configScopeId
-
+        println("Params are")
+        println(params.toString())
         configScopeId?.let {
             val project = findModule(configScopeId)?.project ?: BackendService.findProject(configScopeId)
             project?.let {

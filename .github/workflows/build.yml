@@ -60,7 +60,7 @@ jobs:
   build-plugin:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260318124419
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -87,11 +87,11 @@ jobs:
 
       - name: Export embedded IDE paths from container
         run: |
-          echo "IDEA_HOME=${IDEA_2023_DIR}" >> $GITHUB_ENV
-          echo "CLION_HOME=${CLION_2023_DIR}" >> $GITHUB_ENV
-          echo "RIDER_HOME=${RIDER_2023_DIR}" >> $GITHUB_ENV
+          echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Build Plugin
         uses: SonarSource/ci-github-actions/build-gradle@v1
@@ -113,7 +113,7 @@ jobs:
         run: echo "project-version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
 
   check_windows:
-    runs-on: warp-custom-sonarlint-intellij
+    runs-on: warp-custom-pr-317-warp-sonarlint-intellij-v20260324164102
     needs: build-number
     name: Test Windows
     env:
@@ -141,7 +141,7 @@ jobs:
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           IDEA_HOME: C:\Program Files\intellij
           RIDER_HOME: C:\Program Files\rider
-          RESHARPER_HOME: C:\Program Files\resharper
+          RESHARPER_HOME: C:\Program Files\clion
           CLION_HOME: C:\Program Files\clion
           ULTIMATE_HOME: C:\Program Files\ultimate
         run: .\gradlew.bat :check
@@ -169,7 +169,7 @@ jobs:
   test-and-sonar:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260318124419
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -195,11 +195,11 @@ jobs:
 
       - name: Export embedded IDE paths from container
         run: |
-          echo "IDEA_HOME=${IDEA_2023_DIR}" >> $GITHUB_ENV
-          echo "CLION_HOME=${CLION_2023_DIR}" >> $GITHUB_ENV
-          echo "RIDER_HOME=${RIDER_2023_DIR}" >> $GITHUB_ENV
+          echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Run Tests and Sonar Analysis
         uses: SonarSource/ci-github-actions/build-gradle@v1
@@ -236,7 +236,7 @@ jobs:
   verify-plugin:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260318124419
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -260,17 +260,17 @@ jobs:
 
       - name: Export embedded IDE paths from container
         run: |
-          echo "IDEA_HOME=${IDEA_2023_DIR}" >> $GITHUB_ENV
-          echo "CLION_HOME=${CLION_2023_DIR}" >> $GITHUB_ENV
-          echo "RIDER_HOME=${RIDER_2023_DIR}" >> $GITHUB_ENV
+          echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Restore verifier IDEs cache
         uses: SonarSource/gh-action_cache@v1
         with:
           path: /home/runner/.gradle/caches/*/transforms/
-          key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-231
+          key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
           restore-keys: |
             verifier-ides-${{ runner.os }}-
 
@@ -291,7 +291,7 @@ jobs:
   qa:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260318124419
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -308,17 +308,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ide_version: 'IC-2023.1.7'
-            qa_category: 'Idea2023'
+          - ide_version: 'IC-2024.2'
+            qa_category: 'Idea2024'
             test_suite: 'OpenInIdeTests'
-          - ide_version: 'IC-2023.1.7'
-            qa_category: 'Idea2023'
+          - ide_version: 'IC-2024.2'
+            qa_category: 'Idea2024'
             test_suite: 'ConnectedAnalysisTests'
-          - ide_version: 'IC-2023.1.7'
-            qa_category: 'Idea2023'
+          - ide_version: 'IC-2024.2'
+            qa_category: 'Idea2024'
             test_suite: 'ConfigurationTests'
-          - ide_version: 'IC-2023.1.7'
-            qa_category: 'Idea2023'
+          - ide_version: 'IC-2024.2'
+            qa_category: 'Idea2024'
             test_suite: 'Standalone'
           - ide_version: 'IC-2025.3.2'
             qa_category: 'Idea2025'
@@ -332,35 +332,33 @@ jobs:
           - ide_version: 'IC-2025.3.2'
             qa_category: 'Idea2025'
             test_suite: 'Standalone'
-          - ide_version: 'IU-2023.1.7'
-            qa_category: 'IdeaUltimate2023'
+          - ide_version: 'IU-2024.2'
+            qa_category: 'IdeaUltimate2024'
           #          - ide_version: 'IU-2025.3.2'
           #            qa_category: 'IdeaUltimate2025'
-          - ide_version: 'PY-2023.3.7'
-            qa_category: 'PyCharmProfessional2023'
+          - ide_version: 'PY-2024.2'
+            qa_category: 'PyCharmProfessional2024'
           #          - ide_version: 'PY-2025.3.2.1'
           #            qa_category: 'PyCharmProfessional2025'
-          - ide_version: 'PC-2023.3.7'
-            qa_category: 'PyCharmCommunity2023'
+          - ide_version: 'PC-2024.2'
+            qa_category: 'PyCharmCommunity2024'
           #          - ide_version: 'PC-2025.3.2.1'
           #            qa_category: 'PyCharmCommunity2025'
-          #          - ide_version: 'RD-2023.1.7'
-          #            qa_category: 'Rider2023'
-          #          - ide_version: 'RD-2024.3.9'
+          #          - ide_version: 'RD-2024.2.7'
           #            qa_category: 'Rider2024'
           # Temporarily disabled, consistently failing
           #          - ide_version: 'RD-2025.1.5'
           #            qa_category: 'Rider2025'
-          - ide_version: 'PS-2023.3.8'
-            qa_category: 'PhpStorm2023'
+          - ide_version: 'PS-2024.2'
+            qa_category: 'PhpStorm2024'
           - ide_version: 'PS-2025.3.2'
             qa_category: 'PhpStorm2025'
-          - ide_version: 'GO-2023.3.8'
-            qa_category: 'GoLand2023'
+          - ide_version: 'GO-2024.2'
+            qa_category: 'GoLand2024'
           - ide_version: 'GO-2025.3.2'
             qa_category: 'GoLand2025'
-          - ide_version: 'CL-2023.1.7'
-            qa_category: 'CLion2023'
+          - ide_version: 'CL-2024.2'
+            qa_category: 'CLion2024'
           - ide_version: 'CL-2025.3.2'
             qa_category: 'CLion2025'
     env:
@@ -442,11 +440,11 @@ jobs:
 
       - name: Export embedded IDE paths from container
         run: |
-          echo "IDEA_HOME=${IDEA_2023_DIR}" >> $GITHUB_ENV
-          echo "CLION_HOME=${CLION_2023_DIR}" >> $GITHUB_ENV
-          echo "RIDER_HOME=${RIDER_2023_DIR}" >> $GITHUB_ENV
+          echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2023_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Determine IDE source (embedded vs Repox)
         id: ide-source
@@ -462,7 +460,7 @@ jobs:
           CACHE_PATH=""
 
           case "$IDE_CODE-$IDE_YEAR" in
-            IC-2023|IU-2023|CL-2023|CL-2024|RD-2023|RD-2024)
+            IC-2024|IU-2024|CL-2024|RD-2024)
               EMBEDDED="true"
               ;;
             *)

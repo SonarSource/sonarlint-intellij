@@ -17,15 +17,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.walkthrough
+package org.sonarlint.intellij.ui.walkthrough;
 
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.ToolWindow
-import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.openapi.wm.ToolWindowType;
 
-private const val WALKTHROUGH_SONARQUBE_FOR_IDE: String = "Welcome to SonarQube for IDE"
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-fun getSonarLintWalkthroughToolWindow(project: Project): ToolWindow? {
-    val toolWindowManager: ToolWindowManager = ToolWindowManager.getInstance(project)
-    return toolWindowManager.getToolWindow(WALKTHROUGH_SONARQUBE_FOR_IDE)
+public class SonarLintWalkthroughToolWindowFactory implements ToolWindowFactory {
+
+  @Override
+  public void createToolWindowContent(Project project, ToolWindow toolWindow) {
+    toolWindow.setType(ToolWindowType.DOCKED, null);
+    var content = toolWindow.getContentManager().getFactory().createContent(new WalkthroughPanel(project), "", false);
+    toolWindow.getContentManager().addContent(content);
+    toolWindow.getContentManager().addContentManagerListener(getService(project, SonarLintWalkthroughToolWindow.class));
+  }
 }
