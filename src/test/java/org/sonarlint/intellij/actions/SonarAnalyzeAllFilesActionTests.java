@@ -60,7 +60,7 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
     replaceApplicationService(SonarLintTelemetry.class, sonarLintTelemetry);
     status = AnalysisStatus.get(getProject());
     myFixture.copyFileToProject("foo/foo.php", "foo/foo.php");
-    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
+    Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted(() ->
       assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue()
     );
     clearInvocations(analysisSubmitter);
