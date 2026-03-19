@@ -169,7 +169,7 @@ jobs:
   test-and-sonar:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260318124419
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -236,7 +236,7 @@ jobs:
   verify-plugin:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260318124419
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
@@ -291,7 +291,7 @@ jobs:
   qa:
     runs-on: github-ubuntu-latest-m
     container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260318124419
       options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
