@@ -28,6 +28,7 @@ import java.io.File
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
+import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
@@ -105,6 +106,8 @@ object OpeningUtils {
             copyProjectFiles(projectName)
         }
         with(remoteRobot) {
+            // Dismiss any lingering dialogs that might block the file browser (needed for 2024.2+)
+            findAll<DialogFixture>(DialogFixture.all()).forEach { it.close() }
             try {
                 welcomeFrame {
                     // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
