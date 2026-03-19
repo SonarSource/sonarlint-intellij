@@ -74,12 +74,12 @@ configurations {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 dependencies {
@@ -154,7 +154,7 @@ license {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "231.9423.4"
+            sinceBuild = "242.20224.300"
             untilBuild = provider { null }
         }
     }
@@ -190,8 +190,8 @@ intellijPlatform {
                     select {
                         types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
                         channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "231.*"
-                        untilBuild = "231.*"
+                        sinceBuild = "242.*"
+                        untilBuild = "242.*"
                     }
                 }
 
@@ -374,13 +374,13 @@ tasks {
 
     compileKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
     compileTestKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 

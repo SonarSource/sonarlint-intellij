@@ -54,7 +54,7 @@ class SonarAnalyzeFilesActionTests extends AbstractSonarLintLightTests {
 
   @BeforeEach
   void prepare() {
-    Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
+    Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted(() ->
       assertThat(getService(getProject(), AnalysisReadinessCache.class).isModuleReady(getModule())).isTrue()
     );
 

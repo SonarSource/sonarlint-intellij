@@ -22,12 +22,14 @@ package org.sonarlint.intellij.its.utils
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
 import com.intellij.remoterobot.utils.keyboard
 import java.awt.Point
 import java.io.File
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
+import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
@@ -105,26 +107,25 @@ object OpeningUtils {
             copyProjectFiles(projectName)
         }
         with(remoteRobot) {
-            try {
-                welcomeFrame {
-                    // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
-                    openProjectButton().click(Point(10, 10))
-                }
-            } catch (e: Throwable) {
-                // Starting from 2025.2+ there's no welcome frame
-                if (isGoLand()) {
-                    openFileSelector()
-                } else {
-                    throw e
-                }
-            }
+            // Dismiss any lingering dialogs that might block the file browser (needed for 2024.2+)
+            findAll<DialogFixture>(DialogFixture.all()).forEach { it.close() }
+            clickOpenProjectButton()
             if (remoteRobot.isRider()) {
                 openSolutionBrowserDialog {
                     selectProjectFile(projectName)
                 }
             } else {
-                openProjectFileBrowserDialog {
-                    selectProjectFile(projectName)
+                try {
+                    openProjectFileBrowserDialog {
+                        selectProjectFile(projectName)
+                    }
+                } catch (e: WaitForConditionTimeoutException) {
+                    // In IntelliJ 2024.2+, the first Open button click may silently fail
+                    // (e.g. due to EDT blocking by background initialization). Retry once.
+                    clickOpenProjectButton()
+                    openProjectFileBrowserDialog {
+                        selectProjectFile(projectName)
+                    }
                 }
             }
             if (!remoteRobot.isCLion()) {
@@ -169,6 +170,24 @@ object OpeningUtils {
                 val name = if (isRider()) "Close Solution" else "Close Project"
                 item(name) {
                     click()
+                }
+            }
+        }
+    }
+
+    private fun clickOpenProjectButton() {
+        with(remoteRobot) {
+            try {
+                welcomeFrame {
+                    // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
+                    openProjectButton().click(Point(10, 10))
+                }
+            } catch (e: Throwable) {
+                // Starting from 2025.2+ there's no welcome frame
+                if (isGoLand()) {
+                    openFileSelector()
+                } else {
+                    throw e
                 }
             }
         }
