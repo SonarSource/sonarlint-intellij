@@ -28,7 +28,6 @@ import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
-import org.assertj.swing.timing.Pause
 import java.time.Duration
 
 fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
@@ -41,8 +40,6 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
 
     fun openProjectButton(): ComponentFixture {
         selectTab("Projects")
-        // Let the tab content fully load after switching (needed for 2024.2+)
-        Pause.pause(2000)
         // This can match two things: If no previous projects, its a SVG icon, else a jbutton
         return findAll<ComponentFixture>(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]")).first()
     }
