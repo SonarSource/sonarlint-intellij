@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.project
+package org.sonarlint.intellij.config.project.supported.languages
 
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.EmptyIcon
@@ -30,26 +30,29 @@ import javax.swing.table.DefaultTableCellRenderer
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.ui.icons.SonarLintIcons
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.ArtifactSourceDto
 
 private val COLOR_BLUE = JBColor(Color(30, 100, 200), Color(100, 160, 255))
 private val CELL_PADDING = JBUI.Borders.empty(0, 8)
 
 class SourceCellRenderer : DefaultTableCellRenderer() {
+
     private val pluginVersion: String = SonarLintUtils.getService(SonarLintPlugin::class.java).version
 
     override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
-        if (value is AnalyzerSource) {
+        if (value is ArtifactSourceDto) {
             label.icon = when (value) {
-                AnalyzerSource.SONARQUBE_SERVER -> SonarLintIcons.ICON_SONARQUBE_SERVER_16
-                AnalyzerSource.SONARQUBE_CLOUD -> SonarLintIcons.ICON_SONARQUBE_CLOUD_16
-                AnalyzerSource.LOCAL -> EmptyIcon.ICON_16
+                ArtifactSourceDto.SONARQUBE_SERVER -> SonarLintIcons.ICON_SONARQUBE_SERVER_16
+                ArtifactSourceDto.SONARQUBE_CLOUD -> SonarLintIcons.ICON_SONARQUBE_CLOUD_16
+                else -> EmptyIcon.ICON_16
             }
             label.text = when (value) {
-                AnalyzerSource.LOCAL -> "${value.label} $pluginVersion"
-                else -> value.label
+                ArtifactSourceDto.SONARQUBE_SERVER,
+                ArtifactSourceDto.SONARQUBE_CLOUD -> value.label
+                else -> "${value.label} $pluginVersion"
             }
-            if (!isSelected && value != AnalyzerSource.LOCAL) {
+            if (!isSelected && value == ArtifactSourceDto.SONARQUBE_SERVER || value == ArtifactSourceDto.SONARQUBE_CLOUD) {
                 label.foreground = COLOR_BLUE
             }
         }
@@ -57,4 +60,5 @@ class SourceCellRenderer : DefaultTableCellRenderer() {
         label.border = CELL_PADDING
         return label
     }
+
 }

@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.project
+package org.sonarlint.intellij.config.project.supported.languages
 
 import com.intellij.openapi.fileTypes.UnknownFileType
 import com.intellij.util.ui.EmptyIcon
@@ -31,16 +31,16 @@ import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
 private val CELL_PADDING = JBUI.Borders.empty(0, 8)
 
 class LanguageCellRenderer : DefaultTableCellRenderer() {
-    override fun getTableCellRendererComponent(
-        table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int,
-    ): Component {
+
+    override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int, ): Component {
         val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
-        if (value is SupportedLanguageRow) {
-            val fileType = RuleLanguages.findFileTypeByRuleLanguage(value.language)
-            label.icon = if (fileType is UnknownFileType) EmptyIcon.ICON_16 else fileType.icon
-            label.text = value.displayName
+        if (value is org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto) {
+            val fileType = value.language?.let { RuleLanguages.findFileTypeByRuleLanguage(it) }
+            label.icon = if (fileType is UnknownFileType || fileType == null) EmptyIcon.ICON_16 else fileType.icon
+            label.text = value.pluginName
         }
         label.border = CELL_PADDING
         return label
     }
+
 }
