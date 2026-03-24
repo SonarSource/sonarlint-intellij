@@ -27,6 +27,7 @@ import javax.swing.JLabel
 import javax.swing.JTable
 import javax.swing.table.DefaultTableCellRenderer
 import org.sonarlint.intellij.ui.ruledescription.RuleLanguages
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto
 
 private val CELL_PADDING = JBUI.Borders.empty(0, 8)
 
