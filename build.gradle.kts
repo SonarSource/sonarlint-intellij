@@ -48,7 +48,6 @@ description = "SonarLint for IntelliJ IDEA"
 
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
-val omnisharpVersion: String by project
 val runIdeDirectory: String by project
 val verifierEnv: String by project
 
@@ -68,7 +67,6 @@ configurations {
         isTransitive = true
     }
     create("cfamilySignature") { isTransitive = false }
-    register("omnisharp")
     register("sloop")
 }
 
@@ -120,9 +118,6 @@ dependencies {
     if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "cfamilySignature"("${libs.sonar.cfamily.get()}@jar.asc")
         "sqplugins"(libs.sonar.dotnet.enterprise)
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
     }
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
@@ -308,10 +303,27 @@ fun renameCsharpPlugins(pluginsDir: File) {
 }
 
 fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
-    configurations["omnisharp"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
-        copy {
-            from(zipTree(artifact.file))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/${artifact.classifier}"))
+    val omnisharpBinariesBaseUrl = "https://binaries.sonarsource.com/OmniSharp-Roslyn"
+    mapOf(
+        "mono" to "omnisharp-mono.zip",
+        "net472" to "omnisharp-net472.zip",
+        "net6" to "omnisharp-net6.0.zip"
+    ).forEach { (classifier, fileName) ->
+        val destDir = file("$destinationDir/${pluginName.get()}/omnisharp/$classifier")
+        if (!destDir.exists() || destDir.listFiles()?.isEmpty() == true) {
+            logger.lifecycle("Downloading omnisharp $classifier from $omnisharpBinariesBaseUrl/$fileName")
+            val tmpZip = File.createTempFile("omnisharp-$classifier", ".zip")
+            tmpZip.deleteOnExit()
+            uri("$omnisharpBinariesBaseUrl/$fileName").toURL().openStream().use { input ->
+                tmpZip.outputStream().use { output -> input.copyTo(output) }
+            }
+            copy {
+                from(zipTree(tmpZip))
+                into(destDir)
+            }
+            tmpZip.delete()
+        } else {
+            logger.lifecycle("Omnisharp $classifier already present, skipping download")
         }
     }
 }
