@@ -21,49 +21,17 @@ package org.sonarlint.intellij.config.project
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.sonarlint.intellij.config.project.supported.languages.SupportedLanguagesTableModel
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.ArtifactSourceDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 class SupportedLanguagesPanelTests {
 
     @Test
-    fun `AnalyzerStatus PREMIUM has tooltip`() {
-        assertThat(AnalyzerStatus.PREMIUM.tooltip).isEqualTo("Requires Connected Mode")
-    }
-
-    @Test
-    fun `statuses without tooltip have null tooltip`() {
-        val withoutTooltip = listOf(
-            AnalyzerStatus.ACTIVE,
-            AnalyzerStatus.SYNCED,
-            AnalyzerStatus.DOWNLOADING,
-            AnalyzerStatus.FAILED,
-            AnalyzerStatus.UNSUPPORTED,
-        )
-        withoutTooltip.forEach { assertThat(it.tooltip).isNull() }
-    }
-
-    @Test
-    fun `AnalyzerSource labels are non-blank`() {
-        AnalyzerSource.values().forEach { assertThat(it.label).isNotBlank() }
-    }
-
-    @Test
-    fun `SupportedLanguageRow holds expected values`() {
-        val row = SupportedLanguageRow(
-            language = Language.JAVA,
-            displayName = "Java",
-            status = AnalyzerStatus.ACTIVE,
-            source = AnalyzerSource.LOCAL,
-            version = "7.30.1",
-            localVersion = "7.30.1",
-        )
-
-        assertThat(row.language).isEqualTo(Language.JAVA)
-        assertThat(row.displayName).isEqualTo("Java")
-        assertThat(row.status).isEqualTo(AnalyzerStatus.ACTIVE)
-        assertThat(row.source).isEqualTo(AnalyzerSource.LOCAL)
-        assertThat(row.version).isEqualTo("7.30.1")
-        assertThat(row.localVersion).isEqualTo("7.30.1")
+    fun `ArtifactSourceDto labels are non-blank`() {
+        ArtifactSourceDto.values().forEach { assertThat(it.label).isNotBlank() }
     }
 
     // -------------------------------------------------------------------------
@@ -73,8 +41,8 @@ class SupportedLanguagesPanelTests {
     @Test
     fun `table model reports correct row and column count`() {
         val rows = listOf(
-            SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1", localVersion = "7.30.1"),
-            SupportedLanguageRow(Language.PYTHON, "Python", AnalyzerStatus.PREMIUM, AnalyzerSource.LOCAL, null),
+            PluginStatusDto(Language.JAVA, "Java", PluginStateDto.ACTIVE, ArtifactSourceDto.EMBEDDED, "7.30.1", "7.30.1", null),
+            PluginStatusDto(Language.PYTHON, "Python", PluginStateDto.PREMIUM, ArtifactSourceDto.EMBEDDED, null, null, null),
         )
         val model = SupportedLanguagesTableModel(rows)
 
@@ -93,7 +61,7 @@ class SupportedLanguagesPanelTests {
 
     @Test
     fun `table model getValueAt returns full row for ANALYSIS_TYPE column`() {
-        val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1", localVersion = "7.30.1")
+        val row = PluginStatusDto(Language.JAVA, "Java", PluginStateDto.ACTIVE, ArtifactSourceDto.EMBEDDED, "7.30.1", "7.30.1", null)
         val model = SupportedLanguagesTableModel(listOf(row))
 
         assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.ANALYSIS_TYPE.ordinal)).isEqualTo(row)
@@ -101,25 +69,25 @@ class SupportedLanguagesPanelTests {
 
     @Test
     fun `table model getValueAt returns typed values for STATUS and SOURCE columns`() {
-        val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1")
+        val row = PluginStatusDto(Language.JAVA, "Java", PluginStateDto.ACTIVE, ArtifactSourceDto.EMBEDDED, "7.30.1", null, null)
         val model = SupportedLanguagesTableModel(listOf(row))
 
-        assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.STATUS.ordinal)).isEqualTo(AnalyzerStatus.ACTIVE)
-        assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.SOURCE.ordinal)).isEqualTo(AnalyzerSource.LOCAL)
+        assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.STATUS.ordinal)).isEqualTo(PluginStateDto.ACTIVE)
+        assertThat(model.getValueAt(0, SupportedLanguagesTableModel.Column.SOURCE.ordinal)).isEqualTo(ArtifactSourceDto.EMBEDDED)
     }
 
     @Test
     fun `table model column classes are correct`() {
         val model = SupportedLanguagesTableModel(emptyList())
 
-        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.ANALYSIS_TYPE.ordinal)).isEqualTo(SupportedLanguageRow::class.java)
-        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.STATUS.ordinal)).isEqualTo(AnalyzerStatus::class.java)
-        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.SOURCE.ordinal)).isEqualTo(AnalyzerSource::class.java)
+        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.ANALYSIS_TYPE.ordinal)).isEqualTo(PluginStatusDto::class.java)
+        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.STATUS.ordinal)).isEqualTo(PluginStateDto::class.java)
+        assertThat(model.getColumnClass(SupportedLanguagesTableModel.Column.SOURCE.ordinal)).isEqualTo(ArtifactSourceDto::class.java)
     }
 
     @Test
     fun `table model cells are not editable`() {
-        val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1")
+        val row = PluginStatusDto(Language.JAVA, "Java", PluginStateDto.ACTIVE, ArtifactSourceDto.EMBEDDED, "7.30.1", null, null)
         val model = SupportedLanguagesTableModel(listOf(row))
 
         for (col in 0 until model.columnCount) {
@@ -129,7 +97,7 @@ class SupportedLanguagesPanelTests {
 
     @Test
     fun `table model getRow returns correct row`() {
-        val row = SupportedLanguageRow(Language.JAVA, "Java", AnalyzerStatus.ACTIVE, AnalyzerSource.LOCAL, "7.30.1")
+        val row = PluginStatusDto(Language.JAVA, "Java", PluginStateDto.ACTIVE, ArtifactSourceDto.EMBEDDED, "7.30.1", null, null)
         val model = SupportedLanguagesTableModel(listOf(row))
 
         assertThat(model.getRow(0)).isEqualTo(row)

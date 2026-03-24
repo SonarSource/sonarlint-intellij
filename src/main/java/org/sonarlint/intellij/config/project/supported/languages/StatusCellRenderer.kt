@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.project
+package org.sonarlint.intellij.config.project.supported.languages
 
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
@@ -34,7 +34,8 @@ import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.SwingConstants
 import javax.swing.table.TableCellRenderer
-import org.sonarlint.intellij.config.project.StatusCellRenderer.GreenDotIcon
+import org.sonarlint.intellij.config.project.supported.languages.StatusCellRenderer.GreenDotIcon
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
 
 private val COLOR_GREEN = JBColor(Color(34, 139, 34), Color(80, 200, 80))
 private val COLOR_BLUE = JBColor(Color(30, 100, 200), Color(100, 160, 255))
@@ -80,18 +81,17 @@ class StatusCellRenderer : TableCellRenderer {
         textLabel.toolTipText = null
         dotPlaceholder.showDot = false
 
-        if (value is AnalyzerStatus) {
+        if (value is PluginStateDto) {
             textLabel.text = value.label
-            textLabel.toolTipText = value.tooltip
 
             textLabel.foreground = if (isSelected) fg else when (value) {
-                AnalyzerStatus.ACTIVE -> COLOR_GREEN
-                AnalyzerStatus.SYNCED -> COLOR_BLUE
-                AnalyzerStatus.FAILED -> COLOR_RED
+                PluginStateDto.ACTIVE -> COLOR_GREEN
+                PluginStateDto.SYNCED -> COLOR_BLUE
+                PluginStateDto.FAILED -> COLOR_RED
                 else -> fg
             }
 
-            dotPlaceholder.showDot = value == AnalyzerStatus.ACTIVE
+            dotPlaceholder.showDot = value == PluginStateDto.ACTIVE
         }
 
         return cell
@@ -111,4 +111,5 @@ class StatusCellRenderer : TableCellRenderer {
             g2.dispose()
         }
     }
+
 }

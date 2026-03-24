@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.project.supported.languages.SupportedLanguagesPanel;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse;

@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.project
+package org.sonarlint.intellij.config.project.supported.languages
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ModalityState
@@ -43,17 +43,15 @@ import javax.swing.JPanel
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.ConfigurationPanel
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.PluginStatusChangeListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
 
 private val BACKGROUND_COLOR = JBColor(Color(49, 52, 56), Color(49, 52, 56))
 private val BORDER_COLOR = JBColor(Color(69, 73, 78), Color(69, 73, 78))
-
-private val PREMIUM_LANGUAGES = listOf(
-    "Text", "Secrets", "PL/SQL", "Scala", "Swift"
-)
 
 class SupportedLanguagesPanel(
     private val project: Project,
@@ -64,6 +62,9 @@ class SupportedLanguagesPanel(
     private val bannerPanel = JPanel(BorderLayout())
     private val table = JBTable()
     private var tableModel = SupportedLanguagesTableModel(emptyList())
+    private val extendedLangLabel = JBLabel("<html><u>extended language support</u></html>").apply {
+        foreground = UIUtil.getLabelForeground()
+    }
 
     init {
         buildBanner()
@@ -110,11 +111,6 @@ class SupportedLanguagesPanel(
 
         descRow.add(JBLabel(" to unlock ").apply { foreground = UIUtil.getLabelForeground() })
 
-        val premiumTooltipText = PREMIUM_LANGUAGES.joinToString(", ")
-        val extendedLangLabel = JBLabel("<html><u>extended language support</u></html>").apply {
-            foreground = UIUtil.getLabelForeground()
-            toolTipText = premiumTooltipText
-        }
         descRow.add(extendedLangLabel)
 
         descRow.add(JBLabel(" and advanced security rules for your existing code.").apply {
@@ -181,10 +177,19 @@ class SupportedLanguagesPanel(
     private fun fetchAndRefreshStatuses() {
         getService(BackendService::class.java).getPluginStatuses(project)
             .thenAccept { response ->
-                val rows = PluginStatusMapper.mapToRows(response.pluginStatuses)
+                val premiumLanguages = response.pluginStatuses
+                    .filter { it.state == PluginStateDto.PREMIUM }
+                    .map { it.pluginName }
+                    .sorted()
+                    .joinToString(", ")
+                
+                val filteredStatuses = response.pluginStatuses.filter { it.state != PluginStateDto.UNSUPPORTED && it.state != PluginStateDto.PREMIUM && it.language != null }
                 runOnUiThread(project, ModalityState.stateForComponent(panel)) {
                     if (!project.isDisposed) {
-                        tableModel = SupportedLanguagesTableModel(rows)
+                        if (premiumLanguages.isNotEmpty()) {
+                            extendedLangLabel.toolTipText = premiumLanguages
+                        }
+                        tableModel = SupportedLanguagesTableModel(filteredStatuses)
                         table.model = tableModel
                         applyColumnRenderers()
                     }

@@ -283,7 +283,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_notify_failed_plugin_statuses() {
-        client.didChangePluginStatuses(projectBackendId, listOf(PluginStatusDto("Python", PluginStateDto.FAILED, null, null, null)))
+        client.didChangePluginStatuses(projectBackendId, listOf(PluginStatusDto(Language.PYTHON, "Python", PluginStateDto.FAILED, null, null, null, null)))
 
         assertThat(projectNotifications).extracting("title", "content").containsExactly(
             tuple(
@@ -301,8 +301,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         client.didChangePluginStatuses(
             projectBackendId,
             listOf(
-                PluginStatusDto("Python", PluginStateDto.FAILED, null, null, null),
-                PluginStatusDto("JavaScript", PluginStateDto.FAILED, null, null, null),
+                PluginStatusDto(Language.PYTHON, "Python", PluginStateDto.FAILED, null, null, null, null),
+                PluginStatusDto(Language.JS, "JavaScript", PluginStateDto.FAILED, null, null, null, null),
             )
         )
 
@@ -319,7 +319,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_not_notify_non_failed_plugin_statuses() {
-        client.didChangePluginStatuses(projectBackendId, listOf(PluginStatusDto("Python", PluginStateDto.SYNCED, null, null, null)))
+        client.didChangePluginStatuses(projectBackendId, listOf(PluginStatusDto(Language.PYTHON, "Python", PluginStateDto.SYNCED, null, null, null, null)))
 
         assertThat(projectNotifications).isEmpty()
     }

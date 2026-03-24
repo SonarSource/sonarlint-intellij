@@ -17,11 +17,14 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.project
+package org.sonarlint.intellij.config.project.supported.languages
 
 import javax.swing.table.AbstractTableModel
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.ArtifactSourceDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto
 
-class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>) : AbstractTableModel() {
+class SupportedLanguagesTableModel(private val rows: List<PluginStatusDto>) : AbstractTableModel() {
 
     enum class Column(val header: String) {
         ANALYSIS_TYPE("Analysis Type"),
@@ -36,21 +39,22 @@ class SupportedLanguagesTableModel(private val rows: List<SupportedLanguageRow>)
     override fun getColumnName(column: Int): String = Column.values()[column].header
 
     override fun getColumnClass(columnIndex: Int): Class<*> = when (Column.values()[columnIndex]) {
-        Column.ANALYSIS_TYPE -> SupportedLanguageRow::class.java
-        Column.STATUS -> AnalyzerStatus::class.java
-        Column.SOURCE -> AnalyzerSource::class.java
+        Column.ANALYSIS_TYPE -> PluginStatusDto::class.java
+        Column.STATUS -> PluginStateDto::class.java
+        Column.SOURCE -> ArtifactSourceDto::class.java
     }
 
     override fun isCellEditable(rowIndex: Int, columnIndex: Int): Boolean = false
 
-    override fun getValueAt(rowIndex: Int, columnIndex: Int): Any {
+    override fun getValueAt(rowIndex: Int, columnIndex: Int): Any? {
         val row = rows[rowIndex]
         return when (Column.values()[columnIndex]) {
             Column.ANALYSIS_TYPE -> row
-            Column.STATUS -> row.status
-            Column.SOURCE -> row.source
+            Column.STATUS -> row.state
+            Column.SOURCE -> row.source ?: ArtifactSourceDto.EMBEDDED
         }
     }
 
-    fun getRow(rowIndex: Int): SupportedLanguageRow = rows[rowIndex]
+    fun getRow(rowIndex: Int): PluginStatusDto = rows[rowIndex]
+
 }
