@@ -404,6 +404,8 @@ tasks {
         )
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
+        // disable thread leak checker for now as it's raising FPs
+        systemProperty("junit.jupiter.extensions.autodetection.exclude", "com.intellij.testFramework.junit5.impl.ThreadLeakTrackerExtension")
     }
 
     prepareSandbox {
