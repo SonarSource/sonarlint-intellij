@@ -79,6 +79,14 @@ class SonarLintTelemetry {
         notifyTelemetry { it.fixSuggestionResolved(FixSuggestionResolvedParams(suggestionId, status, snippetIndex)) }
     }
 
+    fun supportedLanguagesPanelOpened() {
+        notifyTelemetry { it.supportedLanguagesPanelOpened() }
+    }
+
+    fun supportedLanguagesPanelCtaClicked() {
+        notifyTelemetry { it.supportedLanguagesPanelCtaClicked() }
+    }
+
     companion object {
         private fun notifyTelemetry(action: (TelemetryRpcService) -> Unit) {
             runOnPooledThread { getService(BackendService::class.java).notifyTelemetry(action) }

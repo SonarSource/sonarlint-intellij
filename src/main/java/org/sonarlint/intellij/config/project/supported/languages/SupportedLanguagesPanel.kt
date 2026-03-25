@@ -47,6 +47,7 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.PluginStatusChangeListener
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
 
@@ -122,7 +123,10 @@ class SupportedLanguagesPanel(
         bannerPanel.add(descRow, gbc)
 
         val setupButton = JButton("Set up connection").apply {
-            addActionListener { onSetupConnectedMode() }
+            addActionListener {
+                getService(SonarLintTelemetry::class.java).supportedLanguagesPanelCtaClicked()
+                onSetupConnectedMode()
+            }
         }
         gbc.gridy = 2
         gbc.fill = GridBagConstraints.NONE
@@ -172,6 +176,7 @@ class SupportedLanguagesPanel(
     override fun load(settings: SonarLintProjectSettings) {
         bannerPanel.isVisible = !settings.isBound
         fetchAndRefreshStatuses()
+        getService(SonarLintTelemetry::class.java).supportedLanguagesPanelOpened()
     }
 
     private fun fetchAndRefreshStatuses() {
