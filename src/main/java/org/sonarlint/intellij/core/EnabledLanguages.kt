@@ -65,7 +65,7 @@ object EnabledLanguages {
         EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"),
         EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-text-plugin-*.jar"),
         EmbeddedPlugin(Language.GO, "Go", "sonar-go-plugin-*.jar"),
-        EmbeddedPlugin(SonarLanguage.valueOf(Language.CLOUDFORMATION.name).pluginKey, "IaC", "sonar-iac-plugin-*.jar")
+        EmbeddedPlugin(SonarLanguage.valueOf(Language.CLOUDFORMATION.name).plugin.key, "IaC", "sonar-iac-plugin-*.jar")
     )
 
     @JvmStatic
@@ -182,7 +182,7 @@ object EnabledLanguages {
     }
 
     private class EmbeddedPlugin(val pluginKey: String, val name: String, val jarFilePattern: String) {
-        constructor(language: Language, name: String, jarFilePattern: String) : this(SonarLanguage.valueOf(language.name).pluginKey, name, jarFilePattern)
+        constructor(language: Language, name: String, jarFilePattern: String) : this(SonarLanguage.valueOf(language.name).plugin.key, name, jarFilePattern)
     }
 
     @JvmStatic
