@@ -183,11 +183,11 @@ class SupportedLanguagesPanel(
             .thenAccept { response ->
                 val premiumLanguages = response.pluginStatuses
                     .filter { it.state == PluginStateDto.PREMIUM }
-                    .map { it.pluginName }
+                    .mapNotNull { it.pluginName }
                     .sorted()
                     .joinToString(", ")
                 
-                val filteredStatuses = response.pluginStatuses.filter { it.state != PluginStateDto.UNSUPPORTED && it.state != PluginStateDto.PREMIUM && it.language != null }
+                val filteredStatuses = response.pluginStatuses.filter { it.state != PluginStateDto.UNSUPPORTED && it.state != PluginStateDto.PREMIUM }
                 runOnUiThread(project, ModalityState.stateForComponent(panel)) {
                     if (!project.isDisposed) {
                         if (premiumLanguages.isNotEmpty()) {
