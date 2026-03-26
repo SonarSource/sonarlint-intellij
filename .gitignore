@@ -54,3 +54,4 @@ build
 # ---- Kotlin
 .kotlin
 
+.claude
