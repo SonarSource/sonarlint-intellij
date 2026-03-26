@@ -120,10 +120,10 @@ dependencies {
     if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "cfamilySignature"("${libs.sonar.cfamily.get()}@jar.asc")
         "sqplugins"(libs.sonar.dotnet.enterprise)
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
-        "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6@zip")
     }
+    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
+    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
+    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6.0@zip")
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
@@ -309,9 +309,10 @@ fun renameCsharpPlugins(pluginsDir: File) {
 
 fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
     configurations["omnisharp"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
+        val classifier = if (artifact.classifier == "net6.0") "net6" else artifact.classifier
         copy {
-            from(zipTree(artifact.file))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/${artifact.classifier}"))
+            from(tarTree(artifact.file))
+            into(file("$destinationDir/${pluginName.get()}/omnisharp/$classifier"))
         }
     }
 }
