@@ -10,12 +10,10 @@ sonar-kotlin = "3.4.0.8957"
 sonar-ruby = "1.22.0.1992"
 sonar-go = "1.33.0.5387"
 sonar-html = "3.25.0.7473"
-sonar-xml = "2.16.0.7616"
 sonar-omnisharp = "1.41.0.101735"
+sonar-xml = "2.16.0.7616"
 sonar-text = "2.42.0.10784"
 sonar-iac = "2.8.0.19776"
-sonar-cpp = "6.79.0.97291"
-sonar-dotnet = "10.21.0.135717"
 
 sonarqube = "4.4.1.3373"
 orchestrator = "6.1.0.3962"
@@ -60,9 +58,6 @@ sonar-omnisharp = { module = "org.sonarsource.sonarlint.omnisharp:sonarlint-omni
 sonar-text = { module = "org.sonarsource.text:sonar-text-plugin", version.ref = "sonar-text" }
 sonar-go = { module = "org.sonarsource.go:sonar-go-plugin", version.ref = "sonar-go" }
 sonar-iac = { module = "org.sonarsource.iac:sonar-iac-plugin", version.ref = "sonar-iac" }
-sonar-cfamily = { module = "com.sonarsource.cpp:sonar-cfamily-plugin", version.ref = "sonar-cpp" }
-sonar-dotnet = { module = "org.sonarsource.dotnet:sonar-csharp-plugin", version.ref = "sonar-dotnet" }
-sonar-dotnet-enterprise = { module = "com.sonarsource.dotnet:sonar-csharp-enterprise-plugin", version.ref = "sonar-dotnet" }
 
 commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
@@ -85,8 +80,7 @@ its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.r
 its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "its-remote" }
 
 [bundles]
-# Does not include cfamily and dotnet-enterprise
-sonar-analyzers = ["sonar-java", "sonar-java-symbolic-execution", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac", "sonar-dotnet"]
+sonar-analyzers = ["sonar-java", "sonar-java-symbolic-execution", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac"]
 its-remote = ["its-remote-robot", "its-remote-fixtures"]
 
 [plugins]

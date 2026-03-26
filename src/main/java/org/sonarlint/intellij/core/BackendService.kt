@@ -67,7 +67,6 @@ import org.sonarlint.intellij.analysis.GlobalBackgroundTaskTracker
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.NodeJsSettings
@@ -145,7 +144,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.HttpConfig
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.InitializeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.JsTsRequirementsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.LanguageSpecificRequirements
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.OmnisharpRequirementsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SonarCloudAlternativeEnvironmentDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SonarQubeCloudRegionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.SslConfigurationDto
@@ -361,7 +359,6 @@ class BackendService : Disposable {
         val eslintBridgePath = generateEslintBridgePath()
         val jsTsRequirements = JsTsRequirementsDto(nodeJsPath, eslintBridgePath)
         val workDir = Paths.get(PathManager.getTempPath()).resolve("sonarlint")
-        val omnisharpRequirementsDto = generateOmnisharpDto()
         // e.g. IntelliJ IDEA 2024.3.2
         val host = "${ApplicationInfo.getInstance().versionName} ${ApplicationInfo.getInstance().fullVersion}"
         return rpcServer.initialize(
@@ -386,7 +383,7 @@ class BackendService : Disposable {
                 null,
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
-                LanguageSpecificRequirements(jsTsRequirements, omnisharpRequirementsDto),
+                LanguageSpecificRequirements(jsTsRequirements, null),
                 getGlobalSettings().isAutoTrigger,
                 null,
                 LogLevel.DEBUG
@@ -416,19 +413,6 @@ class BackendService : Disposable {
             capabilities.add(BackendCapability.MONITORING)
         }
         return capabilities
-    }
-
-    private fun generateOmnisharpDto(): OmnisharpRequirementsDto? {
-        return if (isRider()) {
-            val pluginPath = getService(SonarLintPlugin::class.java).path
-            OmnisharpRequirementsDto(
-                null,
-                null,
-                null,
-                null,
-                null
-            )
-        } else null
     }
 
     private fun generateEslintBridgePath(): Path {
