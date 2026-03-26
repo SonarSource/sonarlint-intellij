@@ -55,3 +55,9 @@ fun RemoteRobot.isGoPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginM
 fun RemoteRobot.isSQLPlugin() = callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('com.intellij.database'))")
 fun RemoteRobot.isJavaScriptPlugin() =
     callJs<Boolean>("com.intellij.ide.plugins.PluginManager.isPluginInstalled(com.intellij.openapi.extensions.PluginId.getId('JavaScript'))")
+
+/**
+ * Get the IDE version year (e.g., 2023, 2024, 2025)
+ * Returns the major version number from the build string (e.g., "253.30387.173" -> 253 -> 2025)
+ */
+fun RemoteRobot.getIdeVersionYear() = callJs<Int>("2000 + parseInt(com.intellij.openapi.application.ApplicationInfo.getInstance().getBuild().getBaselineVersion() / 10)")
