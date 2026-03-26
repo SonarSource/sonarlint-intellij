@@ -20,17 +20,6 @@ dependencyResolutionManagement {
 
     @Suppress("UnstableApiUsage")
     repositories {
-        ivy {
-            name = "OmniSharp-Roslyn"
-            url = URI("https://binaries.sonarsource.com/OmniSharp-Roslyn")
-            patternLayout {
-                artifact("[revision]/omnisharp-[classifier].tar.gz")
-            }
-            content {
-                includeModule("org.sonarsource.sonarlint.omnisharp", "omnisharp-roslyn")
-            }
-            metadataSources { artifact() }
-        }
         if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
             maven("$artifactoryUrl/sonarsource") {
                 credentials {

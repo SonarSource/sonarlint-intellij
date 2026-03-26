@@ -68,7 +68,6 @@ configurations {
         isTransitive = true
     }
     create("cfamilySignature") { isTransitive = false }
-    register("omnisharp")
     register("sloop")
 }
 
@@ -121,9 +120,6 @@ dependencies {
         "cfamilySignature"("${libs.sonar.cfamily.get()}@jar.asc")
         "sqplugins"(libs.sonar.dotnet.enterprise)
     }
-    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:mono@zip")
-    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net472@zip")
-    "omnisharp"("org.sonarsource.sonarlint.omnisharp:omnisharp-roslyn:$omnisharpVersion:net6.0@zip")
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
@@ -274,7 +270,7 @@ fun setupSandbox(destinationDir: File, pluginName: Property<String>) {
     copyAsc(pluginsDir)
     copyPlugins(pluginsDir)
     renameCsharpPlugins(pluginsDir)
-    copyOmnisharp(destinationDir, pluginName)
+    downloadAndCopyOmnisharp(destinationDir, pluginName)
     copySloop(destinationDir, pluginName)
     unzipEslintBridgeBundle(pluginsDir)
 }
@@ -307,12 +303,28 @@ fun renameCsharpPlugins(pluginsDir: File) {
     }
 }
 
-fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
-    configurations["omnisharp"].resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
-        val classifier = if (artifact.classifier == "net6.0") "net6" else artifact.classifier
-        copy {
-            from(tarTree(artifact.file))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/$classifier"))
+fun downloadAndCopyOmnisharp(destinationDir: File, pluginName: Property<String>) {
+    val omnisharpBinariesBaseUrl = "https://binaries.sonarsource.com/OmniSharp-Roslyn"
+    mapOf(
+        "mono" to "omnisharp-mono.zip",
+        "net472" to "omnisharp-net472.zip",
+        "net6" to "omnisharp-net6.0.zip"
+    ).forEach { (classifier, fileName) ->
+        val destDir = file("$destinationDir/${pluginName.get()}/omnisharp/$classifier")
+        if (!destDir.exists() || destDir.listFiles()?.isEmpty() == true) {
+            logger.lifecycle("Downloading omnisharp $classifier from $omnisharpBinariesBaseUrl/$omnisharpVersion/$fileName")
+            val tmpZip = File.createTempFile("omnisharp-$classifier", ".zip")
+            tmpZip.deleteOnExit()
+            uri("$omnisharpBinariesBaseUrl/$omnisharpVersion/$fileName").toURL().openStream().use { input ->
+                tmpZip.outputStream().use { output -> input.copyTo(output) }
+            }
+            copy {
+                from(zipTree(tmpZip))
+                into(destDir)
+            }
+            tmpZip.delete()
+        } else {
+            logger.lifecycle("Omnisharp $classifier already present, skipping download")
         }
     }
 }
