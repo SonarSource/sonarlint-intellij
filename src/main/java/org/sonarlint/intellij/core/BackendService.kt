@@ -422,11 +422,11 @@ class BackendService : Disposable {
         return if (isRider()) {
             val pluginPath = getService(SonarLintPlugin::class.java).path
             OmnisharpRequirementsDto(
-                pluginPath.resolve("omnisharp/mono"),
-                pluginPath.resolve("omnisharp/net6"),
-                pluginPath.resolve("omnisharp/net472"),
-                pluginPath.resolve("plugins/sonar-csharp-plugin.jar"),
-                pluginPath.resolve("plugins/sonar-csharp-enterprise-plugin.jar"),
+                null,
+                null,
+                null,
+                null,
+                null
             )
         } else null
     }

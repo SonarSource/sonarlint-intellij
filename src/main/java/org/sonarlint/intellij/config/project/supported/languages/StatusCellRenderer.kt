@@ -82,7 +82,7 @@ class StatusCellRenderer : TableCellRenderer {
         dotPlaceholder.showDot = false
 
         if (value is PluginStateDto) {
-            textLabel.text = value.label
+            textLabel.text = "lo"
 
             textLabel.foreground = if (isSelected) fg else when (value) {
                 PluginStateDto.ACTIVE -> COLOR_GREEN

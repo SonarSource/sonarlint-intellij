@@ -49,8 +49,8 @@ class SourceCellRenderer : DefaultTableCellRenderer() {
             }
             label.text = when (value) {
                 ArtifactSourceDto.SONARQUBE_SERVER,
-                ArtifactSourceDto.SONARQUBE_CLOUD -> value.label
-                else -> "${value.label} $pluginVersion"
+                ArtifactSourceDto.SONARQUBE_CLOUD -> "lol"
+                else -> "$pluginVersion"
             }
             if (!isSelected && (value == ArtifactSourceDto.SONARQUBE_SERVER || value == ArtifactSourceDto.SONARQUBE_CLOUD)) {
                 label.foreground = COLOR_BLUE
