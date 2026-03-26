@@ -20,18 +20,13 @@
 package org.sonarlint.intellij.core
 
 import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.extensions.PluginId
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.EnumSet
-import kotlin.io.path.name
 import org.sonarlint.intellij.SonarLintPlugin
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.cfamily.CFamilyAnalyzerManager
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
@@ -63,7 +58,6 @@ object EnabledLanguages {
         Language.TERRAFORM
     )
     private val EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE = listOf(
-        EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
         EmbeddedPlugin(Language.HTML, "HTML", "sonar-html-plugin-*.jar"),
         EmbeddedPlugin(Language.JS, "JavaScript/TypeScript", "sonar-javascript-plugin-*.jar"),
         EmbeddedPlugin(Language.KOTLIN, "Kotlin", "sonar-kotlin-plugin-*.jar"),
@@ -78,14 +72,8 @@ object EnabledLanguages {
     fun getEmbeddedPluginsForConnectedMode(): Map<String, Path> {
         val embeddedPlugins = mutableMapOf<String, Path>()
         EMBEDDED_PLUGINS_TO_USE_IN_CONNECTED_MODE.forEach {
-            if (it.pluginKey == SonarLanguage.valueOf(Language.CPP.name).pluginKey && isClionEnabled()) {
-                findCFamilyPlugin()?.let { pluginPath ->
-                    embeddedPlugins[it.pluginKey] = pluginPath
-                }
-            } else {
-                findEmbeddedPlugin(getPluginsDir(), it)?.let { pluginPath ->
-                    embeddedPlugins[it.pluginKey] = pluginPath
-                }
+            findEmbeddedPlugin(getPluginsDir(), it)?.let { pluginPath ->
+                embeddedPlugins[it.pluginKey] = pluginPath
             }
         }
         findEmbeddedPlugin(getPluginsDir(), "sonarlint-omnisharp-plugin-*.jar", "OmniSharp")?.let {
@@ -151,45 +139,12 @@ object EnabledLanguages {
     @Throws(IOException::class)
     fun findEmbeddedPlugins(): Set<Path> {
         val plugins = getPluginsUrls(getPluginsDir()).toMutableSet()
-
-        if (isClionEnabled()) {
-            val cachedCFamily = getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
-            if (cachedCFamily != null) {
-                plugins.add(cachedCFamily)
-                getService(GlobalLogOutput::class.java).log(
-                    "Including cached CFamily plugin: ${cachedCFamily.fileName}",
-                    ClientLogOutput.Level.DEBUG
-                )
-            } else {
-                SonarLintProjectNotifications.projectLessNotification(
-                    null, "The CFamily plugin was not found in the current installed plugins. " +
-                        "C/C++ analysis might not be available." +
-                        " Check the logs for more details.", NotificationType.WARNING
-                )
-            }
-        }
-        
         return plugins
     }
 
     private fun getPluginsDir(): Path {
         val plugin = getService(SonarLintPlugin::class.java)
         return plugin.path.resolve("plugins")
-    }
-
-    private fun findCFamilyPlugin(): Path? {
-        val cachedPath = getService(CFamilyAnalyzerManager::class.java).getCachedAnalyzerPath()
-        if (cachedPath != null) {
-            getService(GlobalLogOutput::class.java).log("Found CFamily plugin in cache: ${cachedPath.fileName}", ClientLogOutput.Level.DEBUG)
-            return cachedPath
-        }
-
-        SonarLintProjectNotifications.projectLessNotification(
-            null, "The CFamily plugin was not found in the current installed plugins. " +
-                "C/C++ analysis might not be available." +
-                " Check the logs for more details.", NotificationType.WARNING
-        )
-        return null
     }
 
     private fun findEmbeddedPlugin(pluginsDir: Path, embeddedPlugin: EmbeddedPlugin): Path? {
@@ -216,13 +171,10 @@ object EnabledLanguages {
         val pluginsPaths = HashSet<Path>()
         if (Files.isDirectory(pluginsDir)) {
             Files.newDirectoryStream(pluginsDir, pattern).use { directoryStream ->
-                val globalLogOutput = SonarLintUtils.getService(GlobalLogOutput::class.java)
+                val globalLogOutput = getService(GlobalLogOutput::class.java)
                 for (path in directoryStream) {
-                    // Do not load C# analyzers, they are handled differently
-                    if (!path.name.contains("csharp")) {
-                        globalLogOutput.log(logPrefix + path.fileName.toString(), ClientLogOutput.Level.DEBUG)
-                        pluginsPaths.add(path)
-                    }
+                    globalLogOutput.log(logPrefix + path.fileName.toString(), ClientLogOutput.Level.DEBUG)
+                    pluginsPaths.add(path)
                 }
             }
         }
