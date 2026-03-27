@@ -30,9 +30,10 @@ import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.spy
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.clearInvocations
@@ -52,10 +53,15 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         actualBackendService = ApplicationManager.getApplication().getService(BackendService::class.java)
-        backendService = spy(actualBackendService)
+        backendService = mock(BackendService::class.java)
         ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
         file = myFixture.copyFileToProject(FILE_NAME, FILE_NAME)
         virtualFileSystemListener = VirtualFileSystemListener()
+    }
+
+    @AfterEach
+    fun cleanup() {
+        ApplicationManager.getApplication().replaceService(BackendService::class.java, actualBackendService, applicationLevelDisposable)
     }
 
     @Test
