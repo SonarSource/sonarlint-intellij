@@ -270,16 +270,12 @@ class BackendService : Disposable {
                     migrateStoragePath()
                     getService(GlobalLogOutput::class.java).log(
                         "Listening for SonarQube for IDE service exit...",
-                        ClientLogOutput.Level.ERROR
+                        ClientLogOutput.Level.INFO
                     )
                     listenForProcessExit(sloop)
                     getService(GlobalLogOutput::class.java).log(
                         "Initializing the SonarQube for IDE service...",
-                        ClientLogOutput.Level.ERROR
-                    )
-                    getService(GlobalLogOutput::class.java).log(
-                        "Is process alive: ${sloop.isAlive}",
-                        ClientLogOutput.Level.ERROR
+                        ClientLogOutput.Level.INFO
                     )
                     initRpcServer(sloop.rpcServer)[1, TimeUnit.MINUTES]
                     getService(GlobalLogOutput::class.java).log("SonarQube for IDE service initialized...", ClientLogOutput.Level.INFO)

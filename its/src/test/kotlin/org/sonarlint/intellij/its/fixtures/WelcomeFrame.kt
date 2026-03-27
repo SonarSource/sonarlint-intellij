@@ -41,7 +41,8 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
 
     fun openProjectButton(): ComponentFixture {
         selectTab("Projects")
-        Pause.pause(3000)
+        //Let the notifications appear as they can cover the open project button and make it not clickable, we will close them in a next step
+        Pause.pause(1500)
         closeVisibleNotifications()
         // This can match two things: If no previous projects, its a SVG icon, else a jbutton
         return findAll<ComponentFixture>(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]")).first()
