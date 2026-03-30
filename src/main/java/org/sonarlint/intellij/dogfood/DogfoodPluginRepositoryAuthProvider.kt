@@ -22,7 +22,7 @@ package org.sonarlint.intellij.dogfood
 import com.intellij.ide.plugins.auth.PluginRepositoryAuthProvider
 import com.intellij.notification.NotificationType
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.util.Base64
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
@@ -49,7 +49,7 @@ class DogfoodPluginRepositoryAuthProvider : PluginRepositoryAuthProvider {
             return if (dogfoodCredentials != null && !dogfoodCredentials.userName.isNullOrBlank() && !dogfoodCredentials.password.isNullOrBlank()) {
                 val encodedAuth = "Basic " + "${dogfoodCredentials.userName}:${dogfoodCredentials.password}".encodeBase64()
 
-                val testUrlRepox = URL("https://repox.jfrog.io/repox/sonarsource")
+                val testUrlRepox = URI("https://repox.jfrog.io/repox/sonarsource").toURL()
                 runOnPooledThread {
                     with(testUrlRepox.openConnection() as HttpURLConnection) {
                         requestMethod = "GET"

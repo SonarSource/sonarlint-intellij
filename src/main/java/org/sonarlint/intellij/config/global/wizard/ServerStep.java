@@ -24,11 +24,12 @@ import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.components.JBTextField;
-import com.intellij.util.net.HttpConfigurable;
+import com.intellij.openapi.options.ShowSettingsUtil;
+import com.intellij.util.net.HttpProxyConfigurable;
 import com.intellij.util.ui.SwingHelper;
 import java.awt.event.MouseEvent;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -126,7 +127,7 @@ public class ServerStep extends AbstractWizardStepEx {
       });
     }
 
-    proxyButton.addActionListener(evt -> HttpConfigurable.editConfigurable(panel));
+    proxyButton.addActionListener(evt -> ShowSettingsUtil.getInstance().editConfigurable(panel, new HttpProxyConfigurable()));
 
     load(editing);
     paintErrors();
@@ -250,11 +251,11 @@ public class ServerStep extends AbstractWizardStepEx {
   private void validateUrl() throws CommitStepException {
     if (radioSonarQube.isSelected()) {
       try {
-        var url = new URL(urlText.getText());
-        if (SonarLintUtils.isBlank(url.getHost())) {
+        var uri = new URI(urlText.getText());
+        if (SonarLintUtils.isBlank(uri.getHost())) {
           throw new CommitStepException("Please provide a valid URL");
         }
-      } catch (MalformedURLException e) {
+      } catch (URISyntaxException e) {
         throw new CommitStepException("Please provide a valid URL");
       }
     }

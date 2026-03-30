@@ -27,7 +27,8 @@ import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
-import com.intellij.util.net.HttpConfigurable
+import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.util.net.HttpProxyConfigurable
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import java.awt.BorderLayout
@@ -219,7 +220,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
             )
         )
 
-        proxyButton.addActionListener { _ -> HttpConfigurable.editConfigurable(centerPanel) }
+        proxyButton.addActionListener { _ -> ShowSettingsUtil.getInstance().editConfigurable(centerPanel, HttpProxyConfigurable()) }
 
         centerPanel.preferredSize = Dimension(600, 300)
         isResizable = false

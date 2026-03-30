@@ -181,7 +181,7 @@ public class ExclusionTable {
       }
       model.remove(selectedIndex);
       if (model.getRowCount() > 0) {
-        var newIndex = Math.min(model.getRowCount() - 1, Math.max(selectedIndex - 1, 0));
+        var newIndex = Math.clamp(selectedIndex - 1, 0, model.getRowCount() - 1);
         table.setRowSelectionInterval(newIndex, newIndex);
       }
     }
