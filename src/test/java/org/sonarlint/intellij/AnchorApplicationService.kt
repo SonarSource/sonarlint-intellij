@@ -17,15 +17,18 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.walkthrough
+package org.sonarlint.intellij
 
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.ToolWindow
-import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
 
-private const val WALKTHROUGH_SONARQUBE_FOR_IDE: String = "Welcome to SonarQube for IDE"
-
-fun getSonarLintWalkthroughToolWindow(project: Project): ToolWindow? {
-    val toolWindowManager: ToolWindowManager = ToolWindowManager.getInstance(project)
-    return toolWindowManager.getToolWindow(WALKTHROUGH_SONARQUBE_FOR_IDE)
+/**
+ * Application service that is used to get an application-level disposable.
+ * This allows us to replace application-level service and keep control over when replacements will be disposed.
+ */
+@Service(Service.Level.APP)
+class AnchorApplicationService : Disposable {
+    override fun dispose() {
+        // empty
+    }
 }

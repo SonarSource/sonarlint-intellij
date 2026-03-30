@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +72,10 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   private BackendService realBackendService;
   protected static final Path storageRoot = Paths.get(PathManager.getSystemPath()).resolve("sonarlint").resolve("storage");
   private final List<Path> createdTempDirs = new ArrayList<>();
+
+  public @NotNull Disposable getApplicationLevelDisposable() {
+    return getService(AnchorApplicationService.class);
+  }
 
   @Override
   protected final String getTestDataPath() {

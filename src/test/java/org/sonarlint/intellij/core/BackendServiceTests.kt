@@ -25,7 +25,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
-import com.intellij.testFramework.replaceService
 import java.nio.file.Path
 import java.time.Duration
 import java.util.UUID
@@ -47,7 +46,6 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.eraseToken
 import org.sonarlint.intellij.config.global.credentials.eraseUsernamePassword
@@ -156,16 +154,14 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(sloopLauncher.start(any(), any(), any())).thenReturn(sloop)
         service = BackendService(sloopLauncher)
         // modulesAdded() is triggered when the test project is opened during super.initApplication(), before replaceService() is called
-        getService(BackendService::class.java).dispose()
-        ApplicationManager.getApplication().replaceService(BackendService::class.java, service, testRootDisposable)
     }
 
     @BeforeEach
     fun resetMockBackend() {
-        // Wait for async initialization and configuration scope setup to complete before resetting mocks
-        // ModuleChangeListener triggers modulesAdded() during project setup, which initializes the backend
+        service.projectOpened(project)
+        service.modulesAdded(project, listOf(module))
+
         verify(backend, timeout(2000)).initialize(any())
-        verify(backendConfigurationService, timeout(2000).atLeastOnce()).didAddConfigurationScopes(any())
 
         // Ignore previous events caused by HeavyTestFramework opening a project
         reset(backendConfigurationService)

@@ -74,12 +74,12 @@ configurations {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 dependencies {
@@ -154,7 +154,7 @@ license {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "231.9423.4"
+            sinceBuild = "242.20224.300"
             untilBuild = provider { null }
         }
     }
@@ -190,8 +190,8 @@ intellijPlatform {
                     select {
                         types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
                         channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "231.*"
-                        untilBuild = "231.*"
+                        sinceBuild = "242.*"
+                        untilBuild = "242.*"
                     }
                 }
 
@@ -374,13 +374,13 @@ tasks {
 
     compileKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
     compileTestKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
@@ -397,8 +397,15 @@ tasks {
 
     test {
         useJUnitPlatform()
+        javaLauncher.set(
+            project.the<JavaToolchainService>().launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(21))
+            }
+        )
         systemProperty("sonarlint.telemetry.disabled", "true")
         systemProperty("sonarlint.monitoring.disabled", "true")
+        // disable thread leak checker for now as it's raising FPs
+        systemProperty("junit.jupiter.extensions.autodetection.exclude", "com.intellij.testFramework.junit5.impl.ThreadLeakTrackerExtension")
     }
 
     prepareSandbox {

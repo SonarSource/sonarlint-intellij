@@ -19,9 +19,11 @@
  */
 package org.sonarlint.intellij
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.ComponentManagerImpl
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
@@ -30,6 +32,10 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.fixtures.AbstractHeavyTests
 
 abstract class AbstractSonarLintHeavyTests : AbstractHeavyTests() {
+
+    fun getApplicationLevelDisposable(): Disposable {
+        return SonarLintUtils.getService(AnchorApplicationService::class.java)
+    }
 
     val globalSettings: SonarLintGlobalSettings
         get() {

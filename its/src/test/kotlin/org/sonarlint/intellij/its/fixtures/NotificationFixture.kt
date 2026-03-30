@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its.fixtures
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
@@ -52,6 +53,14 @@ fun RemoteRobot.firstNotification(
 ): NotificationFixture = step("Search first notification") {
     val notification = find<NotificationFixture>(NotificationFixture.first(), timeout)
     notification.apply(function)
+}
+
+fun RemoteRobot.dismissAllBalloonNotifications() = step("Dismiss all balloon notifications") {
+    while (true) {
+        val closeButtons = findAll<ComponentFixture>(byXpath("//div[@class='CloseButton']"))
+        if (closeButtons.isEmpty()) break
+        closeButtons.first().click()
+    }
 }
 
 @FixtureName("Notification")

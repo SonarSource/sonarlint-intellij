@@ -29,6 +29,7 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
 import java.time.Duration
+import org.assertj.swing.timing.Pause
 
 fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
     find(WelcomeFrame::class.java, byXpath("//div[@class='FlatWelcomeFrame']"), Duration.ofSeconds(7)).apply(function)
@@ -40,6 +41,9 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
 
     fun openProjectButton(): ComponentFixture {
         selectTab("Projects")
+        //Let the notifications appear as they can cover the open project button and make it not clickable, we will close them in a next step
+        Pause.pause(1500)
+        closeVisibleNotifications()
         // This can match two things: If no previous projects, its a SVG icon, else a jbutton
         return findAll<ComponentFixture>(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]")).first()
     }
@@ -52,6 +56,10 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
 
     private fun selectTab(tabName: String) {
         findElement<ComponentFixture>(byXpath("//div[@accessiblename='Welcome screen categories']")).findText(tabName).click()
+    }
+
+    private fun closeVisibleNotifications() {
+        remoteRobot.dismissAllBalloonNotifications()
     }
 
 }

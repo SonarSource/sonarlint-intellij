@@ -24,12 +24,11 @@ import com.intellij.testFramework.replaceService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import org.awaitility.Awaitility.await
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -37,43 +36,50 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse
 
 class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
-    private lateinit var backendService: BackendService
+    private lateinit var actualBackendService: BackendService
+    private lateinit var mockBackendService: BackendService
     private lateinit var submitter: AnalysisSubmitter
 
     @BeforeEach
     fun initialization() {
-        backendService = spy(ApplicationManager.getApplication().getService(BackendService::class.java))
-        ApplicationManager.getApplication().replaceService(BackendService::class.java, backendService, testRootDisposable)
+        actualBackendService = ApplicationManager.getApplication().getService(BackendService::class.java)
+        mockBackendService = mock(BackendService::class.java)
+        ApplicationManager.getApplication().replaceService(BackendService::class.java, mockBackendService, testRootDisposable)
         submitter = AnalysisSubmitter(project)
+    }
+
+    @AfterEach
+    fun cleanup() {
+        ApplicationManager.getApplication().replaceService(BackendService::class.java, actualBackendService, applicationLevelDisposable)
     }
 
     @Test
     fun `analyzeAllFiles should call analyzeFullProject and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
-        doReturn(future).whenever(backendService).analyzeFullProject(module)
+        doReturn(future).whenever(mockBackendService).analyzeFullProject(module)
 
         submitter.analyzeAllFiles()
 
-        await().atMost(1, TimeUnit.SECONDS).untilAsserted { verify(backendService).analyzeFullProject(module) }
+        await().atMost(1, TimeUnit.SECONDS).untilAsserted { verify(mockBackendService).analyzeFullProject(module) }
     }
 
     @Test
     fun `analyzeVcsChangedFiles should call analyzeVCSChangedFiles and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
-        doReturn(future).whenever(backendService).analyzeVCSChangedFiles(module)
+        doReturn(future).whenever(mockBackendService).analyzeVCSChangedFiles(module)
 
         submitter.analyzeVcsChangedFiles()
 
-        await().atMost(1, TimeUnit.SECONDS).untilAsserted { verify(backendService).analyzeVCSChangedFiles(module) }
+        await().atMost(1, TimeUnit.SECONDS).untilAsserted { verify(mockBackendService).analyzeVCSChangedFiles(module) }
     }
 
     @Test
     fun `autoAnalyzeOpenFiles should call analyzeOpenFiles and track`() {
         val future = CompletableFuture.completedFuture(mock(ForceAnalyzeResponse::class.java))
-        doReturn(future).whenever(backendService).analyzeOpenFiles(module)
+        doReturn(future).whenever(mockBackendService).analyzeOpenFiles(module)
 
         submitter.autoAnalyzeOpenFiles()
 
-        await().atMost(1, TimeUnit.SECONDS).untilAsserted { verify(backendService).analyzeOpenFiles(module) }
+        await().atMost(1, TimeUnit.SECONDS).untilAsserted { verify(mockBackendService).analyzeOpenFiles(module) }
     }
 } 
