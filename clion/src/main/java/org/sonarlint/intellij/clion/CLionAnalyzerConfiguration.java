@@ -145,7 +145,7 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
         cppEnvironment = tryReflection(initializedWorkspace, project);
       }
       if (cppEnvironment != null) {
-        return cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker();
+        return cppEnvironment.getToolSet().isSsh() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker();
       }
     }
     SonarLintConsole.get(project).debug("Not using remote or WSL toolchain");

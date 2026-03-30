@@ -116,7 +116,7 @@ public class EditableList<T> {
       model.remove(entry);
 
       if (model.getSize() > 0) {
-        int newIndex = Math.min(model.getSize() - 1, Math.max(selectedIndex - 1, 0));
+        int newIndex = Math.clamp(selectedIndex - 1, 0, model.getSize() - 1);
         list.setSelectedValue(model.getElementAt(newIndex), true);
       }
     }

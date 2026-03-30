@@ -331,7 +331,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       connectionChangeListener.changed(connections);
 
       if (model.getSize() > 0) {
-        var newIndex = Math.min(model.getSize() - 1, Math.max(selectedIndex - 1, 0));
+        var newIndex = Math.clamp(selectedIndex - 1, 0, model.getSize() - 1);
         connectionList.setSelectedValue(model.getElementAt(newIndex), true);
       }
     }
