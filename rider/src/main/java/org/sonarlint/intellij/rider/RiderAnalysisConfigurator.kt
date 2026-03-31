@@ -84,10 +84,14 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
             when (msBuildPathValue) {
                 is String -> msBuildPathValue
                 else -> {
+                    // For RdPath or other wrapper types, try to get the inner value
                     try {
-                        // For RdPath type, try to get the inner value
                         val innerValueMethod = msBuildPathValue.javaClass.getMethod("getValue")
-                        innerValueMethod.invoke(msBuildPathValue) as? String
+                        when (val innerValue = innerValueMethod.invoke(msBuildPathValue)) {
+                            is String -> innerValue
+                            is Path -> innerValue.toAbsolutePath().normalize().pathString
+                            else -> innerValue?.toString()
+                        }
                     } catch (_: NoSuchMethodException) {
                         // Fallback to toString if no getValue method
                         msBuildPathValue.toString()
