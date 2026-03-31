@@ -19,31 +19,34 @@
  */
 package org.sonarlint.intellij.clion;
 
+import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
+import com.jetbrains.cidr.lang.CLanguageKind;
+import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfigurations;
+import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import com.jetbrains.cidr.project.workspace.CidrWorkspace;
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public abstract class AnalyzerConfiguration {
 
-  private static Method preprocessorDefinesMethod;
-
   public static final Map<ForcedLanguage, String> LANGUAGE_KEYS = Map.of(ForcedLanguage.C, "c", ForcedLanguage.CPP, "cpp", ForcedLanguage.OBJC, "objc");
+
+  public abstract ConfigurationResult getConfiguration(VirtualFile file);
 
   public static class ConfigurationResult {
     @Nullable
@@ -98,50 +101,6 @@ public abstract class AnalyzerConfiguration {
     return OCResolveConfigurations.getPreselectedConfiguration(file, project);
   }
 
-  public static Method getPreprocessorDefinesMethod() {
-    if (preprocessorDefinesMethod == null) {
-      try {
-        preprocessorDefinesMethod = OCCompilerSettings.class.getMethod("getPreprocessorDefines");
-      } catch (NoSuchMethodException e) {
-        throw new IllegalStateException(e);
-      }
-    }
-    return preprocessorDefinesMethod;
-  }
-
-  private static Object unWrapList(Object result) {
-    if (result instanceof List<?> list) {
-      // getEnvironment returns a singleton list
-      result = list.get(0);
-    }
-    return result;
-  }
-
-  @Nullable
-  public CPPEnvironment tryReflection(CidrWorkspace initializedWorkspace, Project project) {
-    // Use reflection to check if workspace is instanceof com.jetbrains.cidr.project.workspace.WorkspaceWithEnvironment interface has
-    // getEnvironment() method
-    final Method classMethod;
-    try {
-      classMethod = initializedWorkspace.getClass().getMethod("getEnvironment");
-    } catch (NoSuchMethodException e) {
-      SonarLintConsole.get(project).debug(initializedWorkspace.getClass().getName() + " has no getEnvironment() method");
-      return null;
-    }
-    Object result;
-    try {
-      result = classMethod.invoke(initializedWorkspace);
-    } catch (ReflectiveOperationException e) {
-      SonarLintConsole.get(project).debug(e.getMessage());
-      return null;
-    }
-    result = unWrapList(result);
-    if (result instanceof CPPEnvironment cppEnvironment) {
-      return cppEnvironment;
-    }
-    return null;
-  }
-
   @Nullable
   public static String mapToCFamilyCompiler(OCCompilerKind compilerKind) {
     return switch (compilerKind.getDisplayName()) {
@@ -151,6 +110,63 @@ public abstract class AnalyzerConfiguration {
       case "IAR" -> "iar";
       default -> null;
     };
+  }
+
+  @Nullable
+  public static ForcedLanguage getSonarLanguage(@Nullable OCLanguageKind languageKind) {
+    return switch (languageKind) {
+      case CLanguageKind.C -> ForcedLanguage.C;
+      case CLanguageKind.CPP -> ForcedLanguage.CPP;
+      case CLanguageKind.OBJ_C -> ForcedLanguage.OBJC;
+      case null, default -> null;
+    };
+  }
+
+  public static boolean isRemoteWslOrDockerCMakeToolchain(Project project, OCResolveConfiguration configuration) {
+    for (var initializedWorkspace : CidrWorkspace.getInitializedWorkspaces(project)) {
+      if (initializedWorkspace instanceof CMakeWorkspace cMakeWorkspace) {
+        var cppEnvironment = getCMakeCppEnvironment(project, cMakeWorkspace, configuration);
+        if (cppEnvironment != null) {
+          return cppEnvironment.getToolSet().isSsh() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker();
+        }
+      }
+    }
+    SonarLintConsole.get(project).debug("Not using remote or WSL toolchain");
+    return false;
+  }
+
+  @Nullable
+  private static CPPEnvironment getCMakeCppEnvironment(Project project, CMakeWorkspace cMakeWorkspace, OCResolveConfiguration configuration) {
+    var cMakeConfiguration = cMakeWorkspace.getCMakeConfigurationFor(configuration);
+    if (cMakeConfiguration == null) {
+      SonarLintConsole.get(project).debug("cMakeConfiguration is null");
+      return null;
+    }
+    try {
+      return cMakeWorkspace.getProfileInfoFor(cMakeConfiguration).getEnvironment();
+    } catch (ExecutionException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  public static void collectCompilerKindProperties(Project project, OCResolveConfiguration resolveConfiguration, OCCompilerKind compilerKind,
+    String cFamilyCompiler, OCCompilerSettings compilerSettings, @Nullable OCLanguageKind languageKind, Map<String, String> properties) {
+    if (isRemoteWslOrDockerCMakeToolchain(project, resolveConfiguration)) {
+      collectPropertiesForRemoteToolchain(compilerSettings, properties);
+    } else if (compilerKind instanceof MSVCCompilerKind) {
+      // For MSVC, we collect built-in headers only, and the driver on CFamily side still handles '/external:I' arguments.
+      collectDefinesAndIncludes(compilerSettings, properties, HeadersSearchPath::isBuiltInHeaders);
+    } else if ("iar".equals(cFamilyCompiler)) {
+      // For IAR, we are interested in all headers. This is necessary to support the C_INCLUDE environment variable (as it is a user header).
+      collectDefinesAndIncludes(compilerSettings, properties, h -> true);
+    } else {
+      SonarLintConsole.get(project).debug("Did not collect any properties for " + compilerKind.getDisplayName() + " compiler");
+    }
+
+    var sonarLanguage = getSonarLanguage(languageKind);
+    if (sonarLanguage != null) {
+      properties.put("sonarLanguage", LANGUAGE_KEYS.get(sonarLanguage));
+    }
   }
 
   public static void collectPropertiesForRemoteToolchain(OCCompilerSettings compilerSettings, Map<String, String> properties) {
@@ -172,23 +188,7 @@ public abstract class AnalyzerConfiguration {
 
   @NotNull
   public static String getPreprocessorDefines(OCCompilerSettings compilerSettings) {
-    Object result;
-    try {
-      result = getPreprocessorDefinesMethod().invoke(compilerSettings);
-    } catch (ReflectiveOperationException e) {
-      throw new IllegalStateException(e);
-    }
-    if (result instanceof List) {
-      return ((List<String>) result).stream()
-        .map(String::trim)
-        .collect(Collectors.joining("\n")) + "\n";
-    } else if (result instanceof String resultString) {
-      return Arrays.stream(resultString.split("\n"))
-        .map(String::trim)
-        .collect(Collectors.joining("\n")) + "\n";
-    } else {
-      throw new IllegalStateException(result.toString());
-    }
+    return compilerSettings.getPreprocessorDefines().stream().map(String::trim).collect(Collectors.joining("\n")) + "\n";
   }
 
 }

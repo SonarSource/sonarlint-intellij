@@ -23,7 +23,7 @@ dependencies {
         }
         pluginComposedModule(implementation(project(":common")))
         // nativeDebug: https://youtrack.jetbrains.com/issue/CPP-43231/Cannot-extend-cidr.runConfigurationExtension
-        bundledPlugins("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang", "com.intellij.nativeDebug")
+        bundledPlugins("com.intellij.clion", "com.intellij.cidr.lang", "com.intellij.nativeDebug")
         testFramework(TestFrameworkType.Platform)
         // test-framework is not published as an artifact
         testFramework(TestFrameworkType.Bundled)

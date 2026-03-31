@@ -235,6 +235,7 @@
     <depends optional="true" config-file="plugin-plsql.xml">com.intellij.database</depends>
     <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.cidr.lang</depends>
+    <depends optional="true" config-file="plugin-clion-cmake.xml">com.intellij.clion</depends>
     <depends optional="true" config-file="plugin-clion-resharper.xml">org.jetbrains.plugins.clion.radler</depends>
     <depends optional="true" config-file="plugin-rider.xml">com.intellij.modules.rider</depends>
     <depends optional="true" config-file="plugin-jupyter.xml">intellij.jupyter</depends>

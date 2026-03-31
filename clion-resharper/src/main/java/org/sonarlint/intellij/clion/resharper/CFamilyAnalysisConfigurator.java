@@ -22,31 +22,14 @@ package org.sonarlint.intellij.clion.resharper;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import org.sonarlint.intellij.clion.AnalyzerConfiguration;
-import org.sonarlint.intellij.clion.BuildWrapperJsonGenerator;
+import org.sonarlint.intellij.clion.CFamilyAnalysisConfiguratorSupport;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
   @Override
   public AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
-    SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for Resharper");
-    var result = new AnalysisConfiguration();
-    var analyzerConfiguration = new CLionResharperAnalyzerConfiguration(module.getProject());
-    var buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
-    filesToAnalyze.stream()
-      .map(analyzerConfiguration::getConfiguration)
-      .filter(AnalyzerConfiguration.ConfigurationResult::hasConfiguration)
-      .map(AnalyzerConfiguration.ConfigurationResult::getConfiguration)
-      .forEach(configuration -> {
-        buildWrapperJsonGenerator.add(configuration);
-        if (configuration.sonarLanguage() != null) {
-          result.forcedLanguages.put(configuration.virtualFile(), configuration.sonarLanguage());
-        }
-      });
-    result.extraProperties.put("sonar.cfamily.build-wrapper-content", buildWrapperJsonGenerator.build());
-    return result;
+    return CFamilyAnalysisConfiguratorSupport.configure(module, filesToAnalyze, CLionResharperAnalyzerConfiguration::new, "CLion Nova (Resharper)");
   }
 
 }
