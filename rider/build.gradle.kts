@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 val riderBuildVersion: String by project
 val riderHome: String? = System.getenv("RIDER_HOME")
 
@@ -22,7 +24,11 @@ dependencies {
         pluginComposedModule(implementation(project(":common")))
         pluginComposedModule(implementation(project(":git")))
         bundledPlugins("Git4Idea")
+        testFramework(TestFrameworkType.Platform)
     }
     compileOnly(libs.findbugs.jsr305)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.four)
+    testRuntimeOnly(libs.junit.launcher)
 }
