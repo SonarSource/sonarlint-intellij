@@ -89,7 +89,7 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
                         val innerValueMethod = msBuildPathValue.javaClass.getMethod("getValue")
                         when (val innerValue = innerValueMethod.invoke(msBuildPathValue)) {
                             is String -> innerValue
-                            is Path -> innerValue.toAbsolutePath().normalize().pathString
+                            is Path -> innerValue.normalize().pathString
                             else -> innerValue?.toString()
                         }
                     } catch (_: NoSuchMethodException) {
