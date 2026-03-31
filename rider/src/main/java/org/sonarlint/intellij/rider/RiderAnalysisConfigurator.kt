@@ -56,7 +56,7 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
         return result
     }
 
-    private fun getCliExePath(dotNetCoreRuntime: Any): String {
+    internal fun getCliExePath(dotNetCoreRuntime: Any): String {
         return when (val cliExePath = dotNetCoreRuntime.javaClass.getMethod("getCliExePath").invoke(dotNetCoreRuntime)) {
             is Path -> cliExePath.normalize().pathString
             is String -> cliExePath
@@ -64,7 +64,7 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
         }
     }
 
-    private fun getMonoExePath(monoRuntime: Any): String {
+    internal fun getMonoExePath(monoRuntime: Any): String {
         return when (val monoExe = monoRuntime.javaClass.getMethod("getMonoExe").invoke(monoRuntime)) {
             is Path -> monoExe.normalize().pathString
             else -> {
@@ -74,7 +74,7 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
         }
     }
 
-    private fun getMsBuildPathString(module: Module): String? {
+    internal fun getMsBuildPathString(module: Module): String? {
         val msBuildPathValue = module.project.solution.activeMsBuildPath.value ?: return null
         return when (msBuildPathValue) {
             is String -> msBuildPathValue
