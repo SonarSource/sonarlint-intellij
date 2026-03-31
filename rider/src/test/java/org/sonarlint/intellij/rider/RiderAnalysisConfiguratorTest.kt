@@ -77,6 +77,38 @@ class RiderAnalysisConfiguratorTest {
         assertEquals("/usr/bin/mono", result)
     }
 
+    @Test
+    fun `getCliExePath should convert relative path to absolute`() {
+        val relativePath = Paths.get("dotnet")
+        val mockRuntime = MockDotNetCoreRuntimeNewApi(relativePath)
+        val result = configurator.getCliExePath(mockRuntime)
+        
+        // Result should be absolute (not just "dotnet")
+        assert(Paths.get(result).isAbsolute) { "Path should be absolute but got: $result" }
+    }
+
+    @Test
+    fun `getMonoExePath should convert relative path to absolute`() {
+        val relativePath = Paths.get("mono")
+        val mockRuntime = MockMonoRuntimeNewApi(relativePath)
+        val result = configurator.getMonoExePath(mockRuntime)
+        
+        // Result should be absolute (not just "mono")
+        assert(Paths.get(result).isAbsolute) { "Path should be absolute but got: $result" }
+    }
+
+    @Test
+    fun `getCliExePath should handle relative path with parent references`() {
+        val relativePath = Paths.get("../bin/dotnet")
+        val mockRuntime = MockDotNetCoreRuntimeNewApi(relativePath)
+        val result = configurator.getCliExePath(mockRuntime)
+        
+        // Result should be absolute and normalized
+        val resultPath = Paths.get(result)
+        assert(resultPath.isAbsolute) { "Path should be absolute but got: $result" }
+        assert(!result.contains("..")) { "Path should be normalized (no ..) but got: $result" }
+    }
+
     class MockDotNetCoreRuntimeNewApi(private val path: Path) {
         fun getCliExePath(): Path = path
     }

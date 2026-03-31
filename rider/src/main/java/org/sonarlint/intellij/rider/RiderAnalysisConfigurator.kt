@@ -66,7 +66,7 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
 
     internal fun getMonoExePath(monoRuntime: Any): String {
         return when (val monoExe = monoRuntime.javaClass.getMethod("getMonoExe").invoke(monoRuntime)) {
-            is Path -> monoExe.normalize().pathString
+            is Path -> monoExe.toAbsolutePath().normalize().pathString
             else -> {
                 val absolutePathMethod = monoExe.javaClass.getMethod("getAbsolutePath")
                 absolutePathMethod.invoke(monoExe) as String
@@ -75,17 +75,27 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
     }
 
     internal fun getMsBuildPathString(module: Module): String? {
-        val msBuildPathValue = module.project.solution.activeMsBuildPath.value ?: return null
-        return when (msBuildPathValue) {
-            is String -> msBuildPathValue
-            else -> {
-                try {
-                    val valueMethod = msBuildPathValue.javaClass.getMethod("getValue")
-                    valueMethod.invoke(msBuildPathValue) as String
-                } catch (_: NoSuchMethodException) {
-                    msBuildPathValue.toString()
+        return try {
+            // Use reflection to access the 'value' property to avoid ClassNotFoundException
+            val activeMsBuildPath = module.project.solution.activeMsBuildPath
+            val valueProperty = activeMsBuildPath.javaClass.getMethod("getValue")
+            val msBuildPathValue = valueProperty.invoke(activeMsBuildPath) ?: return null
+            
+            when (msBuildPathValue) {
+                is String -> msBuildPathValue
+                else -> {
+                    try {
+                        // For RdPath type, try to get the inner value
+                        val innerValueMethod = msBuildPathValue.javaClass.getMethod("getValue")
+                        innerValueMethod.invoke(msBuildPathValue) as? String
+                    } catch (_: NoSuchMethodException) {
+                        // Fallback to toString if no getValue method
+                        msBuildPathValue.toString()
+                    }
                 }
             }
+        } catch (_: Exception) {
+            null
         }
     }
 
