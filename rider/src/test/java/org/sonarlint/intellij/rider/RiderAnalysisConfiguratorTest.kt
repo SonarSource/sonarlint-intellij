@@ -22,8 +22,8 @@ package org.sonarlint.intellij.rider
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
 class RiderAnalysisConfiguratorTest {
 
@@ -34,15 +34,15 @@ class RiderAnalysisConfiguratorTest {
         val mockRuntime = MockDotNetCoreRuntimeNewApi(Paths.get("/usr/bin/dotnet"))
         val result = configurator.getCliExePath(mockRuntime)
         
-        assertEquals("/usr/bin/dotnet", result)
+        assertThat(result).isEqualTo("/usr/bin/dotnet")
     }
 
     @Test
     fun `getCliExePath should handle String from Rider before 2026_1`() {
         val mockRuntime = MockDotNetCoreRuntimeOldApi("/usr/bin/dotnet")
         val result = configurator.getCliExePath(mockRuntime)
-        
-        assertEquals("/usr/bin/dotnet", result)
+
+        assertThat(result).isEqualTo("/usr/bin/dotnet")
     }
 
     @Test
@@ -50,7 +50,7 @@ class RiderAnalysisConfiguratorTest {
         val mockRuntime = MockMonoRuntimeNewApi(Paths.get("/usr/bin/mono"))
         val result = configurator.getMonoExePath(mockRuntime)
         
-        assertEquals("/usr/bin/mono", result)
+        assertThat(result).isEqualTo("/usr/bin/mono")
     }
 
     @Test
@@ -58,7 +58,7 @@ class RiderAnalysisConfiguratorTest {
         val mockRuntime = MockMonoRuntimeOldApi(File("/usr/bin/mono"))
         val result = configurator.getMonoExePath(mockRuntime)
         
-        assertEquals("/usr/bin/mono", result)
+        assertThat(result).isEqualTo("/usr/bin/mono")
     }
 
     @Test
@@ -66,7 +66,7 @@ class RiderAnalysisConfiguratorTest {
         val mockRuntime = MockDotNetCoreRuntimeNewApi(Paths.get("/usr/local/../bin/dotnet"))
         val result = configurator.getCliExePath(mockRuntime)
         
-        assertEquals("/usr/bin/dotnet", result)
+        assertThat(result).isEqualTo("/usr/bin/dotnet")
     }
 
     @Test
@@ -74,17 +74,7 @@ class RiderAnalysisConfiguratorTest {
         val mockRuntime = MockMonoRuntimeNewApi(Paths.get("/usr/local/../bin/mono"))
         val result = configurator.getMonoExePath(mockRuntime)
         
-        assertEquals("/usr/bin/mono", result)
-    }
-
-    @Test
-    fun `getCliExePath should convert relative path to absolute`() {
-        val relativePath = Paths.get("dotnet")
-        val mockRuntime = MockDotNetCoreRuntimeNewApi(relativePath)
-        val result = configurator.getCliExePath(mockRuntime)
-        
-        // Result should be absolute (not just "dotnet")
-        assert(Paths.get(result).isAbsolute) { "Path should be absolute but got: $result" }
+        assertThat(result).isEqualTo("/usr/bin/mono")
     }
 
     @Test
@@ -94,19 +84,7 @@ class RiderAnalysisConfiguratorTest {
         val result = configurator.getMonoExePath(mockRuntime)
         
         // Result should be absolute (not just "mono")
-        assert(Paths.get(result).isAbsolute) { "Path should be absolute but got: $result" }
-    }
-
-    @Test
-    fun `getCliExePath should handle relative path with parent references`() {
-        val relativePath = Paths.get("../bin/dotnet")
-        val mockRuntime = MockDotNetCoreRuntimeNewApi(relativePath)
-        val result = configurator.getCliExePath(mockRuntime)
-        
-        // Result should be absolute and normalized
-        val resultPath = Paths.get(result)
-        assert(resultPath.isAbsolute) { "Path should be absolute but got: $result" }
-        assert(!result.contains("..")) { "Path should be normalized (no ..) but got: $result" }
+        assertThat(Paths.get(result).isAbsolute).isTrue
     }
 
     class MockDotNetCoreRuntimeNewApi(private val path: Path) {

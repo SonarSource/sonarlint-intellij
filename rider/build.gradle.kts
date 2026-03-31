@@ -27,5 +27,8 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     compileOnly(libs.findbugs.jsr305)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.four)
+    testRuntimeOnly(libs.junit.launcher)
 }
