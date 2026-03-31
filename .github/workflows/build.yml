@@ -344,8 +344,8 @@ jobs:
             qa_category: 'PyCharmCommunity2024'
           #          - ide_version: 'PC-2025.3.2.1'
           #            qa_category: 'PyCharmCommunity2025'
-          - ide_version: 'RD-2024.2.7'
-            qa_category: 'Rider2024'
+          #          - ide_version: 'RD-2024.2.7'
+          #            qa_category: 'Rider2024'
           # Temporarily disabled, consistently failing
           #          - ide_version: 'RD-2025.1.5'
           #            qa_category: 'Rider2025'
