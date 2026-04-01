@@ -19,16 +19,30 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintCheckinHandlerFactory extends CheckinHandlerFactory {
 
   @NotNull @Override public CheckinHandler createHandler(CheckinProjectPanel panel, CommitContext commitContext) {
     var project = panel.getProject();
-    return new SonarLintCheckinHandler(project, panel);
+    var handler = new SonarLintCheckinHandler(project, panel);
+    var workflowHandler = panel.getCommitWorkflowHandler();
+    if (workflowHandler instanceof Disposable workflowDisposable) {
+      Disposer.register(workflowDisposable, handler);
+    } else {
+      // This should not happen
+      getService(GlobalLogOutput.class).log("Cannot register SonarLintCheckinHandler as Disposable", ClientLogOutput.Level.DEBUG);
+    }
+    return handler;
   }
 }

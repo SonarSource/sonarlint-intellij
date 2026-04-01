@@ -23,13 +23,16 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.replaceService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
@@ -81,5 +84,19 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
         submitter.autoAnalyzeOpenFiles()
 
         await().atMost(1, TimeUnit.SECONDS).untilAsserted { verify(mockBackendService).analyzeOpenFiles(module) }
+    }
+
+    @Test
+    fun `analyzeFilesPreCommit should not throw when backend future completes exceptionally`() {
+        val psiFile = myFixture.configureByText("Foo.java", "class Foo {}")
+        val vFile = psiFile.virtualFile
+        val failedFuture = CompletableFuture.failedFuture<ForceAnalyzeResponse>(RuntimeException("test failure"))
+        doReturn(failedFuture).whenever(mockBackendService).analyzeFileList(eq(module), any())
+
+        val result = submitter.analyzeFilesPreCommit(setOf(vFile))
+
+        assertThat(result).isNotNull
+        assertThat(result!!.left.analysisSucceeded()).isFalse
+        assertThat(result.right).isEmpty()
     }
 } 
