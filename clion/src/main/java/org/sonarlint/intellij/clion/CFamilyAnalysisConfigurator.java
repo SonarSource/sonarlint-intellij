@@ -19,32 +19,18 @@
  */
 package org.sonarlint.intellij.clion;
 
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
-import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import com.intellij.openapi.project.Project;
 
-public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
+public class CFamilyAnalysisConfigurator extends AbstractCFamilyAnalysisConfigurator {
 
   @Override
-  public AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
-    SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for CLion");
-    var result = new AnalysisConfiguration();
-    var analyzerConfiguration = new CLionAnalyzerConfiguration(module.getProject());
-    var buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
-    filesToAnalyze.stream()
-      .map(analyzerConfiguration::getConfiguration)
-      .filter(AnalyzerConfiguration.ConfigurationResult::hasConfiguration)
-      .map(AnalyzerConfiguration.ConfigurationResult::getConfiguration)
-      .forEach(configuration -> {
-        buildWrapperJsonGenerator.add(configuration);
-        if (configuration.sonarLanguage() != null) {
-          result.forcedLanguages.put(configuration.virtualFile(), configuration.sonarLanguage());
-        }
-      });
-    result.extraProperties.put("sonar.cfamily.build-wrapper-content", buildWrapperJsonGenerator.build());
-    return result;
+  protected AnalyzerConfiguration createAnalyzerConfiguration(Project project) {
+    return new CLionAnalyzerConfiguration(project);
+  }
+
+  @Override
+  protected String configuratorLogLabel() {
+    return "CLion";
   }
 
 }

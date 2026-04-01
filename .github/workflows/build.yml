@@ -90,7 +90,6 @@ jobs:
           echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
           echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
-          echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Build Plugin
@@ -141,7 +140,6 @@ jobs:
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           IDEA_HOME: C:\Program Files\intellij
           RIDER_HOME: C:\Program Files\rider
-          RESHARPER_HOME: C:\Program Files\clion
           CLION_HOME: C:\Program Files\clion
           ULTIMATE_HOME: C:\Program Files\ultimate
         run: .\gradlew.bat :check
@@ -198,7 +196,6 @@ jobs:
           echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
           echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
-          echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Run Tests and Sonar Analysis
@@ -263,7 +260,6 @@ jobs:
           echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
           echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
-          echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Restore verifier IDEs cache
@@ -443,7 +439,6 @@ jobs:
           echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
           echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
-          echo "RESHARPER_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Determine IDE source (embedded vs Repox)

@@ -19,24 +19,15 @@
  */
 package org.sonarlint.intellij.clion;
 
-import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
-import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
-import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
-import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
-import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
-import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
-import com.jetbrains.cidr.project.workspace.CidrWorkspace;
 import java.util.HashMap;
-import javax.annotation.Nullable;
-import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafelyInSmartMode;
@@ -102,79 +93,11 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
       properties.put("isHeaderFile", "true");
     }
 
-    if (isRemoteOrWslToolchainSupported() && usingRemoteOrWslToolchain(configuration)) {
-      collectPropertiesForRemoteToolchain(compilerSettings, properties);
-    } else if (compilerKind instanceof MSVCCompilerKind) {
-      // For MSVC, we collect built-in headers only, and the driver on CFamily side still handles '/external:I' arguments.
-      collectDefinesAndIncludes(compilerSettings, properties, HeadersSearchPath::isBuiltInHeaders);
-    } else if ("iar".equals(cFamilyCompiler)) {
-      // For IAR, we are interested in all headers. This is necessary to support the C_INCLUDE environment variable (as it is a user header).
-      collectDefinesAndIncludes(compilerSettings, properties, h -> true);
-    } else {
-      SonarLintConsole.get(project).debug("Did not collect any properties for " + compilerKind.getDisplayName() + " compiler");
-    }
+    AnalyzerConfiguration.collectCompilerKindProperties(project, configuration, compilerKind, cFamilyCompiler, compilerSettings, languageKind, properties);
 
-    var sonarLanguage = getSonarLanguage(languageKind);
-    if (sonarLanguage != null) {
-      properties.put("sonarLanguage", LANGUAGE_KEYS.get(sonarLanguage));
-    }
+    var sonarLanguage = AnalyzerConfiguration.getSonarLanguage(languageKind);
     return ConfigurationResult.of(new Configuration(file, compilerSettings.getCompilerExecutable().getAbsolutePath(), compilerSettings.getCompilerWorkingDir().getAbsolutePath(),
       compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW), cFamilyCompiler, sonarLanguage, properties));
-  }
-
-  @Nullable
-  static ForcedLanguage getSonarLanguage(@Nullable OCLanguageKind languageKind) {
-    if (languageKind == CLanguageKind.C) {
-      return ForcedLanguage.C;
-    } else if (languageKind == CLanguageKind.CPP) {
-      return ForcedLanguage.CPP;
-    } else if (languageKind == CLanguageKind.OBJ_C) {
-      return ForcedLanguage.OBJC;
-    } else {
-      return null;
-    }
-  }
-
-  private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
-    final var initializedWorkspaces = CidrWorkspace.getInitializedWorkspaces(project);
-    for (var initializedWorkspace : initializedWorkspaces) {
-      CPPEnvironment cppEnvironment;
-      if (initializedWorkspace instanceof CMakeWorkspace) {
-        cppEnvironment = getCMakeCppEnvironment(initializedWorkspace, configuration);
-      } else {
-        cppEnvironment = tryReflection(initializedWorkspace, project);
-      }
-      if (cppEnvironment != null) {
-        return cppEnvironment.getToolSet().isSsh() || cppEnvironment.getToolSet().isWSL() || cppEnvironment.getToolSet().isDocker();
-      }
-    }
-    SonarLintConsole.get(project).debug("Not using remote or WSL toolchain");
-    return false;
-  }
-
-  private boolean isRemoteOrWslToolchainSupported() {
-    try {
-      Class.forName("com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace");
-      return true;
-    } catch (ClassNotFoundException | NoClassDefFoundError e) {
-      SonarLintConsole.get(project).debug("Could not support remote or WSL toolchain");
-      return false;
-    }
-  }
-
-  @Nullable
-  private CPPEnvironment getCMakeCppEnvironment(CidrWorkspace cdirWorkspace, OCResolveConfiguration configuration) {
-    var cMakeWorkspace = (CMakeWorkspace) cdirWorkspace;
-    var cMakeConfiguration = cMakeWorkspace.getCMakeConfigurationFor(configuration);
-    if (cMakeConfiguration == null) {
-      SonarLintConsole.get(project).debug("cMakeConfiguration is null");
-      return null;
-    }
-    try {
-      return cMakeWorkspace.getProfileInfoFor(cMakeConfiguration).getEnvironment();
-    } catch (ExecutionException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
 }

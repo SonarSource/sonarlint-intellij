@@ -19,14 +19,28 @@
  */
 package org.sonarlint.intellij.clion;
 
+import com.intellij.openapi.vfs.VirtualFile;
+import com.jetbrains.cidr.lang.CLanguageKind;
+import com.jetbrains.cidr.lang.CUDALanguageKind;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
+import com.jetbrains.cidr.lang.workspace.compiler.AppleClangCompilerKind;
+import com.jetbrains.cidr.lang.workspace.compiler.ClangClCompilerKind;
+import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
+import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
+import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
+import org.sonarlint.intellij.common.analysis.ForcedLanguage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -148,4 +162,72 @@ class AnalyzerConfigurationTests {
     assertEquals("existingValue", properties.get("existingKey"));
     assertEquals(3, properties.size());
   }
+
+  @Test
+  void get_sonar_language() {
+    assertEquals(ForcedLanguage.C, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.C));
+    assertEquals(ForcedLanguage.CPP, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.CPP));
+    assertEquals(ForcedLanguage.OBJC, AnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_C));
+    assertNull(AnalyzerConfiguration.getSonarLanguage(CLanguageKind.OBJ_CPP));
+    assertNull(AnalyzerConfiguration.getSonarLanguage(CUDALanguageKind.CUDA));
+  }
+
+  @Test
+  void map_to_cfamily_compiler() {
+    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(ClangCompilerKind.INSTANCE));
+    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(GCCCompilerKind.INSTANCE));
+    assertEquals("clang-cl", AnalyzerConfiguration.mapToCFamilyCompiler(ClangClCompilerKind.INSTANCE));
+    assertEquals("msvc-cl", AnalyzerConfiguration.mapToCFamilyCompiler(MSVCCompilerKind.INSTANCE));
+    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(AppleClangCompilerKind.INSTANCE));
+  }
+
+  @Test
+  void configuration_record() {
+    var file = mock(VirtualFile.class);
+
+    var configuration = new AnalyzerConfiguration.Configuration(
+      file,
+      "compilerExecutable",
+      "compilerWorkingDir",
+      List.of("s1", "s2"),
+      "compilerKind",
+      ForcedLanguage.CPP,
+      Map.of("isHeaderFile", "true"));
+
+    assertEquals(file, configuration.virtualFile());
+    assertEquals("compilerExecutable", configuration.compilerExecutable());
+    assertEquals("compilerWorkingDir", configuration.compilerWorkingDir());
+    assertEquals(List.of("s1", "s2"), configuration.compilerSwitches());
+    assertEquals("compilerKind", configuration.compilerKind());
+    assertEquals(ForcedLanguage.CPP, configuration.sonarLanguage());
+    assertEquals("true", configuration.properties().get("isHeaderFile"));
+  }
+
+  @Test
+  void configuration_result_with_configuration() {
+    var configuration = new AnalyzerConfiguration.Configuration(
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      Map.of("isHeaderFile", "false"));
+
+    var result = AnalyzerConfiguration.ConfigurationResult.of(configuration);
+
+    assertTrue(result.hasConfiguration());
+    assertEquals(configuration, result.getConfiguration());
+    assertThrows(UnsupportedOperationException.class, result::getSkipReason);
+  }
+
+  @Test
+  void configuration_result_skipped() {
+    var result = AnalyzerConfiguration.ConfigurationResult.skip("reason");
+
+    assertFalse(result.hasConfiguration());
+    assertEquals("reason", result.getSkipReason());
+    assertThrows(UnsupportedOperationException.class, result::getConfiguration);
+  }
+
 }
