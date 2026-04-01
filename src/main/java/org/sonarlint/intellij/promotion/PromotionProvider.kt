@@ -64,14 +64,6 @@ class PromotionProvider(private val project: Project) {
         }
     }
 
-    fun handlePromotionOnAnalysis() {
-        if (isPromotionEnabled()) {
-            val notifications = getSonarLintProjectNotifications()
-            val wasAutoAnalyzed = PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L) != 0L
-            processAutoAnalysisTriggers(wasAutoAnalyzed, notifications)
-        }
-    }
-
     fun handlePromotionOnAnalysisReport(files: List<VirtualFile>) {
         if (isPromotionEnabled()) {
             val notifications = getSonarLintProjectNotifications()
@@ -94,14 +86,6 @@ class PromotionProvider(private val project: Project) {
 
         if (files.size > 1) {
             processFasterProjectAnalysisPromotion(notifications)
-        }
-    }
-
-    private fun processAutoAnalysisTriggers(wasAutoAnalyzed: Boolean, notifications: SonarLintProjectNotifications) {
-        if (wasAutoAnalyzed) {
-            processFullProjectPromotion(notifications)
-        } else {
-            PropertiesComponent.getInstance().setValue(FIRST_AUTO_ANALYSIS_DATE, Instant.now().toEpochMilli().toString())
         }
     }
 

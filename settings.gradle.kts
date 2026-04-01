@@ -44,7 +44,7 @@ dependencyResolutionManagement {
                         password = artifactoryPassword
                     }
                     patternLayout {
-                        artifact("[organization]/[module]-[revision](-[classifier]).[ext]",)
+                        artifact("[organization]/[module]-[revision](-[classifier]).[ext]")
                         artifact("[organization]/[module]-[revision](.[classifier]).[ext]")
                         artifact("[organization]/[revision]/[module]-[revision](-[classifier]).[ext]")
                         artifact("[organization]/[revision]/[module]-[revision](.[classifier]).[ext]")

@@ -26,7 +26,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.startup.StartupActivity
+import com.intellij.openapi.startup.ProjectActivity
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.EnabledLanguages
@@ -36,26 +36,23 @@ import org.sonarlint.intellij.util.ProgressUtils
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 
 /**
- * Startup activity that checks CFamily analyzer availability on project open.
+ * Project activity that checks CFamily analyzer availability on project open.
  *
  * When the analyzer is downloaded for the first time, it triggers a backend restart
  * to ensure the backend picks up the newly available analyzer.
  *
  * This runs once per IDE session to avoid redundant checks.
  */
-class CFamilyAnalyzerStartupActivity : StartupActivity {
+class CFamilyAnalyzerStartupActivity : ProjectActivity {
 
     private var hasRun = false
     private val lock = Any()
 
-    override fun runActivity(project: Project) {
-        if (ApplicationManager.getApplication().isUnitTestMode ||
-            !EnabledLanguages.isClionEnabled()
-        ) {
+    override suspend fun execute(project: Project) {
+        if (ApplicationManager.getApplication().isUnitTestMode || !EnabledLanguages.isClionEnabled()) {
             return
         }
 
-        // Only run once per IDE session
         synchronized(lock) {
             if (hasRun) {
                 return
@@ -63,11 +60,7 @@ class CFamilyAnalyzerStartupActivity : StartupActivity {
             hasRun = true
         }
 
-        val task = object : Task.Backgroundable(
-            project,
-            "Checking CFamily Analyzer",
-            true
-        ) {
+        val task = object : Task.Backgroundable(project, "Checking CFamily Analyzer", true) {
             override fun run(indicator: ProgressIndicator) {
                 indicator.isIndeterminate = false
                 indicator.text = "Checking CFamily analyzer..."
