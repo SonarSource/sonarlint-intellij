@@ -23,20 +23,16 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import java.util.function.Function;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
-public final class CFamilyAnalysisConfiguratorSupport {
+public abstract class AbstractCFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
-  private CFamilyAnalysisConfiguratorSupport() {
-  }
-
-  public static AnalysisConfigurator.AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze,
-    Function<Project, AnalyzerConfiguration> analyzerFactory, String logLabel) {
-    SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for " + logLabel);
-    var result = new AnalysisConfigurator.AnalysisConfiguration();
-    var analyzerConfiguration = analyzerFactory.apply(module.getProject());
+  @Override
+  public final AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
+    SonarLintConsole.get(module.getProject()).debug("Running CFamily analysis configurator for " + configuratorLogLabel());
+    var result = new AnalysisConfiguration();
+    var analyzerConfiguration = createAnalyzerConfiguration(module.getProject());
     var buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
     filesToAnalyze.stream()
       .map(analyzerConfiguration::getConfiguration)
@@ -51,5 +47,9 @@ public final class CFamilyAnalysisConfiguratorSupport {
     result.extraProperties.put("sonar.cfamily.build-wrapper-content", buildWrapperJsonGenerator.build());
     return result;
   }
+
+  protected abstract AnalyzerConfiguration createAnalyzerConfiguration(Project project);
+
+  protected abstract String configuratorLogLabel();
 
 }

@@ -19,16 +19,18 @@
  */
 package org.sonarlint.intellij.clion;
 
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
-import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
+import com.intellij.openapi.project.Project;
 
-public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
+public class CFamilyAnalysisConfigurator extends AbstractCFamilyAnalysisConfigurator {
 
   @Override
-  public AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
-    return CFamilyAnalysisConfiguratorSupport.configure(module, filesToAnalyze, CLionAnalyzerConfiguration::new, "CLion");
+  protected AnalyzerConfiguration createAnalyzerConfiguration(Project project) {
+    return new CLionAnalyzerConfiguration(project);
+  }
+
+  @Override
+  protected String configuratorLogLabel() {
+    return "CLion";
   }
 
 }
