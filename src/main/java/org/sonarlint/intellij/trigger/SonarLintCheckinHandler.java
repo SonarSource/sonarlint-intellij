@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -73,7 +74,7 @@ import static org.sonarlint.intellij.tasks.TaskRunnerKt.runModalTaskWithResult;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 
-public class SonarLintCheckinHandler extends CheckinHandler {
+public class SonarLintCheckinHandler extends CheckinHandler implements Disposable {
   private static final String ACTIVATED_OPTION_NAME = "SONARLINT_PRECOMMIT_ANALYSIS";
   private static final int PRE_COMMIT_TIMEOUT = 60_000;
 
@@ -86,7 +87,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   public SonarLintCheckinHandler(Project project, CheckinProjectPanel checkinPanel) {
     this.project = project;
     this.checkinPanel = checkinPanel;
-    this.scheduledExecutor = newSingleThreadScheduledExecutor();
+    this.scheduledExecutor = newSingleThreadScheduledExecutor(r -> new Thread(r, "sonarlint-pre-commit-poll"));
   }
 
   @Override
@@ -119,9 +120,13 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         var future = new CompletableFuture<Boolean>();
         var startTime = System.currentTimeMillis();
         var checkTask = runPreCommitAnalysis(future, indicator, analysisIds, startTime);
-        // Avoid busy-waiting
-        scheduledExecutor.scheduleAtFixedRate(checkTask, 0, 100, TimeUnit.MILLISECONDS);
-        return waitForFuture(indicator, future);
+        var polling = scheduledExecutor.scheduleAtFixedRate(checkTask, 0, 100, TimeUnit.MILLISECONDS);
+        try {
+          return waitForFuture(indicator, future);
+        } finally {
+          // Otherwise scheduleAtFixedRate keeps firing every 100ms until the executor is shut down.
+          polling.cancel(false);
+        }
       });
 
       if (Boolean.FALSE.equals(completed) || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
@@ -353,4 +358,10 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       restoreState();
     }
   }
+
+  @Override
+  public void dispose() {
+    scheduledExecutor.shutdownNow();
+  }
+
 }

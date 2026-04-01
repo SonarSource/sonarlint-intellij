@@ -19,10 +19,12 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcs.commit.CommitWorkflowHandler;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 class SonarLintCheckinHandlerFactoryTests {
   private SonarLintCheckinHandlerFactory sonarLintCheckinHandlerFactory;
@@ -43,6 +46,8 @@ class SonarLintCheckinHandlerFactoryTests {
   void setUp() {
     when(panel.getVirtualFiles()).thenReturn(List.of(file));
     when(panel.getProject()).thenReturn(project);
+    var workflowHandler = mock(CommitWorkflowHandler.class, withSettings().extraInterfaces(Disposable.class));
+    when(panel.getCommitWorkflowHandler()).thenReturn(workflowHandler);
 
     sonarLintCheckinHandlerFactory = new SonarLintCheckinHandlerFactory();
   }
@@ -53,6 +58,7 @@ class SonarLintCheckinHandlerFactoryTests {
     assertThat(handler).isInstanceOf(SonarLintCheckinHandler.class);
 
     verify(panel).getProject();
+    verify(panel).getCommitWorkflowHandler();
   }
 
 }
