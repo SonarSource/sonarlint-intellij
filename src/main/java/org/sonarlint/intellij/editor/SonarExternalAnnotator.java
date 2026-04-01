@@ -34,7 +34,6 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
-import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
@@ -42,6 +41,7 @@ import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
+import org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsStore;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
@@ -66,10 +66,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     var isFocusOnNewCode = getService(CleanAsYouCodeService.class).shouldFocusOnNewCode();
     var isBindingEnabled = getSettingsFor(project).isBindingEnabled();
 
-    var toolWindowService = getService(project, SonarLintToolWindow.class);
     var fileTextRange = psiFile.getTextRange();
     var currentFile = psiFile.getVirtualFile();
-    var findings = toolWindowService.getDisplayedFindings(currentFile);
+    var findings = getService(project, CurrentFileDisplayedFindingsStore.class).getFindingsForFile(currentFile);
 
     findings.getIssues().stream()
       .filter(issue -> !issue.isResolved())
