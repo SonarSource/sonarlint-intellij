@@ -22,7 +22,7 @@ package org.sonarlint.intellij
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.startup.StartupActivity
+import com.intellij.openapi.startup.ProjectActivity
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindow
@@ -30,9 +30,9 @@ import org.sonarlint.intellij.util.runOnPooledThread
 
 private const val HAS_WALKTHROUGH_RUN_ONCE: String = "hasWalkthroughRunOnce"
 
-class OpenWelcomePageOnceOneProjectOpened : StartupActivity {
+class OpenWelcomePageOnceOneProjectOpened : ProjectActivity {
 
-    override fun runActivity(project: Project) {
+    override suspend fun execute(project: Project) {
         if (ApplicationManager.getApplication().isUnitTestMode) {
             return
         }
