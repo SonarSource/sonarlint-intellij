@@ -34,14 +34,11 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
 
   private static final String ID = "SonarQube for IDE";
 
-  private final Project project;
-
   public SonarLintLogPanel(Project project) {
     super(false, false);
-    this.project = project;
 
     addToolbar();
-    addConsole();
+    addConsole(project);
   }
 
   private void addToolbar() {
@@ -63,7 +60,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     return actionGroup;
   }
 
-  private void addConsole() {
+  private void addConsole(Project project) {
     var consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
     SonarLintUtils.getService(project, SonarLintConsole.class).setConsoleView(consoleView);
     super.setContent(consoleView.getComponent());
