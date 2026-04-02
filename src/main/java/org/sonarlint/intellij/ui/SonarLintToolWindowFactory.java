@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
@@ -26,6 +27,7 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.ContentManager;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -42,6 +44,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
     runOnUiThread(project, () -> {
+      configureAdditionalGearActions(toolWindow);
       var contentManager = toolWindow.getContentManager();
       addCurrentFileTab(project, contentManager);
       var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
@@ -50,6 +53,12 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
       toolWindow.setType(ToolWindowType.DOCKED, null);
       contentManager.addContentManagerListener(sonarLintToolWindow);
     });
+  }
+
+  private static void configureAdditionalGearActions(ToolWindow toolWindow) {
+    var gearActions = new DefaultActionGroup();
+    gearActions.add(new ToolWindowVerboseModeAction());
+    toolWindow.setAdditionalGearActions(gearActions);
   }
 
   private static void addCurrentFileTab(Project project, ContentManager contentManager) {
@@ -71,7 +80,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   private static void addLogTab(Project project, ToolWindow toolWindow) {
     var logContent = toolWindow.getContentManager().getFactory()
       .createContent(
-        new SonarLintLogPanel(toolWindow, project),
+        new SonarLintLogPanel(project),
         LOG_TAB_TITLE,
         false);
     logContent.setCloseable(false);
