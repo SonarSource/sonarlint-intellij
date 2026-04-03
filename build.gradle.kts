@@ -48,7 +48,6 @@ description = "SonarLint for IntelliJ IDEA"
 
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
-val omnisharpVersion: String by project
 val runIdeDirectory: String by project
 val verifierEnv: String by project
 
@@ -67,7 +66,6 @@ configurations {
         extendsFrom(sqplugins)
         isTransitive = true
     }
-    create("cfamilySignature") { isTransitive = false }
     register("sloop")
 }
 
@@ -116,10 +114,6 @@ dependencies {
     testImplementation(testFixtures(project("test-common")))
     testRuntimeOnly(libs.junit.launcher)
     "sqplugins"(libs.bundles.sonar.analyzers)
-    if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "cfamilySignature"("${libs.sonar.cfamily.get()}@jar.asc")
-        "sqplugins"(libs.sonar.dotnet.enterprise)
-    }
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
@@ -267,65 +261,15 @@ intellijPlatformTesting {
 fun setupSandbox(destinationDir: File, pluginName: Property<String>) {
     val pluginsDir = file("$destinationDir/${pluginName.get()}/plugins")
 
-    copyAsc(pluginsDir)
     copyPlugins(pluginsDir)
-    renameCsharpPlugins(pluginsDir)
-    downloadAndCopyOmnisharp(destinationDir, pluginName)
     copySloop(destinationDir, pluginName)
     unzipEslintBridgeBundle(pluginsDir)
-}
-
-fun copyAsc(pluginsDir: File) {
-    copy {
-        from(project.configurations["cfamilySignature"])
-        into(pluginsDir)
-    }
 }
 
 fun copyPlugins(pluginsDir: File) {
     copy {
         from(project.configurations["sqplugins"])
         into(pluginsDir)
-    }
-}
-
-fun renameCsharpPlugins(pluginsDir: File) {
-    pluginsDir.listFiles()?.forEach { file ->
-        when {
-            file.name.matches(Regex("sonar-csharp-enterprise-plugin-.*\\.jar")) -> {
-                file.renameTo(File(pluginsDir, "sonar-csharp-enterprise-plugin.jar"))
-            }
-
-            file.name.matches(Regex("sonar-csharp-plugin-.*\\.jar")) -> {
-                file.renameTo(File(pluginsDir, "sonar-csharp-plugin.jar"))
-            }
-        }
-    }
-}
-
-fun downloadAndCopyOmnisharp(destinationDir: File, pluginName: Property<String>) {
-    val omnisharpBinariesBaseUrl = "https://binaries.sonarsource.com/OmniSharp-Roslyn"
-    mapOf(
-        "mono" to "omnisharp-mono.zip",
-        "net472" to "omnisharp-net472.zip",
-        "net6" to "omnisharp-net6.0.zip"
-    ).forEach { (classifier, fileName) ->
-        val destDir = file("$destinationDir/${pluginName.get()}/omnisharp/$classifier")
-        if (!destDir.exists() || destDir.listFiles()?.isEmpty() == true) {
-            logger.lifecycle("Downloading omnisharp $classifier from $omnisharpBinariesBaseUrl/$omnisharpVersion/$fileName")
-            val tmpZip = File.createTempFile("omnisharp-$classifier", ".zip")
-            tmpZip.deleteOnExit()
-            uri("$omnisharpBinariesBaseUrl/$omnisharpVersion/$fileName").toURL().openStream().use { input ->
-                tmpZip.outputStream().use { output -> input.copyTo(output) }
-            }
-            copy {
-                from(zipTree(tmpZip))
-                into(destDir)
-            }
-            tmpZip.delete()
-        } else {
-            logger.lifecycle("Omnisharp $classifier already present, skipping download")
-        }
     }
 }
 
@@ -377,14 +321,6 @@ fun unzipEslintBridgeBundle(pluginsDir: File) {
 configurations.archives.get().isCanBeResolved = true
 
 tasks {
-    processResources {
-        val cfamilyVersion = providers.provider { libs.versions.sonar.cpp.get() }
-        inputs.property("cfamilyVersion", cfamilyVersion)
-        filesMatching("cfamily-version.properties") {
-            expand(mapOf("cfamilyVersion" to cfamilyVersion.get()))
-        }
-    }
-
     compileKotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
