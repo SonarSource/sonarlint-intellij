@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -80,6 +81,13 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     analysisUuid = UUID.randomUUID();
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
       .thenReturn(Pair.of(checkInCallable, List.of(analysisUuid)));
+  }
+
+  @AfterEach
+  void tearDownHandler() {
+    if (handler != null) {
+      handler.dispose();
+    }
   }
 
   @Test

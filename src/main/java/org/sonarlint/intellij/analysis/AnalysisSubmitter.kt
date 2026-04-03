@@ -27,7 +27,9 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.UUID
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import org.apache.commons.lang3.tuple.Pair
 import org.jetbrains.annotations.VisibleForTesting
 import org.sonarlint.intellij.callable.CheckInCallable
@@ -37,6 +39,7 @@ import org.sonarlint.intellij.callable.ShowUpdatedCurrentFileCallable
 import org.sonarlint.intellij.callable.UpdateOnTheFlyFindingsCallable
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator
 import org.sonarlint.intellij.common.analysis.ForcedLanguage
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.BackendService
@@ -107,23 +110,41 @@ class AnalysisSubmitter(private val project: Project) {
     fun analyzeFilesPreCommit(files: Set<VirtualFile>): Pair<CheckInCallable, List<UUID>>? {
         val callback = CheckInCallable()
         val analysisIds = mutableListOf<UUID>()
-        files.groupBy { file ->
-            computeOnPooledThread(project, "Find Module For File") { findModuleForFile(file, project) }
-        }.forEach { (module, files) ->
-            module?.let {
-                getService(project, PromotionProvider::class.java).handlePromotionOnPreCommitCheck()
-                val response = getService(BackendService::class.java).analyzeFileList(module, files)[5, TimeUnit.SECONDS]
-                response.analysisId?.let { analysisId ->
-                    val analysisState = AnalysisState(analysisId, callback, module)
-                    getService(project, RunningAnalysesTracker::class.java).track(analysisState)
-                    analysisIds.add(analysisId)
-                }
+        files.groupBy { file -> computeOnPooledThread(project, "Find Module For File") { findModuleForFile(file, project) } }
+            .forEach { (module, moduleFiles) -> module?.let { awaitPreCommitAnalysisStart(it, moduleFiles, callback, analysisIds) } }
+        return preCommitAnalysisResult(callback, analysisIds)
+    }
+
+    private fun awaitPreCommitAnalysisStart(module: Module, files: List<VirtualFile>, callback: CheckInCallable, analysisIds: MutableList<UUID>) {
+        getService(project, PromotionProvider::class.java).handlePromotionOnPreCommitCheck()
+        val future = getService(BackendService::class.java).analyzeFileList(module, files)
+        try {
+            future[5, TimeUnit.SECONDS].analysisId?.let { analysisId ->
+                getService(project, RunningAnalysesTracker::class.java).track(AnalysisState(analysisId, callback, module))
+                analysisIds.add(analysisId)
             }
+        } catch (e: TimeoutException) {
+            future.cancel(true)
+            reportPreCommitAnalysisStartFailure(callback, e, "Pre-commit analysis timed out while waiting for the analysis to start")
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            reportPreCommitAnalysisStartFailure(callback, e, "Pre-commit analysis interrupted")
+        } catch (e: ExecutionException) {
+            reportPreCommitAnalysisStartFailure(callback, e.cause ?: e, "Pre-commit analysis failed to start")
+        } catch (e: Exception) {
+            reportPreCommitAnalysisStartFailure(callback, e, "Pre-commit analysis failed to start")
         }
-        if (analysisIds.isEmpty()) {
-            return null
-        }
-        return Pair.of(callback, analysisIds)
+    }
+
+    private fun reportPreCommitAnalysisStartFailure(callback: CheckInCallable, error: Throwable, message: String) {
+        SonarLintConsole.get(project).error(message, error)
+        callback.onError(error)
+    }
+
+    private fun preCommitAnalysisResult(callback: CheckInCallable, analysisIds: List<UUID>): Pair<CheckInCallable, List<UUID>>? = when {
+        analysisIds.isNotEmpty() -> Pair.of(callback, analysisIds)
+        !callback.analysisSucceeded() -> Pair.of(callback, analysisIds)
+        else -> null
     }
 
     fun analyzeFilesOnUserAction(files: Set<VirtualFile>, actionEvent: AnActionEvent) {
