@@ -27,7 +27,6 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.ContentManagerListener;
-import java.util.List;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
@@ -40,7 +39,6 @@ import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.ui.ToolWindowConstants;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
-import org.sonarlint.intellij.ui.filter.FilteredFindings;
 import org.sonarlint.intellij.ui.report.ReportPanel;
 import org.sonarlint.intellij.ui.report.ReportTabManager;
 
@@ -135,25 +133,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void setAnalysisReadyCurrentFile() {
     this.updateCurrentFileTab(CurrentFilePanel::setAnalysisIsReady);
-  }
-
-  /**
-   * Gets the displayed findings from the Findings tab.
-   * Note: This method returns findings from the Findings tab, not report tabs,
-   * as report tabs show historical analysis results.
-   */
-  public FilteredFindings getDisplayedFindings(VirtualFile file) {
-    var toolWindow = getToolWindow();
-    if (toolWindow == null) {
-      return new FilteredFindings(List.of(), List.of(), List.of(), List.of());
-    }
-    
-    var contentManager = toolWindow.getContentManager();
-    var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
-    if (content != null && content.getComponent() instanceof CurrentFilePanel currentFilePanel) {
-      return currentFilePanel.getDisplayedFindingsFoFile(file);
-    }
-    return new FilteredFindings(List.of(), List.of(), List.of(), List.of());
   }
 
   private void openTab(String name) {
