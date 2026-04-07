@@ -78,10 +78,6 @@ class ReportTaintTreeModelBuilder(project: Project, isOld: Boolean) {
 
     fun isEmpty(): Boolean = latestTaints.isEmpty()
 
-    fun numberOfDisplayedFindings(): Int {
-        return taintVulnerabilityTreeUpdater.getNumberOfTaints()
-    }
-
     @Synchronized
     fun clear() {
         latestTaints.clear()

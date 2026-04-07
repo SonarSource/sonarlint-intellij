@@ -31,7 +31,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -45,9 +44,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 
 public abstract class LiveFinding implements Finding {
-  private static final AtomicLong UID_GEN = new AtomicLong();
 
-  private final long uid;
   private final UUID backendId;
   private final Module module;
   private final RangeMarker range;
@@ -64,9 +61,9 @@ public abstract class LiveFinding implements Finding {
   private final SoftwareQuality highestQuality;
   private final ImpactSeverity highestImpact;
   private final boolean isMqrMode;
+  private final String serverFindingKey;
 
   private Instant introductionDate;
-  private String serverFindingKey;
   private boolean resolved;
 
   protected LiveFinding(Module module, RaisedFindingDto finding, VirtualFile virtualFile, @Nullable RangeMarker range, @Nullable FindingContext context,
@@ -78,7 +75,6 @@ public abstract class LiveFinding implements Finding {
     this.message = finding.getPrimaryMessage();
     this.ruleKey = finding.getRuleKey();
     this.virtualFile = virtualFile;
-    this.uid = UID_GEN.getAndIncrement();
     this.context = context;
     this.quickFixes = quickFixes;
     this.ruleDescriptionContextKey = finding.getRuleDescriptionContextKey();
@@ -139,10 +135,6 @@ public abstract class LiveFinding implements Finding {
   @Override
   public String getRuleKey() {
     return ruleKey;
-  }
-
-  public long uid() {
-    return uid;
   }
 
   @CheckForNull
@@ -212,11 +204,6 @@ public abstract class LiveFinding implements Finding {
   @Override
   public List<ImpactDto> getImpacts() {
     return this.impacts;
-  }
-
-  // mutable fields
-  public void setServerFindingKey(@Nullable String serverHotspotKey) {
-    this.serverFindingKey = serverHotspotKey;
   }
 
   public void setIntroductionDate(@Nullable Instant introductionDate) {

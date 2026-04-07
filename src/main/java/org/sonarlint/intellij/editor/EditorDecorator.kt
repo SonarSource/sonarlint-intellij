@@ -194,8 +194,8 @@ class EditorDecorator(private val project: Project) : Disposable {
         return editor.document in currentHighlightedDoc
     }
 
-    private fun createGutterIcon(editor: Editor, startOffset: Int, line: Int, issues: List<Issue>): RangeHighlighter {
-        val renderer = CodeFixGutterIconRenderer(editor, line, issues)
+    private fun createGutterIcon(editor: Editor, startOffset: Int, issues: List<Issue>): RangeHighlighter {
+        val renderer = CodeFixGutterIconRenderer(editor, issues)
         return editor.markupModel.addRangeHighlighter(
             null,
             startOffset,
@@ -232,12 +232,11 @@ class EditorDecorator(private val project: Project) : Disposable {
             getEditors(document).forEach { editor ->
                 getService(project, CodeFixGutterHandler::class.java).cleanTaintIconsFromDisposedEditorsAndSelectedEditor(editor)
                 if (!editor.isDisposed) {
-                    val icons = fixableTaintsByLine.map { (line, fixableTaints) ->
+                    val icons = fixableTaintsByLine.map { (_, fixableTaints) ->
                         val startOffset = taints.first().rangeMarker()?.startOffset ?: return
                         createGutterIcon(
                             editor,
                             startOffset,
-                            line,
                             fixableTaints
                         )
                     }.toSet()
@@ -256,12 +255,11 @@ class EditorDecorator(private val project: Project) : Disposable {
 
         getEditors(document).forEach { editor ->
             getService(project, CodeFixGutterHandler::class.java).cleanIssueIconsFromDisposedEditorsAndSelectedEditor(editor)
-            val icons = fixableIssuesByLine.map { (line, fixableIssues) ->
+            val icons = fixableIssuesByLine.map { (_, fixableIssues) ->
                 val startOffset = fixableIssues.first().range?.startOffset ?: return
                 createGutterIcon(
                     editor,
                     startOffset,
-                    line,
                     fixableIssues
                 )
             }.toSet()

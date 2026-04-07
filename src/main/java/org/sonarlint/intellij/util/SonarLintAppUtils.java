@@ -22,11 +22,9 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
@@ -57,11 +55,6 @@ public class SonarLintAppUtils {
       }
       return ProjectFileIndex.getInstance(project).getModuleForFile(file, false);
     });
-  }
-
-  @CheckForNull
-  public static Project guessProjectForFile(VirtualFile file) {
-    return ProjectLocator.getInstance().guessProjectForFile(file);
   }
 
   /**
@@ -171,24 +164,6 @@ public class SonarLintAppUtils {
       }
 
       if (!vFile.isDirectory() && FileUtils.INSTANCE.isFileValidForSonarLint(vFile, module.getProject())) {
-        filesToAdd.add(vFile);
-        return true;
-      }
-
-      return true;
-    });
-    return filesToAdd;
-  }
-
-  public static List<VirtualFile> visitAndAddAllFilesForProject(Project project) {
-    var filesToAdd = new ArrayList<VirtualFile>();
-    var projectFileIndex = ProjectRootManager.getInstance(project).getFileIndex();
-    projectFileIndex.iterateContent(vFile -> {
-      if (project.isDisposed()) {
-        return false;
-      }
-
-      if (!vFile.isDirectory() && FileUtils.INSTANCE.isFileValidForSonarLint(vFile, project)) {
         filesToAdd.add(vFile);
         return true;
       }

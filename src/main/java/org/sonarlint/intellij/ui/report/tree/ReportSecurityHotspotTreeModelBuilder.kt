@@ -89,16 +89,6 @@ class ReportSecurityHotspotTreeModelBuilder(project: Project, isOld: Boolean) {
 
     fun isEmpty(): Boolean = latestHotspots.isEmpty()
 
-    fun numberOfDisplayedFindings(): Int {
-        // Count total hotspots across all file nodes
-        var count = 0
-        for (i in 0 until summaryNode.childCount) {
-            val fileNode = summaryNode.getChildAt(i) as? FileNode ?: continue
-            count += fileNode.childCount
-        }
-        return count
-    }
-
     fun clear() {
         latestHotspots.clear()
         summaryNode.removeAllChildren()

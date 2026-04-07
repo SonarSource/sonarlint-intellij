@@ -76,8 +76,6 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
-import org.sonarlint.intellij.finding.sca.DependencyRisksCache
-import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.CredentialsChangeListener
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
@@ -280,7 +278,7 @@ class BackendService : Disposable {
                     initRpcServer(sloop.rpcServer)[1, TimeUnit.MINUTES]
                     getService(GlobalLogOutput::class.java).log("SonarQube for IDE service initialized...", ClientLogOutput.Level.INFO)
                     backendFuture.complete(sloop.rpcServer)
-                } catch (t: TimeoutException) {
+                } catch (_: TimeoutException) {
                     GlobalLogOutput.get().log(
                         "The 'Starting SonarQube for IDE service...' task timed out, please capture thread dumps of the 'SonarLintServerCli' process and report the problem to the SonarQube for IDE maintainers",
                         ClientLogOutput.Level.ERROR
@@ -1019,18 +1017,6 @@ class BackendService : Disposable {
                     response.taintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
                 } ?: return@thenApplyAsync
                 getService(project, TaintVulnerabilitiesCache::class.java).taintVulnerabilities = localTaintVulnerabilities
-                runOnUiThread(project) {
-                    getService(project, SonarLintToolWindow::class.java).refreshViews()
-                }
-            }
-    }
-
-    fun refreshDependencyRisks(project: Project) {
-        val projectId = projectId(project)
-        requestFromBackend { it.dependencyRiskService.listAll(ListAllParams(projectId, true)) }
-            .thenApplyAsync { response ->
-                val localDependencyRisks = response.dependencyRisks.map { LocalDependencyRisk(it) }
-                getService(project, DependencyRisksCache::class.java).dependencyRisks = localDependencyRisks
                 runOnUiThread(project) {
                     getService(project, SonarLintToolWindow::class.java).refreshViews()
                 }
