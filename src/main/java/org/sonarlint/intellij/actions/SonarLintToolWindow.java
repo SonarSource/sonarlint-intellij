@@ -121,13 +121,15 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var reportTabManager = getService(project, ReportTabManager.class);
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
-      var contentManager = toolWindow.getContentManager();
-      for (var tabTitle: reportTabManager.getOpenReportTabs()) {
-        var content = contentManager.findContent(tabTitle);
-        if (content != null && content.getComponent() instanceof ReportPanel reportPanel) {
-          runOnPooledThread(project, reportPanel::refreshView);
+      runOnUiThread(project, () -> {
+        var contentManager = toolWindow.getContentManager();
+        for (var tabTitle : reportTabManager.getOpenReportTabs()) {
+          var content = contentManager.findContent(tabTitle);
+          if (content != null && content.getComponent() instanceof ReportPanel reportPanel) {
+            runOnPooledThread(project, reportPanel::refreshView);
+          }
         }
-      }
+      });
     }
   }
 
