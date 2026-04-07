@@ -89,15 +89,6 @@ class ReportIssueTreeModelBuilder(project: Project, isOld: Boolean) {
 
     fun isEmpty(): Boolean = latestIssues.isEmpty()
 
-    fun numberOfDisplayedFindings(): Int {
-        var count = 0
-        for (i in 0 until summaryNode.childCount) {
-            val fileNode = summaryNode.getChildAt(i) as? FileNode ?: continue
-            count += fileNode.childCount
-        }
-        return count
-    }
-
     fun clear() {
         latestIssues.clear()
         summaryNode.removeAllChildren()

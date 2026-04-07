@@ -49,9 +49,6 @@ class ReportTreeManager(
     private val project: Project,
     private val findingDetailsPanel: FindingDetailsPanel
 ) {
-    companion object {
-        private const val TREE_EXPANSION_THRESHOLD = 30
-    }
     
     // Issue trees
     val issuesTreeBuilder = ReportIssueTreeModelBuilder(project, isOld = false)
@@ -218,14 +215,6 @@ class ReportTreeManager(
                     TreeUtil.collapseAll(tree, 0)
                 }
             }
-        }
-    }
-    
-    private fun expandTreeIfSmall(tree: Tree, findingsCount: Int) {
-        if (findingsCount < TREE_EXPANSION_THRESHOLD) {
-            TreeUtil.expandAll(tree)
-        } else {
-            tree.expandRow(0)
         }
     }
     

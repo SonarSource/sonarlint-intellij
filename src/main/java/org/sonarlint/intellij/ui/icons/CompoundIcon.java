@@ -41,8 +41,8 @@ public class CompoundIcon implements Icon {
   private final Axis axis;
   private final int gap;
 
-  private float alignmentX = CENTER;
-  private float alignmentY = CENTER;
+  private final float alignmentX;
+  private final float alignmentY;
 
   public CompoundIcon(Icon... icons) {
     this(Axis.X_AXIS, icons);
@@ -78,30 +78,6 @@ public class CompoundIcon implements Icon {
     }
 
     this.icons = icons;
-  }
-
-  public Axis getAxis() {
-    return axis;
-  }
-
-  public int getGap() {
-    return gap;
-  }
-
-  public float getAlignmentX() {
-    return alignmentX;
-  }
-
-  public float getAlignmentY() {
-    return alignmentY;
-  }
-
-  public int getIconCount() {
-    return icons.length;
-  }
-
-  public Icon getIcon(int index) {
-    return icons[index];
   }
 
   @Override

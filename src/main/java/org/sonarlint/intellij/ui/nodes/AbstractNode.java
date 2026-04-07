@@ -37,7 +37,6 @@ import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafe
 public abstract class AbstractNode extends DefaultMutableTreeNode {
   public static final String UNKNOWN_RANGE_COORDINATES = "(-, -) ";
   protected int findingCount;
-  protected int fileCount;
 
   public abstract void render(TreeCellRenderer renderer);
 
@@ -84,7 +83,6 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
   }
 
   public void setDirty() {
-    fileCount = -1;
     findingCount = -1;
     if (super.getParent() != null) {
       ((AbstractNode) super.getParent()).setDirty();

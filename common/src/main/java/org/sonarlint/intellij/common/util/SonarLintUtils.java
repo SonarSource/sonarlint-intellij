@@ -37,7 +37,6 @@ import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
 public class SonarLintUtils {
 
@@ -134,13 +133,6 @@ public class SonarLintUtils {
     return null;
   }
 
-  public static boolean isGeneratedSource(SourceFolder sourceFolder) {
-    // copied from JavaProjectRootsUtil. Don't use that class because it's not available in other flavors of Intellij
-    var properties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
-    var resourceProperties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.RESOURCES);
-    return (properties != null && properties.isForGeneratedSources()) || (resourceProperties != null && resourceProperties.isForGeneratedSources());
-  }
-
   @Nullable
   public static SourceFolder getSourceFolder(@CheckForNull VirtualFile source, Module module) {
     if (source == null) {
@@ -154,10 +146,6 @@ public class SonarLintUtils {
       }
     }
     return null;
-  }
-
-  public static boolean isJavaResource(SourceFolder source) {
-    return JavaModuleSourceRootTypes.RESOURCES.contains(source.getRootType());
   }
 
   public static String pluralize(String str, long i) {
@@ -184,11 +172,6 @@ public class SonarLintUtils {
     return getAppInfo().getFullApplicationName().toLowerCase().contains("clion");
   }
 
-  /** Alternative to {@link com.intellij.util.PlatformUtils#isGoIde} */
-  public static boolean isGoIde() {
-    return getAppInfo().getFullApplicationName().toLowerCase().contains("goland");
-  }
-
   /** Alternative to {@link com.intellij.util.PlatformUtils#isRider} */
   public static boolean isRider() {
     return getAppInfo().getFullApplicationName().toLowerCase().contains("rider");
@@ -197,10 +180,6 @@ public class SonarLintUtils {
   /** Alternative to {@link com.intellij.util.PlatformUtils#isAppCode} */
   public static boolean isAppCode() {
     return getAppInfo().getFullApplicationName().toLowerCase().contains("appcode");
-  }
-
-  public static boolean isTaintVulnerabilitiesEnabled() {
-    return !isCLion() && !isGoIde();
   }
 
   public static boolean isModuleLevelBindingEnabled() {

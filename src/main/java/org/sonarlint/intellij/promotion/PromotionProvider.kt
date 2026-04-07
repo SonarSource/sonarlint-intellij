@@ -25,7 +25,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.time.Duration
 import java.time.Instant
 import java.time.Period
 import java.util.EnumSet
@@ -38,7 +37,6 @@ import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
 
 private const val LAST_PROMOTION_NOTIFICATION_DATE = "SonarLint.lastPromotionNotificationDate"
-private const val FIRST_AUTO_ANALYSIS_DATE = "SonarLint.firstAutoAnalysisDate"
 private const val WAS_REPORT_EVER_USED = "SonarLint.wasReportEverUsed"
 
 @Service(Service.Level.PROJECT)
@@ -61,14 +59,6 @@ class PromotionProvider(private val project: Project) {
                     }
                 }
             })
-        }
-    }
-
-    fun handlePromotionOnAnalysis() {
-        if (isPromotionEnabled()) {
-            val notifications = getSonarLintProjectNotifications()
-            val wasAutoAnalyzed = PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L) != 0L
-            processAutoAnalysisTriggers(wasAutoAnalyzed, notifications)
         }
     }
 
@@ -97,14 +87,6 @@ class PromotionProvider(private val project: Project) {
         }
     }
 
-    private fun processAutoAnalysisTriggers(wasAutoAnalyzed: Boolean, notifications: SonarLintProjectNotifications) {
-        if (wasAutoAnalyzed) {
-            processFullProjectPromotion(notifications)
-        } else {
-            PropertiesComponent.getInstance().setValue(FIRST_AUTO_ANALYSIS_DATE, Instant.now().toEpochMilli().toString())
-        }
-    }
-
     private fun isPromotionEnabled() = getGlobalSettings().serverConnections.isEmpty() && !getSettingsFor(project).isBound && !getGlobalSettings().isPromotionDisabled
 
     private fun getSonarLintProjectNotifications(source: FileEditorManager): SonarLintProjectNotifications {
@@ -119,15 +101,6 @@ class PromotionProvider(private val project: Project) {
             project,
             SonarLintProjectNotifications::class.java
         )
-    }
-
-    private fun processFullProjectPromotion(notifications: SonarLintProjectNotifications) {
-        val firstAutoAnalysis = Instant.ofEpochMilli(PropertiesComponent.getInstance().getLong(FIRST_AUTO_ANALYSIS_DATE, 0L))
-        val wasReportEverUsed = PropertiesComponent.getInstance().getBoolean(WAS_REPORT_EVER_USED, false)
-
-        if (!wasReportEverUsed && firstAutoAnalysis.isBefore(Instant.now().minus(FULL_PROJECT_PROMOTION_DURATION))) {
-            showPromotion(notifications, "Detect issues in your whole project", UtmParameters.DETECT_PROJECT_ISSUES)
-        }
     }
 
     private fun processFasterProjectAnalysisPromotion(notifications: SonarLintProjectNotifications) {
@@ -213,6 +186,5 @@ class PromotionProvider(private val project: Project) {
 
     companion object {
         val PROMOTION_PERIOD: Period = Period.ofDays(7)
-        val FULL_PROJECT_PROMOTION_DURATION: Duration = Duration.ofMinutes(20L)
     }
 }

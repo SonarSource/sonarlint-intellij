@@ -27,16 +27,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupStep
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
-import org.sonarlint.intellij.ui.icons.SonarLintIcons
+import java.awt.event.MouseEvent
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import java.awt.event.MouseEvent
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 
 private const val ISSUE_TEXT_TITLE = "SonarQube: Fix with AI CodeFix"
 
-class CodeFixGutterIconRenderer(val editor: Editor, val line: Int, val issues: List<Issue>) : GutterIconRenderer() {
+class CodeFixGutterIconRenderer(val editor: Editor, val issues: List<Issue>) : GutterIconRenderer() {
 
     override fun getClickAction(): AnAction {
         return object : AnAction() {

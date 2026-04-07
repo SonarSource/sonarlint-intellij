@@ -32,14 +32,6 @@ import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractSonarToggleAction extends ToggleAction implements DumbAware {
 
-  protected AbstractSonarToggleAction() {
-    super();
-  }
-
-  protected AbstractSonarToggleAction(@Nullable @NlsActions.ActionText final String text) {
-    super(text);
-  }
-
   protected AbstractSonarToggleAction(@Nullable @NlsActions.ActionText final String text,
     @Nullable @NlsActions.ActionDescription final String description,
     @Nullable final Icon icon) {

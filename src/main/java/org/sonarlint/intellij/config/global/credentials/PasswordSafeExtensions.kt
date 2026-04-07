@@ -46,10 +46,6 @@ fun PasswordSafe.eraseUsernamePassword(name: String) {
     setUsernamePassword(name, null)
 }
 
-fun PasswordSafe.eraseDogfoodCredentials() {
-    set(dogfoodAttributes(), null)
-}
-
 fun PasswordSafe.setToken(name: String, value: String?) {
     setPassword(tokenAttributes(name), value)
 }
