@@ -66,4 +66,5 @@ class EditorOpenTrigger(private val myProject: Project) : FileEditorManagerListe
             }
         }
     }
+
 }

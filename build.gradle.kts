@@ -39,7 +39,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.7")
+        "classpath"("org.jetbrains.intellij:blockmap:1.0.7")
     }
 }
 
