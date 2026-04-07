@@ -216,16 +216,13 @@ class EditorDecorator(private val project: Project) : Disposable {
 
         val selectedFiles = FileEditorManager.getInstance(project).selectedFiles
         val fixableTaintsByFile = taints
-            .filter { it.isAiCodeFixable() && it.rangeMarker() != null && it.file() != null && selectedFiles.contains(it.file()) }
+            .filter { it.isValid() && it.isAiCodeFixable() && selectedFiles.contains(it.file()) }
             .groupBy { it.file() }
 
         fixableTaintsByFile.forEach { (file, taints) ->
             val document = file?.getDocument() ?: return@forEach
             val fixableTaintsByLine = taints.groupBy {
                 val marker = it.rangeMarker() ?: return@forEach
-                if (marker.startOffset > document.textLength || marker.endOffset > document.textLength) {
-                    return@forEach
-                }
                 document.getLineNumber(marker.startOffset)
             }
 
@@ -251,7 +248,7 @@ class EditorDecorator(private val project: Project) : Disposable {
         val document = file.getDocument() ?: return
 
         val fixableIssuesByLine = issues
-            .filter { it.isAiCodeFixable() && it.range != null }
+            .filter { it.isValid() && it.isAiCodeFixable() && it.range != null }
             .groupBy { document.getLineNumber(it.range!!.startOffset) }
 
         getEditors(document).forEach { editor ->
