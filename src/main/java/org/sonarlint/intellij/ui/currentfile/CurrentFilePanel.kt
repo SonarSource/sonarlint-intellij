@@ -375,6 +375,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
 
         filteredFindingsCache = newFilteredFindings
+        getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(newFilteredFindings)
 
         // Cache values for next comparison
         lastFile = file
@@ -386,7 +387,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
         // Take snapshot of expansion state before populating trees (only in all files mode)
         val treeStateSnapshot = if (filtersPanel.findingsScope == FindingsScope.ALL_FILES) {
-            TreeType.values().associateWith { treeType ->
+            TreeType.entries.associateWith { treeType ->
                 val tree = getTree(treeType, isOld = false)
                 val oldTree = getTree(treeType, isOld = true)
                 Pair(
@@ -708,7 +709,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         // Only restore state in "all files" mode and if we have a snapshot
         if (findingsScope == FindingsScope.ALL_FILES && treeStateSnapshot != null) {
             // In all files mode with snapshot, expand root only and restore file node states
-            TreeType.values().forEach { treeType ->
+            TreeType.entries.forEach { treeType ->
                 val tree = getTree(treeType, isOld = false)
                 val oldTree = getTree(treeType, isOld = true)
                 
@@ -730,7 +731,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     
     fun expandAllTrees() {
         val findingsScope = filtersPanel.findingsScope
-        TreeType.values().forEach { treeType ->
+        TreeType.entries.forEach { treeType ->
             val tree = getTree(treeType, isOld = false)
             val oldTree = getTree(treeType, isOld = true)
 
@@ -865,10 +866,6 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                 )
             }
         }
-    }
-
-    fun getDisplayedFindingsFoFile(file: VirtualFile): FilteredFindings {
-        return filteredFindingsCache.getFindingsForFile(file)
     }
 
     fun allowResolvedFindings(isResolved: Boolean) {
