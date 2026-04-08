@@ -127,6 +127,7 @@ class AnalysisSubmitter(private val project: Project) {
             future.cancel(true)
             reportPreCommitAnalysisStartFailure(callback, e, "Pre-commit analysis timed out while waiting for the analysis to start")
         } catch (e: InterruptedException) {
+            future.cancel(true)
             Thread.currentThread().interrupt()
             reportPreCommitAnalysisStartFailure(callback, e, "Pre-commit analysis interrupted")
         } catch (e: ExecutionException) {
@@ -142,8 +143,7 @@ class AnalysisSubmitter(private val project: Project) {
     }
 
     private fun preCommitAnalysisResult(callback: CheckInCallable, analysisIds: List<UUID>): Pair<CheckInCallable, List<UUID>>? = when {
-        analysisIds.isNotEmpty() -> Pair.of(callback, analysisIds)
-        !callback.analysisSucceeded() -> Pair.of(callback, analysisIds)
+        analysisIds.isNotEmpty() || !callback.analysisSucceeded() -> Pair.of(callback, analysisIds)
         else -> null
     }
 

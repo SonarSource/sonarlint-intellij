@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -49,8 +48,10 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,13 +82,6 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     analysisUuid = UUID.randomUUID();
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file)))
       .thenReturn(Pair.of(checkInCallable, List.of(analysisUuid)));
-  }
-
-  @AfterEach
-  void tearDownHandler() {
-    if (handler != null) {
-      handler.dispose();
-    }
   }
 
   @Test
@@ -165,6 +159,19 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     var analysisResult = analysisResultCaptor.getValue();
     assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
+  }
+
+  @Test
+  void commitsWhenPreCommitAnalysisDidNotStart() {
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(null);
+
+    handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
+    var result = handler.beforeCheckin(null, null);
+
+    assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
+    verify(sonarLintTelemetry).analysisReportingTriggered(AnalysisReportingType.PRE_COMMIT_ANALYSIS_TYPE);
+    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
+    verify(runningAnalysesTracker, never()).getById(any());
   }
 
   @Test
