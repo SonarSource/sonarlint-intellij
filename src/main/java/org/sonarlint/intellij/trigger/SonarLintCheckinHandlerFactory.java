@@ -31,4 +31,5 @@ public class SonarLintCheckinHandlerFactory extends CheckinHandlerFactory {
     var project = panel.getProject();
     return new SonarLintCheckinHandler(project, panel);
   }
+
 }

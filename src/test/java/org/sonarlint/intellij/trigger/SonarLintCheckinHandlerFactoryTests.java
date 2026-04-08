@@ -35,9 +35,9 @@ import static org.mockito.Mockito.when;
 class SonarLintCheckinHandlerFactoryTests {
   private SonarLintCheckinHandlerFactory sonarLintCheckinHandlerFactory;
 
-  private CheckinProjectPanel panel = mock(CheckinProjectPanel.class);
-  private VirtualFile file = mock(VirtualFile.class);
-  private Project project = mock(Project.class);
+  private final CheckinProjectPanel panel = mock(CheckinProjectPanel.class);
+  private final VirtualFile file = mock(VirtualFile.class);
+  private final Project project = mock(Project.class);
 
   @BeforeEach
   void setUp() {

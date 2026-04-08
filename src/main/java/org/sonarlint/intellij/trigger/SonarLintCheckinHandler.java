@@ -24,6 +24,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.util.ProgressIndicatorUtils;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -40,11 +41,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -66,27 +63,24 @@ import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.tasks.TaskRunnerKt.runModalTaskWithResult;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
-import static org.sonarlint.intellij.util.ProgressUtils.waitForFuture;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
   private static final String ACTIVATED_OPTION_NAME = "SONARLINT_PRECOMMIT_ANALYSIS";
   private static final int PRE_COMMIT_TIMEOUT = 60_000;
+  private static final int PRE_COMMIT_POLL_INTERVAL_MS = 100;
 
   private final Project project;
   private final CheckinProjectPanel checkinPanel;
-  private final ScheduledExecutorService scheduledExecutor;
 
   private JCheckBox checkBox;
 
   public SonarLintCheckinHandler(Project project, CheckinProjectPanel checkinPanel) {
     this.project = project;
     this.checkinPanel = checkinPanel;
-    this.scheduledExecutor = newSingleThreadScheduledExecutor();
   }
 
   @Override
@@ -115,14 +109,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
       var analysisIds = analysisIdsByCallback.getRight();
 
-      var completed = runModalTaskWithResult(project, "Waiting for SonarQube for IDE Analysis", indicator -> {
-        var future = new CompletableFuture<Boolean>();
-        var startTime = System.currentTimeMillis();
-        var checkTask = runPreCommitAnalysis(future, indicator, analysisIds, startTime);
-        // Avoid busy-waiting
-        scheduledExecutor.scheduleAtFixedRate(checkTask, 0, 100, TimeUnit.MILLISECONDS);
-        return waitForFuture(indicator, future);
-      });
+      var completed = runModalTaskWithResult(project, "Waiting for SonarQube for IDE Analysis",
+        indicator -> waitForPreCommitAnalyses(indicator, analysisIds));
 
       if (Boolean.FALSE.equals(completed) || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
         SonarLintConsole.get(project).debug("Pre-commit analysis failed");
@@ -139,27 +127,26 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     }
   }
 
-  private Runnable runPreCommitAnalysis(CompletableFuture<Boolean> future, ProgressIndicator indicator, List<UUID> analysisIds, long startTime) {
-    return () -> {
-      if (future.isDone()) return;
-      if (indicator.isCanceled()) {
-        future.cancel(true);
-        return;
+  private boolean waitForPreCommitAnalyses(ProgressIndicator indicator, List<UUID> analysisIds) {
+    var tracker = getService(project, RunningAnalysesTracker.class);
+    var startTime = System.currentTimeMillis();
+    while (true) {
+      indicator.checkCanceled();
+      if (System.currentTimeMillis() - startTime > PRE_COMMIT_TIMEOUT) {
+        return false;
       }
-      var elapsed = System.currentTimeMillis() - startTime;
-      if (elapsed > PRE_COMMIT_TIMEOUT) {
-        future.complete(false);
-        return;
+      var anyRunning = false;
+      for (var id : analysisIds) {
+        if (tracker.getById(id) != null) {
+          anyRunning = true;
+          break;
+        }
       }
-
-      boolean anyRunning = analysisIds.stream()
-        .map(id -> getService(project, RunningAnalysesTracker.class).getById(id))
-        .anyMatch(Objects::nonNull);
-
       if (!anyRunning) {
-        future.complete(true);
+        return true;
       }
-    };
+      ProgressIndicatorUtils.awaitWithCheckCanceled(PRE_COMMIT_POLL_INTERVAL_MS);
+    }
   }
 
   private ReturnResult handleError(Exception e, int numFiles) {
@@ -228,7 +215,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
             return merged;
           }));
       var allFilesAnalyzed = results.stream().flatMap(result -> result.getAnalyzedFiles().stream()).toList();
-      var result = new AnalysisResult(null, new LiveFindings(issuesPerFile, hotspotsPerFile), allFilesAnalyzed, results.get(0).getAnalysisDate());
+      var result = new AnalysisResult(null, new LiveFindings(issuesPerFile, hotspotsPerFile), allFilesAnalyzed, results.getFirst().getAnalysisDate());
       showChangedFilesTab(result);
     }
     return choice;
@@ -353,4 +340,5 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       restoreState();
     }
   }
+
 }
