@@ -329,7 +329,9 @@ class BackendService : Disposable {
 
     private fun handleSloopExited() {
         ProjectManager.getInstance().openProjects.forEach { project ->
-            getService(project, SonarLintToolWindow::class.java).refreshViews()
+            runOnUiThread(project) {
+                getService(project, SonarLintToolWindow::class.java).refreshViews()
+            }
         }
 
         // Only show error notification if this wasn't an intentional restart
@@ -946,7 +948,9 @@ class BackendService : Disposable {
 
     private fun catchUpWithBackend(rpcServer: SonarLintRpcServer) {
         ProjectManager.getInstance().openProjects.forEach { project ->
-            getService(project, SonarLintToolWindow::class.java).refreshViews()
+            runOnUiThread(project) {
+                getService(project, SonarLintToolWindow::class.java).refreshViews()
+            }
 
             val binding = getService(project, ProjectBindingManager::class.java).binding
             rpcServer.configurationService.didAddConfigurationScopes(

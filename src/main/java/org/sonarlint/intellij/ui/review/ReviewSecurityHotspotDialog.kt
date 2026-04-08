@@ -74,12 +74,12 @@ class ReviewSecurityHotspotDialog(
                 SonarLintUtils.getService(BackendService::class.java)
                     .changeStatusForHotspot(module, securityHotspotKey, status)
                     .thenAcceptAsync {
+                        SonarLintUtils.getService(project, SonarLintToolWindow::class.java).refreshViews()
+                        SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
                         runOnUiThread(
                             project,
                             modalityState,
                         ) {
-                            SonarLintUtils.getService(project, SonarLintToolWindow::class.java).refreshViews()
-                            SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
                             close(OK_EXIT_CODE)
                         }
                     }

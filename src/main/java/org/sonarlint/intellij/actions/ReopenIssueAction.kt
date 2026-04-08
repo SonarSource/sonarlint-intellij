@@ -43,7 +43,6 @@ import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
-import org.sonarlint.intellij.ui.UiUtils
 import org.sonarlint.intellij.util.DataKeys
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.runOnPooledThread
@@ -105,11 +104,9 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         }
 
         private fun updateUI(project: Project, issue: Issue) {
-            UiUtils.runOnUiThread(project) {
-                issue.reopen()
-                getService(project, SonarLintToolWindow::class.java).refreshViews()
-                getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-            }
+            issue.reopen()
+            getService(project, SonarLintToolWindow::class.java).refreshViews()
+            getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
         }
 
         private fun confirm(project: Project, productName: String): Boolean {
