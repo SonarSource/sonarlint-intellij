@@ -44,8 +44,8 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.config.ConfigurationPanel;
-import org.sonarlint.intellij.core.EnabledLanguages;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.core.EnabledLanguages;
 import org.sonarlint.intellij.util.HelpLabelUtils;
 
 import static java.awt.GridBagConstraints.WEST;
@@ -167,6 +167,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     neverDownloadCFamily.setSelected(model.isNeverDownloadCFamilyAnalyzer());
     enableRegion.setSelected(model.isRegionEnabled());
     nodeJsPath.setText(model.getNodejsPath());
+    nodeJsPath.getEmptyText().clear();
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
     loadNodeJsSettings(model);
   }
@@ -177,6 +178,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
       if (settings == null) {
         this.nodeJsVersion.setText("N/A");
       } else {
+        this.nodeJsPath.getEmptyText().clear();
         this.nodeJsPath.setText(settings.getPath().toString());
         this.nodeJsVersion.setText(settings.getVersion());
       }
@@ -185,6 +187,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
 
   private void setAutoDetectedNodeJs() {
     getService(BackendService.class).getAutoDetectedNodeJs().thenAccept(settings -> {
+      this.nodeJsPath.setText("");
       if (settings == null) {
         this.nodeJsPath.getEmptyText().setText("Node.js not found");
         this.nodeJsVersion.setText("N/A");
@@ -204,7 +207,9 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
             // Fallback to auto-detected Node.js
             setAutoDetectedNodeJs();
           } else {
-            this.nodeJsPath.setText(settings.getPath().toString());
+            // Keep stored path blank: show resolved binary only as placeholder so Apply does not persist IDE-derived Node.
+            this.nodeJsPath.setText("");
+            this.nodeJsPath.getEmptyText().setText(settings.getPath().toString());
             this.nodeJsVersion.setText(settings.getVersion());
           }
         });
