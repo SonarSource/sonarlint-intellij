@@ -74,6 +74,14 @@ jobs:
           artifactory-deployer-role: qa-deployer
           gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
 
+  iris:
+    needs: scan
+    runs-on: github-ubuntu-latest-m
+    name: Run IRIS Analysis
+    permissions:
+      id-token: write
+      contents: read
+    steps:
       - name: Run IRIS Analysis
         uses: SonarSource/unified-dogfooding-actions/run-iris@v1
         with:
