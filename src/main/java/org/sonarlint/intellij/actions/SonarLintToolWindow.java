@@ -117,17 +117,19 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void refreshViews() {
     this.updateCurrentFileTab(CurrentFilePanel::refreshView);
-    // Refresh all open report tabs
-    var reportTabManager = getService(project, ReportTabManager.class);
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
-      var contentManager = toolWindow.getContentManager();
-      for (var tabTitle: reportTabManager.getOpenReportTabs()) {
-        var content = contentManager.findContent(tabTitle);
-        if (content != null && content.getComponent() instanceof ReportPanel reportPanel) {
-          runOnPooledThread(project, reportPanel::refreshView);
+      runOnUiThread(project, () -> {
+        var contentManager = toolWindow.getContentManager();
+        // Refresh all open report tabs
+        var reportTabManager = getService(project, ReportTabManager.class);
+        for (var tabTitle : reportTabManager.getOpenReportTabs()) {
+          var content = contentManager.findContent(tabTitle);
+          if (content != null && content.getComponent() instanceof ReportPanel reportPanel) {
+            runOnPooledThread(project, reportPanel::refreshView);
+          }
         }
-      }
+      });
     }
   }
 
@@ -314,7 +316,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   @Override
   public void bindingChanged() {
-    runOnPooledThread(project, this::refreshViews);
+    refreshViews();
   }
 
 }

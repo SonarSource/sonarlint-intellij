@@ -149,11 +149,9 @@ class MarkAsResolvedAction(
         }
 
         private fun updateUI(project: Project, issue: Issue) {
-            runOnUiThread(project) {
-                issue.resolve()
-                getService(project, SonarLintToolWindow::class.java).refreshViews()
-                getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-            }
+            issue.resolve()
+            getService(project, SonarLintToolWindow::class.java).refreshViews()
+            getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
         }
 
         private fun addComment(project: Project, module: Module, issueKey: String, comment: String) {
