@@ -9,7 +9,7 @@ env:
 
 jobs:
   aws-auth:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-xs-public
     permissions:
       id-token: write
     outputs:
@@ -32,7 +32,7 @@ jobs:
 
   scan:
     needs: aws-auth
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-m-docker
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
       options: --user runner
