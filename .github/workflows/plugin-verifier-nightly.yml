@@ -14,7 +14,7 @@ env:
 
 jobs:
   verify_plugin:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-xs-public
     name: Verify Plugin - LATEST
     if: github.ref_name == github.event.repository.default_branch
     steps:
@@ -63,7 +63,7 @@ jobs:
           ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-          DEVELOCITY_ACCESS_KEY: develocity-public.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+          DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
         run: ./gradlew :verifyPlugin -PverifierEnv=LATEST
 
       - name: Upload reports on failure
