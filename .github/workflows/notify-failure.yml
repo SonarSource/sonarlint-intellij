@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   notify:
-    runs-on: github-ubuntu-latest-s
+    runs-on: sonar-xs-public
     name: Send Slack Notification
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     steps:
