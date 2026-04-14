@@ -35,6 +35,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.project.supported.languages.SupportedLanguagesPanel;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionResponse;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -74,6 +75,12 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     tabs.insertTab("File Exclusions", null, exclusionsPanel.getComponent(), "Configure which files to exclude from analysis", 1);
     tabs.insertTab("Analysis Properties", null, rootPropertiesPane, "Configure analysis properties", 2);
     tabs.insertTab("Supported Languages & Analyzers", null, supportedLanguagesPanel.getComponent(), "View supported languages and analyzers", 3);
+
+    tabs.addChangeListener(e -> {
+      if (tabs.getSelectedIndex() == SUPPORTED_LANGUAGES_TAB_INDEX) {
+        getService(SonarLintTelemetry.class).supportedLanguagesPanelOpened();
+      }
+    });
 
     root.add(tabs, BorderLayout.CENTER);
   }
