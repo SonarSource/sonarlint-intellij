@@ -25,6 +25,7 @@ import javax.swing.JButton
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -48,10 +49,19 @@ class SupportedLanguagesPanelTelemetryTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `panel opened telemetry is sent on load`() {
+    fun `panel opened telemetry is not sent on load`() {
         val panel = SupportedLanguagesPanel(project) {}
 
         panel.load(projectSettings)
+
+        verify(telemetry, never()).supportedLanguagesPanelOpened()
+    }
+
+    @Test
+    fun `panel opened telemetry is sent when selecting the supported languages tab`() {
+        val settingsPanel = SonarLintProjectSettingsPanel(project)
+
+        settingsPanel.selectSupportedLanguagesTab()
 
         verify(telemetry, timeout(1000)).supportedLanguagesPanelOpened()
     }

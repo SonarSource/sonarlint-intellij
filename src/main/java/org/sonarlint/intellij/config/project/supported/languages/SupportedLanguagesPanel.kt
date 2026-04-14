@@ -176,7 +176,6 @@ class SupportedLanguagesPanel(
     override fun load(settings: SonarLintProjectSettings) {
         bannerPanel.isVisible = !settings.isBound
         fetchAndRefreshStatuses()
-        getService(SonarLintTelemetry::class.java).supportedLanguagesPanelOpened()
     }
 
     private fun fetchAndRefreshStatuses() {
