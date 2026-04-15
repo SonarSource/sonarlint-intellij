@@ -1,5 +1,5 @@
 [versions]
-sonarlint-core = "11.0.0.85168"
+sonarlint-core = "11.1.0.85309"
 
 sonar-java = "8.26.0.42915"
 sonar-java-symbolic = "8.16.3.1589"
@@ -16,6 +16,7 @@ sonar-text = "2.42.0.10784"
 sonar-iac = "2.8.0.19776"
 sonar-cpp = "6.79.0.97291"
 sonar-dotnet = "10.21.0.135717"
+sonar-architecture = "2.27.0.9457"
 
 sonarqube = "4.4.1.3373"
 orchestrator = "6.1.0.3962"
@@ -63,6 +64,8 @@ sonar-iac = { module = "org.sonarsource.iac:sonar-iac-plugin", version.ref = "so
 sonar-cfamily = { module = "com.sonarsource.cpp:sonar-cfamily-plugin", version.ref = "sonar-cpp" }
 sonar-dotnet = { module = "org.sonarsource.dotnet:sonar-csharp-plugin", version.ref = "sonar-dotnet" }
 sonar-dotnet-enterprise = { module = "com.sonarsource.dotnet:sonar-csharp-enterprise-plugin", version.ref = "sonar-dotnet" }
+sonar-architecture = { module = "com.sonarsource.architecture:sonar-architecture-plugin", version.ref = "sonar-architecture" }
+sonar-architecture-java-frontend = { module = "com.sonarsource.architecture:sonar-architecture-java-frontend-plugin", version.ref = "sonar-architecture" }
 
 commons-langs3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
