@@ -5,6 +5,9 @@ name: Userns probe (temporary)
 # to the rootless DinD user-namespace mapping. Remove before merging.
 
 on:
+  push:
+    branches:
+      - chore/hnasr/BUILD-10988-migrateWorkflowRunners
   workflow_dispatch:
 
 permissions:
