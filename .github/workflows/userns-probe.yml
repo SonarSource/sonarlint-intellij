@@ -1,0 +1,127 @@
+name: Userns probe (temporary)
+
+# Temporary workflow for BUILD-10988 to empirically verify that --user 0
+# inside the sonar-m-docker job container does NOT equal host root, thanks
+# to the rootless DinD user-namespace mapping. Remove before merging.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  aws-auth:
+    runs-on: sonar-xs-public
+    permissions:
+      id-token: write
+    outputs:
+      docker_username: ${{ steps.login-ecr.outputs.docker_username_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
+      docker_password: ${{ steps.login-ecr.outputs.docker_password_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+        with:
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::275878209202:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        with:
+          mask-password: 'false'
+
+  probe-user-0:
+    needs: aws-auth
+    runs-on: sonar-m-docker
+    container:
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
+      options: --user 0
+      credentials:
+        username: ${{ needs.aws-auth.outputs.docker_username }}
+        password: ${{ needs.aws-auth.outputs.docker_password }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Identity and namespace mapping
+        run: |
+          echo '### id'
+          id
+          echo
+          echo '### /proc/self/uid_map  (container_uid  host_uid  count)'
+          cat /proc/self/uid_map
+          echo
+          echo '### /proc/self/gid_map  (container_gid  host_gid  count)'
+          cat /proc/self/gid_map
+          echo
+          echo '### effective / permitted / bounding capability sets'
+          grep -E '^Cap(Inh|Prm|Eff|Bnd|Amb)' /proc/self/status
+          echo
+          echo '### apparent ownership of the shared _work mount'
+          stat -c '%u:%g %n' /__w /__w/_temp 2>/dev/null || true
+
+      - name: Daemon view of the runtime (rootless, userns-remap)
+        run: |
+          echo '### docker info | Security Options and related'
+          docker info 2>/dev/null | grep -E 'Security Options|userns|rootless|Name:|Server Version' || true
+          echo
+          echo '### docker info --format SecurityOptions json'
+          docker info --format '{{json .SecurityOptions}}' 2>/dev/null || true
+
+      - name: Privileged syscalls expected to fail
+        run: |
+          set +e
+          fail=0
+          probe() {
+            local label="$1"; shift
+            echo
+            echo "### $label"
+            "$@"
+            local rc=$?
+            echo "exit=$rc"
+            if [ $rc -eq 0 ]; then
+              echo "UNEXPECTED: $label succeeded (would indicate host root)"
+              fail=1
+            fi
+          }
+
+          probe 'mknod block device /tmp/hostsda (needs host CAP_MKNOD)' \
+            mknod /tmp/hostsda b 8 0
+
+          probe 'write /proc/sys/kernel/sysrq (host sysctl)' \
+            sh -c 'echo 1 > /proc/sys/kernel/sysrq'
+
+          probe 'mount tmpfs on /mnt (needs host CAP_SYS_ADMIN)' \
+            mount -t tmpfs tmpfs /mnt
+
+          probe 'read host /etc/shadow via /proc/1/root' \
+            cat /proc/1/root/etc/shadow
+
+          probe 'reboot (needs host CAP_SYS_BOOT)' \
+            /sbin/reboot
+
+          echo
+          if [ $fail -eq 0 ]; then
+            echo 'OK: all privileged operations were denied, as expected under rootless userns.'
+          else
+            echo 'FAIL: at least one privileged operation succeeded. This runner is NOT safely rootless.'
+            exit 1
+          fi
+
+      - name: Probe file written to shared volume from container UID 0
+        run: |
+          mkdir -p /__w/_temp/userns-probe
+          marker=/__w/_temp/userns-probe/marker.txt
+          printf 'written from container uid=%s gid=%s at %s\n' \
+            "$(id -u)" "$(id -g)" "$(date -Iseconds)" > "$marker"
+          echo '### apparent stat from inside container (userns view)'
+          stat -c 'uid=%u gid=%g mode=%A %n' "$marker"
+          cat "$marker"
+
+      - name: Nested container - user namespace is still applied
+        run: |
+          echo '### nested: id and uid_map via rootless dockerd'
+          docker run --rm 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051 \
+            sh -c 'id; echo ---; cat /proc/self/uid_map; echo ---; cat /proc/self/gid_map' || true
