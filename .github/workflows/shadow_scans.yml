@@ -76,7 +76,7 @@ jobs:
 
   iris:
     needs: scan
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-m-public
     name: Run IRIS Analysis
     permissions:
       id-token: write
