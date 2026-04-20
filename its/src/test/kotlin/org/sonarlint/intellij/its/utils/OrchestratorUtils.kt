@@ -42,7 +42,6 @@ object OrchestratorUtils {
             .defaultForceAuthentication()
             .useDefaultAdminCredentialsForBuilds(true)
             .setSonarVersion(SONAR_VERSION)
-            .setServerProperty("sonar.search.javaAdditionalOpts", "-Des.insecure.allow.root=true")
     }
 
     fun newAdminWsClientWithUser(server: Server): WsClient {

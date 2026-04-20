@@ -594,6 +594,14 @@ jobs:
             -codec:v libx264 -r 12 ${GITHUB_WORKSPACE}/recording_${IDEA_VERSION}.mp4 &
           echo "FFMPEG_PID=$!" >> $GITHUB_ENV
 
+      - name: Prepare non-root user for SonarQube tests
+        run: |
+          useradd -m -s /bin/bash sqtester
+          chmod -R a+rwX ${GITHUB_WORKSPACE}
+          chmod a+rx /root
+          chmod -R a+rwX /root/.gradle
+          chmod -R a+rx /github/home/.local/share/mise
+
       - name: Run integration tests
         env:
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
@@ -603,7 +611,8 @@ jobs:
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
           DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks
+          GRADLE_USER_HOME: /root/.gradle
+        run: su sqtester -p -c './gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks'
 
       - name: Stop recording
         if: always()
