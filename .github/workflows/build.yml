@@ -83,7 +83,7 @@ jobs:
 
       - uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4.0.0
         with:
-          version: 2025.9.12
+          version: 2026.4.11
 
       - name: Export embedded IDE paths from container
         run: |
@@ -122,7 +122,7 @@ jobs:
 
       - uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4.0.0
         with:
-          version: 2025.9.12
+          version: 2026.4.11
 
       - name: Fetch vault secrets
         id: secrets
@@ -189,7 +189,7 @@ jobs:
 
       - uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4.0.0
         with:
-          version: 2025.9.12
+          version: 2026.4.11
 
       - name: Export embedded IDE paths from container
         run: |
@@ -253,7 +253,7 @@ jobs:
 
       - uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4.0.0
         with:
-          version: 2025.9.12
+          version: 2026.4.11
 
       - name: Export embedded IDE paths from container
         run: |
@@ -369,7 +369,7 @@ jobs:
 
       - uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4.0.0
         with:
-          version: 2025.9.12
+          version: 2026.4.11
 
       - name: Select Java ${{ env.JDK_VERSION }}
         run: mise use java@${{ env.JDK_VERSION }}
@@ -674,7 +674,7 @@ jobs:
 
       - uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4.0.0
         with:
-          version: 2025.9.12
+          version: 2026.4.11
 
       - name: Promote artifacts
         uses: SonarSource/ci-github-actions/promote@v1
@@ -698,7 +698,7 @@ jobs:
 
       - uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4.0.0
         with:
-          version: 2025.9.12
+          version: 2026.4.11
           experimental: true
 
       - name: Fetch vault secrets
