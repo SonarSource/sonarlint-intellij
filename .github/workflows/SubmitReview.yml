@@ -7,7 +7,7 @@ on:
 jobs:
   SubmitReview_job:
     name: Submit Review
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     permissions:
       id-token: write
       pull-requests: read

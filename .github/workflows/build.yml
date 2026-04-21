@@ -27,7 +27,7 @@ jobs:
   build-number:
     outputs:
       BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     name: Get build number
     permissions:
       id-token: write
@@ -36,7 +36,7 @@ jobs:
         id: build-number
 
   aws-auth:
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     permissions:
       id-token: write
     outputs:
@@ -668,7 +668,7 @@ jobs:
           path: "**/test-results/**/*.xml"
 
   promote:
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     name: Promote
     needs:
       - build-number
@@ -694,7 +694,7 @@ jobs:
           promote-pull-request: true
 
   dogfood:
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     name: Update Dogfood Repository
     needs:
       - build-number

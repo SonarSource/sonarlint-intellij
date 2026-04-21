@@ -9,7 +9,7 @@ env:
 
 jobs:
   aws-auth:
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     permissions:
       id-token: write
     outputs:
@@ -76,7 +76,7 @@ jobs:
 
   iris:
     needs: scan
-    runs-on: sonar-m-public
+    runs-on: sonar-m
     name: Run IRIS Analysis
     permissions:
       id-token: write
