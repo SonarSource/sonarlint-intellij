@@ -1,7 +1,7 @@
 [tools]
 java = ["21"]
 gradle = "8.14.3"
-gh = "2.83.0"
+gh = "2.89.0"
 jfrog-cli = "2.77.0"
 maven = "3.9.9"
 
