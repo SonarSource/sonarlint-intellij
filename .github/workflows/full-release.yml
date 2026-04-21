@@ -33,7 +33,6 @@ jobs:
       project-name: "SonarQube for IntelliJ"
       short-description: ${{ inputs.short-description }}
       branch: ${{ inputs.branch }}
-      slack-channel: "C02E6L5C01H" #squad-devex-private
       is-test-run: ${{ inputs.dry-run }}
 
   bump-version:
@@ -42,6 +41,7 @@ jobs:
       - release
     runs-on: github-ubuntu-latest-m
     permissions:
+      id-token: write
       contents: write
       pull-requests: write
     steps:
@@ -49,3 +49,4 @@ jobs:
         with:
           version: ${{ needs.release.outputs.new-version }}
           base-branch: ${{ inputs.branch }}
+          token: ${{ github.token }}
