@@ -613,7 +613,7 @@ jobs:
           DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
           GRADLE_USER_HOME: /root/.gradle
         run: |
-          su sqtester -s /bin/bash -c "export PATH='${PATH}' && ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks"
+          su sqtester -p -s /bin/bash -c "export PATH='${PATH}' && ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks"
 
       - name: Stop recording
         if: always()
