@@ -231,9 +231,10 @@ jobs:
           path: "**/test-results/**/*.xml"
 
   verify-plugin:
-    runs-on: sonar-m-public
+    runs-on: sonar-m-docker
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
+      options: --user 0
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
         password: ${{ needs.aws-auth.outputs.docker_password }}
