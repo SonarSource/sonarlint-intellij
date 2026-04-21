@@ -1,9 +1,20 @@
 name: sonar-release
-# This workflow is triggered when publishing a new GitHub release
+
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: Version
+        required: true
+      releaseId:
+        type: string
+        description: Release ID
+        required: true
+      dryRun:
+        type: boolean
+        description: Flag to enable the dry-run execution
+        default: false
 
 jobs:
   release:
@@ -12,4 +23,7 @@ jobs:
       contents: write
     uses: SonarSource/gh-action_release/.github/workflows/main.yaml@c52861bb0e5dd564187f3fd74e048f20aef0f761 # 6.5.0
     with:
+      version: ${{ inputs.version }}
+      releaseId: ${{ inputs.releaseId }}
+      dryRun: ${{ inputs.dryRun }}
       slackChannel: squad-ide-private
