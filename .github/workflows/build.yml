@@ -104,8 +104,8 @@ jobs:
           artifactory-deployer-role: qa-deployer
           gradle-args: -x test -x :its:check :buildPlugin :cyclonedxBom
           cache-paths: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+            /root/.gradle/caches
+            /root/.gradle/wrapper
 
       - name: Set project version output
         id: set_version
@@ -207,8 +207,8 @@ jobs:
           artifactory-reader-role: private-reader
           gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
           cache-paths: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+            /root/.gradle/caches
+            /root/.gradle/wrapper
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@49b2ca06f62aa7ef83ae6769a2179271e160d8e4 # v6.3.1
@@ -265,7 +265,7 @@ jobs:
       - name: Restore verifier IDEs cache
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: /home/runner/.gradle/caches/*/transforms/
+          path: /root/.gradle/caches/*/transforms/
           key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
           restore-keys: |
             verifier-ides-${{ runner.os }}-
@@ -280,9 +280,9 @@ jobs:
           artifactory-reader-role: private-reader
           gradle-args: -x test -x check -x :its:check :verifyPlugin -PverifierEnv=CI
           cache-paths: |
-            /home/runner/.gradle/caches
-            !/home/runner/.gradle/caches/*/transforms/
-            /home/runner/.gradle/wrapper
+            /root/.gradle/caches
+            !/root/.gradle/caches/*/transforms/
+            /root/.gradle/wrapper
 
   qa:
     runs-on: sonar-m-docker
@@ -422,8 +422,8 @@ jobs:
         uses: SonarSource/gh-action_cache@v1
         with:
           path: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+            /root/.gradle/caches
+            /root/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ github.workflow }}-${{ steps.gradle-cache-key.outputs.key }}
           restore-keys: |
             gradle-${{ runner.os }}-${{ github.workflow }}-
