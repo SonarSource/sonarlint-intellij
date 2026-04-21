@@ -231,7 +231,7 @@ jobs:
           path: "**/test-results/**/*.xml"
 
   verify-plugin:
-    runs-on: sonar-m
+    runs-on: sonar-m-public
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
       credentials:
