@@ -33,7 +33,7 @@ jobs:
       project-name: "SonarQube for IntelliJ"
       short-description: ${{ inputs.short-description }}
       branch: ${{ inputs.branch }}
-      slack-channel: "squad-ide-private"
+      slack-channel: "C02E6L5C01H" #squad-devex-private
       is-test-run: ${{ inputs.dry-run }}
 
   bump-version:

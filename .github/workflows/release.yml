@@ -26,4 +26,4 @@ jobs:
       version: ${{ inputs.version }}
       releaseId: ${{ inputs.releaseId }}
       dryRun: ${{ inputs.dryRun }}
-      slackChannel: squad-ide-private
+      slackChannel: C02E6L5C01H # squad-devex-private
