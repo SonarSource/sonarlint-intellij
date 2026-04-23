@@ -49,7 +49,7 @@ jobs:
     steps:
       - name: Vault
         id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
+        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
         with:
           secrets: |
             development/artifactory/token/SonarSource-sonarlint-intellij-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
@@ -60,7 +60,7 @@ jobs:
         with:
           version: 2025.9.12
 
-      - uses: SonarSource/ci-github-actions/build-gradle@v1
+      - uses: SonarSource/ci-github-actions/build-gradle@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
         env:
           IDEA_HOME: ${{ env.IDEA_2024_DIR }}
           CLION_HOME: ${{ env.CLION_2024_DIR }}
@@ -83,7 +83,7 @@ jobs:
       contents: read
     steps:
       - name: Run IRIS Analysis
-        uses: SonarSource/unified-dogfooding-actions/run-iris@v1
+        uses: SonarSource/unified-dogfooding-actions/run-iris@54cee68ff08f10645c757675c59d232063e0b947 # 1.0.0
         with:
           primary_project_key: "org.sonarsource.sonarlint.intellij:sonarlint-intellij"
           primary_platform: "Next"
