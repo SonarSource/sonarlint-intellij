@@ -27,7 +27,7 @@ jobs:
   build-number:
     outputs:
       BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-xs
     name: Get build number
     permissions:
       id-token: write
@@ -36,7 +36,7 @@ jobs:
         id: build-number
 
   aws-auth:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-xs
     permissions:
       id-token: write
     outputs:
@@ -58,10 +58,10 @@ jobs:
           mask-password: 'false'
 
   build-plugin:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-m-docker
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
-      options: --user runner
+      options: --user 0
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
         password: ${{ needs.aws-auth.outputs.docker_password }}
@@ -99,13 +99,13 @@ jobs:
           sonar-platform: none
           deploy-pull-request: true
           use-develocity: true
-          develocity-url: https://develocity-public.sonar.build
+          develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
           gradle-args: -x test -x :its:check :buildPlugin :cyclonedxBom
           cache-paths: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+            /root/.gradle/caches
+            /root/.gradle/wrapper
 
       - name: Set project version output
         id: set_version
@@ -165,10 +165,10 @@ jobs:
           path: "**/test-results/**/*.xml"
 
   test-and-sonar:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-m-docker
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
-      options: --user runner
+      options: --user 0
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
         password: ${{ needs.aws-auth.outputs.docker_password }}
@@ -203,12 +203,12 @@ jobs:
         with:
           deploy: false
           use-develocity: true
-          develocity-url: https://develocity-public.sonar.build
+          develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
           cache-paths: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+            /root/.gradle/caches
+            /root/.gradle/wrapper
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
@@ -231,10 +231,10 @@ jobs:
           path: "**/test-results/**/*.xml"
 
   verify-plugin:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-m-docker
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
-      options: --user runner
+      options: --user 0
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
         password: ${{ needs.aws-auth.outputs.docker_password }}
@@ -265,7 +265,7 @@ jobs:
       - name: Restore verifier IDEs cache
         uses: SonarSource/gh-action_cache@v1
         with:
-          path: /home/runner/.gradle/caches/*/transforms/
+          path: /root/.gradle/caches/*/transforms/
           key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
           restore-keys: |
             verifier-ides-${{ runner.os }}-
@@ -276,19 +276,19 @@ jobs:
           deploy: false
           sonar-platform: none
           use-develocity: true
-          develocity-url: https://develocity-public.sonar.build
+          develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           gradle-args: -x test -x check -x :its:check :verifyPlugin -PverifierEnv=CI
           cache-paths: |
-            /home/runner/.gradle/caches
-            !/home/runner/.gradle/caches/*/transforms/
-            /home/runner/.gradle/wrapper
+            /root/.gradle/caches
+            !/root/.gradle/caches/*/transforms/
+            /root/.gradle/wrapper
 
   qa:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-m-docker
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
-      options: --user runner
+      options: --user 0
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
         password: ${{ needs.aws-auth.outputs.docker_password }}
@@ -422,8 +422,8 @@ jobs:
         uses: SonarSource/gh-action_cache@v1
         with:
           path: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
+            /root/.gradle/caches
+            /root/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ github.workflow }}-${{ steps.gradle-cache-key.outputs.key }}
           restore-keys: |
             gradle-${{ runner.os }}-${{ github.workflow }}-
@@ -594,6 +594,14 @@ jobs:
             -codec:v libx264 -r 12 ${GITHUB_WORKSPACE}/recording_${IDEA_VERSION}.mp4 &
           echo "FFMPEG_PID=$!" >> $GITHUB_ENV
 
+      - name: Prepare non-root user for SonarQube tests
+        run: |
+          useradd -m -s /bin/bash sqtester
+          chmod -R a+rwX ${GITHUB_WORKSPACE}
+          chmod a+rx /root
+          chmod -R a+rwX /root/.gradle
+          chmod -R a+rx /github/home/.local/share/mise
+
       - name: Run integration tests
         env:
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
@@ -602,8 +610,10 @@ jobs:
           SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-          DEVELOCITY_ACCESS_KEY: develocity-public.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks
+          DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+          GRADLE_USER_HOME: /root/.gradle
+        run: |
+          su sqtester -p -s /bin/bash -c "export PATH='${PATH}' && ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks"
 
       - name: Stop recording
         if: always()
@@ -658,7 +668,7 @@ jobs:
           path: "**/test-results/**/*.xml"
 
   promote:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-xs
     name: Promote
     needs:
       - build-number
@@ -684,7 +694,7 @@ jobs:
           promote-pull-request: true
 
   dogfood:
-    runs-on: github-ubuntu-latest-m
+    runs-on: sonar-xs
     name: Update Dogfood Repository
     needs:
       - build-number
