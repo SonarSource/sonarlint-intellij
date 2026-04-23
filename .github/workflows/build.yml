@@ -32,7 +32,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@v1
+      - uses: SonarSource/ci-github-actions/get-build-number@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
         id: build-number
 
   aws-auth:
@@ -93,7 +93,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Build Plugin
-        uses: SonarSource/ci-github-actions/build-gradle@v1
+        uses: SonarSource/ci-github-actions/build-gradle@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
         id: build_plugin
         with:
           sonar-platform: none
@@ -126,7 +126,7 @@ jobs:
 
       - name: Fetch vault secrets
         id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
+        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
         with:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
@@ -199,7 +199,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Run Tests and Sonar Analysis
-        uses: SonarSource/ci-github-actions/build-gradle@v1
+        uses: SonarSource/ci-github-actions/build-gradle@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
         with:
           deploy: false
           use-develocity: true
@@ -263,7 +263,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Restore verifier IDEs cache
-        uses: SonarSource/gh-action_cache@v1
+        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
         with:
           path: /root/.gradle/caches/*/transforms/
           key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
@@ -271,7 +271,7 @@ jobs:
             verifier-ides-${{ runner.os }}-
 
       - name: Verify Plugin Compatibility
-        uses: SonarSource/ci-github-actions/build-gradle@v1
+        uses: SonarSource/ci-github-actions/build-gradle@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
         with:
           deploy: false
           sonar-platform: none
@@ -376,7 +376,7 @@ jobs:
 
       - name: Vault Secrets
         id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
+        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
         with:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
@@ -402,7 +402,7 @@ jobs:
           echo "Create dir ${ORCHESTRATOR_HOME}"
           mkdir -p "${ORCHESTRATOR_HOME}"
 
-      - uses: SonarSource/gh-action_cache@v1
+      - uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
         with:
           path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
           key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
@@ -419,7 +419,7 @@ jobs:
           rm -f gradle-md5-sums.txt
 
       - name: Restore Gradle Cache
-        uses: SonarSource/gh-action_cache@v1
+        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
         with:
           path: |
             /root/.gradle/caches
@@ -483,7 +483,7 @@ jobs:
       - name: Restore IDE from cache
         if: steps.ide-source.outputs.embedded == 'false'
         id: cache-ide
-        uses: SonarSource/gh-action_cache@v1
+        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
         with:
           path: ${{ steps.ide-source.outputs.cache_path }}
           key: ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}
@@ -687,7 +687,7 @@ jobs:
           version: 2025.9.12
 
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@v1
+        uses: SonarSource/ci-github-actions/promote@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
         env:
           PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         with:
@@ -713,7 +713,7 @@ jobs:
 
       - name: Fetch vault secrets
         id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
+        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
         with:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
