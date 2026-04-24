@@ -99,7 +99,7 @@ jobs:
           sonar-platform: none
           deploy-pull-request: true
           use-develocity: true
-          develocity-url: https://develocity-public.sonar.build
+          develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
           gradle-args: -x test -x :its:check :buildPlugin :cyclonedxBom
@@ -203,7 +203,7 @@ jobs:
         with:
           deploy: false
           use-develocity: true
-          develocity-url: https://develocity-public.sonar.build
+          develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
           cache-paths: |
@@ -276,7 +276,7 @@ jobs:
           deploy: false
           sonar-platform: none
           use-develocity: true
-          develocity-url: https://develocity-public.sonar.build
+          develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           gradle-args: -x test -x check -x :its:check :verifyPlugin -PverifierEnv=CI
           cache-paths: |
@@ -602,7 +602,7 @@ jobs:
           SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-          DEVELOCITY_ACCESS_KEY: develocity-public.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+          DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
         run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --dependency-verification lenient --rerun-tasks
 
       - name: Stop recording
