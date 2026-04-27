@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.sonarsource.sonarlint.core</groupId>
   <artifactId>shared-connected-mode</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>12.3-SNAPSHOT</version>
   <name>Shared Connected Mode</name>
   <description>Sample project for ITs</description>
   <packaging>pom</packaging>

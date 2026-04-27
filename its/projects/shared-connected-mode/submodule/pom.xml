@@ -4,10 +4,10 @@
   <parent>
     <groupId>org.sonarsource.sonarlint.core</groupId>
     <artifactId>shared-connected-mode</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>12.3-SNAPSHOT</version>
   </parent>
   <artifactId>shared-connected-mode-module</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>12.3-SNAPSHOT</version>
   <name>Shared Connected Mode Module</name>
   <description>Sample project for ITs</description>
 
