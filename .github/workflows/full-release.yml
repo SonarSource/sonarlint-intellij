@@ -12,11 +12,6 @@ on:
         required: false
         default: 'master'
         type: string
-      dry-run:
-        description: 'Test mode: use Jira sandbox and create a draft GitHub release'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   release:
@@ -33,7 +28,7 @@ jobs:
       project-name: "SonarQube for IntelliJ"
       short-description: ${{ inputs.short-description }}
       branch: ${{ inputs.branch }}
-      is-test-run: ${{ inputs.dry-run }}
+      slack-channel: "C06M15TJN30" #squad-ide-intellij-family-bots
 
   bump-version:
     name: Bump version
@@ -50,3 +45,4 @@ jobs:
           version: ${{ needs.release.outputs.new-version }}
           base-branch: ${{ inputs.branch }}
           token: ${{ github.token }}
+          excluded-modules: its
