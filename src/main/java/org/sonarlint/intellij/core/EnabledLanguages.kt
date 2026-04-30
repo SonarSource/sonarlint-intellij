@@ -114,7 +114,7 @@ object EnabledLanguages {
     @JvmStatic
     val extraEnabledLanguagesInConnectedMode: Set<Language>
         get() {
-            val extraEnabledLanguages = EnumSet.of(Language.ANSIBLE, Language.TEXT, Language.GITHUBACTIONS)
+            val extraEnabledLanguages = EnumSet.of(Language.ANSIBLE, Language.TEXT, Language.GITHUBACTIONS, Language.SHELL, Language.AZUREPIPELINES)
 
             return when {
                 isIdeModuleEnabled(RIDER_MODULE_ID) -> {

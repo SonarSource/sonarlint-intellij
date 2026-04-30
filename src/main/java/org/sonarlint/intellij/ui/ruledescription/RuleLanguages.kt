@@ -33,6 +33,7 @@ private val typescriptFileTypesByPriority = arrayOf("TypeScript", "JavaScript")
 enum class RuleLanguages(private val language: Language, private vararg val fileTypesByPriorityOrder: String) {
 
     ANSIBLE(Language.ANSIBLE, "YAML"),
+    AZURE_PIPELINES(Language.AZUREPIPELINES, "YAML"),
     C(Language.C, *cFamilyLanguagesFileTypesByPriority),
     // for now most code examples are written in YAML for CloudFormation
     CLOUD_FORMATION(Language.CLOUDFORMATION, "YAML"),
@@ -53,6 +54,7 @@ enum class RuleLanguages(private val language: Language, private vararg val file
     PY(Language.PYTHON, "Python"),
     RUBY(Language.RUBY, "Ruby"),
     SCALA(Language.SCALA, "Scala"),
+    SHELL(Language.SHELL, "Shell Script"),
     // comes from the "Terraform and HCL" plugin from JetBrains (installable from the marketplace)
     TERRAFORM(Language.TERRAFORM, "Terraform"),
     TS(Language.TS, *typescriptFileTypesByPriority),
