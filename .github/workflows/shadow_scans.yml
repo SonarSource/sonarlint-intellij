@@ -32,10 +32,10 @@ jobs:
 
   scan:
     needs: aws-auth
-    runs-on: sonar-m-docker
+    runs-on: warp-custom-docker-m
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260224212528
-      options: --user 0
+      options: --user runner
       credentials:
         username: ${{ needs.aws-auth.outputs.docker_username }}
         password: ${{ needs.aws-auth.outputs.docker_password }}
