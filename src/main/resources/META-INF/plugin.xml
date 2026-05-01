@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>12.2.1 - Fixed synchronization failure when the server returns dependency risks of Malware type.</li>
         <li>12.2 - On-demand download of C# analysis dependencies and C/C++ analyzer.  Security Hotspots in PHP have been migrated to security issues. Fewer FPs across many languages.</li>
         <li>12.1 - File exclusions are now properly applied across all analysis types. Fixed a rare crash during pre-commit analysis, resolved memory leaks, and improved overall stability. Bug fixes, fewer FPs and improvements for JS, C# and Python.</li>
         <li>12.0.1 - Fixed an issue in Rider 2026.1 where analysis failed due to changes in the platform APIs.</li>

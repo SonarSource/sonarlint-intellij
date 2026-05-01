@@ -64,10 +64,10 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
         if (node.vulnerabilityId != null && node.cvssScore != null) {
             details += " [${node.cvssScore}] ${node.vulnerabilityId}"
         }
-        details = if (node.type == DependencyRiskDto.Type.PROHIBITED_LICENSE) {
-            "$details (Prohibited License)"
-        } else {
-            "$details (Vulnerability)"
+        details = when (node.type) {
+            DependencyRiskDto.Type.VULNERABILITY -> "$details (Vulnerability)"
+            DependencyRiskDto.Type.PROHIBITED_LICENSE -> "$details (Prohibited License)"
+            DependencyRiskDto.Type.MALWARE -> "$details (Malware)"
         }
         return details
     }
