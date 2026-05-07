@@ -16,7 +16,7 @@ on:
 jobs:
   release:
     name: Release
-    uses: SonarSource/release-github-actions/.github/workflows/ide-automated-release.yml@af430f8dca91f916af4f8933cbc481c9bde4f93a # 1.5.6
+    uses: SonarSource/release-github-actions/.github/workflows/ide-automated-release.yml@1340c5f09fba35b909ed5fd443e60c0d351116db # 1.5.7
     permissions:
       statuses: read
       id-token: write
@@ -40,7 +40,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: SonarSource/release-github-actions/bump-version@af430f8dca91f916af4f8933cbc481c9bde4f93a # 1.5.6
+      - uses: SonarSource/release-github-actions/bump-version@1340c5f09fba35b909ed5fd443e60c0d351116db # 1.5.7
         with:
           version: ${{ needs.release.outputs.new-version }}
           base-branch: ${{ inputs.branch }}
