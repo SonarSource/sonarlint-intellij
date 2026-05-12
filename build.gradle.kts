@@ -115,38 +115,7 @@ dependencies {
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
-dependencyLocking {
-    lockAllConfigurations()
-    // IntelliJ Platform synthetic coordinates are environment-dependent (local vs downloaded IDE).
-    // Groups are taken from IntelliJPlatformType installer coordinates in the IJGP2 source.
-    ignoredDependencies.addAll(
-        // IDE installer coordinates — switch between local and downloaded depending on *_HOME env vars
-        "idea:*", "cpp:*", "rider:*", "python:*", "go:*", "webide:*",
-        "ruby:*", "webstorm:*", "datagrip:*", "mps:*", "rustrover:*",
-        "com.google.android.studio:*",
-        "localIde:*",
-        // com.jetbrains.intellij.* Maven artifacts are all tied to the exact IDE build number in use,
-        // which differs between local installations and downloaded IDEs.
-        "com.jetbrains.intellij.rider:*",
-        "com.jetbrains.intellij.java:*",
-        "com.jetbrains.intellij.platform:*",
-        "com.jetbrains.intellij.tools:*",
-        "com.jetbrains.intellij.idea:*",
-        "com.jetbrains.intellij.clion:*",
-        "com.jetbrains.intellij.goland:*",
-        "com.jetbrains.intellij.phpstorm:*",
-        "com.jetbrains.intellij.pycharm:*",
-        "com.jetbrains.intellij.rubymine:*",
-        "com.jetbrains.intellij.webstorm:*",
-        "com.jetbrains.intellij.rustrover:*",
-        "com.jetbrains.intellij.fleetBackend:*",
-        "com.jetbrains.intellij.gateway:*",
-        // Bundled IDE contents added to compile/test classpaths by the IntelliJ Platform plugin
-        "bundledModule:*", "bundledPlugin:*",
-        // Plugin verifier unzipped plugin cache — content depends on the IDE version under test
-        "unzipped.com.jetbrains.plugins:*",
-    )
-}
+apply(from = "gradle/intellij-dependency-lock.gradle")
 
 val bomFile = layout.buildDirectory.file("reports/bom.json")
 artifacts.add("archives", bomFile.get().asFile) {

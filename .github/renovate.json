@@ -9,7 +9,7 @@
   ],
   "postUpgradeTasks": {
     "commands": [
-      "./gradlew --write-locks dependencies :common:dependencies :clion:dependencies :clion-resharper:dependencies :nodejs:dependencies :git:dependencies :rider:dependencies :test-common:dependencies :its:dependencies"
+      "./gradlew --write-locks help dependencies :common:dependencies :clion:dependencies :clion-resharper:dependencies :nodejs:dependencies :git:dependencies :rider:dependencies :test-common:dependencies :its:dependencies"
     ],
     "fileFilters": ["**/*.lockfile", "*gradle.lockfile"],
     "executionMode": "update"

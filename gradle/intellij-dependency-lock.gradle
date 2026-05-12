@@ -1,0 +1,38 @@
+// Shared dependency-locking configuration applied to both the root project (build.gradle.kts)
+// and every submodule (via module-conventions.gradle).
+//
+// IntelliJ Platform artifacts are excluded from lock tracking because their resolved coordinates
+// are environment-dependent: they change between local IDE installations (*_HOME env vars) and
+// downloaded IDEs, and between different IDE build numbers. Everything else is fully locked.
+
+dependencyLocking {
+    lockAllConfigurations()
+    ignoredDependencies.addAll(
+        // IDE installer coordinates (IJGP2 IntelliJPlatformType.installer) — resolved as
+        // "idea:ideaIC", "cpp:CLion", etc. when downloaded; "localIde:*" when *_HOME is set.
+        "idea:*", "cpp:*", "rider:*", "python:*", "go:*", "webide:*",
+        "ruby:*", "webstorm:*", "datagrip:*", "mps:*", "rustrover:*",
+        "com.google.android.studio:*",
+        "localIde:*",
+        // com.jetbrains.intellij.* Maven artifacts are all tied to the exact IDE build number
+        // in use, which differs between local installations and downloaded IDEs.
+        "com.jetbrains.intellij.rider:*",
+        "com.jetbrains.intellij.java:*",
+        "com.jetbrains.intellij.platform:*",
+        "com.jetbrains.intellij.tools:*",
+        "com.jetbrains.intellij.idea:*",
+        "com.jetbrains.intellij.clion:*",
+        "com.jetbrains.intellij.goland:*",
+        "com.jetbrains.intellij.phpstorm:*",
+        "com.jetbrains.intellij.pycharm:*",
+        "com.jetbrains.intellij.rubymine:*",
+        "com.jetbrains.intellij.webstorm:*",
+        "com.jetbrains.intellij.rustrover:*",
+        "com.jetbrains.intellij.fleetBackend:*",
+        "com.jetbrains.intellij.gateway:*",
+        // Bundled IDE contents added to compile/test classpaths by the IntelliJ Platform plugin
+        "bundledModule:*", "bundledPlugin:*",
+        // Plugin verifier unzipped plugin cache — content depends on the IDE version under test
+        "unzipped.com.jetbrains.plugins:*",
+    )
+}
