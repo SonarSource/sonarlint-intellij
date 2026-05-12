@@ -2,5 +2,16 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>SonarSource/renovate-config:ide-xp-team"
-  ]
+  ],
+  "configMigration": true,
+  "ignorePaths": [
+    "its/projects/**"
+  ],
+  "postUpgradeTasks": {
+    "commands": [
+      "./gradlew --write-locks dependencies :common:dependencies :clion:dependencies :clion-resharper:dependencies :nodejs:dependencies :git:dependencies :rider:dependencies :test-common:dependencies :its:dependencies"
+    ],
+    "fileFilters": ["**/*.lockfile", "*gradle.lockfile"],
+    "executionMode": "update"
+  }
 }

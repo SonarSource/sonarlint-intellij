@@ -115,6 +115,10 @@ dependencies {
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
 }
 
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 val bomFile = layout.buildDirectory.file("reports/bom.json")
 artifacts.add("archives", bomFile.get().asFile) {
     name = "sonarlint-intellij"

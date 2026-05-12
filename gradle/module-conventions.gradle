@@ -1,5 +1,9 @@
 // Apply common logic to all module build files
 
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
 }
