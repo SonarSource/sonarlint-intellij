@@ -4,6 +4,12 @@
 com.github.ben-manes.caffeine:caffeine:2.9.3=swiftExportClasspathResolvable
 com.google.code.findbugs:jsr305:3.0.2=compileClasspath,compileOnlyDependenciesMetadata
 com.google.errorprone:error_prone_annotations:2.28.0=swiftExportClasspathResolvable
+com.jetbrains.intellij.java:java-compiler-ant-tasks:242.20224.300=intellijPlatformJavaCompiler
+com.jetbrains.intellij.java:java-compiler-instrumentation-util-java8:242.20224.300=intellijPlatformJavaCompiler
+com.jetbrains.intellij.java:java-compiler-instrumentation-util:242.20224.300=intellijPlatformJavaCompiler
+com.jetbrains.intellij.java:java-gui-forms-compiler:242.20224.300=intellijPlatformJavaCompiler
+com.jetbrains.intellij.java:java-gui-forms-rt:242.20224.300=intellijPlatformJavaCompiler
+com.jetbrains.intellij.platform:util-jdom:242.20224.300=intellijPlatformJavaCompiler
 com.jgoodies:forms:1.1-preview=intellijPlatformJavaCompiler
 io.github.java-diff-utils:java-diff-utils:4.12=kotlinInternalAbiValidation
 io.opentelemetry:opentelemetry-api:1.41.0=swiftExportClasspathResolvable
