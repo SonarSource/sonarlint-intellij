@@ -117,8 +117,19 @@ dependencies {
 
 dependencyLocking {
     lockAllConfigurations()
-    // IntelliJ Platform synthetic coordinates are environment-dependent (local vs downloaded IDE)
-    ignoredDependencies.addAll("idea:*", "localIde:*", "bundledModule:*", "bundledPlugin:*")
+    // IntelliJ Platform synthetic coordinates are environment-dependent (local vs downloaded IDE).
+    // Groups are taken from IntelliJPlatformType installer coordinates in the IJGP2 source.
+    ignoredDependencies.addAll(
+        // IDE installer coordinates — switch between local and downloaded depending on *_HOME env vars
+        "idea:*", "cpp:*", "rider:*", "python:*", "go:*", "webide:*",
+        "ruby:*", "webstorm:*", "datagrip:*", "mps:*", "rustrover:*",
+        "com.google.android.studio:*",
+        "localIde:*",
+        // Bundled IDE contents added to compile/test classpaths by the IntelliJ Platform plugin
+        "bundledModule:*", "bundledPlugin:*",
+        // Plugin verifier unzipped plugin cache — content depends on the IDE version under test
+        "unzipped.com.jetbrains.plugins:*",
+    )
 }
 
 val bomFile = layout.buildDirectory.file("reports/bom.json")

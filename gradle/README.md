@@ -33,7 +33,6 @@ We use Gradle's version catalog (`libs.versions.toml`) to centrally manage depen
    }
    ```
 
-
 ## Dependency Locking
 
 We use [Gradle dependency locking](https://docs.gradle.org/current/userguide/dependency_locking.html) to ensure reproducible builds. Lock files (`gradle.lockfile`) are committed to the repository and record the exact resolved versions for every configuration.
@@ -41,6 +40,12 @@ We use [Gradle dependency locking](https://docs.gradle.org/current/userguide/dep
 ### How It Works
 
 When Gradle resolves dependencies, it checks that the resolved versions match the lock file. If a version was updated (e.g. via Renovate or a manual change to `libs.versions.toml`) without updating the lock file, the build fails.
+
+### IntelliJ Platform artifacts
+
+IDE distributions and their bundled contents (modules, plugins) use synthetic Maven coordinates that are environment-dependent: Gradle resolves `idea:ideaIC:2024.2` when the IDE is downloaded, but `localIde:IC:...` when `IDEA_HOME` is set. Similar groups exist for every IDE type (`cpp`, `rider`, `python`, etc.).
+
+All these groups are listed in `ignoredDependencies` in `build.gradle.kts` and `gradle/module-conventions.gradle`, so they are neither tracked in nor validated against the lock files.
 
 ### Updating Lock Files
 
