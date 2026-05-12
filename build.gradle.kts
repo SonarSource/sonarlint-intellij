@@ -117,6 +117,8 @@ dependencies {
 
 dependencyLocking {
     lockAllConfigurations()
+    // IntelliJ Platform synthetic coordinates are environment-dependent (local vs downloaded IDE)
+    ignoredDependencies.addAll("idea:*", "localIde:*", "bundledModule:*", "bundledPlugin:*")
 }
 
 val bomFile = layout.buildDirectory.file("reports/bom.json")
