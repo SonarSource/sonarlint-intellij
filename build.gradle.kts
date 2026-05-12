@@ -125,6 +125,8 @@ dependencyLocking {
         "ruby:*", "webstorm:*", "datagrip:*", "mps:*", "rustrover:*",
         "com.google.android.studio:*",
         "localIde:*",
+        // Rider uses useInstaller=false so it resolves via Maven; ignored for the same reason as above
+        "com.jetbrains.intellij.rider:*",
         // Bundled IDE contents added to compile/test classpaths by the IntelliJ Platform plugin
         "bundledModule:*", "bundledPlugin:*",
         // Plugin verifier unzipped plugin cache — content depends on the IDE version under test
