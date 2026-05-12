@@ -10,6 +10,11 @@ plugins {
 
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 
+// ITs require IDEs whose test-framework JARs introduce transitive deps that vary by environment
+dependencyLocking {
+    lockMode.set(LockMode.LENIENT)
+}
+
 val intellijBuildVersion: String by project
 val ijVersion: String by project
 val runIdeDirectory: String by project
