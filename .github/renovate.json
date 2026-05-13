@@ -3,7 +3,6 @@
   "extends": [
     "github>SonarSource/renovate-config:ide-xp-team"
   ],
-  "configMigration": true,
   "ignorePaths": [
     "its/projects/**"
   ]
