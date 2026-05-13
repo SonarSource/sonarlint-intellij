@@ -6,12 +6,5 @@
   "configMigration": true,
   "ignorePaths": [
     "its/projects/**"
-  ],
-  "postUpgradeTasks": {
-    "commands": [
-      "./gradlew --write-locks help dependencies :common:dependencies :clion:dependencies :clion-resharper:dependencies :nodejs:dependencies :git:dependencies :rider:dependencies :test-common:dependencies :its:dependencies"
-    ],
-    "fileFilters": ["**/*.lockfile", "*gradle.lockfile"],
-    "executionMode": "update"
-  }
+  ]
 }
