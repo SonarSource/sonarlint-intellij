@@ -104,7 +104,7 @@ public class FutureUtils {
       try {
         return future.get(WAITING_FREQUENCY, TimeUnit.MILLISECONDS);
       } catch (TimeoutException ignored) {
-        continue;
+        // will retry
       } catch (InterruptedException | CancellationException e) {
         throw new InterruptedException("Interrupted");
       }
@@ -125,7 +125,7 @@ public class FutureUtils {
         future.get(WAITING_FREQUENCY, TimeUnit.MILLISECONDS);
         return;
       } catch (TimeoutException ignored) {
-        continue;
+        // will retry
       } catch (InterruptedException | CancellationException e) {
         throw new InterruptedException("Interrupted");
       }
