@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
-import static com.intellij.openapi.actionSystem.Toggleable.SELECTED_PROPERTY;
+import com.intellij.openapi.actionSystem.Toggleable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -50,7 +50,7 @@ class RulesFilterActionTests extends AbstractSonarLintLightTests {
   void show_only_changed() {
     var changed = findAction("Changed");
 
-    presentation.putClientProperty(SELECTED_PROPERTY, true);
+    Toggleable.setSelected(presentation, true);
 
     changed.actionPerformed(event);
     verify(model).setShowOnlyChanged(true);
@@ -62,7 +62,7 @@ class RulesFilterActionTests extends AbstractSonarLintLightTests {
   void show_only_disabled() {
     var disabled = findAction("Disabled");
 
-    presentation.putClientProperty(SELECTED_PROPERTY, true);
+    Toggleable.setSelected(presentation, true);
 
     disabled.actionPerformed(event);
     verify(model).setShowOnlyDisabled(true);
@@ -74,7 +74,7 @@ class RulesFilterActionTests extends AbstractSonarLintLightTests {
   void show_only_enabled() {
     var enabled = findAction("Enabled");
 
-    presentation.putClientProperty(SELECTED_PROPERTY, true);
+    Toggleable.setSelected(presentation, true);
 
     enabled.actionPerformed(event);
     verify(model).setShowOnlyEnabled(true);

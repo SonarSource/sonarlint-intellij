@@ -22,6 +22,7 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +68,7 @@ class ExcludeFileActionLightTests extends AbstractSonarLintLightTests {
 
   @Test
   void reject_project() {
-    when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {getProject().getBaseDir()});
+    when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {ProjectUtil.guessProjectDir(getProject())});
 
     action.actionPerformed(e);
     assertThat(getProjectSettings().getFileExclusions()).isEmpty();
