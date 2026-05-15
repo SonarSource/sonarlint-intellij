@@ -1,5 +1,7 @@
 // Apply common logic to all module build files
 
+apply(from: "${rootProject.projectDir}/gradle/intellij-dependency-lock.gradle")
+
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
 }

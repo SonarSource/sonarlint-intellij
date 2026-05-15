@@ -33,53 +33,28 @@ We use Gradle's version catalog (`libs.versions.toml`) to centrally manage depen
    }
    ```
 
+## Dependency Locking
 
-## Dependency Verification
-
-For more details, refer to the [Gradle Dependency Verification Guide](https://docs.gradle.org/8.9/userguide/dependency_verification.html#sec:dealing-verification-failure).
-
-Dependency verification ensures the integrity and provenance of dependencies through two key operations:
-
-- **Checksum verification**: Confirms the integrity of a dependency.
-- **Signature verification**: Validates the origin of a dependency.
-
-In the `sonarlint-intellij` project, only **SHA-256 checksums** are verified to ensure artifact integrity.
+We use [Gradle dependency locking](https://docs.gradle.org/current/userguide/dependency_locking.html) to ensure reproducible builds. Lock files (`gradle.lockfile`) are committed to the repository and record the exact resolved versions for every configuration.
 
 ### How It Works
 
-When a dependency is downloaded, its SHA-256 checksum is calculated and compared to the expected value. If the checksums do not match, the download fails.  
-The expected checksums are stored in the `gradle/verification-metadata.xml` file.
+When Gradle resolves dependencies, it checks that the resolved versions match the lock file. If a version was updated (e.g. via Renovate or a manual change to `libs.versions.toml`) without updating the lock file, the build fails.
 
-### Updating Dependency Metadata
+### Updating Lock Files
 
-When adding or updating a dependency, verification failures may occur. To resolve this, run the following command:
-
-```bash
-./gradlew --write-verification-metadata sha256
-```
-
-This command updates the metadata file with the new checksums. Depending on the build context, you might need to run a specific task, such as:
+After adding, removing, or updating a dependency, regenerate all lock files:
 
 ```bash
-./gradlew :buildPlugin --write-verification-metadata sha256
+./gradlew --write-locks dependencies \
+  :common:dependencies \
+  :clion:dependencies \
+  :clion-resharper:dependencies \
+  :nodejs:dependencies \
+  :git:dependencies \
+  :rider:dependencies \
+  :test-common:dependencies \
+  :its:dependencies
 ```
 
-> **Note**: Always review the changes to the metadata file before committing them.
-
-### Cleaning Up Dependency Checksums
-
-When new checksums are generated, older versions remain in the metadata file. To clean up outdated entries, follow these steps:
-
-1. Review the newly added checksums.
-2. Manually remove outdated entries.
-3. Verify that the cleanup is complete.
-
-The checksum file is ordered chronologically per dependency, making it easier to identify and remove old entries.
-
-> **Tip**: Double-check removed entries to ensure you are not deleting checksums for active dependencies.
-
-In case there are too many old entries, this is a more direct way of cleaning up the file:
-
-1. Back up the current `verification-metadata.xml`
-2. Generate a fresh verification file using `./gradlew --write-verification-metadata sha256`
-3. Compare the files and identify the changes are correct
+> **Note**: Always commit the updated `gradle.lockfile` files together with the dependency changes.
