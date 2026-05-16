@@ -42,7 +42,7 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
   public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row,
     boolean hasFocus) {
     var component = new SimpleColoredComponent();
-    var node = (RulesTreeNode) value;
+    var node = (RulesTreeNode<?>) value;
     var background = selected ? getSelectedBackgroundColor(tree) : UIUtil.getTreeBackground();
     UIUtil.changeBackGround(component, background);
     var foreground = selected ? UIUtil.getTreeSelectionForeground(true) : getUnselectedForegroundColor(node);
@@ -64,7 +64,7 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
     return component;
   }
 
-  private static Color getUnselectedForegroundColor(RulesTreeNode node) {
+  private static Color getUnselectedForegroundColor(RulesTreeNode<?> node) {
     return node.isNonDefault() ? PlatformColors.BLUE : UIUtil.getTreeForeground();
   }
 

@@ -106,7 +106,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   @Override
   public AnnotationContext collectInformation(PsiFile file) {
-    return new AnnotationContext();
+    return new AnnotationContext() {};
   }
 
   @Override
@@ -240,6 +240,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return HighlightSeverity.WARNING;
   }
 
-  public static class AnnotationContext {
+  public interface AnnotationContext {
   }
 }

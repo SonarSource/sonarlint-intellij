@@ -26,7 +26,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
@@ -67,7 +66,7 @@ public class SonarLintUtils {
   }
 
   public static <T> T getService(@NotNull Module module, Class<T> clazz) {
-    var t = ModuleServiceManager.getService(module, clazz);
+    var t = module.getService(clazz);
     logAndThrowIfServiceNotFound(t, clazz.getName());
 
     return t;
