@@ -117,14 +117,6 @@ dependencies {
 
 apply(from = "gradle/intellij-dependency-lock.gradle")
 
-val bomFile = layout.buildDirectory.file("reports/bom.json")
-artifacts.add("archives", bomFile.get().asFile) {
-    name = "sonarlint-intellij"
-    type = "json"
-    classifier = "cyclonedx"
-    builtBy("cyclonedxBom")
-}
-
 license {
     header = rootProject.file("HEADER")
     mapping(
@@ -171,7 +163,7 @@ intellijPlatform {
         )
 
         ides {
-            ide(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
+            create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
         }
 
         if (project.hasProperty("verifierEnv")) {
@@ -208,34 +200,36 @@ intellijPlatform {
     }
 
     artifactory {
-        clientConfig.info.buildName = "sonarlint-intellij"
-        clientConfig.info.buildNumber = System.getenv("BUILD_NUMBER")
+        buildInfo {
+            buildName = "sonarlint-intellij"
+            buildNumber = System.getenv("BUILD_NUMBER") ?: ""
+            addEnvironmentProperty(
+                "ARTIFACTS_TO_DOWNLOAD",
+                "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip,org.sonarsource.sonarlint.intellij:sonarlint-intellij:json:cyclonedx"
+            )
+        }
         clientConfig.isIncludeEnvVars = true
         clientConfig.envVarsExcludePatterns =
             "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
-        clientConfig.info.addEnvironmentProperty(
-            "ARTIFACTS_TO_DOWNLOAD",
-            "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip,org.sonarsource.sonarlint.intellij:sonarlint-intellij:json:cyclonedx"
-        )
         setContextUrl(System.getenv("ARTIFACTORY_URL"))
         publish {
             repository {
-                setProperty("repoKey", System.getenv("ARTIFACTORY_DEPLOY_REPO"))
-                setProperty("username", System.getenv("ARTIFACTORY_DEPLOY_USERNAME"))
-                setProperty("password", System.getenv("ARTIFACTORY_DEPLOY_ACCESS_TOKEN"))
+                repoKey = System.getenv("ARTIFACTORY_DEPLOY_REPO") ?: ""
+                username = System.getenv("ARTIFACTORY_DEPLOY_USERNAME") ?: ""
+                password = System.getenv("ARTIFACTORY_DEPLOY_ACCESS_TOKEN") ?: ""
             }
             defaults {
                 setProperties(
                     mapOf(
-                        "vcs.revision" to System.getenv("GITHUB_SHA"),
+                        "vcs.revision" to (System.getenv("GITHUB_SHA") ?: ""),
                         "vcs.branch" to (System.getenv("GITHUB_HEAD_REF")
-                            ?: System.getenv("GITHUB_REF_NAME")),
+                            ?: System.getenv("GITHUB_REF_NAME") ?: ""),
                         "build.name" to "sonarlint-intellij",
-                        "build.number" to System.getenv("BUILD_NUMBER")
+                        "build.number" to (System.getenv("BUILD_NUMBER") ?: "")
                     )
                 )
-                publishConfigs("archives")
-                setPublishPom(true)
+                this.addDefaultArchiveConfigurations()
+                setPublishPom(false)
                 setPublishIvy(false)
             }
         }
@@ -318,8 +312,6 @@ fun unzipEslintBridgeBundle(pluginsDir: File) {
     }
 }
 
-configurations.archives.get().isCanBeResolved = true
-
 tasks {
     compileKotlin {
         compilerOptions {
@@ -369,24 +361,22 @@ tasks {
         }
     }
 
+    cyclonedxDirectBom {
+        includeConfigs = listOf("runtimeClasspath", "sqplugins_deps")
+        xmlOutput.unsetConvention()
+    }
+
     cyclonedxBom {
-        setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
-        inputs.files(configurations.runtimeClasspath, configurations.archives.get())
-        mustRunAfter(
-            getTasksByName("buildPluginBlockmap", true)
-        )
+        jsonOutput.set(layout.buildDirectory.file("reports/bom.json"))
+        xmlOutput.unsetConvention()
     }
 
     val buildPluginBlockmap by registering {
-        inputs.file(buildPlugin.get().archiveFile)
+        inputs.files(buildPlugin.flatMap { it.archiveFile })
+            .withPropertyName("distribZip")
+            .skipWhenEmpty()
         doLast {
             val distribZip = buildPlugin.get().archiveFile.get().asFile
-            artifacts.add("archives", distribZip) {
-                name = project.name
-                extension = "zip"
-                type = "zip"
-                builtBy("buildPluginBlockmap")
-            }
             val blockMapBytes =
                 com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
             val blockMapFile = File(distribZip.parentFile, "blockmap.json")
@@ -400,22 +390,10 @@ tasks {
             origin.copyTo(blockMapFileZip, 1024)
             origin.close()
             blockMapFileZip.close()
-            artifacts.add("archives", blockMapFileZipFile) {
-                name = project.name
-                extension = "zip.blockmap.zip"
-                type = "zip"
-                builtBy("buildPluginBlockmap")
-            }
             val fileHash = com.fasterxml.jackson.databind.ObjectMapper()
                 .writeValueAsString(com.jetbrains.plugin.blockmap.core.FileHash(distribZip.inputStream()))
             val fileHashJsonFile = file(distribZip.absolutePath + ".hash.json")
             fileHashJsonFile.writeText(fileHash)
-            artifacts.add("archives", fileHashJsonFile) {
-                name = project.name
-                extension = "zip.hash.json"
-                type = "json"
-                builtBy("buildPluginBlockmap")
-            }
         }
     }
 
@@ -444,19 +422,52 @@ tasks {
             getTasksByName("buildPluginBlockmap", true)
         )
     }
+}
 
-    signing {
-        setRequired {
-            val branch = System.getenv("GITHUB_REF_NAME") ?: ""
-            val pr = System.getenv("GITHUB_HEAD_REF") ?: ""
-            (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
-                pr == "" &&
-                gradle.taskGraph.hasTask(":artifactoryPublish")
-        }
-        val signingKeyId: String? by project
-        val signingKey: String? by project
-        val signingPassword: String? by project
-        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-        sign(configurations.archives.get())
+// Register all published artifacts in the 'archives' configuration at configuration time.
+// Gradle 9 makes configurations immutable after they are consumed as a variant, so all
+// artifact registrations must happen here (not in task doLast blocks).
+artifacts {
+    add("archives", tasks.named<Zip>("buildPlugin").flatMap { it.archiveFile }) {
+        name = project.name
+        extension = "zip"
+        type = "zip"
     }
+    add("archives", tasks.named<Zip>("buildPlugin").map {
+        file(it.archiveFile.get().asFile.absolutePath + ".blockmap.zip")
+    }) {
+        name = project.name
+        extension = "zip.blockmap.zip"
+        type = "zip"
+        builtBy(tasks.named("buildPluginBlockmap"))
+    }
+    add("archives", tasks.named<Zip>("buildPlugin").map {
+        file(it.archiveFile.get().asFile.absolutePath + ".hash.json")
+    }) {
+        name = project.name
+        extension = "zip.hash.json"
+        type = "json"
+        builtBy(tasks.named("buildPluginBlockmap"))
+    }
+    add("archives", layout.buildDirectory.file("reports/bom.json")) {
+        name = "sonarlint-intellij"
+        type = "json"
+        classifier = "cyclonedx"
+        builtBy(tasks.named("cyclonedxBom"))
+    }
+}
+
+signing {
+    setRequired {
+        val branch = System.getenv("GITHUB_REF_NAME") ?: ""
+        val pr = System.getenv("GITHUB_HEAD_REF") ?: ""
+        (branch == "master" || branch.matches("branch-[\\d.]+".toRegex())) &&
+            pr == "" &&
+            gradle.taskGraph.hasTask(":artifactoryPublish")
+    }
+    val signingKeyId = project.findProperty("signingKeyId") as? String
+    val signingKey = project.findProperty("signingKey") as? String
+    val signingPassword = project.findProperty("signingPassword") as? String
+    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    sign(configurations.archives.get())
 }

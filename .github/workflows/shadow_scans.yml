@@ -72,7 +72,7 @@ jobs:
           run-shadow-scans: true
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
-          gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
+          gradle-args: -x :its:check -x :buildPlugin -x :buildPluginBlockmap -x :cyclonedxBom check jacocoTestReport
 
   iris:
     needs: scan

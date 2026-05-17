@@ -20,22 +20,11 @@ kotlin {
     jvmToolchain(21)
 }
 
-configurations.archives.canBeResolved = true
-
 tasks {
-  cyclonedxBom {
-    setIncludeConfigs(List.of("runtimeClasspath"))
-    inputs.files(configurations.named("runtimeClasspath").get(), configurations.archives)
-    mustRunAfter(getTasksByName("buildPluginBlockmap", true))
+  cyclonedxDirectBom {
+    includeConfigs = ["runtimeClasspath"]
+    xmlOutput.unsetConvention()
   }
-}
-
-var bomFile = layout.buildDirectory.file("reports/bom.json")
-artifacts.add("archives", bomFile.get().asFile) {
-    name = "sonarlint-intellij"
-    type = "json"
-    classifier = "cyclonedx"
-    builtBy("cyclonedxBom")
 }
 
 license {

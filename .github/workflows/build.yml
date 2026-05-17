@@ -205,7 +205,7 @@ jobs:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
-          gradle-args: -x :its:check -x :buildPlugin -x :cyclonedxBom check jacocoTestReport
+          gradle-args: -x :its:check -x :buildPlugin -x :buildPluginBlockmap -x :cyclonedxBom check jacocoTestReport
           cache-paths: |
             /home/runner/.gradle/caches
             /home/runner/.gradle/wrapper
