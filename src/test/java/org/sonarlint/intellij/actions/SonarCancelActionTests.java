@@ -77,8 +77,6 @@ class SonarCancelActionTests extends AbstractSonarLintHeavyTests {
     assertThat(presentation.isEnabled()).isTrue();
 
     var projectDir = FileUtil.createTempDirectory("project", null);
-    var project = ProjectManager.getInstance().createProject("project", projectDir.getAbsolutePath());
-    disposeOnTearDown(project);
     var projectManager = ProjectManager.getInstance();
     var reloaded = projectManager.loadAndOpenProject(projectDir.getAbsolutePath());
     disposeOnTearDown(reloaded);
