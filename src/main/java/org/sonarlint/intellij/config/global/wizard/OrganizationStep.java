@@ -66,29 +66,30 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   private void enterCustomOrganizationKey() {
-    while (true) {
+    var shouldContinue = true;
+    while (shouldContinue) {
       var organizationKey = Messages.showInputDialog(panel, "Please enter the organization key", "Add Another Organization", null);
       if (StringUtil.isNotEmpty(organizationKey)) {
         boolean found = selectOrganizationIfExists(organizationKey);
         if (found) {
-          break;
-        }
-
-        var task = new GetOrganizationTask(model.createConnectionWithoutOrganization(), organizationKey);
-        ProgressManager.getInstance().run(task);
-
-        if (task.organization() != null) {
-          listModel.add(0, task.organization());
-          orgList.setSelectedIndex(0);
-          orgList.ensureIndexIsVisible(0);
-          break;
-        } else if (task.getException() != null) {
-          Messages.showErrorDialog("Failed to fetch organization from server: " + task.getException().getMessage(), "Connection Failure");
+          shouldContinue = false;
         } else {
-          Messages.showErrorDialog(String.format("Organization '%s' not found. Please enter the key of an existing organization.", organizationKey), "Organization Not Found");
+          var task = new GetOrganizationTask(model.createConnectionWithoutOrganization(), organizationKey);
+          ProgressManager.getInstance().run(task);
+
+          if (task.organization() != null) {
+            listModel.add(0, task.organization());
+            orgList.setSelectedIndex(0);
+            orgList.ensureIndexIsVisible(0);
+            shouldContinue = false;
+          } else if (task.getException() != null) {
+            Messages.showErrorDialog("Failed to fetch organization from server: " + task.getException().getMessage(), "Connection Failure");
+          } else {
+            Messages.showErrorDialog(String.format("Organization '%s' not found. Please enter the key of an existing organization.", organizationKey), "Organization Not Found");
+          }
         }
       } else {
-        break;
+        shouldContinue = false;
       }
     }
   }
