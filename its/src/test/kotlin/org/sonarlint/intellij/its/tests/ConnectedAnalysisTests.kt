@@ -151,12 +151,10 @@ class ConnectedAnalysisTests : BaseUiTest() {
             analyzeAndVerifyReportTabContainsMessages(
                 "No new issues from last 1 days",
                 "No new Security Hotspots from last 1 days",
-                "Found 2 older issues",
-                "Found 1 older Security Hotspot"
+                "Found 3 older issues"
             )
             verifyCurrentFileTabContainsMessages(
-                "Found 2 older issues",
-                "Found 1 older Security Hotspot",
+                "Found 3 older issues",
                 "Found 1 older Taint Vulnerability"
             )
             resetFocusOnNewCode()
