@@ -9,7 +9,7 @@
       <key>S3649</key>
       <priority>BLOCKER</priority>
     </rule>
-    <!-- Using hardcoded IP addresses is security-sensitive. Hotspot that should not be visible in SonarLint -->
+    <!-- Using hardcoded IP addresses is security-sensitive. Was a Hotspot in java:8.26, reclassified as a Bug/Vulnerability in java:8.28 -->
     <rule>
       <repositoryKey>java</repositoryKey>
       <key>S1313</key>
