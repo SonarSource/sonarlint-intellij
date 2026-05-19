@@ -20,9 +20,7 @@
 package org.sonarlint.intellij.config.global.rules;
 
 import com.intellij.ui.scale.JBUIScale;
-import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
-import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
@@ -36,7 +34,6 @@ import static org.sonarlint.intellij.config.global.rules.RulesTreeTable.IS_ENABL
 import static org.sonarlint.intellij.config.global.rules.RulesTreeTable.TREE_COLUMN;
 
 public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableModel {
-  private TreeTable treeTable;
 
   public RulesTreeTableModel(TreeNode root) {
     super(root);
@@ -158,6 +155,6 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   @Override
   public void setTree(JTree tree) {
-    treeTable = ((TreeTableTree) tree).getTreeTable();
+    // Required by TreeTableModel interface
   }
 }

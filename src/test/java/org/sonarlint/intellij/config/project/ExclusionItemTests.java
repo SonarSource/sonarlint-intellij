@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.config.project;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,21 +48,10 @@ class ExclusionItemTests {
   }
 
 
-  @Test
-  void return_null_if_fail_to_parse() {
-    var item = ExclusionItem.parse("Unknown:src/main/java/File.java");
-    assertThat(item).isNull();
-  }
-
-  @Test
-  void return_null_if_fail_to_parse2() {
-    var item = ExclusionItem.parse("Unknown:");
-    assertThat(item).isNull();
-  }
-
-  @Test
-  void return_null_if_fail_to_parse3() {
-    var item = ExclusionItem.parse("Unknown");
+  @ParameterizedTest
+  @ValueSource(strings = {"Unknown:src/main/java/File.java", "Unknown:", "Unknown"})
+  void return_null_if_fail_to_parse(String input) {
+    var item = ExclusionItem.parse(input);
     assertThat(item).isNull();
   }
 

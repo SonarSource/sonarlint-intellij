@@ -198,22 +198,22 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     if (paths == null) {
       return Collections.emptyList();
     }
-    final var q = new ArrayDeque<RulesTreeNode>(paths.length);
+    final var q = new ArrayDeque<RulesTreeNode<?>>(paths.length);
     for (final TreePath path : paths) {
       if (path != null) {
-        q.addLast((RulesTreeNode) path.getLastPathComponent());
+        q.addLast((RulesTreeNode<?>) path.getLastPathComponent());
       }
     }
     return getRulesNodes(q);
   }
 
-  private static List<RulesTreeNode.Rule> getRulesNodes(final ArrayDeque<RulesTreeNode> queue) {
+  private static List<RulesTreeNode.Rule> getRulesNodes(final ArrayDeque<RulesTreeNode<?>> queue) {
     final var nodes = new ArrayList<RulesTreeNode.Rule>();
     while (!queue.isEmpty()) {
       final var node = queue.pollFirst();
       if (node instanceof RulesTreeNode.LanguageNode) {
         for (var i = 0; i < node.getChildCount(); i++) {
-          final var childNode = (RulesTreeNode) node.getChildAt(i);
+          final var childNode = (RulesTreeNode<?>) node.getChildAt(i);
           queue.addLast(childNode);
         }
       } else {

@@ -48,9 +48,9 @@ public class IncludeResolvedFindingsAction<T extends Finding> extends AbstractSo
   public void setSelected(AnActionEvent event, boolean flag) {
     var p = event.getProject();
     if (p != null && type == Finding.class) {
-        isResolved = flag;
-        getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
-      }
+      isResolved = flag;
+      getService(p, SonarLintToolWindow.class).filterCurrentFileTab(isResolved);
+    }
   }
 
 }

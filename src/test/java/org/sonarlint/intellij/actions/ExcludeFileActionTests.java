@@ -80,7 +80,7 @@ class ExcludeFileActionTests extends AbstractSonarLintHeavyTests {
 
   @Test
   void do_nothing_if_there_are_no_files() {
-    when(projectSpy.isDisposed()).thenReturn(true);
+    when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[0]);
 
     action.actionPerformed(e);
     
