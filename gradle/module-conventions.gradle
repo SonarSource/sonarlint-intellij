@@ -1,6 +1,20 @@
 // Apply common logic to all module build files
 
+import org.jetbrains.intellij.platform.gradle.services.RequestedIntelliJPlatformsService
+
 apply(from: "${rootProject.projectDir}/gradle/intellij-dependency-lock.gradle")
+
+// Workaround for an IntelliJ Platform Gradle Plugin 2.14+ interaction bug.
+// `local(...)` defers `markIntelliJPlatformDependencyExplicit` to a lazy provider, which
+// races with the auto-inherit provider added by IntelliJPlatformModulePlugin and triggers
+// "intellijPlatformDependency already contains IC-2024.2 (installer)" on CI.
+// `create(...)` / `intellijIdeaCommunity(...)` mark it eagerly; we mimic that here so the
+// auto-inherit path backs off.
+def requestedPlatformsServiceClass = RequestedIntelliJPlatformsService.class
+def requestedPlatformsServiceName = "${requestedPlatformsServiceClass.simpleName}_${requestedPlatformsServiceClass.classLoader.hashCode()}_${project.path.replace(':', '_')}"
+gradle.sharedServices.registerIfAbsent(requestedPlatformsServiceName, requestedPlatformsServiceClass) {
+    parameters.useInstaller = true
+}.get().markExplicit("intellijPlatformDependency")
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()

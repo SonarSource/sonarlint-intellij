@@ -1,3 +1,4 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 val riderBuildVersion: String by project
@@ -19,7 +20,7 @@ dependencies {
             local(riderHome)
         } else {
             println("No local installation of Rider found, using version $riderBuildVersion")
-            rider(riderBuildVersion) { useInstaller = false }
+            create(IntelliJPlatformType.Rider, riderBuildVersion) { useInstaller = false }
         }
         pluginComposedModule(implementation(project(":common")))
         pluginComposedModule(implementation(project(":git")))

@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+
 val intellijUltimateBuildVersion: String by project
 val ultimateHome: String? = System.getenv("ULTIMATE_HOME")
 
@@ -17,7 +19,7 @@ dependencies {
             local(ultimateHome)
         } else {
             println("No local installation of Ultimate found, using version $intellijUltimateBuildVersion")
-            intellijIdeaUltimate(intellijUltimateBuildVersion)
+            create(IntelliJPlatformType.IntellijIdeaUltimate, intellijUltimateBuildVersion)
         }
         pluginComposedModule(implementation(project(":common")))
         bundledPlugins("JavaScript")

@@ -1,3 +1,4 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 val clionBuildVersion: String by project
@@ -19,7 +20,7 @@ dependencies {
             local(clionHome)
         } else {
             println("No local installation of CLion found, using version $clionBuildVersion")
-            clion(clionBuildVersion)
+            create(IntelliJPlatformType.CLion, clionBuildVersion)
         }
         pluginComposedModule(implementation(project(":common")))
         pluginComposedModule(implementation(project(":clion")))
