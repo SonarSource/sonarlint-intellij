@@ -117,15 +117,19 @@ class AnalysisSubmitter(private val project: Project) {
 
     private fun awaitPreCommitAnalysisStart(module: Module, files: List<VirtualFile>, callback: CheckInCallable, analysisIds: MutableList<UUID>) {
         getService(project, PromotionProvider::class.java).handlePromotionOnPreCommitCheck()
+        val console = SonarLintConsole.get(project)
+        val startTime = System.currentTimeMillis()
+        console.debug("Pre-commit: submitting analyzeFileList for module '${module.name}' with ${files.size} file(s)")
         val future = getService(BackendService::class.java).analyzeFileList(module, files)
         try {
             future[5, TimeUnit.SECONDS].analysisId?.let { analysisId ->
+                console.debug("Pre-commit: analyzeFileList returned analysisId=$analysisId in ${System.currentTimeMillis() - startTime} ms")
                 getService(project, RunningAnalysesTracker::class.java).track(AnalysisState(analysisId, callback, module))
                 analysisIds.add(analysisId)
-            }
+            } ?: console.debug("Pre-commit: analyzeFileList returned no analysisId in ${System.currentTimeMillis() - startTime} ms")
         } catch (e: TimeoutException) {
             future.cancel(true)
-            reportPreCommitAnalysisStartFailure(callback, e, "Pre-commit analysis timed out while waiting for the analysis to start")
+            reportPreCommitAnalysisStartFailure(callback, e, "Pre-commit analysis timed out while waiting for the analysis to start (after ${System.currentTimeMillis() - startTime} ms)")
         } catch (e: InterruptedException) {
             future.cancel(true)
             Thread.currentThread().interrupt()

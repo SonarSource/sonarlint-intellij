@@ -23,6 +23,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.project.stateStore
 import com.intellij.testFramework.replaceService
 import git4idea.GitUtil
@@ -32,6 +33,9 @@ import git4idea.commands.Git
 import git4idea.commands.GitCommand
 import git4idea.commands.GitLineHandler
 import git4idea.repo.GitRepository
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -40,10 +44,9 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.whenever
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.fixtures.AbstractLightTests
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 
 private const val MAIN_BRANCH = "main"
 private const val EXPECTED = "expected-branch"
@@ -62,6 +65,12 @@ class GitRepoTests : AbstractLightTests() {
         project.replaceService(GitBranchIncomingOutgoingManager::class.java,
             mock(GitBranchIncomingOutgoingManager::class.java),
             testRootDisposable)
+        // Register a no-op SonarLintConsole so the timing/debug logs in GitRepo can be issued in tests.
+        project.replaceService(SonarLintConsole::class.java,
+            mock(SonarLintConsole::class.java),
+            testRootDisposable)
+        // Branch matching cache is process-wide; clear it so a previous test cannot mask a real cache miss.
+        clearGitRepoBranchMatchingCache()
     }
 
     @AfterEach
@@ -278,6 +287,49 @@ class GitRepoTests : AbstractLightTests() {
         verify(repoSpy, times(2)).currentRevision
         // invoked when no cache
         verify(repoSpy, times(2)).branches
+    }
+
+    @Test
+    fun `should not evict cache when another repository is matched in-between`() {
+        // Real repo for the first matcher
+        val realRepoSpy = spy(initRepoWithCommit())
+        newBranch("branch-1")
+        commitNewFile("1.txt")
+        newBranch(EXPECTED)
+        commitNewFile("2.txt")
+        newBranch("branch-3")
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            realRepoSpy.update()
+        }.get()
+        val realRepoMatcher = GitRepo(realRepoSpy, this.project)
+        val branchNames = setOf(MAIN_BRANCH, "branch-1", EXPECTED)
+
+        // 1) Populate cache for the real repo (expensive branch walk).
+        realRepoMatcher.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, branchNames)
+
+        // 2) Match a different repository in between (simulates another open project doing branch matching).
+        val otherRepoMatcher = GitRepo(otherRepoMock(rootPath = "/some/other/repo/path"), this.project)
+        otherRepoMatcher.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, setOf(MAIN_BRANCH))
+
+        // 3) Match the real repo again with the same inputs: must still hit the cache.
+        realRepoMatcher.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, branchNames)
+
+        // Cheap getters are called every time
+        verify(realRepoSpy, times(2)).currentBranchName
+        verify(realRepoSpy, times(2)).currentRevision
+        // The expensive branch walk must run exactly once: the second call hits the cache despite the other repo being matched in-between.
+        verify(realRepoSpy, times(1)).branches
+    }
+
+    private fun otherRepoMock(rootPath: String): GitRepository {
+        val mockRepo = mock(GitRepository::class.java)
+        val mockRoot = mock(VirtualFile::class.java)
+        whenever(mockRoot.path).thenReturn(rootPath)
+        whenever(mockRepo.root).thenReturn(mockRoot)
+        whenever(mockRepo.currentBranchName).thenReturn(MAIN_BRANCH)
+        whenever(mockRepo.currentRevision).thenReturn("deadbeef")
+        // currentBranch is in allBranchNames -> short-circuits, never reaches repo.branches
+        return mockRepo
     }
 
     private fun newGitRepository(): GitRepository {
