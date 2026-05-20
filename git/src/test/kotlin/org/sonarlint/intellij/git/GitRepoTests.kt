@@ -290,6 +290,29 @@ class GitRepoTests : AbstractLightTests() {
     }
 
     @Test
+    fun `should cache null result when no local branch matches any server branch`() {
+        val gitRepository = initRepoWithCommit()
+        newBranch("branch-1")
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            gitRepository.update()
+        }.get()
+        val repoSpy = spy(gitRepository)
+        val tested = GitRepo(repoSpy, this.project)
+        val unknownServerBranches = setOf("otherMain", "otherBranch-1")
+
+        val first = tested.electBestMatchingServerBranchForCurrentHead("otherMain", unknownServerBranches)
+        val second = tested.electBestMatchingServerBranchForCurrentHead("otherMain", unknownServerBranches)
+
+        assertThat(first).isNull()
+        assertThat(second).isNull()
+        // Cheap getters always run
+        verify(repoSpy, times(2)).currentBranchName
+        verify(repoSpy, times(2)).currentRevision
+        // The expensive walk must run exactly once; the second call hits the (now cached) null result.
+        verify(repoSpy, times(1)).branches
+    }
+
+    @Test
     fun `should not evict cache when another repository is matched in-between`() {
         // Real repo for the first matcher
         val realRepoSpy = spy(initRepoWithCommit())

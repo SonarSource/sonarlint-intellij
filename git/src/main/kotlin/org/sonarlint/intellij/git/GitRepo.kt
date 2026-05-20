@@ -95,11 +95,13 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
             SonarLintConsole.get(project).debug(
                 "Branch matching walked ${allBranchNames.size} server branches ($matchedCount with local merge-base) for $repoCacheKey in ${System.currentTimeMillis() - totalStart} ms"
             )
-            val bestCandidates = branchesPerDistance.minByOrNull { it.key }?.value ?: return null
-            if (mainBranchName in bestCandidates) {
+            val bestCandidates = branchesPerDistance.minByOrNull { it.key }?.value
+            when {
+                bestCandidates == null -> null
                 // Favor the main branch when there are multiple candidates with the same distance
-                mainBranchName
-            } else bestCandidates.first()
+                mainBranchName in bestCandidates -> mainBranchName
+                else -> bestCandidates.first()
+            }
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Couldn't find best matching branch", e)
             null
