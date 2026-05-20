@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.cyclonedx)
     alias(libs.plugins.license)
     alias(libs.plugins.kotlin)
+    jacoco
 }
 
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
@@ -122,12 +123,24 @@ tasks {
     }
 }
 
-tasks.named<Test>("test") {
-    javaLauncher.set(
-        javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
-    )
+// IT coverage is opt-in: enable with -PitCoverage=true.
+// When enabled, the JaCoCo agent is attached to the IDE JVM in TCP-server mode so we
+// can dump coverage on demand (the IDE JVM is usually killed, not shut down cleanly).
+val isItCoverageEnabled = project.hasProperty("itCoverage")
+val itCoveragePort = (project.findProperty("itCoveragePort") as? String)?.toInt() ?: 6300
+val ideCoverageExecFile = layout.buildDirectory.file("jacoco/runIdeForUiTests.exec")
+
+// We need the standalone jacocoagent.jar (the `runtime` classifier of `org.jacoco.agent`) so we
+// can pass it to the IDE JVM as a -javaagent. The `jacoco` plugin's built-in `jacocoAgent`
+// configuration resolves to a ZIP containing jacocoagent.jar, which is less convenient; a
+// dedicated configuration with the `runtime` classifier gives us the JAR directly.
+val itJacocoAgent: Configuration = configurations.create("itJacocoAgent") {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+}
+
+dependencies {
+    "itJacocoAgent"("org.jacoco:org.jacoco.agent:${jacoco.toolVersion}:runtime@jar")
 }
 
 val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
@@ -137,7 +150,7 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
 
     task {
         jvmArgumentProviders += CommandLineArgumentProvider {
-            listOf(
+            val baseArgs = listOf(
                 "-Xmx1G",
                 "-Drobot-server.port=8082",
                 "-Drobot-server.host.public=true",
@@ -157,6 +170,10 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
                 "-Djb.consents.confirmation.enabled=false",
                 "-Deap.require.license=true"
             )
+            if (isItCoverageEnabled) {
+                val agentJar = itJacocoAgent.singleFile.absolutePath
+                baseArgs + "-javaagent:$agentJar=output=tcpserver,address=*,port=$itCoveragePort,includes=org.sonarlint.intellij.*,append=false"
+            } else baseArgs
         }
 
         doFirst {
@@ -179,6 +196,98 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
 
     prepareSandboxTask {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+}
+
+// Dumps JaCoCo coverage from the running IDE's TCP server into a local .exec file.
+// Wired as a finalizer on :its:test (only when -PitCoverage is set) so coverage is captured
+// even when tests fail.
+val dumpIdeCoverage by tasks.registering {
+    group = "verification"
+    description = "Dumps JaCoCo coverage from the running IDE's TCP server."
+    val outFile = ideCoverageExecFile.get().asFile
+    val port = itCoveragePort
+    val jacocoAntClasspath = configurations.named("jacocoAnt")
+    outputs.file(outFile)
+    onlyIf { isItCoverageEnabled }
+
+    doLast {
+        outFile.parentFile.mkdirs()
+        try {
+            ant.withGroovyBuilder {
+                "taskdef"(
+                    "name" to "jacocoDump",
+                    "classname" to "org.jacoco.ant.DumpTask",
+                    "classpath" to jacocoAntClasspath.get().asPath
+                )
+                "jacocoDump"(
+                    "address" to "localhost",
+                    "port" to port,
+                    "reset" to false,
+                    "destfile" to outFile.absolutePath,
+                    "append" to false
+                )
+            }
+            logger.lifecycle("IT coverage dumped to ${outFile.absolutePath}")
+        } catch (e: Exception) {
+            // Don't fail the build if the IDE isn't reachable - tests may have aborted before the IDE started.
+            logger.warn("Failed to dump IT coverage from localhost:$port: ${e.message}")
+        }
+    }
+}
+
+// Generates a JaCoCo report for SonarLint plugin code exercised by the ITs.
+// Picks up every *.exec file under build/jacoco/ so it can also be used to merge
+// coverage collected from several matrix jobs (CI downloads them side-by-side).
+tasks.register<JacocoReport>("jacocoIdeReport") {
+    group = "verification"
+    description = "Generates a JaCoCo coverage report for SonarLint plugin code exercised by the ITs."
+
+    executionData.setFrom(
+        fileTree(layout.buildDirectory.dir("jacoco")) {
+            include("**/*.exec")
+        }
+    )
+
+    // The composed plugin includes the root project plus every `pluginComposedModule` sub-module
+    // listed in the root build.gradle.kts. The IDE JVM loads all of them, so the report needs
+    // their sources and instrumented classes too.
+    val pluginModulePaths = listOf("", "common", "clion", "clion-resharper", "nodejs", "rider", "git")
+    val moduleProjects = pluginModulePaths.map { if (it.isEmpty()) rootProject else rootProject.project(":$it") }
+    sourceDirectories.setFrom(
+        moduleProjects.flatMap { p ->
+            listOf(p.file("src/main/java"), p.file("src/main/kotlin"))
+        }.filter { it.exists() }
+    )
+    // Same instrumented output the unit-test report uses, so forms/etc. are included.
+    classDirectories.setFrom(
+        moduleProjects.map { it.layout.buildDirectory.dir("instrumented/instrumentCode") }
+    )
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    onlyIf {
+        executionData.files.any { it.exists() && it.length() > 0 }
+    }
+}
+
+tasks.named<Test>("test") {
+    javaLauncher.set(
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    )
+    // The test JVM only drives the IDE remotely - it never loads plugin code - so the default
+    // JaCoCo agent attached by the `jacoco` plugin would produce an empty exec file. Disable it
+    // to keep build/jacoco/ clean for the IDE JVM dump.
+    configure<JacocoTaskExtension> {
+        isEnabled = false
+    }
+    if (isItCoverageEnabled) {
+        finalizedBy(dumpIdeCoverage)
     }
 }
 
