@@ -40,6 +40,13 @@ class ReadActionUtils {
         }
 
         @JvmStatic
+        fun runReadActionSafely(action: Runnable) {
+            return ReadAction.run<Exception> {
+                action.run()
+            }
+        }
+
+        @JvmStatic
         fun <T> computeReadActionSafely(action: ThrowableComputable<T, out Exception>): T {
             return ReadAction.compute<T, Exception> {
                 action.compute()

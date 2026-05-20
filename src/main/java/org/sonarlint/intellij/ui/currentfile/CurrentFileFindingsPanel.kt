@@ -188,7 +188,7 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
                 }
             }
         })
-        tree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
+        tree.selectionModel.selectionMode = TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION
         tree.isVisible = false // Trees should be hidden initially, shown only when they have content
     }
 

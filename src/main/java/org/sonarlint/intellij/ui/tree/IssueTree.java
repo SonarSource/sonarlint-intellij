@@ -35,6 +35,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.TreeModel;
 import org.jetbrains.annotations.NonNls;
+import org.sonarlint.intellij.actions.CopyFindingsAction;
 import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
@@ -83,6 +84,7 @@ public class IssueTree extends FindingTree implements DataProvider {
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
     group.add(new MarkAsResolvedAction());
     group.add(new ReopenIssueAction());
+    group.add(new CopyFindingsAction());
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
     group.addSeparator();

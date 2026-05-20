@@ -91,7 +91,7 @@ class ReportTreeManager(
                 }
             }
         })
-        tree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
+        tree.selectionModel.selectionMode = TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION
     }
     
     private fun setupTreeSelectionListeners() {
