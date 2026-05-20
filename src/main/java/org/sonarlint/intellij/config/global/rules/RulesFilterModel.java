@@ -90,14 +90,16 @@ public class RulesFilterModel {
     return text == null && !isShowOnlyChanged() && !isShowOnlyDisabled() && !isShowOnlyEnabled();
   }
 
-  public void reset(boolean triggerListener) {
+  public void reset() {
     showOnlyChanged = false;
     showOnlyDisabled = false;
     showOnlyEnabled = false;
     text = null;
-    if (triggerListener) {
-      onChange.run();
-    }
+  }
+
+  public void resetAndNotify() {
+    reset();
+    onChange.run();
   }
 
   public boolean filter(RulesTreeNode.Rule rule) {

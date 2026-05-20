@@ -58,12 +58,12 @@ public class ErrorPainter extends AbstractPainter {
     }
   }
 
-  public void setValid(JComponent component, boolean valid) {
-    if (valid) {
-      removeComponentWithErrors(component);
-    } else {
-      addComponentWithErrors(component);
-    }
+  public void setAsValid(JComponent component) {
+    removeComponentWithErrors(component);
+  }
+
+  public void setAsInvalid(JComponent component) {
+    addComponentWithErrors(component);
   }
 
   public void removeComponentWithErrors(JComponent component) {

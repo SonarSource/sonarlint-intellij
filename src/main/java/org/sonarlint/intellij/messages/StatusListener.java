@@ -20,14 +20,10 @@
 package org.sonarlint.intellij.messages;
 
 import com.intellij.util.messages.Topic;
+import java.util.function.Consumer;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 @FunctionalInterface
-public interface StatusListener {
+public interface StatusListener extends Consumer<AnalysisStatus.Status> {
   Topic<StatusListener> SONARLINT_STATUS_TOPIC = Topic.create("SonarQube for IDE analyzer status", StatusListener.class);
-
-  /**
-   * Called when the status of the user-initiated analysis changes.
-   */
-  void changed(AnalysisStatus.Status newStatus);
 }

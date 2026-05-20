@@ -241,11 +241,11 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private void recomputeDirtyState() {
     runOnPooledThread(project, () -> getService(BackendService.class).getListAllStandaloneRulesDefinitions()
       .thenAcceptAsync(response -> {
-        var persistedRules = response.getRulesByKey().values().stream()
-          .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
-            loadRuleActivation(getGlobalSettings(), ruleDefinitionDto),
-            loadNonDefaultRuleParams(getGlobalSettings(), ruleDefinitionDto)))
-          .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
+      var persistedRules = response.getRulesByKey().values().stream()
+        .map(ruleDefinitionDto -> new RulesTreeNode.Rule(ruleDefinitionDto,
+          loadRuleActivation(getGlobalSettings(), ruleDefinitionDto),
+          loadNonDefaultRuleParams(getGlobalSettings(), ruleDefinitionDto)))
+        .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
 
       dirtyRules.clear();
 
@@ -592,7 +592,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       var path = new TreePath(node.getPath());
       table.getTree().setSelectionPath(path);
     } else {
-      filterModel.reset(false);
+      filterModel.reset();
       myRuleFilter.reset();
     }
   }
