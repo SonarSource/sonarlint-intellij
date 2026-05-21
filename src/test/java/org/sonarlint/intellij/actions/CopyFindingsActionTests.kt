@@ -74,7 +74,7 @@ class CopyFindingsActionTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `actionPerformed - copies single issue with null range as (0, 0)`() {
+    fun `actionPerformed - copies single issue with null range as (-, -)`() {
         assumeFalse(GraphicsEnvironment.isHeadless(), "Clipboard not available in headless environment")
 
         val tree = treeWithSelectedNodes(IssueNode(anIssueWithFile(message = "Null pointer dereference", ruleKey = "java:S2259")))
