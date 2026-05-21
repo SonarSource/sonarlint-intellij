@@ -45,7 +45,7 @@ import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
  * Extends {@link Tree} to provide context data for actions and initialize it
  */
 public class SecurityHotspotTree extends FindingTree implements DataProvider {
-  private final Project project;
+  private final transient Project project;
 
   public SecurityHotspotTree(Project project, TreeModel model) {
     super(project, model);

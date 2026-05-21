@@ -80,6 +80,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
 
   @Override
   public void commit(CommitType commitType) {
+    // Nothing to commit: this is a read-only confirmation step
   }
 
   @Nullable

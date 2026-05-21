@@ -30,7 +30,7 @@ import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class PrimaryLocationNode extends AbstractNode {
   private final String message;
-  private final Flow associatedFlow;
+  private final transient Flow associatedFlow;
   private final VirtualFile file;
   private final Integer number;
   private final RangeMarker rangeMarker;

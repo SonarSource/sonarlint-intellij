@@ -81,7 +81,9 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
   }
 
   @Override
-  public void setConsoleView(ConsoleView consoleView) { }
+  public void setConsoleView(ConsoleView consoleView) {
+    // No-op: not needed in test implementation
+  }
 
   @Override
   public String getContent() {
