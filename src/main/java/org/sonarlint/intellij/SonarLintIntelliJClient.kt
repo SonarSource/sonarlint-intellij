@@ -691,6 +691,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         allBranchesNames: Set<String>,
         cancelChecker: SonarLintCancelChecker,
     ): String? {
+        val matchStart = System.currentTimeMillis()
         val repositoriesEPs = VcsRepoProvider.EP_NAME.extensionList
         val repositories = findModule(configurationScopeId)?.let { module ->
             matchSonarModule(module, repositoriesEPs)
@@ -727,7 +728,11 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         })
         return computeOnPooledThread(project, "Waiting for branch matching result") {
             try {
-                resultFuture.get()
+                val matched = resultFuture.get()
+                getService(project, SonarLintConsole::class.java).debug(
+                    "Matched Sonar project branch '$matched' for $configurationScopeId (${allBranchesNames.size} server branches) in ${System.currentTimeMillis() - matchStart} ms"
+                )
+                matched
             } catch (e: InterruptedException) {
                 if (!project.isDisposed) {
                     getService(project, SonarLintConsole::class.java).error(INTERRUPTED_MESSAGE, e)

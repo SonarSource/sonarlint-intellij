@@ -26,6 +26,8 @@ import git4idea.commands.GitLineHandler
 import git4idea.history.GitHistoryUtils
 import git4idea.repo.GitRepository
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
+import org.jetbrains.annotations.VisibleForTesting
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.vcs.VcsRepo
 
@@ -37,52 +39,75 @@ private data class CacheKey(
     val allBranchNames: Set<String>,
 )
 
-private var cache: Pair<CacheKey, String?>? = null
+// Keyed by repository root path so independent repositories (and independent open projects) do not evict each other.
+private val cacheByRepoPath = ConcurrentHashMap<String, Pair<CacheKey, String?>>()
+
+@VisibleForTesting
+fun clearGitRepoBranchMatchingCache() = cacheByRepoPath.clear()
 
 class GitRepo(private val repo: GitRepository, private val project: Project) : VcsRepo {
     override fun electBestMatchingServerBranchForCurrentHead(mainBranchName: String, allBranchNames: Set<String>): String? {
+        val totalStart = System.currentTimeMillis()
         val currentBranch = repo.currentBranchName
         val head = repo.currentRevision
         val repoBaseDir = getGitDir()
+        val repoCacheKey = repo.root.path
 
         val cacheKey = CacheKey(currentBranch, head, repoBaseDir, mainBranchName, allBranchNames)
 
-        cache?.let { (cachedKey, cachedResult) ->
+        cacheByRepoPath[repoCacheKey]?.let { (cachedKey, cachedResult) ->
             if (cachedKey == cacheKey) {
+                SonarLintConsole.get(project).debug(
+                    "Branch matching cache hit for $repoCacheKey in ${System.currentTimeMillis() - totalStart} ms"
+                )
                 return cachedResult
             }
         }
 
         if (currentBranch != null && currentBranch in allBranchNames) {
-            cache = Pair(cacheKey, currentBranch)
+            cacheByRepoPath[repoCacheKey] = Pair(cacheKey, currentBranch)
+            SonarLintConsole.get(project).debug(
+                "Branch matching short-circuit (currentBranch in serverBranches) for $repoCacheKey in ${System.currentTimeMillis() - totalStart} ms"
+            )
             return currentBranch
         }
 
         if (head == null) {
-            cache = Pair(cacheKey, null)
+            cacheByRepoPath[repoCacheKey] = Pair(cacheKey, null)
             return null // Could be the case if no commit has been made in the repo
         }
 
         val result = try {
             val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
             val branches = repo.branches
+            var matchedCount = 0
             for (serverBranchName in allBranchNames) {
                 val localBranch = branches.findLocalBranch(serverBranchName) ?: continue
                 val localBranchHash = branches.getHash(localBranch) ?: continue
+                val distanceStart = System.currentTimeMillis()
                 val distance = distance(project, repo, head, localBranchHash.asString()) ?: continue
+                SonarLintConsole.get(project).debug(
+                    "Branch matching: distance to '$serverBranchName' computed in ${System.currentTimeMillis() - distanceStart} ms"
+                )
+                matchedCount++
                 branchesPerDistance.computeIfAbsent(distance) { HashSet() }.add(serverBranchName)
             }
-            val bestCandidates = branchesPerDistance.minByOrNull { it.key }?.value ?: return null
-            if (mainBranchName in bestCandidates) {
+            SonarLintConsole.get(project).debug(
+                "Branch matching walked ${allBranchNames.size} server branches ($matchedCount with local merge-base) for $repoCacheKey in ${System.currentTimeMillis() - totalStart} ms"
+            )
+            val bestCandidates = branchesPerDistance.minByOrNull { it.key }?.value
+            when {
+                bestCandidates == null -> null
                 // Favor the main branch when there are multiple candidates with the same distance
-                mainBranchName
-            } else bestCandidates.first()
+                mainBranchName in bestCandidates -> mainBranchName
+                else -> bestCandidates.first()
+            }
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Couldn't find best matching branch", e)
             null
         }
 
-        cache = Pair(cacheKey, result)
+        cacheByRepoPath[repoCacheKey] = Pair(cacheKey, result)
         return result
     }
 

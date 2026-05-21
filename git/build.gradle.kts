@@ -28,5 +28,6 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
     testRuntimeOnly(libs.junit.launcher)
 }
