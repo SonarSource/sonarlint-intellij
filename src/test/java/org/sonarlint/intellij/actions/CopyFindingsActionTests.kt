@@ -82,7 +82,7 @@ class CopyFindingsActionTests : AbstractSonarLintLightTests() {
 
         action.actionPerformed(mockEvent)
 
-        assertThat(clipboardText()).isEqualTo("(0, 0) Null pointer dereference [java:S2259]")
+        assertThat(clipboardText()).isEqualTo("(-, -) Null pointer dereference [java:S2259]")
     }
 
     @Test
@@ -98,7 +98,7 @@ class CopyFindingsActionTests : AbstractSonarLintLightTests() {
         action.actionPerformed(mockEvent)
 
         assertThat(clipboardText()).isEqualTo(
-            "(0, 0) First issue [java:S1]\n(0, 0) Second issue [java:S2]"
+            "(-, -) First issue [java:S1]\n(-, -) Second issue [java:S2]"
         )
     }
 
@@ -124,7 +124,7 @@ class CopyFindingsActionTests : AbstractSonarLintLightTests() {
 
         action.actionPerformed(mockEvent)
 
-        assertThat(clipboardText()).isEqualTo("(0, 0) Weak hash algorithm [java:S2070]")
+        assertThat(clipboardText()).isEqualTo("(-, -) Weak hash algorithm [java:S2070]")
     }
 
     @Test
@@ -136,7 +136,7 @@ class CopyFindingsActionTests : AbstractSonarLintLightTests() {
 
         action.actionPerformed(mockEvent)
 
-        assertThat(clipboardText()).isEqualTo("(0, 0) SQL injection [javasecurity:S3649]")
+        assertThat(clipboardText()).isEqualTo("(-, -) SQL injection [javasecurity:S3649]")
     }
 
     @Test

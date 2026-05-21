@@ -87,7 +87,7 @@ class CopyFindingsAction : AnAction("Copy Finding(s)", "Copy selected findings t
     }
 
     private fun formatCoords(file: VirtualFile?, rangeMarker: RangeMarker?): String {
-        if (rangeMarker == null) return "(0, 0) "
+        if (rangeMarker == null) return "(-, -) "
         var result = "(-, -) "
         runReadActionSafely {
             if (!rangeMarker.isValid || file == null || !file.isValid) return@runReadActionSafely
