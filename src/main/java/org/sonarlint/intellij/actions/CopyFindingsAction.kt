@@ -31,11 +31,10 @@ import com.intellij.ui.treeStructure.Tree
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
+import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
 import org.sonarlint.intellij.ui.nodes.FindingNode
-import org.sonarlint.intellij.ui.nodes.IssueNode
-import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 
 /**
  * Copies one or more selected findings from a findings tree to the clipboard.
@@ -72,15 +71,9 @@ class CopyFindingsAction : AnAction("Copy Finding(s)", "Copy selected findings t
 
     private fun formatNode(node: Any?): String? {
         return when (node) {
-            is IssueNode -> {
-                val issue = node.issue()
-                val coords = formatCoords(issue.file(), issue.range)
-                "$coords${issue.message} [${issue.getRuleKey()}]"
-            }
-            is LiveSecurityHotspotNode -> {
-                val hotspot = node.hotspot
-                val coords = formatCoords(hotspot.file(), hotspot.range)
-                "$coords${hotspot.message} [${hotspot.getRuleKey()}]"
+            is FindingNode -> (node.finding as? LiveFinding)?.let { finding ->
+                val coords = formatCoords(finding.file(), finding.range)
+                "$coords${finding.message} [${finding.getRuleKey()}]"
             }
             is LocalTaintVulnerability -> {
                 val coords = formatCoords(node.file(), node.rangeMarker())

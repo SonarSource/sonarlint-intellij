@@ -35,13 +35,21 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assumptions.assumeFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.finding.Location
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.sca.aDependencyRisk
 import org.sonarlint.intellij.ui.nodes.IssueNode
+import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.VulnerabilityProbability
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
@@ -108,6 +116,30 @@ class CopyFindingsActionTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun `actionPerformed - copies security hotspot with message and rule key`() {
+        assumeFalse(GraphicsEnvironment.isHeadless(), "Clipboard not available in headless environment")
+
+        val tree = treeWithSelectedNodes(aSecurityHotspotNode(message = "Weak hash algorithm", ruleKey = "java:S2070"))
+        `when`(mockDataContext.getData(PlatformDataKeys.CONTEXT_COMPONENT)).thenReturn(tree)
+
+        action.actionPerformed(mockEvent)
+
+        assertThat(clipboardText()).isEqualTo("(0, 0) Weak hash algorithm [java:S2070]")
+    }
+
+    @Test
+    fun `actionPerformed - copies local taint vulnerability with message and rule key`() {
+        assumeFalse(GraphicsEnvironment.isHeadless(), "Clipboard not available in headless environment")
+
+        val tree = treeWithSelectedNodes(aLocalTaintVulnerability(message = "SQL injection", ruleKey = "javasecurity:S3649"))
+        `when`(mockDataContext.getData(PlatformDataKeys.CONTEXT_COMPONENT)).thenReturn(tree)
+
+        action.actionPerformed(mockEvent)
+
+        assertThat(clipboardText()).isEqualTo("(0, 0) SQL injection [javasecurity:S3649]")
+    }
+
+    @Test
     fun `actionPerformed - does nothing when tree has no selection`() {
         val tree = emptyTree()
         `when`(mockDataContext.getData(PlatformDataKeys.CONTEXT_COMPONENT)).thenReturn(tree)
@@ -126,6 +158,25 @@ class CopyFindingsActionTests : AbstractSonarLintLightTests() {
         val file = mock(VirtualFile::class.java)
         `when`(file.isValid).thenReturn(true)
         return LiveIssue(null, dto, file, emptyList())
+    }
+
+    private fun aSecurityHotspotNode(message: String, ruleKey: String): LiveSecurityHotspotNode {
+        val dto = mock(RaisedHotspotDto::class.java)
+        `when`(dto.primaryMessage).thenReturn(message)
+        `when`(dto.ruleKey).thenReturn(ruleKey)
+        `when`(dto.severityMode).thenReturn(Either.forLeft(StandardModeDetails(IssueSeverity.BLOCKER, RuleType.BUG)))
+        `when`(dto.vulnerabilityProbability).thenReturn(VulnerabilityProbability.HIGH)
+        val file = mock(VirtualFile::class.java)
+        `when`(file.isValid).thenReturn(true)
+        return LiveSecurityHotspotNode(LiveSecurityHotspot(null, dto, file, emptyList()), false)
+    }
+
+    private fun aLocalTaintVulnerability(message: String, ruleKey: String): LocalTaintVulnerability {
+        val dto = mock(TaintVulnerabilityDto::class.java, Mockito.RETURNS_DEEP_STUBS)
+        `when`(dto.message).thenReturn(message)
+        `when`(dto.ruleKey).thenReturn(ruleKey)
+        val primaryLocation = Location(file = null, range = null, message = message, textRangeHash = null)
+        return LocalTaintVulnerability(null, primaryLocation, emptyList(), dto, false)
     }
 
     /**
