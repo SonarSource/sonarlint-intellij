@@ -39,7 +39,7 @@ class IssueNodeTests {
 
   @Test
   void testCount() {
-    var i = createIssue(Instant.now(), "rule");
+    var i = createIssue(Instant.EPOCH, "rule");
     node = new IssueNode(i);
     assertThat(node.getFindingCount()).isEqualTo(1);
     assertThat(node.issue()).isEqualTo(i);

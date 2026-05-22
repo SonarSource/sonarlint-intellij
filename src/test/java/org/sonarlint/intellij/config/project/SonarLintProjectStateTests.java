@@ -19,6 +19,9 @@
  */
 package org.sonarlint.intellij.config.project;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -26,6 +29,8 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SonarLintProjectStateTests extends AbstractSonarLintLightTests {
+  private static final Clock FIXED_CLOCK = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC);
+
   @Test
   void testEmpty() {
     var state = new SonarLintProjectState();
@@ -34,16 +39,16 @@ class SonarLintProjectStateTests extends AbstractSonarLintLightTests {
 
   @Test
   void testSet() {
+    var now = ZonedDateTime.now(FIXED_CLOCK);
     var state = new SonarLintProjectState();
-    state.setLastEventPolling(ZonedDateTime.now());
-    assertThat(state.getLastEventPolling()).isBeforeOrEqualTo(ZonedDateTime.now());
-    assertThat(state.getLastEventPolling()).isAfter(ZonedDateTime.now().minusSeconds(3));
+    state.setLastEventPolling(now);
+    assertThat(state.getLastEventPolling()).isEqualTo(now);
   }
 
   @Test
   void testSerialization() {
     var state = new SonarLintProjectState();
-    state.setLastEventPolling(ZonedDateTime.now().minusHours(2));
+    state.setLastEventPolling(ZonedDateTime.now(FIXED_CLOCK).minusHours(2));
 
     var copy = state.getState();
     assertThat(copy.getLastEventPolling()).isEqualTo(state.getLastEventPolling());
