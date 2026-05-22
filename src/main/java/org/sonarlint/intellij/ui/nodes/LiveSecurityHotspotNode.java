@@ -33,7 +33,7 @@ import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class LiveSecurityHotspotNode extends FindingNode {
-  private final LiveSecurityHotspot securityHotspot;
+  private final transient LiveSecurityHotspot securityHotspot;
   private final boolean appendFileName;
 
   public LiveSecurityHotspotNode(LiveSecurityHotspot securityHotspot, boolean appendFileName) {

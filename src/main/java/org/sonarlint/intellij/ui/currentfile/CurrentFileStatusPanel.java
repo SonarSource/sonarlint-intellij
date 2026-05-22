@@ -37,7 +37,7 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
     Dependency risks are displayed at project level, as they are not linked to a specific file.
    """;
 
-  private final Project project;
+  private final transient Project project;
 
   CurrentFileStatusPanel(Project project) {
     super(new BorderLayout());

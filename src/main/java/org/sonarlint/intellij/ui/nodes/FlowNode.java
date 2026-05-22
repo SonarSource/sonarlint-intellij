@@ -27,7 +27,7 @@ import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class FlowNode extends AbstractNode {
   private final String label;
-  private final Flow flow;
+  private final transient Flow flow;
 
   public FlowNode(Flow flow, String label) {
     this.flow = flow;

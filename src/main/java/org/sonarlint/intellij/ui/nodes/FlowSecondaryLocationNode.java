@@ -24,7 +24,7 @@ import org.sonarlint.intellij.finding.Flow;
 import org.sonarlint.intellij.finding.Location;
 
 public class FlowSecondaryLocationNode extends PrimaryLocationNode {
-  private final Location secondaryLocation;
+  private final transient Location secondaryLocation;
 
   public FlowSecondaryLocationNode(@Nullable Integer number, Location secondaryLocation, Flow parentFlow) {
     super(secondaryLocation.getFile(), number, secondaryLocation.getRange(), secondaryLocation.getMessage(), parentFlow);

@@ -103,7 +103,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   }
 
   public static class Rule extends RulesTreeNode {
-    private final RuleDefinitionDto details;
+    private final transient RuleDefinitionDto details;
     private final Map<String, String> nonDefaultParams;
     private final SoftwareQuality highestQuality;
     private final ImpactSeverity highestImpact;
