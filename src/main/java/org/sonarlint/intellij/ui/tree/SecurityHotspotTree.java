@@ -35,6 +35,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.TreeModel;
 import org.jetbrains.annotations.NonNls;
+import org.sonarlint.intellij.actions.CopyFindingsAction;
 import org.sonarlint.intellij.actions.OpenSecurityHotspotInBrowserAction;
 import org.sonarlint.intellij.actions.OpenSecurityHotspotInBrowserActionKt;
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction;
@@ -61,6 +62,7 @@ public class SecurityHotspotTree extends FindingTree implements DataProvider {
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
     group.add(new OpenSecurityHotspotInBrowserAction());
     group.add(new ReviewSecurityHotspotAction());
+    group.add(new CopyFindingsAction());
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL));
 
