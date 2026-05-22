@@ -101,7 +101,7 @@ class IdeaUltimateTests : BaseUiTest() {
         openFile("file3.css")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
-            "Unexpected empty block"
+            "Empty block"
         )
 
         openFile("file4.html")
