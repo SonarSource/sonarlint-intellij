@@ -42,8 +42,7 @@ class SonarLintProjectStateTests extends AbstractSonarLintLightTests {
     var now = ZonedDateTime.now(FIXED_CLOCK);
     var state = new SonarLintProjectState();
     state.setLastEventPolling(now);
-    assertThat(state.getLastEventPolling()).isBeforeOrEqualTo(now);
-    assertThat(state.getLastEventPolling()).isAfter(now.minusSeconds(3));
+    assertThat(state.getLastEventPolling()).isEqualTo(now);
   }
 
   @Test
