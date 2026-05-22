@@ -91,7 +91,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     when(issue.isResolved()).thenReturn(true);
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
-      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.now())));
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.EPOCH)));
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
@@ -109,7 +109,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     when(issue.getRuleKey()).thenReturn("java:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
-      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.now())));
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.EPOCH)));
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
@@ -137,7 +137,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     when(issue.getRuleKey()).thenReturn("secrets:S123");
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
-      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.now())));
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.EPOCH)));
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
@@ -181,7 +181,7 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
     when(issue.isResolved()).thenReturn(true);
     when(checkInCallable.analysisSucceeded()).thenReturn(true);
     when(checkInCallable.getResults())
-      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.now())));
+      .thenReturn(List.of(new AnalysisResult(null, new LiveFindings(Map.of(file, Set.of(issue)), Collections.emptyMap()), Set.of(file), Instant.EPOCH)));
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(analysisState);
     when(runningAnalysesTracker.getById(analysisUuid)).thenReturn(null);
 
