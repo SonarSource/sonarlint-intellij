@@ -20,6 +20,7 @@ dependencyResolutionManagement {
 
     @Suppress("UnstableApiUsage")
     repositories {
+        mavenLocal()
         if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
             maven("$artifactoryUrl/sonarsource") {
                 credentials {

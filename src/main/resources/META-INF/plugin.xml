@@ -391,6 +391,14 @@
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
+        <action id="SonarLint.AnalyzeScaDependencies"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeScaDependenciesAction"
+                text="Analyze SCA Dependencies with SonarQube for IDE"
+                description="Run a SonarQube for IDE SCA dependency analysis on the project"
+                icon="org.sonarlint.intellij.ui.icons.SonarLintIcons.SONARQUBE_FOR_INTELLIJ_13PX">
+            <add-to-group group-id="SonarLint.AnalyzeMenu"/>
+        </action>
+
         <action id="SonarLint.toolwindow.Cancel"
                 class="org.sonarlint.intellij.actions.SonarCancelAction"
                 text="Cancel SonarQube for IDE Analysis"
