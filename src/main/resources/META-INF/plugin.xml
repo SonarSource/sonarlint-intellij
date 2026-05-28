@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>12.3 - Add multi-selection and bulk copy of findings in the Findings and Report tabs.</li>
+        <li>12.3 - Add multi-selection and bulk copy of findings in the Findings and Report tabs. Optimized branch-matching resolution per repository. One new rule for Java. New Logic Apps rules for Azure Resource Manager. Add support for bun, Deno, and pnpm dependency detection. Fewer FPs across many languages.</li>
         <li>12.2.2 - Fix C# analysis in connected mode.</li>
         <li>12.2.1 - Fixed synchronization failure when the server returns dependency risks of Malware type.</li>
         <li>12.2 - On-demand download of C# analysis dependencies and C/C++ analyzer.  Security Hotspots in PHP have been migrated to security issues. Fewer FPs across many languages.</li>
