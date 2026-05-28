@@ -61,6 +61,7 @@ import org.sonarlint.intellij.its.utils.SonarCloudUtils.SONARCLOUD_STAGING_URL
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.analyzeSonarCloudWithMaven
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.associateSonarCloudProjectToQualityProfile
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.cleanupProjects
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.getFirstSonarCloudIssueKey
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.newAdminSonarCloudWsClientWithUser
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.provisionSonarCloudProfile
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.restoreSonarCloudProfile
@@ -115,14 +116,6 @@ class ConfigurationTests : BaseUiTest() {
         private fun getFirstIssueKey(client: WsClient, projectKey: String): String? {
             val searchRequest = SearchRequest()
             searchRequest.projects = listOf(projectKey)
-            val searchResults = client.issues().search(searchRequest)
-            val issue = searchResults.issuesList[0]
-            return issue.key
-        }
-
-        private fun getFirstSCIssueKey(client: WsClient): String? {
-            val searchRequest = SearchRequest()
-            searchRequest.projects = listOf(SONARCLOUD_ISSUE_PROJECT_KEY)
             val searchResults = client.issues().search(searchRequest)
             val issue = searchResults.issuesList[0]
             return issue.key
@@ -307,7 +300,7 @@ class ConfigurationTests : BaseUiTest() {
             )
 
             analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues", sonarCloudToken)
-            firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
+            firstSCIssueKey = getFirstSonarCloudIssueKey(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY)
         }
 
         @Test
