@@ -68,6 +68,7 @@ import org.sonarlint.intellij.its.utils.SonarCloudUtils.SONARCLOUD_STAGING_URL
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.analyzeSonarCloudWithMaven
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.associateSonarCloudProjectToQualityProfile
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.cleanupProjects
+import org.sonarlint.intellij.its.utils.SonarCloudUtils.getFirstSonarCloudIssueKey
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.newAdminSonarCloudWsClientWithUser
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.provisionSonarCloudProfile
 import org.sonarlint.intellij.its.utils.SonarCloudUtils.restoreSonarCloudProfile
@@ -126,14 +127,6 @@ class OpenInIdeTests : BaseUiTest() {
         private fun getFirstIssueKey(client: WsClient): String? {
             val searchRequest = SearchRequest()
             searchRequest.projects = listOf(ISSUE_PROJECT_KEY)
-            val searchResults = client.issues().search(searchRequest)
-            val issue = searchResults.issuesList[0]
-            return issue.key
-        }
-
-        private fun getFirstSCIssueKey(client: WsClient): String? {
-            val searchRequest = SearchRequest()
-            searchRequest.projects = listOf(SONARCLOUD_ISSUE_PROJECT_KEY)
             val searchResults = client.issues().search(searchRequest)
             val issue = searchResults.issuesList[0]
             return issue.key
@@ -222,7 +215,9 @@ class OpenInIdeTests : BaseUiTest() {
             // Build and analyze project to raise issue
             executeBuildWithMaven("projects/sli-java-issues/pom.xml", ORCHESTRATOR)
             firstIssueKey = getFirstIssueKey(adminWsClient)
+        }
 
+        private fun prepareSonarCloudIssueProject() {
             restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
             provisionSonarCloudProfile(adminSonarCloudWsClient, ISSUE_PROJECT_KEY, SONARCLOUD_ISSUE_PROJECT_KEY)
             associateSonarCloudProjectToQualityProfile(
@@ -231,15 +226,14 @@ class OpenInIdeTests : BaseUiTest() {
                 SONARCLOUD_ISSUE_PROJECT_KEY,
                 "SonarLint IT Java Issue"
             )
-
             analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues", sonarCloudToken)
-
-            firstSCIssueKey = getFirstSCIssueKey(adminSonarCloudWsClient)
+            firstSCIssueKey = getFirstSonarCloudIssueKey(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY)
         }
 
         @Disabled("Doesn't find the project")
         @Test
         fun click_open_in_ide_SC_issue_then_should_automatically_create_connection_then_should_automatically_bind() = uiTest {
+            prepareSonarCloudIssueProject()
             clearConnections()
             openExistingProject(ISSUE_PROJECT_KEY)
             triggerOpenSCIssueRequest(

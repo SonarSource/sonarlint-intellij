@@ -35,6 +35,7 @@ import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.PostRequest
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
+import org.sonarqube.ws.client.issues.SearchRequest
 
 object SonarCloudUtils {
 
@@ -76,8 +77,22 @@ object SonarCloudUtils {
                 "true" == response.content()
             }
         }
-        // Once the queue is empty, wait one more second as it can sometimes happen that issue cannot be yet fetched from SQ:C
-        Thread.sleep(1000)
+        waitForSonarCloudIssues(adminWsClient, projectKey)
+    }
+
+    fun waitForSonarCloudIssues(adminWsClient: WsClient, projectKey: String) {
+        waitFor(Duration.ofMinutes(2), interval = Duration.ofSeconds(5)) {
+            val searchRequest = SearchRequest()
+            searchRequest.projects = listOf(projectKey)
+            adminWsClient.issues().search(searchRequest).issuesList.isNotEmpty()
+        }
+    }
+
+    fun getFirstSonarCloudIssueKey(adminWsClient: WsClient, projectKey: String): String {
+        waitForSonarCloudIssues(adminWsClient, projectKey)
+        val searchRequest = SearchRequest()
+        searchRequest.projects = listOf(projectKey)
+        return adminWsClient.issues().search(searchRequest).issuesList.first().key
     }
 
     fun restoreSonarCloudProfile(adminWsClient: WsClient, fileName: String) {
