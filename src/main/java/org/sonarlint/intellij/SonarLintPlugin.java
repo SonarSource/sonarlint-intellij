@@ -19,15 +19,18 @@
  */
 package org.sonarlint.intellij;
 
-import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.PluginManagerCore;
+import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.extensions.PluginDescriptor;
 import com.intellij.openapi.extensions.PluginId;
 import java.nio.file.Path;
+import org.jetbrains.annotations.NotNull;
 
 @Service(Service.Level.APP)
 public final class SonarLintPlugin {
-  private IdeaPluginDescriptor plugin;
+  private static final PluginId PLUGIN_ID = PluginId.getId("org.sonarlint.idea");
+
+  private PluginDescriptor plugin;
 
   public String getVersion() {
     return getPlugin().getVersion();
@@ -37,9 +40,12 @@ public final class SonarLintPlugin {
     return getPlugin().getPluginPath();
   }
 
-  private IdeaPluginDescriptor getPlugin() {
+  private @NotNull PluginDescriptor getPlugin() {
     if (plugin == null) {
-      plugin = PluginManagerCore.getPlugin(PluginId.getId("org.sonarlint.idea"));
+      plugin = PluginManager.getInstance().findEnabledPlugin(PLUGIN_ID);
+      if (plugin == null) {
+        throw new IllegalStateException("Cannot find SonarLint plugin descriptor (id=" + PLUGIN_ID + ")");
+      }
     }
     return plugin;
   }
