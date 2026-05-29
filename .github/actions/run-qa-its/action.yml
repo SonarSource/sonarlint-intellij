@@ -242,6 +242,12 @@ runs:
         echo "Writing license key to ${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
         echo "${!KEY_VAR}" | base64 -d > "${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
 
+    - name: Start window manager
+      shell: bash
+      run: |
+        metacity --sm-disable --replace &
+        sleep 3
+
     - name: Start IDE in background
       shell: bash
       env:
