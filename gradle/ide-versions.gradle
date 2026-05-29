@@ -1,0 +1,10 @@
+// Shared IDE version properties for CI integration tests and plugin verification.
+// Applied from root build.gradle.kts and its/build.gradle.kts.
+
+ext {
+    minSupportedIdeVersion = findProperty("minSupportedIdeVersion") ?: "2024.2"
+    latestStableIdeVersion = findProperty("latestStableIdeVersion") ?: "2025.3.2"
+    eapIdeVersion = findProperty("eapIdeVersion") ?: "2026.1-EAP"
+    // Build range for min supported platform (242 = 2024.2)
+    minSupportedBuildPattern = "242.*"
+}

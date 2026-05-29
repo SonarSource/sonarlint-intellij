@@ -41,6 +41,8 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
 object OpeningUtils {
 
+    private val preparedProjects = mutableSetOf<String>()
+
     fun openFile(filePath: String, fileName: String = filePath) {
         with(remoteRobot) {
             idea {
@@ -112,10 +114,10 @@ object OpeningUtils {
                 }
             } catch (e: Throwable) {
                 // Starting from 2025.2+ there's no welcome frame
-                if (isGoLand()) {
-                    openFileSelector()
-                } else {
-                    throw e
+                when {
+                    isGoLand() -> openFileSelector()
+                    isRider() -> openSolutionSelector()
+                    else -> throw e
                 }
             }
             if (remoteRobot.isRider()) {
@@ -174,9 +176,29 @@ object OpeningUtils {
         }
     }
 
+    private fun openSolutionSelector() {
+        with(remoteRobot) {
+            idea {
+                optionalStep {
+                    findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
+                }
+                actionMenu("File") {
+                    item("Open...") {
+                        click(Point(10, 10))
+                    }
+                }
+            }
+        }
+    }
+
     private fun copyProjectFiles(projectName: String) {
-        File("projects/$projectName-tmp").deleteRecursively()
-        File("projects/$projectName").copyRecursively(File("projects/$projectName-tmp"))
+        val tmp = File("projects/$projectName-tmp")
+        if (projectName in preparedProjects && tmp.exists()) {
+            return
+        }
+        tmp.deleteRecursively()
+        File("projects/$projectName").copyRecursively(tmp)
+        preparedProjects.add(projectName)
     }
 
 }

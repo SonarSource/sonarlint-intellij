@@ -266,7 +266,7 @@ jobs:
         uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
         with:
           path: /home/runner/.gradle/caches/*/transforms/
-          key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
+          key: verifier-ides-${{ runner.os }}-IU-CL-RD-${{ hashFiles('gradle.properties') }}
           restore-keys: |
             verifier-ides-${{ runner.os }}-
 
@@ -284,6 +284,28 @@ jobs:
             !/home/runner/.gradle/caches/*/transforms/
             /home/runner/.gradle/wrapper
 
+  setup-matrix:
+    runs-on: sonar-xs
+    name: Setup QA matrix
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Build QA matrix from gradle.properties
+        id: set-matrix
+        run: |
+          MIN=$(grep '^minSupportedIdeVersion=' gradle.properties | cut -d= -f2)
+          LATEST=$(grep '^latestStableIdeVersion=' gradle.properties | cut -d= -f2)
+          MATRIX=$(jq -nc --arg min "$MIN" --arg lat "$LATEST" \
+            '[{"ide_version":"IU-"+$min,"qa_category":"IdeaUltimateMin"},
+              {"ide_version":"IU-"+$lat,"qa_category":"IdeaUltimateLatest"},
+              {"ide_version":"CL-"+$min,"qa_category":"CLionMin"},
+              {"ide_version":"CL-"+$lat,"qa_category":"CLionLatest"},
+              {"ide_version":"RD-"+$min,"qa_category":"RiderMin"},
+              {"ide_version":"RD-"+$lat,"qa_category":"RiderLatest"}]')
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
   qa:
     runs-on: warp-custom-ubuntu-24-04
     container:
@@ -295,398 +317,25 @@ jobs:
     defaults:
       run:
         shell: bash
-    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
+    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.qa_category }}
     needs:
       - build-plugin
       - build-number
       - aws-auth
+      - setup-matrix
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - ide_version: 'IC-2024.2'
-            qa_category: 'Idea2024'
-            test_suite: 'OpenInIdeTests'
-          - ide_version: 'IC-2024.2'
-            qa_category: 'Idea2024'
-            test_suite: 'ConnectedAnalysisTests'
-          - ide_version: 'IC-2024.2'
-            qa_category: 'Idea2024'
-            test_suite: 'ConfigurationTests'
-          - ide_version: 'IC-2024.2'
-            qa_category: 'Idea2024'
-            test_suite: 'Standalone'
-          - ide_version: 'IC-2025.3.2'
-            qa_category: 'Idea2025'
-            test_suite: 'OpenInIdeTests'
-          - ide_version: 'IC-2025.3.2'
-            qa_category: 'Idea2025'
-            test_suite: 'ConnectedAnalysisTests'
-          - ide_version: 'IC-2025.3.2'
-            qa_category: 'Idea2025'
-            test_suite: 'ConfigurationTests'
-          - ide_version: 'IC-2025.3.2'
-            qa_category: 'Idea2025'
-            test_suite: 'Standalone'
-          - ide_version: 'IU-2024.2'
-            qa_category: 'IdeaUltimate2024'
-          #          - ide_version: 'IU-2025.3.2'
-          #            qa_category: 'IdeaUltimate2025'
-          - ide_version: 'PY-2024.2'
-            qa_category: 'PyCharmProfessional2024'
-          #          - ide_version: 'PY-2025.3.2.1'
-          #            qa_category: 'PyCharmProfessional2025'
-          - ide_version: 'PC-2024.2'
-            qa_category: 'PyCharmCommunity2024'
-          #          - ide_version: 'PC-2025.3.2.1'
-          #            qa_category: 'PyCharmCommunity2025'
-          #          - ide_version: 'RD-2024.2.7'
-          #            qa_category: 'Rider2024'
-          # Temporarily disabled, consistently failing
-          #          - ide_version: 'RD-2025.1.5'
-          #            qa_category: 'Rider2025'
-          - ide_version: 'PS-2024.2'
-            qa_category: 'PhpStorm2024'
-          - ide_version: 'PS-2025.3.2'
-            qa_category: 'PhpStorm2025'
-          - ide_version: 'GO-2024.2'
-            qa_category: 'GoLand2024'
-          - ide_version: 'GO-2025.3.2'
-            qa_category: 'GoLand2025'
-          - ide_version: 'CL-2024.2'
-            qa_category: 'CLion2024'
-          - ide_version: 'CL-2025.3.2'
-            qa_category: 'CLion2025'
+        include: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
     env:
       DISPLAY: ':10'
-      JDK_VERSION: '21'
-      IDEA_VERSION: ${{ matrix.ide_version }}
-      QA_CATEGORY: ${{ matrix.qa_category }}
-      TEST_SUITE: ${{ matrix.test_suite }}
-      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: ./.github/actions/run-qa-its
         with:
-          version: 2025.9.12
-
-      - name: Select Java ${{ env.JDK_VERSION }}
-        run: mise use java@${{ env.JDK_VERSION }}
-
-      - name: Vault Secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
-        with:
-          secrets: |
-            development/kv/data/repox url | ARTIFACTORY_URL;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
-            development/team/sonarlint/kv/data/ide.keys clion | CLION_KEY;
-            development/team/sonarlint/kv/data/ide.keys goland | GOLAND_KEY;
-            development/team/sonarlint/kv/data/ide.keys idea | IDEA_KEY;
-            development/team/sonarlint/kv/data/ide.keys phpstorm | PHPSTORM_KEY;
-            development/team/sonarlint/kv/data/ide.keys pycharm | PYCHARM_KEY;
-            development/team/sonarlint/kv/data/ide.keys rider | RIDER_KEY;
-            development/github/token/licenses-ro token | GITHUB_TOKEN;
-            development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
-            development/kv/data/develocity token | DEVELOCITY_TOKEN;
-
-      - name: Compute month key
-        id: month
-        run: |
-          THIS_MONTH="$(date +%Y-%m)"
-          echo "month=${THIS_MONTH}" >> "$GITHUB_OUTPUT"
-          ORCHESTRATOR_HOME="${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}"
-          echo "ORCHESTRATOR_HOME=${ORCHESTRATOR_HOME}" >> "$GITHUB_ENV"
-          echo "Create dir ${ORCHESTRATOR_HOME}"
-          mkdir -p "${ORCHESTRATOR_HOME}"
-
-      - uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
-        with:
-          path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
-          key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
-          restore-keys: |
-            cache-${{ runner.os }}
-
-      - name: Generate Gradle Cache Key
-        id: gradle-cache-key
-        run: |
-          /usr/bin/find . \( -name '*.gradle' -o -name '*.gradle.kts' \) -type f -exec md5sum {} \; | sort > gradle-md5-sums.txt
-          md5sum gradle/libs.versions.toml gradle/wrapper/gradle-wrapper.properties 2>/dev/null >> gradle-md5-sums.txt || true
-          GRADLE_CACHE_KEY=$(md5sum gradle-md5-sums.txt | awk '{ print $1 }')
-          echo "key=${GRADLE_CACHE_KEY}" >> "$GITHUB_OUTPUT"
-          rm -f gradle-md5-sums.txt
-
-      - name: Restore Gradle Cache
-        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
-        with:
-          path: |
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ github.workflow }}-${{ steps.gradle-cache-key.outputs.key }}
-          restore-keys: |
-            gradle-${{ runner.os }}-${{ github.workflow }}-
-
-      - name: Start Xvfb
-        run: |
-          Xvfb ${DISPLAY} -screen 0 1280x960x24 &
-          echo "XVFB_PID=$!" >> $GITHUB_ENV
-          sleep 2
-
-      - name: Export embedded IDE paths from container
-        run: |
-          echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
-          echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
-          echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
-          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
-
-      - name: Determine IDE source (embedded vs Repox)
-        id: ide-source
-        run: |
-          IDE="${{ matrix.ide_version }}"
-          # Parse IDE code and version
-          IDE_CODE="${IDE%%-*}"
-          IDE_VERSION="${IDE#*-}"
-          IDE_YEAR="${IDE_VERSION%%.*}"
-
-          # Check if embedded in container
-          EMBEDDED="false"
-          CACHE_PATH=""
-
-          case "$IDE_CODE-$IDE_YEAR" in
-            IC-2024|IU-2024|CL-2024|RD-2024)
-              EMBEDDED="true"
-              ;;
-            *)
-              EMBEDDED="false"
-              # Determine cache path based on IDE code
-              case "$IDE_CODE" in
-                IC) CACHE_PATH="$HOME/.cache/JetBrains/IdeaIC/$IDE_VERSION" ;;
-                IU) CACHE_PATH="$HOME/.cache/JetBrains/IdeaIU/$IDE_VERSION" ;;
-                CL) CACHE_PATH="$HOME/.cache/JetBrains/CLion/$IDE_VERSION" ;;
-                RD) CACHE_PATH="$HOME/.cache/JetBrains/Rider/$IDE_VERSION" ;;
-                PY) CACHE_PATH="$HOME/.cache/JetBrains/PyCharm/$IDE_VERSION" ;;
-                PC) CACHE_PATH="$HOME/.cache/JetBrains/PyCharmCE/$IDE_VERSION" ;;
-                PS) CACHE_PATH="$HOME/.cache/JetBrains/PhpStorm/$IDE_VERSION" ;;
-                GO) CACHE_PATH="$HOME/.cache/JetBrains/GoLand/$IDE_VERSION" ;;
-              esac
-              ;;
-          esac
-
-          echo "embedded=$EMBEDDED" >> $GITHUB_OUTPUT
-          echo "cache_path=$CACHE_PATH" >> $GITHUB_OUTPUT
-          echo "IDE: $IDE (code=$IDE_CODE, version=$IDE_VERSION, year=$IDE_YEAR)"
-          echo "Embedded: $EMBEDDED"
-          echo "Cache path: $CACHE_PATH"
-
-      - name: Restore IDE from cache
-        if: steps.ide-source.outputs.embedded == 'false'
-        id: cache-ide
-        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
-        with:
-          path: ${{ steps.ide-source.outputs.cache_path }}
-          key: ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}
-          restore-keys: |
-            ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}-
-
-      - name: Setup IDE for QA test
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: .github/scripts/setup-qa-ide.sh "${{ matrix.ide_version }}"
-
-      - name: Validate IDE setup for ${{ matrix.ide_version }}
-        run: |
-          # Determine expected environment variable
-          IDE_CODE="${IDEA_VERSION%%-*}"
-          case "$IDE_CODE" in
-            IC|IU) IDE_VAR="IDEA_HOME" ;;
-            CL) IDE_VAR="CLION_HOME" ;;
-            RD) IDE_VAR="RIDER_HOME" ;;
-            PY|PC) IDE_VAR="PYCHARM_HOME" ;;
-            PS) IDE_VAR="PHPSTORM_HOME" ;;
-            GO) IDE_VAR="GOLAND_HOME" ;;
-            *) echo "::error::Unknown IDE code: $IDE_CODE"; exit 1 ;;
-          esac
-          if [ -z "${!IDE_VAR:-}" ]; then
-            echo "::error::${IDE_VAR} is not defined or is empty"
-            exit 1
-          fi
-          IDE_PATH="${!IDE_VAR}"
-          echo "Found ${IDE_VAR}=${IDE_PATH}"
-          if [ ! -d "${IDE_PATH}" ]; then
-            echo "::error::IDE path does not exist: ${IDE_PATH}"
-            exit 1
-          fi
-          if [ -z "$(ls -A "${IDE_PATH}" 2>/dev/null)" ]; then
-            echo "::error::IDE path is empty: ${IDE_PATH}"
-            exit 1
-          fi
-
-          echo "✓ IDE validation successful"
-          echo "  Variable: ${IDE_VAR}"
-          echo "  Path: ${IDE_PATH}"
-          echo "  Contents sample:"
-          ls -la "${IDE_PATH}" | head -10
-
-      - name: Extract and setup plugin
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_PRIVATE_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-          PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
-          CLION_KEY:    ${{ fromJSON(steps.secrets.outputs.vault).CLION_KEY }}
-          GOLAND_KEY:   ${{ fromJSON(steps.secrets.outputs.vault).GOLAND_KEY }}
-          IDEA_KEY:     ${{ fromJSON(steps.secrets.outputs.vault).IDEA_KEY }}
-          PHPSTORM_KEY: ${{ fromJSON(steps.secrets.outputs.vault).PHPSTORM_KEY }}
-          PYCHARM_KEY:  ${{ fromJSON(steps.secrets.outputs.vault).PYCHARM_KEY }}
-          RIDER_KEY:    ${{ fromJSON(steps.secrets.outputs.vault).RIDER_KEY }}
-        shell: bash --noprofile --norc -euo pipefail {0}
-        run: |
-          echo "Using project version: ${PROJECT_VERSION}"
-          curl -fsSL -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
-            -o sonarlint-intellij.zip \
-            "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
-          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
-          mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
-          rm sonarlint-intellij.zip
-          
-          # IntelliJ Platform Gradle Plugin 2.13+ introduced a sandbox layout change:
-          #   <sandboxContainer>/<project.name>/<productCode>-<productVersion>/config_<task>/
-          # The sandbox container lives at the *root* project's `.intellijPlatform/sandbox`
-          IDE_CODE="${IDEA_VERSION%%-*}"
-          case "$IDE_CODE" in
-            IC|IU) IDE_HOME="$IDEA_HOME" ;;
-            CL)    IDE_HOME="$CLION_HOME" ;;
-            RD)    IDE_HOME="$RIDER_HOME" ;;
-            PY|PC) IDE_HOME="$PYCHARM_HOME" ;;
-            PS)    IDE_HOME="$PHPSTORM_HOME" ;;
-            GO)    IDE_HOME="$GOLAND_HOME" ;;
-            *) echo "::error::Unknown IDE code: $IDE_CODE"; exit 1 ;;
-          esac
-          PRODUCT_CODE=$(jq -r .productCode "${IDE_HOME}/product-info.json")
-          PRODUCT_VERSION=$(jq -r .version "${IDE_HOME}/product-info.json")
-          SANDBOX_CONFIG_DIR=".intellijPlatform/sandbox/its/${PRODUCT_CODE}-${PRODUCT_VERSION}/config_runIdeForUiTests"
-          mkdir -p "${SANDBOX_CONFIG_DIR}"
-          
-          # Decode the license key for the IDE under test only (community editions need none).
-          case "$IDE_CODE" in
-            IC|PC) KEY_VAR=""             ; KEY_FILE="" ;;
-            IU)    KEY_VAR="IDEA_KEY"     ; KEY_FILE="idea.key" ;;
-            CL)    KEY_VAR="CLION_KEY"    ; KEY_FILE="clion.key" ;;
-            RD)    KEY_VAR="RIDER_KEY"    ; KEY_FILE="rider.key" ;;
-            PY)    KEY_VAR="PYCHARM_KEY"  ; KEY_FILE="pycharm.key" ;;
-            PS)    KEY_VAR="PHPSTORM_KEY" ; KEY_FILE="phpstorm.key" ;;
-            GO)    KEY_VAR="GOLAND_KEY"   ; KEY_FILE="goland.key" ;;
-          esac
-          if [ -n "$KEY_VAR" ]; then
-            echo "Writing license key to ${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
-            echo "${!KEY_VAR}" | base64 -d > "${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
-          else
-            echo "No license key required for $IDE_CODE"
-          fi
-          
-          # Start metacity
-          metacity --sm-disable --replace &
-          sleep 3
-
-      - name: Start IDE in background
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: |
-          # Start IDE in background using Gradle
-          nohup gradle :its:runIdeForUiTests --stacktrace -i \
-            -PijVersion=${IDEA_VERSION} \
-            -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
-          echo "IDE_PID=$!" >> $GITHUB_ENV
-
-      - name: Wait for IDE to start
-        run: |
-          echo "Waiting for IDE to start..."
-          # retry every 5 seconds, max 150 times (750 seconds total)
-          curl --retry 150 \
-               --retry-delay 5 \
-               --retry-all-errors \
-               --fail \
-               --max-time 3 \
-               --connect-timeout 2 \
-               --silent \
-               --output /dev/null \
-               http://127.0.0.1:8082 2>/dev/null && echo "IDE is ready!" || (echo "Timeout waiting for IDE to start" && exit 1)
-
-      - name: Start recording
-        run: |
-          echo 'Recording tests on video'
-          ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -i ${DISPLAY} \
-            -codec:v libx264 -r 12 ${GITHUB_WORKSPACE}/recording_${IDEA_VERSION}.mp4 &
-          echo "FFMPEG_PID=$!" >> $GITHUB_ENV
-
-      - name: Run integration tests
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-          SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
-          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
-          DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-          DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
-
-      - name: Stop recording
-        if: always()
-        run: |
-          if [ -n "$FFMPEG_PID" ] && kill -0 $FFMPEG_PID 2>/dev/null; then
-            kill -2 $FFMPEG_PID
-            # Wait for ffmpeg to finish
-            timeout=30
-            while kill -0 $FFMPEG_PID 2>/dev/null && [ $timeout -gt 0 ]; do
-              sleep 1
-              timeout=$((timeout - 1))
-            done
-          fi
-          if [ -n "$XVFB_PID" ] && kill -0 $XVFB_PID 2>/dev/null; then
-            kill $XVFB_PID
-          fi
-
-      - name: Display IDE log
-        if: always()
-        run: |
-          if [ -f ${GITHUB_WORKSPACE}/runIdeGradle.log ]; then
-            cat ${GITHUB_WORKSPACE}/runIdeGradle.log
-          fi
-
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
-        if: ${{ !cancelled() }}
-        with:
-          report_paths: '**/test-results/**/*.xml'
-
-      - name: Upload test recording
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: test-recording-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
-          path: ${{ github.workspace }}/recording_${{ matrix.ide_version }}.mp4
-          if-no-files-found: warn
-
-      - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: test-reports-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
-          path: "**/reports/**/*"
-          if-no-files-found: warn
-
-      - name: Upload JUnit test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: junit-results-qa-${{ matrix.ide_version }}-${{ matrix.test_suite || matrix.qa_category }}
-          path: "**/test-results/**/*.xml"
+          ide_version: ${{ matrix.ide_version }}
+          qa_category: ${{ matrix.qa_category }}
+          project_version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
+          build_number: ${{ needs.build-number.outputs.BUILD_NUMBER }}
 
   promote:
     runs-on: sonar-xs
@@ -696,6 +345,7 @@ jobs:
       - build-plugin
       - test-and-sonar
       - check_windows
+      - verify-plugin
       - qa
     if: ${{ github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-') }}
     env:

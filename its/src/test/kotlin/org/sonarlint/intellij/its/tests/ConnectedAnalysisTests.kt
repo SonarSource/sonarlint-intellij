@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.its.tests
 
-import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.http.HttpMethod
-import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
 import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
@@ -31,8 +29,8 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIf
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.DeveloperOrchestratorUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
@@ -40,7 +38,6 @@ import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
-import org.sonarlint.intellij.its.utils.OrchestratorUtils.defaultBuilderEnv
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.executeBuildWithMaven
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.generateTokenNameAndValue
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.newAdminWsClientWithUser
@@ -53,24 +50,10 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 
 @Tag("ConnectedAnalysisTests")
-@EnabledIf("isIdeaCommunity")
-class ConnectedAnalysisTests : BaseUiTest() {
+@EnabledIf("isIntelliJIdea")
+class ConnectedAnalysisTests : DeveloperOrchestratorUiTest() {
 
     companion object {
-        @JvmField
-        @RegisterExtension
-        val ORCHESTRATOR: OrchestratorExtension = defaultBuilderEnv()
-            .setEdition(Edition.DEVELOPER)
-            .activateLicense()
-            .addBundledPluginToKeep("sonar-java")
-            .addBundledPluginToKeep("sonar-security")
-            .addBundledPluginToKeep("sonar-php")
-            .addBundledPluginToKeep("sonar-python")
-            .addBundledPluginToKeep("sonar-swift")
-            .addBundledPluginToKeep("sonar-kotlin")
-            .addBundledPluginToKeep("sonar-go")
-            .build()
-
         private lateinit var adminWsClient: WsClient
         private lateinit var adminSonarCloudWsClient: WsClient
 

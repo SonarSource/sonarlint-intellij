@@ -52,11 +52,19 @@ is_unified_distribution() {
     return 1
 }
 
+# Returns 0 (true) if the version is an EAP build, 1 otherwise.
+is_eap_version() {
+    local version="$1"
+    [[ "${version}" == *EAP* ]]
+}
+
 # Map IDE type to Repox artifact path
 case "${IDE_TYPE}" in
     IC|IU)
-        # 2025.3+ uses a single unified distribution (no IC/IU distinction)
-        if is_unified_distribution "${IDE_VERSION}"; then
+        if is_eap_version "${IDE_VERSION}"; then
+            ARTIFACT_PATH="jetbrains-download/idea/idea-${IDE_VERSION}.tar.gz"
+            IDE_NAME="IntelliJ IDEA EAP"
+        elif is_unified_distribution "${IDE_VERSION}"; then
             ARTIFACT_PATH="jetbrains-download/idea/idea-${IDE_VERSION}.tar.gz"
             IDE_NAME="IntelliJ IDEA"
         elif [[ "${IDE_TYPE}" == "IC" ]]; then
@@ -68,12 +76,22 @@ case "${IDE_TYPE}" in
         fi
         ;;
     CL)
-        ARTIFACT_PATH="jetbrains-download/cpp/CLion-${IDE_VERSION}.tar.gz"
-        IDE_NAME="CLion"
+        if is_eap_version "${IDE_VERSION}"; then
+            ARTIFACT_PATH="jetbrains-download/cpp/CLion-${IDE_VERSION}.tar.gz"
+            IDE_NAME="CLion EAP"
+        else
+            ARTIFACT_PATH="jetbrains-download/cpp/CLion-${IDE_VERSION}.tar.gz"
+            IDE_NAME="CLion"
+        fi
         ;;
     RD)
-        ARTIFACT_PATH="jetbrains-download/rider/JetBrains.Rider-${IDE_VERSION}.tar.gz"
-        IDE_NAME="Rider"
+        if is_eap_version "${IDE_VERSION}"; then
+            ARTIFACT_PATH="jetbrains-download/rider/JetBrains.Rider-${IDE_VERSION}.tar.gz"
+            IDE_NAME="Rider EAP"
+        else
+            ARTIFACT_PATH="jetbrains-download/rider/JetBrains.Rider-${IDE_VERSION}.tar.gz"
+            IDE_NAME="Rider"
+        fi
         ;;
     PY|PC)
         # 2025.3+ uses a single unified distribution (no Community/Professional distinction)

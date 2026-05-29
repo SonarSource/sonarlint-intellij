@@ -13,7 +13,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -50,6 +49,9 @@ val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 val runIdeDirectory: String by project
 val verifierEnv: String by project
+val minSupportedIdeVersion: String by project
+val latestStableIdeVersion: String by project
+val eapIdeVersion: String by project
 
 // The environment variables ARTIFACTORY_ACCESS_USERNAME and ARTIFACTORY_ACCESS_TOKEN are used on CI env
 // On local box, please add artifactoryUrl, artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
@@ -116,6 +118,7 @@ dependencies {
 }
 
 apply(from = "gradle/intellij-dependency-lock.gradle")
+apply(from = "gradle/ide-versions.gradle")
 
 license {
     header = rootProject.file("HEADER")
@@ -156,11 +159,10 @@ intellijPlatform {
             "-ignored-problems", "${project.rootDir}/.verifier-ignored-problems.txt"
         )
 
-        val ideTypes = listOf(
-            IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
-            IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.GoLand,
-            IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
-            IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity
+        val ciIdeTypes = listOf(
+            IntelliJPlatformType.IntellijIdeaUltimate,
+            IntelliJPlatformType.CLion,
+            IntelliJPlatformType.Rider,
         )
 
         ides {
@@ -170,20 +172,15 @@ intellijPlatform {
         if (project.hasProperty("verifierEnv")) {
             when (verifierEnv) {
                 "CI" -> ides {
-                    select {
-                        types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
-                        channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "242.*"
-                        untilBuild = "242.*"
+                    ciIdeTypes.forEach { type ->
+                        create(type, minSupportedIdeVersion)
+                        create(type, latestStableIdeVersion)
                     }
                 }
 
-                "LATEST" -> ides {
-                    select {
-                        types = ideTypes
-                        channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "252.*"
-                        untilBuild = "252.*"
+                "EAP" -> ides {
+                    ciIdeTypes.forEach { type ->
+                        create(type, eapIdeVersion)
                     }
                 }
             }

@@ -62,6 +62,9 @@ open class BaseUiTest {
         fun isIdeaCommunity() = remoteRobot.isIdea() && remoteRobot.isBuildCommunity()
 
         @JvmStatic
+        fun isIntelliJIdea() = remoteRobot.isIdea()
+
+        @JvmStatic
         fun isIdeaUltimate() = remoteRobot.isIdea() && remoteRobot.isBuildUltimate()
 
         @JvmStatic
@@ -104,15 +107,18 @@ open class BaseUiTest {
     }
 
     fun uiTest(test: RemoteRobot.() -> Unit) {
+        val skipLogCleanup = System.getenv("CI") == "true" || System.getenv("IT_SKIP_LOG_CLEANUP") == "true"
         try {
             remoteRobot.apply(test)
         } finally {
             closeAllDialogs()
-            optionalStep {
-                sonarlintLogPanel {
-                    println("SonarQube for IDE log outputs:")
-                    println(console().text)
-                    toolBarButton("Clear SonarQube for IDE Console").click()
+            if (!skipLogCleanup) {
+                optionalStep {
+                    sonarlintLogPanel {
+                        println("SonarQube for IDE log outputs:")
+                        println(console().text)
+                        toolBarButton("Clear SonarQube for IDE Console").click()
+                    }
                 }
             }
             if (remoteRobot.isCLion()) {

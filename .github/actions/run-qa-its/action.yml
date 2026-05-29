@@ -1,0 +1,343 @@
+name: Run QA Integration Tests
+description: Setup IDE, start Remote Robot, and run SonarLint UI integration tests
+
+inputs:
+  ide_version:
+    description: IDE identifier (e.g. IU-2024.2, CL-2025.3.2)
+    required: true
+  qa_category:
+    description: Label for artifacts and job naming
+    required: true
+  project_version:
+    description: Built plugin version to download from Artifactory QA repo
+    required: true
+  build_number:
+    description: CI build number
+    required: true
+  plugin_directory:
+    description: Optional pre-built plugin directory; skips Artifactory download when set
+    required: false
+    default: ''
+  plugin_artifact:
+    description: Optional artifact name containing plugin zip; extracted after checkout
+    required: false
+    default: ''
+  record_video_on_failure:
+    description: When true, record ffmpeg video if tests fail
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Download plugin artifact
+      if: inputs.plugin_artifact != ''
+      uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ inputs.plugin_artifact }}
+
+    - name: Extract plugin artifact
+      if: inputs.plugin_artifact != ''
+      shell: bash
+      run: |
+        unzip -qo sonarlint-intellij-*.zip -d plugin-extract
+        echo "PLUGIN_DIR=${GITHUB_WORKSPACE}/plugin-extract/sonarlint-intellij" >> $GITHUB_ENV
+
+    - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      with:
+        version: 2025.9.12
+
+    - name: Select Java 21
+      shell: bash
+      run: mise use java@21
+
+    - name: Vault Secrets
+      id: secrets
+      uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
+      with:
+        secrets: |
+          development/kv/data/repox url | ARTIFACTORY_URL;
+          development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+          development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+          development/team/sonarlint/kv/data/ide.keys clion | CLION_KEY;
+          development/team/sonarlint/kv/data/ide.keys idea | IDEA_KEY;
+          development/team/sonarlint/kv/data/ide.keys rider | RIDER_KEY;
+          development/github/token/licenses-ro token | GITHUB_TOKEN;
+          development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
+          development/kv/data/develocity token | DEVELOCITY_TOKEN;
+
+    - name: Compute month key
+      id: month
+      shell: bash
+      run: |
+        THIS_MONTH="$(date +%Y-%m)"
+        echo "month=${THIS_MONTH}" >> "$GITHUB_OUTPUT"
+        ORCHESTRATOR_HOME="${GITHUB_WORKSPACE}/orchestrator/${THIS_MONTH}"
+        echo "ORCHESTRATOR_HOME=${ORCHESTRATOR_HOME}" >> "$GITHUB_ENV"
+        mkdir -p "${ORCHESTRATOR_HOME}"
+
+    - uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+      with:
+        path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
+        key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
+        restore-keys: |
+          cache-${{ runner.os }}
+
+    - name: Generate Gradle Cache Key
+      id: gradle-cache-key
+      shell: bash
+      run: |
+        /usr/bin/find . \( -name '*.gradle' -o -name '*.gradle.kts' \) -type f -exec md5sum {} \; | sort > gradle-md5-sums.txt
+        md5sum gradle/libs.versions.toml gradle/wrapper/gradle-wrapper.properties 2>/dev/null >> gradle-md5-sums.txt || true
+        GRADLE_CACHE_KEY=$(md5sum gradle-md5-sums.txt | awk '{ print $1 }')
+        echo "key=${GRADLE_CACHE_KEY}" >> "$GITHUB_OUTPUT"
+        rm -f gradle-md5-sums.txt
+
+    - uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+      with:
+        path: |
+          /home/runner/.gradle/caches
+          /home/runner/.gradle/wrapper
+        key: gradle-${{ runner.os }}-qa-${{ steps.gradle-cache-key.outputs.key }}
+        restore-keys: |
+          gradle-${{ runner.os }}-qa-
+          gradle-${{ runner.os }}-
+
+    - name: Start Xvfb
+      shell: bash
+      env:
+        DISPLAY: ':10'
+      run: |
+        Xvfb ${DISPLAY} -screen 0 1280x960x24 &
+        echo "XVFB_PID=$!" >> $GITHUB_ENV
+        sleep 2
+
+    - name: Export embedded IDE paths from container
+      shell: bash
+      run: |
+        echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
+        echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+        echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
+        echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
+
+    - name: Determine IDE source (embedded vs Repox)
+      id: ide-source
+      shell: bash
+      env:
+        IDE: ${{ inputs.ide_version }}
+      run: |
+        IDE_CODE="${IDE%%-*}"
+        IDE_VERSION="${IDE#*-}"
+        IDE_YEAR="${IDE_VERSION%%.*}"
+
+        EMBEDDED="false"
+        CACHE_PATH=""
+
+        case "$IDE_CODE-$IDE_YEAR" in
+          IU-2024|CL-2024|RD-2024)
+            EMBEDDED="true"
+            ;;
+          *)
+            case "$IDE_CODE" in
+              IU) CACHE_PATH="$HOME/.cache/JetBrains/IdeaIU/$IDE_VERSION" ;;
+              CL) CACHE_PATH="$HOME/.cache/JetBrains/CLion/$IDE_VERSION" ;;
+              RD) CACHE_PATH="$HOME/.cache/JetBrains/Rider/$IDE_VERSION" ;;
+              *) echo "::error::Unsupported IDE code for QA: $IDE_CODE"; exit 1 ;;
+            esac
+            ;;
+        esac
+
+        echo "embedded=$EMBEDDED" >> $GITHUB_OUTPUT
+        echo "cache_path=$CACHE_PATH" >> $GITHUB_OUTPUT
+
+    - name: Restore IDE from cache
+      if: steps.ide-source.outputs.embedded == 'false'
+      uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+      with:
+        path: ${{ steps.ide-source.outputs.cache_path }}
+        key: ${{ runner.os }}-jetbrains-ide-${{ inputs.ide_version }}
+        restore-keys: |
+          ${{ runner.os }}-jetbrains-ide-${{ inputs.ide_version }}-
+
+    - name: Setup IDE for QA test
+      shell: bash
+      env:
+        ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+        ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+        ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+      run: .github/scripts/setup-qa-ide.sh "${{ inputs.ide_version }}"
+
+    - name: Validate IDE setup
+      shell: bash
+      env:
+        IDEA_VERSION: ${{ inputs.ide_version }}
+      run: |
+        IDE_CODE="${IDEA_VERSION%%-*}"
+        case "$IDE_CODE" in
+          IU) IDE_VAR="IDEA_HOME" ;;
+          CL) IDE_VAR="CLION_HOME" ;;
+          RD) IDE_VAR="RIDER_HOME" ;;
+          *) echo "::error::Unknown IDE code: $IDE_CODE"; exit 1 ;;
+        esac
+        if [ -z "${!IDE_VAR:-}" ] || [ ! -d "${!IDE_VAR}" ]; then
+          echo "::error::${IDE_VAR} is not set or does not exist"
+          exit 1
+        fi
+
+    - name: Restore plugin zip cache
+      if: inputs.plugin_directory == ''
+      uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+      with:
+        path: sonarlint-intellij.zip
+        key: plugin-zip-${{ inputs.project_version }}
+
+    - name: Extract and setup plugin
+      shell: bash
+      env:
+        ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+        ARTIFACTORY_PRIVATE_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+        ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        PROJECT_VERSION: ${{ inputs.project_version }}
+        IDEA_VERSION: ${{ inputs.ide_version }}
+        CLION_KEY: ${{ fromJSON(steps.secrets.outputs.vault).CLION_KEY }}
+        IDEA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).IDEA_KEY }}
+        RIDER_KEY: ${{ fromJSON(steps.secrets.outputs.vault).RIDER_KEY }}
+        PLUGIN_DIRECTORY: ${{ inputs.plugin_directory }}
+      run: |
+        mkdir -p ${GITHUB_WORKSPACE}/downloaded-plugin/staged-plugin
+        LOCAL_PLUGIN="${PLUGIN_DIRECTORY}"
+        if [ -z "${LOCAL_PLUGIN}" ] && [ -n "${PLUGIN_DIR:-}" ]; then
+          LOCAL_PLUGIN="${PLUGIN_DIR}"
+        fi
+        if [ -n "${LOCAL_PLUGIN}" ]; then
+          cp -r "${LOCAL_PLUGIN}/." ${GITHUB_WORKSPACE}/downloaded-plugin/staged-plugin/
+        else
+          if [ ! -f sonarlint-intellij.zip ]; then
+            curl -fsSL -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
+              -o sonarlint-intellij.zip \
+              "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
+          fi
+          unzip -qo sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
+          mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
+        fi
+
+        IDE_CODE="${IDEA_VERSION%%-*}"
+        case "$IDE_CODE" in
+          IU) IDE_HOME="$IDEA_HOME" ;;
+          CL) IDE_HOME="$CLION_HOME" ;;
+          RD) IDE_HOME="$RIDER_HOME" ;;
+        esac
+        PRODUCT_CODE=$(jq -r .productCode "${IDE_HOME}/product-info.json")
+        PRODUCT_VERSION=$(jq -r .version "${IDE_HOME}/product-info.json")
+        SANDBOX_CONFIG_DIR=".intellijPlatform/sandbox/its/${PRODUCT_CODE}-${PRODUCT_VERSION}/config_runIdeForUiTests"
+        mkdir -p "${SANDBOX_CONFIG_DIR}"
+
+        case "$IDE_CODE" in
+          IU) KEY_VAR="IDEA_KEY"; KEY_FILE="idea.key" ;;
+          CL) KEY_VAR="CLION_KEY"; KEY_FILE="clion.key" ;;
+          RD) KEY_VAR="RIDER_KEY"; KEY_FILE="rider.key" ;;
+        esac
+        echo "Writing license key to ${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
+        echo "${!KEY_VAR}" | base64 -d > "${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
+
+    - name: Start IDE in background
+      shell: bash
+      env:
+        ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+        ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+        ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        IDEA_VERSION: ${{ inputs.ide_version }}
+      run: |
+        nohup gradle :its:runIdeForUiTests --stacktrace \
+          -PijVersion=${IDEA_VERSION} \
+          -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
+        echo "IDE_PID=$!" >> $GITHUB_ENV
+
+    - name: Wait for IDE to start
+      shell: bash
+      run: |
+        curl --retry 150 \
+             --retry-delay 2 \
+             --retry-all-errors \
+             --fail \
+             --max-time 3 \
+             --connect-timeout 2 \
+             --silent \
+             --output /dev/null \
+             http://127.0.0.1:8082
+
+    - name: Run integration tests
+      id: run_tests
+      shell: bash
+      env:
+        ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+        ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+        ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
+        GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+        DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+        DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
+        IDEA_VERSION: ${{ inputs.ide_version }}
+        CI: 'true'
+        IT_SKIP_LOG_CLEANUP: 'true'
+        BUILD_NUMBER: ${{ inputs.build_number }}
+      run: ./gradlew :its:test --stacktrace -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin
+
+    - name: Record video on failure
+      if: failure() && inputs.record_video_on_failure == 'true'
+      shell: bash
+      env:
+        DISPLAY: ':10'
+        IDEA_VERSION: ${{ inputs.ide_version }}
+      run: |
+        metacity --sm-disable --replace &
+        sleep 2
+        ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -i ${DISPLAY} \
+          -t 30 -codec:v libx264 -r 12 ${GITHUB_WORKSPACE}/recording_${IDEA_VERSION}.mp4 || true
+
+    - name: Stop Xvfb
+      if: always()
+      shell: bash
+      run: |
+        if [ -n "${XVFB_PID:-}" ] && kill -0 $XVFB_PID 2>/dev/null; then
+          kill $XVFB_PID
+        fi
+
+    - name: Display IDE log
+      if: always()
+      shell: bash
+      run: |
+        if [ -f ${GITHUB_WORKSPACE}/runIdeGradle.log ]; then
+          cat ${GITHUB_WORKSPACE}/runIdeGradle.log
+        fi
+
+    - name: Publish Test Report
+      uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+      if: ${{ !cancelled() }}
+      with:
+        report_paths: '**/test-results/**/*.xml'
+
+    - name: Upload test recording
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: failure() && inputs.record_video_on_failure == 'true'
+      with:
+        name: test-recording-${{ inputs.ide_version }}-${{ inputs.qa_category }}
+        path: ${{ github.workspace }}/recording_${{ inputs.ide_version }}.mp4
+        if-no-files-found: warn
+
+    - name: Upload test reports
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ !cancelled() }}
+      with:
+        name: test-reports-qa-${{ inputs.ide_version }}-${{ inputs.qa_category }}
+        path: "**/reports/**/*"
+        if-no-files-found: warn
+
+    - name: Upload JUnit test results
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ !cancelled() }}
+      with:
+        name: junit-results-qa-${{ inputs.ide_version }}-${{ inputs.qa_category }}
+        path: "**/test-results/**/*.xml"

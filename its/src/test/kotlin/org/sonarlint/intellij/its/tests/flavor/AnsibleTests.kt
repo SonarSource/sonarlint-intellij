@@ -45,7 +45,7 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnectionsAndAddSona
 const val ANSIBLE_PROJECT_KEY = "sample-ansible"
 
 @Tag("ConnectedAnalysisTests")
-@EnabledIf("isIdeaCommunity")
+@EnabledIf("isIntelliJIdea")
 class AnsibleTests : BaseUiTest() {
 
     @Test

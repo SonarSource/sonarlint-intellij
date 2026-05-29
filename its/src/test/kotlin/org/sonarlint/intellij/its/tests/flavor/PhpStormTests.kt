@@ -26,6 +26,7 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 
+/** Runs on PhpStorm only; CI uses IntelliJ Ultimate instead. */
 @EnabledIf("isPhpStorm")
 class PhpStormTests : BaseUiTest() {
 

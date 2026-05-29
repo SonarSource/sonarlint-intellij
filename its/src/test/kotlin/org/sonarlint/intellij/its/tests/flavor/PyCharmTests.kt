@@ -26,6 +26,7 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 
+/** Runs on PyCharm only; CI uses IntelliJ Ultimate instead. */
 @EnabledIf("isPyCharm")
 class PyCharmTests : BaseUiTest() {
 

@@ -38,7 +38,7 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.toggleRule
 import org.sonarlint.intellij.its.utils.optionalStep
 
 @Tag("Standalone")
-@EnabledIf("isIdeaCommunity")
+@EnabledIf("isIntelliJIdea")
 class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
