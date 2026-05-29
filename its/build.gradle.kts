@@ -18,7 +18,6 @@ dependencyLocking {
 val intellijBuildVersion: String by project
 val ijVersion: String by project
 val runIdeDirectory: String by project
-group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
 java {
