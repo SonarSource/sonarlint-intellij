@@ -106,11 +106,11 @@ jobs:
       - name: Build EAP matrix from gradle.properties
         id: set-matrix
         run: |
-          EAP=$(grep '^eapIdeVersion=' gradle.properties | cut -d= -f2)
+          EAP=$(grep '^eapIdeVersion=' gradle.properties | cut -d= -f2 | cut -d'#' -f1 | xargs)
           MATRIX=$(jq -nc --arg eap "$EAP" \
-            '[{"ide_version":"IU-"+$eap,"qa_category":"IdeaUltimateEAP"},
-              {"ide_version":"CL-"+$eap,"qa_category":"CLionEAP"},
-              {"ide_version":"RD-"+$eap,"qa_category":"RiderEAP"}]')
+            '[{"ide_version":("IU-" + $eap),"qa_category":"IdeaUltimateEAP"},
+              {"ide_version":("CL-" + $eap),"qa_category":"CLionEAP"},
+              {"ide_version":("RD-" + $eap),"qa_category":"RiderEAP"}]')
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   qa-eap:

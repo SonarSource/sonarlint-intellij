@@ -295,15 +295,15 @@ jobs:
       - name: Build QA matrix from gradle.properties
         id: set-matrix
         run: |
-          MIN=$(grep '^minSupportedIdeVersion=' gradle.properties | cut -d= -f2)
-          LATEST=$(grep '^latestStableIdeVersion=' gradle.properties | cut -d= -f2)
+          MIN=$(grep '^minSupportedIdeVersion=' gradle.properties | cut -d= -f2 | cut -d'#' -f1 | xargs)
+          LATEST=$(grep '^latestStableIdeVersion=' gradle.properties | cut -d= -f2 | cut -d'#' -f1 | xargs)
           MATRIX=$(jq -nc --arg min "$MIN" --arg lat "$LATEST" \
-            '[{"ide_version":"IU-"+$min,"qa_category":"IdeaUltimateMin"},
-              {"ide_version":"IU-"+$lat,"qa_category":"IdeaUltimateLatest"},
-              {"ide_version":"CL-"+$min,"qa_category":"CLionMin"},
-              {"ide_version":"CL-"+$lat,"qa_category":"CLionLatest"},
-              {"ide_version":"RD-"+$min,"qa_category":"RiderMin"},
-              {"ide_version":"RD-"+$lat,"qa_category":"RiderLatest"}]')
+            '[{"ide_version":("IU-" + $min),"qa_category":"IdeaUltimateMin"},
+              {"ide_version":("IU-" + $lat),"qa_category":"IdeaUltimateLatest"},
+              {"ide_version":("CL-" + $min),"qa_category":"CLionMin"},
+              {"ide_version":("CL-" + $lat),"qa_category":"CLionLatest"},
+              {"ide_version":("RD-" + $min),"qa_category":"RiderMin"},
+              {"ide_version":("RD-" + $lat),"qa_category":"RiderLatest"}]')
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   qa:
