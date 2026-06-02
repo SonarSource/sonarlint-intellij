@@ -338,7 +338,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         val actions = SonarLintActions.getInstance()
         setToolbarSections(listOf(
             listOf(actions.analyzeCurrentFileAction(), actions.cancelAnalysis()),
-            listOf(actions.analyzeChangedFiles(), actions.analyzeAllFiles()),
+            listOf(actions.analyzeChangedFiles(), actions.analyzeScaDependencies(), actions.analyzeAllFiles()),
             listOf(actions.expandAllTreesAction(), actions.collapseAllTreesAction()),
             listOf(actions.configure(), actions.clearIssues())
         ))

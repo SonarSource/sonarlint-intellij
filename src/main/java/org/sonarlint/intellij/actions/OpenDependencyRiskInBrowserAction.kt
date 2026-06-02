@@ -36,7 +36,8 @@ class OpenDependencyRiskInBrowserAction : AbstractSonarAction(
 ) {
 
     override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
-        return e.getData(DEPENDENCY_RISK_DATA_KEY) != null
+        val dependencyRisk = e.getData(DEPENDENCY_RISK_DATA_KEY)
+        return dependencyRisk != null && !dependencyRisk.isLocalOnly
     }
 
     override fun updatePresentation(e: AnActionEvent, project: Project) {
@@ -49,6 +50,9 @@ class OpenDependencyRiskInBrowserAction : AbstractSonarAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val dependencyRisk = e.getData(DEPENDENCY_RISK_DATA_KEY) ?: return
+        if (dependencyRisk.isLocalOnly) {
+            return
+        }
         runOnPooledThread(project) {
             getService(BackendService::class.java).openDependencyRiskInBrowser(project, dependencyRisk.getId())
         }

@@ -45,3 +45,26 @@ fun aDependencyRiskDto(status: DependencyRiskDto.Status, transition: List<Depend
         "7.5",
         transition
     )
+
+fun aLocalOnlyDependencyRiskDto(id: UUID = UUID.randomUUID()) =
+    DependencyRiskDto.withLocalAnalysis(
+        aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), id = id),
+        aLocalAnalysisDetailsDto(),
+        false,
+        true
+    )
+
+fun aMatchedDependencyRiskDto(id: UUID = UUID.randomUUID()) =
+    DependencyRiskDto.withLocalAnalysis(
+        aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(DependencyRiskDto.Transition.ACCEPT), id = id),
+        aLocalAnalysisDetailsDto(),
+        true,
+        false
+    )
+
+fun aLocalAnalysisDetailsDto() = DependencyRiskDto.LocalAnalysisDetailsDto(
+    DependencyRiskDto.ReleaseDetailsDto("release-key", "pkg:maven/org.example/library@1.2.3", "maven", "MIT", true, true, false),
+    DependencyRiskDto.IssueDetailsDto(false, listOf("CWE-79"), null, emptyList()),
+    DependencyRiskDto.DependencyDetailsDto(listOf("pom.xml"), listOf(listOf("root", "library")))
+)
+

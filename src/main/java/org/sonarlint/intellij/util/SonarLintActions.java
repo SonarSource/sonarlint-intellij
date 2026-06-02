@@ -33,6 +33,7 @@ import org.sonarlint.intellij.actions.RestartBackendAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction;
+import org.sonarlint.intellij.actions.SonarAnalyzeScaDependenciesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
 import org.sonarlint.intellij.actions.filters.IncludeResolvedFindingsAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -51,6 +52,7 @@ public final class SonarLintActions {
   private final AnAction cancelAction;
   private final AnAction configureAction;
   private final AnAction analyzeChangedFilesAction;
+  private final AnAction analyzeScaDependenciesAction;
   private final AnAction analyzeAllFilesAction;
   private final IncludeResolvedFindingsAction<LiveIssue> includeResolvedIssuesAction;
   private final AnAction analyzeCurrentFileAction;
@@ -86,6 +88,9 @@ public final class SonarLintActions {
     analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
       "Run a SonarQube for IDE analysis on VCS changed files",
       SonarLintIcons.SCM);
+    analyzeScaDependenciesAction = new SonarAnalyzeScaDependenciesAction("Analyze SCA Dependencies",
+      "Run a SonarQube for IDE SCA dependency analysis on the project",
+      SonarLintIcons.PLAY);
     includeResolvedIssuesAction = new IncludeResolvedFindingsAction<>("Include Resolved Issues",
       "Include resolved issues",
       SonarLintIcons.RESOLVED,
@@ -120,6 +125,10 @@ public final class SonarLintActions {
 
   public AnAction analyzeChangedFiles() {
     return analyzeChangedFilesAction;
+  }
+
+  public AnAction analyzeScaDependencies() {
+    return analyzeScaDependenciesAction;
   }
 
   public AnAction analyzeAllFiles() {

@@ -156,7 +156,7 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
                 object : DoubleClickListener() {
                     override fun onDoubleClick(event: MouseEvent): Boolean {
                         val selectedNode = tree.getSelectedNodes(LocalDependencyRisk::class.java, null)
-                        if (selectedNode.isNotEmpty()) {
+                        if (selectedNode.isNotEmpty() && !selectedNode.first().isLocalOnly) {
                             runOnPooledThread {
                                 getService(BackendService::class.java).openDependencyRiskInBrowser(project, selectedNode.first().getId())
                             }

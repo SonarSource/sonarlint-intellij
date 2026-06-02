@@ -37,13 +37,16 @@ class LocalDependencyRisk(private val serverDependencyRisk: DependencyRiskDto) :
     val vulnerabilityId = serverDependencyRisk.vulnerabilityId
     val cvssScore = serverDependencyRisk.cvssScore
     val transitions: List<DependencyRiskDto.Transition> = serverDependencyRisk.transitions
+    val localAnalysisDetails: DependencyRiskDto.LocalAnalysisDetailsDto? = serverDependencyRisk.localAnalysisDetails
+    val isMatched: Boolean = serverDependencyRisk.isMatched
+    val isLocalOnly: Boolean = serverDependencyRisk.isLocalOnly
     private val resolvedStatus = listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT, DependencyRiskDto.Status.FIXED)
 
     fun canChangeStatus(): Boolean {
-        return transitions.isNotEmpty()
+        return !isLocalOnly && transitions.isNotEmpty()
     }
 
-    override fun getId(): UUID = serverDependencyRisk.id
+    override fun getId(): UUID = serverDependencyRisk.id!!
 
     override fun getCleanCodeAttribute() = null
 
